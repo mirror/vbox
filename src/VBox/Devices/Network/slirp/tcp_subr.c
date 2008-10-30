@@ -261,10 +261,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 
 	DEBUG_CALL("tcp_close");
 	DEBUG_ARG("tp = %lx", (long )tp);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        /*sofree destrys so_mutex*/
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-#endif
 
 	/* free the reassembly queue, if any */
 	t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
@@ -279,6 +275,11 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        /*sofree destrys so_mutex*/
+        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+#endif
 	u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
 	free(tp);
 	so->so_tcpcb = 0;
@@ -291,6 +292,9 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 	sbfree(&so->so_snd);
 	sofree(pData, so);
 	tcpstat.tcps_closed++;
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSemMutexRelease(pData->tcb_mutex);
+#endif
 	return ((struct tcpcb *)0);
 }
 

@@ -234,6 +234,8 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     AssertReleaseRC(rc);
     rc = RTSemMutexCreate(&pData->udb_mutex);
     AssertReleaseRC(rc);
+    rc = RTSemMutexCreate(&pData->udp_last_so_mutex);
+    AssertReleaseRC(rc);
     rc = RTSemMutexCreate(&pData->if_queued_mutex);
     AssertReleaseRC(rc);
     rc = RTSemMutexCreate(&pData->next_m_mutex);
@@ -459,8 +461,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #ifdef VBOX_WITH_SYNC_SLIRP
                 before_loop_ends:
                         /*Release of global tcb mutex happens in the head of loop*/
-                        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
                         RTSemMutexRelease(so->so_mutex);
+                        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
                         so = so_next;
 #endif
 		}
@@ -515,8 +517,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			}
 #ifdef VBOX_WITH_SYNC_SLIRP
                         before_udp_loop_end:
-                        RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
                         RTSemMutexRelease(so->so_mutex);
+                        RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
                         so = so_next;
 #endif
 		}
@@ -738,8 +740,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #endif
 #ifdef VBOX_WITH_SYNC_SLIRP
                     before_loop_ends:
-                    RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
                     RTSemMutexRelease(so->so_mutex);
+                    RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
                     so = so_next;
 #endif
 		}
@@ -769,8 +771,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                             sorecvfrom(pData, so);
                         }
 #ifdef VBOX_WITH_SYNC_SLIRP
-                    RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
                     RTSemMutexRelease(so->so_mutex);
+                    RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
                     so = so_next;
 #endif
 		}
@@ -783,7 +785,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 	if (if_queued && link_up)
 	   if_start(pData);
 #else
-#if 0
+#if 1
         if (link_up) {
             RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
             if (if_queued > 0){
@@ -886,6 +888,9 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 {
     struct mbuf *m;
     int proto;
+#ifdef VBOX_WITH_SYNC_SLIRP
+    int rc;
+#endif
 
     if (pkt_len < ETH_HLEN)
         return;
@@ -901,6 +906,12 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 	updtime(pData);
 
         m = m_get(pData);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (m != NULL) {
+            rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+            AssertReleaseRC(rc);
+        }
+#endif
         if (!m)
             return;
         /* Note: we add to align the IP header */
@@ -914,6 +925,10 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         m->m_len -= 2 + ETH_HLEN;
 
         ip_input(pData, m);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        rc = RTSemMutexRelease(m->m_mutex);
+        AssertReleaseRC(rc);
+#endif
         break;
     default:
         break;

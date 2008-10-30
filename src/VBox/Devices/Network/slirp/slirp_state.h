@@ -176,6 +176,10 @@ typedef struct NATState
      * udb_mutex used in similar to tcb_mutex way, but for handling udp connections
      */
     RTSEMMUTEX udb_mutex;
+    /*
+     * used for access udp_last_so global pointer avoiding overusing of udb_mutex.
+     */
+    RTSEMMUTEX udp_last_so_mutex;
 #endif
 } NATState;
 

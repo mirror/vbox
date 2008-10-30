@@ -100,7 +100,7 @@ sofree(PNATState pData, struct socket *so)
     }
 
     if (so->so_type == IPPROTO_UDP) {
-        RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
     }
     else if (so->so_type == IPPROTO_TCP) {
         RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
@@ -118,7 +118,7 @@ sofree(PNATState pData, struct socket *so)
       remque(pData, so);  /* crashes if so is not in a queue */
 
     if (so->so_type == IPPROTO_UDP) {
-        RTSemMutexRelease(pData->udb_mutex);
+        RTSemMutexRelease(pData->udp_last_so_mutex);
     }
     else if (so->so_type == IPPROTO_TCP) {
         RTSemMutexRelease(pData->tcb_mutex);
@@ -386,6 +386,9 @@ sowrite(PNATState pData, struct socket *so)
 	if (so->so_urgc) {
 		sosendoob(so);
 		if (sb->sb_cc == 0)
+#ifdef VBOX_WITH_SYNC_SLIRP
+       RTSemMutexRelease(so->so_mutex);
+#endif
 			return 0;
 	}
 
