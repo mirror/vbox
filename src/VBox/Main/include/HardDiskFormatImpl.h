@@ -68,7 +68,7 @@ public:
     STDMETHOD(COMGETTER(FileExtensions)) (ComSafeArrayOut (BSTR, aFileExtensions));
 
     STDMETHOD(COMGETTER(Capabilities)) (ULONG *aCaps);
-    STDMETHOD(COMGETTER(ConfigNames)) (ComSafeArrayOut (BSTR, aConfigNames));
+    STDMETHOD(COMGETTER(PropertyNames)) (ComSafeArrayOut (BSTR, aPropertyNames));
 
     // public methods only for internal purposes
 
@@ -90,7 +90,7 @@ private:
         const Bstr name;
         const BstrList fileExtensions;
         const uint64_t capabilities;
-        const BstrList configNames;
+        const BstrList propertyNames;
     };
 
     Data mData;

@@ -83,7 +83,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
         PCVDCONFIGINFO pa = aVDInfo->paConfigInfo;
         while (pa->pszKey != NULL)
         {
-            unconst (mData.configNames).push_back (*pa->pszKey);
+            unconst (mData.propertyNames).push_back (*pa->pszKey);
             ++ pa;
         }
     }
@@ -107,7 +107,7 @@ void HardDiskFormat::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (mData.configNames).clear();
+    unconst (mData.propertyNames).clear();
     unconst (mData.fileExtensions).clear();
     unconst (mData.capabilities) = 0;
     unconst (mData.name).setNull();
@@ -180,21 +180,21 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
 }
 
 STDMETHODIMP HardDiskFormat::
-COMGETTER(ConfigNames)(ComSafeArrayOut (BSTR, aConfigNames))
+COMGETTER(PropertyNames)(ComSafeArrayOut (BSTR, aPropertyNames))
 {
-    if (ComSafeArrayOutIsNull (aConfigNames))
+    if (ComSafeArrayOutIsNull (aPropertyNames))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> configNames (mData.configNames.size());
+    com::SafeArray <BSTR> propertyNames (mData.propertyNames.size());
     int i = 0;
-    for (BstrList::const_iterator it = mData.configNames.begin();
-        it != mData.configNames.end(); ++ it, ++ i)
-        (*it).cloneTo (&configNames [i]);
-    configNames.detachTo (ComSafeArrayOutArg (aConfigNames));
+    for (BstrList::const_iterator it = mData.propertyNames.begin();
+        it != mData.propertyNames.end(); ++ it, ++ i)
+        (*it).cloneTo (&propertyNames [i]);
+    propertyNames.detachTo (ComSafeArrayOutArg (aPropertyNames));
 
     return S_OK;
 }
