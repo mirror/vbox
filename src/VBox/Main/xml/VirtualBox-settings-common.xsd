@@ -391,12 +391,24 @@
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
+<xsd:complexType name="TCPUCount">
+  <xsd:attribute name="CPUCount">
+    <xsd:simpleType>
+      <xsd:restriction base="xsd:unsignedInt">
+        <xsd:minInclusive value="1"/>
+        <xsd:maxInclusive value="63"/>
+      </xsd:restriction>
+    </xsd:simpleType>
+  </xsd:attribute>
+</xsd:complexType>
+
 <xsd:complexType name="TCPU">
   <xsd:sequence>
     <xsd:element name="HardwareVirtEx" type="THWVirtExType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
+    <xsd:element name="CPUCount" type="TCPUCount" minOccurs="0"/>
   </xsd:sequence>
 </xsd:complexType>
 
