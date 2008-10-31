@@ -226,12 +226,14 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         /*
          * Hypervisor errors.
          */
+        case VINF_EM_DBG_RING0_ASSERTION:
         case VINF_EM_DBG_HYPER_ASSERTION:
         {
-            const char *pszMsg1 = HWACCMR3IsActive(pVM) ? pVM->vmm.s.szRing0AssertMsg1 : VMMR3GetGCAssertMsg1(pVM);
+            bool fIsRing0 = rcErr == VINF_EM_DBG_RING0_ASSERTION;
+            const char *pszMsg1 = fIsRing0 ? pVM->vmm.s.szRing0AssertMsg1 : VMMR3GetGCAssertMsg1(pVM);
             while (pszMsg1 && *pszMsg1 == '\n')
                 pszMsg1++;
-            const char *pszMsg2 = HWACCMR3IsActive(pVM) ? pVM->vmm.s.szRing0AssertMsg2 : VMMR3GetGCAssertMsg2(pVM);
+            const char *pszMsg2 = fIsRing0 ? pVM->vmm.s.szRing0AssertMsg2 : VMMR3GetGCAssertMsg2(pVM);
             while (pszMsg2 && *pszMsg2 == '\n')
                 pszMsg2++;
             pHlp->pfnPrintf(pHlp,
