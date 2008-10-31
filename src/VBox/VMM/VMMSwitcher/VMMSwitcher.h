@@ -74,12 +74,12 @@ typedef struct VMMSWITCHERDEF *PVMMSWITCHERDEF;
  *
  * @param   pVM         VM handle.
  * @param   pSwitcher   Pointer to the switcher structure.
- * @param   pu8CodeR0   Pointer to the first code byte in the ring-0 mapping.
+ * @param   R0PtrCode   Pointer to the first code byte in the ring-0 mapping.
  * @param   pu8CodeR3   Pointer to the first code byte in the ring-3 mapping.
  * @param   GCPtrCode   The GC address of the first code byte.
  * @param   u32IDCode   The address of the identity mapped code (first byte).
  */
-typedef DECLCALLBACK(void) FNVMMSWITCHERRELOCATE(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3,
+typedef DECLCALLBACK(void) FNVMMSWITCHERRELOCATE(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3,
                                                  RTGCPTR GCPtrCode, uint32_t u32IDCode);
 /** Pointer to a FNVMMSWITCHERRELOCATE(). */
 typedef FNVMMSWITCHERRELOCATE *PFNVMMSWITCHERRELOCATE;
@@ -140,14 +140,14 @@ extern VMMSWITCHERDEF vmmR3SwitcherPAEToAMD64_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherAMD64ToPAE_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherAMD64ToAMD64_Def;
 
-extern DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3Switcher32BitToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
-extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3Switcher32BitToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 __END_DECLS
 
 #endif

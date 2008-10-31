@@ -630,42 +630,44 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
  * @returns iprt status code.
  *
  * @param   pLogger             The logger instance to be cloned.
- * @param   pLoggerGC           Where to create the GC logger instance.
- * @param   cbLoggerGC          Amount of memory allocated to for the GC logger instance clone.
- * @param   pfnLoggerGCPtr      Pointer to logger wrapper function for this instance (GC Ptr).
- * @param   pfnFlushGCPtr       Pointer to flush function (GC Ptr).
+ * @param   pLoggerRC           Where to create the RC logger instance.
+ * @param   cbLoggerRC          Amount of memory allocated to for the RC logger
+ *                              instance clone.
+ * @param   pfnLoggerRCPtr      Pointer to logger wrapper function for this
+ *                              instance (RC Ptr).
+ * @param   pfnFlushRCPtr       Pointer to flush function (RC Ptr).
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  */
-RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC, size_t cbLoggerGC,
-                         RTRCPTR pfnLoggerGCPtr, RTRCPTR pfnFlushGCPtr, RTUINT fFlags)
+RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC, size_t cbLoggerRC,
+                         RTRCPTR pfnLoggerRCPtr, RTRCPTR pfnFlushRCPtr, RTUINT fFlags)
 {
     /*
      * Validate input.
      */
-   if (    !pLoggerGC
-       ||  !pfnFlushGCPtr
-       ||  !pfnLoggerGCPtr)
+   if (    !pLoggerRC
+       ||  !pfnFlushRCPtr
+       ||  !pfnLoggerRCPtr)
     {
        AssertMsgFailed(("Invalid parameters!\n"));
        return VERR_INVALID_PARAMETER;
     }
-    if (cbLoggerGC < sizeof(*pLoggerGC))
+    if (cbLoggerRC < sizeof(*pLoggerRC))
     {
-        AssertMsgFailed(("%d min=%d\n", cbLoggerGC, sizeof(*pLoggerGC)));
+        AssertMsgFailed(("%d min=%d\n", cbLoggerRC, sizeof(*pLoggerRC)));
         return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Initialize GC instance.
      */
-    pLoggerGC->offScratch   = 0;
-    pLoggerGC->fPendingPrefix = false;
-    pLoggerGC->pfnLogger    = pfnLoggerGCPtr;
-    pLoggerGC->pfnFlush     = pfnFlushGCPtr;
-    pLoggerGC->u32Magic     = RTLOGGERRC_MAGIC;
-    pLoggerGC->fFlags       = fFlags | RTLOGFLAGS_DISABLED;
-    pLoggerGC->cGroups      = 1;
-    pLoggerGC->afGroups[0]  = 0;
+    pLoggerRC->offScratch   = 0;
+    pLoggerRC->fPendingPrefix = false;
+    pLoggerRC->pfnLogger    = pfnLoggerRCPtr;
+    pLoggerRC->pfnFlush     = pfnFlushRCPtr;
+    pLoggerRC->u32Magic     = RTLOGGERRC_MAGIC;
+    pLoggerRC->fFlags       = fFlags | RTLOGFLAGS_DISABLED;
+    pLoggerRC->cGroups      = 1;
+    pLoggerRC->afGroups[0]  = 0;
 
     /*
      * Resolve defaults.
@@ -680,41 +682,41 @@ RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC, size_t cbLogg
     /*
      * Check if there's enough space for the groups.
      */
-    if (cbLoggerGC < (size_t)RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]))
+    if (cbLoggerRC < (size_t)RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]))
     {
-        AssertMsgFailed(("%d req=%d cGroups=%d\n", cbLoggerGC, RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]), pLogger->cGroups));
+        AssertMsgFailed(("%d req=%d cGroups=%d\n", cbLoggerRC, RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]), pLogger->cGroups));
         return VERR_INVALID_PARAMETER;
     }
-    memcpy(&pLoggerGC->afGroups[0], &pLogger->afGroups[0], pLogger->cGroups * sizeof(pLoggerGC->afGroups[0]));
-    pLoggerGC->cGroups = pLogger->cGroups;
+    memcpy(&pLoggerRC->afGroups[0], &pLogger->afGroups[0], pLogger->cGroups * sizeof(pLoggerRC->afGroups[0]));
+    pLoggerRC->cGroups = pLogger->cGroups;
 
     /*
      * Copy bits from the HC instance.
      */
-    pLoggerGC->fPendingPrefix = pLogger->fPendingPrefix;
-    pLoggerGC->fFlags |= pLogger->fFlags;
+    pLoggerRC->fPendingPrefix = pLogger->fPendingPrefix;
+    pLoggerRC->fFlags |= pLogger->fFlags;
 
     /*
      * Check if we can remove the disabled flag.
      */
     if (    pLogger->fDestFlags
         &&  !((pLogger->fFlags | fFlags) & RTLOGFLAGS_DISABLED))
-        pLoggerGC->fFlags &= ~RTLOGFLAGS_DISABLED;
+        pLoggerRC->fFlags &= ~RTLOGFLAGS_DISABLED;
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * Flushes a GC logger instance to a HC logger.
+ * Flushes a RC logger instance to a R3 logger.
  *
  *
  * @returns iprt status code.
- * @param   pLogger     The HC logger instance to flush pLoggerGC to.
- *                      If NULL the default logger is used.
- * @param   pLoggerGC   The GC logger instance to flush.
+ * @param   pLogger     The R3 logger instance to flush pLoggerRC to. If NULL
+ *                      the default logger is used.
+ * @param   pLoggerRC   The RC logger instance to flush.
  */
-RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC)
+RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC)
 {
     /*
      * Resolve defaults.
@@ -724,7 +726,7 @@ RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC)
         pLogger = RTLogDefaultInstance();
         if (!pLogger)
         {
-            pLoggerGC->offScratch = 0;
+            pLoggerRC->offScratch = 0;
             return;
         }
     }
@@ -733,7 +735,7 @@ RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC)
      * Any thing to flush?
      */
     if (    pLogger->offScratch
-        ||  pLoggerGC->offScratch)
+        ||  pLoggerRC->offScratch)
     {
         /*
          * Acquire logger instance sem.
@@ -746,11 +748,11 @@ RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC)
          * Write whatever the GC instance contains to the HC one, and then
          * flush the HC instance.
          */
-        if (pLoggerGC->offScratch)
+        if (pLoggerRC->offScratch)
         {
-            rtLogOutput(pLogger, pLoggerGC->achScratch, pLoggerGC->offScratch);
+            rtLogOutput(pLogger, pLoggerRC->achScratch, pLoggerRC->offScratch);
             rtLogOutput(pLogger, NULL, 0);
-            pLoggerGC->offScratch = 0;
+            pLoggerRC->offScratch = 0;
         }
 
         /*
