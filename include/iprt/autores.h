@@ -31,7 +31,6 @@
 #define ___iprt_autores_h
 
 #include <iprt/types.h>
-#include <iprt/mem.h>
 #include <iprt/assert.h>
 
 
@@ -207,6 +206,10 @@ public:
         return m_hRes;
     }
 };
+
+
+/* include after template definition */
+#include <iprt/mem.h>
 
 #endif
 

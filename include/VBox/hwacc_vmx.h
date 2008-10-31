@@ -34,6 +34,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <VBox/x86.h>
 
 /** @defgroup grp_vmx   vmx Types and Definitions
  * @ingroup grp_hwaccm
@@ -51,6 +52,8 @@
 
 /**
  * EPT Page Directory Pointer Entry. Bit view.
+ * @todo uint64_t isn't safe for bitfields (gcc pedantic warnings, and IIRC,
+ *       this did cause trouble with one compiler/version).
  */
 #pragma pack(1)
 typedef struct EPTPML4EBITS
