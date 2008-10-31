@@ -392,10 +392,9 @@ vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITH_IDT_PATCHING
 vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
 endif
-# Disabled temporarily
-#ifdef VBOX_WITH_NETFLT
-#vboxdrv_DEFS         += VBOX_WITH_NETFLT
-#endif
+ifdef VBOX_WITH_NETFLT
+ vboxdrv_DEFS         += VBOX_WITH_NETFLT
+endif
 vboxdrv_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
