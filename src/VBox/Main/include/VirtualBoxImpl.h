@@ -82,6 +82,8 @@ public:
     typedef std::vector <ComObjPtr <SessionMachine> > SessionMachineVector;
     typedef std::vector <ComObjPtr <Machine> > MachineVector;
 
+    typedef std::vector <ComPtr <IInternalSessionControl> > InternalControlVector;
+
     class CallbackEvent;
     friend class CallbackEvent;
 
@@ -215,7 +217,13 @@ public:
 
     ComObjPtr <GuestOSType> getUnknownOSType();
 
-    void getOpenedMachines (SessionMachineVector &aVector);
+    void getOpenedMachines (SessionMachineVector &aMachines,
+                            InternalControlVector *aControls = NULL);
+
+    /** Shortcut to #getOpenedMachines (aMachines, &aControls). */
+    void getOpenedMachinesAndControls (SessionMachineVector &aMachines,
+                                       InternalControlVector &aControls)
+    { getOpenedMachines (aMachines, &aControls); }
 
     bool isMachineIdValid (const Guid &aId)
     {

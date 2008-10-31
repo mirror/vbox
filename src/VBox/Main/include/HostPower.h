@@ -25,6 +25,8 @@
 #include "VirtualBoxBase.h"
 #include "MachineImpl.h"
 
+#include <vector>
+
 class VirtualBox;
 
 typedef enum
@@ -37,17 +39,17 @@ typedef enum
 class HostPowerService
 {
 public:
-    HostPowerService(VirtualBox *aVirtualBox);
+
+    HostPowerService (VirtualBox *aVirtualBox);
     virtual ~HostPowerService();
 
-    void    notify(HostPowerEvent event);
-    HRESULT processEvent(SessionMachine *machine, HostPowerEvent event, BOOL *paMachineSuspended);
+    void    notify (HostPowerEvent aEvent);
 
 protected:
+
     ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
-    BOOL    *aMachineSuspended;
-    size_t   cbMachineSuspended;
+    std::vector <ComPtr <IConsole> > mConsoles;
 };
 
 # ifdef RT_OS_WINDOWS
@@ -57,10 +59,12 @@ protected:
 class HostPowerServiceWin : public HostPowerService
 {
 public:
+
     HostPowerServiceWin(VirtualBox *aVirtualBox);
     virtual ~HostPowerServiceWin();
 
 private:
+
     static DECLCALLBACK(int) NotificationThread (RTTHREAD ThreadSelf, void *pInstance);
     static LRESULT CALLBACK  WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

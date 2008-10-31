@@ -3827,20 +3827,24 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
  * Note that when the method returns @c false, the arguments remain unchanged.
  *
  * @param aMachine  Session machine object.
- * @param aIPCSem   Mutex IPC semaphore handle for this machine.
+ * @param aControl  Direct session control object (optional).
+ * @param aIPCSem   Mutex IPC semaphore handle for this machine (optional).
  *
  * @note locks this object for reading.
  */
 #if defined (RT_OS_WINDOWS)
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             ComPtr <IInternalSessionControl> *aControl /*= NULL*/,
                              HANDLE *aIPCSem /*= NULL*/,
                              bool aAllowClosing /*= false*/)
 #elif defined (RT_OS_OS2)
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             ComPtr <IInternalSessionControl> *aControl /*= NULL*/,
                              HMTX *aIPCSem /*= NULL*/,
                              bool aAllowClosing /*= false*/);
 #else
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                             ComPtr <IInternalSessionControl> *aControl /*= NULL*/,
                              bool aAllowClosing /*= false*/)
 #endif
 {
@@ -3859,6 +3863,9 @@ bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
         AssertReturn (!mData->mSession.mMachine.isNull(), false);
 
         aMachine = mData->mSession.mMachine;
+
+        if (aControl != NULL)
+            *aControl = mData->mSession.mDirectControl;
 
 #if defined (RT_OS_WINDOWS) || defined (RT_OS_OS2)
         /* Additional session data */
