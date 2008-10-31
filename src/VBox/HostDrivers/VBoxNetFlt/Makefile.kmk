@@ -28,11 +28,15 @@ VBoxNetFlt_DEFS = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
 VBoxNetFlt_SDKS.win = W2K3DDK WINPSDKINCS
 VBoxNetFlt_INCS := $(PATH_SUB_CURRENT)
 VBoxNetFlt_SOURCES.darwin = darwin/VBoxNetFlt-darwin.cpp
-VBoxNetFlt_SOURCES.win = win/VBoxNetFlt-win.c win/VBoxNetFltPt-win.c win/VBoxNetFltNf-win.c win/VBoxNetFlt-win.rc
+VBoxNetFlt_SOURCES.win = \
+	win/VBoxNetFlt-win.c \
+	win/VBoxNetFltPt-win.c \
+	win/VBoxNetFltNf-win.c \
+	win/VBoxNetFlt-win.rc
 ifdef VBOX_NETFLT_ONDEMAND_BIND
-VBoxNetFlt_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
+ VBoxNetFlt_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
 else
-VBoxNetFlt_SOURCES.win += win/VBoxNetFltMp-win.c
+ VBoxNetFlt_SOURCES.win += win/VBoxNetFltMp-win.c
 endif
 VBoxNetFlt_SOURCES = VBoxNetFlt.c
 VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
@@ -104,7 +108,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir 
 
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
-        $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf \
+		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat
 	$(call MSG_TOOL,Inf2Cat,VBoxNetFlt-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
@@ -114,10 +118,10 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 # WinNetConfig - static library with host network interface config API
 #
 LIBRARIES.win += WinNetConfig
-WinNetConfig_TEMPLATE         = VBOXR3STATIC
+WinNetConfig_TEMPLATE = VBOXR3STATIC
 WinNetConfig_DEFS     = _WIN32_WINNT=0x0500 _UNICODE UNICODE
 WinNetConfig_SDKS     = WINPSDK W2K3DDK
-WinNetConfig_SOURCES         = \
+WinNetConfig_SOURCES  = \
 	win/WinNetConfig.cpp
 
 else if1of ($(KBUILD_TARGET), linux solaris)
