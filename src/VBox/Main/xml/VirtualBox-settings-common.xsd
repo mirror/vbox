@@ -392,7 +392,7 @@
 </xsd:complexType>
 
 <xsd:complexType name="TCPUCount">
-  <xsd:attribute name="CPUCount">
+  <xsd:attribute name="count">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="1"/>
