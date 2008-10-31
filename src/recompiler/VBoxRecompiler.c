@@ -440,6 +440,9 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
 
     /* Clear raw ring 0 init state */
     pVM->rem.s.Env.state &= ~CPU_RAW_RING0;
+
+    /* Flush the TBs the next time we execute code here. */
+    pVM->rem.s.fFlushTBs = true;
 }
 
 
