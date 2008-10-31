@@ -497,6 +497,12 @@ udp_detach(PNATState pData, struct socket *so)
 	/* if (so->so_m) m_free(so->so_m);    done by sofree */
 
 	sofree(pData, so);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (so != NULL) {
+            rc = RTSemMutexRelease(so->so_mutex);
+            AssertReleaseRC(rc);
+        }
+#endif
 }
 
 static const struct tos_t udptos[] = {
@@ -823,6 +829,10 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0) {
 		udp_detach(pData, so);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(so->so_mutex);
+                AssertReleaseRC(rc);
+#endif
 		return NULL;
 	}
 	setsockopt(so->s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));

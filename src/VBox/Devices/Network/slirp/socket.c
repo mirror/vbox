@@ -103,7 +103,7 @@ sofree(PNATState pData, struct socket *so)
         RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
     }
     else if (so->so_type == IPPROTO_TCP) {
-        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRequest(pData->tcp_last_so_mutex, RT_INDEFINITE_WAIT);
     }
     else {
         Assert(!"unknown type");
@@ -121,7 +121,7 @@ sofree(PNATState pData, struct socket *so)
         RTSemMutexRelease(pData->udp_last_so_mutex);
     }
     else if (so->so_type == IPPROTO_TCP) {
-        RTSemMutexRelease(pData->tcb_mutex);
+        RTSemMutexRelease(pData->tcp_last_so_mutex);
     }
     else {
         Assert(!"unknown type");

@@ -200,9 +200,25 @@ ip_input(PNATState pData, struct mbuf *m)
 			ipstat.ips_fragments++;
 			ip = ip_reass(pData, (struct ipasfrag *)ip, fp);
 			if (ip == 0)
+#ifndef VBOX_WITH_SYNC_SLIRP
 				return;
+#else
+                        {
+                            rc = RTSemMutexRelease(m->m_mutex);
+                            AssertReleaseRC(rc);
+                            return;
+                        }
+#endif
 			ipstat.ips_reassembled++;
+#ifndef VBOX_WITH_SYNC_SLIRP
 			m = dtom(pData, ip);
+#else
+                        rc = RTSemMutexRelease(m->m_mutex);
+                        AssertReleaseRC(rc);
+			m = dtom(pData, ip);
+                        rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+                        AssertReleaseRC(rc);
+#endif
 		} else
 			if (fp)
 		   	   ip_freef(pData, fp);
