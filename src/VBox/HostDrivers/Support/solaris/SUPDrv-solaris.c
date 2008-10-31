@@ -196,10 +196,6 @@ int _init(void)
 {
     LogFlow((DEVICE_NAME ":_init\n"));
 
-#ifdef VBOX_WITH_NETFLT
-    NOREF(g_vboxNetFltSolarisRTR0Symbols);
-#endif
-
     /*
      * Prevent module autounloading.
      */
