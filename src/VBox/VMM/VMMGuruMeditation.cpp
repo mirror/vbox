@@ -226,10 +226,10 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
         /*
          * Hypervisor errors.
          */
-        case VINF_EM_DBG_RING0_ASSERTION:
+        case VERR_VMM_RING0_ASSERTION:
         case VINF_EM_DBG_HYPER_ASSERTION:
         {
-            bool fIsRing0 = rcErr == VINF_EM_DBG_RING0_ASSERTION;
+            bool fIsRing0 = rcErr == VERR_VMM_RING0_ASSERTION;
             const char *pszMsg1 = fIsRing0 ? pVM->vmm.s.szRing0AssertMsg1 : VMMR3GetGCAssertMsg1(pVM);
             while (pszMsg1 && *pszMsg1 == '\n')
                 pszMsg1++;

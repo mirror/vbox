@@ -1965,7 +1965,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc) || rc == VINF_EM_DBG_RING0_ASSERTION)
+        if (VBOX_FAILURE(rc))
             return rc;
         /* Resume R0 */
     }
@@ -2236,7 +2236,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
 #endif
             LogRel((pVM->vmm.s.szRing0AssertMsg1));
             LogRel((pVM->vmm.s.szRing0AssertMsg2));
-            return VINF_EM_DBG_RING0_ASSERTION;
+            return VERR_VMM_RING0_ASSERTION;
 
         default:
             AssertMsgFailed(("enmCallHostOperation=%d\n", pVM->vmm.s.enmCallHostOperation));
