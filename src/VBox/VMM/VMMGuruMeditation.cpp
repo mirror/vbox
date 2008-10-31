@@ -292,10 +292,10 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                  * Try figure out where eip is.
                  */
                 /* core code? */
-                if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode < pVM->vmm.s.cbCoreCode)
+                if (uEIP - (RTGCUINTPTR)pVM->vmm.s.pvCoreCodeRC < pVM->vmm.s.cbCoreCode)
                     pHlp->pfnPrintf(pHlp,
                                 "!! EIP is in CoreCode, offset %#x\n",
-                                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvGCCoreCode);
+                                uEIP - (RTGCUINTPTR)pVM->vmm.s.pvCoreCodeRC);
                 else
                 {   /* ask PDM */  /** @todo ask DBGFR3Sym later? */
                     char        szModName[64];

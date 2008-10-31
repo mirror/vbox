@@ -174,7 +174,7 @@ static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
     /*
      * Register the EMT R0 logger instance.
      */
-    PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0Logger;
+    PVMMR0LOGGER pR0Logger = pVM->vmm.s.pR0LoggerR0;
     if (pR0Logger)
     {
 #if 0 /* testing of the logger. */
@@ -488,7 +488,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
             register int rc;
-            pVM->vmm.s.iLastGCRc = rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            pVM->vmm.s.iLastGZRc = rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, rc);
@@ -547,7 +547,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
                 return VERR_NOT_SUPPORTED;
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
             /** @todo dispatch interrupts? */
             ASMSetFlags(fFlags);
             return rc;
@@ -575,7 +575,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  * The Ring 0 entry point, called by the fast-ioctl path.
  *
  * @param   pVM             The VM to operate on.
- *                          The return code is stored in pVM->vmm.s.iLastGCRc.
+ *                          The return code is stored in pVM->vmm.s.iLastGZRc.
  * @param   enmOperation    Which operation to execute.
  * @remarks Assume called with interrupts _enabled_.
  */
@@ -595,8 +595,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 RTCCUINTREG uFlags = ASMIntDisableFlags();
 
                 TMNotifyStartOfExecution(pVM);
-                int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
-                pVM->vmm.s.iLastGCRc = rc;
+                int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
+                pVM->vmm.s.iLastGZRc = rc;
                 TMNotifyEndOfExecution(pVM);
 
                 if (    rc == VINF_EM_RAW_INTERRUPT
@@ -613,7 +613,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             else
             {
                 Assert(!pVM->vmm.s.fSwitcherDisabled);
-                pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+                pVM->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
             }
             break;
         }
@@ -649,7 +649,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
                 /* System is about to go into suspend mode; go back to ring 3. */
                 rc = VINF_EM_RAW_INTERRUPT;
             }
-            pVM->vmm.s.iLastGCRc = rc;
+            pVM->vmm.s.iLastGZRc = rc;
 #ifndef RT_OS_WINDOWS /** @todo check other hosts */
             ASMSetFlags(uFlags);
 #endif
@@ -665,7 +665,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
          * For profiling.
          */
         case VMMR0_DO_NOP:
-            pVM->vmm.s.iLastGCRc = VINF_SUCCESS;
+            pVM->vmm.s.iLastGZRc = VINF_SUCCESS;
             break;
 
         /*
@@ -673,7 +673,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
          */
         default:
             AssertMsgFailed(("%#x\n", enmOperation));
-            pVM->vmm.s.iLastGCRc = VERR_NOT_SUPPORTED;
+            pVM->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
             break;
     }
 }
@@ -818,7 +818,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
                 return VERR_NOT_SUPPORTED;
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = pVM->vmm.s.pfnR0HostToGuest(pVM);
+            int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
             /** @todo dispatch interrupts? */
             ASMSetFlags(fFlags);
             return rc;
