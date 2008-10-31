@@ -158,13 +158,13 @@ namespace SchemaDefs
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        MinCPUCount'"/>
     <xsl:with-param name="select" select="
-      xsd:complexType[@name='TCPUCount']/xsd:attribute[@name='CPUCount']//xsd:minInclusive/@value
+      xsd:complexType[@name='TCPUCount']/xsd:attribute[@name='count']//xsd:minInclusive/@value
     "/>
   </xsl:call-template>
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        MaxCPUCount'"/>
     <xsl:with-param name="select" select="
-      xsd:complexType[@name='TCPUCount']/xsd:attribute[@name='CPUCount']//xsd:maxInclusive/@value
+      xsd:complexType[@name='TCPUCount']/xsd:attribute[@name='count']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
 
