@@ -172,6 +172,10 @@ ifdef VBOX_USE_NAT
 VBoxDD_LIBS           += $(PATH_LIB)/NatAlias$(VBOX_SUFF_LIB)
 endif
 
+ifdef VBOX_WITH_NETFLT
+VBoxDD_LIBS.win       += $(PATH_LIB)/WinNetConfig.lib
+endif
+
 ifeq ($(KBUILD_TARGET),solaris)
  VBoxDD_LIBS           += adm
  ifdef VBOX_WITH_SUID_WRAPPER
@@ -190,7 +194,6 @@ VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dyli
 	-framework DiskArbitration
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
-
 
 #
 # VBoxDD2 (shared object)
