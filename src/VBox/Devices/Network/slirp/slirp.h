@@ -383,4 +383,41 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 #define errno (WSAGetLastError())
 #endif
 
+#ifdef VBOX_WITH_SYNC_SLIRP
+#define VBOX_SLIRP_LOCK_SUFFIX _mutex
+
+#define VBOX_SLIRP_LOCK(x)                                                  \
+do{                                                                         \
+    int rc;                                                                 \
+    rc = RTSemMutexRequest((x), RT_INDEFINITE_WAIT);                        \
+    AssertReleaseRC(rc);                                                    \
+}while (0)
+
+#define VBOX_SLIRP_UNLOCK(x)                                                \
+do{                                                                         \
+    int rc;                                                                 \
+    rc = RTSemMutexRelease((x));                                            \
+    AssertReleaseRC(rc);                                                    \
+}while (0)
+
+#define VBOX_SLIRP_LOCK_CREATE(x)                                           \
+do{                                                                         \
+    int rc;                                                                 \
+    rc = RTSemMutexCreate((x));                                             \
+    AssertReleaseRC(rc);                                                    \
+}while (0)
+
+#define VBOX_SLIRP_LOCK_DESTROY(x)                                          \
+do{                                                                         \
+    int rc;                                                                 \
+    rc = RTSemMutexDestroy((x));                                            \
+    AssertReleaseRC(rc);                                                    \
+}while (0)
+#else
+#define VBOX_SLIRP_LOCK(x) /* ignore */
+#define VBOX_SLIRP_UNLOCK(x) /* ignore */
+#define VBOX_SLIRP_LOCK_DESTROY(x) /* ignore */
+#define VBOX_SLIRP_LOCK_CREATE(x) /* ignore */
+#endif
+
 #endif

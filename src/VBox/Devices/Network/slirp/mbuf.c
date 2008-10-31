@@ -24,11 +24,11 @@ m_init(PNATState pData)
 	m_freelist.m_next = m_freelist.m_prev = &m_freelist;
 	m_usedlist.m_next = m_usedlist.m_prev = &m_usedlist;
         mbuf_alloced = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexCreate(&pData->m_usedlist_mutex);
-        RTSemMutexCreate(&pData->m_freelist_mutex);
-        RTSemMutexCreate(&pData->mbuf_alloced_mutex);
-#endif
+
+        VBOX_SLIRP_LOCK_CREATE(&pData->m_usedlist_mutex);
+        VBOX_SLIRP_LOCK_CREATE(&pData->m_freelist_mutex);
+        VBOX_SLIRP_LOCK_CREATE(&pData->mbuf_alloced_mutex);
+
 	msize_init(pData);
 }
 
@@ -62,44 +62,37 @@ m_get(PNATState pData)
 
 	DEBUG_CALL("m_get");
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(pData->m_freelist_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(pData->m_freelist_mutex);
+
 	if (m_freelist.m_next == &m_freelist) {
 		m = (struct mbuf *)malloc(msize);
 		if (m == NULL) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                    RTSemMutexRelease(pData->m_freelist_mutex);
-#endif
+                    VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
                     goto end_error;
                 }
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexCreate(&m->m_mutex);
-                RTSemMutexRequest(pData->mbuf_alloced_mutex, RT_INDEFINITE_WAIT);
-#endif
+
+                VBOX_SLIRP_LOCK_CREATE(&m->m_mutex);
+                VBOX_SLIRP_LOCK(pData->mbuf_alloced_mutex);
+
 		mbuf_alloced++;
 		if (mbuf_alloced > mbuf_thresh)
 			flags = M_DOFREE;
 		if (mbuf_alloced > mbuf_max)
 			mbuf_max = mbuf_alloced;
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(pData->mbuf_alloced_mutex);
-#endif
+                VBOX_SLIRP_UNLOCK(pData->mbuf_alloced_mutex);
 	} else {
 		m = m_freelist.m_next;
 		remque(pData, m);
 	}
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-        RTSemMutexRelease(pData->m_freelist_mutex);
-        RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
-#endif
 
+        VBOX_SLIRP_LOCK(m->m_mutex);
+        VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
+
+        VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
 	/* Insert it in the used list */
 	insque(pData, m,&m_usedlist);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(pData->m_usedlist_mutex);
-#endif
+        VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
+
 	m->m_flags = (flags | M_USEDLIST);
 
 	/* Initialise it */
@@ -108,9 +101,8 @@ m_get(PNATState pData)
 	m->m_len = 0;
 	m->m_nextpkt = 0;
 	m->m_prevpkt = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(m->m_mutex);
-#endif
+
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 end_error:
 	DEBUG_ARG("m = %lx", (long )m);
 	return m;
@@ -125,17 +117,11 @@ m_free(PNATState pData, struct mbuf *m)
 
   if(m) {
 	/* Remove from m_usedlist */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
 	if (m->m_flags & M_USEDLIST) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-           RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
-#endif
+           VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
 	   remque(pData, m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-           RTSemMutexRelease(pData->m_usedlist_mutex);
-#endif
+           VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
         }
 
 	/* If it's M_EXT, free() it */
@@ -147,32 +133,22 @@ m_free(PNATState pData, struct mbuf *m)
 	 */
 	if (m->m_flags & M_DOFREE) {
 		u32ptr_done(pData, ptr_to_u32(pData, m), m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(m->m_mutex);
-                RTSemMutexDestroy(m->m_mutex);
-#endif
+                VBOX_SLIRP_UNLOCK(m->m_mutex);
+                VBOX_SLIRP_LOCK_DESTROY(m->m_mutex);
 		free(m);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 m = NULL;
-                RTSemMutexRequest(pData->mbuf_alloced_mutex, RT_INDEFINITE_WAIT);
-		mbuf_alloced--;
-                RTSemMutexRelease(pData->mbuf_alloced_mutex);
-#else
-		mbuf_alloced--;
 #endif
+                VBOX_SLIRP_LOCK(pData->mbuf_alloced_mutex);
+		mbuf_alloced--;
+                VBOX_SLIRP_UNLOCK(pData->mbuf_alloced_mutex);
 	} else if ((m->m_flags & M_FREELIST) == 0) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRequest(pData->m_freelist_mutex, RT_INDEFINITE_WAIT);
-#endif
+                VBOX_SLIRP_LOCK(pData->m_freelist_mutex);
 		insque(pData, m,&m_freelist);
 		m->m_flags = M_FREELIST; /* Clobber other flags */
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(pData->m_freelist_mutex);
-#endif
+                VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
 	}
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (m != NULL) RTSemMutexRelease(m->m_mutex);
-#endif
+        if (m != NULL) VBOX_SLIRP_UNLOCK(m->m_mutex);
   } /* if(m) */
 }
 
@@ -187,10 +163,9 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	/*
 	 * If there's no room, realloc
 	 */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-        RTSemMutexRequest(n->m_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
+        VBOX_SLIRP_LOCK(n->m_mutex);
+
 	if (M_FREEROOM(m) < n->m_len)
 		m_inc(m,m->m_size+MINCSIZE);
 
@@ -198,10 +173,9 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	m->m_len += n->m_len;
 
 	m_free(pData, n);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(m->m_mutex);
-        if (n != NULL) RTSemMutexRelease(n->m_mutex);
-#endif
+
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
+        if (n != NULL) VBOX_SLIRP_UNLOCK(n->m_mutex);
 }
 
 
@@ -214,13 +188,9 @@ m_inc(m, size)
 	int datasize;
 
 	/* some compiles throw up on gotos.  This one we can fake. */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
         if(m->m_size>size) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-            RTSemMutexRelease(m->m_mutex);
-#endif
+            VBOX_SLIRP_UNLOCK(m->m_mutex);
             return;
         }
 
@@ -246,9 +216,7 @@ m_inc(m, size)
         }
 
         m->m_size = size;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(m->m_mutex);
-#endif
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 }
 
 
@@ -260,9 +228,7 @@ m_adj(m, len)
 {
 	if (m == NULL)
 		return;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
 	if (len >= 0) {
 		/* Trim from head */
 		m->m_data += len;
@@ -272,9 +238,7 @@ m_adj(m, len)
 		len = -len;
 		m->m_len -= len;
 	}
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(m->m_mutex);
-#endif
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 }
 
 
@@ -286,24 +250,18 @@ m_copy(n, m, off, len)
 	struct mbuf *n, *m;
 	int off, len;
 {
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-        RTSemMutexRequest(n->m_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
+        VBOX_SLIRP_LOCK(n->m_mutex);
 	if (len > M_FREEROOM(n)) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(n->m_mutex);
-                RTSemMutexRelease(m->m_mutex);
-#endif
+                VBOX_SLIRP_UNLOCK(n->m_mutex);
+                VBOX_SLIRP_UNLOCK(m->m_mutex);
 		return -1;
         }
 
 	memcpy((n->m_data + n->m_len), (m->m_data + off), len);
 	n->m_len += len;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(n->m_mutex);
-        RTSemMutexRelease(m->m_mutex);
-#endif
+        VBOX_SLIRP_UNLOCK(n->m_mutex);
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return 0;
 }
 
@@ -326,31 +284,27 @@ dtom(PNATState pData, void *dat)
 	for (m = m_usedlist.m_next; m != &m_usedlist; m = m->m_next) {
 #else
 	struct mbuf *mnext;
-        RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
         m = m_usedlist.m_next;
         while(1) {
-            RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
+            VBOX_SLIRP_LOCK(m->m_mutex);
             mnext = m->m_next;
-            RTSemMutexRelease(pData->m_usedlist_mutex);
+            VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
 #endif
 	  if (m->m_flags & M_EXT) {
 	    if( (char *)dat>=m->m_ext && (char *)dat<(m->m_ext + m->m_size) ) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-              RTSemMutexRelease(m->m_mutex);
-#endif
+              VBOX_SLIRP_UNLOCK(m->m_mutex);
 	      return m;
             }
 	  } else {
 	    if( (char *)dat >= m->m_dat && (char *)dat<(m->m_dat + m->m_size) ) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-              RTSemMutexRelease(m->m_mutex);
-#endif
+              VBOX_SLIRP_UNLOCK(m->m_mutex);
 	      return m;
             }
 	  }
+          VBOX_SLIRP_UNLOCK(m->m_mutex);
+          VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
-          RTSemMutexRelease(m->m_mutex);
-          RTSemMutexRequest(pData->m_usedlist_mutex, RT_INDEFINITE_WAIT);
           m = mnext;
 #endif
 	}
