@@ -41,10 +41,13 @@ public:
     virtual ~HostPowerService();
 
     void    notify(HostPowerEvent event);
-    HRESULT processEvent(SessionMachine *machine, HostPowerEvent event);
+    HRESULT processEvent(SessionMachine *machine, HostPowerEvent event, BOOL *paMachineSuspended);
 
 protected:
     ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+
+    BOOL    *aMachineSuspended;
+    size_t   cbMachineSuspended;
 };
 
 # ifdef RT_OS_WINDOWS
