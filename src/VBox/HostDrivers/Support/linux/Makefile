@@ -67,7 +67,7 @@ else
 endif
 
 # use vm_insert_page() API (if available) to map kernel pages to userland - better debugging 
-VBOX_USE_INSERT_PAGE = 1
+# VBOX_USE_INSERT_PAGE = 1
 
 # override is required by the Debian guys
 override MODULE = vboxdrv
