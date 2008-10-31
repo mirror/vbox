@@ -145,11 +145,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
 
+    ULONG cCpus = 1;
 #ifdef VBOX_WITH_SMP_GUESTS
-    /* @todo nike: Testing code, should use actual getter when ready */
-    uint16_t cCpus = 2;
-#else
-    uint16_t cCpus = 1;
+    hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                    H();
 #endif
 
     /*

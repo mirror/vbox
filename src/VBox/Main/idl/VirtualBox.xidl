@@ -2535,7 +2535,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="ceb17b5b-fd1f-424f-9dd3-2ab04c06eefc"
+     uuid="b5d1baca-da5b-4202-905f-ee53a5f60ae5"
      wsmap="managed"
      >
     <desc>
@@ -2717,6 +2717,10 @@
           installed to the guest OS.
         </note>
       </desc>
+    </attribute>
+
+    <attribute name="CPUCount" type="unsigned long">
+      <desc>Number of virtual CPUs in the VM.</desc>
     </attribute>
 
     <attribute name="memorySize" type="unsigned long">

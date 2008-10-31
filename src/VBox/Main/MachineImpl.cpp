@@ -187,6 +187,7 @@ Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
     mMemorySize = 128;
+    mCPUCount = 1;
     mMemoryBalloonSize = 0;
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
@@ -225,6 +226,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
         mHWVirtExVPIDEnabled != that.mHWVirtExVPIDEnabled ||
         mPAEEnabled != that.mPAEEnabled ||
+        mCPUCount != that.mCPUCount ||
         mClipboardMode != that.mClipboardMode)
         return false;
 
@@ -931,6 +933,44 @@ STDMETHODIMP Machine::COMSETTER(MemorySize) (ULONG memorySize)
 
     mHWData.backup();
     mHWData->mMemorySize = memorySize;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(CPUCount) (ULONG *CPUCount)
+{
+    if (!CPUCount)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    *CPUCount = mHWData->mCPUCount;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
+{
+    /* check RAM limits */
+    if (CPUCount < SchemaDefs::MinCPUCount ||
+        CPUCount > SchemaDefs::MaxCPUCount)
+        return setError (E_INVALIDARG,
+            tr ("Invalid virtual CPU count: %lu (must be in range [%lu, %lu])"),
+                CPUCount, SchemaDefs::MinCPUCount, SchemaDefs::MaxCPUCount);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    mHWData->mCPUCount = CPUCount;
 
     return S_OK;
 }
@@ -4939,6 +4979,13 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             {
                 mHWData->mPAEEnabled = PAENode.value <bool> ("enabled");
             }
+
+            /* CPUCount(optional, default is 1) */
+            Key CPUCountNode = cpuNode.findKey ("CPUCount");
+            if (!CPUCountNode.isNull())
+            {
+                mHWData->mCPUCount = CPUCountNode.value <ULONG> ("CPUCount");
+            }
         }
     }
 
@@ -6309,6 +6356,10 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             Key PAENode = cpuNode.createKey ("PAE");
             PAENode.setValue <bool> ("enabled", true);
         }
+
+        /* CPU count */
+        Key CPUCountNode = cpuNode.createKey ("CPUCount");
+        CPUCountNode.setValue <ULONG> ("CPUCount", mHWData->mCPUCount);
     }
 
     /* memory (required) */
