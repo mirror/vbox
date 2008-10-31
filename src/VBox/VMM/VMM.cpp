@@ -585,7 +585,7 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
 
 #ifdef VBOX_WITH_NMI
     /*
-     * Map the host APIC into GC - This may be host os specific!
+     * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
      */
     if (VBOX_SUCCESS(rc))
         rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
@@ -656,7 +656,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
  */
 VMMR3DECL(int) VMMR3InitRC(PVM pVM)
 {
-    /* In VMX mode, there's no need to init GC. */
+    /* In VMX mode, there's no need to init RC. */
     if (pVM->vmm.s.fSwitcherDisabled)
         return VINF_SUCCESS;
 
@@ -677,7 +677,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
         CPUMPushHyper(pVM, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
         CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
-        CPUMPushHyper(pVM, pVM->pVMGC);                 /* Param 0: pVM */
+        CPUMPushHyper(pVM, pVM->pVMRC);                 /* Param 0: pVM */
         CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));      /* trampoline param: stacksize.  */
         CPUMPushHyper(pVM, GCPtrEP);                    /* Call EIP. */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
@@ -694,12 +694,12 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
             PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
             if (    pLogger
                 &&  pLogger->offScratch > 0)
-                RTLogFlushGC(NULL, pLogger);
+                RTLogFlushRC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
             PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
             if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-                RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
+                RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
             if (rc != VINF_VMM_CALL_HOST)
                 break;
@@ -783,7 +783,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     LogFlow(("VMMR3Relocate: offDelta=%VGv\n", offDelta));
 
     /*
-     * Recalc the GC address.
+     * Recalc the RC address.
      */
     pVM->vmm.s.pvCoreCodeRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pvCoreCodeR3);
 
@@ -805,7 +805,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             unsigned off = pVM->vmm.s.aoffSwitchers[iSwitcher];
             pSwitcher->pfnRelocate(pVM,
                                    pSwitcher,
-                                   (uint8_t *)pVM->vmm.s.pvCoreCodeR0 + off,
+                                   pVM->vmm.s.pvCoreCodeR0 + off,
                                    (uint8_t *)pVM->vmm.s.pvCoreCodeR3 + off,
                                    pVM->vmm.s.pvCoreCodeRC + off,
                                    pVM->vmm.s.HCPhysCoreCode + off);
@@ -813,18 +813,18 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /*
-     * Recalc the GC address for the current switcher.
+     * Recalc the RC address for the current switcher.
      */
     PVMMSWITCHERDEF pSwitcher   = s_apSwitchers[pVM->vmm.s.enmSwitcher];
-    RTGCPTR         GCPtr       = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[pVM->vmm.s.enmSwitcher];
-    pVM->vmm.s.pfnGuestToHostRC         = GCPtr + pSwitcher->offGCGuestToHost;
-    pVM->vmm.s.pfnCallTrampolineRC      = GCPtr + pSwitcher->offGCCallTrampoline;
-    pVM->pfnVMMGCGuestToHostAsm         = GCPtr + pSwitcher->offGCGuestToHostAsm;
-    pVM->pfnVMMGCGuestToHostAsmHyperCtx = GCPtr + pSwitcher->offGCGuestToHostAsmHyperCtx;
-    pVM->pfnVMMGCGuestToHostAsmGuestCtx = GCPtr + pSwitcher->offGCGuestToHostAsmGuestCtx;
+    RTRCPTR         RCPtr       = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[pVM->vmm.s.enmSwitcher];
+    pVM->vmm.s.pfnGuestToHostRC         = RCPtr + pSwitcher->offGCGuestToHost;
+    pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offGCCallTrampoline;
+    pVM->pfnVMMGCGuestToHostAsm         = RCPtr + pSwitcher->offGCGuestToHostAsm;
+    pVM->pfnVMMGCGuestToHostAsmHyperCtx = RCPtr + pSwitcher->offGCGuestToHostAsmHyperCtx;
+    pVM->pfnVMMGCGuestToHostAsmGuestCtx = RCPtr + pSwitcher->offGCGuestToHostAsmGuestCtx;
 
     /*
-     * Get other GC entry points.
+     * Get other RC entry points.
      */
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
     AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Vra\n", rc));
@@ -840,7 +840,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
- * Updates the settings for the GC and R0 loggers.
+ * Updates the settings for the RC and R0 loggers.
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
@@ -848,7 +848,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
 {
     /*
-     * Simply clone the logger instance (for GC).
+     * Simply clone the logger instance (for RC).
      */
     int rc = VINF_SUCCESS;
     RTRCPTR RCPtrLoggerFlush = 0;
@@ -868,10 +868,11 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Vra\n", rc));
+
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
         rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pRCLoggerR3, pVM->vmm.s.cbRCLogger,
                           RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Vra\n", rc));
     }
 
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
@@ -880,10 +881,11 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Vra\n", rc));
+
         pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
         rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
                           RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Vra\n", rc));
     }
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
@@ -907,7 +909,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
             rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
                                   *(PFNRTLOGGER *)&pfnLoggerWrapper, *(PFNRTLOGFLUSH *)&pfnLoggerFlush,
                                   RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
-            AssertReleaseMsgRCReturn(rc, ("RTLogCloneGC failed! rc=%Vra\n", rc), rc);
+            AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Vra\n", rc), rc);
             pR0LoggerR3->fCreated = true;
         }
 
@@ -925,7 +927,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   pSwitcher   The switcher definition.
  * @param   pu8CodeR3   Pointer to the core code block for the switcher, ring-3 mapping.
- * @param   pu8CodeR0   Pointer to the core code block for the switcher, ring-0 mapping.
+ * @param   R0PtrCode   Pointer to the core code block for the switcher, ring-0 mapping.
  * @param   GCPtrCode   The guest context address corresponding to pu8Code.
  * @param   u32IDCode   The identity mapped (ID) address corresponding to pu8Code.
  * @param   SelCS       The hypervisor CS selector.
@@ -934,7 +936,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
  * @param   GCPtrGDT    The GC address of the hypervisor GDT.
  * @param   SelCS64     The 64-bit mode hypervisor CS selector.
  */
-static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode,
+static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode,
                                          RTSEL SelCS, RTSEL SelDS, RTSEL SelTSS, RTGCPTR GCPtrGDT, RTSEL SelCS64)
 {
     union
@@ -992,7 +994,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 Assert(offSrc - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offSrc - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offTrg - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
-                *uSrc.pu32 = (uint32_t)((u32IDCode + offTrg) - ((uintptr_t)pu8CodeR0 + offSrc + 4));
+                *uSrc.pu32 = (uint32_t)((u32IDCode + offTrg) - (R0PtrCode + offSrc + 4));
                 break;
             }
 
@@ -1004,7 +1006,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 Assert(offSrc - pSwitcher->offGCCode < pSwitcher->cbGCCode);
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
-                *uSrc.pu32 = (uint32_t)(((uintptr_t)pu8CodeR0 + offTrg) - (GCPtrCode + offSrc + 4));
+                *uSrc.pu32 = (uint32_t)((R0PtrCode + offTrg) - (GCPtrCode + offSrc + 4));
                 break;
             }
 
@@ -1028,7 +1030,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 Assert(offSrc - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offSrc - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
-                *uSrc.pu32 = (uint32_t)(((uintptr_t)pu8CodeR0 + offTrg) - (u32IDCode + offSrc + 4));
+                *uSrc.pu32 = (uint32_t)((R0PtrCode + offTrg) - (u32IDCode + offSrc + 4));
                 break;
             }
 
@@ -1269,7 +1271,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 uint32_t offTrg = *u.pu32++;
                 Assert(offSrc < pSwitcher->cbCode);
                 Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
-                *uSrc.pu32 = (uintptr_t)pu8CodeR0 + offTrg;
+                *uSrc.pu32 = R0PtrCode + offTrg;
                 break;
             }
 
@@ -1282,7 +1284,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                 uint32_t offTrg = *u.pu32++;
                 Assert(offSrc < pSwitcher->cbCode);
                 Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
-                *uSrc.pu64 = (uintptr_t)pu8CodeR0 + offTrg;
+                *uSrc.pu64 = R0PtrCode + offTrg;
                 break;
             }
 
@@ -1375,7 +1377,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
     if (LogIs2Enabled())
     {
         RTLogPrintf("*** Disassembly of switcher %d '%s' %#x bytes ***\n"
-                    "   pu8CodeR0   = %p\n"
+                    "   R0PtrCode   = %p\n"
                     "   pu8CodeR3   = %p\n"
                     "   GCPtrCode   = %VGv\n"
                     "   u32IDCode   = %08x\n"
@@ -1391,7 +1393,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
                     "   SelCS64     = %04x\n"
                     "   SelTSS      = %04x\n",
                     pSwitcher->enmType, pSwitcher->pszDesc, pSwitcher->cbCode,
-                    pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode, VM_GUEST_ADDR(pVM, pVM),
+                    R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode, VM_GUEST_ADDR(pVM, pVM),
                     VM_GUEST_ADDR(pVM, &pVM->cpum), pVM, &pVM->cpum,
                     GCPtrGDT,
                     PGMGetHyper32BitCR3(pVM), PGMGetHyperPaeCR3(pVM), PGMGetHyperAmd64CR3(pVM),
@@ -1410,14 +1412,14 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
             if (offCode - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0)
             {
                 pszDesc = "HCCode0";
-                uBase   = (RTUINTPTR)pu8CodeR0;
+                uBase   = R0PtrCode;
                 offCode = pSwitcher->offHCCode0;
                 cbCode  = pSwitcher->cbHCCode0;
             }
             else if (offCode - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1)
             {
                 pszDesc = "HCCode1";
-                uBase   = (RTUINTPTR)pu8CodeR0;
+                uBase   = R0PtrCode;
                 offCode = pSwitcher->offHCCode1;
                 cbCode  = pSwitcher->cbHCCode1;
             }
@@ -1497,9 +1499,9 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uin
 /**
  * Relocator for the 32-Bit to 32-Bit world switcher.
  */
-DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
-    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode,
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
 }
 
@@ -1507,9 +1509,9 @@ DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF p
 /**
  * Relocator for the 32-Bit to PAE world switcher.
  */
-DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
-    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode,
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
 }
 
@@ -1517,9 +1519,9 @@ DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 /**
  * Relocator for the PAE to 32-Bit world switcher.
  */
-DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
-    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode,
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
 }
 
@@ -1527,9 +1529,9 @@ DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 /**
  * Relocator for the PAE to PAE world switcher.
  */
-DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
-    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode,
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
 }
 
@@ -1537,9 +1539,9 @@ DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwit
 /**
  * Relocator for the AMD64 to PAE world switcher.
  */
-DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pu8CodeR0, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
-    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, pu8CodeR0, pu8CodeR3, GCPtrCode, u32IDCode,
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
 }
 
@@ -1850,6 +1852,8 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
  *
  * @returns VBox status code
  * @param   pVM         The VM to operate on.
+ *
+ * @remarks The global VMM lock isn't really used for anything any longer.
  */
 VMMR3DECL(int) VMMR3Lock(PVM pVM)
 {
@@ -1862,6 +1866,8 @@ VMMR3DECL(int) VMMR3Lock(PVM pVM)
  *
  * @returns VBox status code
  * @param   pVM         The VM to operate on.
+ *
+ * @remarks The global VMM lock isn't really used for anything any longer.
  */
 VMMR3DECL(int) VMMR3Unlock(PVM pVM)
 {
@@ -1875,6 +1881,8 @@ VMMR3DECL(int) VMMR3Unlock(PVM pVM)
  * @returns Thread id of owner.
  * @returns NIL_RTTHREAD if no owner.
  * @param   pVM         The VM to operate on.
+ *
+ * @remarks The global VMM lock isn't really used for anything any longer.
  */
 VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM)
 {
@@ -1888,6 +1896,8 @@ VMMR3DECL(RTNATIVETHREAD) VMMR3LockGetOwner(PVM pVM)
  * @returns true if owner.
  * @returns false if not owner.
  * @param   pVM         The VM to operate on.
+ *
+ * @remarks The global VMM lock isn't really used for anything any longer.
  */
 VMMR3DECL(bool) VMMR3LockIsOwner(PVM pVM)
 {
@@ -1896,7 +1906,7 @@ VMMR3DECL(bool) VMMR3LockIsOwner(PVM pVM)
 
 
 /**
- * Executes guest code.
+ * Executes guest code in the raw-mode context.
  *
  * @param   pVM         VM handle.
  */
@@ -1936,12 +1946,12 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
         PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
         if (    pLogger
             &&  pLogger->offScratch > 0)
-            RTLogFlushGC(NULL, pLogger);
+            RTLogFlushRC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
         if (rc != VINF_VMM_CALL_HOST)
         {
@@ -2069,12 +2079,12 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list
         PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
         if (    pLogger
             &&  pLogger->offScratch > 0)
-            RTLogFlushGC(NULL, pLogger);
+            RTLogFlushRC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
             VMMR3FatalDump(pVM, rc);
@@ -2125,12 +2135,12 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
         PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
         if (    pLogger
             &&  pLogger->offScratch > 0)
-            RTLogFlushGC(NULL, pLogger);
+            RTLogFlushRC(NULL, pLogger);
 #endif
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushGC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
 #endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
             VMMR3FatalDump(pVM, rc);

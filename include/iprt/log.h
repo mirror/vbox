@@ -1357,24 +1357,26 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger);
  * @returns iprt status code.
  *
  * @param   pLogger             The logger instance to be cloned.
- * @param   pLoggerGC           Where to create the GC logger instance.
- * @param   cbLoggerGC          Amount of memory allocated to for the GC logger instance clone.
- * @param   pfnLoggerGCPtr      Pointer to logger wrapper function for this instance (GC Ptr).
- * @param   pfnFlushGCPtr       Pointer to flush function (GC Ptr).
+ * @param   pLoggerRC           Where to create the RC logger instance.
+ * @param   cbLoggerRC          Amount of memory allocated to for the RC logger
+ *                              instance clone.
+ * @param   pfnLoggerRCPtr      Pointer to logger wrapper function for this
+ *                              instance (RC Ptr).
+ * @param   pfnFlushRCPtr       Pointer to flush function (RC Ptr).
  * @param   fFlags              Logger instance flags, a combination of the RTLOGFLAGS_* values.
  */
-RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC, size_t cbLoggerGC,
-                         RTRCPTR pfnLoggerGCPtr, RTRCPTR pfnFlushGCPtr, RTUINT fFlags);
+RTDECL(int) RTLogCloneRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC, size_t cbLoggerRC,
+                         RTRCPTR pfnLoggerRCPtr, RTRCPTR pfnFlushRCPtr, RTUINT fFlags);
 
 /**
- * Flushes a GC logger instance to a HC logger.
+ * Flushes a RC logger instance to a R3 logger.
  *
  * @returns iprt status code.
- * @param   pLogger     The HC logger instance to flush pLoggerGC to.
- *                      If NULL the default logger is used.
- * @param   pLoggerGC   The GC logger instance to flush.
+ * @param   pLogger     The R3 logger instance to flush pLoggerRC to. If NULL
+ *                      the default logger is used.
+ * @param   pLoggerRC   The RC logger instance to flush.
  */
-RTDECL(void) RTLogFlushGC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerGC);
+RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC);
 
 /**
  * Flushes the buffer in one logger instance onto another logger.
