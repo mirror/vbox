@@ -83,19 +83,15 @@ include $(KBUILD_PATH)/footer.kmk
 
 define def_hdr
 $(eval flatname := $(subst /,_,$(basename $(hdr))))
-$$(PATH_TARGET)/$(flatname)-cpp.cpp:
-	$$(MKDIR) -p $$(dir $$@)
-	$$(RM) -f $$@
-	$$(APPEND) $$@ "#include <$(hdr)>"
-	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
+$$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
+	$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
-$$(PATH_TARGET)/$(flatname)-c.c: Makefile.kmk
-	$$(MKDIR) -p $$(dir $$@)
-	$$(RM) -f $$@
+$$(PATH_TARGET)/$(flatname)-c.c: Makefile.kmk | $$(PATH_TARGET)/
 ifn1of ($(hdr),$(cpp_hdrs))
-	$$(APPEND) $$@ "#include <$(hdr)>"
+	$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+else
+	$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 endif
-	$$(APPEND) $$@ "int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}"
 
 $(subst .h,.o,$(notdir $(hdr)))::
 	$$(MAKE) -f $(MAKEFILE) $(flatname)-c.o $(flatname)-cpp.o
