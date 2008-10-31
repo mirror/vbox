@@ -114,9 +114,9 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 if1of ($(KBUILD_TARGET), linux darwin solaris)
 # Extra flags for these source modules.
-target-i386/op-helper.c_CFLAGS.x86 = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
-cpu-exec.c_CFLAGS.x86           = -O2 -fomit-frame-pointer -fno-strict-aliasing -fno-gcse
-cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fomit-frame-pointer -fno-strict-aliasing
+target-i386/op-helper.c_CFLAGS.x86 = -O2 -fno-strict-aliasing -fno-gcse
+cpu-exec.c_CFLAGS.x86           = -O2 -fno-strict-aliasing -fno-gcse
+cpu-exec.c_CFLAGS.solaris.amd64 = -O2 -fno-strict-aliasing
 endif
 
 #
