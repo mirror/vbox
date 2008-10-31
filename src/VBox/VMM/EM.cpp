@@ -644,6 +644,9 @@ static int emR3Debug(PVM pVM, int rc)
             /*
              * Guru meditation.
              */
+            case VINF_EM_DBG_RING0_ASSERTION: /** @todo Make a guru meditation event! */
+                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VINF_EM_DBG_RING0_ASSERTION", 0, NULL, NULL);
+                break;
             case VERR_REM_TOO_MANY_TRAPS: /** @todo Make a guru meditation event! */
                 rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_REM_TOO_MANY_TRAPS", 0, NULL, NULL);
                 break;
@@ -670,6 +673,7 @@ static int emR3Debug(PVM pVM, int rc)
                 case VINF_EM_DBG_HYPER_STEPPED:
                 case VINF_EM_DBG_HYPER_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_ASSERTION:
+                case VINF_EM_DBG_RING0_ASSERTION:
                     break;
 
                 /*
@@ -700,9 +704,10 @@ static int emR3Debug(PVM pVM, int rc)
                 case VERR_DBGF_NOT_ATTACHED:
                     switch (rcLast)
                     {
-                        case VINF_EM_DBG_HYPER_ASSERTION:
                         case VINF_EM_DBG_HYPER_STEPPED:
                         case VINF_EM_DBG_HYPER_BREAKPOINT:
+                        case VINF_EM_DBG_HYPER_ASSERTION:
+                        case VINF_EM_DBG_RING0_ASSERTION:
                             return rcLast;
                     }
                     return VINF_EM_OFF;
@@ -2355,9 +2360,9 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_EM_DBG_STEPPED:
         case VINF_EM_DBG_BREAKPOINT:
         case VINF_EM_DBG_STEP:
-        case VINF_EM_DBG_HYPER_ASSERTION:
         case VINF_EM_DBG_HYPER_BREAKPOINT:
         case VINF_EM_DBG_HYPER_STEPPED:
+        case VINF_EM_DBG_HYPER_ASSERTION:
         case VINF_EM_DBG_STOP:
             break;
 
@@ -2366,8 +2371,12 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VERR_TRPM_DONT_PANIC:
         case VERR_TRPM_PANIC:
+        case VINF_EM_DBG_RING0_ASSERTION:
             break;
 
+        /*
+         * Up a level, after HwAccM have done some release logging.
+         */
         case VERR_VMX_INVALID_VMCS_FIELD:
         case VERR_VMX_INVALID_VMCS_PTR:
         case VERR_VMX_INVALID_VMXON_PTR:
@@ -3257,7 +3266,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
  * All interaction from other thread are done using forced actions
  * and signaling of the wait object.
  *
- * @returns VBox status code.
+ * @returns VBox status code, informational status codes may indicate failure.
  * @param   pVM         The VM to operate on.
  */
 VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
@@ -3450,8 +3459,16 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 case VINF_EM_DBG_HYPER_STEPPED:
                 case VINF_EM_DBG_HYPER_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_ASSERTION:
-                    Log2(("EMR3ExecuteVM: %Vrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_HYPER));
+                    Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_HYPER));
                     pVM->em.s.enmState = EMSTATE_DEBUG_HYPER;
+                    break;
+
+                /*
+                 * Guru mediations.
+                 */
+                case VINF_EM_DBG_RING0_ASSERTION:
+                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVM->em.s.enmState, EMSTATE_GURU_MEDITATION));
+                    pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
 
                 /*

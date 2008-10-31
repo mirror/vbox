@@ -100,34 +100,37 @@
  * EM will first send this to the debugger, and if the issue isn't
  * resolved there it will enter guru meditation. */
 #define VINF_EM_DBG_HYPER_ASSERTION         1103
+/** Hit a ring-0 assertion on EMT.
+ * EM will enter guru mediation state when. */
+#define VINF_EM_DBG_RING0_ASSERTION         1104
 /** Indicating that the VM should be suspended for debugging because
  * the developer wants to inspect the VM state. */
-#define VINF_EM_DBG_STOP                    1104
+#define VINF_EM_DBG_STOP                    1105
 /** Indicating success single stepping and that EM should report that
  * event to the debugger. */
-#define VINF_EM_DBG_STEPPED                 1105
+#define VINF_EM_DBG_STEPPED                 1106
 /** Indicating that a breakpoint was hit and that EM should notify the debugger
  * and in the event there is no debugger fail fatally. */
-#define VINF_EM_DBG_BREAKPOINT              1106
+#define VINF_EM_DBG_BREAKPOINT              1107
 /** Indicating that EM should single step an instruction.
  * The instruction is stepped in the current execution mode (RAW/REM). */
-#define VINF_EM_DBG_STEP                    1107
+#define VINF_EM_DBG_STEP                    1108
 /** Indicating that the VM is being turned off and that the EM should
  * exit to the VM awaiting the destruction request. */
-#define VINF_EM_OFF                         1108
+#define VINF_EM_OFF                         1109
 /** Indicating that the VM has been reset and that scheduling goes
  * back to startup defaults. */
-#define VINF_EM_RESET                       1109
+#define VINF_EM_RESET                       1110
 /** Indicating that the VM has been suspended and that the the thread
  * should wait for request telling it what to do next. */
-#define VINF_EM_SUSPEND                     1110
+#define VINF_EM_SUSPEND                     1111
 /** Indicating that the VM has executed a halt instruction and that
  * the emulation thread should wait for an interrupt before resuming
  * execution. */
-#define VINF_EM_HALT                        1111
+#define VINF_EM_HALT                        1112
 /** Indicating that the VM has been resumed and that the thread should
  * start executing. */
-#define VINF_EM_RESUME                      1112
+#define VINF_EM_RESUME                      1113
 /** Indicating that we've got an out-of-memory condition and that we need
  * to take the appropriate actions to deal with this.
  * @remarks It might seem odd at first that this has lower priority than VINF_EM_HALT,
@@ -135,82 +138,82 @@
  *          vital to correctly operating the VM. Also, they can't normally occur together
  *          with an out-of-memory condition, and even if that should happen the condition
  *          will be rediscovered before executing any more code. */
-#define VINF_EM_NO_MEMORY                   1113
+#define VINF_EM_NO_MEMORY                   1114
 /** The fatal variant of VINF_EM_NO_MEMORY. */
-#define VERR_EM_NO_MEMORY                   (-1113)
+#define VERR_EM_NO_MEMORY                   (-1114)
 /** Indicating that a rescheduling to recompiled execution.
  * Typically caused by raw-mode executing code which is difficult/slow
  * to virtualize rawly.
  * @remarks Important to have a higher priority (lower number) than the other rescheduling status codes. */
-#define VINF_EM_RESCHEDULE_REM              1114
+#define VINF_EM_RESCHEDULE_REM              1115
 /** Indicating that a rescheduling to vmx-mode execution.
  * Typically caused by REM detecting that hardware-accelerated raw-mode execution is possible. */
-#define VINF_EM_RESCHEDULE_HWACC            1115
+#define VINF_EM_RESCHEDULE_HWACC            1116
 /** Indicating that a rescheduling to raw-mode execution.
  * Typically caused by REM detecting that raw-mode execution is possible.
  * @remarks Important to have a higher priority (lower number) than VINF_EM_RESCHEDULE. */
-#define VINF_EM_RESCHEDULE_RAW              1116
+#define VINF_EM_RESCHEDULE_RAW              1117
 /** Indicating that a rescheduling now is required. Typically caused by
  * interrupts having changed the EIP. */
-#define VINF_EM_RESCHEDULE                  1117
+#define VINF_EM_RESCHEDULE                  1118
 /** PARAV call */
-#define VINF_EM_RESCHEDULE_PARAV            1118
+#define VINF_EM_RESCHEDULE_PARAV            1119
 /** Last scheduling related status code. (inclusive) */
-#define VINF_EM_LAST                        1118
+#define VINF_EM_LAST                        1119
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
  * The trap is generally forwared to the REM and executed there. */
-#define VINF_EM_RAW_GUEST_TRAP              1120
+#define VINF_EM_RAW_GUEST_TRAP              1121
 /** Reason for leaving GC: Interrupted by external interrupt.
  * The interrupt needed to be handled by the host OS. */
-#define VINF_EM_RAW_INTERRUPT               1121
+#define VINF_EM_RAW_INTERRUPT               1122
 /** Reason for leaving GC: Interrupted by external interrupt while in hypervisor code.
  * The interrupt needed to be handled by the host OS and hypervisor execution must be
  * resumed. VM state is not complete at this point. */
-#define VINF_EM_RAW_INTERRUPT_HYPER         1122
+#define VINF_EM_RAW_INTERRUPT_HYPER         1123
 /** Reason for leaving GC: A Ring switch was attempted.
  * Normal cause of action is to execute this in REM. */
-#define VINF_EM_RAW_RING_SWITCH             1123
+#define VINF_EM_RAW_RING_SWITCH             1124
 /** Reason for leaving GC: A Ring switch was attempted using software interrupt.
  * Normal cause of action is to execute this in REM. */
-#define VINF_EM_RAW_RING_SWITCH_INT         1124
+#define VINF_EM_RAW_RING_SWITCH_INT         1125
 /** Reason for leaving GC: A privileged instruction was attempted executed.
  * Normal cause of action is to execute this in REM. */
-#define VINF_EM_RAW_EXCEPTION_PRIVILEGED    1125
+#define VINF_EM_RAW_EXCEPTION_PRIVILEGED    1126
 
 /** Reason for leaving GC: Emulate instruction. */
-#define VINF_EM_RAW_EMULATE_INSTR           1126
+#define VINF_EM_RAW_EMULATE_INSTR           1127
 /** Reason for leaving GC: Unhandled TSS write.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT 1127
+#define VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT 1128
 /** Reason for leaving GC: Unhandled LDT write.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT 1128
+#define VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT 1129
 /** Reason for leaving GC: Unhandled IDT write.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT 1129
+#define VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT 1130
 /** Reason for leaving GC: Unhandled GDT write.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT 1130
+#define VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT 1131
 /** Reason for leaving GC: Unhandled Page Directory write.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_PD_FAULT  1131
+#define VINF_EM_RAW_EMULATE_INSTR_PD_FAULT  1132
 /** Reason for leaving GC: jump inside generated patch jump.
  * Fatal error. */
-#define VERR_EM_RAW_PATCH_CONFLICT          (-1132)
+#define VERR_EM_RAW_PATCH_CONFLICT          (-1133)
 /** Reason for leaving GC: Hlt instruction.
  * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_HLT       1133
+#define VINF_EM_RAW_EMULATE_INSTR_HLT       1134
 /** Reason for leaving GC: Ring-3 operation pending. */
-#define VINF_EM_RAW_TO_R3                   1134
+#define VINF_EM_RAW_TO_R3                   1135
 /** Reason for leaving GC: Timer pending. */
-#define VINF_EM_RAW_TIMER_PENDING           1135
+#define VINF_EM_RAW_TIMER_PENDING           1136
 /** Reason for leaving GC: Interrupt pending (guest). */
-#define VINF_EM_RAW_INTERRUPT_PENDING       1136
+#define VINF_EM_RAW_INTERRUPT_PENDING       1137
 /** Reason for leaving GC: Encountered a stale selector. */
-#define VINF_EM_RAW_STALE_SELECTOR          1137
+#define VINF_EM_RAW_STALE_SELECTOR          1138
 /** Reason for leaving GC: The IRET resuming guest code trapped. */
-#define VINF_EM_RAW_IRET_TRAP               1138
+#define VINF_EM_RAW_IRET_TRAP               1139
 /** The interpreter was unable to deal with the instruction at hand. */
 #define VERR_EM_INTERPRETER                 (-1148)
 /** Internal EM error caused by an unknown warning or informational status code. */
