@@ -113,29 +113,24 @@ typedef void * host_reg_t;
 #endif /* VBOX */
 
 #ifdef __i386__
+#ifndef VBOX
 #define AREG0 "ebp"
 #define AREG1 "ebx"
 #define AREG2 "esi"
 #define AREG3 "edi"
+#else
+#define AREG0 "esi"
+#define AREG1 "edi"
+#endif
 #endif
 #ifdef __x86_64__
 #if defined(VBOX) 
-/* gcc 3.4.3 on 64-bit Solaris screws up when using rbp, it 
-   seems so at least. (Setting AREG4 to "r15" causes compiler 
-   error btw, so don't try it.)  */
 /* Must be in sync with TCG register notion, see tcg-target.h */
+#endif
 #define AREG0 "r14"
 #define AREG1 "r15"
 #define AREG2 "r12"
 #define AREG3 "r13"
-#else
-#define AREG0 "r14"
-#define AREG1 "r15"
-#define AREG2 "r12"
-#define AREG3 "r13"
-#endif 
-//#define AREG4 "r14"
-//#define AREG5 "r15"
 #endif
 #ifdef __powerpc__
 #define AREG0 "r27"
