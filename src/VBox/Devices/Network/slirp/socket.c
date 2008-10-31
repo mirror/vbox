@@ -63,9 +63,7 @@ socreate()
     memset(so, 0, sizeof(struct socket));
     so->so_state = SS_NOFDREF;
     so->s = -1;
-#ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexCreate(&so->so_mutex);
-#endif
+    VBOX_SLIRP_LOCK_CREATE(&so->so_mutex);
   }
   return(so);
 }
@@ -93,17 +91,17 @@ sofree(PNATState pData, struct socket *so)
 #else
     /*Take global mutexes of udb and tcb, because we dont know which is mutex */
     /*XXX: don't forget to set correct so_type in corresponded attach operation */
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
     if (so->so_emu==EMU_RSH && so->extra) {
           sofree(pData, so->extra);
           so->extra=NULL;
     }
 
     if (so->so_type == IPPROTO_UDP) {
-        RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
     }
     else if (so->so_type == IPPROTO_TCP) {
-        RTSemMutexRequest(pData->tcp_last_so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
     }
     else {
         Assert(!"unknown type");
@@ -118,21 +116,21 @@ sofree(PNATState pData, struct socket *so)
       remque(pData, so);  /* crashes if so is not in a queue */
 
     if (so->so_type == IPPROTO_UDP) {
-        RTSemMutexRelease(pData->udp_last_so_mutex);
+        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
     }
     else if (so->so_type == IPPROTO_TCP) {
-        RTSemMutexRelease(pData->tcp_last_so_mutex);
+        VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
     }
     else {
         Assert(!"unknown type");
     }
     /* socket's mutex could be released because socket none accessible via queue anymore*/
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 
     m_free(pData, so->so_m);
 
 
-    RTSemMutexDestroy(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 
   free(so);
@@ -155,9 +153,7 @@ soread(PNATState pData, struct socket *so)
 	struct iovec iov[2];
 	int mss = so->so_tcpcb->t_maxseg;
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(so->so_mutex);
 	DEBUG_CALL("soread");
 	DEBUG_ARG("so = %lx", (long )so);
 
@@ -217,18 +213,14 @@ soread(PNATState pData, struct socket *so)
 #endif
 	if (nn <= 0) {
 		if (nn < 0 && (errno == EINTR || errno == EAGAIN)) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                        RTSemMutexRelease(so->so_mutex);
-#endif
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return 0;
                 }
 		else {
 			DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
 			sofcantrcvmore(so);
 			tcp_sockclosed(pData, sototcpcb(so));
-#ifdef VBOX_WITH_SYNC_SLIRP
-                        RTSemMutexRelease(so->so_mutex);
-#endif
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return -1;
 		}
 	}
@@ -258,9 +250,7 @@ soread(PNATState pData, struct socket *so)
 	sb->sb_wptr += nn;
 	if (sb->sb_wptr >= (sb->sb_data + sb->sb_datalen))
 		sb->sb_wptr -= sb->sb_datalen;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
-#endif
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return nn;
 }
 
@@ -274,9 +264,7 @@ soread(PNATState pData, struct socket *so)
 void
 sorecvoob(PNATState pData, struct socket *so)
 {
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-#endif
+        VBOX_SLIRP_LOCK(so->so_mutex);
 	struct tcpcb *tp = sototcpcb(so);
 
 	DEBUG_CALL("sorecvoob");
@@ -292,12 +280,10 @@ sorecvoob(PNATState pData, struct socket *so)
 	 */
 	soread(pData, so);
 	tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	tp->t_force = 1;
 	tcp_output(pData, tp);
 	tp->t_force = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
-#endif
 }
 
 /*
@@ -313,7 +299,7 @@ sosendoob(so)
 
 	int n, len;
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 
 	DEBUG_CALL("sosendoob");
@@ -360,7 +346,7 @@ sosendoob(so)
 		sb->sb_rptr -= sb->sb_datalen;
 
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 	return n;
 }
@@ -377,7 +363,7 @@ sowrite(PNATState pData, struct socket *so)
 	int len = sb->sb_cc;
 	struct iovec iov[2];
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 
 	DEBUG_CALL("sowrite");
@@ -387,7 +373,7 @@ sowrite(PNATState pData, struct socket *so)
 		sosendoob(so);
 		if (sb->sb_cc == 0)
 #ifdef VBOX_WITH_SYNC_SLIRP
-       RTSemMutexRelease(so->so_mutex);
+       VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 			return 0;
 	}
@@ -431,7 +417,7 @@ sowrite(PNATState pData, struct socket *so)
 	/* This should never happen, but people tell me it does *shrug* */
 	if (nn < 0 && (errno == EAGAIN || errno == EINTR)) {
 #ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(so->so_mutex);
+                VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 		return 0;
         }
@@ -442,7 +428,7 @@ sowrite(PNATState pData, struct socket *so)
 		sofcantsendmore(so);
 		tcp_sockclosed(pData, sototcpcb(so));
 #ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(so->so_mutex);
+                VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 		return -1;
 	}
@@ -471,7 +457,7 @@ sowrite(PNATState pData, struct socket *so)
 		sofcantsendmore(so);
 
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 	return nn;
 }
@@ -489,7 +475,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 	DEBUG_ARG("so = %lx", (long)so);
 
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 
 	if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
@@ -578,7 +564,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 	  } /* rx error */
 	} /* if ping packet */
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 
@@ -594,7 +580,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
         struct sockaddr_in host_addr;
 #endif
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 
 	DEBUG_CALL("sosendto");
@@ -649,7 +635,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 		     (struct sockaddr *)&addr, sizeof (struct sockaddr));
 	if (ret < 0) {
 #ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(so->so_mutex);
+                VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 		return -1;
         }
@@ -662,7 +648,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 		so->so_expire = curtime + SO_EXPIRE;
 	so->so_state = SS_ISFCONNECTED; /* So that it gets select()ed */
 #ifdef VBOX_WITH_SYNC_SLIRP
-                RTSemMutexRelease(so->so_mutex);
+                VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 	return 0;
 }
@@ -697,11 +683,11 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 #ifndef VBOX_WITH_SYNC_SLIRP
 	insque(pData, so,&tcb);
 #else
-        RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(so->so_mutex);
         /*after adding to global queue probably we should keep lock*/
-        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        VBOX_SLIRP_LOCK(pData->tcb_mutex);
 	insque(pData, so,&tcb);
-        RTSemMutexRelease(pData->tcb_mutex);
+        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 #endif
 
 	/*
@@ -748,7 +734,7 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	so->s = s;
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 	return so;
 }
@@ -789,13 +775,13 @@ soisfconnecting(so)
 	register struct socket *so;
 {
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 	so->so_state &= ~(SS_NOFDREF|SS_ISFCONNECTED|SS_FCANTRCVMORE|
 			  SS_FCANTSENDMORE|SS_FWDRAIN);
 	so->so_state |= SS_ISFCONNECTING; /* Clobber other states */
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 
@@ -804,12 +790,12 @@ soisfconnected(so)
         register struct socket *so;
 {
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 	so->so_state &= ~(SS_ISFCONNECTING|SS_FWDRAIN|SS_NOFDREF);
 	so->so_state |= SS_ISFCONNECTED; /* Clobber other states */
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 
@@ -818,7 +804,7 @@ sofcantrcvmore(so)
 	struct  socket *so;
 {
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 	if ((so->so_state & SS_NOFDREF) == 0) {
 		shutdown(so->s,0);
@@ -829,7 +815,7 @@ sofcantrcvmore(so)
 	else
 	   so->so_state |= SS_FCANTRCVMORE;
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 
@@ -838,7 +824,7 @@ sofcantsendmore(so)
 	struct socket *so;
 {
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 	if ((so->so_state & SS_NOFDREF) == 0) {
             shutdown(so->s,1);           /* send FIN to fhost */
@@ -849,7 +835,7 @@ sofcantsendmore(so)
 	else
 	   so->so_state |= SS_FCANTSENDMORE;
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 
@@ -874,14 +860,14 @@ sofwdrain(so)
 	struct socket *so;
 {
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+    VBOX_SLIRP_LOCK(so->so_mutex);
 #endif
 	if (so->so_rcv.sb_cc)
 		so->so_state |= SS_FWDRAIN;
 	else
 		sofcantsendmore(so);
 #ifdef VBOX_WITH_SYNC_SLIRP
-    RTSemMutexRelease(so->so_mutex);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 }
 

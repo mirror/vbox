@@ -76,11 +76,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	DEBUG_CALL("udp_input");
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("iphlen = %d", iphlen);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-        rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-#endif
+
+        VBOX_SLIRP_LOCK(m->m_mutex);
 
 	udpstat.udps_ipackets++;
 
@@ -160,76 +157,56 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	/*
 	 * Locate pcb for datagram.
 	 */
-#ifndef VBOX_WITH_SYNC_SLIRP
-	so = udp_last_so;
-	if (so->so_lport != uh->uh_sport ||
-	    so->so_laddr.s_addr != ip->ip_src.s_addr) {
-		struct socket *tmp;
-		for (tmp = udb.so_next; tmp != &udb; tmp = tmp->so_next) {
-#else
-        rc = RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-
+        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
         so = udp_last_so;
         if (so != &udb) {
-            rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
+            VBOX_SLIRP_LOCK(so->so_mutex);
         }
 
-        rc = RTSemMutexRelease(pData->udp_last_so_mutex);
-        AssertReleaseRC(rc);
+        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 
 	if (so->so_lport != uh->uh_sport ||
 	    so->so_laddr.s_addr != ip->ip_src.s_addr) {
 		struct socket *tmp;
-		struct socket *tmp_next;
-            if (so != &udb) {
-                /*we don't interesting in this socket any more*/
-                rc = RTSemMutexRelease(so->so_mutex);
-                AssertReleaseRC(rc);
-            }
-            rc = RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
-            tmp = udb.so_next;
-
-            while (1) {
-                if (tmp == &udb) {
-                    rc = RTSemMutexRelease(pData->udb_mutex);
-                    AssertReleaseRC(rc);
-                    break;
+                if (so != &udb) {
+                    /*we don't interesting in this socket any more*/
+                    VBOX_SLIRP_UNLOCK(so->so_mutex);
                 }
-                tmp_next = tmp->so_next;
-                rc = RTSemMutexRequest(tmp->so_mutex, RT_INDEFINITE_WAIT);
-                AssertReleaseRC(rc);
-                rc = RTSemMutexRelease(pData->udb_mutex);
-                AssertReleaseRC(rc);
+#ifndef VBOX_WITH_SYNC_SLIRP
+		for (tmp = udb.so_next; tmp != &udb; tmp = tmp->so_next) {
+#else
+
+		struct socket *tmp_next;
+                VBOX_SLIRP_LOCK(pData->udb_mutex);
+                tmp = udb.so_next;
+
+                while (1) {
+                    if (tmp == &udb) {
+                        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
+                        break; /* end of loop*/
+                    }
+                    VBOX_SLIRP_LOCK(tmp->so_mutex);
+                    VBOX_SLIRP_UNLOCK(pData->udb_mutex);
+                    tmp_next = tmp->so_next;
 #endif
 			if (tmp->so_lport == uh->uh_sport &&
 			    tmp->so_laddr.s_addr == ip->ip_src.s_addr) {
 				so = tmp;
 				break;
 			}
+                        VBOX_SLIRP_UNLOCK(tmp->so_mutex);
+                        VBOX_SLIRP_LOCK(pData->udb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
-                        rc = RTSemMutexRelease(tmp->so_mutex);
-                        AssertReleaseRC(rc);
-                        rc = RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-                        AssertReleaseRC(rc);
                         tmp = tmp_next;
 #endif
 		}
 		if (tmp == &udb) {
 		  so = NULL;
 		} else {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                  rc = RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
-                  AssertReleaseRC(rc);
-#endif
 		  udpstat.udpps_pcbcachemiss++;
+                  VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
 		  udp_last_so = so;
-#ifdef VBOX_WITH_SYNC_SLIRP
-                  rc = RTSemMutexRelease(pData->udp_last_so_mutex);
-                  AssertReleaseRC(rc);
-#endif
+                  VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 		}
 	}
 
@@ -243,10 +220,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	   * create one
 	   */
 	  if ((so = socreate()) == NULL) goto bad;
-#ifdef VBOX_WITH_SYNC_SLIRP
-          rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-          AssertReleaseRC(rc);
-#endif
+          VBOX_SLIRP_LOCK(so->so_mutex);
 	  if(udp_attach(pData, so) == -1) {
 	    DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
 			errno,strerror(errno)));
@@ -299,22 +273,15 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	*ip=save_ip;
 	so->so_m=m;         /* ICMP backup */
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRelease(so->so_mutex);
-        AssertReleaseRC(rc);
-        rc = RTSemMutexRelease(m->m_mutex);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return;
 bad:
 	m_freem(pData, m);
 	/* if (opts) m_freem(opts); */
-#ifdef VBOX_WITH_SYNC_SLIRP
         if (m != NULL) {
-            rc = RTSemMutexRelease(m->m_mutex);
-            AssertReleaseRC(rc);
+            VBOX_SLIRP_UNLOCK(m->m_mutex);
         }
-#endif
 	return;
 }
 
@@ -324,15 +291,10 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 {
 	register struct udpiphdr *ui;
 	int error = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
         if(so != NULL) {
-            rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
+            VBOX_SLIRP_LOCK(so->so_mutex);
         }
-        rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_LOCK(m->m_mutex);
 
 	DEBUG_CALL("udp_output");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -378,10 +340,8 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 	udpstat.udps_opackets++;
 
 	error = ip_output(pData, so, m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (so != NULL) rc = RTSemMutexRelease(so->so_mutex);
-        rc = RTSemMutexRelease(m->m_mutex);
-#endif
+        if (so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return (error);
 }
 
@@ -389,12 +349,8 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {
     struct sockaddr_in saddr, daddr;
-#ifdef VBOX_WITH_SYNC_SLIRP
     int status;
-    int rc;
-    rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-    AssertReleaseRC(rc);
-#endif
+    VBOX_SLIRP_LOCK(so->so_mutex);
 
     saddr = *addr;
     if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
@@ -411,25 +367,16 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     daddr.sin_addr = so->so_laddr;
     daddr.sin_port = so->so_lport;
 
-#ifdef VBOX_WITH_SYNC_SLIRP
     status = udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
-    rc = RTSemMutexRelease(so->so_mutex);
-    AssertReleaseRC(rc);
+    VBOX_SLIRP_UNLOCK(so->so_mutex);
     return status;
-#else
-    return udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
-#endif
 }
 
 int
 udp_attach(PNATState pData, struct socket *so)
 {
   struct sockaddr_in addr;
-#ifdef VBOX_WITH_SYNC_SLIRP
-    int rc;
-    rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-    AssertReleaseRC(rc);
-#endif
+    VBOX_SLIRP_LOCK(so->so_mutex);
 
   if((so->s = socket(AF_INET,SOCK_DGRAM,0)) != -1) {
     /*
@@ -444,9 +391,6 @@ udp_attach(PNATState pData, struct socket *so)
       int lasterrno=errno;
       closesocket(so->s);
       so->s=-1;
-#ifdef VBOX_WITH_SYNC_SLIRP
-     AssertRelease(so->s != -1);
-#endif
 #ifdef _WIN32
       WSASetLastError(lasterrno);
 #else
@@ -458,22 +402,15 @@ udp_attach(PNATState pData, struct socket *so)
       so->so_expire = curtime + SO_EXPIRE;
       /* enable broadcast for later use */
       setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
-#ifdef VBOX_WITH_SYNC_SLIRP
-     rc = RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-     AssertReleaseRC(rc);
-#endif
+      VBOX_SLIRP_LOCK(pData->udb_mutex);
       insque(pData, so,&udb);
-#ifdef VBOX_WITH_SYNC_SLIRP
-     rc = RTSemMutexRelease(pData->udb_mutex);
-     AssertReleaseRC(rc);
-#endif
+      VBOX_SLIRP_UNLOCK(pData->udb_mutex);
     }
   }
 #ifdef VBOX_WITH_SYNC_SLIRP
   so->so_type = IPPROTO_UDP;
-  rc = RTSemMutexRelease(so->so_mutex);
-  AssertReleaseRC(rc);
 #endif
+  VBOX_SLIRP_UNLOCK(so->so_mutex);
   return(so->s);
 }
 
@@ -481,28 +418,18 @@ void
 udp_detach(PNATState pData, struct socket *so)
 {
 	/* Correctly update list if detaching last socket in list. */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-        rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-        rc = RTSemMutexRequest(pData->udp_last_so_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_LOCK(so->so_mutex);
+        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
 	if (so == udp_last_so) udp_last_so = &udb;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRelease(pData->udp_last_so_mutex);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 	closesocket(so->s);
 	/* if (so->so_m) m_free(so->so_m);    done by sofree */
 
 	sofree(pData, so);
-#ifdef VBOX_WITH_SYNC_SLIRP
+
         if (so != NULL) {
-            rc = RTSemMutexRelease(so->so_mutex);
-            AssertReleaseRC(rc);
+            VBOX_SLIRP_UNLOCK(so->so_mutex);
         }
-#endif
 }
 
 static const struct tos_t udptos[] = {
@@ -518,22 +445,13 @@ udp_tos(so)
 	struct socket *so;
 {
 	int i = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-#endif
 
 	while(udptos[i].tos) {
 		if ((udptos[i].fport && ntohs(so->so_fport) == udptos[i].fport) ||
 		    (udptos[i].lport && ntohs(so->so_lport) == udptos[i].lport)) {
-#ifdef VBOX_WITH_SYNC_SLIRP
-                        rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-                        AssertReleaseRC(rc);
-#endif
+                        VBOX_SLIRP_LOCK(so->so_mutex);
 		    	so->so_emu = udptos[i].emu;
-#ifdef VBOX_WITH_SYNC_SLIRP
-                        rc = RTSemMutexRelease(so->so_mutex);
-                        AssertReleaseRC(rc);
-#endif
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return udptos[i].tos;
 		}
 		i++;
@@ -554,9 +472,6 @@ udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
 {
 	struct sockaddr_in addr;
         socklen_t addrlen = sizeof(addr);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-#endif
 #ifdef EMULATE_TALK
 	CTL_MSG_OLD *omsg;
 	CTL_MSG *nmsg;
@@ -586,14 +501,11 @@ struct cu_header {
 	uint16_t	pkt_len;		/* packet length */
 } *cu_head;
 
+        VBOX_SLIRP_LOCK(so->so_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
 #define return \
                 do {                                        \
-                    int rc;                                 \
-                    rc = RTSemMutexRelease(so->so_mutex);   \
-                    AssertReleaseRC(rc);                    \
+                    VBOX_SLIRP_UNLOCK(so->so_mutex);        \
                     return;                                 \
                 }while(0)
 #endif
@@ -788,6 +700,7 @@ struct cu_header {
 
 		return;
 	}
+/*see macro definition in the begining of method*/
 #ifdef VBOX_WITH_SYNC_SLIRP
     return;
 #undef return
@@ -801,9 +714,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	struct socket *so;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
         int opt = 1;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-#endif
 
 	if ((so = socreate()) == NULL) {
 		free(so);
@@ -811,17 +721,10 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	}
 	so->s = socket(AF_INET,SOCK_DGRAM,0);
 	so->so_expire = curtime + SO_EXPIRE;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-        rc = RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_LOCK(so->so_mutex);
+        VBOX_SLIRP_LOCK(pData->udb_mutex);
 	insque(pData, so,&udb);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRelease(pData->udb_mutex);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
@@ -829,10 +732,7 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0) {
 		udp_detach(pData, so);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                rc = RTSemMutexRelease(so->so_mutex);
-                AssertReleaseRC(rc);
-#endif
+                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return NULL;
 	}
 	setsockopt(so->s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));
@@ -854,10 +754,7 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	   so->so_expire = 0;
 
 	so->so_state = SS_ISFCONNECTED;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRelease(so->so_mutex);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_UNLOCK(so->so_mutex);
 
 	return so;
 }
