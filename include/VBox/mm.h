@@ -141,6 +141,8 @@ typedef enum MMTAG
     MM_TAG_CSAM,
     MM_TAG_CSAM_PATCH,
 
+    MM_TAG_CPUM_CTX,
+
     MM_TAG_DBGF,
     MM_TAG_DBGF_INFO,
     MM_TAG_DBGF_LINE,
