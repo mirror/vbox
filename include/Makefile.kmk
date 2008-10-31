@@ -38,11 +38,13 @@ r3_only_hdrs := \
 	VBox/VBoxHDD-new.h \
 	VBox/VBoxHDD.h \
 	iprt/tcp.h \
+	iprt/localipc.h
 
 hdrs := $(filter-out \
 	VBox/VBoxGuest16.h \
 	VBox/tapwin32.h \
-	VBox/usblib-win.h, \
+	VBox/usblib-win.h \
+	VBox/usblib-solaris.h, \
 	$(wildcard VBox/*.h iprt/*.h))
 
 hdrs.r3 := $(filter-out VBox/VBoxGuestLib.h, $(hdrs))

@@ -369,6 +369,7 @@ __END_DECLS
 
 
 #ifdef __cplusplus
+# include <iprt/assert.h>
 
 /**
  * Template function wrapping RTMemFree to get the correct Destruct
