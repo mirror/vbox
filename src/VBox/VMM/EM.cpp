@@ -644,8 +644,8 @@ static int emR3Debug(PVM pVM, int rc)
             /*
              * Guru meditation.
              */
-            case VINF_EM_DBG_RING0_ASSERTION: /** @todo Make a guru meditation event! */
-                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VINF_EM_DBG_RING0_ASSERTION", 0, NULL, NULL);
+            case VERR_VMM_RING0_ASSERTION: /** @todo Make a guru meditation event! */
+                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_VMM_RING0_ASSERTION", 0, NULL, NULL);
                 break;
             case VERR_REM_TOO_MANY_TRAPS: /** @todo Make a guru meditation event! */
                 rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_REM_TOO_MANY_TRAPS", 0, NULL, NULL);
@@ -673,7 +673,6 @@ static int emR3Debug(PVM pVM, int rc)
                 case VINF_EM_DBG_HYPER_STEPPED:
                 case VINF_EM_DBG_HYPER_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_ASSERTION:
-                case VINF_EM_DBG_RING0_ASSERTION:
                     break;
 
                 /*
@@ -707,7 +706,9 @@ static int emR3Debug(PVM pVM, int rc)
                         case VINF_EM_DBG_HYPER_STEPPED:
                         case VINF_EM_DBG_HYPER_BREAKPOINT:
                         case VINF_EM_DBG_HYPER_ASSERTION:
-                        case VINF_EM_DBG_RING0_ASSERTION:
+                        case VERR_TRPM_PANIC:
+                        case VERR_TRPM_DONT_PANIC:
+                        case VERR_VMM_RING0_ASSERTION:
                             return rcLast;
                     }
                     return VINF_EM_OFF;
@@ -722,6 +723,7 @@ static int emR3Debug(PVM pVM, int rc)
                 case VINF_EM_RAW_IRET_TRAP:
                 case VERR_TRPM_PANIC:
                 case VERR_TRPM_DONT_PANIC:
+                case VERR_VMM_RING0_ASSERTION:
                 case VERR_INTERNAL_ERROR:
                     return rc;
 
@@ -2371,7 +2373,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VERR_TRPM_DONT_PANIC:
         case VERR_TRPM_PANIC:
-        case VINF_EM_DBG_RING0_ASSERTION:
+        case VERR_VMM_RING0_ASSERTION:
             break;
 
         /*
@@ -3466,7 +3468,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 /*
                  * Guru mediations.
                  */
-                case VINF_EM_DBG_RING0_ASSERTION:
+                case VERR_VMM_RING0_ASSERTION:
                     Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVM->em.s.enmState, EMSTATE_GURU_MEDITATION));
                     pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;

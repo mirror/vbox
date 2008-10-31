@@ -100,9 +100,6 @@
  * EM will first send this to the debugger, and if the issue isn't
  * resolved there it will enter guru meditation. */
 #define VINF_EM_DBG_HYPER_ASSERTION         1103
-/** Hit a ring-0 assertion on EMT.
- * EM will enter guru mediation state when. */
-#define VINF_EM_DBG_RING0_ASSERTION         1104
 /** Indicating that the VM should be suspended for debugging because
  * the developer wants to inspect the VM state. */
 #define VINF_EM_DBG_STOP                    1105
@@ -764,6 +761,8 @@
  */
 /** Reason for leaving GC: Calling host function. */
 #define VINF_VMM_CALL_HOST                  2700
+/** Reason for leaving R0: Hit a ring-0 assertion on EMT. */
+#define VERR_VMM_RING0_ASSERTION            (-2701)
 /** @} */
 
 
