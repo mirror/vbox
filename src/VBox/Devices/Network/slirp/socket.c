@@ -264,8 +264,8 @@ soread(PNATState pData, struct socket *so)
 void
 sorecvoob(PNATState pData, struct socket *so)
 {
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	struct tcpcb *tp = sototcpcb(so);
+        VBOX_SLIRP_LOCK(so->so_mutex);
 
 	DEBUG_CALL("sorecvoob");
 	DEBUG_ARG("so = %lx", (long)so);
