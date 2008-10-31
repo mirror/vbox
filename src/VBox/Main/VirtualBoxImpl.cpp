@@ -2498,10 +2498,13 @@ ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
 }
 
 /**
- * Returns the list of opened machines (machines having direct sessionsopened by
- * client processes).
+ * Returns the list of opened machines (machines having direct sessions opened
+ * by client processes) and optionally the list of direct session controls.
  *
- * @note The returned list contains smart pointers. So, clear it as soon as
+ * @param aMachines     Where to put opened machines (will be empty if none).
+ * @param aControls     Where to put direct session controls (optional).
+ *
+ * @note The returned lists contain smart pointers. So, clear it as soon as
  * it becomes no more necessary to release instances.
  *
  * @note It can be possible that a session machine from the list has been
@@ -2510,12 +2513,15 @@ ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
  *
  * @note Locks objects for reading.
  */
-void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
+void VirtualBox::getOpenedMachines (SessionMachineVector &aMachines,
+                                    InternalControlVector *aControls /*= NULL*/)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    aVector.clear();
+    aMachines.clear();
+    if (aControls)
+        aControls->clear();
 
     AutoReadLock alock (this);
 
@@ -2524,8 +2530,13 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aVector)
          ++ it)
     {
         ComObjPtr <SessionMachine> sm;
-        if ((*it)->isSessionOpen (sm))
-            aVector.push_back (sm);
+        ComPtr <IInternalSessionControl> ctl;
+        if ((*it)->isSessionOpen (sm, &ctl))
+        {
+            aMachines.push_back (sm);
+            if (aControls)
+                aControls->push_back (ctl);
+        }
     }
 }
 
@@ -4070,7 +4081,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
                     ComObjPtr <SessionMachine> sm;
                     HANDLE ipcSem;
-                    if ((*it)->isSessionOpenOrClosing (sm, &ipcSem))
+                    if ((*it)->isSessionOpenOrClosing (sm, NULL, &ipcSem))
                     {
                         machines.push_back (sm);
                         handles [1 + cnt] = ipcSem;
@@ -4262,7 +4273,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
 
                         ComObjPtr <SessionMachine> sm;
                         HMTX ipcSem;
-                        if ((*it)->isSessionOpenOrClosing (sm, &ipcSem))
+                        if ((*it)->isSessionOpenOrClosing (sm, NULL, &ipcSem))
                         {
                             machines.push_back (sm);
                             handles [cnt].hsemCur = (HSEM) ipcSem;

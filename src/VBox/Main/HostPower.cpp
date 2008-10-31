@@ -28,8 +28,9 @@
 #include "HostPower.h"
 #include "Logging.h"
 
-HostPowerService::HostPowerService(VirtualBox *aVirtualBox) : aMachineSuspended(NULL), cbMachineSuspended(0)
+HostPowerService::HostPowerService (VirtualBox *aVirtualBox)
 {
+    Assert (aVirtualBox != NULL);
     mVirtualBox = aVirtualBox;
 }
 
@@ -37,130 +38,114 @@ HostPowerService::~HostPowerService()
 {
 }
 
-
-void HostPowerService::notify(HostPowerEvent event)
+void HostPowerService::notify (HostPowerEvent aEvent)
 {
     VirtualBox::SessionMachineVector machines;
-    mVirtualBox->getOpenedMachines (machines);
+    VirtualBox::InternalControlVector controls;
 
-    switch (event)
+    HRESULT rc = S_OK;
+
+    switch (aEvent)
     {
-    case HostPowerEvent_Suspend:
-        if (machines.size())
-            aMachineSuspended = (BOOL *)RTMemAllocZ(sizeof(BOOL) * machines.size());
-
-        cbMachineSuspended = machines.size();
-
-        for (size_t i = 0; i < machines.size(); i++)
-            processEvent(machines[i], HostPowerEvent_Suspend, (aMachineSuspended) ? &aMachineSuspended[i] : NULL);
-
-        Log(("HostPowerService::notify SUSPEND\n"));
-        break;
-
-    case HostPowerEvent_Resume:
-        Log(("HostPowerService::notify RESUME\n"));
-
-        if (aMachineSuspended)
+        case HostPowerEvent_Suspend:
         {
-            /* It's possible (in theory) that machines are created or destroyed between the suspend notification and the actual host suspend.
-             * Ignore this edge case and just make sure not to access invalid data.
-             */
-            cbMachineSuspended = RT_MIN(machines.size(), cbMachineSuspended);
+            LogFunc (("SUSPEND\n"));
 
-            for (size_t i = 0; i < cbMachineSuspended; i++)
-                processEvent(machines[i], HostPowerEvent_Resume, &aMachineSuspended[i]);
+            mVirtualBox->getOpenedMachinesAndControls (machines, controls);
 
-            RTMemFree(aMachineSuspended);
-            cbMachineSuspended = 0;
-            aMachineSuspended  = NULL;
-        }
-        break;
-
-    case HostPowerEvent_BatteryLow:
-        Log(("HostPowerService::notify BATTERY LOW\n"));
-        for (size_t i = 0; i < machines.size(); i++)
-            processEvent(machines[i], HostPowerEvent_BatteryLow, NULL);
-        break;
-    }
-
-    machines.clear();
-}
-
-HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent event, BOOL *pMachineSuspended)
-{
-    MachineState_T state;
-    HRESULT        rc;
-
-    rc = machine->COMGETTER(State)(&state);
-    CheckComRCReturnRC (rc);
-
-    /* Power event handling:
-     * - pause running machines for HostPowerEvent_Suspend
-     * - resume paused machines for HostPowerEvent_Resume
-     * - save the state of running and paused machine for HostPowerEvent_BatteryLow
-     */
-    if (    (state == MachineState_Running && event != HostPowerEvent_Resume)
-        ||  (state == MachineState_Paused  && event != HostPowerEvent_Suspend))
-    {
-        ComPtr <ISession> session;
-
-        rc = session.createInprocObject (CLSID_Session);
-        if (FAILED (rc))
-            return rc;
-
-        /* get the IInternalSessionControl interface */
-        ComPtr <IInternalSessionControl> control = session;
-        if (!control)
-        {
-            rc = E_INVALIDARG;
-            goto fail;
-        }
-
-        rc = machine->openExistingSession (control);
-        if (SUCCEEDED (rc))
-        {
-            /* get the associated console */
-            ComPtr<IConsole> console;
-            rc = session->COMGETTER(Console)(console.asOutParam());
-            if (SUCCEEDED (rc))
+            /* pause running VMs */
+            for (size_t i = 0; i < controls.size(); ++ i)
             {
-                switch (event)
-                {
-                case HostPowerEvent_Suspend:
-                    rc = console->Pause();
-                    if (    SUCCEEDED(rc)
-                        &&  pMachineSuspended)
-                        *pMachineSuspended = TRUE;
-                    break;
+                /* get the remote console */
+                ComPtr <IConsole> console;
+                rc = controls [i]->GetRemoteConsole (console.asOutParam());
+                /* the VM could have been powered down and closed or whatever */
+                if (FAILED (rc))
+                    continue;
 
-                case HostPowerEvent_Resume:
-                    Assert(pMachineSuspended);
-                    if (*pMachineSuspended == TRUE)
-                        rc = console->Resume();
-                    break;
+                /* note that Pause() will simply return a failure if the VM is
+                 * in an inappropriate state */
+                rc = console->Pause();
+                if (FAILED (rc))
+                    continue;
 
-                case HostPowerEvent_BatteryLow:
-                {
-                    ComPtr<IProgress> progress;
-
-                    rc = console->SaveState(progress.asOutParam());
-                    if (SUCCEEDED(rc))
-                    {
-                        /* Wait until the operation has been completed. */
-                        progress->WaitForCompletion(-1); 
-
-                        progress->COMGETTER(ResultCode)(&rc);
-                        AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %x\n", rc));
-                    }
-
-                    break;
-                }
-
-                } /* switch (event) */
+                /* save the control to un-pause the VM later */
+                mConsoles.push_back (console);
             }
+
+            LogFunc (("Suspended %d VMs\n", mConsoles.size()));
+
+            break;
         }
-fail:
-        session->Close();
+
+        case HostPowerEvent_Resume:
+        {
+            LogFunc (("RESUME\n"));
+
+            size_t resumed = 0;
+
+            /* go through VMs we paused on Suspend */
+            for (size_t i = 0; i < mConsoles.size(); ++ i)
+            {
+                /* note that Resume() will simply return a failure if the VM is
+                 * in an inappropriate state (it will also fail if the VM has
+                 * been somehow closed by this time already so that the
+                 * console reference we have is dead) */
+                rc = mConsoles [i]->Resume();
+                if (FAILED (rc))
+                    continue;
+
+                ++ resumed;
+            }
+
+            LogFunc (("Resumed %d VMs\n", resumed));
+
+            mConsoles.clear();
+
+            break;
+        }
+
+        case HostPowerEvent_BatteryLow:
+        {
+            LogFunc (("BATTERY LOW\n"));
+
+            mVirtualBox->getOpenedMachinesAndControls (machines, controls);
+
+            size_t saved = 0;
+
+            /* save running VMs */
+            for (size_t i = 0; i < controls.size(); ++ i)
+            {
+                /* get the remote console */
+                ComPtr <IConsole> console;
+                rc = controls [i]->GetRemoteConsole (console.asOutParam());
+                /* the VM could have been powered down and closed or whatever */
+                if (FAILED (rc))
+                    continue;
+
+                ComPtr<IProgress> progress;
+
+                /* note that SaveState() will simply return a failure if the VM
+                 * is in an inappropriate state */
+                rc = console->SaveState (progress.asOutParam());
+                if (FAILED (rc))
+                    continue;
+
+                /* Wait until the operation has been completed. */
+                rc = progress->WaitForCompletion(-1);
+                if (SUCCEEDED (rc))
+                    progress->COMGETTER(ResultCode) (&rc);
+
+                AssertMsg (SUCCEEDED (rc), ("SaveState WaitForCompletion "
+                                            "failed with %Rhrc (%#08X)\n", rc, rc));
+
+                if (SUCCEEDED (rc))
+                    ++ saved;
+            }
+
+            LogFunc (("Saved %d VMs\n", saved));
+
+            break;
+        }
     }
-    return rc;
 }

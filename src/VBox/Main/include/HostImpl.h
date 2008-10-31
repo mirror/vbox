@@ -125,8 +125,6 @@ public:
                                              SVCHlpMsg::Code aMsgCode);
 #endif
 
-    HostPowerService *mHostPowerService;
-
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Host"; }
 
@@ -178,6 +176,7 @@ private:
     USBProxyService *mUSBProxyService;
 #endif /* VBOX_WITH_USB */
 
+    HostPowerService *mHostPowerService;
 };
 
 #endif // ____H_HOSTIMPL

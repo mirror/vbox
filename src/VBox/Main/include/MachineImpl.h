@@ -635,32 +635,38 @@ public:
 #if defined (RT_OS_WINDOWS)
 
     bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        ComPtr <IInternalSessionControl> *aControl = NULL,
                         HANDLE *aIPCSem = NULL, bool aAllowClosing = false);
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
 
     bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
+                                 ComPtr <IInternalSessionControl> *aControl = NULL,
                                  HANDLE *aIPCSem = NULL)
-    { return isSessionOpen (aMachine, aIPCSem, true /* aAllowClosing */); }
+    { return isSessionOpen (aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
 
 #elif defined (RT_OS_OS2)
 
     bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        ComPtr <IInternalSessionControl> *aControl = NULL,
                         HMTX *aIPCSem = NULL, bool aAllowClosing = false);
 
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
 
     bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
+                                 ComPtr <IInternalSessionControl> *aControl = NULL,
                                  HMTX *aIPCSem = NULL)
-    { return isSessionOpen (aMachine, aIPCSem, true /* aAllowClosing */); }
+    { return isSessionOpen (aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
 
 #else
 
     bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                        ComPtr <IInternalSessionControl> *aControl = NULL,
                         bool aAllowClosing = false);
     bool isSessionSpawning();
 
-    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine)
-    { return isSessionOpen (aMachine, true /* aAllowClosing */); }
+    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
+                                 ComPtr <IInternalSessionControl> *aControl = NULL)
+    { return isSessionOpen (aMachine, aControl, true /* aAllowClosing */); }
 
 #endif
 
@@ -960,11 +966,13 @@ private:
     HANDLE mIPCSem;
     Bstr mIPCSemName;
     friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                                        ComPtr <IInternalSessionControl> *aControl,
                                         HANDLE *aIPCSem, bool aAllowClosing);
 #elif defined (RT_OS_OS2)
     HMTX mIPCSem;
     Bstr mIPCSemName;
     friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
+                                        ComPtr <IInternalSessionControl> *aControl,
                                         HMTX *aIPCSem, bool aAllowClosing);
 #elif defined (VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;
