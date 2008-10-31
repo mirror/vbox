@@ -67,9 +67,6 @@ ifneq ($(KBUILD_TARGET),win)
 endif
 ifdef VBOX_WITH_NETFLT
  VBOX_MAIN_DEFS += VBOX_WITH_NETFLT
- ifdef VBOX_NETFLT_ONDEMAND_BIND
-  VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
- endif
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBOX_MAIN_DEFS += VBOX_WITH_GUEST_PROPS
@@ -318,6 +315,12 @@ ifdef VBOX_WITH_USB
  VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWindows.cpp
 endif
 
+ifdef VBOX_WITH_NETFLT
+ VBoxSVC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib
+ ifdef VBOX_NETFLT_ONDEMAND_BIND
+  VBoxSVC_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
+ endif
+endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
 ifeq ($(KBUILD_TYPE),debug)
  VBoxSVC_LDFLAGS.linux   += -rdynamic # for backtrace_symbols()

@@ -110,6 +110,15 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
 
+#
+# WinNetConfig - static library with host network interface config API
+#
+LIBRARIES.win += WinNetConfig
+WinNetConfig_TEMPLATE         = VBOXR3STATIC
+WinNetConfig_DEFS     = _WIN32_WINNT=0x0500 _UNICODE UNICODE
+WinNetConfig_SDKS     = WINPSDK W2K3DDK
+WinNetConfig_SOURCES         = \
+	win/WinNetConfig.cpp
 
 else if1of ($(KBUILD_TARGET), linux solaris)
 #
