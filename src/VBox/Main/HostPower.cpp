@@ -94,9 +94,10 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
     rc = machine->COMGETTER(State)(&state);
     CheckComRCReturnRC (rc);
 
-    /* Valid combinations:
-     * running & suspend or battery low notification events
-     * pause   & resume or battery low notification events
+    /* Power event handling:
+     * - pause running machines for HostPowerEvent_Suspend
+     * - resume paused machines for HostPowerEvent_Resume
+     * - save the state of running and paused machine for HostPowerEvent_BatteryLow
      */
     if (    (state == MachineState_Running && event != HostPowerEvent_Resume)
         ||  (state == MachineState_Paused  && event != HostPowerEvent_Suspend))
