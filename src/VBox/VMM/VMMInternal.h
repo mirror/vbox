@@ -245,7 +245,11 @@ typedef struct VMM
     /** Pointer to the R0 logger instance - R0 Ptr.
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Padding1; /**< Alignment padding. */
+#endif
     /** @} */
+
 
     /** Global VM critical section. */
     RTCRITSECT                  CritSectVMLock;
