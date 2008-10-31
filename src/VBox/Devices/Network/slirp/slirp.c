@@ -232,6 +232,8 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 #ifdef VBOX_WITH_SYNC_SLIRP
     rc = RTSemMutexCreate(&pData->tcb_mutex);
     AssertReleaseRC(rc);
+    rc = RTSemMutexCreate(&pData->tcp_last_so_mutex);
+    AssertReleaseRC(rc);
     rc = RTSemMutexCreate(&pData->udb_mutex);
     AssertReleaseRC(rc);
     rc = RTSemMutexCreate(&pData->udp_last_so_mutex);
@@ -785,7 +787,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 	if (if_queued && link_up)
 	   if_start(pData);
 #else
-#if 1
+#if 0
         if (link_up) {
             RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
             if (if_queued > 0){

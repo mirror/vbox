@@ -148,8 +148,12 @@ typedef struct NATState
     tcp_seq tcp_iss;
 #ifdef VBOX_WITH_SYNC_SLIRP
     /*
+     * tcp_last_so_mutex used for control access to tcp_last_so pointer
+     */
+    RTSEMMUTEX tcp_last_so_mutex;
+    /*
      * tcb_mutex used for control access to tcb queue of sockets
-     * servising TCP connections and tcp_last_so field
+     * servising TCP connections
      */
     RTSEMMUTEX tcb_mutex;
 #endif

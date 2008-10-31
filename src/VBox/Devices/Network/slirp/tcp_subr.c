@@ -276,7 +276,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
  */
 /*	free(tp, M_PCB);  */
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        RTSemMutexRequest(pData->tcp_last_so_mutex, RT_INDEFINITE_WAIT);
         /*sofree destrys so_mutex*/
         RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
 #endif
@@ -293,7 +293,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 	sofree(pData, so);
 	tcpstat.tcps_closed++;
 #ifdef VBOX_WITH_SYNC_SLIRP
-        RTSemMutexRelease(pData->tcb_mutex);
+        RTSemMutexRelease(pData->tcp_last_so_mutex);
 #endif
 	return ((struct tcpcb *)0);
 }
@@ -455,6 +455,13 @@ tcp_connect(PNATState pData, struct socket *inso)
 
 	DEBUG_CALL("tcp_connect");
 	DEBUG_ARG("inso = %lx", (long)inso);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        int rc;
+        rc = RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        AssertReleaseRC(rc);
+        rc = RTSemMutexRequest(inso->so_mutex, RT_INDEFINITE_WAIT);
+        AssertReleaseRC(rc);
+#endif
 
 	/*
 	 * If it's an SS_ACCEPTONCE socket, no need to socreate()
@@ -467,12 +474,38 @@ tcp_connect(PNATState pData, struct socket *inso)
 		if ((so = socreate()) == NULL) {
 			/* If it failed, get rid of the pending connection */
 			closesocket(accept(inso->s,(struct sockaddr *)&addr,&addrlen));
+#ifdef VBOX_WITH_SYNC_SLIRP
+                        rc = RTSemMutexRelease(inso->so_mutex);
+                        AssertReleaseRC(rc);
+                        rc = RTSemMutexRelease(pData->tcb_mutex);
+                        AssertReleaseRC(rc);
+#endif
 			return;
 		}
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+                AssertReleaseRC(rc);
+#endif
 		if (tcp_attach(pData, so) < 0) {
+#ifndef VBOX_WITH_SYNC_SLIRP
 			free(so); /* NOT sofree */
+#else
+                        rc = RTSemMutexRelease(inso->so_mutex);
+                        AssertReleaseRC(rc);
+                        rc = RTSemMutexRelease(so->so_mutex);
+                        AssertReleaseRC(rc);
+                        RTSemMutexDestroy(so->so_mutex);
+                        rc = RTSemMutexRelease(pData->tcb_mutex);
+                        AssertReleaseRC(rc);
+                        free(so);
+                        so = NULL;
+#endif
 			return;
 		}
+#ifdef VBOX_WITH_SYNC_SLIRP
+                rc = RTSemMutexRelease(pData->tcb_mutex);
+                AssertReleaseRC(rc);
+#endif
 		so->so_laddr = inso->so_laddr;
 		so->so_lport = inso->so_lport;
 	}
@@ -481,6 +514,14 @@ tcp_connect(PNATState pData, struct socket *inso)
 
 	if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0) {
 		tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */
+#ifdef VBOX_WITH_SYNC_SLIRP
+                if (so != inso) {
+                    rc = RTSemMutexRelease(inso->so_mutex);
+                    AssertReleaseRC(rc);
+                }
+                rc = RTSemMutexRelease(so->so_mutex);
+                AssertReleaseRC(rc);
+#endif
 		return;
 	}
 	fd_nonblock(s);
@@ -503,6 +544,12 @@ tcp_connect(PNATState pData, struct socket *inso)
 		so->so_state = SS_NOFDREF; /* Don't select it yet, even though we have an FD */
 					   /* if it's not FACCEPTONCE, it's already NOFDREF */
 	}
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (so != inso) {
+            rc = RTSemMutexRelease(inso->so_mutex);
+            AssertReleaseRC(rc);
+        }
+#endif
 	so->s = s;
 
 	so->so_iptos = tcp_tos(so);
@@ -525,6 +572,10 @@ tcp_connect(PNATState pData, struct socket *inso)
 	tcp_iss += TCP_ISSINCR/2;
 	tcp_sendseqinit(tp);
 	tcp_output(pData, tp);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        rc = RTSemMutexRelease(so->so_mutex);
+        AssertReleaseRC(rc);
+#endif
 }
 
 /*
@@ -536,11 +587,18 @@ tcp_attach(PNATState pData, struct socket *so)
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
 #ifdef VBOX_WITH_SYNC_SLIRP
+        int rc = RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
+        AssertReleaseRC(rc);
         so->so_type = IPPROTO_TCP;
 
-        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        rc = RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+        AssertReleaseRC(rc);
 	insque(pData, so, &tcb);
-        RTSemMutexRelease(pData->tcb_mutex);
+        rc = RTSemMutexRelease(pData->tcb_mutex);
+        AssertReleaseRC(rc);
+
+        rc = RTSemMutexRelease(so->so_mutex);
+        AssertReleaseRC(rc);
 #else
 	insque(pData, so, &tcb);
 #endif
