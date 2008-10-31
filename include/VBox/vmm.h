@@ -128,7 +128,7 @@ VMMR3DECL(void)     VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(int)      VMMR3UpdateLoggers(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetGCAssertMsg2(PVM pVM);
-VMMR3DECL(int)      VMMR3GetImportGC(PVM pVM, const char *pszSymbol, PRTGCPTR pGCPtrValue);
+VMMR3DECL(int)      VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3DECL(int)      VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3DECL(int)      VMMR3DisableSwitcher(PVM pVM);
 VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM);

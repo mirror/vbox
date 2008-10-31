@@ -164,23 +164,25 @@ typedef struct VMM
      * See VMM2VM(). */
     RTINT                       offVM;
 
+    /** @name World Switcher and Related
+     * @{
+     */
     /** Size of the core code. */
     RTUINT                      cbCoreCode;
     /** Physical address of core code. */
     RTHCPHYS                    HCPhysCoreCode;
-/** @todo pvHCCoreCodeR3 -> pvCoreCodeR3, pvHCCoreCodeR0 -> pvCoreCodeR0 */
     /** Pointer to core code ring-3 mapping - contiguous memory.
      * At present this only means the context switcher code. */
-    RTR3PTR                     pvHCCoreCodeR3;
+    RTR3PTR                     pvCoreCodeR3;
     /** Pointer to core code ring-0 mapping - contiguous memory.
      * At present this only means the context switcher code. */
-    RTR0PTR                     pvHCCoreCodeR0;
+    RTR0PTR                     pvCoreCodeR0;
     /** Pointer to core code guest context mapping. */
-    RTGCPTR32                   pvGCCoreCode;
+    RTRCPTR                     pvCoreCodeRC;
 #ifdef VBOX_WITH_NMI
     /** The guest context address of the APIC (host) mapping. */
-    RTGCPTR32                   GCPtrApicBase;
-    RTGCPTR32                   pGCPadding0; /**< Alignment padding */
+    RTRCPTR                     GCPtrApicBase;
+    RTRCPTR                     pGCPadding0; /**< Alignment padding */
 #endif
     /** The current switcher.
      * This will be set before the VMM is fully initialized. */
@@ -191,21 +193,22 @@ typedef struct VMM
     bool                        fSwitcherDisabled;
 
     /** Host to guest switcher entry point. */
-    R0PTRTYPE(PFNVMMSWITCHERHC) pfnR0HostToGuest;
+    R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
     /** Guest to host switcher entry point. */
-    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGCGuestToHost;
+    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGuestToHostRC;
     /** Call Trampoline. See vmmGCCallTrampoline(). */
-    RTGCPTR32                   pfnGCCallTrampoline;
+    RTRCPTR                     pfnCallTrampolineRC;
 
     /** Resume Guest Execution. See CPUMGCResumeGuest(). */
-    RTGCPTR32                   pfnCPUMGCResumeGuest;
+    RTRCPTR                     pfnCPUMRCResumeGuest;
     /** Resume Guest Execution in V86 mode. See CPUMGCResumeGuestV86(). */
-    RTGCPTR32                   pfnCPUMGCResumeGuestV86;
-    /** The last GC return code. */
-    RTINT                       iLastGCRc;
+    RTRCPTR                     pfnCPUMRCResumeGuestV86;
+    /** The last RC/R0 return code. */
+    RTINT                       iLastGZRc;
 #if HC_ARCH_BITS == 64
     uint32_t                    u32Padding0; /**< Alignment padding. */
 #endif
+    /** @}  */
 
     /** VMM stack, pointer to the top of the stack in R3.
      * Stack is allocated from the hypervisor heap and is page aligned
@@ -216,28 +219,33 @@ typedef struct VMM
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
 
-    /** Pointer to the GC logger instance - GC Ptr.
+    /** @name Logging
+     * @{
+     */
+    /** Size of the allocated logger instance (pRCLoggerRC/pRCLoggerR3). */
+    uint32_t                    cbRCLogger;
+    /** Pointer to the RC logger instance - RC Ptr.
      * This is NULL if logging is disabled. */
-    RCPTRTYPE(PRTLOGGERRC)      pLoggerGC;
-    /** Size of the allocated logger instance (pLoggerGC/pLoggerHC). */
-    RTUINT                      cbLoggerGC;
-    /** Pointer to the GC logger instance - HC Ptr.
+    RCPTRTYPE(PRTLOGGERRC)      pRCLoggerRC;
+    /** Pointer to the GC logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
-    R3PTRTYPE(PRTLOGGERRC)      pLoggerHC;
-
-    /** Pointer to the R0 logger instance.
-     * This is NULL if logging is disabled. */
-    R3R0PTRTYPE(PVMMR0LOGGER)   pR0Logger;
-
+    R3PTRTYPE(PRTLOGGERRC)      pRCLoggerR3;
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
-    /** Pointer to the GC release logger instance - GC Ptr. */
-    RCPTRTYPE(PRTLOGGERRC)      pRelLoggerGC;
-    /** Size of the allocated release logger instance (pRelLoggerGC/pRelLoggerHC).
-     * This may differ from cbLoggerGC. */
-    RTUINT                      cbRelLoggerGC;
-    /** Pointer to the GC release logger instance - HC Ptr. */
-    R3PTRTYPE(PRTLOGGERRC)      pRelLoggerHC;
+    /** Size of the allocated release logger instance (pRCRelLoggerRC/pRCRelLoggerR3).
+     * This may differ from cbRCLogger. */
+    uint32_t                    cbRCRelLogger;
+    /** Pointer to the GC release logger instance - RC Ptr. */
+    RCPTRTYPE(PRTLOGGERRC)      pRCRelLoggerRC;
+    /** Pointer to the GC release logger instance - R3 Ptr. */
+    R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
+    /** Pointer to the R0 logger instance - R3 Ptr.
+     * This is NULL if logging is disabled. */
+    R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
+    /** Pointer to the R0 logger instance - R0 Ptr.
+     * This is NULL if logging is disabled. */
+    R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
+    /** @} */
 
     /** Global VM critical section. */
     RTCRITSECT                  CritSectVMLock;

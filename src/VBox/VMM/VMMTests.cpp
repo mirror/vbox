@@ -68,10 +68,10 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVM, pVM->pVMGC);
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
-    CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
+    CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = pVM->vmm.s.iLastGCRc;
+        rc = pVM->vmm.s.iLastGZRc;
     return rc;
 }
 
@@ -105,10 +105,10 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVM, pVM->pVMGC);
     CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
     CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
-    CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
+    CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = pVM->vmm.s.iLastGCRc;
+        rc = pVM->vmm.s.iLastGZRc;
     bool fDump = false;
     if (rc != rcExpect)
     {
@@ -339,8 +339,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         CPUMPushHyper(pVM, pVM->pVMGC);
         CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
         CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
-        CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
-        Log(("trampoline=%x\n", pVM->vmm.s.pfnGCCallTrampoline));
+        CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
+        Log(("trampoline=%x\n", pVM->vmm.s.pfnCallTrampolineRC));
 
         /*
          * Switch and do da thing.
@@ -353,7 +353,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         {
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGCRc;
+                rc = pVM->vmm.s.iLastGZRc;
             if (VBOX_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
@@ -401,12 +401,12 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMPushHyper(pVM, pVM->pVMGC);
             CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));    /* stack frame size */
             CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
-            CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
+            CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
             if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVM->vmm.s.iLastGCRc;
+                rc = pVM->vmm.s.iLastGZRc;
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (VBOX_FAILURE(rc))
             {
@@ -528,7 +528,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMPushHyper(pVM, pVM->pVMGC);
             CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));    /* stack frame size */
             CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
-            CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnGCCallTrampoline);
+            CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
             CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
             pGuestCtx = CPUMQueryGuestCtxPtr(pVM);
