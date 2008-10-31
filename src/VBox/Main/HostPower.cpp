@@ -23,11 +23,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/mem.h>
 #include <VBox/com/ptr.h>
 #include "HostPower.h"
 #include "Logging.h"
 
-HostPowerService::HostPowerService(VirtualBox *aVirtualBox)
+HostPowerService::HostPowerService(VirtualBox *aVirtualBox) : aMachineSuspended(NULL), cbMachineSuspended(0)
 {
     mVirtualBox = aVirtualBox;
 }
@@ -39,31 +40,53 @@ HostPowerService::~HostPowerService()
 
 void HostPowerService::notify(HostPowerEvent event)
 {
+    VirtualBox::SessionMachineVector machines;
+    mVirtualBox->getOpenedMachines (machines);
+
     switch (event)
     {
     case HostPowerEvent_Suspend:
+        if (machines.size())
+            aMachineSuspended = (BOOL *)RTMemAllocZ(sizeof(BOOL) * machines.size());
+
+        cbMachineSuspended = machines.size();
+
+        for (size_t i = 0; i < machines.size(); i++)
+            processEvent(machines[i], HostPowerEvent_Suspend, (aMachineSuspended) ? &aMachineSuspended[i] : NULL);
+
         Log(("HostPowerService::notify SUSPEND\n"));
         break;
 
     case HostPowerEvent_Resume:
         Log(("HostPowerService::notify RESUME\n"));
+
+        if (aMachineSuspended)
+        {
+            /* It's possible (in theory) that machines are created or destroyed between the suspend notification and the actual host suspend.
+             * Ignore this edge case and just make sure not to access invalid data.
+             */
+            cbMachineSuspended = RT_MIN(machines.size(), cbMachineSuspended);
+
+            for (size_t i = 0; i < cbMachineSuspended; i++)
+                processEvent(machines[i], HostPowerEvent_Resume, &aMachineSuspended[i]);
+
+            RTMemFree(aMachineSuspended);
+            cbMachineSuspended = 0;
+            aMachineSuspended  = NULL;
+        }
         break;
 
     case HostPowerEvent_BatteryLow:
         Log(("HostPowerService::notify BATTERY LOW\n"));
+        for (size_t i = 0; i < machines.size(); i++)
+            processEvent(machines[i], HostPowerEvent_BatteryLow, NULL);
         break;
     }
-
-    VirtualBox::SessionMachineVector machines;
-    mVirtualBox->getOpenedMachines (machines);
-
-    for (size_t i = 0; i < machines.size(); i++)
-        processEvent(machines[i], event);
 
     machines.clear();
 }
 
-HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent event)
+HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent event, BOOL *pMachineSuspended)
 {
     MachineState_T state;
     HRESULT        rc;
@@ -71,7 +94,12 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
     rc = machine->COMGETTER(State)(&state);
     CheckComRCReturnRC (rc);
 
-    if (state == MachineState_Running)
+    /* Valid combinations:
+     * running & suspend or battery low notification events
+     * pause   & resume or battery low notification events
+     */
+    if (    (state == MachineState_Running && event != HostPowerEvent_Resume)
+        ||  (state == MachineState_Paused  && event != HostPowerEvent_Suspend))
     {
         ComPtr <ISession> session;
 
@@ -99,16 +127,39 @@ HRESULT HostPowerService::processEvent(SessionMachine *machine, HostPowerEvent e
                 {
                 case HostPowerEvent_Suspend:
                     rc = console->Pause();
+                    if (    SUCCEEDED(rc)
+                        &&  pMachineSuspended)
+                        *pMachineSuspended = TRUE;
                     break;
+
                 case HostPowerEvent_Resume:
+                    Assert(pMachineSuspended);
+                    if (*pMachineSuspended == TRUE)
+                        rc = console->Resume();
+                    break;
+
                 case HostPowerEvent_BatteryLow:
+                {
+                    ComPtr<IProgress> progress;
+
+                    rc = console->SaveState(progress.asOutParam());
+                    if (SUCCEEDED(rc))
+                    {
+                        /* Wait until the operation has been completed. */
+                        progress->WaitForCompletion(-1); 
+
+                        progress->COMGETTER(ResultCode)(&rc);
+                        AssertMsg(SUCCEEDED(rc), ("SaveState WaitForCompletion failed with %x\n", rc));
+                    }
+
                     break;
                 }
+
+                } /* switch (event) */
             }
         }
 fail:
         session->Close();
-
     }
     return rc;
 }
