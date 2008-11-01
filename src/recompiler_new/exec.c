@@ -2298,7 +2298,7 @@ void tlb_flush_page(CPUState *env, target_ulong addr)
 
 int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
                       target_phys_addr_t paddr, int prot,
-                      int is_user, int is_softmmu)
+                      int mmu_idx, int is_softmmu)
 {
     return 0;
 }

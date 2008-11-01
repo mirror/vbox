@@ -276,43 +276,6 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #define ASM_NAME(x) #x
 #endif
 
-#ifdef __i386__
-#define EXIT_TB() asm volatile ("ret")
-#define GOTO_LABEL_PARAM(n) asm volatile ("jmp " ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __x86_64__
-#define EXIT_TB() asm volatile ("ret")
-#define GOTO_LABEL_PARAM(n) asm volatile ("jmp " ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __powerpc__
-#define EXIT_TB() asm volatile ("blr")
-#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __s390__
-#define EXIT_TB() asm volatile ("br %r14")
-#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __alpha__
-#define EXIT_TB() asm volatile ("ret")
-#endif
-#ifdef __ia64__
-#define EXIT_TB() asm volatile ("br.ret.sptk.many b0;;")
-#define GOTO_LABEL_PARAM(n) asm volatile ("br.sptk.many " \
-					  ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __sparc__
-#define EXIT_TB() asm volatile ("jmpl %i0 + 8, %g0; nop")
-#define GOTO_LABEL_PARAM(n) asm volatile ("ba " ASM_NAME(__op_gen_label) #n ";nop")
-#endif
-#ifdef __arm__
-#define EXIT_TB() asm volatile ("b exec_loop")
-#define GOTO_LABEL_PARAM(n) asm volatile ("b " ASM_NAME(__op_gen_label) #n)
-#endif
-#ifdef __mc68000
-#define EXIT_TB() asm volatile ("rts")
-#endif
-
-
 #ifdef VBOX
 #define GETPC() ASMReturnAddress() 
 #elif defined(__s390__)

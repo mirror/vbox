@@ -3079,6 +3079,9 @@ void remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb)
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
     PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb);
+#ifdef DEBUG_PHYS
+    LogRel(("read(%d): %p\n", cb, SrcGCPhys));
+#endif
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 }
 
@@ -3093,8 +3096,11 @@ uint8_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
     uint8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);    
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("readu8: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3111,6 +3117,9 @@ int8_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("reads8: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3127,6 +3136,9 @@ uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("readu16: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3143,6 +3155,9 @@ int16_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("reads16: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3159,6 +3174,9 @@ uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys)
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("readu32: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3175,6 +3193,9 @@ int32_t remR3PhysReadS32(RTGCPHYS SrcGCPhys)
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
+#ifdef DEBUG_PHYS
+    LogRel(("reads32: %x <- %p\n", val, SrcGCPhys));
+#endif
     return val;
 }
 
@@ -3223,6 +3244,7 @@ void remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    LogRel(("write(%d): %p\n", cb, DstGCPhys));
 }
 
 
@@ -3238,6 +3260,7 @@ void remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU8(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    LogRel(("writeu8: %x -> %p\n", val, DstGCPhys));
 }
 
 
@@ -3253,6 +3276,7 @@ void remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU16(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    LogRel(("writeu16: %x -> %p\n", val, DstGCPhys));
 }
 
 
@@ -3268,6 +3292,7 @@ void remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU32(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+    LogRel(("writeu32: %x -> %p\n", val, DstGCPhys));
 }
 
 

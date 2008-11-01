@@ -30,6 +30,11 @@
 # define NULL 0
 #endif
 
+#define fflush(file)            RTLogFlush(NULL)
+#define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+#define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+
+
 #else /* !VBOX */
 
 #include <stdarg.h>
