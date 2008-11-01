@@ -1926,12 +1926,12 @@ private:
  *
  * <ol><li>
  *      Given an IUnknown instance, it's possible to quickly determine
- *      whether this instance represents a child object created by the given
- *      component, and if so, get a valid VirtualBoxBase pointer to the child
- *      object. The returned pointer can be then safely casted to the
+ *      whether this instance represents a child object that belongs to the
+ *      given component, and if so, get a valid VirtualBoxBase pointer to the
+ *      child object. The returned pointer can be then safely casted to the
  *      actual class of the child object (to get access to its "internal"
  *      non-interface methods) provided that no other child components implement
- *      the same initial interface IUnknown is queried from.
+ *      the same orignial COM interface IUnknown is queried from.
  * </li><li>
  *      When the parent object uninitializes itself, it can easily unintialize
  *      all its VirtualBoxBase derived children (using their
@@ -1944,23 +1944,14 @@ private:
  *      When a child object is initialized, it calls #addDependentChild() of
  *      its parent to register itself within the list of dependent children.
  * </li><li>
- *      When a child object it is uninitialized, it calls
- *      #removeDependentChild() to unregister itself. Since the child's
- *      uninitialization may originate both from this method and from the child
- *      itself calling its uninit() on another thread at the same time, please
- *      make sure that #removeDependentChild() is called:
- *      <ul><li>
- *          after the child has successfully entered AutoUninitSpan -- to make
- *          sure this method is called only once for the given child object
- *          transitioning from Ready to NotReady. A failure to do so will at
- *          least likely cause an assertion ("Failed to remove the child from
- *          the map").
- *      </li><li>
- *          outside the child object's lock -- to avoid guaranteed deadlocks
- *          caused by different lock order: (child_lock, map_lock) in uninit()
- *          and (map_lock, child_lock) in this method.
- *      </li></ul>
+ *      When the child object it is uninitialized, it calls
+ *      #removeDependentChild() to unregister itself.
  * </li></ol>
+ *
+ * Note that if the parent object does not call #uninitDependentChildren() when
+ * it gets uninitialized, it must call uninit() methods of individual children
+ * manually to disconnect them; a failure to do so will cause crashes in these
+ * methods when chidren get destroyed.
  *
  * Note that children added by #addDependentChild() are <b>weakly</b> referenced
  * (i.e. AddRef() is not called), so when a child object is deleted externally
@@ -1968,10 +1959,11 @@ private:
  * itself from the map of dependent children provided that it follows the rules
  * described here.
  *
- * @note Once again: because of weak referencing, deadlocks and assertions are
- *       very likely if #addDependentChild() or #removeDependentChild() are used
- *       incorrectly (called at inappropriate times). Check the above rules once
- *       more.
+ * Access to the child list is serialized using the #childrenLock() lock handle
+ * (which defaults to the general object lock handle (see
+ * VirtualBoxBase::lockHandle()). This lock is used by all add/remove methods of
+ * this class so be aware of the need to preserve the {parent, child} lock order
+ * when calling these methods.
  *
  * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
  *       VirtualBoxBaseNEXT implementation. Will completely supercede
@@ -1983,27 +1975,46 @@ class VirtualBoxBaseWithChildrenNEXT : public VirtualBoxBaseNEXT
 public:
 
     VirtualBoxBaseWithChildrenNEXT()
-        : mUninitDoneSem (NIL_RTSEMEVENT), mChildrenLeft (0)
     {}
 
     virtual ~VirtualBoxBaseWithChildrenNEXT()
     {}
 
     /**
-     * Adds the given child to the map of dependent children.
+     * Lock handle to use when adding/removing child objects from the list of
+     * children. It is guaranteed that no any other lock is requested in methods
+     * of this class while holding this lock.
      *
-     * Typically called from the child's init() method, from within the
-     * AutoInitSpan scope.  Otherwise, VirtualBoxBase::AutoCaller must be
-     * used on @a aChild to make sure it is not uninitialized during this
-     * method's call.
+     * @warning By default, this simply returns the general object's lock handle
+     *          (see VirtualBoxBase::lockHandle()) which is sufficient for most
+     *          cases.
+     */
+    virtual RWLockHandle *childrenLock() { return lockHandle(); }
+
+    /**
+     * Adds the given child to the list of dependent children.
+     *
+     * Usually gets called from the child's init() method.
+     *
+     * @note @a aChild (unless it is in InInit state) must be protected by
+     *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
+     *       another thread during this method's call.
+     *
+     * @note When #childrenLock() is not overloaded (returns the general object
+     *       lock) and this method is called from under the child's read or
+     *       write lock, make sure the {parent, child} locking order is
+     *       preserved by locking the callee (this object) for writing before
+     *       the child's lock.
      *
      * @param aChild    Child object to add (must inherit VirtualBoxBase AND
      *                  implement some interface).
+     *
+     * @note Locks #childrenLock() for writing.
      */
     template <class C>
     void addDependentChild (C *aChild)
     {
-        AssertReturnVoid (aChild);
+        AssertReturnVoid (aChild != NULL);
         doAddDependentChild (ComPtr <IUnknown> (aChild), aChild);
     }
 
@@ -2019,23 +2030,32 @@ public:
     }
 
     /**
-     * Removes the given child from the map of dependent children.
+     * Removes the given child from the list of dependent children.
      *
-     * Typically called from from the child's uninit() method, from within the
-     * AutoUninitSpan scope. Make sure te child is not locked for reading or
-     * writing in this case.
+     * Usually gets called from the child's uninit() method.
      *
-     * If called not from within the AutoUninitSpan scope,
-     * VirtualBoxBase::AutoCaller must be used on @a aChild to make sure it is
-     * not uninitialized during this method's call.
+     * @note Locks #childrenLock() for writing.
      *
-     * @param aChild    Child object to remove (must inherit VirtualBoxBase AND
-     *                  implement some interface).
+     * @note @a aChild (unless it is in InUninit state) must be protected by
+     *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
+     *       another thread during this method's call.
+     *
+     * @note When #childrenLock() is not overloaded (returns the general object
+     *       lock) and this method is called from under the child's read or
+     *       write lock, make sure the {parent, child} locking order is
+     *       preserved by locking the callee (this object) for writing before
+     *       the child's lock. This is irrelevant when the method is called from
+     *       under this object's VirtualBoxBaseProto::AutoUninitSpan (i.e. in
+     *       InUninit state) since in this case no locking is done.
+     *
+     * @param aChild    Child object to remove.
+     *
+     * @note Locks #childrenLock() for writing.
      */
     template <class C>
     void removeDependentChild (C *aChild)
     {
-        AssertReturnVoid (aChild);
+        AssertReturnVoid (aChild != NULL);
         doRemoveDependentChild (ComPtr <IUnknown> (aChild));
     }
 
@@ -2071,12 +2091,6 @@ private:
 
     typedef std::map <IUnknown *, VirtualBoxBaseNEXT *> DependentChildren;
     DependentChildren mDependentChildren;
-
-    RTSEMEVENT mUninitDoneSem;
-    size_t mChildrenLeft;
-
-    /* Protects all the fields above */
-    RWLockHandle mMapLock;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2091,9 +2105,10 @@ private:
  *  As opposed to VirtualBoxBaseWithChildren, children added by
  *  #addDependentChild() are <b>strongly</b> referenced, so that they cannot
  *  be externally destructed until #removeDependentChild() is called.
- *  For this reason, strict rules of calling #removeDependentChild() don't
- *  apply to instances of this class -- it can be called anywhere in the
- *  child's uninit() implementation.
+ *
+ *  Also, this class doesn't have the
+ *  VirtualBoxBaseWithChildrenNEXT::getDependentChild() method because it would
+ *  be not fast for long lists.
  *
  *  @param C    type of child objects (must inherit VirtualBoxBase AND
  *              implement some interface)
@@ -2237,9 +2252,9 @@ private:
 /**
  * Base class to track component's chlidren of the particular type.
  *
- * This class is similar to VirtualBoxBaseWithChildren, with the exception that
- * all children must be of the same type. For this reason, it's not necessary to
- * use a map to store children -- a list is used instead.
+ * This class is similar to VirtualBoxBaseWithChildrenNEXT with the exception
+ * that all children must be of the same type. For this reason, it's not
+ * necessary to use a map to store children -- a list is used instead.
  *
  * Also, as opposed to VirtualBoxBaseWithChildren, children added by
  * #addDependentChild() are <b>strongly</b> referenced, so that they cannot be
@@ -2247,8 +2262,8 @@ private:
  *
  * See individual method descriptions for more information.
  *
- * @param C Type of child objects (must inherit VirtualBoxBase AND implementsome
- *          interface).
+ * @param C Type of child objects (must inherit VirtualBoxBase AND implement
+ *          some interface).
  *
  * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
  *       VirtualBoxBaseNEXT implementation. Will completely supercede
@@ -2267,25 +2282,38 @@ public:
     virtual ~VirtualBoxBaseWithTypedChildrenNEXT() {}
 
     /**
+     * Lock handle to use when adding/removing child objects from the list of
+     * children. It is guaranteed that no any other lock is requested in methods
+     * of this class while holding this lock.
+     *
+     * @warning By default, this simply returns the general object's lock handle
+     *          (see VirtualBoxBase::lockHandle()) which is sufficient for most
+     *          cases.
+     */
+    virtual RWLockHandle *childrenLock() { return lockHandle(); }
+
+    /**
      * Adds the given child to the list of dependent children.
      *
      * Usually gets called from the child's init() method.
-     *
-     * @note Locks this object for writing.
      *
      * @note @a aChild (unless it is in InInit state) must be protected by
      *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
      *       another thread during this method's call.
      *
-     * @note If this method is called from under the child's read or write lock,
-     *       make sure the {parent, child} locking order is preserved by locking
-     *       the callee (this object) for writing before the child's lock.
+     * @note When #childrenLock() is not overloaded (returns the general object
+     *       lock) and this method is called from under the child's read or
+     *       write lock, make sure the {parent, child} locking order is
+     *       preserved by locking the callee (this object) for writing before
+     *       the child's lock.
      *
      * @param aChild    Child object to add.
+     *
+     * @note Locks #childrenLock() for writing.
      */
     void addDependentChild (C *aChild)
     {
-        AssertReturnVoid (aChild);
+        AssertReturnVoid (aChild != NULL);
 
         AutoCaller autoCaller (this);
 
@@ -2294,7 +2322,7 @@ public:
                           autoCaller.state() == Ready ||
                           autoCaller.state() == Limited);
 
-        AutoWriteLock alock (this);
+        AutoWriteLock alock (childrenLock());
         mDependentChildren.push_back (aChild);
     }
 
@@ -2303,21 +2331,25 @@ public:
      *
      * Usually gets called from the child's uninit() method.
      *
-     * Note that once this method returns, the callee (this object) is not
-     * guaranteed to be valid any more, so the caller must not call its
-     * other methods.
-     *
-     * @note Locks this object for writing.
+     * Note that once this method returns, the argument (@a aChild) is not
+     * guaranteed to be valid any more, so the caller of this method must not
+     * call its other methods.
      *
      * @note @a aChild (unless it is in InUninit state) must be protected by
      *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
      *       another thread during this method's call.
      *
-     * @note If this method is called from under the child's read or write lock,
-     *       make sure the {parent, child} locking order is preserved by locking
-     *       the callee (this object) for writing before the child's lock.
+     * @note When #childrenLock() is not overloaded (returns the general object
+     *       lock) and this method is called from under the child's read or
+     *       write lock, make sure the {parent, child} locking order is
+     *       preserved by locking the callee (this object) for writing before
+     *       the child's lock. This is irrelevant when the method is called from
+     *       under this object's AutoUninitSpan (i.e. in InUninit state) since
+     *       in this case no locking is done.
      *
      * @param aChild    Child object to remove.
+     *
+     * @note Locks #childrenLock() for writing.
      */
     void removeDependentChild (C *aChild)
     {
@@ -2329,7 +2361,7 @@ public:
         if (autoCaller.state() == InUninit)
             return;
 
-        AutoWriteLock alock (this);
+        AutoWriteLock alock (childrenLock());
         mDependentChildren.remove (aChild);
     }
 
@@ -2338,8 +2370,8 @@ protected:
     /**
      * Returns the read-only list of all dependent children.
      *
-     * @note Access the returned list (iterate, get size etc.) only after
-     *       locking this object for reading or for writing!
+     * @note Access the returned list (iterate, get size etc.) only after making
+     *       sure #childrenLock() is locked for reading or for writing!
      */
     const DependentChildren &dependentChildren() const { return mDependentChildren; }
 
@@ -2354,20 +2386,20 @@ protected:
      * Note that this method will call uninit() methods of child objects. If
      * these methods need to call the parent object during uninitialization,
      * #uninitDependentChildren() must be called before the relevant part of the
-     * parent is uninitialized, usually at the begnning of the parent
+     * parent is uninitialized: usually at the begnning of the parent
      * uninitialization sequence.
      *
-     * @note May lock this object through the called children.
+     * @note May lock something through the called children.
      */
     void uninitDependentChildren()
     {
         AutoCaller autoCaller (this);
 
-        /* We cannot hold the write lock (necessary here to protect
-         * mDependentChildren) when uninitializing children because we want to
-         * avoid a possible deadlock where we could get stuck in child->uninit()
-         * blocked by AutoUninitSpan waiting for the number of child's callers
-         * to drop to zero, while some caller is stuck in our
+        /* We don't want to hold the childrenLock() write lock here (necessary
+         * to protect mDependentChildren) when uninitializing children because
+         * we want to avoid a possible deadlock where we could get stuck in
+         * child->uninit() blocked by AutoUninitSpan waiting for the number of
+         * child's callers to drop to zero, while some caller is stuck in our
          * removeDependentChild() method waiting for the write lock.
          *
          * The only safe place to not lock and keep accessing our data members
@@ -2388,7 +2420,7 @@ protected:
                 Assert (child);
 
                 /* Note that if child->uninit() happens to be called on another
-                 * thread right before us and is not yet finished; the second
+                 * thread right before us and is not yet finished, the second
                  * uninit() call will wait until the first one has done so
                  * (thanks to AutoUninitSpan). */
                 if (child)
@@ -2408,11 +2440,11 @@ protected:
      *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
      *       another thread during this method's call.
      *
-     * @note Locks this object for writing.
+     * @note Locks #childrenLock() for writing.
      */
     void removeDependentChildren()
     {
-        AutoWriteLock alock (this);
+        AutoWriteLock alock (childrenLock());
         mDependentChildren.clear();
     }
 

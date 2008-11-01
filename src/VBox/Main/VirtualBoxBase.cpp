@@ -1067,144 +1067,135 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Uninitializes all dependent children registered with #addDependentChild().
+ * Uninitializes all dependent children registered on this object with
+ * #addDependentChild().
  *
- * Typically called from the uninit() method. Note that this method will call
- * uninit() methods of child objects. If these methods need to call the parent
- * object during initialization, uninitDependentChildren() must be called before
- * the relevant part of the parent is uninitialized, usually at the begnning of
- * the parent uninitialization sequence.
+ * Must be called from within the VirtualBoxBaseProto::AutoUninitSpan (i.e.
+ * typically from this object's uninit() method) to uninitialize children
+ * before this object goes out of service and becomes unusable.
+ *
+ * Note that this method will call uninit() methods of child objects. If
+ * these methods need to call the parent object during uninitialization,
+ * #uninitDependentChildren() must be called before the relevant part of the
+ * parent is uninitialized: usually at the begnning of the parent
+ * uninitialization sequence.
+ *
+ * @note May lock something through the called children.
  */
 void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
 {
-    LogFlowThisFuncEnter();
+    AutoCaller autoCaller (this);
 
-    AutoWriteLock mapLock (mMapLock);
-
-    LogFlowThisFunc (("count=%u...\n", mDependentChildren.size()));
+    /* We don't want to hold the childrenLock() write lock here (necessary
+     * to protect mDependentChildren) when uninitializing children because
+     * we want to avoid a possible deadlock where we could get stuck in
+     * child->uninit() blocked by AutoUninitSpan waiting for the number of
+     * child's callers to drop to zero, while some caller is stuck in our
+     * removeDependentChild() method waiting for the write lock.
+     *
+     * The only safe place to not lock and keep accessing our data members
+     * is the InUninit state (no active call to our object may exist on
+     * another thread when we are in InUinint, provided that all such calls
+     * use the AutoCaller class of course). InUinint is also used as a flag
+     * by removeDependentChild() that prevents touching mDependentChildren
+     * from outside. Therefore, we assert.
+     */
+    AssertReturnVoid (autoCaller.state() == InUninit);
 
     if (mDependentChildren.size())
     {
-        /* We keep the lock until we have enumerated all children.
-         * Those ones that will try to call removeDependentChild() from a
-         * different thread will have to wait */
-
-        Assert (mUninitDoneSem == NIL_RTSEMEVENT);
-        int vrc = RTSemEventCreate (&mUninitDoneSem);
-        AssertRC (vrc);
-
-        Assert (mChildrenLeft == 0);
-        mChildrenLeft = mDependentChildren.size();
-
         for (DependentChildren::iterator it = mDependentChildren.begin();
-            it != mDependentChildren.end(); ++ it)
+             it != mDependentChildren.end(); ++ it)
         {
             VirtualBoxBase *child = (*it).second;
             Assert (child);
+
+            /* Note that if child->uninit() happens to be called on another
+             * thread right before us and is not yet finished, the second
+             * uninit() call will wait until the first one has done so
+             * (thanks to AutoUninitSpan). */
             if (child)
                 child->uninit();
         }
 
+        /* release all weak references we hold */
         mDependentChildren.clear();
     }
-
-    /* Wait until all children that called uninit() on their own on other
-     * threads but stuck waiting for the map lock in removeDependentChild() have
-     * finished uninitialization. */
-
-    if (mUninitDoneSem != NIL_RTSEMEVENT)
-    {
-        /* let stuck children run */
-        mapLock.leave();
-
-        LogFlowThisFunc (("Waiting for uninitialization of all children...\n"));
-
-        RTSemEventWait (mUninitDoneSem, RT_INDEFINITE_WAIT);
-
-        mapLock.enter();
-
-        RTSemEventDestroy (mUninitDoneSem);
-        mUninitDoneSem = NIL_RTSEMEVENT;
-        Assert (mChildrenLeft == 0);
-    }
-
-    LogFlowThisFuncLeave();
 }
 
 /**
- * Returns a pointer to the dependent child corresponding to the given
- * interface pointer (used as a key in the map of dependent children) or NULL
- * if the interface pointer doesn't correspond to any child registered using
- * #addDependentChild().
+ * Returns a pointer to the dependent child (registered using
+ * #addDependentChild()) corresponding to the given interface pointer or NULL if
+ * the given pointer is unrelated.
+ *
+ * The relation is checked by using the given interface pointer as a key in the
+ * map of dependent children.
  *
  * Note that ComPtr <IUnknown> is used as an argument instead of IUnknown * in
  * order to guarantee IUnknown identity and disambiguation by doing
  * QueryInterface (IUnknown) rather than a regular C cast.
  *
  * @param aUnk  Pointer to map to the dependent child object.
- * @return      Pointer to the dependent child object.
+ * @return      Pointer to the dependent VirtualBoxBase child object.
+ *
+ * @note Locks #childrenLock() for reading.
  */
 VirtualBoxBaseNEXT *
 VirtualBoxBaseWithChildrenNEXT::getDependentChild (const ComPtr <IUnknown> &aUnk)
 {
-    AssertReturn (!!aUnk, NULL);
+    AssertReturn (!aUnk.isNull(), NULL);
 
-    AutoWriteLock alock (mMapLock);
+    AutoCaller autoCaller (this);
 
     /* return NULL if uninitDependentChildren() is in action */
-    if (mUninitDoneSem != NIL_RTSEMEVENT)
+    if (autoCaller.state() == InUninit)
         return NULL;
+
+    AutoReadLock alock (childrenLock());
 
     DependentChildren::const_iterator it = mDependentChildren.find (aUnk);
     if (it == mDependentChildren.end())
         return NULL;
+
     return (*it).second;
 }
 
+/** Helper for addDependentChild(). */
 void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild (
     IUnknown *aUnk, VirtualBoxBaseNEXT *aChild)
 {
-    AssertReturnVoid (aUnk && aChild);
+    AssertReturnVoid (aUnk != NULL);
+    AssertReturnVoid (aChild != NULL);
 
-    AutoWriteLock alock (mMapLock);
+    AutoCaller autoCaller (this);
 
-    if (mUninitDoneSem != NIL_RTSEMEVENT)
-    {
-        /* uninitDependentChildren() is being run. For this very unlikely case,
-         * we have to increase the number of children left, for symmetry with
-         * a later #removeDependentChild() call. */
-        ++ mChildrenLeft;
-        return;
-    }
+    /* sanity */
+    AssertReturnVoid (autoCaller.state() == InInit ||
+                      autoCaller.state() == Ready ||
+                      autoCaller.state() == Limited);
+
+    AutoWriteLock alock (childrenLock());
 
     std::pair <DependentChildren::iterator, bool> result =
         mDependentChildren.insert (DependentChildren::value_type (aUnk, aChild));
-    AssertMsg (result.second, ("Failed to insert a child to the map\n"));
+    AssertMsg (result.second, ("Failed to insert child %p to the map\n", aUnk));
 }
 
+/** Helper for removeDependentChild(). */
 void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
 {
     AssertReturnVoid (aUnk);
 
-    AutoWriteLock alock (mMapLock);
+    AutoCaller autoCaller (this);
 
-    if (mUninitDoneSem != NIL_RTSEMEVENT)
-    {
-        /* uninitDependentChildren() is being run. Just decrease the number of
-         * children left and signal a semaphore if it reaches zero. */
-        Assert (mChildrenLeft != 0);
-        -- mChildrenLeft;
-        if (mChildrenLeft == 0)
-        {
-            int vrc = RTSemEventSignal (mUninitDoneSem);
-            AssertRC (vrc);
-        }
+    /* return shortly; uninitDependentChildren() will do the job */
+    if (autoCaller.state() == InUninit)
         return;
-    }
+
+    AutoWriteLock alock (childrenLock());
 
     DependentChildren::size_type result = mDependentChildren.erase (aUnk);
-    AssertMsg (result == 1, ("Failed to remove the child %p from the map\n",
-                             aUnk));
+    AssertMsg (result == 1, ("Failed to remove child %p from the map\n", aUnk));
     NOREF (result);
 }
 
