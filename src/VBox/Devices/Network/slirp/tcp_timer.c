@@ -73,8 +73,8 @@ tcp_fasttimo(PNATState pData)
 			tcpstat.tcps_delack++;
 			(void) tcp_output(pData, tp);
 		}
-                VBOX_SLIRP_LOCK(pData->tcb_mutex);
                 VBOX_SLIRP_UNLOCK(so->so_mutex);
+                VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 so = so_next;
 #endif
@@ -136,8 +136,8 @@ tcp_slowtimo(PNATState pData)
 tpgone:
 		;
 before_loop_ends:
-                VBOX_SLIRP_LOCK(pData->tcb_mutex);
                 VBOX_SLIRP_UNLOCK(ip->so_mutex);
+                VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 ip=ipnxt;
 #endif

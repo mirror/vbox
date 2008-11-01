@@ -125,7 +125,6 @@ sofree(PNATState pData, struct socket *so)
         Assert(!"unknown type");
     }
     /* socket's mutex could be released because socket none accessible via queue anymore*/
-    VBOX_SLIRP_UNLOCK(so->so_mutex);
 
     m_free(pData, so->so_m);
 
@@ -264,8 +263,9 @@ soread(PNATState pData, struct socket *so)
 void
 sorecvoob(PNATState pData, struct socket *so)
 {
-	struct tcpcb *tp = sototcpcb(so);
+	struct tcpcb *tp;
         VBOX_SLIRP_LOCK(so->so_mutex);
+        tp = sototcpcb(so);
 
 	DEBUG_CALL("sorecvoob");
 	DEBUG_ARG("so = %lx", (long)so);

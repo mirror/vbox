@@ -202,9 +202,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                const char *pszBootFile, void *pvUser)
 {
     int fNATfailed = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-    int rc = 0;
-#endif
     PNATState pData = malloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
@@ -229,20 +226,12 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     }
 #endif
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-    rc = RTSemMutexCreate(&pData->tcb_mutex);
-    AssertReleaseRC(rc);
-    rc = RTSemMutexCreate(&pData->tcp_last_so_mutex);
-    AssertReleaseRC(rc);
-    rc = RTSemMutexCreate(&pData->udb_mutex);
-    AssertReleaseRC(rc);
-    rc = RTSemMutexCreate(&pData->udp_last_so_mutex);
-    AssertReleaseRC(rc);
-    rc = RTSemMutexCreate(&pData->if_queued_mutex);
-    AssertReleaseRC(rc);
-    rc = RTSemMutexCreate(&pData->next_m_mutex);
-    AssertReleaseRC(rc);
-#endif
+    VBOX_SLIRP_LOCK_CREATE(&pData->tcb_mutex);
+    VBOX_SLIRP_LOCK_CREATE(&pData->tcp_last_so_mutex);
+    VBOX_SLIRP_LOCK_CREATE(&pData->udb_mutex);
+    VBOX_SLIRP_LOCK_CREATE(&pData->udp_last_so_mutex);
+    VBOX_SLIRP_LOCK_CREATE(&pData->if_queued_mutex);
+    VBOX_SLIRP_LOCK_CREATE(&pData->next_m_mutex);
 
     Assert(sizeof(struct ip) == 20);
     link_up = 1;
@@ -378,26 +367,23 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		 * *_slowtimo needs calling if there are IP fragments
 		 * in the fragment queue, or there are TCP connections active
 		 */
-#ifndef VBOX_WITH_SYNC_SLIRP
+                VBOX_SLIRP_LOCK(pData->tcb_mutex);
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
 
-		for (so = tcb.so_next; so != &tcb; so = so_next) {
-			so_next = so->so_next;
-#else
-                RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
                 so = tcb.so_next;
-		do_slowtimo = ((so != &tcb) ||
-			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
+#ifndef VBOX_WITH_SYNC_SLIRP
+		for (so = tcb.so_next; so != &tcb; so = so_next) {
+#else
                 while (1) {
                     if (so == &tcb) {
-                        RTSemMutexRelease(pData->tcb_mutex);
+                        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
-                    so_next = so->so_next;
-                    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-                    RTSemMutexRelease(pData->tcb_mutex);
 #endif
+                    so_next = so->so_next;
+                    VBOX_SLIRP_LOCK(so->so_mutex);
+                    VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
 			 * See if we need a tcp_fasttimo
@@ -410,11 +396,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * newly socreated() sockets etc. Don't want to select these.
 	 		 */
 			if (so->so_state & SS_NOFDREF || so->s == -1)
-#ifndef VBOX_WITH_SYNC_SLIRP
-				continue;
-#else
                                 goto before_loop_ends;
-#endif
 
 			/*
 			 * Set for reading sockets which are accepting
@@ -422,11 +404,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_state & SS_FACCEPTCONN) {
                                 FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
-#ifndef VBOX_WITH_SYNC_SLIRP
-				continue;
-#else
                                 goto before_loop_ends;
-#endif
 			}
 
 			/*
@@ -435,11 +413,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_state & SS_ISFCONNECTING) {
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
-#ifndef VBOX_WITH_SYNC_SLIRP
-				continue;
-#else
                                 goto before_loop_ends;
-#endif
 			}
 
 			/*
@@ -460,11 +434,11 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, xfds);
 				UPD_NFDS(so->s);
 			}
-#ifdef VBOX_WITH_SYNC_SLIRP
                 before_loop_ends:
                         /*Release of global tcb mutex happens in the head of loop*/
-                        RTSemMutexRelease(so->so_mutex);
-                        RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
+                        VBOX_SLIRP_LOCK(pData->tcb_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
                         so = so_next;
 #endif
 		}
@@ -472,21 +446,20 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		/*
 		 * UDP sockets
 		 */
+                VBOX_SLIRP_LOCK(pData->udb_mutex);
+                so = udb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (so = udb.so_next; so != &udb; so = so_next) {
-			so_next = so->so_next;
 #else
-                RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-                so = udb.so_next;
                 while(1) {
                     if (so == &udb) {
-                        RTSemMutexRelease(pData->udb_mutex);
+                        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
                         break;
                     }
-                so_next = so->so_next;
-                RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-                RTSemMutexRelease(pData->udb_mutex);
 #endif
+                    so_next = so->so_next;
+                    VBOX_SLIRP_LOCK(so->so_mutex);
+                    VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 			/*
 			 * See if it's timed out
@@ -494,11 +467,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_expire) {
 				if (so->so_expire <= curtime) {
 					udp_detach(pData, so);
-#ifndef VBOX_WITH_SYNC_SLIRP
-					continue;
-#else
                                         goto before_udp_loop_end;
-#endif
 				} else
 					do_slowtimo = 1; /* Let socket expire */
 			}
@@ -517,10 +486,10 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 			}
-#ifdef VBOX_WITH_SYNC_SLIRP
                         before_udp_loop_end:
-                        RTSemMutexRelease(so->so_mutex);
-                        RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
+                        VBOX_SLIRP_LOCK(pData->udb_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
                         so = so_next;
 #endif
 		}
@@ -592,32 +561,27 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		/*
 		 * Check TCP sockets
 		 */
+                VBOX_SLIRP_LOCK(pData->tcb_mutex);
+                so = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
-			so_next = so->so_next;
 #else
-                RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
-                so = tcb.so_next;
                 while (1) {
                     if (so == &tcb) {
-                        RTSemMutexRelease(pData->tcb_mutex);
+                        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
-                so_next = so->so_next;
-                RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-                RTSemMutexRelease(pData->tcb_mutex);
 #endif
+                    so_next = so->so_next;
+                    VBOX_SLIRP_LOCK(so->so_mutex);
+                    VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
 			 * FD_ISSET is meaningless on these sockets
 			 * (and they can crash the program)
 			 */
 			if (so->so_state & SS_NOFDREF || so->s == -1)
-#ifndef VBOX_WITH_SYNC_SLIRP
-				continue;
-#else
                                 goto before_loop_ends;
-#endif
 
 			/*
 			 * Check for URG data
@@ -635,11 +599,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 				 */
 				if (so->so_state & SS_FACCEPTCONN) {
 					tcp_connect(pData, so);
-#ifndef VBOX_WITH_SYNC_SLIRP
-				        continue;
-#else
                                         goto before_loop_ends;
-#endif
 				} /* else */
 				ret = soread(pData, so);
 
@@ -671,11 +631,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			      /* XXXXX Must fix, zero bytes is a NOP */
 			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
 				  errno == EINPROGRESS || errno == ENOTCONN)
-#ifndef VBOX_WITH_SYNC_SLIRP
-				        continue;
-#else
                                         goto before_loop_ends;
-#endif
 
 			      /* else failed */
 			      so->so_state = SS_NOFDREF;
@@ -710,11 +666,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			    /* XXX */
 			    if (errno == EAGAIN || errno == EWOULDBLOCK ||
 				errno == EINPROGRESS || errno == ENOTCONN)
-#ifndef VBOX_WITH_SYNC_SLIRP
-				        continue;/* Still connecting, continue */
-#else
-                                        goto before_loop_ends;
-#endif
+                                        goto before_loop_ends;/* Still connecting, continue */
 
 			    /* else failed */
 			    so->so_state = SS_NOFDREF;
@@ -726,11 +678,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			      /* XXX */
 			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
 				  errno == EINPROGRESS || errno == ENOTCONN)
-#ifndef VBOX_WITH_SYNC_SLIRP
-				        continue;
-#else
                                         goto before_loop_ends;
-#endif
 			      /* else failed */
 			      so->so_state = SS_NOFDREF;
 			    } else
@@ -740,10 +688,10 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			  tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
 			} /* SS_ISFCONNECTING */
 #endif
-#ifdef VBOX_WITH_SYNC_SLIRP
                     before_loop_ends:
-                    RTSemMutexRelease(so->so_mutex);
-                    RTSemMutexRequest(pData->tcb_mutex, RT_INDEFINITE_WAIT);
+                    VBOX_SLIRP_UNLOCK(so->so_mutex);
+                    VBOX_SLIRP_LOCK(pData->tcb_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
                     so = so_next;
 #endif
 		}
@@ -753,28 +701,27 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		 * Incoming packets are sent straight away, they're not buffered.
 		 * Incoming UDP data isn't buffered either.
 		 */
+                VBOX_SLIRP_LOCK(pData->udb_mutex);
+                so = udb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (so = udb.so_next; so != &udb; so = so_next) {
-			so_next = so->so_next;
 #else
-                RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
-                so = udb.so_next;
                 while(1) {
                     if (so == &udb) {
-                        RTSemMutexRelease(pData->udb_mutex);
+                        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
                         break;
                     }
-		    so_next = so->so_next;
-                    RTSemMutexRequest(so->so_mutex, RT_INDEFINITE_WAIT);
-                    RTSemMutexRelease(pData->udb_mutex);
 #endif
+		    so_next = so->so_next;
+                    VBOX_SLIRP_LOCK(so->so_mutex);
+                    VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
                             sorecvfrom(pData, so);
                         }
+                    VBOX_SLIRP_UNLOCK(so->so_mutex);
+                    VBOX_SLIRP_LOCK(pData->udb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
-                    RTSemMutexRelease(so->so_mutex);
-                    RTSemMutexRequest(pData->udb_mutex, RT_INDEFINITE_WAIT);
                     so = so_next;
 #endif
 		}
@@ -789,13 +736,13 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #else
 #if 0
         if (link_up) {
-            RTSemMutexRequest(pData->if_queued_mutex, RT_INDEFINITE_WAIT);
+            VBOX_SLIRP_LOCK(pData->if_queued_mutex);
             if (if_queued > 0){
-                RTSemMutexRelease(pData->if_queued_mutex);
+VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
 	        if_start(pData);
             }
             else {
-                RTSemMutexRelease(pData->if_queued_mutex);
+VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
             }
         }
 #endif
@@ -890,9 +837,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 {
     struct mbuf *m;
     int proto;
-#ifdef VBOX_WITH_SYNC_SLIRP
-    int rc;
-#endif
 
     if (pkt_len < ETH_HLEN)
         return;
@@ -908,14 +852,9 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 	updtime(pData);
 
         m = m_get(pData);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (m != NULL) {
-            rc = RTSemMutexRequest(m->m_mutex, RT_INDEFINITE_WAIT);
-            AssertReleaseRC(rc);
-        }
-#endif
         if (!m)
             return;
+        VBOX_SLIRP_LOCK(m->m_mutex);
         /* Note: we add to align the IP header */
         if (M_FREEROOM(m) < pkt_len + 2) {
             m_inc(m, pkt_len + 2);
@@ -927,10 +866,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         m->m_len -= 2 + ETH_HLEN;
 
         ip_input(pData, m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        rc = RTSemMutexRelease(m->m_mutex);
-        AssertReleaseRC(rc);
-#endif
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
         break;
     default:
         break;
