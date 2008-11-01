@@ -141,6 +141,10 @@ vboxnetflt_INCS.linux   := \
 vboxnetflt_INCS         := \
 	$(PATH_SUB_CURRENT)
 vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv
+ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
+ vboxnetflt_DEFS.solaris += VBOXNETFLT_SOLARIS_USE_NETINFO
+ vboxnetflt_LDFLAGS.solaris += -N misc/neti
+endif
 vboxnetflt_LIBS = \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 ## @todo vboxflt should resolves all the IPRT bits from vboxdrv.

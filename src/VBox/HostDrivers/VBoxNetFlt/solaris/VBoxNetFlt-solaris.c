@@ -55,6 +55,15 @@
 #include <sys/sunddi.h>
 #include <sys/sunldi.h>
 
+/*
+ * Experimental: Using netinfo interfaces and queuing out packets.
+ * This is for playing better with IPFilter.
+ */
+#undef VBOXNETFLT_SOLARIS_USE_NETINFO
+#ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
+# include <sys/neti.h>
+#endif
+
 // Workaround for very strange define in sys/user.h
 // #define u       (curproc->p_user)       /* user is now part of proc structure */
 #ifdef u
@@ -2046,7 +2055,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                 g_VBoxNetFltSolarisStreamType = kIp6Stream;
 
                                 /*
-                                 * Inject/Eject from the host IP stack.
+                                 * Inject/Eject from the host IPv6 stack.
                                  */
                                 rc = strioctl(pIp6VNode, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K,
                                             kcred, &ret);
@@ -3147,6 +3156,44 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     int rc = VINF_SUCCESS;
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
+#ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
+        netstack_t *pNetStack = netstack_get_current();
+        if (pNetStack)
+        {
+            net_data_t pNetData = net_lookup_impl(NHF_INET, pNetStack);
+            if (pNetData)
+            {
+                phy_if_t pInterface = net_phylookup(pNetData, pThis->szName);
+                if (pInterface)
+                {
+                    net_inject_t InjectData;
+                    InjectData.ni_packet = pMsg;
+                    InjectData.ni_physical = pInterface;
+                    bzero(&InjectData.ni_addr, sizeof(InjectData.ni_addr));
+                    InjectData.ni_addr.ss_family = AF_INET;
+
+                    /*
+                     * Queue out rather than direct out transmission.
+                     */
+                    int rc = net_inject(pNetData, NI_QUEUE_OUT, &InjectData);
+                    if (!rc)
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        LogRel((DEVICE_NAME ":queuing IP packet for transmission failed. rc=%d\n", rc));
+                        rc = VERR_NET_IO_ERROR;
+                    }
+                }
+                else
+                    LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to lookup physical interface.\n"));
+            }
+            else
+                LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to get IP hooks.\n"));
+            netstack_rele(pNetStack);
+        }
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsXmit failed to get current net stack.\n"));
+#else
         vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
         if (RT_LIKELY(pPromiscStream))
         {
@@ -3164,6 +3211,8 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                 rc = VERR_NO_MEMORY;
             }
         }
+#endif
+
     }
 
     if (fDst & INTNETTRUNKDIR_HOST)
