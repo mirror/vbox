@@ -3244,7 +3244,9 @@ void remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+#ifdef DEBUG_PHYS
     LogRel(("write(%d): %p\n", cb, DstGCPhys));
+#endif
 }
 
 
@@ -3260,7 +3262,9 @@ void remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU8(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+#ifdef DEBUG_PHYS
     LogRel(("writeu8: %x -> %p\n", val, DstGCPhys));
+#endif
 }
 
 
@@ -3276,7 +3280,9 @@ void remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU16(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+#ifdef DEBUG_PHYS
     LogRel(("writeu16: %x -> %p\n", val, DstGCPhys));
+#endif
 }
 
 
@@ -3292,7 +3298,9 @@ void remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val)
     VBOX_CHECK_ADDR(DstGCPhys);
     PGMR3PhysWriteU32(cpu_single_env->pVM, DstGCPhys, val);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
+#ifdef DEBUG_PHYS
     LogRel(("writeu32: %x -> %p\n", val, DstGCPhys));
+#endif
 }
 
 
