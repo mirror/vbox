@@ -634,7 +634,6 @@ typedef struct CPUX86State {
     target_ulong dr[8]; /* debug registers */
     uint32_t smbase;
     int old_exception;  /* exception in flight */
-  
 
     CPU_COMMON
 

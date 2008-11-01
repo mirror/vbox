@@ -20,7 +20,7 @@
  */
 
 
-#if defined(RT_ARCH_AMD64) || defined(HOST_X86_64) /* The latter, for dyngen when cross compiling (windows, l4, etc). */
+#if defined(RT_ARCH_AMD64)
 # define HOST_X86_64 1
 # define HOST_LONG_BITS 64
 #else

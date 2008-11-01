@@ -347,7 +347,7 @@ extern int tb_invalidated_flag;
 
 #if !defined(CONFIG_USER_ONLY)
 
-void tlb_fill(target_ulong addr, int is_write, int is_user,
+void tlb_fill(target_ulong addr, int is_write, int mmu_idx,
               void *retaddr);
 
 #include "softmmu_defs.h"
@@ -390,53 +390,37 @@ target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
 /* NOTE2: the returned address is not exactly the physical address: it
    is the offset relative to phys_ram_base */
 #ifndef VBOX
-static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
+static inline target_ulong get_phys_addr_code(CPUState *env1, target_ulong addr)
 #else
-DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env, target_ulong addr)
+DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
 #endif
 {
-    int is_user, index, pd;
+    int mmu_idx, page_index, pd;
 
-    index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-#if defined(TARGET_I386)
-    is_user = ((env->hflags & HF_CPL_MASK) == 3);
-#elif defined (TARGET_PPC)
-    is_user = msr_pr;
-#elif defined (TARGET_MIPS)
-    is_user = ((env->hflags & MIPS_HFLAG_MODE) == MIPS_HFLAG_UM);
-#elif defined (TARGET_SPARC)
-    is_user = (env->psrs == 0);
-#elif defined (TARGET_ARM)
-    is_user = ((env->uncached_cpsr & CPSR_M) == ARM_CPU_MODE_USR);
-#elif defined (TARGET_SH4)
-    is_user = ((env->sr & SR_MD) == 0);
-#else
-#error unimplemented CPU
-#endif
-#ifndef VBOX
-    if (__builtin_expect(env->tlb_table[is_user][index].addr_code !=
-                         (addr & TARGET_PAGE_MASK), 0)) {
-#else
-    if (RT_UNLIKELY(env->tlb_table[is_user][index].addr_code !=
-                         (addr & TARGET_PAGE_MASK))) {
-#endif
+    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    mmu_idx = cpu_mmu_index(env1);
+    if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code !=
+                 (addr & TARGET_PAGE_MASK))) {
         ldub_code(addr);
     }
-    pd = env->tlb_table[is_user][index].addr_code & ~TARGET_PAGE_MASK;
+    pd = env1->tlb_table[mmu_idx][page_index].addr_code & ~TARGET_PAGE_MASK;
     if (pd > IO_MEM_ROM && !(pd & IO_MEM_ROMD)) {
 # ifdef VBOX
         /* deal with non-MMIO access handlers. */
-        return remR3PhysGetPhysicalAddressCode(env, addr, &env->tlb_table[is_user][index]);
-# else
-        cpu_abort(env, "Trying to execute code outside RAM or ROM at 0x%08lx\n", addr);
-# endif
+        return remR3PhysGetPhysicalAddressCode(env1, addr, &env1->tlb_table[mmu_idx][page_index]);
+# elif defined(TARGET_SPARC) || defined(TARGET_MIPS)
+        do_unassigned_access(addr, 0, 1, 0, 4);
+#else
+        cpu_abort(env1, "Trying to execute code outside RAM or ROM at 0x" TARGET_FMT_lx "\n", addr);
+#endif
     }
+
 # if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
-    return addr + env->tlb_table[is_user][index].addend;
+    return addr + env1->tlb_table[mmu_idx][page_index].addend;
 # elif defined(VBOX)
-    return remR3HCVirt2GCPhys(env, (void *)(addr + env->tlb_table[is_user][index].addend));
+    return remR3HCVirt2GCPhys(env, (void *)(addr + env1->tlb_table[mmu_idx][page_index].addend));
 # else
-    return addr + env->tlb_table[is_user][index].addend - (unsigned long)phys_ram_base;
+    return addr + env1->tlb_table[mmu_idx][page_index].addend - (unsigned long)phys_ram_base;
 # endif
 }
 

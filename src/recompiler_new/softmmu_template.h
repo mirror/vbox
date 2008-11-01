@@ -56,8 +56,8 @@
 #define ADDR_READ addr_read
 #endif
 
-static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr, 
-                                                        int is_user,
+static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
+                                                        int mmu_idx,
                                                         void *retaddr);
 #ifndef VBOX
 static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, 
@@ -206,7 +206,7 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 
 static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, 
                                                    DATA_TYPE val, 
-                                                   int is_user,
+                                                   int mmu_idx,
                                                    void *retaddr);
 
 #ifndef VBOX
@@ -298,7 +298,6 @@ void REGPARM glue(glue(__st, SUFFIX), MMUSUFFIX)(target_ulong addr,
     }
 }
 
-/* handles all unaligned cases */
 /* handles all unaligned cases */
 static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                    DATA_TYPE val,
