@@ -173,8 +173,15 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* this is const, no need to lock */
-    *aCaps = mData.capabilities;
+    /* mData.capabilities is const, no need to lock */
+
+    /// @todo add COMGETTER(ExtendedCapabilities) when we reach the 32 bit
+    /// limit (or make the argument ULONG64 after checking that COM is capable
+    /// of defining enums (used to represent bit flags) that contain 64-bit
+    /// values)
+    ComAssertRet (mData.capabilities == ((ULONG) mData.capabilities), E_FAIL);
+
+    *aCaps = (ULONG) mData.capabilities;
 
     return S_OK;
 }
