@@ -600,9 +600,9 @@ typedef struct PDMIBLOCK
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start reading from.
+     * @param   off             Offset to start reading from. The offset must be aligned to a sector boundary.
      * @param   pvBuf           Where to store the read bits.
-     * @param   cbRead          Number of bytes to read.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIBLOCK pInterface, uint64_t off, void *pvBuf, size_t cbRead));
@@ -612,9 +612,9 @@ typedef struct PDMIBLOCK
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start writing at.
+     * @param   off             Offset to start writing at. The offset must be aligned to a sector boundary.
      * @param   pvBuf           Where to store the write bits.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIBLOCK pInterface, uint64_t off, const void *pvBuf, size_t cbWrite));
@@ -815,9 +815,9 @@ typedef struct PDMIMEDIA
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start reading from.
+     * @param   off             Offset to start reading from. The offset must be aligned to a sector boundary.
      * @param   pvBuf           Where to store the read bits.
-     * @param   cbRead          Number of bytes to read.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead));
@@ -827,9 +827,9 @@ typedef struct PDMIMEDIA
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start writing at.
+     * @param   off             Offset to start writing at. The offset must be aligned to a sector boundary.
      * @param   pvBuf           Where to store the write bits.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite));
@@ -1219,10 +1219,10 @@ typedef struct PDMIBLOCKASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start reading from.
+     * @param   off             Offset to start reading from.c
      * @param   pSeg            Pointer to the first element in the scatter list.
      * @param   cSeg            Number of entries in the list.
-     * @param   cbRead          Number of bytes to read.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
@@ -1233,10 +1233,10 @@ typedef struct PDMIBLOCKASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start writing at.
+     * @param   off             Offset to start writing at. The offset must be aligned to a sector boundary.
      * @param   pSeg            Pointer to the first element in the gather list.
      * @param   cSeg            Number of entries in the list.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
@@ -1278,10 +1278,10 @@ typedef struct PDMIMEDIAASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start reading from.
+     * @param   off             Offset to start reading from. Must be aligned to a sector boundary.
      * @param   pSeg            Pointer to the first element in the scatter list.
      * @param   cSeg            Number of entries in the list.
-     * @param   cbRead          Number of bytes to read.
+     * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @param   pvUser          User data.
      * @thread  Any thread.
      */
@@ -1292,10 +1292,10 @@ typedef struct PDMIMEDIAASYNC
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   off             Offset to start writing at.
+     * @param   off             Offset to start writing at. Must be aligned to a sector boundary.
      * @param   pSeg            Pointer to the first element in the gather list.
      * @param   cSeg            Number of entries in the list.
-     * @param   cbWrite         Number of bytes to write.
+     * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @param   pvUser          User data.
      * @thread  Any thread.
      */

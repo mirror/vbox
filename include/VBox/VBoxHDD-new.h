@@ -1161,8 +1161,10 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk);
  * @return  VERR_VDI_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of first reading byte from start of disk.
+ *                          Must be aligned to a sector boundary.
  * @param   pvBuf           Pointer to buffer for reading data.
  * @param   cbRead          Number of bytes to read.
+ *                          Must be aligned to a sector boundary.
  */
 VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t cbRead);
 
@@ -1173,8 +1175,10 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t c
  * @return  VERR_VDI_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of first writing byte from start of disk.
+ *                          Must be aligned to a sector boundary.
  * @param   pvBuf           Pointer to buffer for writing data.
  * @param   cbWrite         Number of bytes to write.
+ *                          Must be aligned to a sector boundary.
  */
 VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, size_t cbWrite);
 
