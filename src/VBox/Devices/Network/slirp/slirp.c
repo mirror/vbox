@@ -565,14 +565,18 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 so = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
+                    so_next = so->so_next;
 #else
                 while (1) {
                     if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
-#endif
                     so_next = so->so_next;
+
+                    AssertRelease(so->so_mutex != NULL);
+                    AssertRelease(so->so_next != NULL &&  so->so_prev != NULL);
+#endif
                     VBOX_SLIRP_LOCK(so->so_mutex);
                     VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 

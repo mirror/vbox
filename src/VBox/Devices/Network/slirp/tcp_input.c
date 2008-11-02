@@ -423,6 +423,7 @@ findso:
 	  if ((so = socreate()) == NULL)
 	    goto dropwithreset;
 
+          if (inso != NULL) VBOX_SLIRP_UNLOCK(inso->so_mutex);
           VBOX_SLIRP_LOCK(so->so_mutex);
 	  if (tcp_attach(pData, so) < 0) {
             VBOX_SLIRP_UNLOCK(so->so_mutex);
