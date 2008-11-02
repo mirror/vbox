@@ -995,10 +995,12 @@ int main()
     GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
     GEN_CHECK_OFF(AHCIPort, StatBytesRead);
     GEN_CHECK_OFF(AHCIPort, StatQueueFillRate);
+#ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(AHCIPort, StatProfileProcessTime);
     GEN_CHECK_OFF(AHCIPort, StatProfileMapIntoR3);
     GEN_CHECK_OFF(AHCIPort, StatProfileReadWrite);
     GEN_CHECK_OFF(AHCIPort, StatProfileDestroyScatterGatherList);
+#endif
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
