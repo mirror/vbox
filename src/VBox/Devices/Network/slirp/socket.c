@@ -112,8 +112,15 @@ sofree(PNATState pData, struct socket *so)
     else if (so == udp_last_so)
       udp_last_so = &udb;
 
-    if(so->so_next && so->so_prev)
+    AssertRelease(so->so_next != NULL &&  so->so_prev != NULL);
+    if(so->so_next && so->so_prev) {
       remque(pData, so);  /* crashes if so is not in a queue */
+    }
+#ifdef VBOX_SLIRP_LOCK
+    else {
+        Assert(!"shouldn't happens");
+    }
+#endif
 
     if (so->so_type == IPPROTO_UDP) {
         VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
@@ -678,6 +685,9 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	/* Don't tcp_attach... we don't need so_snd nor so_rcv */
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL) {
 		free(so);
+#ifdef VBOX_SLIRP_UNLOCK
+                so = NULL;
+#endif
 		return NULL;
 	}
 #ifndef VBOX_WITH_SYNC_SLIRP
