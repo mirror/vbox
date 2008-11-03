@@ -60,6 +60,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -70,11 +71,11 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -93,6 +94,7 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnF
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -103,11 +105,11 @@ VMMR3DECL(int) VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnF
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -126,6 +128,7 @@ VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFN
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -136,11 +139,11 @@ VMMR3DECL(int) VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFN
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, VMREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -159,6 +162,7 @@ VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT 
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pVM             The VM handle.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -171,11 +175,11 @@ VMMR3DECL(int) VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT 
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, enmDest, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -194,6 +198,7 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -206,11 +211,11 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
  */
-VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pUVM, enmDest, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
@@ -229,6 +234,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigne
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -241,7 +247,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigne
  *                          Stuff which differs in size from uintptr_t is gonna make trouble, so don't try!
  * @param   Args            Argument vector.
  */
-VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("VMR3ReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
@@ -264,7 +270,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsign
     /*
      * Allocate request
      */
-    int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL);
+    int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL, enmDest);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -363,10 +369,11 @@ static void vmr3ReqJoinFree(PVMINTUSERPERVM pVMInt, PVMREQ pList)
  * @param   pVM             VM handle.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  */
-VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
+VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest)
 {
-    return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType);
+    return VMR3ReqAllocU(pVM->pUVM, ppReq, enmType, enmDest);
 }
 
 
@@ -381,8 +388,9 @@ VMMR3DECL(int) VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType)
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  */
-VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
+VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest)
 {
     /*
      * Validate input.
@@ -462,6 +470,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
             pReq->iStatus  = VERR_VM_REQUEST_STATUS_STILL_PENDING;
             pReq->fFlags   = VMREQFLAGS_VBOX_STATUS;
             pReq->enmType  = enmType;
+            pReq->enmDest  = enmDest;
 
             *ppReq = pReq;
             STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocRecycled);
@@ -498,6 +507,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType)
     pReq->fEventSemClear = true;
     pReq->fFlags   = VMREQFLAGS_VBOX_STATUS;
     pReq->enmType  = enmType;
+    pReq->enmDest  = enmDest;
 
     *ppReq = pReq;
     STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocNew);

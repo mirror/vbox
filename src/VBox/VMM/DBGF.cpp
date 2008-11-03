@@ -822,7 +822,7 @@ VMMR3DECL(int) DBGFR3Attach(PVM pVM)
      * Call the VM, use EMT for serialization.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3Attach, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3Attach, 1, pVM);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);

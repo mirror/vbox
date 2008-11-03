@@ -356,7 +356,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
     pFrame->pNext = NULL;
 
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
                          pVM, pFrame, CPUMGetGuestCtxCore(pVM), true);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -387,7 +387,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginHyper(PVM pVM, PDBGFSTACKFRAME pFrame)
     pFrame->pNext = NULL;
 
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
                          pVM, pFrame, CPUMGetHyperCtxCore(pVM), 4);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;

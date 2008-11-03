@@ -377,7 +377,7 @@ STDMETHODIMP VMDisplay::InvalidateAndUpdate()
     Assert(pVM);
     /* pdm.h says that this has to be called from the EMT thread */
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)VMDisplay::doInvalidateAndUpdate, 1, mpDrv);
     if (VBOX_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);

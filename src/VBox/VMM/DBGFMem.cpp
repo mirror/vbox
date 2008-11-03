@@ -112,7 +112,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINT
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3MemScan, 6,
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3MemScan, 6,
                          pVM, pAddress, cbRange, pabNeedle, cbNeedle, pHitAddress);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -179,7 +179,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pv
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
 {
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemRead, 4,
+    int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemRead, 4,
                           pVM, pAddress, pvBuf, cbRead);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -276,7 +276,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf
      * Pass it on to the EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemReadString, 4,
+    int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemReadString, 4,
                           pVM, pAddress, pszBuf, cchBuf);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
