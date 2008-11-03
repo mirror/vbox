@@ -193,11 +193,9 @@ typedef struct HWACCM
     /** Old style FPU reporting trap mask override performed (optimization) */
     bool                        fFPUOldStyleOverride;
 
-#if 0
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
     bool                        padding[1];
-#endif
 
     /** HWACCM_CHANGED_* flags. */
     RTUINT                      fContextUseFlags;
