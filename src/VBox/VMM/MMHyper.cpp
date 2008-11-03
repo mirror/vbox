@@ -104,7 +104,7 @@ int mmR3HyperInit(PVM pVM)
         /*
          * Map the VM structure into the hypervisor space.
          */
-        AssertRelease(pVM->cbSelf == RT_OFFSETOF(VM, aCpus[pVM->cCPUs]));
+        AssertRelease(pVM->cbSelf == RT_OFFSETOF(VM, aCpu[pVM->cCPUs]));
 
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
@@ -113,7 +113,7 @@ int mmR3HyperInit(PVM pVM)
             pVM->pVMRC = (RTGCPTR32)GCPtr;
             pVM->pVMGC = pVM->pVMRC;
             for (uint32_t i = 0; i < pVM->cCPUs; i++)
-                pVM->aCpus[i].pVMRC = pVM->pVMRC;
+                pVM->aCpu[i].pVMRC = pVM->pVMRC;
 
             /* Reserve a page for fencing. */
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -292,7 +292,7 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
             pVM->pVMRC                          += offDelta;
             pVM->pVMGC                          = pVM->pVMRC;
             for (uint32_t i = 0; i < pVM->cCPUs; i++)
-                pVM->aCpus[i].pVMRC             = pVM->pVMRC;
+                pVM->aCpu[i].pVMRC             = pVM->pVMRC;
 
             pVM->mm.s.pvHyperAreaGC             += offDelta;
             Assert(pVM->mm.s.pvHyperAreaGC < _4G);

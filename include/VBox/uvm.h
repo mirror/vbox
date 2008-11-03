@@ -36,6 +36,14 @@
 #include <VBox/types.h>
 
 /**
+ * Per virtual CPU ring-3 (user mode) data.
+ */
+typedef struct UVMCPU
+{
+    uint32_t     uFiller;
+} UVMCPU;
+
+/**
  * The ring-3 (user mode) VM structure.
  *
  * This structure is similar to VM and GVM except that it resides in swappable
@@ -93,6 +101,8 @@ typedef struct UVM
         uint8_t                 padding[256];
     } stam;
 
+    /* Per virtual CPU data. */
+    UVMCPU                      aCpu[1];
 } UVM;
 
 /** The UVM::u32Magic value (Brad Mehldau). */

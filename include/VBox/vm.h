@@ -92,7 +92,7 @@ typedef struct VMCPU
     /** Raw-mode Context VM Pointer. */
     PVMRC                   pVMRC;
     /** The CPU ID.
-     * This is the index into the VM::aCpus array. */
+     * This is the index into the VM::aCpu array. */
     VMCPUID                 idCpu;
     /** The ring-3 thread handle of the emulation thread for this CPU.
      * @todo Use the VM_IS_EMT() macro to check if executing in EMT? */
@@ -282,7 +282,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlag   The flag to set.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_SET(pVM, idCpu, fFlag)    ASMAtomicOrU32(&(pVM)->aCpus[idCpu].fForcedActions, (fFlag))
+# define VMCPU_FF_SET(pVM, idCpu, fFlag)    ASMAtomicOrU32(&(pVM)->aCpu[idCpu].fForcedActions, (fFlag))
 #else
 # define VMCPU_FF_SET(pVM, idCpu, fFlag)    VM_FF_SET(pVM, fFlag)
 #endif
@@ -310,7 +310,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlag   The flag to clear.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_CLEAR(pVM, idCpu, fFlag)  ASMAtomicAndU32(&(pVM)->aCpus[idCpu].fForcedActions, ~(fFlag))
+# define VMCPU_FF_CLEAR(pVM, idCpu, fFlag)  ASMAtomicAndU32(&(pVM)->aCpu[idCpu].fForcedActions, ~(fFlag))
 #else
 # define VMCPU_FF_CLEAR(pVM, idCpu, fFlag)  VM_FF_CLEAR(pVM, fFlag)
 #endif
@@ -331,7 +331,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlag   The flag to check.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_ISSET(pVM, idCpu, fFlag)  (((pVM)->aCpus[idCpu].fForcedActions & (fFlag)) == (fFlag))
+# define VMCPU_FF_ISSET(pVM, idCpu, fFlag)  (((pVM)->aCpu[idCpu].fForcedActions & (fFlag)) == (fFlag))
 #else
 # define VMCPU_FF_ISSET(pVM, idCpu, fFlag)  VM_FF_ISSET(pVM, fFlag)
 #endif
@@ -352,7 +352,7 @@ typedef struct VMCPU *PVMCPU;
  * @param   fFlags  The flags to check for.
  */
 #ifdef VBOX_WITH_SMP_GUESTS
-# define VMCPU_FF_ISPENDING(pVM, idCpu, fFlags) ((pVM)->aCpus[idCpu].fForcedActions & (fFlags))
+# define VMCPU_FF_ISPENDING(pVM, idCpu, fFlags) ((pVM)->aCpu[idCpu].fForcedActions & (fFlags))
 #else
 # define VMCPU_FF_ISPENDING(pVM, idCpu, fFlags) VM_FF_ISPENDING(pVM, fFlags)
 #endif
@@ -774,7 +774,7 @@ typedef struct VM
     uint32_t    u32Reserved2[8];
 
     /** VMCPU array for the configured number of virtual CPUs. */
-    VMCPU       aCpus[1];
+    VMCPU       aCpu[1];
 } VM;
 
 /** Pointer to a VM. */

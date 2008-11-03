@@ -123,7 +123,7 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int               vmR3CreateUVM(PUVM *ppUVM);
+static int               vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM);
 static int               vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int               vmR3InitRing0(PVM pVM);
@@ -211,7 +211,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
      * and consoliate a bit of cleanup code.
      */
     PUVM pUVM;
-    int rc = vmR3CreateUVM(&pUVM);
+    int rc = vmR3CreateUVM(cCPUs, &pUVM);
     if (RT_FAILURE(rc))
         return rc;
     if (pfnVMAtError)
@@ -362,15 +362,16 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
  * will terminate that.
  *
  * @returns VBox status code.
+ * @param   cCPUs   Number of virtual CPUs
  * @param   ppUVM   Where to store the UVM pointer.
  */
-static int vmR3CreateUVM(PUVM *ppUVM)
+static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
 {
     /*
      * Create the UVM, initialize the fundamental stuff (VM+MMR3Heap+STAM)
      * and start the emulation thread (EMT).
      */
-    PUVM pUVM = (PUVM)RTMemAllocZ(sizeof(*pUVM));
+    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpu[cCPUs]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
     pUVM->u32Magic = UVM_MAGIC;
 
@@ -462,8 +463,8 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->ThreadEMT = pVM->aCpus[0].hThreadR3 = pUVM->vm.s.ThreadEMT;
-        pVM->NativeThreadEMT = pVM->aCpus[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
+        pVM->ThreadEMT = pVM->aCpu[0].hThreadR3 = pUVM->vm.s.ThreadEMT;
+        pVM->NativeThreadEMT = pVM->aCpu[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
 
         /*
          * Init the configuration.
@@ -484,7 +485,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
             }
 
             /* Calculate the offset to the VMCPU array. */
-            pVM->offVMCPU = RT_OFFSETOF(VM, aCpus);
+            pVM->offVMCPU = RT_OFFSETOF(VM, aCpu);
 
             /* Make sure the CPU count in the config data matches. */
             rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &pVM->cCPUs, 1);
