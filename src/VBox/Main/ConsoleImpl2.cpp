@@ -50,7 +50,6 @@
 # include <VBox/com/array.h>
 # include <hgcm/HGCM.h> /** @todo it should be possible to register a service
                           * extension using a VMMDev callback. */
-# include <vector>
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
 
@@ -269,6 +268,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pIdeInst = NULL;      /* /Devices/piix3ide/0/ */
     PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
 	PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
+#ifdef VBOX_WITH_GUEST_PROPS
+    PCFGMNODE pGuestProps = NULL;   /* /GuestProps */
+    PCFGMNODE pValues = NULL;       /* /GuestProps/Values */
+    PCFGMNODE pTimestamps = NULL;   /* /GuestProps/Timestamps */
+    PCFGMNODE pFlags = NULL;        /* /GuestProps/Flags */
+#endif /* VBOX_WITH_GUEST_PROPS defined */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
@@ -1723,7 +1728,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 #ifdef VBOX_WITH_GUEST_PROPS
     /*
-     * Guest property service
+     * Shared information services
      */
     {
         /* Load the service */
@@ -1737,71 +1742,47 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
         else
         {
-            /* Pull over the properties from the server. */
-            SafeArray <BSTR> namesOut;
-            SafeArray <BSTR> valuesOut;
-            SafeArray <ULONG64> timestampsOut;
-            SafeArray <BSTR> flagsOut;
-            hrc = pConsole->mControl->PullGuestProperties(ComSafeArrayAsOutParam(namesOut),
-                                                ComSafeArrayAsOutParam(valuesOut),
-                                                ComSafeArrayAsOutParam(timestampsOut),
-                                                ComSafeArrayAsOutParam(flagsOut));         H();
-            size_t cProps = namesOut.size();
-            if (   valuesOut.size() != cProps
-                || timestampsOut.size() != cProps
-                || flagsOut.size() != cProps
-               )
-                rc = VERR_INVALID_PARAMETER;
+            rc = CFGMR3InsertNode(pRoot,       "GuestProps", &pGuestProps);             RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Values", &pValues);                     RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Timestamps", &pTimestamps);             RC_CHECK();
+            rc = CFGMR3InsertNode(pGuestProps, "Flags", &pFlags);                       RC_CHECK();
 
-            std::vector <Utf8Str> utf8Names, utf8Values, utf8Flags;
-            std::vector <char *> names, values, flags;
-            std::vector <ULONG64> timestamps;
-            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
-                if (   !VALID_PTR(namesOut[i])
-                    || !VALID_PTR(valuesOut[i])
-                    || !VALID_PTR(flagsOut[i])
-                   )
-                    rc = VERR_INVALID_POINTER;
-            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
+            /* Pull over the properties from the server. */
+            SafeArray <BSTR> names;
+            SafeArray <BSTR> values;
+            SafeArray <ULONG64> timestamps;
+            SafeArray <BSTR> flags;
+            hrc = pConsole->mControl->PullGuestProperties(ComSafeArrayAsOutParam(names),
+                                                ComSafeArrayAsOutParam(values),
+                                                ComSafeArrayAsOutParam(timestamps),
+                                                ComSafeArrayAsOutParam(flags));         H();
+            size_t cProps = names.size();
+            for (size_t i = 0; i < cProps; ++i)
             {
-                utf8Names.push_back(Bstr(namesOut[i]));
-                utf8Values.push_back(Bstr(valuesOut[i]));
-                timestamps.push_back(timestampsOut[i]);
-                utf8Flags.push_back(Bstr(flagsOut[i]));
-                if (   utf8Names.back().isNull()
-                    || utf8Values.back().isNull()
-                    || utf8Flags.back().isNull()
-                   )
-                    throw std::bad_alloc();
+                rc = CFGMR3InsertString(pValues, Utf8Str(names[i]).raw(), Utf8Str(values[i]).raw());    RC_CHECK();
+                rc = CFGMR3InsertInteger(pTimestamps, Utf8Str(names[i]).raw(), timestamps[i]);          RC_CHECK();
+                uint32_t fFlags;
+                rc = guestProp::validateFlags(Utf8Str(flags[i]).raw(), &fFlags);
+                AssertLogRelRCReturn(rc, VMSetError(pVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                    N_("Guest property '%lS' has invalid flags '%lS' in machine definition file"),
+                       names[i], flags[i]));
+                rc = CFGMR3InsertInteger(pFlags, Utf8Str(names[i]).raw(), fFlags);                      RC_CHECK();
             }
-            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
-            {
-                names.push_back(utf8Names[i].mutableRaw());
-                values.push_back(utf8Values[i].mutableRaw());
-                flags.push_back(utf8Flags[i].mutableRaw());
-            }
-            names.push_back(NULL);
-            values.push_back(NULL);
-            timestamps.push_back(0);
-            flags.push_back(NULL);
 
             /* Setup the service. */
-            VBOXHGCMSVCPARM parms[4];
+            VBOXHGCMSVCPARM parms[3];
 
             parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-            parms[0].u.pointer.addr = &names.front();
-            parms[0].u.pointer.size = 0;  /* We don't actually care. */
+            parms[0].u.pointer.addr = pValues;
+            parms[0].u.pointer.size = sizeof(pValues);  /* We don't actually care. */
             parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
-            parms[1].u.pointer.addr = &values.front();
-            parms[1].u.pointer.size = 0;  /* We don't actually care. */
+            parms[1].u.pointer.addr = pTimestamps;
+            parms[1].u.pointer.size = sizeof(pTimestamps);
             parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
-            parms[2].u.pointer.addr = &timestamps.front();
-            parms[2].u.pointer.size = 0;  /* We don't actually care. */
-            parms[3].type = VBOX_HGCM_SVC_PARM_PTR;
-            parms[3].u.pointer.addr = &flags.front();
-            parms[3].u.pointer.size = 0;  /* We don't actually care. */
+            parms[2].u.pointer.addr = pFlags;
+            parms[2].u.pointer.size = sizeof(pFlags);
 
-            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROPS_HOST, 4, &parms[0]);
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_CFGM_NODE, 3, &parms[0]);
 
             /* Register the host notification callback */
             HGCMSVCEXTHANDLE hDummy;

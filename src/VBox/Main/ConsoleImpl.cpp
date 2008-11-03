@@ -95,7 +95,6 @@
 #include <set>
 #include <algorithm>
 #include <memory> // for auto_ptr
-#include <vector>
 
 
 // VMTask and friends
@@ -1062,96 +1061,6 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
                                                          flags)))
             rc = VERR_UNRESOLVED_ERROR;  /** @todo translate error code */
     return rc;
-}
-
-HRESULT Console::doEnumerateGuestProperties (INPTR BSTR aPatterns,
-                                             ComSafeArrayOut(BSTR, aNames),
-                                             ComSafeArrayOut(BSTR, aValues),
-                                             ComSafeArrayOut(ULONG64, aTimestamps),
-                                             ComSafeArrayOut(BSTR, aFlags))
-{
-    using namespace guestProp;
-
-    VBOXHGCMSVCPARM parm[3];
-
-    Utf8Str utf8Patterns(aPatterns);
-    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = utf8Patterns.mutableRaw();
-    parm[0].u.pointer.size = utf8Patterns.length() + 1;
-
-    /*
-     * Now things get slightly complicated.  Due to a race with the guest adding
-     * properties, there is no good way to know how much large a buffer to provide
-     * the service to enumerate into.  We choose a decent starting size and loop a
-     * few times, each time retrying with the size suggested by the service plus
-     * one Kb.
-     */
-    size_t cchBuf = 4096;
-    Utf8Str Utf8Buf;
-    int vrc = VERR_BUFFER_OVERFLOW;
-    for (unsigned i = 0; i < 10 && (VERR_BUFFER_OVERFLOW == vrc); ++i)
-    {
-        Utf8Buf.alloc(cchBuf + 1024);
-        if (Utf8Buf.isNull())
-            return E_OUTOFMEMORY;
-        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
-        parm[1].u.pointer.size = cchBuf + 1024;
-        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
-                                     &parm[0]);
-        if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
-            return setError (E_FAIL, tr ("Internal application error"));
-        cchBuf = parm[2].u.uint32;
-    }
-    if (VERR_BUFFER_OVERFLOW == vrc)
-        return setError (E_UNEXPECTED, tr ("Temporary failure due to guest activity, please retry"));
-
-    /*
-     * Finally we have to unpack the data returned by the service into the safe
-     * arrays supplied by the caller.  We start by counting the number of entries.
-     */
-    const char *pszBuf
-        = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
-    unsigned cEntries = 0;
-    /* The list is terminated by a zero-length string at the end of a set
-     * of four strings. */
-    for (size_t i = 0; strlen(pszBuf + i) != 0; )
-    {
-       /* We are counting sets of four strings. */
-       for (unsigned j = 0; j < 4; ++j)
-           i += strlen(pszBuf + i) + 1;
-       ++cEntries;
-    }
-
-    /*
-     * And now we create the COM safe arrays and fill them in.
-     */
-    com::SafeArray <BSTR> names(cEntries);
-    com::SafeArray <BSTR> values(cEntries);
-    com::SafeArray <ULONG64> timestamps(cEntries);
-    com::SafeArray <BSTR> flags(cEntries);
-    size_t iBuf = 0;
-    /* Rely on the service to have formated the data correctly. */
-    for (unsigned i = 0; i < cEntries; ++i)
-    {
-        size_t cchName = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&names[i]);
-        iBuf += cchName + 1;
-        size_t cchValue = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&values[i]);
-        iBuf += cchValue + 1;
-        size_t cchTimestamp = strlen(pszBuf + iBuf);
-        timestamps[i] = RTStrToUInt64(pszBuf + iBuf);
-        iBuf += cchTimestamp + 1;
-        size_t cchFlags = strlen(pszBuf + iBuf);
-        Bstr(pszBuf + iBuf).detachTo(&flags[i]);
-        iBuf += cchFlags + 1;
-    }
-    names.detachTo(ComSafeArrayOutArg (aNames));
-    values.detachTo(ComSafeArrayOutArg (aValues));
-    timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
-    flags.detachTo(ComSafeArrayOutArg (aFlags));
-    return S_OK;
 }
 #endif
 
@@ -3777,10 +3686,88 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * autoVMCaller, so there is no need to hold a lock of this */
 
-    return doEnumerateGuestProperties (aPatterns, ComSafeArrayOutArg(aNames),
-                                       ComSafeArrayOutArg(aValues),
-                                       ComSafeArrayOutArg(aTimestamps),
-                                       ComSafeArrayOutArg(aFlags));
+    using namespace guestProp;
+
+    VBOXHGCMSVCPARM parm[3];
+
+    Utf8Str utf8Patterns(aPatterns);
+    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    parm[0].u.pointer.addr = utf8Patterns.mutableRaw();
+    parm[0].u.pointer.size = utf8Patterns.length() + 1;
+
+    /*
+     * Now things get slightly complicated.  Due to a race with the guest adding
+     * properties, there is no good way to know how much large a buffer to provide
+     * the service to enumerate into.  We choose a decent starting size and loop a
+     * few times, each time retrying with the size suggested by the service plus
+     * one Kb.
+     */
+    size_t cchBuf = 4096;
+    Utf8Str Utf8Buf;
+    int vrc = VERR_BUFFER_OVERFLOW;
+    for (unsigned i = 0; i < 10 && (VERR_BUFFER_OVERFLOW == vrc); ++i)
+    {
+        Utf8Buf.alloc(cchBuf + 1024);
+        if (Utf8Buf.isNull())
+            return E_OUTOFMEMORY;
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
+        parm[1].u.pointer.size = cchBuf + 1024;
+        vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", ENUM_PROPS_HOST, 3,
+                                     &parm[0]);
+        if (parm[2].type != VBOX_HGCM_SVC_PARM_32BIT)
+            return setError (E_FAIL, tr ("Internal application error"));
+        cchBuf = parm[2].u.uint32;
+    }
+    if (VERR_BUFFER_OVERFLOW == vrc)
+        return setError (E_UNEXPECTED, tr ("Temporary failure due to guest activity, please retry"));
+
+    /*
+     * Finally we have to unpack the data returned by the service into the safe
+     * arrays supplied by the caller.  We start by counting the number of entries.
+     */
+    const char *pszBuf
+        = reinterpret_cast<const char *>(parm[1].u.pointer.addr);
+    unsigned cEntries = 0;
+    /* The list is terminated by a zero-length string at the end of a set
+     * of four strings. */
+    for (size_t i = 0; strlen(pszBuf + i) != 0; )
+    {
+       /* We are counting sets of four strings. */
+       for (unsigned j = 0; j < 4; ++j)
+           i += strlen(pszBuf + i) + 1;
+       ++cEntries;
+    }
+
+    /*
+     * And now we create the COM safe arrays and fill them in.
+     */
+    com::SafeArray <BSTR> names(cEntries);
+    com::SafeArray <BSTR> values(cEntries);
+    com::SafeArray <ULONG64> timestamps(cEntries);
+    com::SafeArray <BSTR> flags(cEntries);
+    size_t iBuf = 0;
+    /* Rely on the service to have formated the data correctly. */
+    for (unsigned i = 0; i < cEntries; ++i)
+    {
+        size_t cchName = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&names[i]);
+        iBuf += cchName + 1;
+        size_t cchValue = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&values[i]);
+        iBuf += cchValue + 1;
+        size_t cchTimestamp = strlen(pszBuf + iBuf);
+        timestamps[i] = RTStrToUInt64(pszBuf + iBuf);
+        iBuf += cchTimestamp + 1;
+        size_t cchFlags = strlen(pszBuf + iBuf);
+        Bstr(pszBuf + iBuf).detachTo(&flags[i]);
+        iBuf += cchFlags + 1;
+    }
+    names.detachTo(ComSafeArrayOutArg (aNames));
+    values.detachTo(ComSafeArrayOutArg (aValues));
+    timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
+    flags.detachTo(ComSafeArrayOutArg (aFlags));
+    return S_OK;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
@@ -4645,73 +4632,6 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
 #ifdef VBOX_WITH_HGCM
 
-# ifdef VBOX_WITH_GUEST_PROPS
-
-    /* Save all guest property store entries to the machine XML file */
-    com::SafeArray <BSTR> namesOut;
-    com::SafeArray <BSTR> valuesOut;
-    com::SafeArray <ULONG64> timestampsOut;
-    com::SafeArray <BSTR> flagsOut;
-    Bstr pattern("");
-    if (pattern.isNull())
-        rc = E_OUTOFMEMORY;
-    else
-        rc = doEnumerateGuestProperties (Bstr (""), ComSafeArrayAsOutParam (namesOut),
-                                        ComSafeArrayAsOutParam (valuesOut),
-                                        ComSafeArrayAsOutParam (timestampsOut),
-                                        ComSafeArrayAsOutParam (flagsOut));
-    if (SUCCEEDED(rc))
-    {
-        try
-        {
-            std::vector <BSTR> names;
-            std::vector <BSTR> values;
-            std::vector <ULONG64> timestamps;
-            std::vector <BSTR> flags;
-            for (unsigned i = 0; i < namesOut.size(); ++i)
-            {
-                uint32_t fFlags;
-                guestProp::validateFlags (Utf8Str(flagsOut[i]).raw(), &fFlags);
-                if (   !( fFlags & guestProp::TRANSIENT)
-                    || (mMachineState == MachineState_Saving)
-                  )
-                {
-                    names.push_back(namesOut[i]);
-                    values.push_back(valuesOut[i]);
-                    timestamps.push_back(timestampsOut[i]);
-                    flags.push_back(flagsOut[i]);
-                }
-            }
-            com::SafeArray <BSTR> namesIn (names);
-            com::SafeArray <BSTR> valuesIn (values);
-            com::SafeArray <ULONG64> timestampsIn (timestamps);
-            com::SafeArray <BSTR> flagsIn (flags);
-            if (   namesIn.isNull()
-                || valuesIn.isNull()
-                || timestampsIn.isNull()
-                || flagsIn.isNull()
-                )
-                throw std::bad_alloc();
-            /* PushGuestProperties() calls DiscardSettings(), which calls us back */
-            alock.leave();
-            mControl->PushGuestProperties (ComSafeArrayAsInParam (namesIn),
-                                          ComSafeArrayAsInParam (valuesIn),
-                                          ComSafeArrayAsInParam (timestampsIn),
-                                          ComSafeArrayAsInParam (flagsIn));
-            alock.enter();
-        }
-        catch (std::bad_alloc)
-        {
-            rc = E_OUTOFMEMORY;
-        }
-    }
-
-    /* advance percent count */
-    if (aProgress)
-        aProgress->notifyProgress (99 * (++ step) / StepCount );
-
-# endif /* VBOX_WITH_GUEST_PROPS defined */
-
     /* Shutdown HGCM services before stopping the guest, because they might
      * need a cleanup. */
     if (mVMMDev)
@@ -4729,6 +4649,92 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
     /* advance percent count */
     if (aProgress)
         aProgress->notifyProgress (99 * (++ step) / StepCount );
+
+# ifdef VBOX_WITH_GUEST_PROPS
+
+    /* Save all guest property store entries to the machine XML file */
+    PCFGMNODE pValues = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Values/");
+    PCFGMNODE pTimestamps = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Timestamps/");
+    PCFGMNODE pFlags = CFGMR3GetChild (CFGMR3GetRoot (mpVM), "GuestProps/Flags/");
+
+    /* Count the number of entries we have */
+    unsigned cValues = 0;
+    PCFGMLEAF pValue;
+    for (pValue = CFGMR3GetFirstValue (pValues); pValue != NULL;
+         pValue = CFGMR3GetNextValue (pValue))
+    {
+        char szPropName[guestProp::MAX_NAME_LEN];
+        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof(szPropName));
+        if (RT_SUCCESS(vrc))
+        {
+            /* Do not send transient properties unless we are saving state */
+            uint32_t fFlags = guestProp::NILFLAG;
+            CFGMR3QueryU32 (pFlags, szPropName, &fFlags);
+            if (!(fFlags & guestProp::TRANSIENT) ||
+                (mMachineState == MachineState_Saving))
+                ++cValues;
+        }
+    }
+
+    /* And pack them into safe arrays */
+    com::SafeArray <BSTR> names(cValues);
+    com::SafeArray <BSTR> values(cValues);
+    com::SafeArray <ULONG64> timestamps(cValues);
+    com::SafeArray <BSTR> flags(cValues);
+    pValue = CFGMR3GetFirstValue (pValues);
+
+    vrc = VINF_SUCCESS;
+    unsigned iProp = 0;
+    while (pValue != NULL && RT_SUCCESS (vrc))
+    {
+        using namespace guestProp;
+
+        char szPropName [MAX_NAME_LEN];
+        char szPropValue [MAX_VALUE_LEN];
+        char szPropFlags [MAX_FLAGS_LEN];
+        ULONG64 u64Timestamp = 0;  /* default */
+        vrc = CFGMR3GetValueName (pValue, szPropName, sizeof (szPropName));
+        if (RT_SUCCESS(vrc))
+            vrc = CFGMR3QueryString (pValues, szPropName, szPropValue,
+                                     sizeof (szPropValue));
+        if (RT_SUCCESS(vrc))
+        {
+            uint32_t fFlags = NILFLAG;
+            CFGMR3QueryU32 (pFlags, szPropName, &fFlags);
+            /* Skip transient properties unless we are saving state */
+            if (!(fFlags & TRANSIENT) ||
+                (mMachineState == MachineState_Saving))
+            {
+                writeFlags(fFlags, szPropFlags);
+                CFGMR3QueryU64 (pTimestamps, szPropName, &u64Timestamp);
+                Bstr(szPropName).cloneTo(&names[iProp]);
+                Bstr(szPropValue).cloneTo(&values[iProp]);
+                timestamps[iProp] = u64Timestamp;
+                Bstr(szPropFlags).cloneTo(&flags[iProp]);
+                ++iProp;
+                if (iProp >= cValues)
+                    vrc = VERR_TOO_MUCH_DATA;
+            }
+            pValue = CFGMR3GetNextValue (pValue);
+        }
+    }
+
+    if (RT_SUCCESS(vrc) || (VERR_TOO_MUCH_DATA == vrc))
+    {
+        /* PushGuestProperties() calls DiscardSettings(), which calls us back */
+        alock.leave();
+        mControl->PushGuestProperties (ComSafeArrayAsInParam (names),
+                                       ComSafeArrayAsInParam (values),
+                                       ComSafeArrayAsInParam (timestamps),
+                                       ComSafeArrayAsInParam (flags));
+        alock.enter();
+    }
+
+    /* advance percent count */
+    if (aProgress)
+        aProgress->notifyProgress (99 * (++ step) / StepCount );
+
+# endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #endif /* VBOX_WITH_HGCM */
 
