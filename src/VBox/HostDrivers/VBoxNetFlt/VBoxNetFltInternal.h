@@ -280,6 +280,8 @@ DECLHIDDEN(int) vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32
  * If it is, then the internal networking switch will send frames
  * heading for the wire to the host as well.
  *
+ * @see INTNETTRUNKIFPORT::pfnIsPromiscuous for more details.
+ *
  * @returns true / false accordingly.
  * @param   pThis           The instance.
  *
