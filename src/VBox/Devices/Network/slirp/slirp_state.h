@@ -68,7 +68,7 @@ typedef struct NATState
      * and understanding that we need call if_start to send anything we have to
      * send.
      */
-    RTSEMMUTEX  if_queued_mutex;
+    RTSEMFASTMUTEX  if_queued_mutex;
 #endif
     int if_thresh;
     struct mbuf if_fastq;
@@ -77,7 +77,7 @@ typedef struct NATState
      * if_fastq_mutex prevent concurrent adding/removing mbufs on
      * fast queue (mbufs) from this queue are processed in first order
      */
-    RTSEMMUTEX  if_fastq_mutex;
+    RTSEMFASTMUTEX  if_fastq_mutex;
 #endif
     struct mbuf if_batchq;
 #ifdef VBOX_WITH_SYNC_SLIRP
@@ -86,7 +86,7 @@ typedef struct NATState
      * batch queue mbufs from this queue used if no mbufs on fast queue
      * and next_m doesn't point on mbuf scheduled to be processesed
      */
-    RTSEMMUTEX  if_batchq_mutex;
+    RTSEMFASTMUTEX  if_batchq_mutex;
 #endif
     struct mbuf *next_m;
 #ifdef VBOX_WITH_SYNC_SLIRP
@@ -96,7 +96,7 @@ typedef struct NATState
      * it readed if no messages are not in fast queue, usually it assigned with
      * mbuf from batch queue
      */
-    RTSEMMUTEX  next_m_mutex;
+    RTSEMFASTMUTEX  next_m_mutex;
 #endif
     /* Stuff from icmp.c */
     struct icmpstat_t icmpstat;
@@ -111,7 +111,7 @@ typedef struct NATState
      * mbuf_alloced_mutex used to prevent concurent access to mbuf_alloced counter
      * which ticks on every allocation and readed to check it against limits
      */
-    RTSEMMUTEX  mbuf_alloced_mutex;
+    RTSEMFASTMUTEX  mbuf_alloced_mutex;
 #endif
     int msize;
     struct mbuf m_freelist, m_usedlist;
@@ -120,8 +120,8 @@ typedef struct NATState
      * m_freelist_mutex and m_usedlist_mutex are used to prevent concurrent access and modifications
      * of corresponded queues controlling allocation/utilization of mbufs
      */
-    RTSEMMUTEX  m_freelist_mutex;
-    RTSEMMUTEX  m_usedlist_mutex;
+    RTSEMFASTMUTEX  m_freelist_mutex;
+    RTSEMFASTMUTEX  m_usedlist_mutex;
 #endif
     /* Stuff from slirp.c */
     void *pvUser;
@@ -150,12 +150,12 @@ typedef struct NATState
     /*
      * tcp_last_so_mutex used for control access to tcp_last_so pointer
      */
-    RTSEMMUTEX tcp_last_so_mutex;
+    RTSEMFASTMUTEX tcp_last_so_mutex;
     /*
      * tcb_mutex used for control access to tcb queue of sockets
      * servising TCP connections
      */
-    RTSEMMUTEX tcb_mutex;
+    RTSEMFASTMUTEX tcb_mutex;
 #endif
 #if ARCH_BITS == 64
     /* Stuff from tcp_subr.c */
@@ -179,11 +179,11 @@ typedef struct NATState
     /*
      * udb_mutex used in similar to tcb_mutex way, but for handling udp connections
      */
-    RTSEMMUTEX udb_mutex;
+    RTSEMFASTMUTEX udb_mutex;
     /*
      * used for access udp_last_so global pointer avoiding overusing of udb_mutex.
      */
-    RTSEMMUTEX udp_last_so_mutex;
+    RTSEMFASTMUTEX udp_last_so_mutex;
 #endif
 } NATState;
 

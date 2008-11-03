@@ -424,7 +424,6 @@ findso:
 	    goto dropwithreset;
 
           if (inso != NULL) VBOX_SLIRP_UNLOCK(inso->so_mutex);
-          VBOX_SLIRP_LOCK(so->so_mutex);
 	  if (tcp_attach(pData, so) < 0) {
             VBOX_SLIRP_UNLOCK(so->so_mutex);
             VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
@@ -434,6 +433,7 @@ findso:
 #endif
 	    goto dropwithreset;
 	  }
+          VBOX_SLIRP_LOCK(so->so_mutex);
 
 	  sbreserve(&so->so_snd, tcp_sndspace);
 	  sbreserve(&so->so_rcv, tcp_rcvspace);

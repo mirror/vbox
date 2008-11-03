@@ -165,7 +165,6 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	DEBUG_ARG("so = %lx", (long)so);
 	DEBUG_ARG("ifm = %lx", (long)ifm);
 
-        if (so != NULL) VBOX_SLIRP_LOCK(so->so_mutex);
 
 	/*
 	 * First remove the mbuf from m_usedlist,
@@ -235,7 +234,9 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
         else {
                 VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
 		ifq = if_batchq.ifq_prev;
-                VBOX_SLIRP_LOCK(ifq->m_mutex);
+                if (ifq != &if_batchq) {
+                    VBOX_SLIRP_LOCK(ifq->m_mutex);
+                }
                 VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
         }
 
@@ -253,6 +254,7 @@ diddit:
 
 	if (so) {
 		/* Update *_queued */
+                VBOX_SLIRP_LOCK(so->so_mutex);
 		so->so_queued++;
 		so->so_nqueued++;
 		/*
