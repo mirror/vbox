@@ -43,13 +43,6 @@
 
 #include <linux/spinlock.h> /** @todo why is this here and not in the-linux-kernel.h? */
 
-#if defined(IN_GUEST_R0) && defined(IN_MODULE)
-EXPORT_SYMBOL(RTSpinlockCreate);
-EXPORT_SYMBOL(RTSpinlockDestroy);
-EXPORT_SYMBOL(RTSpinlockAcquireNoInts);
-EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
-#endif
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -154,3 +147,9 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     spin_unlock(&pSpinlockInt->Spinlock);
 }
 
+#if defined(IN_GUEST_R0) && defined(IN_MODULE)
+EXPORT_SYMBOL(RTSpinlockCreate);
+EXPORT_SYMBOL(RTSpinlockDestroy);
+EXPORT_SYMBOL(RTSpinlockAcquireNoInts);
+EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
+#endif
