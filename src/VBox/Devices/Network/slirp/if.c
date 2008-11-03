@@ -341,6 +341,7 @@ if_start(PNATState pData)
                 on_fast = 1;
 #endif
             VBOX_SLIRP_LOCK(ifm->m_mutex);
+            VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
 	} else {
             VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
 
@@ -355,15 +356,16 @@ if_start(PNATState pData)
 		/* Set which packet to send on next iteration */
 		next_m = ifm->ifq_next;
                 VBOX_SLIRP_UNLOCK(pData->next_m_mutex);
+                VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
 	}
-#ifdef VBOX_WITH_SYNC_SLIRP
         VBOX_SLIRP_LOCK(ifm->m_mutex);
         VBOX_SLIRP_LOCK(pData->if_queued_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
         if (if_queued == 0) {
             if (on_fast) {
-                VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
+                VBOX_SLIRP_LOCK(pData->if_fastq_mutex);
             }else {
-                VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
+                VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
             }
             goto done;
         }
