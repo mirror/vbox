@@ -219,7 +219,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     if (RT_SUCCESS(rc))
     {
         /*
-         * Initialize the support library creating the session for this v
+         * Initialize the support library creating the session for this VM.
          */
         rc = SUPR3Init(&pUVM->vm.s.pSession);
         if (RT_SUCCESS(rc))
@@ -394,7 +394,6 @@ static int vmR3CreateUVM(PUVM *ppUVM)
                 rc = PDMR3InitUVM(pUVM);
                 if (RT_SUCCESS(rc))
                 {
-
                     rc = RTThreadCreate(&pUVM->vm.s.ThreadEMT, vmR3EmulationThread, pUVM, _1M,
                                         RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
                     if (RT_SUCCESS(rc))
