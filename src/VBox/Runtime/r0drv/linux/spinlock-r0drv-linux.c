@@ -41,8 +41,6 @@
 #include <iprt/asm.h>
 #include "internal/magics.h"
 
-#include <linux/spinlock.h> /** @todo why is this here and not in the-linux-kernel.h? */
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
