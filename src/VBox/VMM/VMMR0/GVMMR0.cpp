@@ -606,9 +606,12 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                                     pVM->pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
                                     AssertPtr((void *)pVM->pVMR3);
 
-                                    /** @todo SMP - need to get the cpu count and initialize all the VM pointers. */
-                                    pVM->aCpus[0].pVMR0 = pVM;
-                                    pVM->aCpus[0].pVMR3 = pVM->pVMR3;
+                                    /** Initialize all the VM pointers. */
+                                    for (unsigned i=0;i<cCPUs;i++)
+                                    {
+                                        pVM->aCpus[i].pVMR0 = pVM;
+                                        pVM->aCpus[i].pVMR3 = pVM->pVMR3;
+                                    }
 
                                     rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1, 0,
                                                            RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
