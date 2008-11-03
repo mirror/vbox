@@ -610,7 +610,7 @@ static int dbgfR3VMMWait(PVM pVM)
             if (VM_FF_ISSET(pVM, VM_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
-                rc = VMR3ReqProcessU(pVM->pUVM);
+                rc = VMR3ReqProcessU(pVM->pUVM, VMREQDEST_ALL);
                 LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Vrc rcRet=%Vrc\n", rc, rcRet));
                 if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
                 {
