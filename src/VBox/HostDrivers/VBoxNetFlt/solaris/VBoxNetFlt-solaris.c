@@ -366,9 +366,6 @@ static dev_info_t *g_pVBoxNetFltSolarisDip = NULL;
 /** The (common) global data. */
 static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
 
-/** Mutex protecting dynamic binding of the filter. */
-RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
-
 /** The list of all opened streams. */
 vboxnetflt_stream_t *g_VBoxNetFltSolarisStreams;
 
@@ -412,34 +409,26 @@ int _init(void)
          */
         g_VBoxNetFltSolarisStreams = NULL;
         g_VBoxNetFltSolarisInstance = NULL;
-        rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
+
+        /*
+         * Initialize the globals and connect to the support driver.
+         *
+         * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
+         * for establishing the connect to the support driver.
+         */
+        memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
+        rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Initialize the globals and connect to the support driver.
-             *
-             * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
-             * for establishing the connect to the support driver.
-             */
-            memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-            rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
-            if (RT_SUCCESS(rc))
-            {
-                rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
-                if (!rc)
-                    return rc;
+            rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
+            if (!rc)
+                return rc;
 
-                LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
-                vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
-            }
-            else
-                LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
-
-            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+            LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+            vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
         }
         else
-            LogRel((DEVICE_NAME ":failed to create mutex.\n"));
+            LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
 
         RTR0Term();
     }
@@ -464,12 +453,6 @@ int _fini(void)
     {
         LogRel((DEVICE_NAME ":_fini - busy!\n"));
         return EBUSY;
-    }
-
-    if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
-    {
-        RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-        g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
     }
 
     RTR0Term();
@@ -857,6 +840,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         }
     }
 
+    vboxNetFltRelease(pStream->pThis, false /* fBusy */);
     RTMemFree(pStream);
     pQueue->q_ptr = NULL;
     WR(pQueue)->q_ptr = NULL;
@@ -905,7 +889,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
             RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
             const bool fActive = ASMAtomicUoReadBool(&pThis->fActive);
-            vboxNetFltRetain(pThis, true);
+            vboxNetFltRetain(pThis, true /* fBusy */);
             RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
             vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
@@ -1073,7 +1057,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                 }
             }
 
-            vboxNetFltRelease(pThis, true);
+            vboxNetFltRelease(pThis, true /* fBusy */);
         }
         else
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Could not find VirtualBox instance!!\n"));
@@ -1716,6 +1700,10 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
  */
 static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 {
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisCloseStream pThis=%p\n"));
+
+    vboxNetFltRetain(pThis, false /* fBusy */);
+
     ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
 }
 
@@ -1729,6 +1717,8 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
  */
 static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
 {
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp4 pThis=%p fAttach=%d\n", pThis, fAttach));
+
     /*
      * Statuatory Warning: Hackish code ahead.
      */
@@ -1776,7 +1766,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
     ldi_ident_release(DeviceIdent);
 
     /*
-     * Obtain the interface flags from IP.
+     * Obtain the interface flags from IPv4.
      */
     rc = vboxNetFltSolarisGetIfFlags(Ip4DevHandle, &Ip4Interface);
     if (RT_SUCCESS(rc))
@@ -1850,10 +1840,15 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 /*
                                  * Inject/Eject from the host IP stack.
                                  */
+                                if (!fAttach)
+                                    vboxNetFltRetain(pThis, false /* fBusy */);
                                 rc = strioctl(pIp4VNode, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K,
                                             kcred, &ret);
                                 if (!rc)
                                 {
+                                    if (!fAttach)
+                                        vboxNetFltRetain(pThis, false /* fBusy */);
+
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
@@ -1901,6 +1896,8 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                     {
                                         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to %s the ARP stack. rc=%d\n",
                                                 fAttach ? "inject into" : "eject from", rc));
+                                        if (!fAttach)
+                                            vboxNetFltRelease(pThis, false /* fBusy */);
                                     }
 
                                     if (fAttach)
@@ -1912,6 +1909,8 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 {
                                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to %s the IP stack. rc=%d\n",
                                             fAttach ? "inject into" : "eject from", rc));
+                                    if (!fAttach)
+                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
                             }
                             else
@@ -1961,6 +1960,8 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
  */
 static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 {
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp6 pThis=%p fAttach=%d\n", pThis, fAttach));
+
     /*
      * Statuatory Warning: Hackish code ahead.
      */
@@ -2054,6 +2055,9 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                 g_VBoxNetFltSolarisInstance = pThis;
                                 g_VBoxNetFltSolarisStreamType = kIp6Stream;
 
+                                if (!fAttach)
+                                    vboxNetFltRetain(pThis, false /* fBusy */);
+
                                 /*
                                  * Inject/Eject from the host IPv6 stack.
                                  */
@@ -2098,6 +2102,8 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                 {
                                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to %s the IP stack. rc=%d\n",
                                             fAttach ? "inject into" : "eject from", rc));
+                                    if (!fAttach)
+                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
                             }
                             else
@@ -2172,10 +2178,7 @@ static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach, VBOXNET
  */
 static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 {
-    int rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
-    AssertRC(rc);
-
-    rc = vboxNetFltSolarisOpenStream(pThis);
+    int rc = vboxNetFltSolarisOpenStream(pThis);
     if (RT_SUCCESS(rc))
     {
         rc = vboxNetFltSolarisModSetup(pThis, true, kIp4Stream);
@@ -2192,7 +2195,6 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Vrc\n", rc));
 
-    RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
     return rc;
 }
 
@@ -2207,16 +2209,14 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
  */
 static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 {
-    int rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
-    AssertRC(rc);
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisDetachFromInterface pThis=%p\n", pThis));
 
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     vboxNetFltSolarisCloseStream(pThis);
-    rc = vboxNetFltSolarisModSetup(pThis, false, kIp4Stream);
+    int rc = vboxNetFltSolarisModSetup(pThis, false, kIp4Stream);
     if (pThis->u.s.pvIp6Stream)
-        vboxNetFltSolarisModSetup(pThis, false, kIp6Stream);
+        rc = vboxNetFltSolarisModSetup(pThis, false, kIp6Stream);
 
-    RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
     return rc;
 }
 
@@ -3076,7 +3076,15 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
-    /* Nothing to do here. */
+    LogFlow((DEVICE_NAME ":vboxNetFltOsDisconnectIt pThis=%p\n", pThis));
+
+    vboxNetFltSolarisDetachFromInterface(pThis);
+
+    if (pThis->u.s.hFastMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
+        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
+    }
     return VINF_SUCCESS;
 }
 
@@ -3090,14 +3098,8 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n"));
-    vboxNetFltSolarisDetachFromInterface(pThis);
-
-    if (pThis->u.s.hFastMtx != NIL_RTSEMFASTMUTEX)
-    {
-        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
-        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
-    }
+    LogFlow((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n", pThis));
+    /* Nothing to do here. */
 }
 
 
@@ -3283,33 +3285,32 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                 else
                     freemsg(pMsg);  /* Should really never happen... */
             }
-            else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
-            {
-                /*
-                 * Send messages up IPv6 stream.
-                 */
-                LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv6\n"));
-
-                vboxnetflt_stream_t *pIp6Stream  = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIp6Stream);
-                if (pIp6Stream)
-                {
-                    pMsg->b_rptr += sizeof(RTNETETHERHDR);
-                    queue_t *pIp6ReadQueue = pIp6Stream->pReadQueue;
-                    putnext(pIp6ReadQueue, pMsg);
-                }
-                else
-                    freemsg(pMsg);
-            }
             else
             {
-                /*
-                 * Send messages up IPv4 stream.
-                 */
-                LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv4\n"));
+                 vboxnetflt_stream_t *pIp6Stream  = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIp6Stream);
+                 if (   pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6)
+                     && pIp6Stream)
+                 {
+                     /*
+                      * Send messages up IPv6 stream.
+                      */
+                      LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv6\n"));
 
-                pMsg->b_rptr += sizeof(RTNETETHERHDR);
-                queue_t *pIp4ReadQueue = pIp4Stream->pReadQueue;
-                putnext(pIp4ReadQueue, pMsg);
+                     pMsg->b_rptr += sizeof(RTNETETHERHDR);
+                     queue_t *pIp6ReadQueue = pIp6Stream->pReadQueue;
+                     putnext(pIp6ReadQueue, pMsg);
+                 }
+                 else
+                 {
+                    /*
+                     * Send messages up IPv4 stream.
+                     */
+                    LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv4\n"));
+
+                    pMsg->b_rptr += sizeof(RTNETETHERHDR);
+                    queue_t *pIp4ReadQueue = pIp4Stream->pReadQueue;
+                    putnext(pIp4ReadQueue, pMsg);
+                }
             }
         }
         else
