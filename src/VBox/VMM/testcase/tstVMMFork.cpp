@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
      */
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
-    int rc = VMR3Create(NULL, NULL, NULL, NULL, &pVM);
+    int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
     if (VBOX_SUCCESS(rc))
     {
         /*

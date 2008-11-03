@@ -6609,6 +6609,11 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
 #endif /* VBOX_WITH_VRDP */
 
+        ULONG cCpus = 1;
+#ifdef VBOX_WITH_SMP_GUESTS
+        pMachine->COMGETTER(CPUCount)(&cCpus);
+#endif
+
         /*
          * Create the VM
          */
@@ -6619,7 +6624,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
          */
         alock.leave();
 
-        vrc = VMR3Create (task->mSetVMErrorCallback, task.get(),
+        vrc = VMR3Create (cCpus, task->mSetVMErrorCallback, task.get(),
                           task->mConfigConstructor, static_cast <Console *> (console),
                           &pVM);
 

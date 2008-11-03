@@ -1166,7 +1166,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Create empty VM.
      */
-    rc = VMR3Create(setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &pVM);
+    rc = VMR3Create(1, setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &pVM);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf("Error: VM creation failed with %Vrc.\n", rc);
