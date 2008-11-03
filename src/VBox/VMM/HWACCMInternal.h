@@ -53,13 +53,6 @@ __BEGIN_DECLS
  */
 
 
-/**
- * Converts a HWACCM pointer into a VM pointer.
- * @returns Pointer to the VM structure the EM is part of.
- * @param   pHWACCM   Pointer to HWACCM instance data.
- */
-#define HWACCM2VM(pHWACCM)  ( (PVM)((char*)pHWACCM - pHWACCM->offVM) )
-
 /** Maximum number of exit reason statistics counters. */
 #define MAX_EXITREASON_STAT        0x100
 #define MASK_EXITREASON_STAT       0xff
@@ -178,10 +171,6 @@ typedef union
  */
 typedef struct HWACCM
 {
-    /** Offset to the VM structure.
-     * See HWACCM2VM(). */
-    RTUINT                      offVM;
-
     /** Set when we've initialized VMX or SVM. */
     bool                        fInitialized;
     /** Set when we're using VMX/SVN at that moment. */
