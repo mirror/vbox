@@ -175,16 +175,20 @@ typedef struct VBOXNETFLTINS
             RTMAC Mac;
             /** Mutex protection used for loopback. */
             RTSEMFASTMUTEX hFastMtx;
+            /** @} */
 # elif defined(RT_OS_WINDOWS)
+            /** @name Windows instance data.
+             * @{ */
 #  ifdef VBOX_NETFLT_ONDEMAND_BIND
-            /** filter driver device context */
+            /** Filter driver device context. */
             ADAPT IfAdaptor;
 #  else
-            /** pointer to the filter driver device context */
+            /** Pointer to the filter driver device context. */
             PADAPT volatile pIfAdaptor;
 #  endif
-            /** The MAC address of the interface. Caching MAC for performance reasons */
+            /** The MAC address of the interface. Caching MAC for performance reasons. */
             RTMAC Mac;
+            /** @}  */
 # else
 #  error "PORTME"
 # endif
@@ -192,10 +196,6 @@ typedef struct VBOXNETFLTINS
 #endif
         /** Padding. */
 #if defined(RT_OS_WINDOWS) && defined(VBOX_NETFLT_ONDEMAND_BIND)
-        /* windows AND protocol-based approach :
-         * we include the ADAPT into the VBOXNETFLTINS,
-         * and we do not feet into the 64 bytes padding,
-         * make it bigger */
         uint8_t abPadding[192];
 #else
         uint8_t abPadding[64];
