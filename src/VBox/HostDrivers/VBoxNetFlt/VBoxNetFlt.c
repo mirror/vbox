@@ -739,7 +739,7 @@ DECLHIDDEN(void) vboxNetFltRetain(PVBOXNETFLTINS pThis, bool fBusy)
      * Retain the object.
      */
     cRefs = ASMAtomicIncU32(&pThis->cRefs);
-    Assert(cRefs > 0 && cRefs < UINT32_MAX / 2);
+    Assert(cRefs > 1 && cRefs < UINT32_MAX / 2);
 
     /*
      * Work the busy counter.
@@ -747,7 +747,7 @@ DECLHIDDEN(void) vboxNetFltRetain(PVBOXNETFLTINS pThis, bool fBusy)
     if (fBusy)
     {
         cRefs = ASMAtomicIncU32(&pThis->cBusy);
-        Assert(cRefs > 0 && cRefs < UINT32_MAX / 2);
+        Assert(cRefs > 1 && cRefs < UINT32_MAX / 2);
     }
 
     NOREF(cRefs);
