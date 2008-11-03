@@ -396,7 +396,7 @@
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="1"/>
-        <xsd:maxInclusive value="63"/>
+        <xsd:maxInclusive value="255"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
