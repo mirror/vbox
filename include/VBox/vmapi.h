@@ -264,6 +264,18 @@ typedef enum VMREQFLAGS
 } VMREQFLAGS;
 
 /**
+ * Request destination
+ */
+typedef enum VMREQDEST
+{
+    /** Request packet for VCPU 0. */
+    VMREQDEST_CPU0          = 0,
+
+    /** Request packet for the VM (any VCPU can handle it). */
+    VMREQDEST_ALL           = -1
+} VMREQDEST;
+
+/**
  * VM Request packet.
  *
  * This is used to request an action in the EMT. Usually the requester is
@@ -291,6 +303,8 @@ typedef struct VMREQ
     unsigned                fFlags;
     /** Request type. */
     VMREQTYPE               enmType;
+    /** Request destination. */
+    VMREQDEST               enmDest;
     /** Request specific data. */
     union VMREQ_U
     {
@@ -398,14 +412,14 @@ VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM);
 VMMR3DECL(int)  VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(int)  VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 VMMR3DECL(void) VMR3SetRuntimeErrorWorker(PVM pVM);
-VMMR3DECL(int)  VMR3ReqCall(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVoidU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVoid(PVM pVM, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallEx(PVM pVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)  VMR3ReqCallVU(PUVM pUVM, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
-VMMR3DECL(int)  VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType);
-VMMR3DECL(int)  VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType);
+VMMR3DECL(int)  VMR3ReqCall(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVoidU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVoid(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallEx(PVM pVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)  VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsigned cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+VMMR3DECL(int)  VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest);
+VMMR3DECL(int)  VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQDEST enmDest);
 VMMR3DECL(int)  VMR3ReqFree(PVMREQ pReq);
 VMMR3DECL(int)  VMR3ReqQueue(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqWait(PVMREQ pReq, unsigned cMillies);

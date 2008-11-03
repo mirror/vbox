@@ -2709,7 +2709,7 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall (mpVM, &pReq, 0 /* no wait! */,
+    int vrc = VMR3ReqCall (mpVM, VMREQDEST_ALL, &pReq, 0 /* no wait! */,
                            (PFNRT) Console::changeDrive, 8,
                            this, pszDevice, uInstance, uLun, eState, peState,
                            pszPath, fPassthrough);
@@ -5526,7 +5526,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     PVMREQ pReq = NULL;
-    int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
+    int vrc = VMR3ReqCall (mpVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbAttachCallback, 6, this, aHostDevice, Uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
     if (VBOX_SUCCESS (vrc))
         vrc = pReq->iStatus;
@@ -5651,7 +5651,7 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
 
     PVMREQ pReq;
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
-    int vrc = VMR3ReqCall (mpVM, &pReq, RT_INDEFINITE_WAIT,
+    int vrc = VMR3ReqCall (mpVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                            (PFNRT) usbDetachCallback, 4,
                            this, &aIt, (*aIt)->id().raw());
     if (VBOX_SUCCESS (vrc))
@@ -7135,7 +7135,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                  *  don't leave the lock since reconfigureHardDisks isn't going
                  *  to access Console.
                  */
-                int vrc = VMR3ReqCall (that->mpVM, &pReq, RT_INDEFINITE_WAIT,
+                int vrc = VMR3ReqCall (that->mpVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                        (PFNRT)reconfigureHardDisks, 3, that->mpVM,
                                        atts [i], &rc);
                 if (VBOX_SUCCESS (rc))

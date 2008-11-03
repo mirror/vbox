@@ -41,6 +41,14 @@
 typedef struct UVMCPU
 {
     uint32_t     uFiller;
+    /** The VM internal data. */
+    struct
+    {
+#ifdef ___VMInternal_h
+        struct VMINTUSERPERVMCPU    s;
+#endif
+        uint8_t                     padding[768];
+    } vm;
 } UVMCPU;
 
 /**

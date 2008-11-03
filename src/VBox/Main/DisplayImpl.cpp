@@ -1347,7 +1347,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
-        int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
+        int vrc = VMR3ReqCall (pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 4,
                                this, static_cast <IFramebuffer *> (frameBuf),
                                true /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
@@ -1434,7 +1434,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
-        int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
+        int vrc = VMR3ReqCall (pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 4,
                                this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
         if (VBOX_SUCCESS (vrc))
@@ -1475,7 +1475,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
 
         /* send request to the EMT thread */
         PVMREQ pReq = NULL;
-        int vrc = VMR3ReqCall (pVM, &pReq, RT_INDEFINITE_WAIT,
+        int vrc = VMR3ReqCall (pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 4,
                                this, aFramebuffer, false /* aInternal */, aScreenId);
         if (VBOX_SUCCESS (vrc))
@@ -1630,7 +1630,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     {
         PVMREQ pReq;
         size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
-        rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
+        rcVBox = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
                              address, cbData, NULL, NULL, NULL);
         if (VBOX_SUCCESS(rcVBox))
@@ -1691,7 +1691,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
      * dirty conversion work.
      */
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
                              address, x, y, width, height);
     if (VBOX_SUCCESS(rcVBox))
@@ -1751,7 +1751,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     /* pdm.h says that this has to be called from the EMT thread */
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCallVoid(pVM, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
     if (VBOX_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);
