@@ -389,35 +389,35 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 #define VBOX_SLIRP_LOCK(x)                                                  \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemFastMutexRequest((x));                        \
+    rc = RTSemFastMutexRequest((x));                                        \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_UNLOCK(x)                                                \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemFastMutexRelease((x));                                            \
+    rc = RTSemFastMutexRelease((x));                                        \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_LOCK_CREATE(x)                                           \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemFastMutexCreate((x));                                             \
+    rc = RTSemFastMutexCreate((x));                                         \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_LOCK_DESTROY(x)                                          \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemFastMutexDestroy((x));                                            \
+    rc = RTSemFastMutexDestroy((x));                                        \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 #else
-#define VBOX_SLIRP_LOCK(x) /* ignore */
-#define VBOX_SLIRP_UNLOCK(x) /* ignore */
-#define VBOX_SLIRP_LOCK_DESTROY(x) /* ignore */
-#define VBOX_SLIRP_LOCK_CREATE(x) /* ignore */
+#define VBOX_SLIRP_LOCK(x)              do {} while (0)
+#define VBOX_SLIRP_UNLOCK(x)            do {} while (0)
+#define VBOX_SLIRP_LOCK_DESTROY(x)      do {} while (0)
+#define VBOX_SLIRP_LOCK_CREATE(x)       do {} while (0)
 #endif
 
 #endif
