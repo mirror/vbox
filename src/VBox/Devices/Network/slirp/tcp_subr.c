@@ -290,7 +290,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 	sbfree(&so->so_rcv);
 	sbfree(&so->so_snd);
 	sofree(pData, so);
-        if(so != NULL) VBOX_SLIRP_LOCK(so->so_mutex);
+        if(so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
 	tcpstat.tcps_closed++;
 	return ((struct tcpcb *)0);
 }

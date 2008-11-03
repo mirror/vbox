@@ -389,28 +389,28 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 #define VBOX_SLIRP_LOCK(x)                                                  \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemMutexRequest((x), RT_INDEFINITE_WAIT);                        \
+    rc = RTSemFastMutexRequest((x));                        \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_UNLOCK(x)                                                \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemMutexRelease((x));                                            \
+    rc = RTSemFastMutexRelease((x));                                            \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_LOCK_CREATE(x)                                           \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemMutexCreate((x));                                             \
+    rc = RTSemFastMutexCreate((x));                                             \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 
 #define VBOX_SLIRP_LOCK_DESTROY(x)                                          \
 do{                                                                         \
     int rc;                                                                 \
-    rc = RTSemMutexDestroy((x));                                            \
+    rc = RTSemFastMutexDestroy((x));                                            \
     AssertReleaseRC(rc);                                                    \
 }while (0)
 #else

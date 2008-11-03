@@ -382,7 +382,17 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                     }
 #endif
                     so_next = so->so_next;
+#ifdef VBOX_WITH_SYNC_SLIRP
                     VBOX_SLIRP_LOCK(so->so_mutex);
+                    while (so->so_destroy == 1) {
+                        VBOX_SLIRP_UNLOCK(so->so_mutex);
+                        VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
+                        free(so);
+                        so = so_next;
+                        so_next = so->so_next;
+                        VBOX_SLIRP_LOCK(so->so_mutex);
+                    }
+#endif
                     VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
@@ -565,19 +575,25 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 so = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
-                    so_next = so->so_next;
 #else
                 while (1) {
                     if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
+#endif
                     so_next = so->so_next;
 
-                    AssertRelease(so->so_mutex != NULL);
-                    AssertRelease(so->so_next != NULL &&  so->so_prev != NULL);
-#endif
+
+#ifdef VBOX_WITH_SYNC_SLIRP
+                    if  (so->so_destroy == 1) {
+                        VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
+                        free(so);
+                        so = tcb.so_next;
+                        so_next = so->so_next;
+                    }
                     VBOX_SLIRP_LOCK(so->so_mutex);
+#endif
                     VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
