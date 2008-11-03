@@ -760,11 +760,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         if (link_up) {
             VBOX_SLIRP_LOCK(pData->if_queued_mutex);
             if (if_queued > 0){
-VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
+                VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
 	        if_start(pData);
             }
             else {
-VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
+                VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
             }
         }
 #endif
