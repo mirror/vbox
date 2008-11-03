@@ -617,10 +617,11 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
      * Are we the EMT or not?
      * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
      */
+    RTNATIVETHREAD hCurrentThread = RTThreadNativeSelf();
     int rc = VINF_SUCCESS;
     PUVM pUVM = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
     if (    pReq->enmDest == VMREQDEST_ALL
-        &&  pUVM->vm.s.NativeThreadEMT != RTThreadNativeSelf())
+        &&  pUVM->vm.s.NativeThreadEMT != hCurrentThread)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -651,7 +652,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
     }
     else
     if (    pReq->enmDest != VMREQDEST_ALL
-        &&  pUVM->aCpu[pReq->enmDest].vm.s.NativeThreadEMT != RTThreadNativeSelf())
+        &&  pUVM->aCpu[pReq->enmDest].vm.s.NativeThreadEMT != hCurrentThread)
     {
         RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
