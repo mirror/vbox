@@ -489,17 +489,27 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
 
             /* Make sure the CPU count in the config data matches. */
             rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &pVM->cCPUs, 1);
-            AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc), rc);
+            AssertMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc));
             Assert(pVM->cCPUs == cCPUs);
 
 #ifdef VBOX_WITH_SMP_GUESTS
-            AssertLogRelMsgReturn(pVM->cCPUs > 0 && pVM->cCPUs <= VMCPU_MAX_CPU_COUNT,
-                                  ("Configuration error: \"NumCPUs\"=%RU32 is out of range [1..255]\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
+            AssertMsg(pVM->cCPUs > 0 && pVM->cCPUs <= VMCPU_MAX_CPU_COUNT,
+                      ("Configuration error: \"NumCPUs\"=%RU32 is out of range [1..255]\n", pVM->cCPUs));
 #else
-            AssertLogRelMsgReturn(pVM->cCPUs != 0,
-                                  ("Configuration error: \"NumCPUs\"=%RU32, expected 1\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
+            AssertMsg(pVM->cCPUs != 0,
+                      ("Configuration error: \"NumCPUs\"=%RU32, expected 1\n", pVM->cCPUs));
 #endif
-            if (pVM->cCPUs == cCPUs)
+            if (pVM->cCPUs != cCPUs)
+                rc = VERR_INVALID_PARAMETER;
+            else
+#ifdef VBOX_WITH_SMP_GUESTS
+            if (pVM->cCPUs == 0 || pVM->cCPUs > VMCPU_MAX_CPU_COUNT)
+                rc = VERR_INVALID_PARAMETER;
+#else
+            if (pVM->cCPUs != 1)
+                rc = VERR_INVALID_PARAMETER;
+#endif
+            if (VBOX_SUCCESS(rc))
             {
                 /*
                  * Init the Ring-3 components and do a round of relocations with 0 delta.
