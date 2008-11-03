@@ -400,6 +400,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(enmDest == VMREQDEST_ALL || (unsigned)enmDest < pUVM->pVM->cCPUs, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->pVM->cCPUs), VERR_INVALID_PARAMETER);
 
     /*
      * Try get a recycled packet.
@@ -618,7 +619,8 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
      */
     int rc = VINF_SUCCESS;
     PUVM pUVM = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
-    if (pUVM->vm.s.NativeThreadEMT != RTThreadNativeSelf())
+    if (    pReq->enmDest == VMREQDEST_ALL
+        &&  pUVM->vm.s.NativeThreadEMT != RTThreadNativeSelf())
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -638,6 +640,40 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         if (pUVM->pVM)
             VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
+        VMR3NotifyFFU(pUVM, false);
+
+        /*
+         * Wait and return.
+         */
+        if (!(fFlags & VMREQFLAGS_NO_WAIT))
+            rc = VMR3ReqWait(pReq, cMillies);
+        LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+    }
+    else
+    if (    pReq->enmDest != VMREQDEST_ALL
+        &&  pUVM->aCpu[pReq->enmDest].vm.s.NativeThreadEMT != RTThreadNativeSelf())
+    {
+        RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
+        unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
+
+        /*
+         * Insert it.
+         */
+        pReq->enmState = VMREQSTATE_QUEUED;
+        PVMREQ pNext;
+        do
+        {
+            pNext = pUVM->aCpu[idTarget].vm.s.pReqs;
+            pReq->pNext = pNext;
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpu[idTarget].vm.s.pReqs, (void *)pReq, (void *)pNext));
+
+        /*
+         * Notify EMT.
+         */
+        if (pUVM->pVM)
+            VMCPU_FF_SET(pUVM->pVM, VM_FF_REQUEST, idTarget);
+        /* @todo: VMR3NotifyFFU*/
+        AssertFailed();
         VMR3NotifyFFU(pUVM, false);
 
         /*
@@ -734,10 +770,11 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
  * @returns VBox status code.
  *
  * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   enmDest         Destination of the request packet (global or per VCPU).
  */
-VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM)
+VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
 {
-    LogFlow(("VMR3ReqProcessU: (enmVMState=%d)\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
+    LogFlow(("VMR3ReqProcessU: (enmVMState=%d) enmDest=%d\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING, enmDest));
 
     /*
      * Process loop.
@@ -748,12 +785,25 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM)
     int rc = VINF_SUCCESS;
     while (rc <= VINF_SUCCESS)
     {
+        void *volatile *ppReqs;
+
         /*
          * Get pending requests.
          */
-        if (RT_LIKELY(pUVM->pVM))
-            VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
-        PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, NULL);
+        if (enmDest == VMREQDEST_ALL)
+        {
+            ppReqs = (void * volatile *)&pUVM->vm.s.pReqs;
+            if (RT_LIKELY(pUVM->pVM))
+                VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
+        }
+        else
+        {
+            ppReqs = (void * volatile *)&pUVM->aCpu[enmDest].vm.s.pReqs;
+            if (RT_LIKELY(pUVM->pVM))
+                VMCPU_FF_CLEAR(pUVM->pVM, enmDest, VM_FF_REQUEST);
+        }
+
+        PVMREQ pReqs = (PVMREQ)ASMAtomicXchgPtr(ppReqs, NULL);
         if (!pReqs)
             break;
 

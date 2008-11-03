@@ -96,7 +96,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM);
+                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
                 Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
             }
             else
@@ -131,7 +131,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM);
+                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
                 Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
             }
             else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
@@ -251,7 +251,7 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
             /*
              * Service execute in EMT request.
              */
-            rc = VMR3ReqProcessU(pUVM);
+            rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
             Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
         }
         else if (VM_FF_ISSET(pVM, VM_FF_DBGF))

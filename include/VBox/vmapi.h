@@ -423,7 +423,7 @@ VMMR3DECL(int)  VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQ
 VMMR3DECL(int)  VMR3ReqFree(PVMREQ pReq);
 VMMR3DECL(int)  VMR3ReqQueue(PVMREQ pReq, unsigned cMillies);
 VMMR3DECL(int)  VMR3ReqWait(PVMREQ pReq, unsigned cMillies);
-VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM);
+VMMR3DECL(int)  VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest);
 VMMR3DECL(void) VMR3NotifyFF(PVM pVM, bool fNotifiedREM);
 VMMR3DECL(void) VMR3NotifyFFU(PUVM pUVM, bool fNotifiedREM);
 VMMR3DECL(int)  VMR3WaitHalted(PVM pVM, bool fIgnoreInterrupts);
