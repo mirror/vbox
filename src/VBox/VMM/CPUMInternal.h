@@ -267,10 +267,9 @@ typedef struct CPUM
      */
     CPUMCTX                 Guest;
 
-
     /** Pointer to the current hypervisor core context - R3Ptr. */
     R3PTRTYPE(PCPUMCTXCORE) pHyperCoreR3;
-    /** Pointer to the current hypervisor core context - R3Ptr. */
+    /** Pointer to the current hypervisor core context - R0Ptr. */
     R0PTRTYPE(PCPUMCTXCORE) pHyperCoreR0;
     /** Pointer to the current hypervisor core context - RCPtr. */
     RCPTRTYPE(PCPUMCTXCORE) pHyperCoreRC;
@@ -343,6 +342,20 @@ typedef struct CPUM
 } CPUM;
 /** Pointer to the CPUM instance data residing in the shared VM structure. */
 typedef CPUM *PCPUM;
+
+/**
+ * CPUM Data (part of VMCPU)
+ */
+typedef struct CPUMCPU
+{
+    /**
+     * Guest context.
+     * Aligned on a 64-byte boundrary.
+     */
+    CPUMCTX                 Guest;
+} CPUMCPU;
+/** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
+typedef CPUMCPU *PCPUMCPU;
 
 __BEGIN_DECLS
 

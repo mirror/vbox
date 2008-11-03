@@ -469,6 +469,9 @@ GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
         return VERR_INVALID_PARAMETER;
     if (!VALID_PTR(pReq->pSession))
         return VERR_INVALID_POINTER;
+    if (    pReq->cCPUs == 0
+        ||  pReq->cCPUs > VMCPU_MAX_CPU_COUNT)
+        return VERR_INVALID_PARAMETER;
 
     /*
      * Execute it.
@@ -476,7 +479,7 @@ GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
     PVM pVM;
     pReq->pVMR0 = NULL;
     pReq->pVMR3 = NIL_RTR3PTR;
-    int rc = GVMMR0CreateVM(pReq->pSession, &pVM);
+    int rc = GVMMR0CreateVM(pReq->pSession, pReq->cCPUs, &pVM);
     if (RT_SUCCESS(rc))
     {
         pReq->pVMR0 = pVM;
@@ -493,11 +496,12 @@ GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
  *
  * @returns VBox status code.
  * @param   pSession    The support driver session.
+ * @param   cCPUs       Number of virtual CPUs for the new VM.
  * @param   ppVM        Where to store the pointer to the VM structure.
  *
  * @thread  EMT.
  */
-GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
+GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppVM)
 {
     LogFlow(("GVMMR0CreateVM: pSession=%p\n", pSession));
     PGVMM pGVMM;
@@ -570,7 +574,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, PVM *ppVM)
                         /*
                          * Allocate the shared VM structure and associated page array.
                          */
-                        const size_t cPages = RT_ALIGN(sizeof(VM), PAGE_SIZE) >> PAGE_SHIFT;
+                        const size_t cPages = RT_ALIGN(sizeof(VM) + sizeof(VMCPU) * (cCPUs - 1), PAGE_SIZE) >> PAGE_SHIFT;
                         rc = RTR0MemObjAllocLow(&pGVM->gvmm.s.VMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
                         if (RT_SUCCESS(rc))
                         {

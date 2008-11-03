@@ -370,6 +370,17 @@ typedef struct EM
 typedef EM *PEM;
 
 
+/**
+ * EM VMCPU Instance data.
+ */
+typedef struct EMCPU
+{
+    /** Offset to the VM structure.
+     * See EMCPU2VM(). */
+    RTUINT                  offVMCPU;
+} EMCPU;
+/** Pointer to EM VM instance data. */
+typedef EMCPU *PEMCPU;
 
 /** @} */
 

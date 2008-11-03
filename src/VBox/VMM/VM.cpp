@@ -124,7 +124,7 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int               vmR3CreateUVM(PUVM *ppUVM);
-static int               vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int               vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int               vmR3InitRing0(PVM pVM);
 static int               vmR3InitGC(PVM pVM);
@@ -179,6 +179,7 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  *
  * @returns 0 on success.
  * @returns VBox error code on failure.
+ * @param   cCPUs               Number of virtual CPUs for the new VM.
  * @param   pfnVMAtError        Pointer to callback function for setting VM errors.
  *                              This is called in the EM.
  * @param   pvUserVM            The user argument passed to pfnVMAtError.
@@ -187,9 +188,9 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  * @param   pvUserCFGM          The user argument passed to pfnCFGMConstructor.
  * @param   ppVM                Where to store the 'handle' of the created VM.
  */
-VMMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
+VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
 {
-    LogFlow(("VMR3Create: pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
+    LogFlow(("VMR3Create: cCPUs=%d pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", cCPUs, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
 
     /*
      * Because of the current hackiness of the applications
@@ -228,7 +229,7 @@ VMMR3DECL(int)   VMR3Create(PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCO
              */
             PVMREQ pReq;
             rc = VMR3ReqCallU(pUVM, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
-                              3, pUVM, pfnCFGMConstructor, pvUserCFGM);
+                              4, pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
@@ -421,7 +422,7 @@ static int vmR3CreateUVM(PUVM *ppUVM)
  *
  * @thread EMT
  */
-static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
+static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM)
 {
     int rc = VINF_SUCCESS;
 
@@ -447,6 +448,7 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
     CreateVMReq.pSession = pUVM->vm.s.pSession;
     CreateVMReq.pVMR0 = NIL_RTR0PTR;
     CreateVMReq.pVMR3 = NULL;
+    CreateVMReq.cCPUs = cCPUs;
     rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
@@ -482,65 +484,83 @@ static int vmR3CreateU(PUVM pUVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *p
                 CFGMR3InsertInteger(CFGMR3GetRoot(pVM), "RawR0Enabled", 0);
             }
 
-            /*
-             * Init the Ring-3 components and do a round of relocations with 0 delta.
-             */
-            rc = vmR3InitRing3(pVM, pUVM);
-            if (VBOX_SUCCESS(rc))
-            {
-                VMR3Relocate(pVM, 0);
-                LogFlow(("Ring-3 init succeeded\n"));
+            /* Calculate the offset to the VMCPU array. */
+            pVM->offVMCPU = RT_OFFSETOF(VM, aCpus);
 
+            /* Make sure the CPU count in the config data matches. */
+            rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &pVM->cCPUs, 1);
+            AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc), rc);
+            Assert(pVM->cCPUs == cCPUs);
+
+#ifdef VBOX_WITH_SMP_GUESTS
+            AssertLogRelMsgReturn(pVM->cCPUs > 0 && pVM->cCPUs <= VMCPU_MAX_CPU_COUNT,
+                                  ("Configuration error: \"NumCPUs\"=%RU32 is out of range [1..255]\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
+#else
+            AssertLogRelMsgReturn(pVM->cCPUs != 0,
+                                  ("Configuration error: \"NumCPUs\"=%RU32, expected 1\n", pVM->cCPUs), VERR_INVALID_PARAMETER);
+#endif
+            if (pVM->cCPUs == cCPUs)
+            {
                 /*
-                 * Init the Ring-0 components.
+                 * Init the Ring-3 components and do a round of relocations with 0 delta.
                  */
-                rc = vmR3InitRing0(pVM);
+                rc = vmR3InitRing3(pVM, pUVM);
                 if (VBOX_SUCCESS(rc))
                 {
-                    /* Relocate again, because some switcher fixups depends on R0 init results. */
                     VMR3Relocate(pVM, 0);
+                    LogFlow(("Ring-3 init succeeded\n"));
+
+                    /*
+                     * Init the Ring-0 components.
+                     */
+                    rc = vmR3InitRing0(pVM);
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        /* Relocate again, because some switcher fixups depends on R0 init results. */
+                        VMR3Relocate(pVM, 0);
 
 #ifdef VBOX_WITH_DEBUGGER
-                    /*
-                     * Init the tcp debugger console if we're building
-                     * with debugger support.
-                     */
-                    void *pvUser = NULL;
-                    rc = DBGCTcpCreate(pVM, &pvUser);
-                    if (    VBOX_SUCCESS(rc)
-                        ||  rc == VERR_NET_ADDRESS_IN_USE)
-                    {
-                        pUVM->vm.s.pvDBGC = pvUser;
-#endif
                         /*
-                         * Init the Guest Context components.
+                         * Init the tcp debugger console if we're building
+                         * with debugger support.
                          */
-                        rc = vmR3InitGC(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        void *pvUser = NULL;
+                        rc = DBGCTcpCreate(pVM, &pvUser);
+                        if (    VBOX_SUCCESS(rc)
+                            ||  rc == VERR_NET_ADDRESS_IN_USE)
                         {
+                            pUVM->vm.s.pvDBGC = pvUser;
+#endif
                             /*
-                             * Now we can safely set the VM halt method to default.
-                             */
-                            rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
-                            if (RT_SUCCESS(rc))
+                            * Init the Guest Context components.
+                            */
+                            rc = vmR3InitGC(pVM);
+                            if (VBOX_SUCCESS(rc))
                             {
                                 /*
-                                 * Set the state and link into the global list.
+                                 * Now we can safely set the VM halt method to default.
                                  */
-                                vmR3SetState(pVM, VMSTATE_CREATED);
-                                pUVM->pNext = g_pUVMsHead;
-                                g_pUVMsHead = pUVM;
-                                return VINF_SUCCESS;
+                                rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                    * Set the state and link into the global list.
+                                    */
+                                    vmR3SetState(pVM, VMSTATE_CREATED);
+                                    pUVM->pNext = g_pUVMsHead;
+                                    g_pUVMsHead = pUVM;
+                                    return VINF_SUCCESS;
+                                }
                             }
-                        }
 #ifdef VBOX_WITH_DEBUGGER
-                        DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
-                        pUVM->vm.s.pvDBGC = NULL;
-                    }
+                            DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+                            pUVM->vm.s.pvDBGC = NULL;
+                        }
 #endif
-                    //..
+                        //..
+                    }
+                    vmR3Destroy(pVM);
                 }
-                vmR3Destroy(pVM);
             }
             //..
 

@@ -827,7 +827,7 @@ int main(int argc, char **argv)
      * Create empty VM.
      */
     PVM pVM;
-    rc = VMR3Create(NULL, NULL, cfgmR3CreateDefault, &cbMem, &pVM);
+    rc = VMR3Create(1, NULL, NULL, cfgmR3CreateDefault, &cbMem, &pVM);
     if (VBOX_SUCCESS(rc))
     {
         /*

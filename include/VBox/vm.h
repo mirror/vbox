@@ -43,6 +43,8 @@
  */
 
 
+#define VMCPU_MAX_CPU_COUNT    255
+
 /**
  * The state of a virtual CPU.
  *
@@ -79,40 +81,88 @@ typedef struct VMCPU
 {
     /** Per CPU forced action.
      * See the VMCPU_FF_* \#defines. Updated atomically. */
-    uint32_t volatile   fForcedActions;
+    uint32_t volatile       fForcedActions;
     /** The CPU state. */
-    VMCPUSTATE volatile enmState;
+    VMCPUSTATE volatile     enmState;
 
     /** Ring-3 Host Context VM Pointer. */
-    PVMR3               pVMR3;
+    PVMR3                   pVMR3;
     /** Ring-0 Host Context VM Pointer. */
-    PVMR0               pVMR0;
+    PVMR0                   pVMR0;
     /** Raw-mode Context VM Pointer. */
-    PVMRC               pVMRC;
+    PVMRC                   pVMRC;
     /** The CPU ID.
      * This is the index into the VM::aCpus array. */
-    VMCPUID             idCpu;
+    VMCPUID                 idCpu;
     /** The ring-3 thread handle of the emulation thread for this CPU.
      * @todo Use the VM_IS_EMT() macro to check if executing in EMT? */
-    RTTHREAD            hThreadR3;
+    RTTHREAD                hThreadR3;
     /** The native ring-3 handle. */
-    RTNATIVETHREAD      hNativeThreadR3;
+    RTNATIVETHREAD          hNativeThreadR3;
     /** The native ring-0 handle. */
-    RTNATIVETHREAD      hNativeThreadR0;
+    RTNATIVETHREAD          hNativeThreadR0;
 
-    /** Align the next bit on a 64-byte boundrary. */
-    uint32_t            au32Alignment[HC_ARCH_BITS == 32 ? 7 : 2];
+    /** Align the next bit on a 64-byte boundary. */
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 7 : 2];
 
     /** CPUM part. */
     union
     {
-#if 0 /*def ___CPUMInternal_h */
-        struct VMCPUCPUM    s;
+#ifdef ___CPUMInternal_h
+        struct CPUMCPU      s;
 #endif
-        char                padding[64];
+        char                padding[4096];      /* multiple of 32 */
     } cpum;
+    /** VMM part. */
+    union
+    {
+#ifdef ___VMMInternal_h
+        struct VMMCPU       s;
+#endif
+        char                padding[32];        /* multiple of 32 */
+    } vmm;
+
+    /** PGM part. */
+    union
+    {
+#ifdef ___PGMInternal_h
+        struct PGMCPU       s;
+#endif
+        char                padding[32];        /* multiple of 32 */
+    } pgm;
+
+    /** HWACCM part. */
+    union
+    {
+#ifdef ___HWACCMInternal_h
+        struct HWACCMCPU    s;
+#endif
+        char                padding[32];        /* multiple of 32 */
+    } hwaccm;
+
+    /** EM part. */
+    union
+    {
+#ifdef ___EMInternal_h
+        struct EMCPU        s;
+#endif
+        char                padding[32];        /* multiple of 32 */
+    } em;
+
+    /** TM part. */
+    union
+    {
+#ifdef ___TMInternal_h
+        struct TMCPU        s;
+#endif
+        char                padding[32];        /* multiple of 32 */
+    } tm;
 } VMCPU;
 
+/** Pointer to a VMCPU. */
+#ifndef ___VBox_types_h
+typedef struct VMCPU *PVMCPU;
+#endif
 
 /** The name of the Guest Context VMM Core module. */
 #define VMMGC_MAIN_MODULE_NAME          "VMMGC.gc"
@@ -415,8 +465,12 @@ typedef struct VM
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
     uint32_t                    cCPUs;
+
+    /** Offset to the VMCPU array starting from beginning of this structure. */
+    uint32_t                    offVMCPU;
+
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[7];
+    uint32_t                    u32Reserved[6];
 
     /** @name Public VMM Switcher APIs
      * @{ */
@@ -714,12 +768,10 @@ typedef struct VM
     } rem;
 
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
-    uint32_t u32Reserved2[8];
+    uint32_t    u32Reserved2[8];
 
-    /**
-     * Per virtual CPU state.
-     */
-    VMCPU aCpus[1];
+    /** VMCPU array for the configured number of virtual CPUs. */
+    VMCPU       aCpus[1];
 } VM;
 
 /** Pointer to a VM. */

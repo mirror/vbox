@@ -498,6 +498,18 @@ typedef struct TM
 /** Pointer to TM VM instance data. */
 typedef TM *PTM;
 
+/**
+ * TM VMCPU Instance data.
+ * Changes to this must checked against the padding of the tm union in VM!
+ */
+typedef struct TMCPU
+{
+    /** Offset to the VMCPU structure.
+     * See TMCPU2VM(). */
+    RTUINT                      offVMCPU;
+} TMCPU;
+/** Pointer to TM VMCPU instance data. */
+typedef TMCPU *PTMCPU;
 
 const char             *tmTimerState(TMTIMERSTATE enmState);
 void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);

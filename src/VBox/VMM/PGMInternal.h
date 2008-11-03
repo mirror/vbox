@@ -2610,6 +2610,15 @@ typedef struct PGM
 } PGM, *PPGM;
 
 
+/**
+ * PGMCPU Data (part of VMCPU)
+ */
+typedef struct PGMCPU
+{
+    /** Offset to the VMCPU structure. */
+    RTINT                           offVMCPU;
+} PGMCPU, *PPGMCPU;
+
 /** @name PGM::fSyncFlags Flags
  * @{
  */
