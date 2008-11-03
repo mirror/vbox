@@ -147,7 +147,7 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
                )
                 break;
         if (RT_ELEMENTS(flagList) == i)
-             rc = VERR_PARSE_ERROR;
+             rc = VERR_INVALID_PARAMETER;
         else
         {
             fFlags |= flagList[i];
@@ -156,8 +156,6 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
                 ++pcszNext;
             if (',' == *pcszNext)
                 ++pcszNext;
-            else if (*pcszNext != '\0')
-                rc = VERR_PARSE_ERROR;
             while (' ' == *pcszNext)
                 ++pcszNext;
         }
@@ -190,7 +188,7 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
         unsigned i = 0;
         for (; i < RT_ELEMENTS(flagList); ++i)
         {
-            if (flagList[i] == (fFlags & flagList[i]))
+            if (fFlags & flagList[i])
             {
                 strcpy(pszNext, flagName(flagList[i]));
                 pszNext += flagNameLen(flagList[i]);
@@ -214,13 +212,8 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
  */
 enum eHostFn
 {
-    /**
-     * Set properties in a block.  The parameters are pointers to
-     * NULL-terminated arrays containing the paramters.  These are, in order,
-     * name, value, timestamp, flags.  Strings are stored as pointers to
-     * mutable utf8 data.  All parameters must be supplied.
-     */
-    SET_PROPS_HOST = 1,
+    /** Pass the address of the cfgm node used by the service as a database. */
+    SET_CFGM_NODE = 1,
     /**
      * Get the value attached to a guest property
      * The parameter format matches that of GET_PROP.
