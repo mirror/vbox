@@ -63,7 +63,7 @@ __BEGIN_DECLS
  * @returns 0 - disabled, 1 - enabled
  * @param   pVM         The VM to operate on.
  */
-#define HWACCMIsEnabled(a)    (a->fHWACCMEnabled)
+#define HWACCMIsEnabled(pVM)    ((pVM)->fHWACCMEnabled)
 
 VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
