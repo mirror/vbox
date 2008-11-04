@@ -586,6 +586,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                             pVM->pSession   = pSession;
                             pVM->hSelf      = iHandle;
                             pVM->cbSelf     = cbVM;
+                            pVM->cCPUs      = cCPUs;
 
                             rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                             if (RT_SUCCESS(rc))
@@ -608,8 +609,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                                     pVM->pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
                                     AssertPtr((void *)pVM->pVMR3);
 
-                                    /** Initialize all the VM pointers. */
-                                    for (unsigned i=0;i<cCPUs;i++)
+                                    /* Initialize all the VM pointers. */
+                                    for (uint32_t i = 0; i < cCPUs; i++)
                                     {
                                         pVM->aCpu[i].pVMR0 = pVM;
                                         pVM->aCpu[i].pVMR3 = pVM->pVMR3;
