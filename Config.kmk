@@ -166,6 +166,10 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 # exist and which value they should have (usually 1, but anyway).
 #
 
+# Virtual single makefile.
+# If undefined, the tranditional recursive make method will be used.
+VBOX_SINGLE_MAKEFILE = 1
+
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
 #if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
