@@ -24,8 +24,8 @@
 
 
 struc TSTMICRO
-    .GCPtr                   resd 1
-    .GCPtrStack              resd 1
+    .RCPtr                   resd 1
+    .RCPtrStack              resd 1
     .u64TSCR0Start           resq 1
     .u64TSCRxStart           resq 1
     .u64TSCR0Enter           resq 1

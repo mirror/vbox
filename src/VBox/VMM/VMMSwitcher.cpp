@@ -24,46 +24,22 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm.h>
-#include <VBox/vmapi.h>
 #include <VBox/pgm.h>
-#include <VBox/cfgm.h>
-#include <VBox/pdmqueue.h>
-#include <VBox/pdmapi.h>
-#include <VBox/cpum.h>
-#include <VBox/mm.h>
-#include <VBox/iom.h>
-#include <VBox/trpm.h>
 #include <VBox/selm.h>
-#include <VBox/em.h>
+#include <VBox/mm.h>
 #include <VBox/sup.h>
-#include <VBox/dbgf.h>
-#include <VBox/csam.h>
-#include <VBox/patm.h>
-#include <VBox/rem.h>
-#include <VBox/ssm.h>
-#include <VBox/tm.h>
 #include "VMMInternal.h"
 #include "VMMSwitcher/VMMSwitcher.h"
 #include <VBox/vm.h>
+#include <VBox/dis.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/version.h>
-#include <VBox/x86.h>
-#include <VBox/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
-#include <iprt/time.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/stdarg.h>
 #include <iprt/ctype.h>
-
-
-
-/** The saved state version. */
-#define VMM_SAVED_STATE_VERSION     3
 
 
 /*******************************************************************************

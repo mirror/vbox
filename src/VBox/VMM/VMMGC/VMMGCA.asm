@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VMMGC - Guest Context Virtual Machine Monitor assembly routines.
+; VMMGC - Raw-mode Context Virtual Machine Monitor assembly routines.
 ;
 
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.

@@ -81,11 +81,11 @@ RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath);
  */
 RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath);
 
-/** 
+/**
  * Initializes the runtime library and possibly also SUPLib too.
- * 
+ *
  * Avoid this interface, it's not considered stable.
- * 
+ *
  * @returns IPRT status code.
  * @param   iVersion        The interface version. Must be 0 atm.
  * @param   pszProgramPath  The program path. Pass NULL if we're to figure it out ourselves.
@@ -118,18 +118,18 @@ RTR0DECL(void) RTR0Term(void);
 
 #ifdef IN_GC
 /**
- * Initalizes the guest context runtime library.
+ * Initializes the raw-mode context runtime library.
  *
  * @returns iprt status code.
  *
  * @param   u64ProgramStartNanoTS  The startup timestamp.
  */
-RTGCDECL(int) RTGCInit(uint64_t u64ProgramStartNanoTS);
+RTGCDECL(int) RTRCInit(uint64_t u64ProgramStartNanoTS);
 
 /**
- * Terminates the guest context runtime library.
+ * Terminates the raw-mode context runtime library.
  */
-RTGCDECL(void) RTGCTerm(void);
+RTGCDECL(void) RTRCTerm(void);
 #endif
 
 

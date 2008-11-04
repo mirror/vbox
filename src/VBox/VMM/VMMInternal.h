@@ -87,8 +87,10 @@ typedef FNVMMSWITCHERRC *PFNVMMSWITCHERRC;
 
 
 /**
- * The ring-0 logger instance.
- * We need to be able to find the VM handle from the logger instance.
+ * The ring-0 logger instance wrapper.
+ *
+ * We need to be able to find the VM handle from the logger instance, so we wrap
+ * it in this structure.
  */
 typedef struct VMMR0LOGGER
 {
@@ -101,9 +103,11 @@ typedef struct VMMR0LOGGER
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Alignment;
 #endif
-    /** The ring-0 logger instance. This extends beyond the size.*/
+    /** The ring-0 logger instance. This extends beyond the size.  */
     RTLOGGER                    Logger;
-} VMMR0LOGGER, *PVMMR0LOGGER;
+} VMMR0LOGGER;
+/** Pointer to a ring-0 logger instance wrapper. */
+typedef VMMR0LOGGER *PVMMR0LOGGER;
 
 
 /**
@@ -112,7 +116,7 @@ typedef struct VMMR0LOGGER
  */
 typedef struct VMMR0JMPBUF
 {
-    /** Tranditional jmp_buf stuff
+    /** Traditional jmp_buf stuff
      * @{ */
 #if HC_ARCH_BITS == 32
     uint32_t                    ebx;

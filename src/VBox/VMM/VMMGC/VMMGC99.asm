@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VMMGC0 - The first object module in the link.
+; VMMGC99 - The last object module in the link.
 ;
 
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.

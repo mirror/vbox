@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Init Guest Context.
+ * IPRT - Init Raw-mode Context.
  */
 
 /*
@@ -63,13 +63,13 @@ uint64_t    g_u64ProgramStartMilliTS;
 
 
 /**
- * Initalizes the guest context runtime library. 
+ * Initializes the raw-mode context runtime library.
  *
  * @returns iprt status code.
  *
  * @param   u64ProgramStartNanoTS  The startup timestamp.
  */
-RTGCDECL(int) RTGCInit(uint64_t u64ProgramStartNanoTS)
+RTGCDECL(int) RTRCInit(uint64_t u64ProgramStartNanoTS)
 {
     /*
      * Init the program start TSes.
@@ -84,9 +84,9 @@ RTGCDECL(int) RTGCInit(uint64_t u64ProgramStartNanoTS)
 
 
 /**
- * Terminates the guest context runtime library.
+ * Terminates the raw-mode context runtime library.
  */
-RTGCDECL(void) RTGCTerm(void)
+RTGCDECL(void) RTRCTerm(void)
 {
     /* do nothing */
 }
