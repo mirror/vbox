@@ -54,9 +54,9 @@ VBIPKG_FILENAME = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 #
 # Targets
 #
-INSTALLS         = solaris-doc
-PACKING          = $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
-OTHER_CLEAN      = $(addprefix $(SOLARIS_INST_DIR)/,\
+INSTALLS        += solaris-doc
+PACKING         += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
+OTHER_CLEAN     += $(addprefix $(SOLARIS_INST_DIR)/,\
 	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
         makepackage.sh prototype postinstall.sh preremove.sh)
 
