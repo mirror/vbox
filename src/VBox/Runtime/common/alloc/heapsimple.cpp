@@ -33,6 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DEFAULT
+
+#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
+/* should come first to prevent warnings about duplicate definitions of PAGE_* */
+# include "the-linux-kernel.h"
+#endif
+
 #include <iprt/heap.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -43,12 +49,6 @@
 
 #include "internal/magics.h"
 
-#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
-#include "the-linux-kernel.h"
-EXPORT_SYMBOL(RTHeapSimpleAlloc);
-EXPORT_SYMBOL(RTHeapSimpleInit);
-EXPORT_SYMBOL(RTHeapSimpleFree);
-#endif
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -938,3 +938,9 @@ RTDECL(void) RTHeapSimpleDump(RTHEAPSIMPLE Heap, PFNRTHEAPSIMPLEPRINTF pfnPrintf
     pfnPrintf("**** Done dumping Heap %p ****\n", Heap);
 }
 
+
+#if defined(IN_GUEST_R0) && defined(RT_OS_LINUX) && defined(IN_MODULE)
+EXPORT_SYMBOL(RTHeapSimpleAlloc);
+EXPORT_SYMBOL(RTHeapSimpleInit);
+EXPORT_SYMBOL(RTHeapSimpleFree);
+#endif
