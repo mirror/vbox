@@ -642,7 +642,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *p
             }
             else
             {
-                if (pszSymbol < (const char *)(void *)0x10000)
+                if ((uintptr_t)pszSymbol < 0x10000)
                     AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)(uintptr_t)pszSymbol, pszModule));
                 else
                     AssertMsg(rc, ("Couldn't symbol '%s' in module '%s'\n", pszSymbol, pszModule));
@@ -786,7 +786,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
             }
             else
             {
-                if (pszSymbol < (const char*)(void*)0x10000)
+                if ((uintptr_t)pszSymbol < 0x10000)
                     AssertMsg(rc, ("Couldn't symbol '%u' in module '%s'\n", (unsigned)(uintptr_t)pszSymbol, pszModule));
                 else
                     AssertMsg(rc, ("Couldn't symbol '%s' in module '%s'\n", pszSymbol, pszModule));
