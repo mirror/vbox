@@ -2822,7 +2822,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 #else
         int rc = CTXALLMID(VMM, CallHost)(PGM2VM(pPGM), VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             *ppPage = NULL; /* avoid incorrect and very annoying GCC warnings */
             return rc;
@@ -2889,7 +2889,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
 #else
         int rc = CTXALLMID(VMM, CallHost)(PGM2VM(pPGM), VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             *ppPage = NULL; /* Shut up annoying smart ass. */
             return rc;
@@ -2980,7 +2980,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE p
 #else
         int rc = CTXALLMID(VMM, CallHost)(PGM2VM(pPGM), VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             *ppPage = NULL; /* Shut up silly GCC warnings. */
             *ppPage = NULL; /* ditto */
@@ -3009,7 +3009,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pPGM, GCPhys, &pPage);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
@@ -3063,7 +3063,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageAndRangeEx(pPGM, GCPhys, &pPage, &pRam);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         *pHCPtr = 0; /* Shut up silly GCC warnings. */
         return rc;
@@ -3151,7 +3151,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageAndRangeEx(pPGM, GCPhys, &pPage, &pRam);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         *pHCPtr = 0;    /* Shut up crappy GCC warnings */
         *pHCPhys = 0;   /* ditto */
@@ -3193,7 +3193,7 @@ DECLINLINE(int) pgmRamFlagsClearByGCPhys(PPGM pPGM, RTGCPHYS GCPhys, unsigned fF
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pPGM, GCPhys, &pPage);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     fFlags &= ~X86_PTE_PAE_PG_MASK;
@@ -3216,7 +3216,7 @@ DECLINLINE(int) pgmRamFlagsClearByGCPhysWithHint(PPGM pPGM, RTGCPHYS GCPhys, uns
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, ppRamHint);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     fFlags &= ~X86_PTE_PAE_PG_MASK;
@@ -3237,7 +3237,7 @@ DECLINLINE(int) pgmRamFlagsSetByGCPhys(PPGM pPGM, RTGCPHYS GCPhys, unsigned fFla
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(pPGM, GCPhys, &pPage);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     fFlags &= ~X86_PTE_PAE_PG_MASK;
@@ -3260,7 +3260,7 @@ DECLINLINE(int) pgmRamFlagsSetByGCPhysWithHint(PPGM pPGM, RTGCPHYS GCPhys, unsig
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageWithHintEx(pPGM, GCPhys, &pPage, ppRamHint);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     fFlags &= ~X86_PTE_PAE_PG_MASK;
@@ -3305,7 +3305,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCUINTPTR GCPtr)
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return pPD;
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
         /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emulated as all 0s. */
@@ -3334,7 +3334,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCUINTPTR GCPtr)
         /* The cache is out-of-sync. */
         PX86PDPAE pPD;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return &pPD->a[iPD];
         AssertMsgFailed(("Impossible! rc=%Vrc PDPE=%RX64\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
         /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page or something which we'll emulate as all 0s. */
@@ -3363,7 +3363,7 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return pPD->a[iPD].u;
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
     }
@@ -3396,7 +3396,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             *piPD = iPD;
             return pPD;
@@ -3428,7 +3428,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX
     {
         PX86PDPT pPdpt;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdpt);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return NULL;
@@ -3460,7 +3460,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
     {
         PX86PDPT pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return 0ULL;
@@ -3473,7 +3473,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
             PX86PDPAE pPD;
 
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
                 return 0ULL;
@@ -3503,7 +3503,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
     {
         PX86PDPT pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pGstPaePML4HC->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return 0ULL;
@@ -3515,7 +3515,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
             PX86PDPAE pPD;
 
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
                 return 0ULL;
@@ -3545,7 +3545,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
     {
         PX86PDPT pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pGstPaePML4HC->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return NULL;
@@ -3557,7 +3557,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
             PX86PDPAE pPD;
 
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
                 return NULL;
@@ -3591,7 +3591,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
     {
         PX86PDPT pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return 0ULL;
@@ -3604,7 +3604,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
             PX86PDPAE pPD;
 
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
                 return 0ULL;
@@ -3638,7 +3638,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
     {
         PX86PDPT pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertFailed();
             return 0ULL;
@@ -3651,7 +3651,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
             PX86PDPAE pPD;
 
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
                 return 0ULL;

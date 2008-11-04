@@ -108,7 +108,7 @@ VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
     MMGCRamRegisterTrapHandler(pVM);
     rc = MMGCRamReadNoTrapHandler(pDst, pSrc, cb);
     MMGCRamDeregisterTrapHandler(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         TRPMRestoreTrap(pVM);
 
     return rc;
@@ -131,7 +131,7 @@ VMMRCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
     MMGCRamRegisterTrapHandler(pVM);
     int rc = MMGCRamWriteNoTrapHandler(pDst, pSrc, cb);
     MMGCRamDeregisterTrapHandler(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         TRPMRestoreTrap(pVM);
 
     /*

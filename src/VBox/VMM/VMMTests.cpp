@@ -57,7 +57,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
 {
     RTRCPTR RCPtrEP;
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     CPUMHyperSetCtxCore(pVM, NULL);
@@ -94,7 +94,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
 
     RTRCPTR RCPtrEP;
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     CPUMHyperSetCtxCore(pVM, NULL);
@@ -129,7 +129,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     {
         RTRCPTR RCPtrFault;
         int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &RCPtrFault);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
             RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Vrc!\n", pszFaultEIP, rc);
         else if (RCPtrFault != CPUMGetHyperEIP(pVM))
         {
@@ -184,7 +184,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
      */
     RTRCPTR RCPtrEP;
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
 
@@ -200,7 +200,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         bool f;
         rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "DoubleFault", &f);
 #if !defined(DEBUG_bird)
-        if (VBOX_SUCCESS(rc) && f)
+        if (RT_SUCCESS(rc) && f)
 #endif
         {
             /* see tripple fault warnings in SELM and VMMGC.cpp. */
@@ -298,8 +298,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         RTPrintf("ok\n");
 
         /* done, clear it */
-        if (    VBOX_FAILURE(DBGFR3BpClear(pVM, iBp0))
-            ||  VBOX_FAILURE(DBGFR3BpClear(pVM, iBp1)))
+        if (    RT_FAILURE(DBGFR3BpClear(pVM, iBp0))
+            ||  RT_FAILURE(DBGFR3BpClear(pVM, iBp1)))
         {
             RTPrintf("VMM: Failed to clear breakpoints!\n");
             return VERR_GENERAL_FAILURE;
@@ -354,7 +354,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
@@ -408,7 +408,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
@@ -495,7 +495,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
      */
     RTRCPTR RCPtrEP;
     rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
 
@@ -543,7 +543,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             uint64_t TickThisStart = ASMReadTSC();
             rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN);
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("VMM: R0 returned fatal %Vrc in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);

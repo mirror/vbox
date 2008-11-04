@@ -78,7 +78,7 @@ int mmR3HyperInit(PVM pVM)
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbHyperHeap = 1280*_1K;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         LogRel(("MM/cbHyperHeap query -> %Vrc\n", rc));
         AssertRCReturn(rc, rc);
@@ -92,7 +92,7 @@ int mmR3HyperInit(PVM pVM)
      * hypervisor static area because lookup records are allocated from it.)
      */
     rc = mmR3HyperHeapCreate(pVM, cbHyperHeap, &pVM->mm.s.pHyperHeapR3);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pVM->mm.s.pHyperHeapR0 = (uintptr_t)pVM->mm.s.pHyperHeapR3; /** @todo #1865: map into ring-0 / whatever. */
 
@@ -107,7 +107,7 @@ int mmR3HyperInit(PVM pVM)
         AssertRelease(pVM->cbSelf == RT_UOFFSETOF(VM, aCpus[pVM->cCPUs]));
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pVM->pVMRC = (RTRCPTR)GCPtr;
             pVM->pVMGC = pVM->pVMRC;
@@ -121,7 +121,7 @@ int mmR3HyperInit(PVM pVM)
              * Map the heap into the hypervisor space.
              */
             rc = mmR3HyperHeapMap(pVM, pVM->mm.s.pHyperHeapR3, &GCPtr);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pVM->mm.s.pHyperHeapRC = (RTRCPTR)GCPtr;
                 Assert(pVM->mm.s.pHyperHeapRC == GCPtr);
@@ -162,7 +162,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
         pVM->mm.s.cbHyperArea -= _4M;
     int rc = PGMR3MapPT(pVM, pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea,
                         mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pVM->mm.s.fPGMInitialized = true;
 
@@ -192,10 +192,10 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
                 {
                     RTHCPHYS HCPhys;
                     rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys + off, &HCPhys);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     rc = PGMMap(pVM, GCPtr + off, HCPhys, PAGE_SIZE, 0);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                 }
                 break;
@@ -226,7 +226,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
                 break;
         }
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("rc=%Vrc cb=%d GCPtr=%VGv enmType=%d pszDesc=%s\n",
                              rc, pLookup->cb, pLookup->enmType, pLookup->pszDesc));
@@ -347,7 +347,7 @@ VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t c
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     int rc = mmR3HyperMap(pVM, cbAligned, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_HCPHYS;
         pLookup->u.HCPhys.pvR3   = pvR3;
@@ -358,7 +358,7 @@ VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t c
          */
         if (pVM->mm.s.fPGMInitialized)
             rc = PGMMap(pVM, GCPtr, HCPhys, cbAligned, 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             *pGCPtr = GCPtr;
     }
     return rc;
@@ -393,7 +393,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     int rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_GCPHYS;
         pLookup->u.GCPhys.GCPhys = GCPhys;
@@ -406,7 +406,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             RTHCPHYS HCPhys;
             rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys + off, &HCPhys);
             AssertRC(rc);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("rc=%Vrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
                 break;
@@ -415,7 +415,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             {
                 rc = PGMMap(pVM, GCPtr + off, HCPhys, PAGE_SIZE, 0);
                 AssertRC(rc);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("rc=%Vrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
                     break;
@@ -423,7 +423,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             }
         }
 
-        if (VBOX_SUCCESS(rc) && pGCPtr)
+        if (RT_SUCCESS(rc) && pGCPtr)
             *pGCPtr = GCPtr;
     }
     return rc;
@@ -478,7 +478,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_MMIO2;
         pLookup->u.MMIO2.pDevIns = pDevIns;
@@ -496,7 +496,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
                 rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
                 AssertRCReturn(rc, VERR_INTERNAL_ERROR);
                 rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     AssertMsgFailed(("rc=%Vrc offCur=%RGp %s\n", rc, offCur, pszDesc));
                     break;
@@ -504,7 +504,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             }
         }
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             GCPtr |= offPage;
             *pRCPtr = GCPtr;
@@ -558,19 +558,19 @@ VMMR3DECL(int) MMR3HyperMapHCRam(PVM pVM, void *pvR3, size_t cb, bool fFree, con
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     int rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Lock the heap memory and tell PGM about the locked pages.
          */
         PMMLOCKEDMEM    pLockedMem;
         rc = mmR3LockMem(pVM, pvR3Page, cb, fFree ? MM_LOCKED_TYPE_HYPER : MM_LOCKED_TYPE_HYPER_NOFREE, &pLockedMem, false /* fSilentFailure */);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* map the stuff into guest address space. */
             if (pVM->mm.s.fPGMInitialized)
                 rc = mmR3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
                 pLookup->u.Locked.pvR3       = pvR3;
@@ -625,7 +625,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     int rc = mmR3HyperMap(pVM, cPages << PAGE_SHIFT, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Create a locked memory record and tell PGM about this.
@@ -647,7 +647,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
             /* map the stuff into guest address space. */
             if (pVM->mm.s.fPGMInitialized)
                 rc = mmR3MapLocked(pVM, pLockedMem, GCPtr, 0, ~(size_t)0, 0);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
                 pLookup->u.Locked.pvR3       = pvR3;
@@ -698,7 +698,7 @@ VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGC
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
     int rc = mmR3HyperMap(pVM, cb, pszDesc, &GCPtr, &pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_DYNAMIC;
         if (pGCPtr)
@@ -740,7 +740,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
      */
     PMMLOOKUPHYPER  pLookup;
     int rc = MMHyperAlloc(pVM, sizeof(*pLookup), 1, MM_TAG_MM, (void **)&pLookup);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Initialize it and insert it.
@@ -786,7 +786,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
     void *pv;
     int rc = SUPPageAlloc(cbAligned >> PAGE_SHIFT, &pv); /** @todo #1865: heap allocation must be changed for osx (only). */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Initialize the heap and first free chunk.
@@ -833,7 +833,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
 {
     int rc = MMR3HyperMapHCRam(pVM, pHeap, pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, true, "Heap", ppHeapGC);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pHeap->pVMRC    = pVM->pVMRC;
         pHeap->pbHeapRC = *ppHeapGC + MMYPERHEAP_HDR_SIZE;
@@ -920,13 +920,13 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
     cb = RT_ALIGN(cb, PAGE_SIZE);
     void *pvPages;
     int rc = SUPPageAlloc(cb >> PAGE_SHIFT, &pvPages);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCPTR GCPtr;
         rc = MMR3HyperMapHCRam(pVM, pvPages, cb, true,
                                MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmR3GetTagName(enmTag)),
                                &GCPtr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             *ppv = pvPages;
             Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
@@ -1024,7 +1024,7 @@ VMMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys)
 {
     void *pv;
     int rc = MMR3HyperHCPhys2HCVirtEx(pVM, HCPhys, &pv);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return pv;
     AssertMsgFailed(("Invalid address HCPhys=%x rc=%d\n", HCPhys, rc));
     return NULL;

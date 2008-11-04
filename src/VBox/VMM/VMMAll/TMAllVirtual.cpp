@@ -637,7 +637,7 @@ VMMDECL(int) TMVirtualSetWarpDrive(PVM pVM, uint32_t u32Percent)
 #ifdef IN_RING3
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)tmVirtualSetWarpDrive, 2, pVM, u32Percent);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     return rc;

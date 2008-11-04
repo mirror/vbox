@@ -103,7 +103,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
 
     /* Enter VMX Root Mode */
     int rc = VMXEnable(pPageCpuPhys);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (pVM)
             VMXR0CheckError(pVM, rc);
@@ -258,12 +258,12 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     /* Clear VM Control Structure. */
     Log(("pVMCSPhys  = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
     rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto vmx_end;
 
     /* Activate the VM Control Structure. */
     rc = VMXActivateVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto vmx_end;
 
     /* VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
@@ -667,7 +667,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
 
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc cs:eip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, pCtx->rip));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
@@ -1811,7 +1811,7 @@ ResumeExecution:
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = VMXR0CheckPendingInterrupt(pVM, pCtx);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
@@ -2539,7 +2539,7 @@ ResumeExecution:
         }
 
         /* Update EIP if no error occurred. */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             pCtx->rip += cbInstr;
 
         if (rc == VINF_SUCCESS)
@@ -2597,7 +2597,7 @@ ResumeExecution:
                                     VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification));
         }
         /* Update EIP if no error occurred. */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             pCtx->rip += cbInstr;
 
         if (rc == VINF_SUCCESS)
@@ -2756,7 +2756,7 @@ ResumeExecution:
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(fIOWrite);
         else
-            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
+            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
         break;
     }
@@ -2974,7 +2974,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
 
     /* Activate the VM Control Structure. */
     int rc = VMXActivateVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     pVM->hwaccm.s.vmx.fResumeVM = false;

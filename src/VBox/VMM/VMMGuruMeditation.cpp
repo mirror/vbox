@@ -308,7 +308,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                                                       &szModName[0],  sizeof(szModName),  &RCPtrMod,
                                                       &szNearSym1[0], sizeof(szNearSym1), &RCPtrNearSym1,
                                                       &szNearSym2[0], sizeof(szNearSym2), &RCPtrNearSym2);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                         pHlp->pfnPrintf(pHlp,
                                         "!! EIP in %s (%RRv) at rva %x near symbols:\n"
                                         "!!    %RRv rva %RRv off %08x  %s\n"
@@ -324,7 +324,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                 /* Disassemble the instruction. */
                 char szInstr[256];
                 rc2 = DBGFR3DisasInstrEx(pVM, 0, 0, DBGF_DISAS_FLAGS_CURRENT_HYPER, &szInstr[0], sizeof(szInstr), NULL);
-                if (VBOX_SUCCESS(rc2))
+                if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
                                     "!! %s\n", szInstr);
 
@@ -339,7 +339,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
                 /* Callstack. */
                 DBGFSTACKFRAME Frame = {0};
                 rc2 = DBGFR3StackWalkBeginHyper(pVM, &Frame);
-                if (VBOX_SUCCESS(rc2))
+                if (RT_SUCCESS(rc2))
                 {
                     pHlp->pfnPrintf(pHlp,
                                     "!!\n"
@@ -375,7 +375,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
 
                         /* next */
                         rc2 = DBGFR3StackWalkNext(pVM, &Frame);
-                    } while (VBOX_SUCCESS(rc2));
+                    } while (RT_SUCCESS(rc2));
                     DBGFR3StackWalkEnd(pVM, &Frame);
                 }
 

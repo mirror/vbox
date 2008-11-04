@@ -1002,7 +1002,7 @@ l_tryagain:
         rc |= MMGCRamRead(pVM, &tss.offIoBitmap, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap)), sizeof(tss.offIoBitmap));
 #  endif
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (!fTriedAlready)
             {
@@ -1021,7 +1021,7 @@ l_tryagain:
 # else /* !IN_GC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
         rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
             return rc;

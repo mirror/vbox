@@ -288,7 +288,7 @@ VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetInt3, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpSet: returns %Vrc\n", rc));
@@ -331,7 +331,7 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
             rc = dbgfR3BpInt3Arm(pVM, pBp);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
             if (piBp)
@@ -355,7 +355,7 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PVM pVM, PCDBGFADDRESS pAddress, uint64
      * Now ask REM to set the breakpoint.
      */
     int rc = dbgfR3BpInt3Arm(pVM, pBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (piBp)
             *piBp = pBp->iBp;
@@ -382,7 +382,7 @@ static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
      * Save current byte and write int3 instruction.
      */
     int rc = MMR3ReadGCVirt(pVM, &pBp->u.Int3.bOrg, pBp->GCPtr, 1);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         static const uint8_t s_bInt3 = 0xcc;
         rc = MMR3WriteGCVirt(pVM, pBp->GCPtr, &s_bInt3, 1);
@@ -437,7 +437,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetReg, 7, pVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpSetReg: returns %Vrc\n", rc));
@@ -513,7 +513,7 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
             rc = dbgfR3BpRegArm(pVM, pBp);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
             if (piBp)
@@ -540,7 +540,7 @@ static DECLCALLBACK(int) dbgfR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_
      * Arm the breakpoint.
      */
     int rc = dbgfR3BpRegArm(pVM, pBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (piBp)
             *piBp = pBp->iBp;
@@ -602,7 +602,7 @@ VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetREM, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpSetREM: returns %Vrc\n", rc));
@@ -647,7 +647,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
             rc = REMR3BreakpointSet(pVM, pBp->GCPtr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
             if (piBp)
@@ -671,7 +671,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
      * Now ask REM to set the breakpoint.
      */
     int rc = REMR3BreakpointSet(pVM, pAddress->FlatPtr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (piBp)
             *piBp = pBp->iBp;
@@ -698,7 +698,7 @@ VMMR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpClear, 2, pVM, iBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpClear: returns %Vrc\n", rc));
@@ -775,7 +775,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnable, 2, pVM, iBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpEnable: returns %Vrc\n", rc));
@@ -830,7 +830,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, RTUINT iBp)
             AssertMsgFailed(("Invalid enmType=%d!\n", pBp->enmType));
             return VERR_INTERNAL_ERROR;
     }
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         pBp->fEnabled = false;
 
     return rc;
@@ -852,7 +852,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpDisable, 2, pVM, iBp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpDisable: returns %Vrc\n", rc));
@@ -928,7 +928,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnum, 3, pVM, pfnCallback, pvUser);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     LogFlow(("DBGFR3BpClear: returns %Vrc\n", rc));
@@ -961,7 +961,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *
         if (pVM->dbgf.s.aHwBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pVM, pvUser, &pVM->dbgf.s.aHwBreakpoints[i]);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
 
@@ -972,7 +972,7 @@ static DECLCALLBACK(int) dbgfR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *
         if (pVM->dbgf.s.aBreakpoints[i].enmType != DBGFBPTYPE_FREE)
         {
             int rc = pfnCallback(pVM, pvUser, &pVM->dbgf.s.aBreakpoints[i]);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
 

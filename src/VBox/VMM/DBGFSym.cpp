@@ -256,7 +256,7 @@ int dbgfR3SymInit(PVM pVM)
 #ifndef HAVE_DBGHELP
     /* modules & lines later */
     rc = dbgfR3SymbolInit(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pVM->dbgf.s.fSymInited = true;
 #endif
@@ -508,7 +508,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
                 if (*psz)
                 {
                     int rc2 = DBGFR3SymbolAdd(pVM, ModuleAddress, Address + AddressDelta, 0, psz);
-                    if (VBOX_FAILURE(rc2))
+                    if (RT_FAILURE(rc2))
                         Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %Vrc\n", Address, psz, rc2));
                 }
             }
@@ -540,7 +540,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -578,7 +578,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
                 rc = VERR_NOT_IMPLEMENTED;
                 #endif
             }
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Seek to the start of the file.
@@ -685,7 +685,7 @@ VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR S
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -717,7 +717,7 @@ VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poff
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -772,7 +772,7 @@ VMMR3DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poff
                                           &szModName[0],  sizeof(szModName),  &RCPtrMod,
                                           &szNearSym1[0], sizeof(szNearSym1), &RCPtrNearSym1,
                                           &szNearSym2[0], sizeof(szNearSym2), &RCPtrNearSym2);
-        if (VBOX_SUCCESS(rc) && szNearSym1[0])
+        if (RT_SUCCESS(rc) && szNearSym1[0])
         {
             pSymbol->Value = RCPtrNearSym1;
             pSymbol->cb = RCPtrNearSym2 > RCPtrNearSym1 ? RCPtrNearSym2 - RCPtrNearSym1 : 0;
@@ -805,7 +805,7 @@ VMMR3DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pS
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -875,7 +875,7 @@ VMMR3DECL(PDBGFSYMBOL) DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRT
 {
     DBGFSYMBOL Symbol;
     int rc = DBGFR3SymbolByAddr(pVM, Address, poffDisplacement, &Symbol);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return NULL;
     return dbgfR3SymbolDup(pVM, &Symbol);
 }
@@ -893,7 +893,7 @@ VMMR3DECL(PDBGFSYMBOL) DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol)
 {
     DBGFSYMBOL Symbol;
     int rc = DBGFR3SymbolByName(pVM, pszSymbol, &Symbol);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return NULL;
     return dbgfR3SymbolDup(pVM, &Symbol);
 }
@@ -928,7 +928,7 @@ VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDi
     if (!pVM->dbgf.s.fSymInited)
     {
         int rc = dbgfR3SymLazyInit(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -986,7 +986,7 @@ VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCIN
 {
     DBGFLINE Line;
     int rc = DBGFR3LineByAddr(pVM, Address, poffDisplacement, &Line);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return NULL;
     return dbgfR3LineDup(pVM, &Line);
 }

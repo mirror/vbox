@@ -148,14 +148,14 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "vmm", 1, VMM_SAVED_STATE_VERSION, VMM_STACK_SIZE + sizeof(RTGCPTR),
                                NULL, vmmR3Save, NULL,
                                NULL, vmmR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Register the Ring-0 VM handle with the session for fast ioctl calls.
      */
     rc = SUPSetVMForFastIOCtl(pVM->pVMR0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -182,7 +182,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
             if (RT_SUCCESS(rc))
             {
                 rc = RTCritSectInit(&pVM->vmm.s.CritSectVMLock);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /*
                      * Debug info and statistics.
@@ -197,7 +197,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
         /** @todo: Need failure cleanup. */
 
         //more todo in here?
-        //if (VBOX_SUCCESS(rc))
+        //if (RT_SUCCESS(rc))
         //{
         //}
         //int rc2 = vmmR3TermCoreCode(pVM);
@@ -227,7 +227,7 @@ static int vmmR3InitStacks(PVM pVM)
 #else
     int rc = MMHyperAlloc(pVM, VMM_STACK_SIZE, PAGE_SIZE, MM_TAG_VMM, (void **)&pVM->vmm.s.pbEMTStackR3);
 #endif
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pVM->vmm.s.CallHostR0JmpBuf.pvSavedStack = MMHyperR3ToR0(pVM, pVM->vmm.s.pbEMTStackR3);
         pVM->vmm.s.pbEMTStackRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pbEMTStackR3);
@@ -402,13 +402,13 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
      */
     int rc = PGMMapSetPage(pVM, pVM->vmm.s.pbEMTStackRC, VMM_STACK_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
     AssertRC(rc);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Create the EMT yield timer.
          */
         rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
            rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
     }
 
@@ -416,7 +416,7 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
     /*
      * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
                     X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
 #endif
@@ -441,7 +441,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         &&  !pVM->vmm.s.pR0LoggerR3->fCreated)
     {
         rc = VMMR3UpdateLoggers(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -462,15 +462,15 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
         /* Resume R0 */
     }
 
-    if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+    if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
         LogRel(("R0 init failed, rc=%Vra\n", rc));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
     return rc;
@@ -497,7 +497,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
      */
     RTRCPTR RCPtrEP;
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         CPUMHyperSetCtxCore(pVM, NULL);
         CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
@@ -533,11 +533,11 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
             if (rc != VINF_VMM_CALL_HOST)
                 break;
             rc = vmmR3ServiceCallHostRequest(pVM);
-            if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+            if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
                 break;
         }
 
-        if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
         {
             VMMR3FatalDump(pVM, rc);
             if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -575,14 +575,14 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
         if (rc != VINF_VMM_CALL_HOST)
             break;
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+        if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
             break;
         /* Resume R0 */
     }
-    if (VBOX_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
+    if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
         LogRel(("VMMR3Term: R0 term failed, rc=%Vra. (warning)\n", rc));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
 
@@ -754,7 +754,7 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 
     RTRCPTR RCPtr;
     int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg1", &RCPtr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return (const char *)MMHyperRCToR3(pVM, RCPtr);
 
     return NULL;
@@ -774,7 +774,7 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 
     RTRCPTR RCPtr;
     int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg2", &RCPtr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return (const char *)MMHyperRCToR3(pVM, RCPtr);
 
     return NULL;
@@ -837,7 +837,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     SSMR3GetRCPtr(pSSM, &RCPtrStackBottom);
     RTRCPTR RCPtrESP;
     int rc = SSMR3GetRCPtr(pSSM, &RCPtrESP);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* restore the stack.  */
@@ -846,7 +846,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /* terminator */
     uint32_t u32;
     rc = SSMR3GetU32(pSSM, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32 != ~0U)
     {
@@ -1095,7 +1095,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         /* Resume GC */
     }
@@ -1140,7 +1140,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         /* Resume R0 */
     }
@@ -1231,7 +1231,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 }
@@ -1287,7 +1287,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 }

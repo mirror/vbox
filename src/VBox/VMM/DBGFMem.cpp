@@ -114,7 +114,7 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRang
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3MemScan, 6,
                          pVM, pAddress, cbRange, pabNeedle, cbNeedle, pHitAddress);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
@@ -181,7 +181,7 @@ VMMR3DECL(int) DBGFR3MemRead(PVM pVM, PCDBGFADDRESS pAddress, void *pvBuf, size_
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemRead, 4,
                           pVM, pAddress, pvBuf, cbRead);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
@@ -278,7 +278,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, PCDBGFADDRESS pAddress, char *pszBuf
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3MemReadString, 4,
                           pVM, pAddress, pszBuf, cchBuf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 

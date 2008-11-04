@@ -200,7 +200,7 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "selm", 1, SELM_SAVED_STATE_VERSION, sizeof(SELM),
                                NULL, selmR3Save, NULL,
                                NULL, selmR3Load, selmR3LoadDone);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -769,7 +769,7 @@ static DECLCALLBACK(int) selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
      * Don't do anything if it's a load failure.
      */
     int rc = SSMR3HandleGetStatus(pSSM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return VINF_SUCCESS;
 
     /*
@@ -850,7 +850,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         RTUINT      cbEffLimit = GDTR.cbGdt;
         PX86DESC   pGDTE = &pVM->selm.s.paGdtR3[1];
         rc = PGMPhysSimpleReadGCPtr(pVM, pGDTE, GDTR.pGdt + sizeof(X86DESC), cbEffLimit + 1 - sizeof(X86DESC));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /*
              * Read it page by page.
@@ -871,7 +871,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 RTUINT cb = PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK);
                 cb = RT_MIN(cb, cbLeft);
                 rc = PGMPhysSimpleReadGCPtr(pVM, pu8Dst, GCPtrSrc, cb);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     if (pu8DstInvalid != pu8Dst)
                         memset(pu8DstInvalid, 0, pu8Dst - pu8DstInvalid);
@@ -1063,7 +1063,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GDTR.pGdt, GDTR.pGdt + GDTR.cbGdt /* already inclusive */,
                                              0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0, "Guest GDT write access handler");
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
 
             /* Update saved Guest GDTR. */
@@ -1204,7 +1204,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                     Log(("WARNING: Guest LDT (%VGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%VGv:%04x)\n",
                          GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
                 }
-                else if (VBOX_SUCCESS(rc))
+                else if (RT_SUCCESS(rc))
                     pVM->selm.s.GCPtrGuestLdt = GCPtrLdt;
                 else
                 {
@@ -1268,7 +1268,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             if (cbChunk > cbLeft)
                 cbChunk = cbLeft;
             rc = PGMPhysSimpleReadGCPtr(pVM, pShadowLDT, GCPtrLdt, cbChunk);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Mark page
@@ -1528,7 +1528,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
 
                     rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtrTss, GCPtrTss + cbTss - 1,
                                                      0, selmR3GuestTSSWriteHandler, "selmRCGuestTSSWriteHandler", 0, "Guest TSS write access handler");
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
                         return rc;
@@ -1545,7 +1545,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
             /* feeling very lazy; reading too much */
             VBOXTSS tss;
             rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, offIoBitmap) + sizeof(tss.offIoBitmap));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
                 uint32_t ssr0, espr0;
@@ -1629,7 +1629,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     {
         X86DESC    GDTEGuest;
         int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTEGuest, GCPtrGDTEGuest, sizeof(GDTEGuest));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (pGDTE->Gen.u1DescType || pGDTE->Gen.u4Type != X86_SEL_TYPE_SYS_LDT)
             {
@@ -1667,7 +1667,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     }
     X86DESC    LDTDesc;
     int rc = PGMPhysSimpleReadGCPtr(pVM, &LDTDesc, GDTR.pGdt + (SelLdt & X86_SEL_MASK), sizeof(LDTDesc));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("SELMR3DebugCheck: Failed to read LDT descriptor. rc=%d\n", rc));
         return rc;
@@ -1702,7 +1702,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     {
         X86DESC    LDTEGuest;
         int rc = PGMPhysSimpleReadGCPtr(pVM, &LDTEGuest, GCPtrLDTEGuest, sizeof(LDTEGuest));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (   pLDTE->Gen.u16LimitLow != LDTEGuest.Gen.u16LimitLow
                 || pLDTE->Gen.u4LimitHigh != LDTEGuest.Gen.u4LimitHigh
@@ -1785,11 +1785,11 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
             RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
             uint32_t    ESPR0;
             int rc = PGMPhysSimpleReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 RTSEL SelSS0;
                 rc = PGMPhysSimpleReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     if (    ESPR0 == pVM->selm.s.Tss.esp1
                         &&  SelSS0 == (pVM->selm.s.Tss.ss1 & ~1))
@@ -1844,7 +1844,7 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
     /* Read descriptor from GC. */
     X86DESC Desc;
     int rc = PGMPhysSimpleReadGCPtr(pVM, (void *)&Desc, (RTGCPTR)(GDTR.pGdt + (SelLdt & X86_SEL_MASK)), sizeof(Desc));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         /* fatal */
         AssertMsgFailed(("Can't read LDT descriptor for selector=%04X\n", SelLdt));
@@ -1910,7 +1910,7 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
             return VERR_INVALID_SELECTOR;
         GCPtrDesc = Gdtr.pGdt + (SelLdt & X86_SEL_MASK);
         int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* validate the LDT descriptor. */
@@ -1933,7 +1933,7 @@ static int selmR3GetSelectorInfo64(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 
     /* read the descriptor. */
     int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -2010,7 +2010,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
                 return VERR_INVALID_SELECTOR;
             GCPtrDesc = Gdtr.pGdt + (SelLdt & X86_SEL_MASK);
             int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
 
             /* validate the LDT descriptor. */
@@ -2033,7 +2033,7 @@ static int selmR3GetSelectorInfo32(PVM pVM, RTSEL Sel, PSELMSELINFO pSelInfo)
 
         /* read the descriptor. */
         int rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, GCPtrDesc, sizeof(Desc));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     else
@@ -2312,7 +2312,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     {
         X86DESC GDTE;
         int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTE, pGDTGC, sizeof(GDTE));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (GDTE.Gen.u1Present)
             {
@@ -2375,7 +2375,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     RTGCPTR     pLdtGC;
     unsigned    cbLdt;
     int rc = SELMGetLDTFromSel(pVM, SelLdt, &pLdtGC, &cbLdt);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x): rc=%Rrc\n", SelLdt, rc);
         return;
@@ -2387,7 +2387,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     {
         X86DESC LdtE;
         int rc = PGMPhysSimpleReadGCPtr(pVM, &LdtE, pLdtGC, sizeof(LdtE));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (LdtE.Gen.u1Present)
             {

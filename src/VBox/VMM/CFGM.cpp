@@ -134,7 +134,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
     }
     else
         rc = cfgmR3CreateDefaultTree(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         Log(("CFGMR3Init: Successfully constructed the configuration\n"));
         CFGMR3Dump(CFGMR3GetRoot(pVM));
@@ -219,7 +219,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetChild(PCFGMNODE pNode, const char *pszPath)
 {
     PCFGMNODE pChild;
     int rc = cfgmR3ResolveNode(pNode, pszPath, &pChild);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return pChild;
     return NULL;
 }
@@ -263,7 +263,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathFormat
     {
         PCFGMNODE pChild;
         int rc = cfgmR3ResolveNode(pNode, pszPath, &pChild);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return pChild;
         RTStrFree(pszPath);
     }
@@ -522,7 +522,7 @@ VMMR3DECL(int) CFGMR3QueryType(PCFGMNODE pNode, const char *pszName, PCFGMVALUET
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (penmType)
             *penmType = pLeaf->enmType;
@@ -544,7 +544,7 @@ VMMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         switch (pLeaf->enmType)
         {
@@ -582,7 +582,7 @@ VMMR3DECL(int) CFGMR3QueryInteger(PCFGMNODE pNode, const char *pszName, uint64_t
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLeaf->enmType == CFGMVALUETYPE_INTEGER)
             *pu64 = pLeaf->Value.Integer.u64;
@@ -606,7 +606,7 @@ VMMR3DECL(int) CFGMR3QueryIntegerDef(PCFGMNODE pNode, const char *pszName, uint6
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLeaf->enmType == CFGMVALUETYPE_INTEGER)
             *pu64 = pLeaf->Value.Integer.u64;
@@ -638,7 +638,7 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
@@ -671,7 +671,7 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
@@ -718,7 +718,7 @@ VMMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvDa
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLeaf->enmType == CFGMVALUETYPE_BYTES)
         {
@@ -748,7 +748,7 @@ static int cfgmR3CreateDefaultTree(PVM pVM)
 {
     int rc;
     int rcAll = VINF_SUCCESS;
-#define UPDATERC() do { if (VBOX_FAILURE(rc) && VBOX_SUCCESS(rcAll)) rcAll = rc; } while (0)
+#define UPDATERC() do { if (RT_FAILURE(rc) && RT_SUCCESS(rcAll)) rcAll = rc; } while (0)
 
     /*
      * Root level.
@@ -1223,7 +1223,7 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
                     {
                         /* no, insert it */
                         rc = CFGMR3InsertNode(pNode, psz, &pChild);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             break;
                         if (!pszNext)
                         {
@@ -1565,7 +1565,7 @@ VMMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3InsertLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pLeaf->enmType = CFGMVALUETYPE_INTEGER;
         pLeaf->Value.Integer.u64 = u64Integer;
@@ -1601,7 +1601,7 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
              */
             PCFGMLEAF pLeaf;
             rc = cfgmR3InsertLeaf(pNode, pszName, &pLeaf);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pLeaf->enmType = CFGMVALUETYPE_STRING;
                 pLeaf->Value.String.psz = pszStringCopy;
@@ -1648,7 +1648,7 @@ VMMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const voi
                  */
                 PCFGMLEAF pLeaf;
                 rc = cfgmR3InsertLeaf(pNode, pszName, &pLeaf);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     pLeaf->enmType = CFGMVALUETYPE_BYTES;
                     pLeaf->Value.Bytes.cb   = cbBytes;
@@ -1679,7 +1679,7 @@ VMMR3DECL(int) CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName)
 {
     PCFGMLEAF pLeaf;
     int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         cfgmR3RemoveLeaf(pNode, pLeaf);
     return rc;
 }
@@ -1732,7 +1732,7 @@ VMMR3DECL(int) CFGMR3QueryS64(PCFGMNODE pNode, const char *pszName, int64_t *pi6
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         *pi64 = (int64_t)u64;
     return rc;
 }
@@ -1751,7 +1751,7 @@ VMMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t *
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i64Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         *pi64 = (int64_t)u64;
     return rc;
 }
@@ -1769,7 +1769,7 @@ VMMR3DECL(int) CFGMR3QueryU32(PCFGMNODE pNode, const char *pszName, uint32_t *pu
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffff00000000)))
             *pu32 = (uint32_t)u64;
@@ -1793,7 +1793,7 @@ VMMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t 
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u32Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffff00000000)))
             *pu32 = (uint32_t)u64;
@@ -1816,7 +1816,7 @@ VMMR3DECL(int) CFGMR3QueryS32(PCFGMNODE pNode, const char *pszName, int32_t *pi3
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffff80000000))
             ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
@@ -1841,7 +1841,7 @@ VMMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i32Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffff80000000))
             ||  (u64 & UINT64_C(0xffffffff80000000)) == UINT64_C(0xffffffff80000000))
@@ -1865,7 +1865,7 @@ VMMR3DECL(int) CFGMR3QueryU16(PCFGMNODE pNode, const char *pszName, uint16_t *pu
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffffffff0000)))
             *pu16 = (int16_t)u64;
@@ -1889,7 +1889,7 @@ VMMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t 
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u16Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffffffff0000)))
             *pu16 = (int16_t)u64;
@@ -1912,7 +1912,7 @@ VMMR3DECL(int) CFGMR3QueryS16(PCFGMNODE pNode, const char *pszName, int16_t *pi1
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffffffff8000))
             ||  (u64 & UINT64_C(0xffffffffffff8000)) == UINT64_C(0xffffffffffff8000))
@@ -1937,7 +1937,7 @@ VMMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t *
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i16Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffffffff8000))
             ||  (u64 & UINT64_C(0xffffffffffff8000)) == UINT64_C(0xffffffffffff8000))
@@ -1961,7 +1961,7 @@ VMMR3DECL(int) CFGMR3QueryU8(PCFGMNODE pNode, const char *pszName, uint8_t *pu8)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffffffffff00)))
             *pu8 = (uint8_t)u64;
@@ -1985,7 +1985,7 @@ VMMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *p
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, u8Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffffffffff00)))
             *pu8 = (uint8_t)u64;
@@ -2008,7 +2008,7 @@ VMMR3DECL(int) CFGMR3QueryS8(PCFGMNODE pNode, const char *pszName, int8_t *pi8)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffffffffff80))
             ||  (u64 & UINT64_C(0xffffffffffffff80)) == UINT64_C(0xffffffffffffff80))
@@ -2033,7 +2033,7 @@ VMMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *pi
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i8Def);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (   !(u64 & UINT64_C(0xffffffffffffff80))
             ||  (u64 & UINT64_C(0xffffffffffffff80)) == UINT64_C(0xffffffffffffff80))
@@ -2058,7 +2058,7 @@ VMMR3DECL(int) CFGMR3QueryBool(PCFGMNODE pNode, const char *pszName, bool *pf)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         *pf = u64 ? true : false;
     return rc;
 }
@@ -2078,7 +2078,7 @@ VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, fDef);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         *pf = u64 ? true : false;
     return rc;
 }
@@ -2189,7 +2189,7 @@ VMMR3DECL(int) CFGMR3QueryPtr(PCFGMNODE pNode, const char *pszName, void **ppv)
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         uintptr_t u = (uintptr_t)u64;
         if (u64 == u)
@@ -2214,7 +2214,7 @@ VMMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **pp
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, (uintptr_t)pvDef);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         uintptr_t u = (uintptr_t)u64;
         if (u64 == u)
@@ -2238,7 +2238,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtr(PCFGMNODE pNode, const char *pszName, PRTGCPTR p
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCPTR u = (RTGCPTR)u64;
         if (u64 == u)
@@ -2263,7 +2263,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCPT
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCPTR u = (RTGCPTR)u64;
         if (u64 == u)
@@ -2287,7 +2287,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtrU(PCFGMNODE pNode, const char *pszName, PRTGCUINT
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCUINTPTR u = (RTGCUINTPTR)u64;
         if (u64 == u)
@@ -2312,7 +2312,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGCU
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCUINTPTR u = (RTGCUINTPTR)u64;
         if (u64 == u)
@@ -2336,7 +2336,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtrS(PCFGMNODE pNode, const char *pszName, PRTGCINTP
 {
     uint64_t u64;
     int rc = CFGMR3QueryInteger(pNode, pszName, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCINTPTR u = (RTGCINTPTR)u64;
         if (u64 == (uint64_t)u)
@@ -2361,7 +2361,7 @@ VMMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCI
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, GCPtrDef);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCINTPTR u = (RTGCINTPTR)u64;
         if (u64 == (uint64_t)u)
@@ -2387,13 +2387,13 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
 {
     size_t cch;
     int rc = CFGMR3QuerySize(pNode, pszName, &cch);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cch);
         if (pszString)
         {
             rc = CFGMR3QueryString(pNode, pszName, pszString, cch);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
                 MMR3HeapFree(pszString);
@@ -2424,13 +2424,13 @@ VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, c
         cch = strlen(pszDef) + 1;
         rc = VINF_SUCCESS;
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cch);
         if (pszString)
         {
             rc = CFGMR3QueryStringDef(pNode, pszName, pszString, cch, pszDef);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
                 MMR3HeapFree(pszString);
@@ -2471,7 +2471,7 @@ static DECLCALLBACK(void) cfgmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     if (pszArgs && *pszArgs)
     {
         int rc = cfgmR3ResolveNode(pRoot, pszArgs, &pRoot);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             pHlp->pfnPrintf(pHlp, "Failed to resolve CFGM path '%s', %Vrc", pszArgs, rc);
             return;

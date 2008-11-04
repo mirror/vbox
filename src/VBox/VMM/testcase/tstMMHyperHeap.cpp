@@ -53,9 +53,9 @@ int main(int argc, char **argv)
     RTR0PTR     pvR0;
     SUPPAGE     aPages[RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT];
     int rc = SUPR3Init(NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = SUPLowAlloc(RT_ELEMENTS(aPages), (void **)&pVM, &pvR0, &aPages[0]);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Fatal error: SUP Failure! rc=%Vrc\n", rc);
         return 1;
@@ -70,21 +70,21 @@ int main(int argc, char **argv)
     pVM->pUVM = pUVM;
 
     rc = STAMR3InitUVM(pUVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
         return 1;
     }
 
     rc = MMR3InitUVM(pUVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
         return 1;
     }
 
     rc = MMR3Init(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Fatal error: MMR3Init failed! rc=%Vrc\n", rc);
         return 1;
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         rc = MMHyperAlloc(pVM, aOps[i].cb, aOps[i].uAlignment, MM_TAG_VM, &aOps[i].pvAlloc);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("Failure: MMHyperAlloc(, %#x, %#x,) -> %d i=%d\n", aOps[i].cb, aOps[i].uAlignment, rc, i);
             return 1;
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
             continue;
         //size_t cbBeforeSub = MMHyperHeapGetFreeSize(pVM);
         rc = MMHyperFree(pVM, aOps[i].pvAlloc);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("Failure: MMHyperFree(, %p,) -> %d i=%d\n", aOps[i].pvAlloc, rc, i);
             return 1;
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
         //RTPrintf("debug: i=%d cbBeforeSub=%d now=%d\n", i, cbBeforeSub, MMHyperHeapGetFreeSize(pVM));
         void *pv;
         rc = MMHyperAlloc(pVM, aOps[i].cb, aOps[i].uAlignment, MM_TAG_VM_REQ, &pv);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("Failure: MMHyperAlloc(, %#x, %#x,) -> %d i=%d\n", aOps[i].cb, aOps[i].uAlignment, rc, i);
             return 1;
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
             else
             {
                 rc = MMHyperFree(pVM, aOps[j].pvAlloc);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     RTPrintf("Failure: MMHyperFree(, %p,) -> %d j=%d i=%d\n", aOps[j].pvAlloc, rc, i, j);
                     return 1;

@@ -241,7 +241,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0eTimeSyncPT, f);
         LogFlow(("=>SyncPT %04x = %08x\n", iPDSrc, PdeSrc.au32[0]));
         rc = PGM_BTH_NAME(SyncPT)(pVM, iPDSrc, pPDSrc, (RTGCUINTPTR)pvFault);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeSyncPT, f);
             return rc;
@@ -348,7 +348,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
         {
             PGSTPT pPTSrc;
             rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 unsigned iPTESrc = ((RTGCUINTPTR)pvFault >> GST_PT_SHIFT) & GST_PT_MASK;
                 if (pPTSrc->a[iPTESrc].n.u1Present)
@@ -369,7 +369,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
             PPGMPAGE pPage;
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 if (   PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)
                     || PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
@@ -395,7 +395,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 && !(uErr & X86_TRAP_PF_P))
                             {
                                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
-                                if (    VBOX_FAILURE(rc)
+                                if (    RT_FAILURE(rc)
                                     || !(uErr & X86_TRAP_PF_RW)
                                     || rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
                                 {
@@ -441,7 +441,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             && !(uErr & X86_TRAP_PF_P))
                         {
                             rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
-                            if (    VBOX_FAILURE(rc)
+                            if (    RT_FAILURE(rc)
                                 ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
                                 ||  !(uErr & X86_TRAP_PF_RW))
                             {
@@ -497,7 +497,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             unsigned        iPage;
                             rc = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys + ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK),
                                                                  &pCur, &iPage);
-                            Assert(VBOX_SUCCESS(rc) || !pCur);
+                            Assert(RT_SUCCESS(rc) || !pCur);
                             if (    pCur
                                 &&  (   uErr & X86_TRAP_PF_RW
                                      || pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
@@ -535,7 +535,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         &&  !(uErr & X86_TRAP_PF_P))
                     {
                         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
-                        if (    VBOX_FAILURE(rc)
+                        if (    RT_FAILURE(rc)
                             ||  rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE
                             ||  !(uErr & X86_TRAP_PF_RW))
                         {
@@ -645,7 +645,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 {
                     uint64_t fPageGst;
                     rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
-                    if (    VBOX_SUCCESS(rc)
+                    if (    RT_SUCCESS(rc)
                         && !(fPageGst & X86_PTE_US))
                     {
                         /* Note: can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU */
@@ -717,7 +717,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 }
 #   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0) */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, PGM_SYNC_NR_PAGES, uErr);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* The page was successfully synced, return to the guest. */
                     STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
@@ -732,7 +732,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  * to physical monitored regions, that are no longer valid.
                  * Assume for now it only applies to the read/write flag
                  */
-                if (VBOX_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
+                if (RT_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
                 {
                     if (uErr & X86_TRAP_PF_US)
                         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncUser));
@@ -744,7 +744,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                      * Note: Do NOT use PGM_SYNC_NR_PAGES here. That only works if the page is not present, which is not true in this case.
                      */
                     rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, (RTGCUINTPTR)pvFault, 1, uErr);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                        /*
                         * Page was successfully synced, return to guest.
@@ -753,12 +753,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         RTGCPHYS GCPhys;
                         uint64_t fPageGst;
                         rc = PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
-                        Assert(VBOX_SUCCESS(rc) && fPageGst & X86_PTE_RW);
+                        Assert(RT_SUCCESS(rc) && fPageGst & X86_PTE_RW);
                         LogFlow(("Obsolete physical monitor page out of sync %VGv - phys %VGp flags=%08llx\n", pvFault, GCPhys, (uint64_t)fPageGst));
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
-                        AssertMsg(VBOX_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Vrc fPageShw=%VX64\n", rc, fPageShw));
+                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Vrc fPageShw=%VX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
@@ -772,11 +772,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     {
                         uint64_t fPageGst;
                         rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
-                        if (    VBOX_SUCCESS(rc)
+                        if (    RT_SUCCESS(rc)
                             && !(fPageGst & X86_PTE_RW))
                         {
                             rc = PGMInterpretInstruction(pVM, pRegFrame, pvFault);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                                 STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eWPEmulInRZ);
                             else
                                 STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eWPEmulToR3);
@@ -792,12 +792,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                  * Check for VMM page flags vs. Guest page flags consistency.
                  * Currently only for debug purposes.
                  */
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Get guest page flags. */
                     uint64_t fPageGst;
                     rc = PGMGstGetPage(pVM, pvFault, &fPageGst, NULL);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
@@ -1196,7 +1196,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                 }
 # else /* Syncing it here isn't 100% safe and it's probably not worth spending time syncing it. */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = VINF_SUCCESS;
 # endif
                 STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage4KBPages));
@@ -1416,7 +1416,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
          */
         PPGMPAGE pPage;
         int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK, &pPage);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /** @todo investiage PWT, PCD and PAT. */
             /*
@@ -1660,7 +1660,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                  */
                 PGSTPT pPTSrc;
                 int rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
 # ifdef PGM_SYNC_N_PAGES
                     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
@@ -1749,7 +1749,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                 /* Find ram range. */
                 PPGMPAGE pPage;
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /*
                      * Make shadow PTE entry.
@@ -2100,7 +2100,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
      */
     PGSTPT pPTSrc;
     rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Real page fault?
@@ -2259,7 +2259,7 @@ l_UpperLevelPageFault:
              */
             PGSTPT pPTSrc;
             rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
                 const GSTPTE    PteSrc = *pPteSrc;
@@ -2355,7 +2355,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 #   else
         AssertFailed();     /* can't happen for amd64 */
 #   endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
             return rc;
@@ -2461,7 +2461,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u));
             PGSTPT pPTSrc;
             rc = PGM_GCPHYS_2_PTR(pVM, PdeSrc.u & GST_PDE_PG_MASK, &pPTSrc);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Start by syncing the page directory entry so CSAM's TLB trick works.
@@ -2679,7 +2679,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         AssertRelease(!PdeDst.n.u1Present);
 
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPTFailed));
     return rc;
 
@@ -2879,7 +2879,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                  *        makes no sense to prefetch more than one page.
                  */
                 rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = VINF_SUCCESS;
             }
         }
@@ -3020,7 +3020,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
 
         rc = PGM_BTH_NAME(SyncPage)(pVM, PdeSrc, GCPtrPage, 1, 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Page was successfully synced */
             Log2(("PGMVerifyAccess: success (sync)\n"));
@@ -3348,7 +3348,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #    elif PGM_GST_TYPE == PGM_TYPE_PAE
                         int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPdpte << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
 #    endif
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             return rc;
 
                         /*
@@ -3530,7 +3530,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #    elif PGM_GST_TYPE == PGM_TYPE_PAE
                                 int rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, (iPdpte << GST_PDPT_SHIFT) + (iPD << GST_PD_SHIFT));
 #    endif
-                                if (VBOX_FAILURE(rc))
+                                if (RT_FAILURE(rc))
                                     return rc;
 
                                 /*
@@ -3956,7 +3956,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                         */
                         const GSTPT *pPTSrc;
                         rc = PGM_GCPHYS_2_PTR(pVM, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                         {
                             AssertMsgFailed(("Cannot map/convert guest physical address %VGp in the PDE at %VGv! PdeSrc=%#RX64\n",
                                             GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
@@ -4024,7 +4024,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
 # ifdef IN_RING3
                             rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
-                            if (VBOX_FAILURE(rc))
+                            if (RT_FAILURE(rc))
                             {
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
@@ -4254,7 +4254,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
 # ifdef IN_RING3
                             rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysGst, &HCPhys);
-                            if (VBOX_FAILURE(rc))
+                            if (RT_FAILURE(rc))
                             {
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {

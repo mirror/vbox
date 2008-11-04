@@ -230,7 +230,7 @@ PGM_GST_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
      * Map and monitor CR3
      */
     int rc = PGM_GST_NAME(MapCR3)(pVM, GCPhysCR3);
-    if (VBOX_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
+    if (RT_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
         rc = PGM_GST_NAME(MonitorCR3)(pVM, GCPhysCR3);
     return rc;
 }
@@ -259,7 +259,7 @@ PGM_GST_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta)
 PGM_GST_DECL(int, Exit)(PVM pVM)
 {
     int rc = PGM_GST_NAME(UnmonitorCR3)(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGM_GST_NAME(UnmapCR3)(pVM);
     return rc;
 }

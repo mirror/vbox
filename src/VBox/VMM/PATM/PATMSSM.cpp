@@ -552,7 +552,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         Assert(!(patch.patch.flags & PATMFL_GLOBAL_FUNCTIONS));
 
         rc = MMHyperAlloc(pVM, sizeof(PATMPATCHREC), 0, MM_TAG_PATM_PATCH, (void **)&pPatchRec);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Out of memory!!!!\n"));
             return VERR_NO_MEMORY;
@@ -956,14 +956,14 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
              * Read old patch jump and compare it to the one we previously installed
              */
             int rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->pPrivInstrGC, pPatch->cbPatchJump);
-            Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+            Assert(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
             if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
             {
                 RTRCPTR pPage = pPatch->pPrivInstrGC & PAGE_BASE_GC_MASK;
 
                 rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
-                Assert(VBOX_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
+                Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
             }
             else
             if (memcmp(temp, oldJump, pPatch->cbPatchJump))
@@ -976,7 +976,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
                 pPatch->uState = PATCH_DISABLED;
             }
             else
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pJumpOffGC, &displ, sizeof(displ));
                 AssertRC(rc);

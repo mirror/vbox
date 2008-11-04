@@ -213,7 +213,7 @@ static int dbgfR3InfoRegister(PVM pVM, const char *pszName, const char *pszDesc,
         rc = VINF_SUCCESS;
         if (!RTCritSectIsInitialized(&pVM->dbgf.s.InfoCritSect))
             rc = dbgfR3InfoInit(pVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Insert in alphabetical order.
@@ -276,7 +276,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterDevice(PVM pVM, const char *pszName, const char
      */
     PDBGFINFO pInfo;
     int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_DEV;
         pInfo->u.Dev.pfnHandler = pfnHandler;
@@ -322,7 +322,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const char
      */
     PDBGFINFO pInfo;
     int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_DRV;
         pInfo->u.Drv.pfnHandler = pfnHandler;
@@ -378,7 +378,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const 
      */
     PDBGFINFO pInfo;
     int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, fFlags, &pInfo);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_INT;
         pInfo->u.Int.pfnHandler = pfnHandler;
@@ -418,7 +418,7 @@ VMMR3DECL(int) DBGFR3InfoRegisterExternal(PVM pVM, const char *pszName, const ch
      */
     PDBGFINFO pInfo;
     int rc = dbgfR3InfoRegister(pVM, pszName, pszDesc, 0, &pInfo);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pInfo->enmType = DBGFINFOTYPE_EXT;
         pInfo->u.Ext.pfnHandler = pfnHandler;
@@ -787,7 +787,7 @@ VMMR3DECL(int) DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser
     AssertRC(rc);
 
     rc = VINF_SUCCESS;
-    for (PDBGFINFO pInfo = pVM->dbgf.s.pInfoFirst; VBOX_SUCCESS(rc) && pInfo; pInfo = pInfo->pNext)
+    for (PDBGFINFO pInfo = pVM->dbgf.s.pInfoFirst; RT_SUCCESS(rc) && pInfo; pInfo = pInfo->pNext)
         rc = pfnCallback(pVM, pInfo->szName, pInfo->pszDesc, pvUser);
 
     /*

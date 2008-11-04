@@ -1730,13 +1730,13 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     {   /* large */
         cbRam = RT_ALIGN_Z(cbRam, PAGE_SIZE);
         rc = SUPPageAlloc(cbRam >> PAGE_SHIFT, (void **)&pNew);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTGCPTR GCPtrNew;
             rc = MMR3HyperMapHCRam(pVM, pNew, cbRam, true,
                                    MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "ram range (%s)", pszDesc),
                                    &GCPtrNew);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 RCPtrNew = GCPtrNew;
                 Assert(MMHyperR3ToRC(pVM, pNew) == GCPtrNew && RCPtrNew == GCPtrNew);
@@ -1756,12 +1756,12 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     if (RT_FAILURE(rc))
     {   /* small + fallback (vga) */
         rc = MMHyperAlloc(pVM, cbRam, 16, MM_TAG_PGM, (void **)&pNew);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             RCPtrNew = MMHyperR3ToRC(pVM, pNew);
         else
             AssertMsgFailed(("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb));
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Initialize the range.
@@ -1975,7 +1975,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         AssertMsg(!PDMCritSectIsOwner(&pVM->pgm.s.CritSect), ("We own the PGM lock -> deadlock danger!!\n"));
 
         rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PGM3PhysGrowRange, 2, pVM, &GCPhysParam);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = pReq->iStatus;
             VMR3ReqFree(pReq);
@@ -1996,11 +1996,11 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     for (;;)
     {
         rc = SUPPageAlloc(cPages, &pvRam);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
 
             rc = MMR3PhysRegisterEx(pVM, pvRam, GCPhys, PGM_DYNAMIC_CHUNK_SIZE, 0, MM_PHYS_TYPE_DYNALLOC_CHUNK, "Main Memory");
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 return rc;
 
             SUPPageFree(pvRam, cPages);
@@ -2298,7 +2298,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
     rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Update the tree.
@@ -2392,9 +2392,9 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     {
         void *pvChunk;
         rc = SUPPageAlloc(GMM_CHUNK_SIZE >> PAGE_SHIFT, &pvChunk);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             LogRel(("PGM: GMM Seeding failed, rc=%Vrc\n", rc));
             rc = VINF_EM_NO_MEMORY;

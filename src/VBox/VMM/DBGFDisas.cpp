@@ -116,7 +116,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
                           &pState->Cpu,
                           &pState->Cpu,
                           &cbInstr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
         return VINF_SUCCESS;
@@ -143,7 +143,7 @@ static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
 {
     uint32_t cbInstr;
     int rc = DISInstr(&pState->Cpu, (void *)pState->GCPtrNext, 0, &cbInstr, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pState->GCPtrNext = GCPtr + cbInstr;
         return VINF_SUCCESS;
@@ -212,7 +212,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
                     rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
                 pState->fLocked = RT_SUCCESS_NP(rc);
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 pState->pvPageHC = NULL;
                 return rc;
@@ -401,7 +401,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
     else
     {
         rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTStrPrintf(pszOutput, cchOutput, "Sel=%04x -> %Vrc\n", Sel, rc);
             return rc;
@@ -413,7 +413,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
      */
     DBGFDISASSTATE State;
     rc = dbgfR3DisasInstrFirst(pVM, &SelInfo, enmMode, GCPtr, &State);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTStrPrintf(pszOutput, cchOutput, "Disas -> %Vrc\n", rc);
         return rc;
@@ -549,7 +549,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
     char szBuf[256];
     szBuf[0] = '\0';
     int rc = DBGFR3DisasInstrCurrent(pVM, &szBuf[0], sizeof(szBuf));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrCurrentLog failed with rc=%Vrc\n", rc);
     if (pszPrefix && *pszPrefix)
         RTLogPrintf("%s: %s\n", pszPrefix, szBuf);
@@ -575,7 +575,7 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr)
     char szBuf[256];
     szBuf[0] = '\0';
     int rc = DBGFR3DisasInstr(pVM, Sel, GCPtr, &szBuf[0], sizeof(szBuf));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrLog(, %RTsel, %RGv) failed with rc=%Vrc\n", Sel, GCPtr, rc);
     RTLogPrintf("%s\n", szBuf);
     return rc;

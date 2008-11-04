@@ -85,7 +85,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
         rc = MMHyperAlloc(pVM, cb, 0, MM_TAG_PDM_QUEUE, (void **)&pQueue );
     else
         rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_QUEUE, cb, (void **)&pQueue);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -120,10 +120,10 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
     if (cMilliesInterval)
     {
         int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, pdmR3QueueTimer, pQueue, "Queue timer", &pQueue->pTimer);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = TMTimerSetMillies(pQueue->pTimer, cMilliesInterval);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("TMTimerSetMillies failed rc=%Vrc\n", rc));
                 int rc2 = TMTimerDestroy(pQueue->pTimer); AssertRC(rc2);
@@ -131,7 +131,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
         }
         else
             AssertMsgFailed(("TMR3TimerCreateInternal failed rc=%Vrc\n", rc));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (fRZEnabled)
                 MMHyperFree(pVM, pQueue);
@@ -210,7 +210,7 @@ VMMR3DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem
      */
     PPDMQUEUE pQueue;
     int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, &pQueue);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pQueue->enmType = PDMQUEUETYPE_DEV;
         pQueue->u.Dev.pDevIns = pDevIns;
@@ -259,7 +259,7 @@ VMMR3DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem
      */
     PPDMQUEUE pQueue;
     int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, false, &pQueue);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pQueue->enmType = PDMQUEUETYPE_DRV;
         pQueue->u.Drv.pDrvIns = pDrvIns;
@@ -308,7 +308,7 @@ VMMR3DECL(int) PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
      */
     PPDMQUEUE pQueue;
     int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, fRZEnabled, &pQueue);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pQueue->enmType = PDMQUEUETYPE_INTERNAL;
         pQueue->u.Int.pfnCallback = pfnCallback;
@@ -354,7 +354,7 @@ VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
      */
     PPDMQUEUE pQueue;
     int rc = pdmR3QueueCreate(pVM, cbItem, cItems, cMilliesInterval, false, &pQueue);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pQueue->enmType = PDMQUEUETYPE_EXTERNAL;
         pQueue->u.Ext.pvUser = pvUser;

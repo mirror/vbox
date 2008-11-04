@@ -436,7 +436,7 @@ VMMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage)
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, (RTGCUINTPTR)GCPtrPage);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || VBOX_FAILURE(rc), ("rc=%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Vrc\n", rc));
     return rc;
 }
 
@@ -490,7 +490,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
 
     uint64_t fPage;
     int rc = PGMGstGetPage(pVM, (RTGCPTR)Addr, &fPage, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("PGMIsValidAccess: access violation for %VGv rc=%d\n", Addr, rc));
         return VINF_EM_RAW_GUEST_TRAP;
@@ -511,7 +511,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
         Log(("PGMIsValidAccess: access violation for %VGv attr %#llx vs %d:%d\n", Addr, fPage, fWrite, fUser));
         return VINF_EM_RAW_GUEST_TRAP;
     }
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  PAGE_ADDRESS(Addr) != PAGE_ADDRESS(Addr + cbSize))
         return PGMIsValidAccess(pVM, Addr + PAGE_SIZE, (cbSize > PAGE_SIZE) ? cbSize - PAGE_SIZE : 1, fAccess);
     return rc;
@@ -538,7 +538,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
      */
     uint64_t fPageGst;
     int rc = PGMGstGetPage(pVM, (RTGCPTR)Addr, &fPageGst, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("PGMVerifyAccess: access violation for %VGv rc=%d\n", Addr, rc));
         return VINF_EM_RAW_GUEST_TRAP;
@@ -590,7 +590,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
     /** @note this will assert when writing to monitored pages (a bit annoying actually) */
     uint64_t fPageShw;
     rc = PGMShwGetPage(pVM, (RTGCPTR)Addr, &fPageShw, NULL);
-    if (    (rc == VERR_PAGE_NOT_PRESENT || VBOX_FAILURE(rc))
+    if (    (rc == VERR_PAGE_NOT_PRESENT || RT_FAILURE(rc))
         || (fWrite && !(fPageShw & X86_PTE_RW))
         || (fUser  && !(fPageShw & X86_PTE_US)) )
     {
@@ -600,7 +600,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
     }
 #endif
 
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  (   PAGE_ADDRESS(Addr) != PAGE_ADDRESS(Addr + cbSize - 1)
              || Addr + cbSize < Addr))
     {
@@ -690,7 +690,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
     /*
      * Check if we have a pending update of the CR3 monitoring.
      */
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  (pVM->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3))
     {
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
@@ -1158,7 +1158,7 @@ VMMDECL(int) PGMGstGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
 VMMDECL(bool) PGMGstIsPagePresent(PVM pVM, RTGCPTR GCPtr)
 {
     int rc = PGMGstGetPage(pVM, GCPtr, NULL, NULL);
-    return VBOX_SUCCESS(rc);
+    return RT_SUCCESS(rc);
 }
 
 
@@ -1474,7 +1474,7 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
     {
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
         rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
-        if (VBOX_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
+        if (RT_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
         {
             pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
@@ -1596,7 +1596,7 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     int rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, cr0, cr3, cr4, fGlobal);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || VBOX_FAILURE(rc), ("rc=%VRc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%VRc\n", rc));
     if (rc == VINF_SUCCESS)
     {
         if (!(pVM->pgm.s.fSyncFlags & PGM_SYNC_ALWAYS))

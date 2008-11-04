@@ -91,7 +91,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HWACCM_SSM_VERSION, sizeof(HWACCM),
                                    NULL, hwaccmR3Save, NULL,
                                    NULL, hwaccmR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* Misc initialisation. */
@@ -173,7 +173,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVM->hwaccm.s.paStatExitReason), 0, MM_TAG_HWACCM, (void **)&pVM->hwaccm.s.paStatExitReason);
     AssertRC(rc);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         for (int i=0;i<MAX_EXITREASON_STAT;i++)
         {
@@ -277,13 +277,13 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
      * Note that we have a global setting for VT-x/AMD-V usage. VMX root mode changes the way the CPU operates. Our 64 bits switcher will trap
      * because it turns off paging, which is not allowed in VMX root mode.
      *
-     * To simplify matters we'll just force all running VMs to either use raw or VT-x mode. No mixing allowed in the VT-x case. 
+     * To simplify matters we'll just force all running VMs to either use raw or VT-x mode. No mixing allowed in the VT-x case.
      * There's no such problem with AMD-V. (@todo)
      *
      */
     /* If we enabled or disabled hwaccm mode, then it can't be changed until all the VMs are shutdown. */
     rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, (pVM->hwaccm.s.fAllowed) ? HWACCMSTATE_ENABLED : HWACCMSTATE_DISABLED, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Vrc\n", rc));
         LogRel(("HWACCMR3InitFinalize: disallowed %s of HWACCM\n", pVM->hwaccm.s.fAllowed ? "enabling" : "disabling"));

@@ -438,7 +438,7 @@ VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszN
 {
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DEV;
         pUnit->u.Dev.pfnSavePrep = pfnSavePrep;
@@ -479,7 +479,7 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
 {
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DRV;
         pUnit->u.Drv.pfnSavePrep = pfnSavePrep;
@@ -519,7 +519,7 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
 {
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_INTERNAL;
         pUnit->u.Internal.pfnSavePrep = pfnSavePrep;
@@ -559,7 +559,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
 {
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, &pUnit);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_EXTERNAL;
         pUnit->u.External.pfnSavePrep = pfnSavePrep;
@@ -838,7 +838,7 @@ static int ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
         if (cbFile < 32*1024)
             cbToRead = (unsigned)cbFile;
         rc = RTFileRead(File, pvBuf, cbToRead, NULL);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Failed with rc=%Vrc while calculating crc.\n", rc));
             RTMemTmpFree(pvBuf);
@@ -933,7 +933,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.uPercentDone    = 20;
 
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("SSM: Failed to create save state file '%s', rc=%Vrc.\n",  pszFilename, rc));
         return rc;
@@ -946,7 +946,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      */
     SSMFILEHDR Hdr = { SSMFILEHDR_MAGIC_V1_1, 0, 0, 0 };
     rc = RTFileWrite(Handle.File, &Hdr, sizeof(Hdr), NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Clear the per unit flags.
@@ -993,7 +993,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     }
                     break;
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Prepare save failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
                 break;
@@ -1010,7 +1010,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         /*
          * Do the execute run.
          */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Handle.enmOp = SSMSTATE_SAVE_EXEC;
             for (pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
@@ -1045,10 +1045,10 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 uint64_t   offHdr = RTFileTell(Handle.File);
                 SSMFILEUNITHDR  UnitHdr = { SSMFILEUNITHDR_MAGIC, 0, pUnit->u32Version, pUnit->u32Instance, pUnit->cchName + 1, { '\0' } };
                 rc = RTFileWrite(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), NULL);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = RTFileWrite(Handle.File, &pUnit->szName[0], pUnit->cchName + 1, NULL);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         /*
                          * Call the execute handler.
@@ -1070,30 +1070,30 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                 break;
                         }
                         pUnit->fCalled = true;
-                        if (VBOX_FAILURE(Handle.rc) && VBOX_SUCCESS(rc))
+                        if (RT_FAILURE(Handle.rc) && RT_SUCCESS(rc))
                             rc = Handle.rc;
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             /*
                              * Flush buffer / end compression stream.
                              */
                             if (Handle.pZipComp)
                                 rc = ssmR3WriteFinish(&Handle);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 /*
                                  * Update header with correct length.
                                  */
                                 uint64_t    offEnd = RTFileTell(Handle.File);
                                 rc = RTFileSeek(Handle.File, offHdr, RTFILE_SEEK_BEGIN, NULL);
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                 {
                                     UnitHdr.cbUnit = offEnd - offHdr;
                                     rc = RTFileWrite(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), NULL);
-                                    if (VBOX_SUCCESS(rc))
+                                    if (RT_SUCCESS(rc))
                                     {
                                         rc = RTFileSeek(Handle.File, offEnd, RTFILE_SEEK_BEGIN, NULL);
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                             Log(("SSM: Data unit: offset %#9llx size %9lld '%s'\n", offHdr, UnitHdr.cbUnit, pUnit->szName));
                                     }
                                 }
@@ -1111,7 +1111,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         }
                     }
                 }
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     LogRel(("SSM: Failed to write unit header. rc=%Vrc\n", rc));
                     break;
@@ -1119,11 +1119,11 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             } /* for each unit */
 
             /* finish the progress. */
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 ssmR3Progress(&Handle, Handle.offEstUnitEnd - Handle.offEst);
         }
         /* (progress should be pending 99% now) */
-        AssertMsg(VBOX_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
+        AssertMsg(RT_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
 
         /*
          * Do the done run.
@@ -1159,10 +1159,10 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         rc = pUnit->u.External.pfnSaveDone(&Handle, pUnit->u.External.pvUser);
                     break;
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Done save failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
-                if (VBOX_SUCCESS(Handle.rc))
+                if (RT_SUCCESS(Handle.rc))
                     Handle.rc = rc;
             }
         }
@@ -1171,20 +1171,20 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         /*
          * Finalize the file if successfully saved.
          */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* end record */
             SSMFILEUNITHDR  UnitHdr = { SSMFILEUNITHDR_END, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), 0, '\0'};
             rc = RTFileWrite(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]), NULL);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* get size */
                 Hdr.cbFile = RTFileTell(Handle.File);
                 /* calc checksum */
                 rc = RTFileSeek(Handle.File, RT_OFFSETOF(SSMFILEHDR, u32CRC) + sizeof(Hdr.u32CRC), RTFILE_SEEK_BEGIN, NULL);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = ssmR3CalcChecksum(Handle.File, Hdr.cbFile - sizeof(Hdr), &Hdr.u32CRC);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     if (pfnProgress)
                         pfnProgress(pVM, 90, pvUser);
@@ -1193,9 +1193,9 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                      * Write the update the header to the file.
                      */
                     rc = RTFileSeek(Handle.File, 0, RTFILE_SEEK_BEGIN, NULL);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                         rc = RTFileWrite(Handle.File, &Hdr, sizeof(Hdr), NULL);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = RTFileClose(Handle.File);
                         AssertRC(rc);
@@ -1248,7 +1248,7 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
      * Read the header.
      */
     int rc = RTFileRead(File, pHdr, sizeof(*pHdr), NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("SSM: Failed to read file header. rc=%Vrc\n", rc));
         return rc;
@@ -1305,7 +1305,7 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
      */
     uint64_t cbFile;
     rc = RTFileGetSize(File, &cbFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("SSM: Failed to get file size. rc=%Vrc\n", rc));
         return rc;
@@ -1320,14 +1320,14 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
      * Verify the checksum.
      */
     rc = RTFileSeek(File, offCrc32, RTFILE_SEEK_BEGIN, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("SSM: Failed to seek to crc start. rc=%Vrc\n", rc));
         return rc;
     }
     uint32_t u32CRC;
     rc = ssmR3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32CRC != pHdr->u32CRC)
     {
@@ -1419,7 +1419,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.uPercentDone    = 2;
 
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("SSM: Failed to open save state file '%s', rc=%Vrc.\n",  pszFilename, rc));
         return rc;
@@ -1430,7 +1430,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      */
     SSMFILEHDR Hdr;
     rc = ssmR3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Clear the per unit flags.
@@ -1477,7 +1477,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     }
                     break;
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Prepare load failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
                 break;
@@ -1493,9 +1493,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         /*
          * Do the execute run.
          */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = RTFileSeek(Handle.File, Handle.cbFileHdr, RTFILE_SEEK_BEGIN, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             char   *pszName = NULL;
             size_t  cchName = 0;
@@ -1508,7 +1508,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 uint64_t        offUnit = RTFileTell(Handle.File);
                 SSMFILEUNITHDR  UnitHdr;
                 rc = RTFileRead(Handle.File, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /*
                      * Check the magic and see if it's valid and whether it is a end header or not.
@@ -1543,7 +1543,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     if (pszName)
                     {
                         rc = RTFileRead(Handle.File, pszName, UnitHdr.cchName, NULL);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             if (!pszName[UnitHdr.cchName - 1])
                             {
@@ -1613,9 +1613,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                             ssmR3ReadFinish(&Handle);
 
                                         pUnit->fCalled = true;
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                             rc = Handle.rc;
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                         {
                                             /*
                                              * Now, we'll check the current position to see if all, or
@@ -1689,7 +1689,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 /*
                  * I/O errors ends up here (yea, I know, very nice programming).
                  */
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     LogRel(("SSM: I/O error. rc=%Vrc\n", rc));
                     break;
@@ -1697,7 +1697,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             }
         }
         /* (progress should be pending 99% now) */
-        AssertMsg(VBOX_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
+        AssertMsg(RT_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
 
         /*
          * Do the done run.
@@ -1734,10 +1734,10 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         rc = pUnit->u.External.pfnLoadDone(&Handle, pUnit->u.External.pvUser);
                     break;
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Done load failed with rc=%Vrc for data unit '%s'.\n", rc, pUnit->szName));
-                if (VBOX_SUCCESS(Handle.rc))
+                if (RT_SUCCESS(Handle.rc))
                     Handle.rc = rc;
             }
         }
@@ -1753,7 +1753,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      */
     int rc2 = RTFileClose(Handle.File);
     AssertRC(rc2);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* progress */
         if (pfnProgress)
@@ -1794,7 +1794,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
      */
     RTFILE File;
     int rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         size_t cbFileHdr;
         SSMFILEHDR Hdr;
@@ -1839,12 +1839,12 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
      * Try open the file and validate it.
      */
     int rc = RTFileOpen(&pSSM->File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         SSMFILEHDR Hdr;
         size_t cbFileHdr;
         rc = ssmR3Validate(pSSM->File, &Hdr, &cbFileHdr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             //pSSM->pVM           = NULL;
             pSSM->cbFileHdr       = cbFileHdr;
@@ -1964,7 +1964,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
          */
         rc = RTFileReadAt(pSSM->File, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
         AssertRC(rc);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
             {
@@ -1991,7 +1991,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
                 {
                     rc = RTFileRead(pSSM->File, pszName, UnitHdr.cchName, NULL);
                     AssertRC(rc);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         if (!pszName[UnitHdr.cchName - 1])
                         {
@@ -2050,17 +2050,17 @@ static int ssmR3WriteFinish(PSSMHANDLE pSSM)
         return VINF_SUCCESS;
 
     int rc = RTZipCompFinish(pSSM->pZipComp);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTZipCompDestroy(pSSM->pZipComp);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pSSM->pZipComp = NULL;
             //Log2(("ssmR3WriteFinish: %#010llx done\n", RTFileTell(pSSM->File)));
             return VINF_SUCCESS;
         }
     }
-    if (VBOX_SUCCESS(pSSM->rc))
+    if (RT_SUCCESS(pSSM->rc))
         pSSM->rc = rc;
     Log2(("ssmR3WriteFinish: failure rc=%Vrc\n", rc));
     return rc;
@@ -2082,7 +2082,7 @@ static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     /*
      * Check that everything is fine.
      */
-    if (VBOX_SUCCESS(pSSM->rc))
+    if (RT_SUCCESS(pSSM->rc))
     {
         /*
          * First call starts the compression.
@@ -2091,7 +2091,7 @@ static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         {
             //int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_ZLIB, RTZIPLEVEL_FAST);
             int rc = RTZipCompCreate(&pSSM->pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_LZF, RTZIPLEVEL_FAST);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
 
@@ -2102,7 +2102,7 @@ static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         {
             size_t cbChunk = RT_MIN(cbBuf, 128*1024);
             pSSM->rc = RTZipCompress(pSSM->pZipComp, pvBuf, cbChunk);
-            if (VBOX_FAILURE(pSSM->rc))
+            if (RT_FAILURE(pSSM->rc))
                 break;
             ssmR3Progress(pSSM, cbChunk);
             cbBuf -= cbChunk;
@@ -2126,7 +2126,7 @@ static DECLCALLBACK(int) ssmR3WriteOut(void *pvSSM, const void *pvBuf, size_t cb
 {
     //Log2(("ssmR3WriteOut: %#010llx cbBuf=%#x\n", RTFileTell(((PSSMHANDLE)pvSSM)->File), cbBuf));
     int rc = RTFileWrite(((PSSMHANDLE)pvSSM)->File, pvBuf, cbBuf, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return rc;
     Log(("ssmR3WriteOut: RTFileWrite(,,%d) -> %d\n", cbBuf, rc));
     return rc;
@@ -2146,7 +2146,7 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
 {
     /* begin marker. */
     int rc = SSMR3PutU32(pSSM, SSMR3STRUCT_BEGIN);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* put the fields */
@@ -2155,7 +2155,7 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
          pCur++)
     {
         rc = ssmR3Write(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2610,7 +2610,7 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     /*
      * Check that everything is fine.
      */
-    if (VBOX_SUCCESS(pSSM->rc))
+    if (RT_SUCCESS(pSSM->rc))
     {
         /*
          * Open the decompressor on the first read.
@@ -2618,7 +2618,7 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         if (!pSSM->pZipDecomp)
         {
             pSSM->rc = RTZipDecompCreate(&pSSM->pZipDecomp, pSSM, ssmR3ReadIn);
-            if (VBOX_FAILURE(pSSM->rc))
+            if (RT_FAILURE(pSSM->rc))
                 return pSSM->rc;
         }
 
@@ -2627,7 +2627,7 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          * Use 32kb chunks to work the progress indicator.
          */
         pSSM->rc = RTZipDecompress(pSSM->pZipDecomp, pvBuf, cbBuf, NULL);
-        if (VBOX_SUCCESS(pSSM->rc))
+        if (RT_SUCCESS(pSSM->rc))
             Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
         else
             AssertMsgFailed(("rc=%Vrc cbBuf=%#x\n", pSSM->rc, cbBuf));
@@ -2657,7 +2657,7 @@ static DECLCALLBACK(int) ssmR3ReadIn(void *pvSSM, void *pvBuf, size_t cbBuf, siz
     {
         //Log2(("ssmR3ReadIn: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->File), cbBuf, cbRead));
         int rc = RTFileRead(pSSM->File, pvBuf, cbRead, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pSSM->cbUnitLeft -= cbRead;
             if (pcbRead)
@@ -2690,7 +2690,7 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
     /* begin marker. */
     uint32_t u32Magic;
     int rc = SSMR3GetU32(pSSM, &u32Magic);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Magic != SSMR3STRUCT_BEGIN)
         AssertMsgFailedReturn(("u32Magic=%#RX32\n", u32Magic), VERR_SSM_STRUCTURE_MAGIC);
@@ -2701,13 +2701,13 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
          pCur++)
     {
         rc = ssmR3Read(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
     /* end marker */
     rc = SSMR3GetU32(pSSM, &u32Magic);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Magic != SSMR3STRUCT_END)
         AssertMsgFailedReturn(("u32Magic=%#RX32\n", u32Magic), VERR_SSM_STRUCTURE_MAGIC);
@@ -2728,7 +2728,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
     {
         uint8_t u8; /* see SSMR3PutBool */
         int rc = ssmR3Read(pSSM, &u8, sizeof(u8));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Assert(u8 <= 1);
             *pfBool = !!u8;
@@ -3214,7 +3214,7 @@ VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
         /* read size prefix. */
         uint32_t u32;
         int rc = SSMR3GetU32(pSSM, &u32);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (pcbStr)
                 *pcbStr = u32;
@@ -3263,9 +3263,9 @@ VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
  */
 VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
 {
-    if (VBOX_FAILURE(iStatus))
+    if (RT_FAILURE(iStatus))
     {
-        if (VBOX_SUCCESS(pSSM->rc))
+        if (RT_SUCCESS(pSSM->rc))
             pSSM->rc = iStatus;
         return pSSM->rc = iStatus;
     }

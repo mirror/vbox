@@ -217,7 +217,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
 
     RTGCPTR GCPtr;
     rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to map GIP into GC, rc=%Vrc!\n", rc));
         return rc;
@@ -279,7 +279,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryBool(pCfgHandle, "TSCVirtualized", &pVM->tm.s.fTSCVirtualized);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCVirtualized = true; /* trap rdtsc */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\""));
 
@@ -290,7 +290,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryBool(pCfgHandle, "UseRealTSC", &pVM->tm.s.fTSCUseRealTSC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.fTSCUseRealTSC = false; /* use virtual time */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying bool value \"UseRealTSC\""));
     if (!pVM->tm.s.fTSCUseRealTSC)
@@ -325,7 +325,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
         }
     }
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying uint64_t value \"TSCTicksPerSecond\""));
     else if (   pVM->tm.s.cTSCTicksPerSecond < _1M
@@ -384,7 +384,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU32(pCfgHandle, "ScheduleSlack", &pVM->tm.s.u32VirtualSyncScheduleSlack);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u32VirtualSyncScheduleSlack           =   100000; /* 0.100ms (ASSUMES virtual time is nanoseconds) */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 32-bit integer value \"ScheduleSlack\""));
 
@@ -393,7 +393,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStopThreshold", &pVM->tm.s.u64VirtualSyncCatchUpStopThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpStopThreshold    =   500000; /* 0.5ms */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpStopThreshold\""));
 
@@ -402,7 +402,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU64(pCfgHandle, "CatchUpGiveUpThreshold", &pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold  = UINT64_C(60000000000); /* 60 sec */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpGiveUpThreshold\""));
 
@@ -418,7 +418,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         rc = CFGMR3QueryU64(pCfgHandle, "CatchUpStartThreshold" #iPeriod, &u64); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             u64 = UINT64_C(DefStart); \
-        else if (VBOX_FAILURE(rc)) \
+        else if (RT_FAILURE(rc)) \
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 64-bit integer value \"CatchUpThreshold" #iPeriod "\"")); \
         if (    (iPeriod > 0 && u64 <= pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod - 1].u64Start) \
             ||  u64 >= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold) \
@@ -427,7 +427,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         rc = CFGMR3QueryU32(pCfgHandle, "CatchUpPrecentage" #iPeriod, &pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u32Percentage); \
         if (rc == VERR_CFGM_VALUE_NOT_FOUND) \
             pVM->tm.s.aVirtualSyncCatchUpPeriods[iPeriod].u32Percentage = (DefPct); \
-        else if (VBOX_FAILURE(rc)) \
+        else if (RT_FAILURE(rc)) \
             return VMSetError(pVM, rc, RT_SRC_POS, N_("Configuration error: Failed to querying 32-bit integer value \"CatchUpPrecentage" #iPeriod "\"")); \
     } while (0)
     /* This needs more tuning. Not sure if we really need so many period and be so gentle. */
@@ -452,7 +452,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryS64(pCfgHandle, "UTCOffset", &pVM->tm.s.offUTC);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.offUTC = 0; /* ns */
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying 64-bit integer value \"UTCOffset\""));
 
@@ -468,7 +468,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
         rc = CFGMR3QueryU32(CFGMR3GetRoot(pVM), "WarpDrivePercentage", &pVM->tm.s.u32VirtualWarpDrivePercentage); /* legacy */
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pVM->tm.s.u32VirtualWarpDrivePercentage = 100;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to querying uint32_t value \"WarpDrivePercent\""));
     else if (   pVM->tm.s.u32VirtualWarpDrivePercentage < 2
@@ -489,11 +489,11 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = CFGMR3QueryU32(pCfgHandle, "TimerMillies", &u32Millies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u32Millies = 10;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS,
                           N_("Configuration error: Failed to query uint32_t value \"TimerMillies\""));
     rc = RTTimerCreate(&pVM->tm.s.pTimer, u32Millies, tmR3TimerCallback, pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to create timer, u32Millies=%d rc=%Vrc.\n", u32Millies, rc));
         return rc;
@@ -507,7 +507,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "tm", 1, TM_SAVED_STATE_VERSION, sizeof(uint64_t) * 8,
                                NULL, tmR3Save, NULL,
                                NULL, tmR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1038,7 +1038,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /* the virtual clock. */
     uint64_t u64Hz;
     int rc = SSMR3GetU64(pSSM, &u64Hz);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u64Hz != TMCLOCK_FREQ_VIRTUAL)
     {
@@ -1066,7 +1066,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     /* the real clock  */
     rc = SSMR3GetU64(pSSM, &u64Hz);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u64Hz != TMCLOCK_FREQ_REAL)
     {
@@ -1079,7 +1079,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     pVM->tm.s.fTSCTicking = false;
     SSMR3GetU64(pSSM, &pVM->tm.s.u64TSC);
     rc = SSMR3GetU64(pSSM, &u64Hz);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (pVM->tm.s.fTSCUseRealTSC)
         pVM->tm.s.u64TSCOffset = 0; /** @todo TSC restore stuff and HWACC. */
@@ -1124,7 +1124,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     if (!pTimer)
     {
         int rc = MMHyperAlloc(pVM, sizeof(*pTimer), 0, MM_TAG_TM, (void **)&pTimer);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         Log3(("TM: Allocated new timer %p\n", pTimer));
     }
@@ -1176,7 +1176,7 @@ VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClo
      * Allocate and init stuff.
      */
     int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, ppTimer);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         (*ppTimer)->enmType         = TMTIMERTYPE_DEV;
         (*ppTimer)->u.Dev.pfnTimer  = pfnCallback;
@@ -1206,7 +1206,7 @@ VMMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClo
      * Allocate and init stuff.
      */
     int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, ppTimer);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         (*ppTimer)->enmType         = TMTIMERTYPE_DRV;
         (*ppTimer)->u.Drv.pfnTimer  = pfnCallback;
@@ -1237,7 +1237,7 @@ VMMR3DECL(int) TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT 
      */
     PTMTIMER pTimer;
     int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, &pTimer);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pTimer->enmType             = TMTIMERTYPE_INTERNAL;
         pTimer->u.Internal.pfnTimer = pfnCallback;
@@ -1268,7 +1268,7 @@ VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTI
      */
     PTMTIMERR3 pTimer;
     int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, &pTimer);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pTimer->enmType             = TMTIMERTYPE_EXTERNAL;
         pTimer->u.External.pfnTimer = pfnCallback;
@@ -1916,7 +1916,7 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
      */
     uint8_t u8State;
     int rc = SSMR3GetU8(pSSM, &u8State);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     TMTIMERSTATE enmState = (TMTIMERSTATE)u8State;
     if (    enmState != TMTIMERSTATE_PENDING_STOP
@@ -1934,7 +1934,7 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
          */
         uint64_t u64Expire;
         rc = SSMR3GetU64(pSSM, &u64Expire);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /*
@@ -1955,7 +1955,7 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
     /*
      * On failure set SSM status.
      */
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         rc = SSMR3HandleSetStatus(pSSM, rc);
     return rc;
 }

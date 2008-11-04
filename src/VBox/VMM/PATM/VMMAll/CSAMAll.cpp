@@ -131,7 +131,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
     {
         STAM_COUNTER_INC(&pVM->csam.s.StatBitmapAlloc);
         int rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.CTXSUFF(pPDBitmap)[pgdir]);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("MMR3HyperAlloc failed with %d\n", rc));
             return rc;

@@ -413,7 +413,7 @@ static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTRCPTR pSrc, uint32_t cb
         uint8_t temp;
 
         int rc2 = PATMR3QueryOpcode(pVM, pSrc+i, &temp);
-        if (VBOX_SUCCESS(rc2))
+        if (RT_SUCCESS(rc2))
         {
             pDest[i] = temp;
         }

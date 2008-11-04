@@ -271,7 +271,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
      * Allocate request
      */
     int rc = VMR3ReqAllocU(pUVM, &pReq, VMREQTYPE_INTERNAL, enmDest);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -287,7 +287,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
      * Queue the request and return.
      */
     rc = VMR3ReqQueue(pReq, cMillies);
-    if (    VBOX_FAILURE(rc)
+    if (    RT_FAILURE(rc)
         && rc != VERR_TIMEOUT)
     {
         VMR3ReqFree(pReq);
@@ -452,7 +452,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                     RTSemEventDestroy(pReq->EventSem);
                     rc = RTSemEventCreate(&pReq->EventSem);
                     AssertRC(rc);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         return rc;
                 }
                 pReq->fEventSemClear = true;
@@ -492,7 +492,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
      */
     int rc = RTSemEventCreate(&pReq->EventSem);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         MMR3HeapFree(pReq);
         return rc;
@@ -802,7 +802,7 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
         } while (   pReq->enmState != VMREQSTATE_COMPLETED
                  && pReq->enmState != VMREQSTATE_INVALID);
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         ASMAtomicXchgSize(&pReq->fEventSemClear, true);
     if (pReq->enmState == VMREQSTATE_COMPLETED)
         rc = VINF_SUCCESS;
@@ -1043,7 +1043,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             AssertRC(rc2);
             rcRet = rc2;

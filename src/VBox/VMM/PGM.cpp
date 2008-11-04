@@ -1162,7 +1162,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = pVM->pgm.s.cbRamSize = 0;
-    else if (VBOX_SUCCESS(rc))
+    else if (RT_SUCCESS(rc))
     {
         if (cbRam < PAGE_SIZE)
             cbRam = 0;
@@ -1181,7 +1181,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
                                NULL, pgmR3Save, NULL,
                                NULL, pgmR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1199,7 +1199,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      * Trees
      */
     rc = MMHyperAlloc(pVM, sizeof(PGMTREES), 0, MM_TAG_PGM, (void **)&pVM->pgm.s.pTreesR3);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
         pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
@@ -1209,7 +1209,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
          */
         rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pVM->pgm.s.pvZeroPgGC = MMHyperR3ToRC(pVM, pVM->pgm.s.pvZeroPgR3);
         pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
@@ -1222,14 +1222,14 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
          */
         rc = pgmR3InitPaging(pVM);
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Init the page pool.
          */
         rc = pgmR3PoolInit(pVM);
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Info & statistics
@@ -1265,7 +1265,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         if (!fRegisteredCmds)
         {
             int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 fRegisteredCmds = true;
         }
 #endif
@@ -1316,7 +1316,7 @@ static int pgmR3InitPaging(PVM pVM)
      * points to and in the case of PAE mode to the 4 PDs.
      */
     int rc = MMR3HyperReserve(pVM, PAGE_SIZE * 5, "CR3 mapping", &pVM->pgm.s.GCPtrCR3Mapping);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to reserve two pages for cr mapping in HMA, rc=%Vrc\n", rc));
         return rc;
@@ -1486,9 +1486,9 @@ static int pgmR3InitPaging(PVM pVM)
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
     }
     rc = pgmR3ModeDataInit(pVM, false /* don't resolve GC and R0 syms yet */);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMR3ChangeMode(pVM, PGMMODE_REAL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
@@ -1761,17 +1761,17 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
      * Reserve space for the dynamic mappings.
      */
     rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping", &GCPtr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
 
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  (pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) != ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT))
     {
         rc = MMR3HyperReserve(pVM, MM_HYPER_DYNAMIC_SIZE, "Dynamic mapping not crossing", &GCPtr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             pVM->pgm.s.pbDynPageMapBaseGC = GCPtr;
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT));
         MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -2216,7 +2216,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
         else if (pRam->pvR3)
         {
             int rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
@@ -2267,7 +2267,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     RTUINT cbRamSize;
     int rc = SSMR3GetU32(pSSM, &cbRamSize);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (cbRamSize != pPGM->cbRamSize)
         return VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH;
@@ -2281,7 +2281,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /* check separator. */
     uint32_t u32Sep;
     SSMR3GetU32(pSSM, &u32Sep);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Sep != (uint32_t)~0)
     {
@@ -2297,7 +2297,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     {
         /* Check the seqence number / separator. */
         rc = SSMR3GetU32(pSSM, &u32Sep);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == ~0U)
             break;
@@ -2311,13 +2311,13 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         char szDesc[256];
         szDesc[0] = '\0';
         rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         RTGCPTR GCPtr;
         SSMR3GetGCPtr(pSSM,     &GCPtr);
         RTGCUINTPTR cPTs;
         rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* find matching range. */
@@ -2353,7 +2353,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
         /* Check the seqence number / separator. */
         rc = SSMR3GetU32(pSSM, &u32Sep);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == ~0U)
             break;
@@ -2372,7 +2372,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         SSMR3GetGCPhys(pSSM, &cb);
         uint8_t     fHaveBits;
         rc = SSMR3GetU8(pSSM, &fHaveBits);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (fHaveBits & ~1)
         {
@@ -2427,7 +2427,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
                 uint8_t fValidChunk;
 
                 rc = SSMR3GetU8(pSSM, &fValidChunk);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     return rc;
                 if (fValidChunk > 1)
                     return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -2437,7 +2437,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
                     if (!pRam->paChunkR3Ptrs[iChunk])
                     {
                         rc = pgmr3PhysGrowRange(pVM, pRam->GCPhys + iChunk * PGM_DYNAMIC_CHUNK_SIZE);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             return rc;
                     }
                     Assert(pRam->paChunkR3Ptrs[iChunk]);
@@ -2450,7 +2450,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         else if (pRam->pvR3)
         {
             int rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
@@ -3206,7 +3206,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
          * Select new switcher.
          */
         int rc = VMMR3SelectSwitcher(pVM, enmSwitcher);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("VMMR3SelectSwitcher(%d) -> %Vrc\n", enmSwitcher, rc));
             return rc;
@@ -3223,7 +3223,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         if (PGM_SHW_PFN(Exit, pVM))
         {
             int rc = PGM_SHW_PFN(Exit, pVM)(pVM);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("Exit failed for shadow mode %d: %Vrc\n", pVM->pgm.s.enmShadowMode, rc));
                 return rc;
@@ -3238,7 +3238,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     if (PGM_GST_PFN(Exit, pVM))
     {
         int rc = PGM_GST_PFN(Exit, pVM)(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Exit failed for guest mode %d: %Vrc\n", pVM->pgm.s.enmGuestMode, rc));
             return rc;
@@ -3282,7 +3282,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
                 AssertReleaseMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
                 return VERR_INTERNAL_ERROR;
         }
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("Entering enmShadowMode=%d failed: %Vrc\n", enmShadowMode, rc));
             pVM->pgm.s.enmShadowMode = PGMMODE_INVALID;
@@ -3464,10 +3464,10 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
     /* status codes. */
     AssertRC(rc);
     AssertRC(rc2);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = rc2;
-        if (VBOX_SUCCESS(rc)) /* no informational status codes. */
+        if (RT_SUCCESS(rc)) /* no informational status codes. */
             rc = VINF_SUCCESS;
     }
 
@@ -3622,7 +3622,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                     else
                         pHlp->pfnPrintf(pHlp, "%0*llx error! Page table at HCPhys=%#VHp was not found in the page pool!\n",
                                         fLongMode ? 16 : 8, u64AddressPT, HCPhysPT);
-                    if (rc2 < rc && VBOX_SUCCESS(rc))
+                    if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
@@ -3695,7 +3695,7 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
             {
                 int rc2 = pgmR3DumpHierarchyHCPaePD(pVM, Pdpe.u & X86_PDPE_PG_MASK, u64Address + ((uint64_t)i << X86_PDPT_SHIFT),
                                                     cr4, fLongMode, cMaxDepth - 1, pHlp);
-                if (rc2 < rc && VBOX_SUCCESS(rc))
+                if (rc2 < rc && RT_SUCCESS(rc))
                     rc = rc2;
             }
         }
@@ -3750,7 +3750,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
             if (cMaxDepth >= 1)
             {
                 int rc2 = pgmR3DumpHierarchyHCPaePDPT(pVM, Pml4e.u & X86_PML4E_PG_MASK, u64Address, cr4, true, cMaxDepth - 1, pHlp);
-                if (rc2 < rc && VBOX_SUCCESS(rc))
+                if (rc2 < rc && RT_SUCCESS(rc))
                     rc = rc2;
             }
         }
@@ -3878,7 +3878,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
                         rc2 = pgmR3DumpHierarchyHC32BitPT(pVM, pPT, u32Address, pHlp);
                     else
                         pHlp->pfnPrintf(pHlp, "%08x error! Page table at %#x was not found in the page pool!\n", u32Address, HCPhys);
-                    if (rc2 < rc && VBOX_SUCCESS(rc))
+                    if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
@@ -3951,7 +3951,7 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
     PX86PD pPD = 0;
 
     int rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAGE_MASK, &pPD);
-    if (VBOX_FAILURE(rc) || !pPD)
+    if (RT_FAILURE(rc) || !pPD)
     {
         Log(("Page directory at %#x was not found in the page pool!\n", cr3 & X86_CR3_PAGE_MASK));
         return VERR_INVALID_PARAMETER;
@@ -4031,7 +4031,7 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
                         rc2 = pgmR3DumpHierarchyGC32BitPT(pVM, pPT, u32Address, PhysSearch);
                     else
                         Log(("%08x error! Page table at %#x was not found in the page pool!\n", u32Address, GCPhys));
-                    if (rc2 < rc && VBOX_SUCCESS(rc))
+                    if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
@@ -4122,7 +4122,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%RGp - %RGp  %p\n",
             pRam->GCPhys, pRam->GCPhysLast, pRam->pvR3);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -4154,7 +4154,7 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
      * Print message about the fixedness of the mappings.
      */
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, pVM->pgm.s.fMappingsFixed ? "The mappings are FIXED.\n" : "The mappings are FLOATING.\n");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -4166,7 +4166,7 @@ static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%08x - %08x %s\n",
             pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -4198,7 +4198,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
 
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Forcing page directory sync.\n");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
@@ -4225,7 +4225,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Checking shadow CR3 page tables for consistency.\n");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     PGMAssertCR3(pVM, CPUMGetGuestCR3(pVM), CPUMGetGuestCR4(pVM));

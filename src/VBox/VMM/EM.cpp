@@ -122,10 +122,10 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
      */
     pVM->em.s.offVM = RT_OFFSETOF(VM, em.s);
     int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR3Enabled", &pVM->fRawR3Enabled);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         pVM->fRawR3Enabled = true;
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR0Enabled", &pVM->fRawR0Enabled);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         pVM->fRawR0Enabled = true;
     Log(("EMR3Init: fRawR3Enabled=%d fRawR0Enabled=%d\n", pVM->fRawR3Enabled, pVM->fRawR0Enabled));
     pVM->em.s.enmState = EMSTATE_NONE;
@@ -141,7 +141,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "em", 0, EM_SAVED_STATE_VERSION, 16,
                                NULL, emR3Save, NULL,
                                NULL, emR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -150,7 +150,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     PEMSTATS pStats;
     rc = MMHyperAlloc(pVM, sizeof(*pStats), 0, MM_TAG_EM, (void **)&pStats);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pVM->em.s.pStatsR3 = pStats;
     pVM->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
@@ -480,7 +480,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
      * Load the saved state.
      */
     int rc = SSMR3GetBool(pSSM, &pVM->em.s.fForceRAW);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         pVM->em.s.fForceRAW = false;
 
     Assert(!pVM->em.s.pCliStatTree);
@@ -715,7 +715,7 @@ static int emR3Debug(PVM pVM, int rc)
                     if (pVM->em.s.enmState == EMSTATE_DEBUG_HYPER)
                     {
                         rc = emR3RawResumeHyper(pVM);
-                        if (rc != VINF_SUCCESS && VBOX_SUCCESS(rc))
+                        if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
                             continue;
                     }
                     if (rc == VINF_SUCCESS)
@@ -781,7 +781,7 @@ static int emR3RemStep(PVM pVM)
      * Switch to REM, step instruction, switch back.
      */
     int rc = REMR3State(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = REMR3Step(pVM);
         REMR3StateBack(pVM);
@@ -841,7 +841,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
             STAM_PROFILE_START(&pVM->em.s.StatREMSync, b);
             rc = REMR3State(pVM);
             STAM_PROFILE_STOP(&pVM->em.s.StatREMSync, b);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
             fInREMState = true;
 
@@ -999,7 +999,7 @@ static int emR3RawStep(PVM pVM)
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
 
@@ -1072,7 +1072,7 @@ static int emR3HwAccStep(PVM pVM)
     if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
         rc = emR3RawForcedActions(pVM, pCtx);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     /*
@@ -1283,7 +1283,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
     /* Try our own instruction emulator before falling back to the recompiler. */
     DISCPUSTATE Cpu;
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "GEN EMU");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         uint32_t size;
 
@@ -1300,7 +1300,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
         case OP_XCHG:
             STAM_PROFILE_START(&pVM->em.s.StatMiscEmu, a);
             rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pCtx->rip += Cpu.opsize;
                 STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
@@ -1358,7 +1358,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
      */
     DISCPUSTATE Cpu;
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "IO EMU");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = VINF_EM_RAW_EMULATE_INSTR;
 
@@ -1422,7 +1422,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
         }
         AssertMsg(rc != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
             return rc;
@@ -1452,7 +1452,7 @@ static int emR3RawGuestTrap(PVM pVM)
     RTGCUINT        uErrorCode;
     RTGCUINTPTR     uCR2;
     int rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertReleaseMsgFailed(("No trap! (rc=%Vrc)\n", rc));
         return rc;
@@ -1509,7 +1509,7 @@ static int emR3RawGuestTrap(PVM pVM)
                                    ? TRPM_TRAP_HAS_ERRORCODE
                                    : TRPM_TRAP_NO_ERRORCODE;
             rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8TrapNo, uErrorCode, enmError, TRPM_TRAP, -1);
-            if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
+            if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
             {
                 TRPMResetTrap(pVM);
                 return VINF_EM_RESCHEDULE_RAW;
@@ -1539,7 +1539,7 @@ static int emR3RawGuestTrap(PVM pVM)
          */
         DISCPUSTATE cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap (#UD): ");
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             && (cpu.pCurInstr->opcode == OP_MONITOR || cpu.pCurInstr->opcode == OP_MWAIT))
         {
             uint32_t u32Dummy, u32Features, u32ExtFeatures;
@@ -1551,7 +1551,7 @@ static int emR3RawGuestTrap(PVM pVM)
 
                 uint32_t opsize;
                 rc = EMInterpretInstructionCPU(pVM, &cpu, CPUMCTX2CORE(pCtx), 0, &opsize);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     pCtx->rip += cpu.opsize;
                     return rc;
@@ -1569,7 +1569,7 @@ static int emR3RawGuestTrap(PVM pVM)
          *        I/O access. We can easily handle those in RC.  */
         DISCPUSTATE cpu;
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &cpu, "Guest Trap: ");
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             &&  (cpu.pCurInstr->optype & OPTYPE_PORTIO))
         {
             /*
@@ -1624,7 +1624,7 @@ int emR3RawRingSwitch(PVM pVM)
      * sysenter, syscall & callgate
      */
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "RSWITCH: ");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (Cpu.pCurInstr->opcode == OP_SYSENTER)
         {
@@ -1632,7 +1632,7 @@ int emR3RawRingSwitch(PVM pVM)
             {
                 rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                         (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVM, "Patched sysenter instruction");
                     return VINF_EM_RESCHEDULE_RAW;
@@ -1700,7 +1700,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
     else
     {
         rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Vrc) gcret=%Vrc\n", rc, gcret));
             return rc;
@@ -1723,7 +1723,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
         int         rc;
 
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->eip, &Cpu, "Patch code: ");
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             &&  Cpu.pCurInstr->opcode == OP_IRET)
         {
             uint32_t eip, selCS, uEFlags;
@@ -1883,7 +1883,7 @@ int emR3RawPrivileged(PVM pVM)
         {
             int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                         (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
                 DBGFR3InfoLog(pVM, "cpumguest", "PRIV");
@@ -1909,7 +1909,7 @@ int emR3RawPrivileged(PVM pVM)
     int         rc;
 
     rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCtx->rip, &Cpu, "PRIV: ");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_STATISTICS
         PEMSTATS pStats = pVM->em.s.CTX_SUFF(pStats);
@@ -2045,7 +2045,7 @@ int emR3RawPrivileged(PVM pVM)
 #endif
 
                     rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         pCtx->rip += Cpu.opsize;
                         STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
@@ -2230,7 +2230,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
         case VINF_PATM_HC_MMIO_PATCH_READ:
             rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
                                     PATMFL_MMIO_ACCESS | ((SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0));
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 rc = emR3RawExecuteInstruction(pVM, "MMIO");
             break;
 
@@ -2256,7 +2256,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          */
         case VINF_PGM_CHANGE_MODE:
             rc = PGMChangeMode(pVM, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VINF_EM_RESCHEDULE;
             break;
 
@@ -2464,7 +2464,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     if (VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT))
     {
         int rc = SELMR3UpdateFromCPUM(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2474,7 +2474,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     if (VM_FF_ISSET(pVM, VM_FF_TRPM_SYNC_IDT))
     {
         int rc = TRPMR3SyncIDT(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2484,7 +2484,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     if (VM_FF_ISSET(pVM, VM_FF_SELM_SYNC_TSS))
     {
         int rc = SELMR3SyncTSS(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2494,7 +2494,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         int rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT));
@@ -2509,7 +2509,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
             if (rc != VINF_PGM_SYNC_CR3)
                 return rc;
             rc = PGMSyncCR3(pVM, pCtx->cr0, pCtx->cr3, pCtx->cr4, VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
@@ -2521,7 +2521,7 @@ static int emR3RawForcedActions(PVM pVM, PCPUMCTX pCtx)
     if (VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
     {
         int rc = PGMR3PhysAllocateHandyPages(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -2586,7 +2586,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
         }
 
@@ -2791,7 +2791,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         if (VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pCtx);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
         }
 
@@ -3507,7 +3507,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  * included in this.
                  */
                 default:
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         AssertMsgFailed(("Unexpected warning or informational status code %Vra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;

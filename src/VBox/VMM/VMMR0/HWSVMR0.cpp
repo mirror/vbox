@@ -426,7 +426,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
 
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
             Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);
@@ -868,7 +868,7 @@ ResumeExecution:
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
     rc = SVMR0CheckPendingInterrupt(pVM, pVMCB, pCtx);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
@@ -1920,7 +1920,7 @@ ResumeExecution:
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
-            AssertMsg(VBOX_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
+            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
 #endif
         Log2(("Failed IO at %VGv %x size %d\n", pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
         break;
@@ -2098,7 +2098,7 @@ static int svmR0InterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     RTGCPTR     addr;
 
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
-    if(VBOX_FAILURE(rc))
+    if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
     switch(param1.type)
@@ -2118,7 +2118,7 @@ static int svmR0InterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
      * (in absence of segment override prefixes)????
      */
     rc = PGMInvalidatePage(pVM, addr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Manually invalidate the page for the VM's TLB. */
         Log(("SVMInvlpgA %VGv ASID=%d\n", addr, uASID));
@@ -2153,19 +2153,19 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
     {
         RTGCPTR pbCode;
         int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             uint32_t    cbOp;
             DISCPUSTATE Cpu;
 
             Cpu.mode = enmMode;
             rc = EMInterpretDisasOneEx(pVM, pbCode, pRegFrame, &Cpu, &cbOp);
-            Assert(VBOX_FAILURE(rc) || Cpu.pCurInstr->opcode == OP_INVLPG);
-            if (VBOX_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
+            Assert(RT_FAILURE(rc) || Cpu.pCurInstr->opcode == OP_INVLPG);
+            if (RT_SUCCESS(rc) && Cpu.pCurInstr->opcode == OP_INVLPG)
             {
                 Assert(cbOp == Cpu.opsize);
                 rc = svmR0InterpretInvlPg(pVM, &Cpu, pRegFrame, uASID);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */
                 }

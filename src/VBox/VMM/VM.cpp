@@ -202,7 +202,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     if (!fGlobalInitDone)
     {
         int rc = VMR3GlobalInit();
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         fGlobalInitDone = true;
     }
@@ -523,7 +523,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Init the configuration.
          */
         rc = CFGMR3Init(pVM, pfnCFGMConstructor, pvUserCFGM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * If executing in fake suplib mode disable RR3 and RR0 in the config.
@@ -549,26 +549,26 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                        cCPUsCfg, cCPUs));
                 rc = VERR_INVALID_PARAMETER;
             }
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Init the Ring-3 components and do a round of relocations with 0 delta.
                  */
                 rc = vmR3InitRing3(pVM, pUVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     VMR3Relocate(pVM, 0);
                     LogFlow(("Ring-3 init succeeded\n"));
 
                     /* Initialize the VMCPU components. */
                     rc = vmR3InitVMCpu(pVM);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         /*
                          * Init the Ring-0 components.
                          */
                         rc = vmR3InitRing0(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             /* Relocate again, because some switcher fixups depends on R0 init results. */
                             VMR3Relocate(pVM, 0);
@@ -580,7 +580,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                              */
                             void *pvUser = NULL;
                             rc = DBGCTcpCreate(pVM, &pvUser);
-                            if (    VBOX_SUCCESS(rc)
+                            if (    RT_SUCCESS(rc)
                                 ||  rc == VERR_NET_ADDRESS_IN_USE)
                             {
                                 pUVM->vm.s.pvDBGC = pvUser;
@@ -589,7 +589,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                  * Init the Guest Context components.
                                  */
                                 rc = vmR3InitGC(pVM);
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                 {
                                     /*
                                     * Now we can safely set the VM halt method to default.
@@ -648,7 +648,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
      * Init all R3 components, the order here might be important.
      */
     rc = MMR3Init(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         STAM_REG(pVM, &pVM->StatTotalInGC,          STAMTYPE_PROFILE_ADV, "/PROF/VM/InGC",          STAMUNIT_TICKS_PER_CALL,    "Profiling the total time spent in GC.");
         STAM_REG(pVM, &pVM->StatSwitcherToGC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
@@ -677,70 +677,70 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         STAM_REG(pVM, &pUVM->vm.s.StatReqFreeOverflow, STAMTYPE_COUNTER,   "/VM/Req/FreeOverflow",   STAMUNIT_OCCURENCES,        "Number of times the request was actually freed.");
 
         rc = CPUMR3Init(pVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = HWACCMR3Init(pVM);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = PGMR3Init(pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = REMR3Init(pVM);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = MMR3InitPaging(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                             rc = TMR3Init(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             rc = VMMR3Init(pVM);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 rc = SELMR3Init(pVM);
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                 {
                                     rc = TRPMR3Init(pVM);
-                                    if (VBOX_SUCCESS(rc))
+                                    if (RT_SUCCESS(rc))
                                     {
                                         rc = CSAMR3Init(pVM);
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                         {
                                             rc = PATMR3Init(pVM);
-                                            if (VBOX_SUCCESS(rc))
+                                            if (RT_SUCCESS(rc))
                                             {
 #ifdef VBOX_WITH_VMI
                                                 rc = PARAVR3Init(pVM);
-                                                if (VBOX_SUCCESS(rc))
+                                                if (RT_SUCCESS(rc))
                                                 {
 #endif
                                                     rc = IOMR3Init(pVM);
-                                                    if (VBOX_SUCCESS(rc))
+                                                    if (RT_SUCCESS(rc))
                                                     {
                                                         rc = EMR3Init(pVM);
-                                                        if (VBOX_SUCCESS(rc))
+                                                        if (RT_SUCCESS(rc))
                                                         {
                                                             rc = DBGFR3Init(pVM);
-                                                            if (VBOX_SUCCESS(rc))
+                                                            if (RT_SUCCESS(rc))
                                                             {
                                                                 rc = PDMR3Init(pVM);
-                                                                if (VBOX_SUCCESS(rc))
+                                                                if (RT_SUCCESS(rc))
                                                                 {
                                                                     rc = PGMR3InitDynMap(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = MMR3HyperInitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = PATMR3InitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = PGMR3InitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = SELMR3InitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = TMR3InitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = VMMR3InitFinalize(pVM);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
-                                                                    if (VBOX_SUCCESS(rc))
+                                                                    if (RT_SUCCESS(rc))
                                                                     {
                                                                         LogFlow(("vmR3InitRing3: returns %Vrc\n", VINF_SUCCESS));
                                                                         return VINF_SUCCESS;
@@ -809,22 +809,22 @@ static int vmR3InitVMCpu(PVM pVM)
     int rc2;
 
     rc = CPUMR3InitCPU(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = HWACCMR3InitCPU(pVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = PGMR3InitCPU(pVM);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = TMR3InitCPU(pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = VMMR3InitCPU(pVM);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = EMR3InitCPU(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             LogFlow(("vmR3InitVMCpu: returns %Rrc\n", VINF_SUCCESS));
                             return VINF_SUCCESS;
@@ -875,11 +875,11 @@ static int vmR3InitRing0(PVM pVM)
     /*
      * Do notifications and return.
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
 
     /** todo: move this to the VMINITCOMPLETED_RING0 notification handler once implemented */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = HWACCMR3InitFinalizeR0(pVM);
 
     LogFlow(("vmR3InitRing0: returns %Vrc\n", rc));
@@ -912,7 +912,7 @@ static int vmR3InitGC(PVM pVM)
     /*
      * Do notifications and return.
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_GC);
     LogFlow(("vmR3InitGC: returns %Vrc\n", rc));
     return rc;
@@ -998,7 +998,7 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1068,7 +1068,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1155,7 +1155,7 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1236,7 +1236,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1331,7 +1331,7 @@ VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnPro
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1376,7 +1376,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
      */
     vmR3SetState(pVM, VMSTATE_LOADING);
     int rc = SSMR3Load(pVM, pszFilename, SSMAFTER_RESUME, pfnProgress,  pvUser);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Not paranoia anymore; the saved guest might use different hypervisor selectors. We must call VMR3Relocate. */
         VMR3Relocate(pVM, 0);
@@ -1420,7 +1420,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1481,7 +1481,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
                            "ss:sp=0000:%04x ", esp);
             uint32_t Start = esp & ~(uint32_t)63;
             int rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, Start, 0x100);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 RTLogRelPrintf("0000:%04x TO 0000:%04x:\n"
                                "%.*Rhxd\n",
                                Start, Start + 0x100 - 1,
@@ -1493,7 +1493,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             if (esp < 0x2000 && esp > 0x1fc0)
             {
                 rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x800);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     RTLogRelPrintf("0000:8000 TO 0000:87ff:\n"
                                    "%.*Rhxd\n",
                                    0x800, abBuf);
@@ -1502,7 +1502,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
             if (true)
             {
                 rc = PGMPhysSimpleReadGCPhys(pVM, abBuf, 0x8000, 0x200);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     RTLogRelPrintf("2000:0000 TO 2000:01ff:\n"
                                    "%.*Rhxd\n",
                                    0x200, abBuf);
@@ -1982,7 +1982,7 @@ VMMR3DECL(int)   VMR3Reset(PVM pVM)
     rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
     while (rc == VERR_TIMEOUT)
         rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
@@ -2094,7 +2094,7 @@ static int vmR3AtResetU(PUVM pUVM)
                 return VERR_INTERNAL_ERROR;
         }
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("At-reset handler %s failed with rc=%d\n", pCur->pszDesc, rc));
             return rc;
@@ -2158,7 +2158,7 @@ VMMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET 
      */
     PVMATRESET pNew;
     int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Fill in type data.
@@ -2197,7 +2197,7 @@ VMMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallbac
      */
     PVMATRESET pNew;
     int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Fill in type data.
@@ -2235,7 +2235,7 @@ VMMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallbac
      */
     PVMATRESET pNew;
     int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Fill in type data.
@@ -2498,7 +2498,7 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -2567,7 +2567,7 @@ VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *p
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -2669,7 +2669,7 @@ VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *
      */
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -2738,7 +2738,7 @@ VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *p
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -2954,7 +2954,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRu
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -3023,7 +3023,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);

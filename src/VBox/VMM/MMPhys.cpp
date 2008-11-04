@@ -137,7 +137,7 @@ VMMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigne
          * Register the ram with PGM.
          */
         rc = PGMR3PhysRegister(pVM, pvRam, GCPhys, cb, fFlags, NULL, pszDesc);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (fFlags == MM_RAM_FLAGS_DYNAMIC_ALLOC)
                 pVM->mm.s.cBasePages += cb >> PAGE_SHIFT;
@@ -153,7 +153,7 @@ VMMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigne
          */
         PMMLOCKEDMEM    pLockedMem;
         rc = mmR3LockMem(pVM, pvRam, cb, MM_LOCKED_TYPE_PHYS, &pLockedMem, enmType == MM_PHYS_TYPE_DYNALLOC_CHUNK /* fSilentFailure */);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pLockedMem->u.phys.GCPhys = GCPhys;
 
@@ -170,7 +170,7 @@ VMMR3DECL(int) MMR3PhysRegisterEx(PVM pVM, void *pvRam, RTGCPHYS GCPhys, unsigne
             if (enmType == MM_PHYS_TYPE_NORMAL)
             {
                 rc = PGMR3PhysRegister(pVM, pvRam, pLockedMem->u.phys.GCPhys, cb, fFlags, &pLockedMem->aPhysPages[0], pszDesc);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     if (!fFlags)
                         pVM->mm.s.cBasePages += cb >> PAGE_SHIFT;
@@ -286,7 +286,7 @@ VMMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
     }
     int rc = PGMR3PhysSetFlags(pVM, GCPhys, cbRange, fSet, ~MM_RAM_FLAGS_RESERVED);
     AssertRC(rc);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * To prevent the shadow page table mappings from being RW in raw-mode, we
@@ -308,7 +308,7 @@ VMMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
      * Create a ROM range it so we can make a 'info rom' thingy and more importantly
      * reload and protect/unprotect shadow ROM correctly.
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         PMMROMRANGE pRomRange = (PMMROMRANGE)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(*pRomRange));
         AssertReturn(pRomRange, VERR_NO_MEMORY);
@@ -375,10 +375,10 @@ VMMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const c
          */
         void *pvPages;
         int rc = SUPPageAlloc(cbRange >> PAGE_SHIFT, &pvPages);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = MMR3PhysRegister(pVM, pvPages, GCPhys, cbRange, MM_RAM_FLAGS_RESERVED, pszDesc);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 SUPPageFree(pvPages, cbRange >> PAGE_SHIFT);
         }
         return rc;
