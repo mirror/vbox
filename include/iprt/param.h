@@ -39,10 +39,13 @@
  */
 
 /* Undefine PAGE_SIZE and PAGE_SHIFT to avoid unnecessary noice when clashing
-   with system headers. Include system headers before / after iprt depending
-   on which you wish to take precedence. */
+ * with system headers. Include system headers before / after iprt depending
+ * on which you wish to take precedence. */
 #undef PAGE_SIZE
 #undef PAGE_SHIFT
+
+/* Undefine PAGE_OFFSET_MASK to avoid the conflict with the-linux-kernel.h */
+#undef PAGE_OFFSET_MASK
 
 /**
  * i386 Page size.
