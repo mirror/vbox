@@ -604,7 +604,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 /* When the guest accesses invalid physical memory (e.g. probing of RAM or accessing a remapped MMIO range), then we'll fall
                  * back to the recompiler to emulate the instruction.
                  */
-                LogFlow(("pgmPhysGetPageEx %VGp failed with %Vrc\n", GCPhys, rc));
+                LogFlow(("pgmPhysGetPageEx %VGp failed with %Rrc\n", GCPhys, rc));
                 STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersInvalid);
                 STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
                 return VINF_EM_RAW_EMULATE_INSTR;
@@ -758,7 +758,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
-                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Vrc fPageShw=%VX64\n", rc, fPageShw));
+                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Rrc fPageShw=%VX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
@@ -810,10 +810,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                   ("Page flags mismatch! pvFault=%VGv GCPhys=%VGp fPageShw=%08llx fPageGst=%08llx\n", pvFault, GCPhys, fPageShw, fPageGst));
                     }
                     else
-                        AssertMsgFailed(("PGMGstGetPage rc=%Vrc\n", rc));
+                        AssertMsgFailed(("PGMGstGetPage rc=%Rrc\n", rc));
                 }
                 else
-                    AssertMsgFailed(("PGMGCGetPage rc=%Vrc\n", rc));
+                    AssertMsgFailed(("PGMGCGetPage rc=%Rrc\n", rc));
 #    endif /* VBOX_STRICT */
 #   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
             }
@@ -920,7 +920,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
-        AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+        AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
         if (!VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3))
             PGM_INVL_GUEST_TLBS();
@@ -1734,7 +1734,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                 }
                 else /* MMIO or invalid page: emulated in #PF handler. */
                 {
-                    LogFlow(("PGM_GCPHYS_2_PTR %VGp failed with %Vrc\n", GCPhys, rc));
+                    LogFlow(("PGM_GCPHYS_2_PTR %VGp failed with %Rrc\n", GCPhys, rc));
                     Assert(!pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK].n.u1Present);
                 }
             }
@@ -1807,7 +1807,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                 }
                 else
-                    LogFlow(("PGM_GCPHYS_2_PTR %VGp (big) failed with %Vrc\n", GCPhys, rc));
+                    LogFlow(("PGM_GCPHYS_2_PTR %VGp (big) failed with %Rrc\n", GCPhys, rc));
             }
             return VINF_SUCCESS;
         }
@@ -2442,7 +2442,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
             return VINF_PGM_SYNC_CR3;
         }
         else
-            AssertMsgFailedReturn(("rc=%Vrc\n", rc), VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("rc=%Rrc\n", rc), VERR_INTERNAL_ERROR);
         PdeDst.u &= X86_PDE_AVL_MASK;
         PdeDst.u |= pShwPage->Core.Key;
 
@@ -2760,7 +2760,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
         ||  rc == VINF_PGM_CACHED_PAGE)
         pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     else
-        AssertMsgFailedReturn(("rc=%Vrc\n", rc), VERR_INTERNAL_ERROR);
+        AssertMsgFailedReturn(("rc=%Rrc\n", rc), VERR_INTERNAL_ERROR);
 
     PdeDst.u &= X86_PDE_AVL_MASK;
     PdeDst.u |= pShwPage->Core.Key;
@@ -3269,7 +3269,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 if (rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)
                     break; /* next PML4E */
 
-                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
                 continue;   /* next PDPTE */
             }
             Assert(pPDDst);
@@ -3777,7 +3777,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
             if (rc != VINF_SUCCESS)
             {
-                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Vrc\n", rc));
+                AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
                 GCPtr += 512 * _2M;
                 continue;   /* next PDPTE */
             }

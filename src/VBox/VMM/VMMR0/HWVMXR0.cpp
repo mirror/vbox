@@ -666,7 +666,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
             uint8_t u8Interrupt;
 
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
-            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Vrc cs:eip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, pCtx->rip));
+            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:eip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, pCtx->rip));
             if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
@@ -2105,7 +2105,7 @@ ResumeExecution:
 
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
                 rc = PGMTrap0eHandler(pVM, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
-                Log2(("PGMTrap0eHandler %VGv returned %Vrc\n", pCtx->rip, rc));
+                Log2(("PGMTrap0eHandler %VGv returned %Rrc\n", pCtx->rip, rc));
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
                     Log2(("Shadow page fault at %VGv cr2=%VGv error code %x\n", pCtx->rip, exitQualification ,errCode));
@@ -2245,7 +2245,7 @@ ResumeExecution:
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
-                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Vrc\n", rc));
+                AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Rrc\n", rc));
                 break;
             }
 
@@ -2353,7 +2353,7 @@ ResumeExecution:
 
         /* Handle the pagefault trap for the nested shadow table. */
         rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
-        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Vrc\n", pCtx->rip, rc));
+        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Rrc\n", pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %VGv cr2=%VGp error code %x\n", pCtx->rip, exitQualification , errCode));
@@ -2405,7 +2405,7 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: cpuid failed with %Vrc\n", rc));
+        AssertMsgFailed(("EMU: cpuid failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -2423,7 +2423,7 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
-        AssertMsgFailed(("EMU: rdtsc failed with %Vrc\n", rc));
+        AssertMsgFailed(("EMU: rdtsc failed with %Rrc\n", rc));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         break;
     }
@@ -2442,7 +2442,7 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: invlpg %VGv failed with %Vrc\n", exitQualification, rc));
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: invlpg %VGv failed with %Rrc\n", exitQualification, rc));
         break;
     }
 
@@ -2462,7 +2462,7 @@ ResumeExecution:
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Vrc\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr", rc));
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr", rc));
         break;
     }
 
@@ -2756,7 +2756,7 @@ ResumeExecution:
         else if (rc == VINF_IOM_HC_IOPORT_WRITE)
             Assert(fIOWrite);
         else
-            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Vrc\n", rc));
+            AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
 #endif
         break;
     }

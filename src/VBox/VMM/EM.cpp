@@ -616,7 +616,7 @@ static int emR3Debug(PVM pVM, int rc)
 {
     for (;;)
     {
-        Log(("emR3Debug: rc=%Vrc\n", rc));
+        Log(("emR3Debug: rc=%Rrc\n", rc));
         const int rcLast = rc;
 
         /*
@@ -757,7 +757,7 @@ static int emR3Debug(PVM pVM, int rc)
                  * The rest is unexpected, and will keep us here.
                  */
                 default:
-                    AssertMsgFailed(("Unxpected rc %Vrc!\n", rc));
+                    AssertMsgFailed(("Unxpected rc %Rrc!\n", rc));
                     break;
             }
         } while (false);
@@ -786,7 +786,7 @@ static int emR3RemStep(PVM pVM)
         rc = REMR3Step(pVM);
         REMR3StateBack(pVM);
     }
-    LogFlow(("emR3RemStep: returns %Vrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVM),  CPUMGetGuestEIP(pVM)));
+    LogFlow(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVM),  CPUMGetGuestEIP(pVM)));
     return rc;
 }
 
@@ -885,7 +885,7 @@ static int emR3RemExecute(PVM pVM, bool *pfFFDone)
                  * Anything which is not known to us means an internal error
                  * and the termination of the VM!
                  */
-                AssertMsg(rc == VERR_REM_TOO_MANY_TRAPS, ("Unknown GC return code: %Vra\n", rc));
+                AssertMsg(rc == VERR_REM_TOO_MANY_TRAPS, ("Unknown GC return code: %Rra\n", rc));
                 break;
             }
         }
@@ -959,7 +959,7 @@ static int emR3RawResumeHyper(PVM pVM)
     CPUMRawEnter(pVM, NULL);
     CPUMSetHyperEFlags(pVM, CPUMGetHyperEFlags(pVM) | X86_EFL_RF);
     rc = VMMR3ResumeHyper(pVM);
-    Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - returned from GC with rc=%Vrc\n", pCtx->cs, pCtx->eip, pCtx->eflags, rc));
+    Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - returned from GC with rc=%Rrc\n", pCtx->cs, pCtx->eip, pCtx->eflags, rc));
     rc = CPUMRawLeave(pVM, NULL, rc);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
 
@@ -1023,7 +1023,7 @@ static int emR3RawStep(PVM pVM)
         else
             rc = VMMR3RawRunGC(pVM);
 #ifndef DEBUG_sandervl
-        Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - GC rc %Vrc\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
+        Log(("emR3RawStep: cs:eip=%RTsel:%RGr efl=%RGr - GC rc %Rrc\n", fGuest ? CPUMGetGuestCS(pVM) : CPUMGetHyperCS(pVM),
              fGuest ? CPUMGetGuestEIP(pVM) : CPUMGetHyperEIP(pVM), fGuest ? CPUMGetGuestEFlags(pVM) : CPUMGetHyperEFlags(pVM), rc));
 #endif
     } while (   rc == VINF_SUCCESS
@@ -1274,7 +1274,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
                 return VINF_SUCCESS;
 
             default:
-                AssertReleaseMsgFailed(("Unknown return code %Vrc from PATMR3HandleTrap\n", rc));
+                AssertReleaseMsgFailed(("Unknown return code %Rrc from PATMR3HandleTrap\n", rc));
                 return VERR_INTERNAL_ERROR;
         }
     }
@@ -1307,7 +1307,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
                 return rc;
             }
             if (rc != VERR_EM_INTERPRETER)
-                AssertMsgFailedReturn(("rc=%Vrc\n", rc), rc);
+                AssertMsgFailedReturn(("rc=%Rrc\n", rc), rc);
             STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
             break;
         }
@@ -1427,7 +1427,7 @@ int emR3RawExecuteIOInstruction(PVM pVM)
             STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
             return rc;
         }
-        AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Rrc\n", rc));
     }
     STAM_PROFILE_STOP(&pVM->em.s.StatIOEmu, a);
     return emR3RawExecuteInstruction(pVM, "IO: ");
@@ -1454,7 +1454,7 @@ static int emR3RawGuestTrap(PVM pVM)
     int rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
     if (RT_FAILURE(rc))
     {
-        AssertReleaseMsgFailed(("No trap! (rc=%Vrc)\n", rc));
+        AssertReleaseMsgFailed(("No trap! (rc=%Rrc)\n", rc));
         return rc;
     }
 
@@ -1702,7 +1702,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
         rc = TRPMQueryTrapAll(pVM, &u8TrapNo, &enmType, &uErrorCode, &uCR2);
         if (RT_FAILURE(rc))
         {
-            AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Vrc) gcret=%Vrc\n", rc, gcret));
+            AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Rrc) gcret=%Rrc\n", rc, gcret));
             return rc;
         }
         /* Reset the trap as we'll execute the original instruction again. */
@@ -1843,7 +1843,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
              * Anything else is *fatal*.
              */
             default:
-                AssertReleaseMsgFailed(("Unknown return code %Vrc from PATMR3HandleTrap!\n", rc));
+                AssertReleaseMsgFailed(("Unknown return code %Rrc from PATMR3HandleTrap!\n", rc));
                 return VERR_INTERNAL_ERROR;
         }
     }
@@ -2084,7 +2084,7 @@ int emR3RawPrivileged(PVM pVM)
                         }
                         return rc; /* can return VINF_EM_HALT as well. */
                     }
-                    AssertMsgReturn(rc == VERR_EM_INTERPRETER, ("%Vrc\n", rc), rc);
+                    AssertMsgReturn(rc == VERR_EM_INTERPRETER, ("%Rrc\n", rc), rc);
                     break; /* fall back to the recompiler */
             }
             STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
@@ -2212,7 +2212,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * Patch manager.
          */
         case VERR_EM_RAW_PATCH_CONFLICT:
-            AssertReleaseMsgFailed(("%Vrc handling is not yet implemented\n", rc));
+            AssertReleaseMsgFailed(("%Rrc handling is not yet implemented\n", rc));
             break;
 
 #ifdef VBOX_WITH_VMI
@@ -2365,7 +2365,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
             {
                 pCtx->eip = PATMR3PatchToGCPtr(pVM, (RTGCPTR)pCtx->eip, 0);
             }
-            LogFlow(("emR3RawHandleRC: %Vrc -> %Vrc\n", rc, VINF_EM_RESCHEDULE_REM));
+            LogFlow(("emR3RawHandleRC: %Rrc -> %Rrc\n", rc, VINF_EM_RESCHEDULE_REM));
             rc = VINF_EM_RESCHEDULE_REM;
             break;
 
@@ -2421,7 +2421,7 @@ DECLINLINE(int) emR3RawHandleRC(PVM pVM, PCPUMCTX pCtx, int rc)
          * and the termination of the VM!
          */
         default:
-            AssertMsgFailed(("Unknown GC return code: %Vra\n", rc));
+            AssertMsgFailed(("Unknown GC return code: %Rra\n", rc));
             break;
     }
     return rc;
@@ -2644,7 +2644,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
         STAM_PROFILE_ADV_START(&pVM->em.s.StatRAWTail, d);
 
         LogFlow(("RR0-E: %08X ESP=%08X IF=%d VMFlags=%x PIF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags, pGCState->fPIF, (pCtx->ss & X86_SEL_RPL)));
-        LogFlow(("VMMR3RawRunGC returned %Vrc\n", rc));
+        LogFlow(("VMMR3RawRunGC returned %Rrc\n", rc));
 
 
 
@@ -2679,7 +2679,7 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
 
             default:
                 if (PATMIsPatchGCAddr(pVM, pCtx->eip) && !(pCtx->eflags.u32 & X86_EFL_TF))
-                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %VRv for reason %Vrc\n", (RTRCPTR)CPUMGetGuestEIP(pVM), rc));
+                    LogIt(NULL, 0, LOG_GROUP_PATM, ("Patch code interrupted at %VRv for reason %Rrc\n", (RTRCPTR)CPUMGetGuestEIP(pVM), rc));
                 break;
         }
         /*
@@ -3059,7 +3059,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
     int rc2;
 #define UPDATE_RC() \
         do { \
-            AssertMsg(rc2 <= 0 || (rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST), ("Invalid FF return code: %Vra\n", rc2)); \
+            AssertMsg(rc2 <= 0 || (rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST), ("Invalid FF return code: %Rra\n", rc2)); \
             if (rc2 == VINF_SUCCESS || rc < VINF_SUCCESS) \
                 break; \
             if (!rc || rc2 < rc) \
@@ -3144,7 +3144,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
             rc2 = VMR3ReqProcessU(pVM->pUVM, VMREQDEST_ANY);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE)
             {
-                Log2(("emR3ForcedActions: returns %Vrc\n", rc2));
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc2));
                 STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
                 return rc2;
             }
@@ -3274,7 +3274,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
     }
 
 #undef UPDATE_RC
-    Log2(("emR3ForcedActions: returns %Vrc\n", rc));
+    Log2(("emR3ForcedActions: returns %Rrc\n", rc));
     STAM_REL_PROFILE_STOP(&pVM->em.s.StatForcedActions, a);
     Assert(rcIrq == VINF_SUCCESS || rcIrq == rc);
     return rc;
@@ -3351,7 +3351,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
             /*
              * Now what to do?
              */
-            Log2(("EMR3ExecuteVM: rc=%Vrc\n", rc));
+            Log2(("EMR3ExecuteVM: rc=%Rrc\n", rc));
             switch (rc)
             {
                 /*
@@ -3471,12 +3471,12 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 case VINF_EM_DBG_STEP:
                     if (pVM->em.s.enmState == EMSTATE_RAW)
                     {
-                        Log2(("EMR3ExecuteVM: %Vrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_RAW));
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_RAW));
                         pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
                     }
                     else
                     {
-                        Log2(("EMR3ExecuteVM: %Vrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_REM));
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVM->em.s.enmState, EMSTATE_DEBUG_GUEST_REM));
                         pVM->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
                     }
                     break;
@@ -3509,7 +3509,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                 default:
                     if (RT_SUCCESS(rc))
                     {
-                        AssertMsgFailed(("Unexpected warning or informational status code %Vra!\n", rc));
+                        AssertMsgFailed(("Unexpected warning or informational status code %Rra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;
                     }
                     pVM->em.s.enmState = EMSTATE_GURU_MEDITATION;
@@ -3551,7 +3551,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  */
                 case EMSTATE_REM:
                     rc = emR3RemExecute(pVM, &fFFDone);
-                    Log2(("EMR3ExecuteVM: emR3RemExecute -> %Vrc\n", rc));
+                    Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
 
 #ifdef VBOX_WITH_VMI
@@ -3595,7 +3595,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     rc = emR3Debug(pVM, rc);
                     TMVirtualResume(pVM);
                     TMCpuTickResume(pVM);
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVM->em.s.enmState));
                     break;
 
                 /*
@@ -3608,7 +3608,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                     STAM_REL_PROFILE_ADV_STOP(&pVM->em.s.StatTotal, x);
 
                     rc = emR3Debug(pVM, rc);
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Vrc (state %d)\n", rc, pVM->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVM->em.s.enmState));
                     if (rc != VINF_SUCCESS)
                     {
                         /* switch to guru meditation mode */
@@ -3658,7 +3658,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
         /*
          * Fatal error.
          */
-        LogFlow(("EMR3ExecuteVM: returns %Vrc (longjmp / fatal error)\n", rc));
+        LogFlow(("EMR3ExecuteVM: returns %Rrc (longjmp / fatal error)\n", rc));
         TMVirtualPause(pVM);
         TMCpuTickPause(pVM);
         VMMR3FatalDump(pVM, rc);

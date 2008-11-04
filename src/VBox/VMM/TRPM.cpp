@@ -985,7 +985,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
     rc = PGMPhysSimpleReadGCPtr(pVM, &Idte3, IDTR.pIdt + sizeof(Idte3) * 3,  sizeof(Idte3));
     if (RT_FAILURE(rc))
     {
-        AssertMsgRC(rc, ("Failed to read IDT[3]! rc=%Vrc\n", rc));
+        AssertMsgRC(rc, ("Failed to read IDT[3]! rc=%Rrc\n", rc));
         return DBGFSTOP(pVM);
     }
     AssertRCReturn(rc, rc);
@@ -1209,7 +1209,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
     int rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, GCPtrIDT + iTrap * sizeof(GuestIdte),  sizeof(GuestIdte));
     if (RT_FAILURE(rc))
     {
-        AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));
+        AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -1386,7 +1386,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
 
         uint8_t u8Interrupt;
         rc = PDMGetInterrupt(pVM, &u8Interrupt);
-        Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
+        Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
         if (RT_SUCCESS(rc))
         {
             if (HWACCMR3IsActive(pVM))
@@ -1429,7 +1429,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
         {
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
-            Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
+            Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
             if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);

@@ -106,7 +106,7 @@ VMMR3DECL(int) PDMR3RegisterDrivers(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallbac
 
     int rc = pfnCallback(&RegCB.Core, VBOX_VERSION);
     if (RT_FAILURE(rc))
-        AssertMsgFailed(("VBoxDriversRegister failed with rc=%Vrc\n"));
+        AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n"));
 
     return rc;
 }
@@ -147,7 +147,7 @@ int pdmR3DrvInit(PVM pVM)
         fLoadBuiltin = true;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Rrc\n", rc));
         return rc;
     }
     if (fLoadBuiltin)
@@ -179,7 +179,7 @@ int pdmR3DrvInit(PVM pVM)
         }
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
+            AssertMsgFailed(("CFGMR3GetName -> %Rrc.\n", rc));
             return rc;
         }
 
@@ -190,7 +190,7 @@ int pdmR3DrvInit(PVM pVM)
             strcpy(szFilename, szName);
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
+            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Rrc.\n", rc));
             return rc;
         }
 
@@ -253,17 +253,17 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
             if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded driver module %s (%s).\n", pszName, pszFilename));
             else
-                AssertMsgFailed(("VBoxDriversRegister failed with rc=%Vrc\n"));
+                AssertMsgFailed(("VBoxDriversRegister failed with rc=%Rrc\n"));
         }
         else
         {
-            AssertMsgFailed(("Failed to locate 'VBoxDriversRegister' in %s (%s) rc=%Vrc\n", pszName, pszFilename, rc));
+            AssertMsgFailed(("Failed to locate 'VBoxDriversRegister' in %s (%s) rc=%Rrc\n", pszName, pszFilename, rc));
             if (rc == VERR_SYMBOL_NOT_FOUND)
                 rc = VERR_PDM_NO_REGISTRATION_EXPORT;
         }
     }
     else
-        AssertMsgFailed(("Failed to load %s (%s) rc=%Vrc!\n", pszName, pszFilename, rc));
+        AssertMsgFailed(("Failed to load %s (%s) rc=%Rrc!\n", pszName, pszFilename, rc));
     return rc;
 }
 
@@ -587,7 +587,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                         }
                     }
                     else
-                        AssertMsgFailed(("Failed to create Config node! rc=%Vrc\n", rc));
+                        AssertMsgFailed(("Failed to create Config node! rc=%Rrc\n", rc));
                 }
                 else
                 {
@@ -598,7 +598,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
             }
             else
             {
-                AssertMsgFailed(("Query for string value of \"Driver\" -> %Vrc\n", rc));
+                AssertMsgFailed(("Query for string value of \"Driver\" -> %Rrc\n", rc));
                 if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                     rc = VERR_PDM_CFG_MISSING_DRIVER_NAME;
             }
@@ -612,7 +612,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
         rc = VERR_PDM_DRIVER_ALREADY_ATTACHED;
     }
 
-    LogFlow(("pdmR3DrvHlp_Attach: caller='%s'/%d: return %Vrc\n",
+    LogFlow(("pdmR3DrvHlp_Attach: caller='%s'/%d: return %Rrc\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
@@ -640,7 +640,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns)
         rc = VERR_PDM_NO_DRIVER_ATTACHED;
     }
 
-    LogFlow(("pdmR3DrvHlp_Detach: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DrvHlp_Detach: caller='%s'/%d: returns %Rrc\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
@@ -656,7 +656,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_DetachSelf(PPDMDRVINS pDrvIns)
 
     int rc = pdmR3DrvDetach(pDrvIns);
 
-    LogFlow(("pdmR3DrvHlp_Detach: returns %Vrc\n", rc)); /* pDrvIns is freed by now. */
+    LogFlow(("pdmR3DrvHlp_Detach: returns %Rrc\n", rc)); /* pDrvIns is freed by now. */
     return rc;
 }
 
@@ -712,24 +712,24 @@ static DECLCALLBACK(int) pdmR3DrvHlp_MountPrepare(PPDMDRVINS pDrvIns, const char
                 rc = CFGMR3InsertString(pCfg, "Path", pszFilename);
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlow(("pdmR3DrvHlp_MountPrepare: caller='%s'/%d: returns %Vrc (Driver=%s)\n",
+                    LogFlow(("pdmR3DrvHlp_MountPrepare: caller='%s'/%d: returns %Rrc (Driver=%s)\n",
                              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, pszCoreDriver));
                     return rc;
                 }
                 else
-                    AssertMsgFailed(("Path string insert failed, rc=%Vrc\n", rc));
+                    AssertMsgFailed(("Path string insert failed, rc=%Rrc\n", rc));
             }
             else
-                AssertMsgFailed(("Config node failed, rc=%Vrc\n", rc));
+                AssertMsgFailed(("Config node failed, rc=%Rrc\n", rc));
         }
         else
-            AssertMsgFailed(("Driver string insert failed, rc=%Vrc\n", rc));
+            AssertMsgFailed(("Driver string insert failed, rc=%Rrc\n", rc));
         CFGMR3RemoveNode(pNode);
     }
     else
-        AssertMsgFailed(("AttachedDriver node insert failed, rc=%Vrc\n", rc));
+        AssertMsgFailed(("AttachedDriver node insert failed, rc=%Rrc\n", rc));
 
-    LogFlow(("pdmR3DrvHlp_MountPrepare: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DrvHlp_MountPrepare: caller='%s'/%d: returns %Rrc\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
@@ -819,7 +819,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT c
 
     int rc = PDMR3QueueCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, ppQueue);
 
-    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: returns %Vrc *ppQueue=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, *ppQueue));
+    LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, *ppQueue));
     return rc;
 }
 
@@ -848,7 +848,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMPollerRegister(PPDMDRVINS pDrvIns, PFNPD
         rc = VERR_INTERNAL_ERROR;
     }
 
-    LogFlow(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_PDMPollerRegister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 
@@ -880,7 +880,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK e
 
     int rc = TMR3TimerCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, enmClock, pfnCallback, pszDesc, ppTimer);
 
-    LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: returns %Vrc *ppTimer=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, *ppTimer));
+    LogFlow(("pdmR3DrvHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc *ppTimer=%p\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, *ppTimer));
     return rc;
 }
 
@@ -900,7 +900,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMRegister(PPDMDRVINS pDrvIns, const char 
                                  pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                  pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 
-    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 
@@ -915,7 +915,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMDeregister(PPDMDRVINS pDrvIns, const cha
 
     int rc = SSMR3DeregisterDriver(pDrvIns->Internal.s.pVM, pDrvIns, pszName, u32Instance);
 
-    LogFlow(("pdmR3DrvHlp_SSMDeregister: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_SSMDeregister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 
@@ -975,7 +975,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DrvHlp_SUPCallVMMR0Ex: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_SUPCallVMMR0Ex: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 
@@ -994,7 +994,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_USBRegisterHub(PPDMDRVINS pDrvIns, uint32_t
     int rc = VERR_NOT_SUPPORTED;
 #endif
 
-    LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Vrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_USBRegisterHub: caller='%s'/%d: returns %Rrc\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc));
     return rc;
 }
 
@@ -1010,7 +1010,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTH
 
     int rc = pdmR3ThreadCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 
-    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: returns %Vrc *ppThread=%RTthrd\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
+    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
             rc, *ppThread));
     return rc;
 }
@@ -1041,7 +1041,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS
 
     int rc = PDMR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVM, pDrvIns, ppTemplate, pfnCompleted, pszDesc);
 
-    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Vrc *ppThread=%p\n", pDrvIns->pDrvReg->szDriverName,
+    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Rrc *ppThread=%p\n", pDrvIns->pDrvReg->szDriverName,
              pDrvIns->iInstance, rc, *ppTemplate));
     return rc;
 }

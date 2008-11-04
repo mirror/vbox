@@ -68,7 +68,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
 
     int rc = IOMR3IOPortRegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
 
-    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -124,7 +124,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DevHlp_IOPortRegisterGC: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_IOPortRegisterGC: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -180,7 +180,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_IOPortRegisterR0: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -195,7 +195,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPO
 
     int rc = IOMR3IOPortDeregister(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts);
 
-    LogFlow(("pdmR3DevHlp_IOPortDeregister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_IOPortDeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -212,7 +212,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS G
 
     int rc = IOMR3MMIORegisterR3(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 
-    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIORegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -268,7 +268,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DevHlp_MMIORegisterGC: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIORegisterGC: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -320,7 +320,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
         rc = VERR_INVALID_PARAMETER;
     }
 
-    LogFlow(("pdmR3DevHlp_MMIORegisterR0: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIORegisterR0: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -335,7 +335,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS
 
     int rc = IOMR3MMIODeregister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange);
 
-    LogFlow(("pdmR3DevHlp_MMIODeregister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIODeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -350,7 +350,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
 
     int rc = MMR3PhysRomRegister(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvBinary, fShadow, pszDesc);
 
-    LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_ROMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -369,7 +369,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char 
                                  pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                  pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 
-    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -384,7 +384,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 
     int rc = TMR3TimerCreateDevice(pDevIns->Internal.s.pVMR3, pDevIns, enmClock, pfnCallback, pszDesc, ppTimer);
 
-    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -414,13 +414,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     if (!pPciDev)
     {
         Assert(pPciDev);
-        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc (pPciDev)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc (pPciDev)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (!pPciDev->config[0] && !pPciDev->config[1])
     {
         Assert(pPciDev->config[0] || pPciDev->config[1]);
-        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc (vendor)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc (vendor)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (pDevIns->Internal.s.pPciDeviceR3)
@@ -485,7 +485,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
             rc = CFGMR3QueryU8(pDevIns->Internal.s.pCfgHandle, "PCIFunctionNo", &u8Function);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("Configuration error: PCIDeviceNo, but PCIFunctionNo query failed with rc=%Vrc (%s/%d)\n",
+                AssertMsgFailed(("Configuration error: PCIDeviceNo, but PCIFunctionNo query failed with rc=%Rrc (%s/%d)\n",
                                  rc, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
                 return rc;
             }
@@ -499,7 +499,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
         }
         else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         {
-            AssertMsgFailed(("Configuration error: PCIDeviceNo query failed with rc=%Vrc (%s/%d)\n",
+            AssertMsgFailed(("Configuration error: PCIDeviceNo query failed with rc=%Rrc (%s/%d)\n",
                              rc, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
             return rc;
         }
@@ -535,7 +535,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
         rc = VERR_PDM_NO_PCI_BUS;
     }
 
-    LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -555,7 +555,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
     if (iRegion < 0 || iRegion >= PCI_NUM_REGIONS)
     {
         Assert(iRegion >= 0 && iRegion < PCI_NUM_REGIONS);
-        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc (iRegion)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (iRegion)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     switch (enmType)
@@ -566,13 +566,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
             break;
         default:
             AssertMsgFailed(("enmType=%#x is unknown\n", enmType));
-            LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc (enmType)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+            LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (enmType)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
             return VERR_INVALID_PARAMETER;
     }
     if (!pfnCallback)
     {
         Assert(pfnCallback);
-        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc (callback)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (callback)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     AssertRelease(VMR3GetState(pVM) != VMSTATE_RUNNING);
@@ -607,7 +607,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
         rc = VERR_PDM_NOT_PCI_DEVICE;
     }
 
-    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -765,7 +765,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
     else if (pLun->pTop)
     {
         AssertMsgFailed(("Already attached! The device should keep track of such things!\n"));
-        LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_PDM_DRIVER_ALREADY_ATTACHED));
+        LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_PDM_DRIVER_ALREADY_ATTACHED));
         return VERR_PDM_DRIVER_ALREADY_ATTACHED;
     }
     Assert(pLun->pBase == pBaseInterface);
@@ -837,7 +837,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                             *ppBaseInterface = &pNew->IBase;
                             Log(("PDM: Attached driver '%s'/%d to LUN#%d on device '%s'/%d.\n",
                                  pDrv->pDrvReg->szDriverName, pNew->iInstance, iLun, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                            LogFlow(("pdmR3DevHlp_DriverAttach: caller '%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+                            LogFlow(("pdmR3DevHlp_DriverAttach: caller '%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
 
                             return rc;  /* Might return != VINF_SUCCESS (e.g. VINF_NAT_DNS). */
                         }
@@ -857,7 +857,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                     }
                 }
                 else
-                    AssertMsgFailed(("Failed to create Config node! rc=%Vrc\n", rc));
+                    AssertMsgFailed(("Failed to create Config node! rc=%Rrc\n", rc));
             }
             else
             {
@@ -868,7 +868,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
         }
         else
         {
-            AssertMsgFailed(("Query for string value of \"Driver\" -> %Vrc\n", rc));
+            AssertMsgFailed(("Query for string value of \"Driver\" -> %Rrc\n", rc));
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 rc = VERR_PDM_CFG_MISSING_DRIVER_NAME;
         }
@@ -877,7 +877,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
         rc = VERR_PDM_NO_ATTACHED_DRIVER;
 
 
-    LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_DriverAttach: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -1008,7 +1008,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *p
     VM_ASSERT_EMT(pVM);
     int rc = DBGFR3EventSrcV(pVM, DBGFEVENT_DEV_STOP, pszFile, iLine, pszFunction, pszFormat, args);
 
-    LogFlow(("pdmR3DevHlp_DBGFStopV: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_DBGFStopV: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -1024,7 +1024,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const 
     VM_ASSERT_EMT(pVM);
     int rc = DBGFR3InfoRegisterDevice(pVM, pszName, pszDesc, pfnHandler, pDevIns);
 
-    LogFlow(("pdmR3DevHlp_DBGFInfoRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -1091,7 +1091,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pRtcReg->u32Version,
                          PDM_RTCREG_VERSION));
-        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Vrc (version)\n",
+        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc (version)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1100,7 +1100,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     {
         Assert(pRtcReg->pfnWrite);
         Assert(pRtcReg->pfnRead);
-        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Vrc (callbacks)\n",
+        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc (callbacks)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1108,7 +1108,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     if (!ppRtcHlp)
     {
         Assert(ppRtcHlp);
-        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Vrc (ppRtcHlp)\n",
+        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc (ppRtcHlp)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1120,7 +1120,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     if (pVM->pdm.s.pRtc)
     {
         AssertMsgFailed(("Only one RTC device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Vrc\n",
+        LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1144,7 +1144,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
     else
         rc = VERR_NO_MEMORY;
 
-    LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_RTCRegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -1162,7 +1162,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT c
     VM_ASSERT_EMT(pVM);
     int rc = PDMR3QueueCreateDevice(pVM, pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, ppQueue);
 
-    LogFlow(("pdmR3DevHlp_PDMQueueCreate: caller='%s'/%d: returns %Vrc *ppQueue=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *ppQueue));
+    LogFlow(("pdmR3DevHlp_PDMQueueCreate: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *ppQueue));
     return rc;
 }
 
@@ -1178,7 +1178,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSE
     VM_ASSERT_EMT(pVM);
     int rc = pdmR3CritSectInitDevice(pVM, pDevIns, pCritSect, pszName);
 
-    LogFlow(("pdmR3DevHlp_CritSectInit: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_CritSectInit: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -1208,7 +1208,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTH
 
     int rc = pdmR3ThreadCreateDevice(pDevIns->Internal.s.pVMR3, pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 
-    LogFlow(("pdmR3DevHlp_PDMThreadCreate: caller='%s'/%d: returns %Vrc *ppThread=%RTthrd\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
+    LogFlow(("pdmR3DevHlp_PDMThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
             rc, *ppThread));
     return rc;
 }
@@ -1241,7 +1241,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (pPciBusReg->u32Version != PDM_PCIBUSREG_VERSION)
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pPciBusReg->u32Version, PDM_PCIBUSREG_VERSION));
-        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    !pPciBusReg->pfnRegisterR3
@@ -1257,27 +1257,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
         Assert(pPciBusReg->pfnSaveExecR3);
         Assert(pPciBusReg->pfnLoadExecR3);
         Assert(pPciBusReg->pfnFakePCIBIOSR3);
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pPciBusReg->pszSetIrqRC
         &&  !VALID_PTR(pPciBusReg->pszSetIrqRC))
     {
         Assert(VALID_PTR(pPciBusReg->pszSetIrqRC));
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pPciBusReg->pszSetIrqR0
         &&  !VALID_PTR(pPciBusReg->pszSetIrqR0))
     {
         Assert(VALID_PTR(pPciBusReg->pszSetIrqR0));
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
      if (!ppPciHlpR3)
     {
         Assert(ppPciHlpR3);
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (ppPciHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (ppPciHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1291,7 +1291,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (iBus >= RT_ELEMENTS(pVM->pdm.s.aPciBuses))
     {
         AssertMsgFailed(("Too many PCI buses. Max=%u\n", RT_ELEMENTS(pVM->pdm.s.aPciBuses)));
-        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc (pci bus)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (pci bus)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     PPDMPCIBUS pPciBus = &pVM->pdm.s.aPciBuses[iBus];
@@ -1302,10 +1302,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (pPciBusReg->pszSetIrqRC)
     {
         int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPciBusReg->pszSetIrqRC, &pPciBus->pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPciBusReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pPciBusReg->pszSetIrqRC, rc));
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pPciBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1322,10 +1322,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (pPciBusReg->pszSetIrqR0)
     {
         int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, &pPciBus->pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pPciBusReg->pszSetIrqR0, rc));
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pPciBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -1353,7 +1353,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
     /* set the helper pointer and return. */
     *ppPciHlpR3 = &g_pdmR3DevPciHlp;
-    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1375,7 +1375,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pPicReg->u32Version != PDM_PICREG_VERSION)
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pPicReg->u32Version, PDM_PICREG_VERSION));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    !pPicReg->pfnSetIrqR3
@@ -1383,7 +1383,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     {
         Assert(pPicReg->pfnSetIrqR3);
         Assert(pPicReg->pfnGetInterruptR3);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    (   pPicReg->pszSetIrqRC
@@ -1394,27 +1394,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     {
         Assert(VALID_PTR(pPicReg->pszSetIrqRC));
         Assert(VALID_PTR(pPicReg->pszGetInterruptRC));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (RC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (RC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pPicReg->pszSetIrqRC
         &&  !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
         Assert(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (RC flag)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (RC flag)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pPicReg->pszSetIrqR0
         &&  !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
         Assert(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (R0 flag)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (R0 flag)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (!ppPicHlpR3)
     {
         Assert(ppPicHlpR3);
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc (ppPicHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc (ppPicHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1425,7 +1425,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pVM->pdm.s.Pic.pDevInsR3)
     {
         AssertMsgFailed(("Only one pic device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1435,15 +1435,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pPicReg->pszSetIrqRC)
     {
         int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPicReg->pszSetIrqRC, &pVM->pdm.s.Pic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszSetIrqRC, rc));
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pPicReg->pszGetInterruptRC, &pVM->pdm.s.Pic.pfnGetInterruptRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszGetInterruptRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pPicReg->pszGetInterruptRC, rc));
         }
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.Pic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1461,15 +1461,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pPicReg->pszSetIrqR0)
     {
         int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, &pVM->pdm.s.Pic.pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszSetIrqR0, rc));
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, &pVM->pdm.s.Pic.pfnGetInterruptR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pPicReg->pszGetInterruptR0, rc));
         }
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.Pic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -1492,7 +1492,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 
     /* set the helper pointer and return. */
     *ppPicHlpR3 = &g_pdmR3DevPicHlp;
-    LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+    LogFlow(("pdmR3DevHlp_PICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1517,7 +1517,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     if (pApicReg->u32Version != PDM_APICREG_VERSION)
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pApicReg->u32Version, PDM_APICREG_VERSION));
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    !pApicReg->pfnGetInterruptR3
@@ -1539,7 +1539,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(pApicReg->pfnWriteMSRR3);
         Assert(pApicReg->pfnReadMSRR3);
         Assert(pApicReg->pfnBusDeliverR3);
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (   (    pApicReg->pszGetInterruptRC
@@ -1571,7 +1571,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(VALID_PTR(pApicReg->pszReadMSRRC));
         Assert(VALID_PTR(pApicReg->pszWriteMSRRC));
         Assert(VALID_PTR(pApicReg->pszBusDeliverRC));
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (RC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (RC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (   (    pApicReg->pszGetInterruptR0
@@ -1603,13 +1603,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(VALID_PTR(pApicReg->pszReadMSRR0));
         Assert(VALID_PTR(pApicReg->pszWriteMSRR0));
         Assert(VALID_PTR(pApicReg->pszBusDeliverR0));
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (R0 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (R0 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (!ppApicHlpR3)
     {
         Assert(ppApicHlpR3);
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc (ppApicHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1621,7 +1621,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     if (pVM->pdm.s.Apic.pDevInsR3)
     {
         AssertMsgFailed(("Only one apic device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1631,50 +1631,50 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     if (pApicReg->pszGetInterruptRC)
     {
         int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetInterruptRC, &pVM->pdm.s.Apic.pfnGetInterruptRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetInterruptRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetInterruptRC, rc));
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszHasPendingIrqRC, &pVM->pdm.s.Apic.pfnHasPendingIrqRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszHasPendingIrqRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszHasPendingIrqRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszSetBaseRC, &pVM->pdm.s.Apic.pfnSetBaseRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetBaseRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetBaseRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetBaseRC, &pVM->pdm.s.Apic.pfnGetBaseRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetBaseRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetBaseRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszSetTPRRC, &pVM->pdm.s.Apic.pfnSetTPRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetTPRRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszSetTPRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszGetTPRRC, &pVM->pdm.s.Apic.pfnGetTPRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetTPRRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszGetTPRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszWriteMSRRC, &pVM->pdm.s.Apic.pfnWriteMSRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszWriteMSRRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszWriteMSRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszReadMSRRC, &pVM->pdm.s.Apic.pfnReadMSRRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszReadMSRRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszReadMSRRC, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, &pVM->pdm.s.Apic.pfnBusDeliverRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pApicReg->pszBusDeliverRC, rc));
         }
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.Apic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1699,50 +1699,50 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     if (pApicReg->pszGetInterruptR0)
     {
         int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, &pVM->pdm.s.Apic.pfnGetInterruptR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetInterruptR0, rc));
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszHasPendingIrqR0, &pVM->pdm.s.Apic.pfnHasPendingIrqR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszHasPendingIrqR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszHasPendingIrqR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, &pVM->pdm.s.Apic.pfnSetBaseR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetBaseR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, &pVM->pdm.s.Apic.pfnGetBaseR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetBaseR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, &pVM->pdm.s.Apic.pfnSetTPRR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszSetTPRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, &pVM->pdm.s.Apic.pfnGetTPRR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszGetTPRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszWriteMSRR0, &pVM->pdm.s.Apic.pfnWriteMSRR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszWriteMSRR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszWriteMSRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszReadMSRR0, &pVM->pdm.s.Apic.pfnReadMSRR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszReadMSRR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszReadMSRR0, rc));
         }
         if (RT_SUCCESS(rc))
         {
             rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, &pVM->pdm.s.Apic.pfnBusDeliverR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pApicReg->pszBusDeliverR0, rc));
         }
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.Apic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -1779,7 +1779,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
 
     /* set the helper pointer and return. */
     *ppApicHlpR3 = &g_pdmR3DevApicHlp;
-    LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+    LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1799,33 +1799,33 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->u32Version != PDM_IOAPICREG_VERSION)
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pIoApicReg->u32Version, PDM_IOAPICREG_VERSION));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (!pIoApicReg->pfnSetIrqR3)
     {
         Assert(pIoApicReg->pfnSetIrqR3);
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pIoApicReg->pszSetIrqRC
         &&  !VALID_PTR(pIoApicReg->pszSetIrqRC))
     {
         Assert(VALID_PTR(pIoApicReg->pszSetIrqRC));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pIoApicReg->pszSetIrqR0
         &&  !VALID_PTR(pIoApicReg->pszSetIrqR0))
     {
         Assert(VALID_PTR(pIoApicReg->pszSetIrqR0));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (!ppIoApicHlpR3)
     {
         Assert(ppIoApicHlpR3);
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (ppApicHlp)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (ppApicHlp)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1837,14 +1837,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (!pVM->pdm.s.Apic.pDevInsR3)
     {
         AssertMsgFailed(("Configuration error / Init order error! No APIC!\n"));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (no APIC)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (no APIC)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
     if (    pIoApicReg->pszSetIrqRC
         &&  !pVM->pdm.s.Apic.pDevInsRC)
     {
         AssertMsgFailed(("Configuration error! APIC doesn't do GC, I/O APIC does!\n"));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (no GC APIC)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (no GC APIC)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1854,7 +1854,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pVM->pdm.s.IoApic.pDevInsR3)
     {
         AssertMsgFailed(("Only one ioapic device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc (only one)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (only one)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1864,10 +1864,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetIrqRC)
     {
         int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szRCMod, pIoApicReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szRCMod, pIoApicReg->pszSetIrqRC, rc));
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.IoApic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1884,10 +1884,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetIrqR0)
     {
         int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, &pVM->pdm.s.IoApic.pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Vrc\n", pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pDevReg->szR0Mod, pIoApicReg->pszSetIrqR0, rc));
         if (RT_FAILURE(rc))
         {
-            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
         pVM->pdm.s.IoApic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -1908,7 +1908,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
 
     /* set the helper pointer and return. */
     *ppIoApicHlpR3 = &g_pdmR3DevIoApicHlp;
-    LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+    LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1929,7 +1929,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
     {
         AssertMsgFailed(("u32Version=%#x expected %#x\n", pDmacReg->u32Version,
                          PDM_DMACREG_VERSION));
-        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Vrc (version)\n",
+        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc (version)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1946,7 +1946,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
         Assert(pDmacReg->pfnWriteMemory);
         Assert(pDmacReg->pfnSetDREQ);
         Assert(pDmacReg->pfnGetChannelMode);
-        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Vrc (callbacks)\n",
+        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc (callbacks)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1954,7 +1954,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
     if (!ppDmacHlp)
     {
         Assert(ppDmacHlp);
-        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Vrc (ppDmacHlp)\n",
+        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc (ppDmacHlp)\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1966,7 +1966,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
     if (pVM->pdm.s.pDmac)
     {
         AssertMsgFailed(("Only one DMA device is supported!\n"));
-        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Vrc\n",
+        LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc\n",
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -1990,7 +1990,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
     else
         rc = VERR_NO_MEMORY;
 
-    LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_DMACRegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2076,7 +2076,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 
     int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCVirtSrc, cb);
 
-    LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_PhysReadGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
     return rc;
 }
@@ -2096,7 +2096,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
 
     int rc = PGMPhysSimpleWriteGCPtr(pVM, GCVirtDst, pvSrc, cb);
 
-    LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_PhysWriteGCVirt: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
     return rc;
 }
@@ -2112,7 +2112,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReserve(PPDMDEVINS pDevIns, RTGCPHYS GC
 
     int rc = MMR3PhysReserve(pDevIns->Internal.s.pVMR3, GCPhys, cbRange, pszDesc);
 
-    LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_PhysReserve: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
 
     return rc;
 }
@@ -2155,7 +2155,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
 
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, pGCPhys);
 
-    LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Vrc *pGCPhys=%VGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
+    LogFlow(("pdmR3DevHlp_PhysGCPtr2GCPhys: caller='%s'/%d: returns %Rrc *pGCPhys=%VGp\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pGCPhys));
 
     return rc;
 }
@@ -2225,7 +2225,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
         rc = VINF_EM_RESET;
     }
 
-    LogFlow(("pdmR3DevHlp_VMReset: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_VMReset: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -2240,7 +2240,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
 
     int rc = VMR3Suspend(pDevIns->Internal.s.pVMR3);
 
-    LogFlow(("pdmR3DevHlp_VMSuspend: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_VMSuspend: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -2255,7 +2255,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
 
     int rc = VMR3PowerOff(pDevIns->Internal.s.pVMR3);
 
-    LogFlow(("pdmR3DevHlp_VMPowerOff: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_VMPowerOff: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -2308,7 +2308,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uC
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
         rc = VERR_PDM_NO_DMAC_INSTANCE;
     }
-    LogFlow(("pdmR3DevHlp_DMARegister: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_DMARegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2333,7 +2333,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned 
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
         rc = VERR_PDM_NO_DMAC_INSTANCE;
     }
-    LogFlow(("pdmR3DevHlp_DMAReadMemory: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_DMAReadMemory: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2358,7 +2358,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
         rc = VERR_PDM_NO_DMAC_INSTANCE;
     }
-    LogFlow(("pdmR3DevHlp_DMAWriteMemory: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_DMAWriteMemory: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2379,7 +2379,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uCh
         AssertMsgFailed(("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
         rc = VERR_PDM_NO_DMAC_INSTANCE;
     }
-    LogFlow(("pdmR3DevHlp_DMASetDREQ: caller='%s'/%d: returns %Vrc\n",
+    LogFlow(("pdmR3DevHlp_DMASetDREQ: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2436,7 +2436,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg
     else
         rc = VERR_PDM_NO_RTC_INSTANCE;
 
-    LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: return %Vrc\n",
+    LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: return %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2457,7 +2457,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
     else
         rc = VERR_PDM_NO_RTC_INSTANCE;
 
-    LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: return %Vrc\n",
+    LogFlow(("pdmR3DevHlp_CMOSWrite: caller='%s'/%d: return %Rrc\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
@@ -2488,7 +2488,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPH
 
     int rc = MMR3PhysRomProtect(pDevIns->Internal.s.pVMR3, GCPhysStart, cbRange);
 
-    LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: returns %Vrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_ROMProtectShadow: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
     return rc;
 }
 

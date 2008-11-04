@@ -318,12 +318,12 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                         rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
                         if (RT_FAILURE(rc))
                         {
-                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
+                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Rrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
                             break;
                         }
                         rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8], (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, 8);
                     }
-                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, rc));
+                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Rrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, rc));
                 }
                 STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
             }

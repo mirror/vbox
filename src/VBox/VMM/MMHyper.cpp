@@ -80,7 +80,7 @@ int mmR3HyperInit(PVM pVM)
         cbHyperHeap = 1280*_1K;
     else if (RT_FAILURE(rc))
     {
-        LogRel(("MM/cbHyperHeap query -> %Vrc\n", rc));
+        LogRel(("MM/cbHyperHeap query -> %Rrc\n", rc));
         AssertRCReturn(rc, rc);
     }
     cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);
@@ -138,7 +138,7 @@ int mmR3HyperInit(PVM pVM)
         }
     }
 
-    LogFlow(("mmR3HyperInit: returns %Vrc\n", rc));
+    LogFlow(("mmR3HyperInit: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -228,7 +228,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
 
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("rc=%Vrc cb=%d GCPtr=%VGv enmType=%d pszDesc=%s\n",
+            AssertMsgFailed(("rc=%Rrc cb=%d GCPtr=%VGv enmType=%d pszDesc=%s\n",
                              rc, pLookup->cb, pLookup->enmType, pLookup->pszDesc));
             return rc;
         }
@@ -408,7 +408,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             AssertRC(rc);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("rc=%Vrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                AssertMsgFailed(("rc=%Rrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
                 break;
             }
             if (pVM->mm.s.fPGMInitialized)
@@ -417,7 +417,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
                 AssertRC(rc);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("rc=%Vrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                    AssertMsgFailed(("rc=%Rrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
                     break;
                 }
             }
@@ -498,7 +498,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
                 rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("rc=%Vrc offCur=%RGp %s\n", rc, offCur, pszDesc));
+                    AssertMsgFailed(("rc=%Rrc offCur=%RGp %s\n", rc, offCur, pszDesc));
                     break;
                 }
             }
@@ -764,7 +764,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
     }
 
     AssertRC(rc);
-    LogFlow(("mmR3HyperMap: returns %Vrc *pGCPtr=%VGv\n", rc, *pGCPtr));
+    LogFlow(("mmR3HyperMap: returns %Rrc *pGCPtr=%VGv\n", rc, *pGCPtr));
     return rc;
 }
 
@@ -820,7 +820,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
         *ppHeap = pHeap;
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("SUPPageAlloc(%d,) -> %Vrc\n", cbAligned >> PAGE_SHIFT, rc));
+    AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cbAligned >> PAGE_SHIFT, rc));
 
     *ppHeap = NULL;
     return rc;

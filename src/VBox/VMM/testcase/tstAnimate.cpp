@@ -242,7 +242,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
                             rc = scriptCommand(pVM, psz, pszEnd - psz);
                             if (RT_FAILURE(rc))
                             {
-                                RTPrintf("error: '%s' failed: %Vrc\n", psz, rc);
+                                RTPrintf("error: '%s' failed: %Rrc\n", psz, rc);
                                 break;
                             }
                         }
@@ -254,7 +254,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
 
                 }
                 else
-                    RTPrintf("error: failed to read script file: %Vrc\n", rc);
+                    RTPrintf("error: failed to read script file: %Rrc\n", rc);
                 RTMemFree(pszBuf);
             }
             else
@@ -267,7 +267,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
             RTPrintf("error: script file is too large (0x%llx bytes)\n", cb);
     }
     else
-        RTPrintf("error: couldn't get size of script file: %Vrc\n", rc);
+        RTPrintf("error: couldn't get size of script file: %Rrc\n", rc);
 
     return rc;
 }
@@ -300,7 +300,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
                 if (rc == VERR_EOF)
                     rc = VINF_SUCCESS;
                 else
-                    RTPrintf("error: Read error %Vrc while reading the raw memory file.\n", rc);
+                    RTPrintf("error: Read error %Rrc while reading the raw memory file.\n", rc);
                 break;
             }
 
@@ -311,7 +311,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
         }
     }
     else
-        RTPrintf("error: Failed to seek to 0x%llx in the raw memory file. rc=%Vrc\n", off, rc);
+        RTPrintf("error: Failed to seek to 0x%llx in the raw memory file. rc=%Rrc\n", off, rc);
 
     return rc;
 }
@@ -776,7 +776,7 @@ int main(int argc, char **argv)
         rc = RTFileOpen(&FileRawMem, pszRawMem, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszRawMem, rc);
+            RTPrintf("tstAnimate: error: Failed to open '%s': %Rrc\n", pszRawMem, rc);
             return 1;
         }
     }
@@ -786,7 +786,7 @@ int main(int argc, char **argv)
         rc = RTFileOpen(&FileScript, pszScript, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszScript, rc);
+            RTPrintf("tstAnimate: error: Failed to open '%s': %Rrc\n", pszScript, rc);
             return 1;
         }
     }
@@ -821,7 +821,7 @@ int main(int argc, char **argv)
     if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(pRelLogger);
     else
-        RTPrintf("tstAnimate: rtLogCreateEx failed - %Vrc\n", rc);
+        RTPrintf("tstAnimate: rtLogCreateEx failed - %Rrc\n", rc);
 
     /*
      * Create empty VM.
@@ -864,7 +864,7 @@ int main(int argc, char **argv)
                     {
                         rc = TMVirtualSetWarpDrive(pVM, u32WarpDrive);
                         if (RT_FAILURE(rc))
-                            RTPrintf("warning: TMVirtualSetWarpDrive(,%u) -> %Vrc\n", u32WarpDrive, rc);
+                            RTPrintf("warning: TMVirtualSetWarpDrive(,%u) -> %Rrc\n", u32WarpDrive, rc);
                     }
 
                     /*
@@ -891,10 +891,10 @@ int main(int argc, char **argv)
                                 RTThreadSleep(1000);
                         }
                         else
-                            RTPrintf("error: Failed to power on the VM: %Vrc\n", rc);
+                            RTPrintf("error: Failed to power on the VM: %Rrc\n", rc);
                     }
                     else
-                        RTPrintf("error: Failed to enabled singlestepping: %Vrc\n", rc);
+                        RTPrintf("error: Failed to enabled singlestepping: %Rrc\n", rc);
                 }
                 else
                 {
@@ -912,7 +912,7 @@ int main(int argc, char **argv)
             /* execScript complains */
         }
         else if (FileRawMem == NIL_RTFILE) /* loadMem complains, SSMR3Load doesn't */
-            RTPrintf("tstAnimate: error: SSMR3Load failed: rc=%Vrc\n", rc);
+            RTPrintf("tstAnimate: error: SSMR3Load failed: rc=%Rrc\n", rc);
         rcRet = RT_SUCCESS(rc) ? 0 : 1;
 
         /*
@@ -921,13 +921,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!RT_SUCCESS(rc))
         {
-            RTPrintf("tstAnimate: error: failed to destroy vm! rc=%Vrc\n", rc);
+            RTPrintf("tstAnimate: error: failed to destroy vm! rc=%Rrc\n", rc);
             rcRet++;
         }
     }
     else
     {
-        RTPrintf("tstAnimate: fatal error: failed to create vm! rc=%Vrc\n", rc);
+        RTPrintf("tstAnimate: fatal error: failed to create vm! rc=%Rrc\n", rc);
         rcRet++;
     }
 

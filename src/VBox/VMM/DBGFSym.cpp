@@ -280,7 +280,7 @@ int dbgfR3SymInit(PVM pVM)
             /* File */
             char *pszFilename;
             rc = CFGMR3QueryStringAlloc(pCmdNode, "Filename", &pszFilename);
-            AssertMsgRCReturn(rc, ("rc=%Vrc querying the 'File' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'File' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
 
             /* Delta (optional) */
             RTGCINTPTR offDelta;
@@ -288,7 +288,7 @@ int dbgfR3SymInit(PVM pVM)
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 offDelta = 0;
             else
-                AssertMsgRCReturn(rc, ("rc=%Vrc querying the 'Delta' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+                AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Delta' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
 
             /* Module (optional) */
             char *pszModule;
@@ -296,7 +296,7 @@ int dbgfR3SymInit(PVM pVM)
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 pszModule = NULL;
             else
-                AssertMsgRCReturn(rc, ("rc=%Vrc querying the 'Module' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+                AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Module' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
 
             /* Module (optional) */
             RTGCUINTPTR ModuleAddress;
@@ -304,7 +304,7 @@ int dbgfR3SymInit(PVM pVM)
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 ModuleAddress = 0;
             else
-                AssertMsgRCReturn(rc, ("rc=%Vrc querying the 'ModuleAddress' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+                AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'ModuleAddress' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
 
             /* Image size (optional) */
             RTGCUINTPTR cbModule;
@@ -312,7 +312,7 @@ int dbgfR3SymInit(PVM pVM)
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 cbModule = 0;
             else
-                AssertMsgRCReturn(rc, ("rc=%Vrc querying the 'ModuleAddress' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+                AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'ModuleAddress' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
 
 
             /*
@@ -509,7 +509,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
                 {
                     int rc2 = DBGFR3SymbolAdd(pVM, ModuleAddress, Address + AddressDelta, 0, psz);
                     if (RT_FAILURE(rc2))
-                        Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %Vrc\n", Address, psz, rc2));
+                        Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %Rrc\n", Address, psz, rc2));
                 }
             }
         }

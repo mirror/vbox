@@ -268,7 +268,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     if (    !pVM->hwaccm.s.vmx.fSupported
         &&  !pVM->hwaccm.s.svm.fSupported)
     {
-        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Vrc\n", pVM->hwaccm.s.lLastError));
+        LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%VX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
         return VINF_SUCCESS;
     }
@@ -285,7 +285,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_ENABLE, (pVM->hwaccm.s.fAllowed) ? HWACCMSTATE_ENABLED : HWACCMSTATE_DISABLED, NULL);
     if (RT_FAILURE(rc))
     {
-        LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Vrc\n", rc));
+        LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Rrc\n", rc));
         LogRel(("HWACCMR3InitFinalize: disallowed %s of HWACCM\n", pVM->hwaccm.s.fAllowed ? "enabling" : "disabling"));
         /* Invert the selection */
         pVM->hwaccm.s.fAllowed ^= 1;
@@ -670,7 +670,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             }
             else
             {
-                LogRel(("HWACCM: VMX setup failed with rc=%Vrc!\n", rc));
+                LogRel(("HWACCM: VMX setup failed with rc=%Rrc!\n", rc));
                 LogRel(("HWACCM: Last instruction error %x\n", pVM->hwaccm.s.vmx.ulLastInstrError));
                 pVM->fHWACCMEnabled = false;
             }

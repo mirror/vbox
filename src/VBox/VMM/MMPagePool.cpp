@@ -326,7 +326,7 @@ DECLINLINE(void *) mmR3PagePoolAlloc(PMMPAGEPOOL pPool)
         VMSetError(pPool->pVM, rc, RT_SRC_POS,
                    N_("Failed to expand page pool for memory below 4GB. current size: %d pages"),
                    pPool->cPages);
-    AssertMsgFailed(("Failed to expand pool%s. rc=%Vrc poolsize=%d\n",
+    AssertMsgFailed(("Failed to expand pool%s. rc=%Rrc poolsize=%d\n",
                      pPool->fLow ? " (<4GB)" : "", rc, pPool->cPages));
     return NULL;
 }

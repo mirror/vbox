@@ -1277,7 +1277,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
         {
             case VINF_SUCCESS:
             default:
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 return rc;
 
             case VINF_IOM_MMIO_UNUSED_00:
@@ -1289,7 +1289,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
                 }
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 return VINF_SUCCESS;
 
             case VINF_IOM_MMIO_UNUSED_FF:
@@ -1301,7 +1301,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
                 }
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, *pu32Value, cbValue, rc));
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 return VINF_SUCCESS;
         }
     }
@@ -1377,7 +1377,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
         if (rc != VINF_IOM_HC_MMIO_WRITE)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
-        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, rc));
+        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, rc));
         return rc;
     }
 #ifndef IN_RING3
@@ -1394,7 +1394,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
 #endif
-    Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Vrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
+    Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1513,7 +1513,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Rrc\n", rc));
     return rc;
 }
 
@@ -1553,7 +1553,7 @@ VMMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
         return rc;
     }
 
@@ -1623,7 +1623,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
                           &GCPtrSrc);
     if (RT_FAILURE(rc))
     {
-        Log(("OUTS source address conversion failed -> fallback, rc=%Vrc\n", rc));
+        Log(("OUTS source address conversion failed -> fallback, rc=%Rrc\n", rc));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
@@ -1633,7 +1633,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
                          (cpl == 3) ? X86_PTE_US : 0);
     if (rc != VINF_SUCCESS)
     {
-        Log(("OUTS will generate a trap -> fallback, rc=%Vrc\n", rc));
+        Log(("OUTS will generate a trap -> fallback, rc=%Rrc\n", rc));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
@@ -1676,7 +1676,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Rrc\n", rc));
     return rc;
 }
 
@@ -1718,7 +1718,7 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
         return rc;
     }
 

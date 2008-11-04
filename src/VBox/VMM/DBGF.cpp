@@ -603,7 +603,7 @@ static int dbgfR3VMMWait(PVM pVM)
                 break;
             if (rc != VERR_TIMEOUT)
             {
-                LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
+                LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
                 return rc;
             }
 
@@ -611,7 +611,7 @@ static int dbgfR3VMMWait(PVM pVM)
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcessU(pVM->pUVM, VMREQDEST_ANY);
-                LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Vrc rcRet=%Vrc\n", rc, rcRet));
+                LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Rrc rcRet=%Rrc\n", rc, rcRet));
                 if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
                 {
                     switch (rc)
@@ -620,18 +620,18 @@ static int dbgfR3VMMWait(PVM pVM)
                         case VINF_EM_DBG_STEPPED:
                         case VINF_EM_DBG_STEP:
                         case VINF_EM_DBG_STOP:
-                            AssertMsgFailed(("rc=%Vrc\n", rc));
+                            AssertMsgFailed(("rc=%Rrc\n", rc));
                             break;
 
                         /* return straight away */
                         case VINF_EM_TERMINATE:
                         case VINF_EM_OFF:
-                            LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
+                            LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
                             return rc;
 
                         /* remember return code. */
                         default:
-                            AssertReleaseMsgFailed(("rc=%Vrc is not in the switch!\n", rc));
+                            AssertReleaseMsgFailed(("rc=%Rrc is not in the switch!\n", rc));
                         case VINF_EM_RESET:
                         case VINF_EM_SUSPEND:
                         case VINF_EM_HALT:
@@ -646,7 +646,7 @@ static int dbgfR3VMMWait(PVM pVM)
                 }
                 else if (RT_FAILURE(rc))
                 {
-                    LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
+                    LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
                     return rc;
                 }
             }
@@ -667,7 +667,7 @@ static int dbgfR3VMMWait(PVM pVM)
                      &&  rc <= VINF_EM_LAST
                      &&  (rc < rcRet || rcRet == VINF_SUCCESS))
                 rcRet = rc;
-            LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rcRet));
+            LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rcRet));
             return rcRet;
         }
     }

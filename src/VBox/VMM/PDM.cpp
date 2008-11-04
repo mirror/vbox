@@ -379,7 +379,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
      * Cleanup and return failure.
      */
     PDMR3Term(pVM);
-    LogFlow(("PDMR3Init: returns %Vrc\n", rc));
+    LogFlow(("PDMR3Init: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -461,7 +461,7 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     PCPDMDEVHLPRC pDevHlpRC;
     int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
-    AssertReleaseMsgRC(rc, ("rc=%Vrc when resolving g_pdmRCDevHlp\n", rc));
+    AssertReleaseMsgRC(rc, ("rc=%Rrc when resolving g_pdmRCDevHlp\n", rc));
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
@@ -604,7 +604,7 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
      */
     PDMR3CritSectDelete(&pVM->pdm.s.CritSect);
 
-    LogFlow(("PDMR3Term: returns %Vrc\n", VINF_SUCCESS));
+    LogFlow(("PDMR3Term: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -1235,7 +1235,7 @@ VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
         LogFlow(("PDMR3QueryDeviceLun: return VINF_SUCCESS and *ppBase=%p\n", *ppBase));
         return VINF_SUCCESS;
     }
-    LogFlow(("PDMR3QueryDeviceLun: returns %Vrc\n", rc));
+    LogFlow(("PDMR3QueryDeviceLun: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1267,12 +1267,12 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
         if (pLun->pTop)
         {
             *ppBase = &pLun->pTop->IBase;
-            LogFlow(("PDMR3QueryLun: return %Vrc and *ppBase=%p\n", VINF_SUCCESS, *ppBase));
+            LogFlow(("PDMR3QueryLun: return %Rrc and *ppBase=%p\n", VINF_SUCCESS, *ppBase));
             return VINF_SUCCESS;
         }
         rc = VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN;
     }
-    LogFlow(("PDMR3QueryLun: returns %Vrc\n", rc));
+    LogFlow(("PDMR3QueryLun: returns %Rrc\n", rc));
     return rc;
 }
 

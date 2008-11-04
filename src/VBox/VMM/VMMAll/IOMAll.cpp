@@ -276,7 +276,7 @@ VMMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
                     return VERR_IOM_INVALID_IOPORT_SIZE;
             }
         }
-        Log3(("IOMIOPortRead: Port=%RTiop *pu32=%08RX32 cb=%d rc=%Vrc\n", Port, *pu32Value, cbValue, rc));
+        Log3(("IOMIOPortRead: Port=%RTiop *pu32=%08RX32 cb=%d rc=%Rrc\n", Port, *pu32Value, cbValue, rc));
         return rc;
     }
 
@@ -407,7 +407,7 @@ VMMDECL(int) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrDst, PRT
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(In, ToR3));
 # endif
 #endif
-        Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Vrc\n",
+        Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
               Port, pGCPtrDst, pcTransfers, cTransfers, *pcTransfers, cb, rc));
         return rc;
     }
@@ -527,7 +527,7 @@ VMMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
 # endif
 #endif
-        Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Vrc\n", Port, u32Value, cbValue, rc));
+        Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Rrc\n", Port, u32Value, cbValue, rc));
         return rc;
     }
 
@@ -647,7 +647,7 @@ VMMDECL(int) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPtrSrc, PR
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
 # endif
 #endif
-        Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Vrc\n",
+        Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
               Port, pGCPtrSrc, pcTransfers, cTransfers, *pcTransfers, cb, rc));
         return rc;
     }
@@ -730,7 +730,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         int rc = SELMGetTSSInfo(pVM, &GCPtrTss, &cbTss, &fCanHaveIOBitmap);
         if (RT_FAILURE(rc))
         {
-            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d %Vrc -> #GP(0)\n", Port, cb, rc));
+            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d %Rrc -> #GP(0)\n", Port, cb, rc));
             return TRPMRaiseXcptErr(pVM, pCtxCore, X86_XCPT_GP, 0);
         }
 
@@ -749,7 +749,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         rc = PGMPhysInterpretedRead(pVM, pCtxCore, &offIOPB, GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(offIOPB));
         if (rc != VINF_SUCCESS)
         {
-            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%VGv %Vrc\n",
+            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%VGv %Rrc\n",
                  Port, cb, GCPtrTss, rc));
             return rc;
         }
@@ -768,7 +768,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
         rc = PGMPhysInterpretedRead(pVM, pCtxCore, &u16, GCPtrTss + offTss, sizeof(u16));
         if (rc != VINF_SUCCESS)
         {
-            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%VGv offTss=%#x -> %Vrc\n",
+            Log(("iomInterpretCheckPortIOAccess: Port=%RTiop cb=%d GCPtrTss=%VGv offTss=%#x -> %Rrc\n",
                  Port, cb, GCPtrTss, offTss, rc));
             return rc;
         }
@@ -840,10 +840,10 @@ VMMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
         }
         else
-            AssertMsg(rc == VINF_IOM_HC_IOPORT_READ || RT_FAILURE(rc), ("%Vrc\n", rc));
+            AssertMsg(rc == VINF_IOM_HC_IOPORT_READ || RT_FAILURE(rc), ("%Rrc\n", rc));
     }
     else
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
     return rc;
 }
 
@@ -891,9 +891,9 @@ VMMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
          * Attempt to write to the port.
          */
         rc = IOMIOPortWrite(pVM, uPort, u64Data, cbSize);
-        AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Rrc\n", rc));
     }
     else
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Vrc\n", rc));
+        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
     return rc;
 }

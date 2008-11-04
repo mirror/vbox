@@ -188,7 +188,7 @@ int pdmR3DevInit(PVM pVM)
         /* Get the device name. */
         char szName[sizeof(paDevs[0].pDev->pDevReg->szDeviceName)];
         rc = CFGMR3GetName(pCur, szName, sizeof(szName));
-        AssertMsgRCReturn(rc, ("Configuration error: device name is too long (or something)! rc=%Vrc\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error: device name is too long (or something)! rc=%Rrc\n", rc), rc);
 
         /* Find the device. */
         PPDMDEV pDev = pdmR3DevLookup(pVM, szName);
@@ -204,7 +204,7 @@ int pdmR3DevInit(PVM pVM)
                 /* nop */;
         }
         else
-            AssertMsgRCReturn(rc, ("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Vrc!\n", szName, rc), rc);
+            AssertMsgRCReturn(rc, ("Configuration error: reading \"Priority\" for the '%s' device failed rc=%Rrc!\n", szName, rc), rc);
 
         /* Enumerate the device instances. */
         for (pInstanceNode = CFGMR3GetFirstChild(pCur); pInstanceNode; pInstanceNode = CFGMR3GetNextChild(pInstanceNode))
@@ -216,10 +216,10 @@ int pdmR3DevInit(PVM pVM)
             /* Get the instance number. */
             char szInstance[32];
             rc = CFGMR3GetName(pInstanceNode, szInstance, sizeof(szInstance));
-            AssertMsgRCReturn(rc, ("Configuration error: instance name is too long (or something)! rc=%Vrc\n", rc), rc);
+            AssertMsgRCReturn(rc, ("Configuration error: instance name is too long (or something)! rc=%Rrc\n", rc), rc);
             char *pszNext = NULL;
             rc = RTStrToUInt32Ex(szInstance, &pszNext, 0, &paDevs[i].iInstance);
-            AssertMsgRCReturn(rc, ("Configuration error: RTStrToInt32Ex failed on the instance name '%s'! rc=%Vrc\n", szInstance, rc), rc);
+            AssertMsgRCReturn(rc, ("Configuration error: RTStrToInt32Ex failed on the instance name '%s'! rc=%Rrc\n", szInstance, rc), rc);
             AssertMsgReturn(!*pszNext, ("Configuration error: the instance name '%s' isn't all digits. (%s)\n", szInstance, pszNext), VERR_INVALID_PARAMETER);
 
             /* next instance */
@@ -264,7 +264,7 @@ int pdmR3DevInit(PVM pVM)
             fTrusted = false;
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("configuration error: failed to query boolean \"Trusted\", rc=%Vrc\n", rc));
+            AssertMsgFailed(("configuration error: failed to query boolean \"Trusted\", rc=%Rrc\n", rc));
             return rc;
         }
         /* config node */
@@ -274,7 +274,7 @@ int pdmR3DevInit(PVM pVM)
             rc = CFGMR3InsertNode(paDevs[i].pNode, "Config", &pConfigNode);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("Failed to create Config node! rc=%Vrc\n", rc));
+                AssertMsgFailed(("Failed to create Config node! rc=%Rrc\n", rc));
                 return rc;
             }
         }
@@ -292,7 +292,7 @@ int pdmR3DevInit(PVM pVM)
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("Failed to allocate %d bytes of instance data for device '%s'. rc=%Vrc\n",
+            AssertMsgFailed(("Failed to allocate %d bytes of instance data for device '%s'. rc=%Rrc\n",
                              cb, paDevs[i].pDev->pDevReg->szDeviceName, rc));
             return rc;
         }
@@ -359,7 +359,7 @@ int pdmR3DevInit(PVM pVM)
         rc = pDevIns->pDevReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDM: Failed to construct '%s'/%d! %Vra\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             /* because we're damn lazy right now, we'll say that the destructor will be called even if the constructor fails. */
             return rc;
         }
@@ -385,7 +385,7 @@ int pdmR3DevInit(PVM pVM)
         pdmUnlock(pVM);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("PCI BIOS fake failed rc=%Vrc\n", rc));
+            AssertMsgFailed(("PCI BIOS fake failed rc=%Rrc\n", rc));
             return rc;
         }
     }
@@ -397,7 +397,7 @@ int pdmR3DevInit(PVM pVM)
             rc = pDevIns->pDevReg->pfnInitComplete(pDevIns);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("InitComplete on device '%s'/%d failed with rc=%Vrc\n",
+                AssertMsgFailed(("InitComplete on device '%s'/%d failed with rc=%Rrc\n",
                                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
                 return rc;
             }
@@ -411,7 +411,7 @@ int pdmR3DevInit(PVM pVM)
         return rc;
 #endif
 
-    LogFlow(("pdmR3DevInit: returns %Vrc\n", VINF_SUCCESS));
+    LogFlow(("pdmR3DevInit: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
 }
 
@@ -458,7 +458,7 @@ static int pdmR3DevLoadModules(PVM pVM)
         fLoadBuiltin = true;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Rrc\n", rc));
         return rc;
     }
     if (fLoadBuiltin)
@@ -500,7 +500,7 @@ static int pdmR3DevLoadModules(PVM pVM)
         }
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
+            AssertMsgFailed(("CFGMR3GetName -> %Rrc.\n", rc));
             return rc;
         }
 
@@ -511,7 +511,7 @@ static int pdmR3DevLoadModules(PVM pVM)
             strcpy(szFilename, szName);
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
+            AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Rrc.\n", rc));
             return rc;
         }
 
@@ -573,11 +573,11 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
             if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded device module %s (%s).\n", pszName, pszFilename));
             else
-                AssertMsgFailed(("VBoxDevicesRegister failed with rc=%Vrc for module %s (%s)\n", rc, pszName, pszFilename));
+                AssertMsgFailed(("VBoxDevicesRegister failed with rc=%Rrc for module %s (%s)\n", rc, pszName, pszFilename));
         }
         else
         {
-            AssertMsgFailed(("Failed to locate 'VBoxDevicesRegister' in %s (%s) rc=%Vrc\n", pszName, pszFilename, rc));
+            AssertMsgFailed(("Failed to locate 'VBoxDevicesRegister' in %s (%s) rc=%Rrc\n", pszName, pszFilename, rc));
             if (rc == VERR_SYMBOL_NOT_FOUND)
                 rc = VERR_PDM_NO_REGISTRATION_EXPORT;
         }
@@ -824,9 +824,9 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
         *ppBase = NULL;
 
     if (ppBase)
-        LogFlow(("PDMR3DeviceAttach: returns %Vrc *ppBase=%p\n", rc, *ppBase));
+        LogFlow(("PDMR3DeviceAttach: returns %Rrc *ppBase=%p\n", rc, *ppBase));
     else
-        LogFlow(("PDMR3DeviceAttach: returns %Vrc\n", rc));
+        LogFlow(("PDMR3DeviceAttach: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -871,7 +871,7 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
             rc = VERR_PDM_DEVICE_NO_RT_DETACH;
     }
 
-    LogFlow(("PDMR3DeviceDetach: returns %Vrc\n", rc));
+    LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));
     return rc;
 }
 

@@ -300,7 +300,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPreAlloc = false;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Vrc.\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamPreAlloc\", rc=%Rrc.\n", rc), rc);
 
     /** @cfgm{RamSize, uint64_t, 0, 0, UINT64_MAX}
      * Specifies the size of the base RAM that is to be set up during
@@ -311,7 +311,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbRam = 0;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Vrc.\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamSize\", rc=%Rrc.\n", rc), rc);
 
     cbRam &= X86_PTE_PAE_PG_MASK;
     pVM->mm.s.cbRamBase = cbRam;            /* Warning: don't move this code to MMR3Init without fixing REMR3Init.  */
@@ -335,7 +335,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmPolicy = GMMOCPOLICY_NO_OC;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Policy\", rc=%Vrc.\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Policy\", rc=%Rrc.\n", rc), rc);
 
     /** @cfgm{MM/Priority, string, normal}
      * Specifies the memory priority of this VM. The priority comes into play when the
@@ -358,7 +358,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         enmPriority = GMMPRIORITY_NORMAL;
     else
-        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Priority\", rc=%Vrc.\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error: Failed to query string \"MM/Priority\", rc=%Rrc.\n", rc), rc);
 
     /*
      * Make the initial memory reservation with GMM.
@@ -410,7 +410,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     }
 #endif
 
-    LogFlow(("MMR3InitPaging: returns %Vrc\n", rc));
+    LogFlow(("MMR3InitPaging: returns %Rrc\n", rc));
     return rc;
 }
 

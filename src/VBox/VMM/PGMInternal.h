@@ -3336,7 +3336,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCUINTPTR GCPtr)
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return &pPD->a[iPD];
-        AssertMsgFailed(("Impossible! rc=%Vrc PDPE=%RX64\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
+        AssertMsgFailed(("Impossible! rc=%Rrc PDPE=%RX64\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
         /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page or something which we'll emulate as all 0s. */
     }
     return NULL;

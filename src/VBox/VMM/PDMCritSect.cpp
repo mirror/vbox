@@ -301,7 +301,7 @@ VMMR3DECL(void) PDMR3CritSectFF(PVM pVM)
     {
         PPDMCRITSECT pCritSect = pVM->pdm.s.apQueuedCritSectsLeaves[i];
         int rc = RTCritSectLeave(&pCritSect->s.Core);
-        LogFlow(("PDMR3CritSectFF: %p - %Vrc\n", pCritSect, rc));
+        LogFlow(("PDMR3CritSectFF: %p - %Rrc\n", pCritSect, rc));
         AssertRC(rc);
     }
 

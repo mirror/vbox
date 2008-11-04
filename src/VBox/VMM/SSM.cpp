@@ -840,7 +840,7 @@ static int ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
         rc = RTFileRead(File, pvBuf, cbToRead, NULL);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("Failed with rc=%Vrc while calculating crc.\n", rc));
+            AssertMsgFailed(("Failed with rc=%Rrc while calculating crc.\n", rc));
             RTMemTmpFree(pvBuf);
             return rc;
         }
@@ -935,7 +935,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        LogRel(("SSM: Failed to create save state file '%s', rc=%Vrc.\n",  pszFilename, rc));
+        LogRel(("SSM: Failed to create save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
         return rc;
     }
 
@@ -995,7 +995,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             }
             if (RT_FAILURE(rc))
             {
-                LogRel(("SSM: Prepare save failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
+                LogRel(("SSM: Prepare save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
                 break;
             }
 
@@ -1100,20 +1100,20 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                             }
                             else
                             {
-                                LogRel(("SSM: Failed ending compression stream. rc=%Vrc\n", rc));
+                                LogRel(("SSM: Failed ending compression stream. rc=%Rrc\n", rc));
                                 break;
                             }
                         }
                         else
                         {
-                            LogRel(("SSM: Execute save failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
+                            LogRel(("SSM: Execute save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
                             break;
                         }
                     }
                 }
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("SSM: Failed to write unit header. rc=%Vrc\n", rc));
+                    LogRel(("SSM: Failed to write unit header. rc=%Rrc\n", rc));
                     break;
                 }
             } /* for each unit */
@@ -1161,7 +1161,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             }
             if (RT_FAILURE(rc))
             {
-                LogRel(("SSM: Done save failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
+                LogRel(("SSM: Done save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
                 if (RT_SUCCESS(Handle.rc))
                     Handle.rc = rc;
             }
@@ -1215,7 +1215,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
                 }
             }
-            LogRel(("SSM: Failed to finalize state file! rc=%Vrc\n", pszFilename));
+            LogRel(("SSM: Failed to finalize state file! rc=%Rrc\n", pszFilename));
         }
     }
 
@@ -1250,7 +1250,7 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
     int rc = RTFileRead(File, pHdr, sizeof(*pHdr), NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("SSM: Failed to read file header. rc=%Vrc\n", rc));
+        Log(("SSM: Failed to read file header. rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -1307,7 +1307,7 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
     rc = RTFileGetSize(File, &cbFile);
     if (RT_FAILURE(rc))
     {
-        Log(("SSM: Failed to get file size. rc=%Vrc\n", rc));
+        Log(("SSM: Failed to get file size. rc=%Rrc\n", rc));
         return rc;
     }
     if (cbFile != pHdr->cbFile)
@@ -1322,7 +1322,7 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
     rc = RTFileSeek(File, offCrc32, RTFILE_SEEK_BEGIN, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("SSM: Failed to seek to crc start. rc=%Vrc\n", rc));
+        Log(("SSM: Failed to seek to crc start. rc=%Rrc\n", rc));
         return rc;
     }
     uint32_t u32CRC;
@@ -1421,7 +1421,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        Log(("SSM: Failed to open save state file '%s', rc=%Vrc.\n",  pszFilename, rc));
+        Log(("SSM: Failed to open save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
         return rc;
     }
 
@@ -1479,7 +1479,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             }
             if (RT_FAILURE(rc))
             {
-                LogRel(("SSM: Prepare load failed with rc=%Vrc for data unit '%s.\n", rc, pUnit->szName));
+                LogRel(("SSM: Prepare load failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
                 break;
             }
         }
@@ -1647,7 +1647,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                                              * We failed, but if loading for the debugger ignore certain failures
                                              * just to get it all loaded (big hack).
                                              */
-                                            LogRel(("SSM: LoadExec failed with rc=%Vrc for unit '%s'!\n", rc, pszName));
+                                            LogRel(("SSM: LoadExec failed with rc=%Rrc for unit '%s'!\n", rc, pszName));
                                             if (    Handle.enmAfter != SSMAFTER_DEBUG_IT
                                                 ||  rc != VERR_SSM_LOADED_TOO_MUCH)
                                                 break;
@@ -1691,7 +1691,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                  */
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("SSM: I/O error. rc=%Vrc\n", rc));
+                    LogRel(("SSM: I/O error. rc=%Rrc\n", rc));
                     break;
                 }
             }
@@ -1736,7 +1736,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             }
             if (RT_FAILURE(rc))
             {
-                LogRel(("SSM: Done load failed with rc=%Vrc for data unit '%s'.\n", rc, pUnit->szName));
+                LogRel(("SSM: Done load failed with rc=%Rrc for data unit '%s'.\n", rc, pUnit->szName));
                 if (RT_SUCCESS(Handle.rc))
                     Handle.rc = rc;
             }
@@ -1802,7 +1802,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
         RTFileClose(File);
     }
     else
-        Log(("SSM: Failed to open saved state file '%s', rc=%Vrc.\n",  pszFilename, rc));
+        Log(("SSM: Failed to open saved state file '%s', rc=%Rrc.\n",  pszFilename, rc));
     return rc;
 }
 
@@ -1867,11 +1867,11 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
             LogFlow(("SSMR3Open: returns VINF_SUCCESS *ppSSM=%p\n", *ppSSM));
             return VINF_SUCCESS;
         }
-        Log(("SSMR3Open: Validation of '%s' failed, rc=%Vrc.\n",  pszFilename, rc));
+        Log(("SSMR3Open: Validation of '%s' failed, rc=%Rrc.\n",  pszFilename, rc));
         RTFileClose(pSSM->File);
     }
     else
-        Log(("SSMR3Open: Failed to open saved state file '%s', rc=%Vrc.\n",  pszFilename, rc));
+        Log(("SSMR3Open: Failed to open saved state file '%s', rc=%Rrc.\n",  pszFilename, rc));
     RTMemFree(pSSM);
     return rc;
 
@@ -2062,7 +2062,7 @@ static int ssmR3WriteFinish(PSSMHANDLE pSSM)
     }
     if (RT_SUCCESS(pSSM->rc))
         pSSM->rc = rc;
-    Log2(("ssmR3WriteFinish: failure rc=%Vrc\n", rc));
+    Log2(("ssmR3WriteFinish: failure rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -2630,7 +2630,7 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         if (RT_SUCCESS(pSSM->rc))
             Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
         else
-            AssertMsgFailed(("rc=%Vrc cbBuf=%#x\n", pSSM->rc, cbBuf));
+            AssertMsgFailed(("rc=%Rrc cbBuf=%#x\n", pSSM->rc, cbBuf));
     }
 
     return pSSM->rc;
@@ -3269,7 +3269,7 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
             pSSM->rc = iStatus;
         return pSSM->rc = iStatus;
     }
-    AssertMsgFailed(("iStatus=%d %Vrc\n", iStatus, iStatus));
+    AssertMsgFailed(("iStatus=%d %Rrc\n", iStatus, iStatus));
     return VERR_INVALID_PARAMETER;
 }
 

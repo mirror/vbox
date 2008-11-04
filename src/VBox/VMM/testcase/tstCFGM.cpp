@@ -53,7 +53,7 @@ int main()
         rc = SUPPageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Fatal error: SUP Failure! rc=%Vrc\n", rc);
+        RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);
         return 1;
     }
 
@@ -65,21 +65,21 @@ int main()
     rc = STAMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: STAMR3Init failed. rc=%Rrc\n", rc);
         return 1;
     }
 
     rc = MMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: STAMR3Init failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: STAMR3Init failed. rc=%Rrc\n", rc);
         return 1;
     }
 
     rc = CFGMR3Init(pVM, NULL, NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3Init failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3Init failed. rc=%Rrc\n", rc);
         return 1;
     }
 
@@ -94,7 +94,7 @@ int main()
     rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &u64);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\",) failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\",) failed. rc=%Rrc\n", rc);
         return 1;
     }
 
@@ -102,7 +102,7 @@ int main()
     rc = CFGMR3QuerySize(CFGMR3GetRoot(pVM), "RamSize", &cb);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Rrc\n", rc);
         return 1;
     }
     if (cb != sizeof(uint64_t))
@@ -116,14 +116,14 @@ int main()
     rc = CFGMR3QueryStringAlloc(CFGMR3GetRoot(pVM), "Name", &pszName);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3QueryStringAlloc(,\"Name\" failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3QueryStringAlloc(,\"Name\" failed. rc=%Rrc\n", rc);
         return 1;
     }
 
     rc = CFGMR3QuerySize(CFGMR3GetRoot(pVM), "Name", &cb);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Rrc\n", rc);
         return 1;
     }
     if (cb != strlen(pszName) + 1)
@@ -139,13 +139,13 @@ int main()
     rc = CFGMR3InsertNode(CFGMR3GetRoot(pVM), "First/Second/Third//Final", &pChild);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3InsertNode(,\"First/Second/Third//Final\" failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3InsertNode(,\"First/Second/Third//Final\" failed. rc=%Rrc\n", rc);
         return 1;
     }
     rc = CFGMR3InsertInteger(pChild, "BoolValue", 1);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3InsertInteger(,\"BoolValue\", 1) failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3InsertInteger(,\"BoolValue\", 1) failed. rc=%Rrc\n", rc);
         return 1;
     }
     PCFGMNODE pNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "First/Second/Third/Final");
@@ -158,7 +158,7 @@ int main()
     rc = CFGMR3QueryBool(pNode, "BoolValue", &f);
     if (RT_FAILURE(rc) || !f)
     {
-        RTPrintf("FAILURE: CFGMR3QueryBool(,\"BoolValue\",) failed. rc=%Vrc f=%d\n", rc, f);
+        RTPrintf("FAILURE: CFGMR3QueryBool(,\"BoolValue\",) failed. rc=%Rrc f=%d\n", rc, f);
         return 1;
     }
 
@@ -167,7 +167,7 @@ int main()
     rc = CFGMR3Term(pVM);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\" failed. rc=%Vrc\n", rc);
+        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\" failed. rc=%Rrc\n", rc);
         return 1;
     }
 

@@ -112,7 +112,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     bool fDump = false;
     if (rc != rcExpect)
     {
-        RTPrintf("VMM: FAILURE - rc=%Vrc expected %Vrc\n", rc, rcExpect);
+        RTPrintf("VMM: FAILURE - rc=%Rrc expected %Rrc\n", rc, rcExpect);
         if (rc != VERR_NOT_IMPLEMENTED)
             fDump = true;
     }
@@ -130,7 +130,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
         RTRCPTR RCPtrFault;
         int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &RCPtrFault);
         if (RT_FAILURE(rc2))
-            RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Vrc!\n", pszFaultEIP, rc);
+            RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Rrc!\n", pszFaultEIP, rc);
         else if (RCPtrFault != CPUMGetHyperEIP(pVM))
         {
             RTPrintf("VMM: FAILURE - EIP=%VGv expected %VGv (%s)\n", CPUMGetHyperEIP(pVM), RCPtrFault, pszFaultEIP);
@@ -224,7 +224,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_SUCCESS)
         {
-            RTPrintf("VMM: Nop test failed, rc=%Vrc not VINF_SUCCESS\n", rc);
+            RTPrintf("VMM: Nop test failed, rc=%Rrc not VINF_SUCCESS\n", rc);
             return rc;
         }
 
@@ -238,7 +238,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_SUCCESS)
         {
-            RTPrintf("VMM: DR0=0x10000 test failed with rc=%Vrc!\n", rc);
+            RTPrintf("VMM: DR0=0x10000 test failed with rc=%Rrc!\n", rc);
             return rc;
         }
 
@@ -251,7 +251,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_EM_DBG_HYPER_BREAKPOINT)
         {
-            RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Vrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
+            RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Rrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
             return rc;
         }
 
@@ -261,7 +261,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = VMMR3ResumeHyper(pVM);
         if (rc != VINF_SUCCESS)
         {
-            RTPrintf("VMM: failed to resume on hyper breakpoint, rc=%Vrc\n", rc);
+            RTPrintf("VMM: failed to resume on hyper breakpoint, rc=%Rrc\n", rc);
             return rc;
         }
 
@@ -270,7 +270,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_EM_DBG_HYPER_BREAKPOINT)
         {
-            RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Vrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
+            RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Rrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
             return rc;
         }
 
@@ -283,7 +283,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             rc = VMMR3ResumeHyper(pVM);
             if (rc != VINF_EM_DBG_HYPER_STEPPED)
             {
-                RTPrintf("\nVMM: failed to step on hyper breakpoint, rc=%Vrc\n", rc);
+                RTPrintf("\nVMM: failed to step on hyper breakpoint, rc=%Rrc\n", rc);
                 return rc;
             }
             RTGCUINTREG Pc = CPUMGetHyperEIP(pVM);
@@ -307,7 +307,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_NOP, 0);
         if (rc != VINF_SUCCESS)
         {
-            RTPrintf("VMM: NOP failed, rc=%Vrc\n", rc);
+            RTPrintf("VMM: NOP failed, rc=%Rrc\n", rc);
             return rc;
         }
 
@@ -321,7 +321,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             rc = vmmR3DoGCTest(pVM, VMMGC_DO_TESTCASE_INTERRUPT_MASKING, 0);
             if (rc != VINF_SUCCESS)
             {
-                RTPrintf("VMM: Interrupt masking failed: rc=%Vrc\n", rc);
+                RTPrintf("VMM: Interrupt masking failed: rc=%Rrc\n", rc);
                 return rc;
             }
             uint64_t Ticks = ASMReadTSC() - StartTick;
@@ -356,7 +356,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
                 rc = pVM->vmm.s.iLastGZRc;
             if (RT_FAILURE(rc))
             {
-                Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
+                Log(("VMM: GC returned fatal %Rra in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
                 return rc;
             }
@@ -410,7 +410,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (RT_FAILURE(rc))
             {
-                Log(("VMM: GC returned fatal %Vra in iteration %d\n", rc, i));
+                Log(("VMM: GC returned fatal %Rra in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
                 return rc;
             }
@@ -433,7 +433,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         rc = VINF_SUCCESS;
     }
     else
-        AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Rrc\n", rc));
 #endif
     return rc;
 }
@@ -545,7 +545,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             uint64_t TickThisElapsed = ASMReadTSC() - TickThisStart;
             if (RT_FAILURE(rc))
             {
-                Log(("VMM: R0 returned fatal %Vrc in iteration %d\n", rc, i));
+                Log(("VMM: R0 returned fatal %Rrc in iteration %d\n", rc, i));
                 VMMR3FatalDump(pVM, rc);
                 return rc;
             }
@@ -568,7 +568,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
         rc = VINF_SUCCESS;
     }
     else
-        AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Rrc\n", rc));
 
     return rc;
 }

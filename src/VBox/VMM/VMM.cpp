@@ -137,7 +137,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
         pVM->vmm.s.cYieldEveryMillies = 23; /* Value arrived at after experimenting with the grub boot prompt. */
         //pVM->vmm.s.cYieldEveryMillies = 8; //debugging
     else
-        AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Vrc\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"YieldEMTInterval\", rc=%Rrc\n", rc), rc);
 
     /* GC switchers are enabled by default. Turned off by HWACCM. */
     pVM->vmm.s.fSwitcherDisabled = false;
@@ -469,7 +469,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
 
     if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
-        LogRel(("R0 init failed, rc=%Vra\n", rc));
+        LogRel(("R0 init failed, rc=%Rra\n", rc));
         if (RT_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
@@ -581,7 +581,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     }
     if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
     {
-        LogRel(("VMMR3Term: R0 term failed, rc=%Vra. (warning)\n", rc));
+        LogRel(("VMMR3Term: R0 term failed, rc=%Rra. (warning)\n", rc));
         if (RT_SUCCESS(rc))
             rc = VERR_INTERNAL_ERROR;
     }
@@ -647,10 +647,10 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Get other RC entry points.
      */
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
-    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Vra\n", rc));
+    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Rra\n", rc));
 
     rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMRCResumeGuestV86);
-    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Vra\n", rc));
+    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Rra\n", rc));
 
     /*
      * Update the logger.
@@ -680,19 +680,19 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
        )
     {
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &RCPtrLoggerFlush);
-        AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Rra\n", rc));
     }
 
     if (pVM->vmm.s.pRCLoggerR3)
     {
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &RCPtrLoggerWrapper);
-        AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Rra\n", rc));
 
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
         rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pRCLoggerR3, pVM->vmm.s.cbRCLogger,
                           RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
     }
 
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
@@ -700,12 +700,12 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
     {
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &RCPtrLoggerWrapper);
-        AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Rra\n", rc));
 
         pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
         rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
                           RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Vra\n", rc));
+        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
     }
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
@@ -720,16 +720,16 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
         {
             RTR0PTR pfnLoggerWrapper = NIL_RTR0PTR;
             rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerWrapper", &pfnLoggerWrapper);
-            AssertReleaseMsgRCReturn(rc, ("VMMLoggerWrapper not found! rc=%Vra\n", rc), rc);
+            AssertReleaseMsgRCReturn(rc, ("VMMLoggerWrapper not found! rc=%Rra\n", rc), rc);
 
             RTR0PTR pfnLoggerFlush = NIL_RTR0PTR;
             rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
-            AssertReleaseMsgRCReturn(rc, ("VMMLoggerFlush not found! rc=%Vra\n", rc), rc);
+            AssertReleaseMsgRCReturn(rc, ("VMMLoggerFlush not found! rc=%Rra\n", rc), rc);
 
             rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
                                   *(PFNRTLOGGER *)&pfnLoggerWrapper, *(PFNRTLOGFLUSH *)&pfnLoggerFlush,
                                   RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
-            AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Vra\n", rc), rc);
+            AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
             pR0LoggerR3->fCreated = true;
         }
 
@@ -1091,7 +1091,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #endif
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3RawRunGC: returns %Vrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3RawRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1136,7 +1136,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #endif /* !LOG_ENABLED */
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3HwAccRunGC: returns %Vrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3HwAccRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1227,7 +1227,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
             VMMR3FatalDump(pVM, rc);
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log2(("VMMR3CallGCV: returns %Vrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
+            Log2(("VMMR3CallGCV: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);
@@ -1283,7 +1283,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
             VMMR3FatalDump(pVM, rc);
         if (rc != VINF_VMM_CALL_HOST)
         {
-            Log(("VMMR3ResumeHyper: returns %Vrc\n", rc));
+            Log(("VMMR3ResumeHyper: returns %Rrc\n", rc));
             return rc;
         }
         rc = vmmR3ServiceCallHostRequest(pVM);

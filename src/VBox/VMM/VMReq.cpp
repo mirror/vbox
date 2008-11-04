@@ -296,10 +296,10 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMREQDEST enmDest, PVMREQ *ppReq, unsign
     if (!(fFlags & VMREQFLAGS_NO_WAIT))
     {
         *ppReq = pReq;
-        LogFlow(("VMR3ReqCallV: returns %Vrc *ppReq=%p\n", rc, pReq));
+        LogFlow(("VMR3ReqCallV: returns %Rrc *ppReq=%p\n", rc, pReq));
     }
     else
-        LogFlow(("VMR3ReqCallV: returns %Vrc\n", rc));
+        LogFlow(("VMR3ReqCallV: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -448,7 +448,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      * This shall not happen, but if it does we'll just destroy
                      * the semaphore and create a new one.
                      */
-                    AssertMsgFailed(("rc=%Vrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
+                    AssertMsgFailed(("rc=%Rrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
                     RTSemEventDestroy(pReq->EventSem);
                     rc = RTSemEventCreate(&pReq->EventSem);
                     AssertRC(rc);
@@ -655,7 +655,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                  */
                 if (!(fFlags & VMREQFLAGS_NO_WAIT))
                     rc = VMR3ReqWait(pReq, cMillies);
-                LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+                LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
             }
             else
             {
@@ -664,7 +664,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                  */
                 pReq->enmState = VMREQSTATE_QUEUED;
                 rc = vmR3ReqProcessOneU(pUVM, pReq);
-                LogFlow(("VMR3ReqQueue: returns %Vrc (processed)\n", rc));
+                LogFlow(("VMR3ReqQueue: returns %Rrc (processed)\n", rc));
             }
         } /* for each VMCPU */
     }
@@ -700,7 +700,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         if (!(fFlags & VMREQFLAGS_NO_WAIT))
             rc = VMR3ReqWait(pReq, cMillies);
-        LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+        LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
     }
     else if (    pReq->enmDest == VMREQDEST_ANY
              &&  !pUVMCPU /* only EMT threads have a valid pointer stored in the TLS slot. */)
@@ -730,7 +730,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         if (!(fFlags & VMREQFLAGS_NO_WAIT))
             rc = VMR3ReqWait(pReq, cMillies);
-        LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+        LogFlow(("VMR3ReqQueue: returns %Rrc\n", rc));
     }
     else
     {
@@ -741,7 +741,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
          */
         pReq->enmState = VMREQSTATE_QUEUED;
         rc = vmR3ReqProcessOneU(pUVM, pReq);
-        LogFlow(("VMR3ReqQueue: returns %Vrc (processed)\n", rc));
+        LogFlow(("VMR3ReqQueue: returns %Rrc (processed)\n", rc));
     }
     return rc;
 }
@@ -806,7 +806,7 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, unsigned cMillies)
         ASMAtomicXchgSize(&pReq->fEventSemClear, true);
     if (pReq->enmState == VMREQSTATE_COMPLETED)
         rc = VINF_SUCCESS;
-    LogFlow(("VMR3ReqWait: returns %Vrc\n", rc));
+    LogFlow(("VMR3ReqWait: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -903,7 +903,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         }
     }
 
-    LogFlow(("VMR3ReqProcess: returns %Vrc (enmVMState=%d)\n", rc, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
+    LogFlow(("VMR3ReqProcess: returns %Rrc (enmVMState=%d)\n", rc, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
     return rc;
 }
 
@@ -1032,14 +1032,14 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
     if (pReq->fFlags & VMREQFLAGS_NO_WAIT)
     {
         /* Free the packet, nobody is waiting. */
-        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Vrc rcRet=%Vrc - freeing it\n",
+        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
                  pReq, rcReq, rcRet));
         VMR3ReqFree(pReq);
     }
     else
     {
         /* Notify the waiter and him free up the packet. */
-        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Vrc rcRet=%Vrc - notifying waiting thread\n",
+        LogFlow(("vmR3ReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);

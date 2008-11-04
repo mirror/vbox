@@ -2389,7 +2389,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
             break;
 
         default:
-            AssertMsgFailed(("rc=%Vrc GCPtrSrc=%VGv cb=%#x\n", rc, GCPtrSrc, cb));
+            AssertMsgFailed(("rc=%Rrc GCPtrSrc=%VGv cb=%#x\n", rc, GCPtrSrc, cb));
             return rc;
     }
     Log(("PGMPhysInterpretedRead: GCPtrSrc=%VGv cb=%#x -> #PF(%#x)\n", GCPtrSrc, cb, uErr));

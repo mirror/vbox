@@ -501,7 +501,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const cha
     int rc2 = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
     AssertRC(rc2);
     AssertRC(rc);
-    LogFlow(("DBGFR3InfoDeregisterDevice: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3InfoDeregisterDevice: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -576,7 +576,7 @@ VMMR3DECL(int) DBGFR3InfoDeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
     int rc2 = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
     AssertRC(rc2);
     AssertRC(rc);
-    LogFlow(("DBGFR3InfoDeregisterDriver: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3InfoDeregisterDriver: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -625,7 +625,7 @@ static int dbgfR3InfoDeregister(PVM pVM, const char *pszName, DBGFINFOTYPE enmTy
     int rc2 = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
     AssertRC(rc2);
     AssertRC(rc);
-    LogFlow(("dbgfR3InfoDeregister: returns %Vrc\n", rc));
+    LogFlow(("dbgfR3InfoDeregister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -796,7 +796,7 @@ VMMR3DECL(int) DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback, void *pvUser
     int rc2 = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
     AssertRC(rc2);
 
-    LogFlow(("DBGFR3InfoLog: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3InfoLog: returns %Rrc\n", rc));
     return rc;
 }
 

@@ -86,7 +86,7 @@ static void PrintHeaderInstr(void)
 static void PrintResultInstr(PTSTMICRO pTst, TSTMICROTEST enmTest, int rc, uint64_t cMinTicks, uint64_t cAvgTicks, uint64_t cMaxTicks)
 {
     if (RT_FAILURE(rc))
-        RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu - %Vrc cr2=%x err=%x eip=%x!\n",
+        RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu - %Rrc cr2=%x err=%x eip=%x!\n",
                  GetDescription(enmTest),
                  cMinTicks,
                  cAvgTicks,
@@ -117,7 +117,7 @@ static void PrintHeaderTraps(void)
 static void PrintResultTrap(PTSTMICRO pTst, TSTMICROTEST enmTest, int rc)
 {
     if (RT_FAILURE(rc))
-        RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu  %10llu  %10llu - %Vrc cr2=%x err=%x eip=%x!\n",
+        RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu  %10llu  %10llu - %Rrc cr2=%x err=%x eip=%x!\n",
                  GetDescription(enmTest),
                  pTst->aResults[enmTest].cTotalTicks,
                  pTst->aResults[enmTest].cToRxFirstTicks,
@@ -205,28 +205,28 @@ static DECLCALLBACK(int) doit(PVM pVM)
     int rc = PDMR3LdrLoadRC(pVM, NULL, "tstMicroGC.gc");
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEntry;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &RCPtrEntry);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrStart;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &RCPtrStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEnd;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &RCPtrEnd);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
         return rc;
     }
 
@@ -237,7 +237,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     rc = MMHyperAlloc(pVM, RT_ALIGN_Z(sizeof(*pTst), PAGE_SIZE), PAGE_SIZE, MM_TAG_VM, (void **)&pTst);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve allocate instance memory (%d bytes), rc=%Vra\n", sizeof(*pTst), rc);
+        RTPrintf(TESTCASE ": Failed to resolve allocate instance memory (%d bytes), rc=%Rra\n", sizeof(*pTst), rc);
         return rc;
     }
     pTst->RCPtr = MMHyperR3ToRC(pVM, pTst);
@@ -247,7 +247,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     rc = PGMMapModifyPage(pVM, pTst->RCPtr, sizeof(*pTst), X86_PTE_US | X86_PTE_RW, ~(uint64_t)(X86_PTE_US | X86_PTE_RW));
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Rra\n", rc);
         return rc;
     }
 
@@ -255,7 +255,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     rc = PGMMapModifyPage(pVM, RCPtrStart, RCPtrEnd - RCPtrStart + PAGE_SIZE, X86_PTE_US, ~(uint64_t)X86_PTE_US);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
+        RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Rra\n", rc);
         return rc;
     }
     PGMR3DumpHierarchyHC(pVM, PGMGetHyper32BitCR3(pVM), X86_CR4_PSE, false, 4, NULL);
@@ -274,7 +274,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
             RTLogPrintf("%s\n", sz);
         else
         {
-            RTLogPrintf("%VGv rc=%Vrc\n", GCPtr, rc);
+            RTLogPrintf("%VGv rc=%Rrc\n", GCPtr, rc);
             cb = 1;
         }
         GCPtr += cb;

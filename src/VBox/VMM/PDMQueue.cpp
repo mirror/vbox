@@ -125,12 +125,12 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
             rc = TMTimerSetMillies(pQueue->pTimer, cMilliesInterval);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("TMTimerSetMillies failed rc=%Vrc\n", rc));
+                AssertMsgFailed(("TMTimerSetMillies failed rc=%Rrc\n", rc));
                 int rc2 = TMTimerDestroy(pQueue->pTimer); AssertRC(rc2);
             }
         }
         else
-            AssertMsgFailed(("TMR3TimerCreateInternal failed rc=%Vrc\n", rc));
+            AssertMsgFailed(("TMR3TimerCreateInternal failed rc=%Rrc\n", rc));
         if (RT_FAILURE(rc))
         {
             if (fRZEnabled)
