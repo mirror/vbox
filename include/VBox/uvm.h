@@ -35,12 +35,17 @@
 
 #include <VBox/types.h>
 
+/* Forward decl. */
+struct UVM;
+
 /**
  * Per virtual CPU ring-3 (user mode) data.
  */
 typedef struct UVMCPU
 {
-    uint32_t     uFiller;
+    struct UVM                     *pUVM;
+    RTCPUID                         idCPU;
+
     /** The VM internal data. */
     struct
     {
@@ -49,7 +54,7 @@ typedef struct UVMCPU
 #endif
         uint8_t                     padding[768];
     } vm;
-} UVMCPU;
+} UVMCPU, *PUVMCPU;
 
 /**
  * The ring-3 (user mode) VM structure.

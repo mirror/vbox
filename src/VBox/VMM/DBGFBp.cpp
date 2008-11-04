@@ -287,7 +287,7 @@ VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetInt3, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetInt3, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -436,7 +436,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetReg, 7, pVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetReg, 7, pVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -601,7 +601,7 @@ VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetREM, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpSetREM, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -697,7 +697,7 @@ VMMR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp)
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpClear, 2, pVM, iBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpClear, 2, pVM, iBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -774,7 +774,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp)
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnable, 2, pVM, iBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnable, 2, pVM, iBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -851,7 +851,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp)
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpDisable, 2, pVM, iBp);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpDisable, 2, pVM, iBp);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -927,7 +927,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
      * This must be done in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnum, 3, pVM, pfnCallback, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3BpEnum, 3, pVM, pfnCallback, pvUser);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);

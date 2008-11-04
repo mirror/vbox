@@ -133,7 +133,7 @@ static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
 #endif
 
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
                          pVM, _4K, _1G, pszFormat, pvVA);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -155,7 +155,7 @@ static void PassVA(PVM pVM, const char *pszFormat, ...)
     va_list va1;
     va_start(va1, pszFormat);
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
                          pVM, _4K, _1G, pszFormat, &va1);
     if (VBOX_SUCCESS(rc))
         rc = pReq->iStatus;
@@ -184,7 +184,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
         unsigned        iReq;
         for (iReq = 0; iReq < cReqs; iReq++)
         {
-            rc = VMR3ReqAlloc(pVM, &apReq[iReq], VMREQTYPE_INTERNAL, VMREQDEST_ALL);
+            rc = VMR3ReqAlloc(pVM, &apReq[iReq], VMREQTYPE_INTERNAL, VMREQDEST_ANY);
             if (VBOX_FAILURE(rc))
             {
                 RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Vrc (alloc)\n", i, iReq, cReqs, rc);

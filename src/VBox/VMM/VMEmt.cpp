@@ -53,25 +53,32 @@
  */
 DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
 {
-    PUVM pUVM = (PUVM)pvArgs;
+    PUVMCPU pUVMCPU = (PUVMCPU)pvArgs;
+    PUVM    pUVM    = pUVMCPU->pUVM;
+    RTCPUID idCPU   = pUVMCPU->idCPU;
+    int     rc = VINF_SUCCESS;
+
     AssertReleaseMsg(VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
                      ("Invalid arguments to the emulation thread!\n"));
+
+    rc = RTTlsSet(pUVM->vm.s.idxTLS, pUVMCPU);
+    AssertReleaseMsgReturn(RT_SUCCESS(rc), ("RTTlsSet %x failed with %Rrc\n", pUVM->vm.s.idxTLS, rc), rc);
 
     /*
      * Init the native thread member.
      */
-    pUVM->vm.s.NativeThreadEMT = RTThreadGetNative(ThreadSelf);
+    pUVM->vm.s.NativeThreadEMT    = RTThreadGetNative(ThreadSelf);  /* @todo should go away */
+    pUVMCPU->vm.s.NativeThreadEMT = RTThreadGetNative(ThreadSelf);
 
     /*
      * The request loop.
      */
-    int     rc = VINF_SUCCESS;
     volatile VMSTATE enmBefore = VMSTATE_CREATING; /* volatile because of setjmp */
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", ThreadSelf, pUVM));
     for (;;)
     {
         /* Requested to exit the EMT thread out of sync? (currently only VMR3WaitForResume) */
-        if (setjmp(pUVM->vm.s.emtJumpEnv) != 0)
+        if (setjmp(pUVMCPU->vm.s.emtJumpEnv) != 0)
         {
             rc = VINF_SUCCESS;
             break;
@@ -96,7 +103,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
+                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
             }
             else
@@ -131,7 +138,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
                 /*
                  * Service execute in EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
+                rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
                 Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
             }
             else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
@@ -227,9 +234,14 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
     /*
      * The request loop.
      */
+    PUVMCPU pUVMCPU;
     PUVM    pUVM = pVM->pUVM;
     VMSTATE enmBefore;
     int     rc;
+
+    pUVMCPU = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+    AssertReturn(pUVMCPU, VERR_INTERNAL_ERROR);
+
     for (;;)
     {
 
@@ -251,7 +263,7 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
             /*
              * Service execute in EMT request.
              */
-            rc = VMR3ReqProcessU(pUVM, VMREQDEST_ALL);
+            rc = VMR3ReqProcessU(pUVM, VMREQDEST_ANY);
             Log(("vmR3EmulationThread: Req rc=%Vrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
         }
         else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
@@ -305,7 +317,7 @@ VMMR3DECL(int) VMR3WaitForResume(PVM pVM)
     } /* forever */
 
     /* Return to the main loop in vmR3EmulationThread, which will clean up for us. */
-    longjmp(pUVM->vm.s.emtJumpEnv, 1);
+    longjmp(pUVMCPU->vm.s.emtJumpEnv, 1);
 }
 
 

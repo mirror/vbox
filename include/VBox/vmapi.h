@@ -271,8 +271,11 @@ typedef enum VMREQDEST
     /** Request packet for VCPU 0. */
     VMREQDEST_CPU0          = 0,
 
-    /** Request packet for the VM (any VCPU can handle it). */
-    VMREQDEST_ALL           = -1
+    /** Request packet for all VMCPU threads. */
+    VMREQDEST_BROADCAST     = 0x1000,
+
+    /** Request packet for any VMCPU thread. */
+    VMREQDEST_ANY           = 0x1001
 } VMREQDEST;
 
 /**

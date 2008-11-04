@@ -229,7 +229,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
              * Call vmR3CreateU in the EMT thread and wait for it to finish.
              */
             PVMREQ pReq;
-            rc = VMR3ReqCallU(pUVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
+            rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
                               4, pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
@@ -384,7 +384,24 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     pUVM->vm.s.ppAtErrorNext = &pUVM->vm.s.pAtError;
     pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
     pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_BOOTSTRAP;
-    int rc = RTSemEventCreate(&pUVM->vm.s.EventSemWait);
+
+    /* Allocate a TLS entry to store the VMINTUSERPERVMCPU pointer. */
+    int rc = RTTlsAllocEx(&pUVM->vm.s.idxTLS, NULL);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pUVM);
+        return rc;
+    }
+
+    /* Initialize the VMCPU array in the UVM. */
+    for (unsigned i=0;i<cCPUs;i++)
+    {
+        pUVM->aCpu[i].pUVM  = pUVM;
+        pUVM->aCpu[i].idCPU = i;
+    }
+
+    rc = RTSemEventCreate(&pUVM->vm.s.EventSemWait);
     if (RT_SUCCESS(rc))
     {
         rc = STAMR3InitUVM(pUVM);
@@ -396,8 +413,15 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
                 rc = PDMR3InitUVM(pUVM);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = RTThreadCreate(&pUVM->vm.s.ThreadEMT, vmR3EmulationThread, pUVM, _1M,
-                                        RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                    /* Start the emulation threads for all VMCPUs. */
+                    for (unsigned i=0;i<cCPUs;i++)
+                    {
+                        rc = RTThreadCreate(&pUVM->vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpu[i], _1M,
+                                            RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+
                     if (RT_SUCCESS(rc))
                     {
                         *ppUVM = pUVM;
@@ -413,6 +437,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
         }
         RTSemEventDestroy(pUVM->vm.s.EventSemWait);
     }
+    RTTlsFree(pUVM->vm.s.idxTLS);
     RTMemFree(pUVM);
     return rc;
 }
@@ -954,7 +979,7 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOn, 1, pVM);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1024,7 +1049,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1111,7 +1136,7 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Resume, 1, pVM);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1192,7 +1217,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1287,7 +1312,7 @@ VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnPro
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1376,7 +1401,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
      * Request the operation in EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3PowerOff, 1, pVM);
     if (VBOX_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1546,7 +1571,7 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
          * Request EMT to do the larger part of the destruction.
          */
         PVMREQ pReq = NULL;
-        int rc = VMR3ReqCallU(pUVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
+        int rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3Destroy, 1, pVM);
         if (RT_SUCCESS(rc))
             rc = pReq->iStatus;
         AssertRC(rc);
@@ -1774,6 +1799,8 @@ static void vmR3DestroyUVM(PUVM pUVM)
     MMR3TermUVM(pUVM);
     STAMR3TermUVM(pUVM);
 
+    RTTlsFree(pUVM->vm.s.idxTLS);
+
     ASMAtomicUoWriteU32(&pUVM->u32Magic, UINT32_MAX);
     RTMemFree(pUVM);
 
@@ -1932,7 +1959,7 @@ VMMR3DECL(int)   VMR3Reset(PVM pVM)
      * and wait for it to be processed.
      */
     PVMREQ pReq = NULL;
-    rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
+    rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, 0, (PFNRT)vmR3Reset, 1, pVM);
     while (rc == VERR_TIMEOUT)
         rc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
     if (VBOX_SUCCESS(rc))
@@ -2450,7 +2477,7 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2519,7 +2546,7 @@ VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *p
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2621,7 +2648,7 @@ VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pUVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2690,7 +2717,7 @@ VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *p
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2906,7 +2933,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRu
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;
@@ -2975,7 +3002,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
      * Make sure we're in EMT (to avoid the logging).
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
+    int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
     if (VBOX_FAILURE(rc))
         return rc;
     rc = pReq->iStatus;

@@ -403,9 +403,8 @@ typedef struct VMINTUSERPERVM
     /** Pointer to the DBGC instance data. */
     void                           *pvDBGC;
 
-
-    /** vmR3EmulationThread longjmp buffer. Must be last in the structure. */
-    jmp_buf                         emtJumpEnv;
+    /* TLS index for the VMINTUSERPERVMCPU pointer. */
+    RTTLS                           idxTLS;
 } VMINTUSERPERVM;
 
 /** Pointer to the VM internal data kept in the UVM. */
@@ -542,7 +541,6 @@ typedef struct VMINTUSERPERVMCPU
 
     /** Pointer to the DBGC instance data. */
     void                           *pvDBGC;
-
 
     /** vmR3EmulationThread longjmp buffer. Must be last in the structure. */
     jmp_buf                         emtJumpEnv;

@@ -400,7 +400,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMREQD
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(enmDest == VMREQDEST_ALL || (unsigned)enmDest < pUVM->pVM->cCPUs, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->pVM->cCPUs), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(enmDest == VMREQDEST_ANY || enmDest == VMREQDEST_BROADCAST || (unsigned)enmDest < pUVM->pVM->cCPUs, ("Invalid destination %d (max=%d)\n", enmDest, pUVM->pVM->cCPUs), VERR_INVALID_PARAMETER);
 
     /*
      * Try get a recycled packet.
@@ -617,42 +617,60 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
      * Are we the EMT or not?
      * Also, store pVM (and fFlags) locally since pReq may be invalid after queuing it.
      */
-    RTNATIVETHREAD hCurrentThread = RTThreadNativeSelf();
-    int rc = VINF_SUCCESS;
-    PUVM pUVM = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
-    if (    pReq->enmDest == VMREQDEST_ALL
-        &&  pUVM->vm.s.NativeThreadEMT != hCurrentThread)
+    int     rc      = VINF_SUCCESS;
+    PUVM    pUVM    = ((VMREQ volatile *)pReq)->pUVM;                 /* volatile paranoia */
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+
+    if (pReq->enmDest == VMREQDEST_BROADCAST)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
-        /*
-         * Insert it.
-         */
-        pReq->enmState = VMREQSTATE_QUEUED;
-        PVMREQ pNext;
-        do
+        for (unsigned i=0;i<pUVM->pVM->cCPUs;i++)
         {
-            pNext = pUVM->vm.s.pReqs;
-            pReq->pNext = pNext;
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
+            if (   !pUVMCPU
+                ||  pUVMCPU->idCPU != i)
+            {
+                /*
+                 * Insert it.
+                 */
+                pReq->enmState = VMREQSTATE_QUEUED;
+                PVMREQ pNext;
+                do
+                {
+                    pNext = pUVM->aCpu[i].vm.s.pReqs;
+                    pReq->pNext = pNext;
+                } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpu[i].vm.s.pReqs, (void *)pReq, (void *)pNext));
 
-        /*
-         * Notify EMT.
-         */
-        if (pUVM->pVM)
-            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
-        VMR3NotifyFFU(pUVM, false);
+                /*
+                 * Notify EMT.
+                 */
+                if (pUVM->pVM)
+                    VMCPU_FF_SET(pUVM->pVM, VM_FF_REQUEST, i);
+                /* @todo: VMR3NotifyFFU*/
+                AssertFailed();
+                VMR3NotifyFFU(pUVM, false);
 
-        /*
-         * Wait and return.
-         */
-        if (!(fFlags & VMREQFLAGS_NO_WAIT))
-            rc = VMR3ReqWait(pReq, cMillies);
-        LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+                /*
+                 * Wait and return.
+                 */
+                if (!(fFlags & VMREQFLAGS_NO_WAIT))
+                    rc = VMR3ReqWait(pReq, cMillies);
+                LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+            }
+            else
+            {
+                /*
+                 * The requester was EMT, just execute it.
+                 */
+                pReq->enmState = VMREQSTATE_QUEUED;
+                rc = vmR3ReqProcessOneU(pUVM, pReq);
+                LogFlow(("VMR3ReqQueue: returns %Vrc (processed)\n", rc));
+            }
+        } /* for each VMCPU */
     }
     else
-    if (    pReq->enmDest != VMREQDEST_ALL
-        &&  pUVM->aCpu[pReq->enmDest].vm.s.NativeThreadEMT != hCurrentThread)
+    if (    pReq->enmDest  != VMREQDEST_ANY  /* for a specific VMCPU? */
+        &&  pUVMCPU->idCPU != (unsigned)pReq->enmDest)
     {
         RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
@@ -685,7 +703,40 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
     }
     else
+    if (    pReq->enmDest == VMREQDEST_ANY
+        &&  !pUVMCPU /* only EMT threads have a valid pointer stored in the TLS slot. */)
     {
+        unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
+
+        /*
+         * Insert it.
+         */
+        pReq->enmState = VMREQSTATE_QUEUED;
+        PVMREQ pNext;
+        do
+        {
+            pNext = pUVM->vm.s.pReqs;
+            pReq->pNext = pNext;
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
+
+        /*
+         * Notify EMT.
+         */
+        if (pUVM->pVM)
+            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
+        VMR3NotifyFFU(pUVM, false);
+
+        /*
+         * Wait and return.
+         */
+        if (!(fFlags & VMREQFLAGS_NO_WAIT))
+            rc = VMR3ReqWait(pReq, cMillies);
+        LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
+    }
+    else
+    {
+        Assert(pUVMCPU);
+
         /*
          * The requester was EMT, just execute it.
          */
@@ -791,7 +842,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         /*
          * Get pending requests.
          */
-        if (enmDest == VMREQDEST_ALL)
+        if (enmDest == VMREQDEST_ANY)
         {
             ppReqs = (void * volatile *)&pUVM->vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
