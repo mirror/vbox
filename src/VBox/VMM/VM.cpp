@@ -208,6 +208,15 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     }
 
     /*
+     * Validate input.
+     */
+#ifdef VBOX_WITH_SMP_GUESTS
+    AssertLogRelMsgReturn(cCPUs > 0 && cCPUs <= VMCPU_MAX_CPU_COUNT, ("%RU32\n", cCPUs), VERR_INVALID_PARAMETER);
+#else
+    AssertLogRelMsgReturn(cCPUs == 1, ("%RU32\n", cCPUs), VERR_INVALID_PARAMETER);
+#endif
+
+    /*
      * Create the UVM so we can register the at-error callback
      * and consoliate a bit of cleanup code.
      */
@@ -482,20 +491,24 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(VALID_PTR(pVM));
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
+        AssertRelease(pVM->cCPUs == cCPUs);
 
-        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x \n", pUVM, pVM, pVM->pVMR0, pVM->hSelf));
+        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCPUs=%RU32\n",
+             pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCPUs));
 
         /*
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
         pVM->NativeThreadEMT = pUVM->aCpu[0].vm.s.NativeThreadEMT;
+        pVM->offVMCPU = RT_OFFSETOF(VM, aCpu);
 
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (uint32_t i = 0; i < pVM->cCPUs; i++)
         {
             pVM->aCpu[i].hNativeThread = pUVM->aCpu[i].vm.s.NativeThreadEMT;
-            Assert(pVM->aCpu[i].hNativeThread!= NIL_RTNATIVETHREAD);
+            Assert(pVM->aCpu[i].hNativeThread != NIL_RTNATIVETHREAD);
         }
+
 
         /*
          * Init the configuration.
@@ -515,31 +528,18 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                 CFGMR3InsertInteger(CFGMR3GetRoot(pVM), "RawR0Enabled", 0);
             }
 
-            /* Calculate the offset to the VMCPU array. */
-            pVM->offVMCPU = RT_OFFSETOF(VM, aCpu);
-
-            /* Make sure the CPU count in the config data matches. */
-            rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &pVM->cCPUs, 1);
-            AssertMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Vrc\n", rc));
-            Assert(pVM->cCPUs == cCPUs);
-
-#ifdef VBOX_WITH_SMP_GUESTS
-            AssertMsg(pVM->cCPUs > 0 && pVM->cCPUs <= VMCPU_MAX_CPU_COUNT,
-                      ("Configuration error: \"NumCPUs\"=%RU32 is out of range [1..255]\n", pVM->cCPUs));
-#else
-            AssertMsg(pVM->cCPUs != 0,
-                      ("Configuration error: \"NumCPUs\"=%RU32, expected 1\n", pVM->cCPUs));
-#endif
-            if (pVM->cCPUs != cCPUs)
+            /*
+             * Make sure the CPU count in the config data matches.
+             */
+            uint32_t cCPUsCfg;
+            rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &cCPUsCfg, 1);
+            AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
+            if (RT_SUCCESS(rc) && cCPUsCfg != cCPUs)
+            {
+                AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCPUs=%RU32 does not match!\n",
+                                       cCPUsCfg, cCPUs));
                 rc = VERR_INVALID_PARAMETER;
-            else
-#ifdef VBOX_WITH_SMP_GUESTS
-            if (pVM->cCPUs == 0 || pVM->cCPUs > VMCPU_MAX_CPU_COUNT)
-                rc = VERR_INVALID_PARAMETER;
-#else
-            if (pVM->cCPUs != 1)
-                rc = VERR_INVALID_PARAMETER;
-#endif
+            }
             if (VBOX_SUCCESS(rc))
             {
                 /*
