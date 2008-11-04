@@ -295,4 +295,4 @@ endif # eq($(MAKECMDGOALS),clean)
 clean:
 	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic math/gcc; \
 	    do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers
+	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers modules.order
