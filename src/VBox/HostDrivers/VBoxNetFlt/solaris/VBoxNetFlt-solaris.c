@@ -2138,37 +2138,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 
 
 /**
- * Wrapper for attaching our module to the specificed stream on the host stack.
- * As a side-effect, the streams also gets opened/closed during the actual injection/ejection phase.
- *
- * @returns VBox status code.
- * @param   pThis       The instance.
- * @param   fAttach     Is this an attach or detach.
- * @param   StreamType  Identifies the host stream the module be inject/ejected.
- */
-static int vboxNetFltSolarisModSetup(PVBOXNETFLTINS pThis, bool fAttach, VBOXNETFLTSTREAMTYPE StreamType)
-{
-    LogFlow(("vboxNetFltSolarisModSetup: pThis=%p (%s) fAttach=%s StreamType=%d\n", pThis, pThis->szName,
-            fAttach ? "true" : "false", StreamType));
-
-    switch (StreamType)
-    {
-        case kIp4Stream:
-        case kArpStream:
-            return vboxNetFltSolarisAttachIp4(pThis, fAttach);
-
-        case kIp6Stream:
-            return vboxNetFltSolarisAttachIp6(pThis, fAttach);
-
-        default:
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisModSetup: Invalid stream type %d\n", StreamType));
-            return VERR_INTNET_FLT_IF_FAILED;
-    }
-}
-
-
-
-/**
  * Wrapper for attaching ourselves to the interface.
  *
  * @returns VBox status code.
@@ -2181,10 +2150,10 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
     int rc = vboxNetFltSolarisOpenStream(pThis);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxNetFltSolarisModSetup(pThis, true, kIp4Stream);
+        rc = vboxNetFltSolarisAttachIp4(pThis, true /* fAttach */);
         if (RT_SUCCESS(rc))
         {
-            vboxNetFltSolarisModSetup(pThis, true, kIp6Stream);
+            vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
             /* Ignore Ipv6 binding errors as it's optional. */
 
             ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
@@ -2213,9 +2182,9 @@ static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     vboxNetFltSolarisCloseStream(pThis);
-    int rc = vboxNetFltSolarisModSetup(pThis, false, kIp4Stream);
+    int rc = vboxNetFltSolarisAttachIp4(pThis, false /* fAttach */);
     if (pThis->u.s.pvIp6Stream)
-        rc = vboxNetFltSolarisModSetup(pThis, false, kIp6Stream);
+        rc = vboxNetFltSolarisAttachIp6(pThis, false /* fAttach */);
 
     return rc;
 }
@@ -3159,9 +3128,22 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
 #ifdef VBOXNETFLT_SOLARIS_USE_NETINFO
+        /*
+         * @todo try find a way for IPFilter to accept ethernet frames (currently silently drops them).
+         */
         mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
         if (RT_LIKELY(pMsg))
         {
+            PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
+            unsigned uProtocol;
+            if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+                uProtocol = AF_INET6;
+            else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV4))
+                uProtocol = AF_INET;
+
+            /*
+             * Queue out using netinfo.
+             */
             netstack_t *pNetStack = netstack_get_current();
             if (pNetStack)
             {
@@ -3175,7 +3157,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                         InjectData.ni_packet = pMsg;
                         InjectData.ni_physical = pInterface;
                         bzero(&InjectData.ni_addr, sizeof(InjectData.ni_addr));
-                        InjectData.ni_addr.ss_family = AF_INET;
+                        InjectData.ni_addr.ss_family = uProtocol;
 
                         /*
                          * Queue out rather than direct out transmission.
@@ -3232,7 +3214,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
             }
         }
 #endif
-
     }
 
     if (fDst & INTNETTRUNKDIR_HOST)
@@ -3294,7 +3275,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
                      /*
                       * Send messages up IPv6 stream.
                       */
-                      LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv6\n"));
+                     LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit INTNETTRUNKDIR_HOST IPv6\n"));
 
                      pMsg->b_rptr += sizeof(RTNETETHERHDR);
                      queue_t *pIp6ReadQueue = pIp6Stream->pReadQueue;
