@@ -129,7 +129,7 @@ static Status AcquireDaemonLock(const char *baseDir)
         return ELockFileOwner;
     }
 
-    if (st.st_mode != (S_IREAD | S_IWRITE | S_IEXEC | S_IFDIR))
+    if (st.st_mode != (S_IRUSR | S_IWUSR | S_IXUSR | S_IFDIR))
     {
         printf("Wrong mode (%o) of '%s'.\n", st.st_mode, baseDir);
         return ELockFileOwner;
@@ -166,7 +166,7 @@ static Status AcquireDaemonLock(const char *baseDir)
         return ELockFileOwner;
     }
 
-    if (st.st_mode != (S_IREAD | S_IWRITE | S_IFREG))
+    if (st.st_mode != (S_IRUSR | S_IWUSR | S_IFREG))
     {
         printf("Wrong mode (%o) of '%s'.\n", st.st_mode, lockFile);
         free(lockFile);
