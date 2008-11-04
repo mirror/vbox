@@ -30,10 +30,26 @@
 #include <QAbstractListModel>
 #include <QDateTime>
 
-class VBoxVMItem
+class VBoxVMItem : public QObject
 {
+    Q_OBJECT;
+
 public:
-    VBoxVMItem (const CMachine &aM);
+
+    enum Action
+    {
+        Config = 0,
+        Delete,
+        Start,
+        Discard,
+        Pause,
+        Refresh,
+        ShowLogs
+    };
+
+public:
+
+    VBoxVMItem (const CMachine &aM, QObject* pParent);
     virtual ~VBoxVMItem();
 
     CMachine machine() const { return mMachine; }
@@ -41,16 +57,25 @@ public:
     QString name() const { return mName; }
     QIcon osIcon() const { return mAccessible ? vboxGlobal().vmGuestOSTypeIcon (mOSTypeId) :QPixmap (":/os_unknown.png"); }
     QUuid id() const { return mId; }
-    
+
     QString sessionStateName() const;
     QIcon sessionStateIcon() const { return mAccessible ? vboxGlobal().toIcon (mState) : QPixmap (":/state_aborted_16px.png"); }
 
     QString snapshotName() const { return mSnapshotName; }
     ULONG snapshotCount() const { return mSnapshotCount; }
 
+    QAction* vmActionConfig() const { return vmConfigAction; }
+    QAction* vmActionDelete() const { return vmDeleteAction; }
+    QAction* vmActionStart() const { return vmStartAction; }
+    QAction* vmActionDiscard() const { return vmDiscardAction; }
+    QAction* vmActionPause() const { return vmPauseAction; }
+    QAction* vmActionRefresh() const { return vmRefreshAction; }
+    QAction* vmActionShowLogs() const { return vmShowLogsAction; }
+
     QString toolTipText() const;
 
     bool accessible() const { return mAccessible; }
+    bool running() const {  return (sessionState() != KSessionState_Closed); }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
     KMachineState state() const { return mState; }
     KSessionState sessionState() const { return mSessionState; }
@@ -59,11 +84,22 @@ public:
 
     bool canSwitchTo() const;
     bool switchTo();
+    
+    void updateActions();
 
 private:
 
     /* Private member vars */
+    QObject* mParent;
     CMachine mMachine;
+
+    QAction *vmConfigAction;
+    QAction *vmDeleteAction;
+    QAction *vmStartAction;
+    QAction *vmDiscardAction;
+    QAction *vmPauseAction;
+    QAction *vmRefreshAction;
+    QAction *vmShowLogsAction;
 
     /* Cached machine data (to minimize server requests) */
     QUuid mId;
@@ -81,6 +117,16 @@ private:
     ULONG mSnapshotCount;
 
     ULONG mPid;
+
+private slots:
+
+    void vmSettings();
+    void vmDelete();
+    void vmStart();
+    void vmDiscard();
+    void vmPause(bool aPause);
+    void vmRefresh();
+    void vmShowLogs();
 };
 
 /* Make the pointer of this class public to the QVariant framework */
@@ -110,6 +156,7 @@ public:
     void clear();
 
     VBoxVMItem *itemById (const QUuid &aId) const;
+    VBoxVMItem *itemByRow (int aRow) const;
     QModelIndex indexById (const QUuid &aId) const;
 
     int rowById (const QUuid &aId) const;;
@@ -162,7 +209,7 @@ protected slots:
 protected:
     void mousePressEvent (QMouseEvent *aEvent);
     bool selectCurrent();
-}; 
+};
 
 class VBoxVMItemPainter: public QIItemDelegate
 {
@@ -180,9 +227,9 @@ private:
     inline QFontMetrics fontMetric (const QModelIndex &aIndex, int aRole) const { return QFontMetrics (aIndex.data (aRole).value<QFont>()); }
     inline QIcon::Mode iconMode (QStyle::State aState) const
     {
-        if (!(aState & QStyle::State_Enabled)) 
+        if (!(aState & QStyle::State_Enabled))
             return QIcon::Disabled;
-        if (aState & QStyle::State_Selected) 
+        if (aState & QStyle::State_Selected)
             return QIcon::Selected;
         return QIcon::Normal;
     }
