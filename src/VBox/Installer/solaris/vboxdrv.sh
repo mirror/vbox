@@ -56,7 +56,7 @@ check_if_installed()
     fi
 
     # Check arch only while installing (because rem_drv works for both arch.)
-    if test -n "$CHECKARCH"; then
+    if test ! -z "$CHECKARCH"; then
         # Let us go a step further and check if user has mixed up x86/amd64
         # amd64 ISA, x86 kernel module??
         if test "$cputype" = "amd64"; then
@@ -74,7 +74,7 @@ check_if_installed()
 
         abort "VirtualBox Host kernel module NOT installed."
     else
-        info "## VirtualBox Host kernel module NOT instaled."
+        info "## VirtualBox Host kernel module NOT installed."
         return 0
     fi
 }
