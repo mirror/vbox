@@ -46,6 +46,7 @@ RTRCPTR VMMGetStackRC(PVM pVM)
 }
 #endif /* !IN_RING0 */
 
+
 /**
  * Gets the current virtual CPU ID.
  *
@@ -64,8 +65,7 @@ VMCPUID VMMGetCpuId(PVM pVM)
     return 0;
 
 # elif defined(IN_RING3)
-    /** @todo SMP: Use TLS. */
-    return 0; /** @todo SMP */
+    return VMR3GetVMCPUId(pVM);
 
 # else  /* IN_RING0 */
     /** @todo SMP: Get the real CPU ID and use a table in the VM structure to
