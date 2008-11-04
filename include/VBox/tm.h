@@ -208,9 +208,11 @@ VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, uint64_t *pu64Delta);
  * @{
  */
 VMMR3DECL(int)    TMR3Init(PVM pVM);
+VMMR3DECL(int)    TMR3InitCPU(PVM pVM);
 VMMR3DECL(int)    TMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)   TMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(int)    TMR3Term(PVM pVM);
+VMMR3DECL(int)    TMR3TermCPU(PVM pVM);
 VMMR3DECL(void)   TMR3Reset(PVM pVM);
 VMMR3DECL(int)    TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, const char *pszDesc, PPTMTIMERR3 ppTimer);

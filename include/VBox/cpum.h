@@ -960,8 +960,10 @@ VMMDECL(CPUMMODE)  CPUMGetGuestMode(PVM pVM);
  */
 
 VMMR3DECL(int)          CPUMR3Init(PVM pVM);
+VMMR3DECL(int)          CPUMR3InitCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
+VMMR3DECL(int)          CPUMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
 VMMR3DECL(int)          CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
 # ifdef DEBUG

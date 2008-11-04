@@ -165,9 +165,11 @@ VMMDECL(uint32_t)   EMEmulateLockCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uin
  * @{
  */
 VMMR3DECL(int)      EMR3Init(PVM pVM);
+VMMR3DECL(int)      EMR3InitCPU(PVM pVM);
 VMMR3DECL(void)     EMR3Relocate(PVM pVM);
 VMMR3DECL(void)     EMR3Reset(PVM pVM);
 VMMR3DECL(int)      EMR3Term(PVM pVM);
+VMMR3DECL(int)      EMR3TermCPU(PVM pVM);
 VMMR3DECL(DECLNORETURN(void)) EMR3FatalError(PVM pVM, int rc);
 VMMR3DECL(int)      EMR3ExecuteVM(PVM pVM);
 VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM);
