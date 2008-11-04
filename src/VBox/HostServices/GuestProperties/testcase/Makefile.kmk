@@ -28,9 +28,23 @@ ifdef VBOX_WITH_TESTCASES
 #
 PROGRAMS += tstGuestPropSvc
 tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
-tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM
-tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp
+# The second define here is to ensure that the testcase will run fast, without
+# waiting for any thread synchronisation.
+tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD
+tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
 tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
+
+# Set this in LocalConfig.kmk if you are working on the guest property service
+# to automatically run the testcase at build time.
+ifdef VBOX_RUN_GUEST_PROPERTY_TEST
+ ifndef VBOX_ONLY_SDK
+  TESTING  += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+  OTHERS += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+$$(PATH_tstGuestPropSvc)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
+	$(INSTARGET_tstGuestPropSvc) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+ endif
+endif
 
 endif # VBOX_WITH_TESTCASES
 
