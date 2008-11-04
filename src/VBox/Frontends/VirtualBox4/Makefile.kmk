@@ -213,6 +213,7 @@ VirtualBox4_LIBS.win       = \
 	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  VirtualBox4_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
+ VirtualBox4_LIBS         += X11
 endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
