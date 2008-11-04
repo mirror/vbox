@@ -1744,12 +1744,12 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
             }
             else
             {
-                AssertMsgFailed(("MMR3HyperMapHCRam(,,%#x,,,) -> %Vrc\n", cbRam, rc));
+                AssertMsgFailed(("MMR3HyperMapHCRam(,,%#x,,,) -> %Rrc\n", cbRam, rc));
                 SUPPageFree(pNew, cbRam >> PAGE_SHIFT);
             }
         }
         else
-            AssertMsgFailed(("SUPPageAlloc(%#x,,) -> %Vrc\n", cbRam >> PAGE_SHIFT, rc));
+            AssertMsgFailed(("SUPPageAlloc(%#x,,) -> %Rrc\n", cbRam >> PAGE_SHIFT, rc));
 
     }
 /** @todo Make VGA and VMMDev register their memory at init time before the hma size is fixated. */
@@ -1759,7 +1759,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         if (RT_SUCCESS(rc))
             RCPtrNew = MMHyperR3ToRC(pVM, pNew);
         else
-            AssertMsgFailed(("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb));
+            AssertMsgFailed(("MMHyperAlloc(,%#x,,,) -> %Rrc\n", cbRam, cb));
     }
     if (RT_SUCCESS(rc))
     {
@@ -1788,7 +1788,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         {
             /* Allocate memory for chunk to HC ptr lookup array. */
             rc = MMHyperAlloc(pVM, (cb >> PGM_DYNAMIC_CHUNK_SHIFT) * sizeof(void *), 16, MM_TAG_PGM, (void **)&pNew->paChunkR3Ptrs);
-            AssertMsgReturn(rc == VINF_SUCCESS, ("MMHyperAlloc(,%#x,,,) -> %Vrc\n", cbRam, cb), rc);
+            AssertMsgReturn(rc == VINF_SUCCESS, ("MMHyperAlloc(,%#x,,,) -> %Rrc\n", cbRam, cb), rc);
 
             /* Physical memory will be allocated on demand. */
             while (iPage-- > 0)
@@ -2396,7 +2396,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvChunk, NULL);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PGM: GMM Seeding failed, rc=%Vrc\n", rc));
+            LogRel(("PGM: GMM Seeding failed, rc=%Rrc\n", rc));
             rc = VINF_EM_NO_MEMORY;
         }
     }

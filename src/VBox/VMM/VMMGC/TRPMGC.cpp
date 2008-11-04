@@ -84,7 +84,7 @@ VMMRCDECL(int) TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDLE
  */
 VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
 {
-    LogFlow(("TRPMGCHyperReturnToHost: rc=%Vrc\n", rc));
+    LogFlow(("TRPMGCHyperReturnToHost: rc=%Rrc\n", rc));
     TRPMResetTrap(pVM);
     CPUMHyperSetCtxCore(pVM, NULL);
     VMMGCGuestToHost(pVM, rc);

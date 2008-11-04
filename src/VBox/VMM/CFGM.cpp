@@ -140,7 +140,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
         CFGMR3Dump(CFGMR3GetRoot(pVM));
     }
     else
-        NOT_DMIK(AssertMsgFailed(("Constructor failed with rc=%Vrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor)));
+        NOT_DMIK(AssertMsgFailed(("Constructor failed with rc=%Rrc pfnCFGMConstructor=%p\n", rc, pfnCFGMConstructor)));
 
     return rc;
 }
@@ -2473,7 +2473,7 @@ static DECLCALLBACK(void) cfgmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         int rc = cfgmR3ResolveNode(pRoot, pszArgs, &pRoot);
         if (RT_FAILURE(rc))
         {
-            pHlp->pfnPrintf(pHlp, "Failed to resolve CFGM path '%s', %Vrc", pszArgs, rc);
+            pHlp->pfnPrintf(pHlp, "Failed to resolve CFGM path '%s', %Rrc", pszArgs, rc);
             return;
         }
     }

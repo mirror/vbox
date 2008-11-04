@@ -200,8 +200,8 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
         {
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
-            Log(("trpmGCExitTrap: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
-            AssertFatalMsgRC(rc, ("PDMGetInterrupt failed with %Vrc\n", rc));
+            Log(("trpmGCExitTrap: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
+            AssertFatalMsgRC(rc, ("PDMGetInterrupt failed with %Rrc\n", rc));
             rc = TRPMForwardTrap(pVM, pRegFrame, (uint32_t)u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_HARDWARE_INT, uOldActiveVector);
             /* can't return if successful */
             Assert(rc != VINF_SUCCESS);
@@ -360,7 +360,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
         rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
         if (RT_FAILURE(rc))
         {
-            Log(("TRPMGCTrap06Handler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Vrc !!\n", pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
+            Log(("TRPMGCTrap06Handler: Failed to convert %RTsel:%RX32 (cpl=%d) - rc=%Rrc !!\n", pRegFrame->cs, pRegFrame->eip, pRegFrame->ss & X86_SEL_RPL, rc));
             return trpmGCExitTrap(pVM, VINF_EM_RAW_GUEST_TRAP, pRegFrame);
         }
 
@@ -812,7 +812,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
                       NULL, NULL, &Cpu, &cbOp);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("DISCoreOneEx failed to PC=%VGv rc=%Vrc\n", PC, rc));
+        AssertMsgFailed(("DISCoreOneEx failed to PC=%VGv rc=%Rrc\n", PC, rc));
         STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }

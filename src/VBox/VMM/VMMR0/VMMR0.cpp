@@ -101,7 +101,7 @@ VMMR0DECL(int) ModuleInit(void)
                     return VINF_SUCCESS;
                 }
                 g_pIntNet = NULL;
-                LogFlow(("ModuleTerm: returns %Vrc\n", rc));
+                LogFlow(("ModuleTerm: returns %Rrc\n", rc));
             }
         }
     }

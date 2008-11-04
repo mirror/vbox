@@ -520,10 +520,10 @@ l_try_again:
 # endif
         }
         else
-            AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
+            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
     }
     else
-        AssertMsgFailed(("rc=%Vrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
+        AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
 
 #else /* prot/real stub */
     int rc = VINF_SUCCESS;

@@ -256,7 +256,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
                 }
             }
             else
-                AssertMsgFailed(("VMR3ReqCall failed rc=%Vrc\n", rc));
+                AssertMsgFailed(("VMR3ReqCall failed rc=%Rrc\n", rc));
 
             /*
              * An error occurred during VM creation. Set the error message directly
@@ -353,7 +353,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
                     break;
                 default:
                     pszError = N_("Unknown error initializing kernel driver");
-                    AssertMsgFailed(("Add error message for rc=%d (%Vrc)\n", rc, rc));
+                    AssertMsgFailed(("Add error message for rc=%d (%Rrc)\n", rc, rc));
             }
             vmR3SetErrorU(pUVM, rc, RT_SRC_POS, pszError, rc);
         }
@@ -361,7 +361,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
 
     /* cleanup */
     vmR3DestroyUVM(pUVM);
-    LogFlow(("VMR3Create: returns %Vrc\n", rc));
+    LogFlow(("VMR3Create: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -742,7 +742,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        LogFlow(("vmR3InitRing3: returns %Vrc\n", VINF_SUCCESS));
+                                                                        LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
                                                                         return VINF_SUCCESS;
                                                                     }
                                                                     int rc2 = PDMR3Term(pVM);
@@ -795,7 +795,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         /* MMR3Term is not called here because it'll kill the heap. */
     }
 
-    LogFlow(("vmR3InitRing3: returns %Vrc\n", rc));
+    LogFlow(("vmR3InitRing3: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -845,7 +845,7 @@ static int vmR3InitVMCpu(PVM pVM)
         rc2 = CPUMR3TermCPU(pVM);
         AssertRC(rc2);
     }
-    LogFlow(("vmR3InitVMCpu: returns %Vrc\n", rc));
+    LogFlow(("vmR3InitVMCpu: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -882,7 +882,7 @@ static int vmR3InitRing0(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = HWACCMR3InitFinalizeR0(pVM);
 
-    LogFlow(("vmR3InitRing0: returns %Vrc\n", rc));
+    LogFlow(("vmR3InitRing0: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -914,7 +914,7 @@ static int vmR3InitGC(PVM pVM)
      */
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_GC);
-    LogFlow(("vmR3InitGC: returns %Vrc\n", rc));
+    LogFlow(("vmR3InitGC: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1004,7 +1004,7 @@ VMMR3DECL(int)   VMR3PowerOn(PVM pVM)
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3PowerOn: returns %Vrc\n", rc));
+    LogFlow(("VMR3PowerOn: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1074,7 +1074,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3Suspend: returns %Vrc\n", rc));
+    LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1161,7 +1161,7 @@ VMMR3DECL(int)   VMR3Resume(PVM pVM)
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3Resume: returns %Vrc\n", rc));
+    LogFlow(("VMR3Resume: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1242,7 +1242,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3Save: returns %Vrc\n", rc));
+    LogFlow(("VMR3Save: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1337,7 +1337,7 @@ VMMR3DECL(int)   VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnPro
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3Load: returns %Vrc\n", rc));
+    LogFlow(("VMR3Load: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1426,7 +1426,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
         VMR3ReqFree(pReq);
     }
 
-    LogFlow(("VMR3PowerOff: returns %Vrc\n", rc));
+    LogFlow(("VMR3PowerOff: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1487,7 +1487,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
                                Start, Start + 0x100 - 1,
                                0x100, abBuf);
             else
-                RTLogRelPrintf("rc=%Vrc\n", rc);
+                RTLogRelPrintf("rc=%Rrc\n", rc);
 
             /* grub ... */
             if (esp < 0x2000 && esp > 0x1fc0)
@@ -1691,7 +1691,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
      */
     ASMAtomicUoWriteBool(&pVM->pUVM->vm.s.fTerminateEMT, true);
     ASMAtomicWriteU32(&pVM->fForcedActions, VM_FF_TERMINATE);
-    LogFlow(("vmR3Destroy: returning %Vrc\n", VINF_EM_TERMINATE));
+    LogFlow(("vmR3Destroy: returning %Rrc\n", VINF_EM_TERMINATE));
     return VINF_EM_TERMINATE;
 }
 
@@ -2503,7 +2503,7 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtStateRegister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtStateRegister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2572,7 +2572,7 @@ VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *p
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtStateDeregister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtStateDeregister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2674,7 +2674,7 @@ VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtErrorRegister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtErrorRegister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2743,7 +2743,7 @@ VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *p
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtErrorDeregister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtErrorDeregister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2959,7 +2959,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRu
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtRuntimeErrorRegister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtRuntimeErrorRegister: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3028,7 +3028,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
     rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
-    LogFlow(("VMR3AtRuntimeErrorDeregister: returns %Vrc\n", rc));
+    LogFlow(("VMR3AtRuntimeErrorDeregister: returns %Rrc\n", rc));
     return rc;
 }
 

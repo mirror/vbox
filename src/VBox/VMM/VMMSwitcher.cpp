@@ -149,7 +149,7 @@ int vmmR3SwitcherInit(PVM pVM)
                 paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
                 paBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
                 i++;
-                LogRel(("Failed to allocated and map core code: rc=%Vrc\n", rc));
+                LogRel(("Failed to allocated and map core code: rc=%Rrc\n", rc));
             }
             while (i-- > 0)
             {
@@ -195,7 +195,7 @@ int vmmR3SwitcherInit(PVM pVM)
         }
 
         /* shit */
-        AssertMsgFailed(("PGMR3Map(,%VRv, %VGp, %#x, 0) failed with rc=%Vrc\n", pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
+        AssertMsgFailed(("PGMR3Map(,%VRv, %VGp, %#x, 0) failed with rc=%Rrc\n", pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
         SUPContFree(pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
     }
     else

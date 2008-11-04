@@ -858,7 +858,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage
     /* See use in pgmPoolAccessHandlerSimple(). */
     PGM_INVL_GUEST_TLBS();
 
-    LogFlow(("pgmPoolAccessHandlerPT: returns %Vrc (flushed)\n", rc));
+    LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
 
 }
@@ -974,7 +974,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
      */
     PGM_INVL_GUEST_TLBS();
 
-    LogFlow(("pgmPoolAccessHandlerSimple: returns %Vrc cb=%d\n", rc, cb));
+    LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", rc, cb));
     return rc;
 }
 
@@ -3978,7 +3978,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         if (RT_SUCCESS(rc2))
         {
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            LogFlow(("pgmPoolAlloc: cached returns %Vrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
+            LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
         }
     }
@@ -3996,11 +3996,11 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         {
             if (rc != VERR_PGM_POOL_CLEARED)
             {
-                Log(("pgmPoolAlloc: returns %Vrc (Free)\n", rc));
+                Log(("pgmPoolAlloc: returns %Rrc (Free)\n", rc));
                 STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
                 return rc;
             }
-            Log(("pgmPoolMakeMoreFreePages failed with %Vrc -> return VERR_PGM_POOL_FLUSHED\n", rc));
+            Log(("pgmPoolMakeMoreFreePages failed with %Rrc -> return VERR_PGM_POOL_FLUSHED\n", rc));
             rc = VERR_PGM_POOL_FLUSHED;
         }
         iNew = pPool->iFreeHead;
@@ -4046,10 +4046,10 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
             pPage->iNext = pPool->iFreeHead;
             pPool->iFreeHead = pPage->idx;
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            Log(("pgmPoolAlloc: returns %Vrc (Insert)\n", rc3));
+            Log(("pgmPoolAlloc: returns %Rrc (Insert)\n", rc3));
             return rc3;
         }
-        Log(("pgmPoolTrackInsert failed with %Vrc -> return VERR_PGM_POOL_FLUSHED\n", rc3));
+        Log(("pgmPoolTrackInsert failed with %Rrc -> return VERR_PGM_POOL_FLUSHED\n", rc3));
         rc = VERR_PGM_POOL_FLUSHED;
     }
 #endif /* PGMPOOL_WITH_USER_TRACKING */
@@ -4071,7 +4071,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     }
 
     *ppPage = pPage;
-    LogFlow(("pgmPoolAlloc: returns %Vrc *ppPage=%p:{.Key=%VHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
+    LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%VHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
     return rc;

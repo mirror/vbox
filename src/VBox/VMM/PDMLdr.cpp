@@ -507,7 +507,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
             }
         }
         else
-            AssertMsgFailed(("SUPPageAlloc(%d,) -> %Vrc\n", cb >> PAGE_SHIFT, rc));
+            AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cb >> PAGE_SHIFT, rc));
         int rc2 = RTLdrClose(pModule->hLdrMod);
         AssertRC(rc2);
     }
@@ -598,7 +598,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
 
     RTMemFree(pModule);
     RTMemTmpFree(pszFile);
-    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Vrc\n", pszName, rc));
+    LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc\n", pszName, rc));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
@@ -737,7 +737,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
         if (!pModule)
         {
             int rc = pdmR3LoadR0U(pVM->pUVM, NULL, pszModule);
-            AssertMsgRCReturn(rc, ("pszModule=%s rc=%Vrc\n", pszModule, rc), VERR_MODULE_NOT_FOUND);
+            AssertMsgRCReturn(rc, ("pszModule=%s rc=%Rrc\n", pszModule, rc), VERR_MODULE_NOT_FOUND);
         }
     }
     return PDMR3LdrGetSymbolR0(pVM, pszModule, pszSymbol, ppvValue);
@@ -837,7 +837,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
             AssertMsgReturn(pszFilename, ("pszModule=%s\n", pszModule), VERR_MODULE_NOT_FOUND);
             int rc = PDMR3LdrLoadRC(pVM, pszFilename, pszModule);
             RTMemTmpFree(pszFilename);
-            AssertMsgRCReturn(rc, ("pszModule=%s rc=%Vrc\n", pszModule, rc), VERR_MODULE_NOT_FOUND);
+            AssertMsgRCReturn(rc, ("pszModule=%s rc=%Rrc\n", pszModule, rc), VERR_MODULE_NOT_FOUND);
         }
     }
     return PDMR3LdrGetSymbolRC(pVM, pszModule, pszSymbol, pRCPtrValue);

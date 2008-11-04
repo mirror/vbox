@@ -291,7 +291,7 @@ VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpSet: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpSet: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -440,7 +440,7 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpSetReg: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpSetReg: returns %Rrc\n", rc));
     return rc;
 
 }
@@ -605,7 +605,7 @@ VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpSetREM: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpSetREM: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -701,7 +701,7 @@ VMMR3DECL(int) DBGFR3BpClear(PVM pVM, RTUINT iBp)
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpClear: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -778,7 +778,7 @@ VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, RTUINT iBp)
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpEnable: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpEnable: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -855,7 +855,7 @@ VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, RTUINT iBp)
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpDisable: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpDisable: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -931,7 +931,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
-    LogFlow(("DBGFR3BpClear: returns %Vrc\n", rc));
+    LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }
 

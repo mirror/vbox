@@ -208,7 +208,7 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
     /* Redundant, but just in case we change something in the future */
     iomR3FlushCache(pVM);
 
-    LogFlow(("IOMR3Init: returns %Vrc\n", rc));
+    LogFlow(("IOMR3Init: returns %Rrc\n", rc));
     return rc;
 }
 

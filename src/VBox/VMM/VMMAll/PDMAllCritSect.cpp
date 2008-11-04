@@ -94,7 +94,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     /*
      * Failed.
      */
-    LogFlow(("PDMCritSectEnter: locked => R3 (%Vrc)\n", rcBusy));
+    LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
     STAM_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     return rcBusy;
 #endif /* !IN_RING3 */

@@ -253,7 +253,7 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     if (RT_SUCCESS(rc))
         return PGMR3HandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc);
 
-    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModRC, pszHandlerRC, rc));
+    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModRC, pszHandlerRC, rc));
     return rc;
 }
 

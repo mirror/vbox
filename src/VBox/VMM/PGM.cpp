@@ -1171,7 +1171,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     }
     else
     {
-        AssertMsgFailed(("Configuration error: Failed to query integer \"RamSize\", rc=%Vrc.\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query integer \"RamSize\", rc=%Rrc.\n", rc));
         return rc;
     }
 
@@ -1318,7 +1318,7 @@ static int pgmR3InitPaging(PVM pVM)
     int rc = MMR3HyperReserve(pVM, PAGE_SIZE * 5, "CR3 mapping", &pVM->pgm.s.GCPtrCR3Mapping);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Failed to reserve two pages for cr mapping in HMA, rc=%Vrc\n", rc));
+        AssertMsgFailed(("Failed to reserve two pages for cr mapping in HMA, rc=%Rrc\n", rc));
         return rc;
     }
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -1509,7 +1509,7 @@ static int pgmR3InitPaging(PVM pVM)
         return VINF_SUCCESS;
     }
 
-    LogFlow(("pgmR3InitPaging: returns %Vrc\n", rc));
+    LogFlow(("pgmR3InitPaging: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2218,7 +2218,7 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
             int rc = SSMR3PutMem(pSSM, pRam->pvR3, pRam->cb);
             if (RT_FAILURE(rc))
             {
-                Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
+                Log(("pgmR3Save: SSMR3PutMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
@@ -2452,7 +2452,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             int rc = SSMR3GetMem(pSSM, pRam->pvR3, pRam->cb);
             if (RT_FAILURE(rc))
             {
-                Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Vrc\n", pRam->pvR3, pRam->cb, rc));
+                Log(("pgmR3Save: SSMR3GetMem(, %p, %#x) -> %Rrc\n", pRam->pvR3, pRam->cb, rc));
                 return rc;
             }
         }
@@ -3208,7 +3208,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         int rc = VMMR3SelectSwitcher(pVM, enmSwitcher);
         if (RT_FAILURE(rc))
         {
-            AssertReleaseMsgFailed(("VMMR3SelectSwitcher(%d) -> %Vrc\n", enmSwitcher, rc));
+            AssertReleaseMsgFailed(("VMMR3SelectSwitcher(%d) -> %Rrc\n", enmSwitcher, rc));
             return rc;
         }
     }
@@ -3225,7 +3225,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
             int rc = PGM_SHW_PFN(Exit, pVM)(pVM);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("Exit failed for shadow mode %d: %Vrc\n", pVM->pgm.s.enmShadowMode, rc));
+                AssertMsgFailed(("Exit failed for shadow mode %d: %Rrc\n", pVM->pgm.s.enmShadowMode, rc));
                 return rc;
             }
         }
@@ -3240,7 +3240,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         int rc = PGM_GST_PFN(Exit, pVM)(pVM);
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("Exit failed for guest mode %d: %Vrc\n", pVM->pgm.s.enmGuestMode, rc));
+            AssertMsgFailed(("Exit failed for guest mode %d: %Rrc\n", pVM->pgm.s.enmGuestMode, rc));
             return rc;
         }
     }
@@ -3284,7 +3284,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
         }
         if (RT_FAILURE(rc))
         {
-            AssertReleaseMsgFailed(("Entering enmShadowMode=%d failed: %Vrc\n", enmShadowMode, rc));
+            AssertReleaseMsgFailed(("Entering enmShadowMode=%d failed: %Rrc\n", enmShadowMode, rc));
             pVM->pgm.s.enmShadowMode = PGMMODE_INVALID;
             return rc;
         }

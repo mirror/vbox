@@ -213,7 +213,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, int rcErr)
     pHlp->pfnPrintf(pHlp,
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
                     "!!\n"
-                    "!!                 Guru Meditation %d (%Vrc)\n"
+                    "!!                 Guru Meditation %d (%Rrc)\n"
                     "!!\n",
                     rcErr, rcErr);
 

@@ -436,7 +436,7 @@ VMMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage)
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, (RTGCUINTPTR)GCPtrPage);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -580,7 +580,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
                 return rc;
         }
         else
-            AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Vrc\n", Addr, rc));
+            AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Rrc\n", Addr, rc));
     }
 
 #if 0 /* def VBOX_STRICT; triggers too often now */
@@ -594,7 +594,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
         || (fWrite && !(fPageShw & X86_PTE_RW))
         || (fUser  && !(fPageShw & X86_PTE_US)) )
     {
-        AssertMsgFailed(("Unexpected access violation for %VGv! rc=%Vrc write=%d user=%d\n",
+        AssertMsgFailed(("Unexpected access violation for %VGv! rc=%Rrc write=%d user=%d\n",
                          Addr, rc, fWrite && !(fPageShw & X86_PTE_RW), fUser && !(fPageShw & X86_PTE_US)));
         return VINF_EM_RAW_GUEST_TRAP;
     }

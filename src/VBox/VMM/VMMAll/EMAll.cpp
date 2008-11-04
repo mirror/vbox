@@ -153,7 +153,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
     int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
     if (RT_FAILURE(rc))
     {
-        Log(("EMInterpretDisasOne: Failed to convert %RTsel:%VGv (cpl=%d) - rc=%Vrc !!\n",
+        Log(("EMInterpretDisasOne: Failed to convert %RTsel:%VGv (cpl=%d) - rc=%Rrc !!\n",
              pCtxCore->cs, pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
         return rc;
     }
@@ -183,7 +183,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCOR
                           pCpu, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
-    AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%VGv rc=%Vrc\n", GCPtrInstr, rc));
+    AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%VGv rc=%Rrc\n", GCPtrInstr, rc));
     return VERR_INTERNAL_ERROR;
 }
 
@@ -456,7 +456,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 rc = emRamRead(pVM, &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("MMGCRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("MMGCRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
                 break;
@@ -475,7 +475,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 rc = emRamRead(pVM,  &valpar2, pParam2, param2.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("MMGCRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("MMGCRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                 }
                 break;
 
@@ -509,7 +509,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 rc = emRamWrite(pVM, pParam1, &valpar2, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -535,7 +535,7 @@ static int emInterpretXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 rc = emRamWrite(pVM, pParam2, &valpar1, param2.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -582,7 +582,7 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -600,7 +600,7 @@ static int emInterpretIncDec(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                 return VERR_EM_INTERPRETER;
             }
 
@@ -652,7 +652,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
             rc = emRamRead(pVM,  &valpar1, pStackVal, param1.size);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                AssertMsgFailed(("emRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                 return VERR_EM_INTERPRETER;
             }
 
@@ -673,7 +673,7 @@ static int emInterpretPop(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 rc = emRamWrite(pVM, pParam1, &valpar1, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamWrite %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
 
@@ -744,7 +744,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -919,7 +919,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
                 rc = emRamRead(pVM,  &valpar1, pParam1, param1.size);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                    AssertMsgFailed(("emRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                     return VERR_EM_INTERPRETER;
                 }
             }
@@ -1028,7 +1028,7 @@ static int emInterpretBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
             rc = emRamRead(pVM, &valpar1, pParam1, 1);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("emRamRead %VGv size=%d failed with %Vrc\n", pParam1, param1.size, rc));
+                AssertMsgFailed(("emRamRead %VGv size=%d failed with %Rrc\n", pParam1, param1.size, rc));
                 return VERR_EM_INTERPRETER;
             }
 

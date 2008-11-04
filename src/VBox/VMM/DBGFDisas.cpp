@@ -403,7 +403,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
         if (RT_FAILURE(rc))
         {
-            RTStrPrintf(pszOutput, cchOutput, "Sel=%04x -> %Vrc\n", Sel, rc);
+            RTStrPrintf(pszOutput, cchOutput, "Sel=%04x -> %Rrc\n", Sel, rc);
             return rc;
         }
     }
@@ -415,7 +415,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
     rc = dbgfR3DisasInstrFirst(pVM, &SelInfo, enmMode, GCPtr, &State);
     if (RT_FAILURE(rc))
     {
-        RTStrPrintf(pszOutput, cchOutput, "Disas -> %Vrc\n", rc);
+        RTStrPrintf(pszOutput, cchOutput, "Disas -> %Rrc\n", rc);
         return rc;
     }
 
@@ -550,7 +550,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVM pVM, const char *pszPrefix
     szBuf[0] = '\0';
     int rc = DBGFR3DisasInstrCurrent(pVM, &szBuf[0], sizeof(szBuf));
     if (RT_FAILURE(rc))
-        RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrCurrentLog failed with rc=%Vrc\n", rc);
+        RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrCurrentLog failed with rc=%Rrc\n", rc);
     if (pszPrefix && *pszPrefix)
         RTLogPrintf("%s: %s\n", pszPrefix, szBuf);
     else
@@ -576,7 +576,7 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVM pVM, RTSEL Sel, RTGCPTR GCPtr)
     szBuf[0] = '\0';
     int rc = DBGFR3DisasInstr(pVM, Sel, GCPtr, &szBuf[0], sizeof(szBuf));
     if (RT_FAILURE(rc))
-        RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrLog(, %RTsel, %RGv) failed with rc=%Vrc\n", Sel, GCPtr, rc);
+        RTStrPrintf(szBuf, sizeof(szBuf), "DBGFR3DisasInstrLog(, %RTsel, %RGv) failed with rc=%Rrc\n", Sel, GCPtr, rc);
     RTLogPrintf("%s\n", szBuf);
     return rc;
 }

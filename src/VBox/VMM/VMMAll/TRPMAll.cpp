@@ -460,7 +460,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
             rc = PGMPrefetchPage(pVM, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
             if (rc != VINF_SUCCESS)
             {
-                Log(("TRPMForwardTrap: PGMPrefetchPage failed with rc=%Vrc\n", rc));
+                Log(("TRPMForwardTrap: PGMPrefetchPage failed with rc=%Rrc\n", rc));
                 goto failure;
             }
 #ifdef IN_GC
@@ -520,7 +520,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     rc = PGMPrefetchPage(pVM, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
                     if (rc != VINF_SUCCESS)
                     {
-                        Log(("PGMPrefetchPage failed with rc=%Vrc\n", rc));
+                        Log(("PGMPrefetchPage failed with rc=%Rrc\n", rc));
                         goto failure;
                     }
 #ifdef IN_GC
@@ -530,7 +530,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #endif
                     if (RT_FAILURE(rc))
                     {
-                        Log(("MMGCRamRead failed with %Vrc\n", rc));
+                        Log(("MMGCRamRead failed with %Rrc\n", rc));
                         goto failure;
                     }
                 }
@@ -713,13 +713,13 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #endif
                 }
                 else
-                    Log(("TRAP%02X: PGMVerifyAccess %VGv failed with %Vrc -> forward to REM\n", iGate, pTrapStackGC, rc));
+                    Log(("TRAP%02X: PGMVerifyAccess %VGv failed with %Rrc -> forward to REM\n", iGate, pTrapStackGC, rc));
             }
             else
-                Log(("SELMValidateAndConvertCSAddr failed with %Vrc\n", rc));
+                Log(("SELMValidateAndConvertCSAddr failed with %Rrc\n", rc));
         }
         else
-            Log(("MMRamRead %VGv size %d failed with %Vrc\n", (RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate, sizeof(GuestIdte), rc));
+            Log(("MMRamRead %VGv size %d failed with %Rrc\n", (RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate, sizeof(GuestIdte), rc));
     }
     else
     {

@@ -187,7 +187,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
             rc = VMR3ReqAlloc(pVM, &apReq[iReq], VMREQTYPE_INTERNAL, VMREQDEST_ANY);
             if (RT_FAILURE(rc))
             {
-                RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Vrc (alloc)\n", i, iReq, cReqs, rc);
+                RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Rrc (alloc)\n", i, iReq, cReqs, rc);
                 return rc;
             }
             apReq[iReq]->iStatus = iReq + i;
@@ -203,7 +203,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
             rc = VMR3ReqFree(apReq[iReq]);
             if (RT_FAILURE(rc))
             {
-                RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Vrc (free)\n", i, iReq, cReqs, rc);
+                RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Rrc (free)\n", i, iReq, cReqs, rc);
                 return rc;
             }
         }
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
                 rc = RTThreadWait(Thread1, RT_INDEFINITE_WAIT, &rcThread1);
                 if (RT_FAILURE(rc))
                 {
-                    RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
+                    RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Rrc\n", rc);
                     g_cErrors++;
                 }
                 if (RT_FAILURE(rcThread1))
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                RTPrintf(TESTCASE ": RTThreadCreate(&Thread1,,,,) failed, rc=%Vrc\n", rc);
+                RTPrintf(TESTCASE ": RTThreadCreate(&Thread1,,,,) failed, rc=%Rrc\n", rc);
                 g_cErrors++;
             }
 
@@ -260,7 +260,7 @@ int main(int argc, char **argv)
             rc = RTThreadWait(Thread0, RT_INDEFINITE_WAIT, &rcThread0);
             if (RT_FAILURE(rc))
             {
-                RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
+                RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Rrc\n", rc);
                 g_cErrors++;
             }
             if (RT_FAILURE(rcThread0))
@@ -268,7 +268,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            RTPrintf(TESTCASE ": RTThreadCreate(&Thread0,,,,) failed, rc=%Vrc\n", rc);
+            RTPrintf(TESTCASE ": RTThreadCreate(&Thread0,,,,) failed, rc=%Rrc\n", rc);
             g_cErrors++;
         }
         uint64_t u64ElapsedTS = RTTimeNanoTS() - u64StartTS;
@@ -293,13 +293,13 @@ int main(int argc, char **argv)
         rc = VMR3Destroy(pVM);
         if (!RT_SUCCESS(rc))
         {
-            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Vrc\n", rc);
+            RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Rrc\n", rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Vrc\n", rc);
+        RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Rrc\n", rc);
         g_cErrors++;
     }
 
