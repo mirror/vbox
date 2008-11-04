@@ -94,16 +94,13 @@ typedef struct VMCPU
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
     VMCPUID                 idCpu;
-    /** The ring-3 thread handle of the emulation thread for this CPU.
-     * @todo Use the VM_IS_EMT() macro to check if executing in EMT? */
-    RTTHREAD                hThreadR3;
     /** The native ring-3 handle. */
     RTNATIVETHREAD          hNativeThreadR3;
     /** The native ring-0 handle. */
     RTNATIVETHREAD          hNativeThreadR0;
 
     /** Align the next bit on a 64-byte boundary. */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 7 : 2];
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 8 : 4];
 
     /** CPUM part. */
     union
@@ -518,9 +515,7 @@ typedef struct VM
 
     /** @name Various VM data owned by VM.
      * @{ */
-    /** The thread handle of the emulation thread.
-     * Use the VM_IS_EMT() macro to check if executing in EMT. */
-    RTTHREAD            ThreadEMT;
+    RTTHREAD            uPadding1;
     /** The native handle of ThreadEMT. Getting the native handle
      * is generally faster than getting the IPRT one (except on OS/2 :-). */
     RTNATIVETHREAD      NativeThreadEMT;

@@ -65,7 +65,7 @@ struc VM
     .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR32_RES 1
     .pfnVMMGCGuestToHostAsm         RTGCPTR32_RES 1
 
-    .ThreadEMT          RTHCPTR_RES 1
+    .uPadding1          RTHCPTR_RES 1
     .NativeThreadEMT    RTHCPTR_RES 1
 
     .fRawR3Enabled      resb 1

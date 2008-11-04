@@ -489,7 +489,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->ThreadEMT = pVM->aCpu[0].hThreadR3 = pUVM->vm.s.ThreadEMT;
         pVM->NativeThreadEMT = pVM->aCpu[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
 
         /*
