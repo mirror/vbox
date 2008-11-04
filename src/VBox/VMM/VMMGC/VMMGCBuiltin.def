@@ -1,6 +1,7 @@
+; $Id$
 ;; @file
+; VMM Raw-mode Context Builtin DLL - Definition file for generating import library.
 ;
-; VMM Guest Context Builtin DLL - Definition file for generating import library.
 
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;

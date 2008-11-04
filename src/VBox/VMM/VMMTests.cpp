@@ -55,8 +55,8 @@
  */
 static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariation)
 {
-    RTGCPTR32 GCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -66,8 +66,8 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, enmTestcase);
     CPUMPushHyper(pVM, pVM->pVMGC);
-    CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
-    CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+    CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
+    CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
     if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -92,8 +92,8 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
 {
     RTPrintf("VMM: testing 0%x / %d - %s\n", u8Trap, uVariation, pszDesc);
 
-    RTGCPTR32 GCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (VBOX_FAILURE(rc))
         return rc;
 
@@ -103,8 +103,8 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, u8Trap + VMMGC_DO_TESTCASE_TRAP_FIRST);
     CPUMPushHyper(pVM, pVM->pVMGC);
-    CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
-    CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+    CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
+    CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
     rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
     if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -127,13 +127,13 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     }
     else if (pszFaultEIP)
     {
-        RTGCPTR32 GCPtrFault;
-        int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &GCPtrFault);
+        RTRCPTR RCPtrFault;
+        int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &RCPtrFault);
         if (VBOX_FAILURE(rc2))
             RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Vrc!\n", pszFaultEIP, rc);
-        else if (GCPtrFault != CPUMGetHyperEIP(pVM))
+        else if (RCPtrFault != CPUMGetHyperEIP(pVM))
         {
-            RTPrintf("VMM: FAILURE - EIP=%VGv expected %VGv (%s)\n", CPUMGetHyperEIP(pVM), GCPtrFault, pszFaultEIP);
+            RTPrintf("VMM: FAILURE - EIP=%VGv expected %VGv (%s)\n", CPUMGetHyperEIP(pVM), RCPtrFault, pszFaultEIP);
             fDump = true;
         }
     }
@@ -182,11 +182,11 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     /*
      * Setup stack for calling VMMGCEntry().
      */
-    RTGCPTR32 GCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
+        RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
 
         /*
          * Test various crashes which we must be able to recover from.
@@ -244,7 +244,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
 
         /* a bad one at VMMGCEntry */
         RTPrintf("VMM: testing hardware bp at VMMGCEntry (hit)\n");
-        DBGFR3AddrFromFlat(pVM, &Addr, GCPtrEP);
+        DBGFR3AddrFromFlat(pVM, &Addr, RCPtrEP);
         RTUINT iBp1;
         rc = DBGFR3BpSetReg(pVM, &Addr, 0,  ~(uint64_t)0, X86_DR7_RW_EO, 1, &iBp1);
         AssertReleaseRC(rc);
@@ -337,8 +337,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         CPUMPushHyper(pVM, 0);
         CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HYPER_INTERRUPT);
         CPUMPushHyper(pVM, pVM->pVMGC);
-        CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));  /* stack frame size */
-        CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+        CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
+        CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
         Log(("trampoline=%x\n", pVM->vmm.s.pfnCallTrampolineRC));
 
@@ -399,8 +399,8 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_NOP);
             CPUMPushHyper(pVM, pVM->pVMGC);
-            CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));    /* stack frame size */
-            CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+            CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
+            CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
             uint64_t TickThisStart = ASMReadTSC();
@@ -493,11 +493,11 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     /*
      * Setup stack for calling VMMGCEntry().
      */
-    RTGCPTR32 GCPtrEP;
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    RTRCPTR RCPtrEP;
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
-        RTPrintf("VMM: VMMGCEntry=%VGv\n", GCPtrEP);
+        RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
 
         CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
 
@@ -526,8 +526,8 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HWACCM_NOP);
             CPUMPushHyper(pVM, pVM->pVMGC);
-            CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));    /* stack frame size */
-            CPUMPushHyper(pVM, GCPtrEP);                /* what to call */
+            CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
+            CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
             CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);

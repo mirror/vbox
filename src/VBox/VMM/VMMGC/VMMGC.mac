@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VMMGC - Guest Context Assembly Macros.
+; VMMGC - Raw-mode Context Assembly Macros.
 ;
 
 ;

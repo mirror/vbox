@@ -208,22 +208,22 @@ static DECLCALLBACK(int) doit(PVM pVM)
         RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR32 GCPtrEntry;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &GCPtrEntry);
+    RTRCPTR RCPtrEntry;
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &RCPtrEntry);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR32 GCPtrStart;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &GCPtrStart);
+    RTRCPTR RCPtrStart;
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &RCPtrStart);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
-    RTGCPTR32 GCPtrEnd;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &GCPtrEnd);
+    RTRCPTR RCPtrEnd;
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &RCPtrEnd);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
@@ -240,11 +240,11 @@ static DECLCALLBACK(int) doit(PVM pVM)
         RTPrintf(TESTCASE ": Failed to resolve allocate instance memory (%d bytes), rc=%Vra\n", sizeof(*pTst), rc);
         return rc;
     }
-    pTst->GCPtr = MMHyperHC2GC(pVM, pTst);
-    pTst->GCPtrStack = MMHyperHC2GC(pVM, &pTst->au8Stack[sizeof(pTst->au8Stack) - 32]);
+    pTst->RCPtr = MMHyperR3ToRC(pVM, pTst);
+    pTst->RCPtrStack = MMHyperR3ToRC(pVM, &pTst->au8Stack[sizeof(pTst->au8Stack) - 32]);
 
     /* the page must be writable from user mode */
-    rc = PGMMapModifyPage(pVM, pTst->GCPtr, sizeof(*pTst), X86_PTE_US | X86_PTE_RW, ~(uint64_t)(X86_PTE_US | X86_PTE_RW));
+    rc = PGMMapModifyPage(pVM, pTst->RCPtr, sizeof(*pTst), X86_PTE_US | X86_PTE_RW, ~(uint64_t)(X86_PTE_US | X86_PTE_RW));
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
@@ -252,7 +252,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     }
 
     /* all the code must be executable from R3. */
-    rc = PGMMapModifyPage(pVM, GCPtrStart, GCPtrEnd - GCPtrStart + PAGE_SIZE, X86_PTE_US, ~(uint64_t)X86_PTE_US);
+    rc = PGMMapModifyPage(pVM, RCPtrStart, RCPtrEnd - RCPtrStart + PAGE_SIZE, X86_PTE_US, ~(uint64_t)X86_PTE_US);
     if (VBOX_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
@@ -264,8 +264,8 @@ static DECLCALLBACK(int) doit(PVM pVM)
     /*
      * Disassemble the assembly...
      */
-    RTGCPTR GCPtr = GCPtrStart;
-    while (GCPtr < GCPtrEnd)
+    RTGCPTR GCPtr = RCPtrStart;
+    while (GCPtr < RCPtrEnd)
     {
         size_t  cb = 0;
         char    sz[256];
@@ -297,7 +297,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
         rc = VINF_SUCCESS;
         for (int c = 0; c < 100; c++)
         {
-            int rc2 = VMMR3CallGC(pVM, GCPtrEntry, 2, pTst->GCPtr, enmTest);
+            int rc2 = VMMR3CallRC(pVM, RCPtrEntry, 2, pTst->RCPtr, enmTest);
             if (VBOX_SUCCESS(rc2))
             {
                 uint64_t u64 = pTst->aResults[enmTest].cTotalTicks;
@@ -326,7 +326,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     for (i = TSTMICROTEST_TRAP_FIRST; i < TSTMICROTEST_MAX; i++)
     {
         TSTMICROTEST enmTest = (TSTMICROTEST)i;
-        rc = VMMR3CallGC(pVM, GCPtrEntry, 2, pTst->GCPtr, enmTest);
+        rc = VMMR3CallRC(pVM, RCPtrEntry, 2, pTst->RCPtr, enmTest);
         PrintResultTrap(pTst, enmTest, rc);
     }
 

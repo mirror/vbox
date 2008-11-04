@@ -19,7 +19,6 @@
  * additional information or have any questions.
  */
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -449,7 +448,6 @@ static void vmmR0RecordRC(PVM pVM, int rc)
     }
 }
 #endif /* VBOX_WITH_STATISTICS */
-
 
 
 /**
@@ -1057,7 +1055,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
 }
 
 
-
 /**
  * Internal R0 logger worker: Flush logger.
  *
@@ -1111,7 +1108,6 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 }
 
 
-
 /**
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.
  *
@@ -1138,7 +1134,6 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
     return false;
 #endif
 }
-
 
 
 /**
@@ -1209,5 +1204,4 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
         }
     }
 }
-
 

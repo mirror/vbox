@@ -742,33 +742,41 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
 
 
 /**
- * Gets the pointer to g_szRTAssertMsg1 in GC.
- * @returns Pointer to VMMGC::g_szRTAssertMsg1.
- *          Returns NULL if not present.
+ * Gets the pointer to a buffer containing the R0/RC AssertMsg1 output.
+ *
+ * @returns Pointer to the buffer.
  * @param   pVM         The VM handle.
  */
-VMMR3DECL(const char *) VMMR3GetGCAssertMsg1(PVM pVM)
+VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 {
-    RTGCPTR32 GCPtr;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg1", &GCPtr);
+    if (HWACCMIsEnabled(pVM))
+        return pVM->vmm.s.szRing0AssertMsg1;
+
+    RTRCPTR RCPtr;
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg1", &RCPtr);
     if (VBOX_SUCCESS(rc))
-        return (const char *)MMHyperGC2HC(pVM, GCPtr);
+        return (const char *)MMHyperRCToR3(pVM, RCPtr);
+
     return NULL;
 }
 
 
 /**
- * Gets the pointer to g_szRTAssertMsg2 in GC.
- * @returns Pointer to VMMGC::g_szRTAssertMsg2.
- *          Returns NULL if not present.
+ * Gets the pointer to a buffer containing the R0/RC AssertMsg2 output.
+ *
+ * @returns Pointer to the buffer.
  * @param   pVM         The VM handle.
  */
-VMMR3DECL(const char *) VMMR3GetGCAssertMsg2(PVM pVM)
+VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 {
-    RTGCPTR32 GCPtr;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg2", &GCPtr);
+    if (HWACCMIsEnabled(pVM))
+        return pVM->vmm.s.szRing0AssertMsg2;
+
+    RTRCPTR RCPtr;
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg2", &RCPtr);
     if (VBOX_SUCCESS(rc))
-        return (const char *)MMHyperGC2HC(pVM, GCPtr);
+        return (const char *)MMHyperRCToR3(pVM, RCPtr);
+
     return NULL;
 }
 
@@ -1138,35 +1146,36 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
     }
 }
 
+
 /**
- * Calls GC a function.
+ * Calls a RC function.
  *
  * @param   pVM         The VM handle.
- * @param   GCPtrEntry  The GC function address.
+ * @param   RCPtrEntry  The address of the RC function.
  * @param   cArgs       The number of arguments in the ....
  * @param   ...         Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGC(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, ...)
+VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
 {
     va_list args;
     va_start(args, cArgs);
-    int rc = VMMR3CallGCV(pVM, GCPtrEntry, cArgs, args);
+    int rc = VMMR3CallRCV(pVM, RCPtrEntry, cArgs, args);
     va_end(args);
     return rc;
 }
 
 
 /**
- * Calls GC a function.
+ * Calls a RC function.
  *
  * @param   pVM         The VM handle.
- * @param   GCPtrEntry  The GC function address.
+ * @param   RCPtrEntry  The address of the RC function.
  * @param   cArgs       The number of arguments in the ....
  * @param   args        Arguments to the function.
  */
-VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list args)
+VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
 {
-    Log2(("VMMR3CallGCV: GCPtrEntry=%VRv cArgs=%d\n", GCPtrEntry, cArgs));
+    Log2(("VMMR3CallGCV: RCPtrEntry=%VRv cArgs=%d\n", RCPtrEntry, cArgs));
 
     /*
      * Setup the call frame using the trampoline.
@@ -1180,7 +1189,7 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list
         *pFrame++ = va_arg(args, RTGCUINTPTR32);
 
     CPUMPushHyper(pVM, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
-    CPUMPushHyper(pVM, GCPtrEntry);                                             /* what to call */
+    CPUMPushHyper(pVM, RCPtrEntry);                                             /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
     /*
@@ -1237,7 +1246,7 @@ VMMR3DECL(int) VMMR3CallGCV(PVM pVM, RTRCPTR GCPtrEntry, unsigned cArgs, va_list
  */
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 {
-    Log(("VMMR3ResumeHyper: eip=%VGv esp=%VGv\n", CPUMGetHyperEIP(pVM), CPUMGetHyperESP(pVM)));
+    Log(("VMMR3ResumeHyper: eip=%VRv esp=%VRv\n", CPUMGetHyperEIP(pVM), CPUMGetHyperESP(pVM)));
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).

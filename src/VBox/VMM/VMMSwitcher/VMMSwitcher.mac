@@ -19,8 +19,8 @@
 ; additional information or have any questions.
 ;
 
-%ifndef __VMMSwitcher_mac__
-%define __VMMSwitcher_mac__
+%ifndef ___VMMSwitcher_mac
+%define ___VMMSwitcher_mac
 
 %include "iprt/asmdefs.mac"
 
@@ -139,5 +139,5 @@ BEGINCODE
     %define DEBUG_S_CHAR(ch)
 %endif
 
-%endif ; !__VMMSwitcher_mac__
+%endif ; !___VMMSwitcher_mac
 
