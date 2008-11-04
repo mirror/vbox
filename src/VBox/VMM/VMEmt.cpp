@@ -214,7 +214,6 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     {
         vmR3DestroyFinalBitFromEMT(pUVM);
 
-        /* we don't reset ThreadEMT here because it's used in waiting. */
         pUVM->vm.s.NativeThreadEMT = NIL_RTNATIVETHREAD;
     }
     Log(("vmR3EmulationThread: EMT is terminated.\n"));
