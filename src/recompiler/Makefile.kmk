@@ -304,7 +304,10 @@ endif
 # The VBoxREM import library.
 #
 VBoxREMImp_TEMPLATE         = VBOXR3
-ifeq ($(KBUILD_TARGET),darwin)
+if1of ($(KBUILD_TARGET), os2 win)
+VBoxREMImp_INST             = $(INST_LIB)
+else
+VBoxREMImp_NAME             = VBoxREM
 VBoxREMImp_INST             = $(INST_LIB)
 endif
 VBoxREMImp_SOURCES.win      = VBoxREM.def
