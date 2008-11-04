@@ -69,10 +69,11 @@ VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 
 #ifndef IN_GC
-VMMDECL(int)    HWACCMFlushTLB(PVM pVM);
-VMMDECL(int)    HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(bool)   HWACCMIsNestedPagingActive(PVM pVM);
+VMMDECL(int)     HWACCMFlushTLB(PVM pVM);
+VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
 VMMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
+VMMDECL(RTCPUID) HWACCMGetVMCPUId(PVM pVM);
 #else
 /* Nop in GC */
 # define HWACCMFlushTLB(pVM)                    do { } while (0)
