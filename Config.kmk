@@ -1121,7 +1121,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_LIB)/VBoxREMImp.dylib
+ LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.dylib
@@ -1132,7 +1132,7 @@ ifeq ($(KBUILD_TARGET),l4)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.s.so
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.s.so
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_BIN)/VBoxREMImp.s.so
+ LIB_REM         = $(PATH_LIB)/VBoxREM.s.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.s.so
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.s.so
@@ -1143,10 +1143,10 @@ if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.so
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- ifdef VBOX_WITH_NEW_RECOMPILER # bird: Not acceptable.
+ ifdef VBOX_WITH_NEW_RECOMPILER # bird: Not acceptable - it won't work because of build order (try a clean, recursive, build).
   LIB_REM        = $(PATH_BIN)/VBoxREM.so
  else
-  LIB_REM        = $(PATH_BIN)/VBoxREMImp.so
+  LIB_REM        = $(PATH_LIB)/VBoxREM.so
  endif
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.so
