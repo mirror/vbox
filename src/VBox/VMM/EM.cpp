@@ -373,6 +373,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Initializes the per-VCPU EM.
  *
@@ -384,6 +385,7 @@ VMMR3DECL(int) EMR3InitCPU(PVM pVM)
     LogFlow(("EMR3InitCPU\n"));
     return VINF_SUCCESS;
 }
+
 
 /**
  * Applies relocations to data and code managed by this

@@ -469,9 +469,6 @@ GVMMR0DECL(int) GVMMR0CreateVMReq(PGVMMCREATEVMREQ pReq)
         return VERR_INVALID_PARAMETER;
     if (!VALID_PTR(pReq->pSession))
         return VERR_INVALID_POINTER;
-    if (    pReq->cCPUs == 0
-        ||  pReq->cCPUs > VMCPU_MAX_CPU_COUNT)
-        return VERR_INVALID_PARAMETER;
 
     /*
      * Execute it.
@@ -509,6 +506,10 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
 
     AssertPtrReturn(ppVM, VERR_INVALID_POINTER);
     *ppVM = NULL;
+
+    if (    cCPUs == 0
+        ||  cCPUs > VMCPU_MAX_CPU_COUNT)
+        return VERR_INVALID_PARAMETER;
 
     RTNATIVETHREAD hEMT = RTThreadNativeSelf();
     AssertReturn(hEMT != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
@@ -574,7 +575,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                         /*
                          * Allocate the shared VM structure and associated page array.
                          */
-                        const size_t cbVM   = RT_OFFSETOF(VM, aCpu[cCPUs]);
+                        const size_t cbVM   = RT_UOFFSETOF(VM, aCpus[cCPUs]);
                         const size_t cPages = RT_ALIGN(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
                         rc = RTR0MemObjAllocLow(&pGVM->gvmm.s.VMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
                         if (RT_SUCCESS(rc))
@@ -587,6 +588,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                             pVM->hSelf      = iHandle;
                             pVM->cbSelf     = cbVM;
                             pVM->cCPUs      = cCPUs;
+                            pVM->offVMCPU   = RT_UOFFSETOF(VM, aCpus);
 
                             rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                             if (RT_SUCCESS(rc))
@@ -612,8 +614,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCPUs, PVM *ppV
                                     /* Initialize all the VM pointers. */
                                     for (uint32_t i = 0; i < cCPUs; i++)
                                     {
-                                        pVM->aCpu[i].pVMR0 = pVM;
-                                        pVM->aCpu[i].pVMR3 = pVM->pVMR3;
+                                        pVM->aCpus[i].pVMR0 = pVM;
+                                        pVM->aCpus[i].pVMR3 = pVM->pVMR3;
                                     }
 
                                     rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1, 0,

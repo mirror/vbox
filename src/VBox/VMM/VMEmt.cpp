@@ -56,17 +56,18 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
     PUVMCPU pUVMCPU = (PUVMCPU)pvArgs;
     PUVM    pUVM    = pUVMCPU->pUVM;
     RTCPUID idCPU   = pUVMCPU->idCPU;
-    int     rc = VINF_SUCCESS;
+    int     rc;
 
     AssertReleaseMsg(VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
                      ("Invalid arguments to the emulation thread!\n"));
 
     rc = RTTlsSet(pUVM->vm.s.idxTLS, pUVMCPU);
-    AssertReleaseMsgReturn(RT_SUCCESS(rc), ("RTTlsSet %x failed with %Rrc\n", pUVM->vm.s.idxTLS, rc), rc);
+    AssertReleaseMsgRCReturn(rc, ("RTTlsSet %x failed with %Rrc\n", pUVM->vm.s.idxTLS, rc), rc);
 
     /*
      * The request loop.
      */
+    rc = VINF_SUCCESS;
     volatile VMSTATE enmBefore = VMSTATE_CREATING; /* volatile because of setjmp */
     Log(("vmR3EmulationThread: Emulation thread starting the days work... Thread=%#x pUVM=%p\n", ThreadSelf, pUVM));
     for (;;)

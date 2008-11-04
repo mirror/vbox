@@ -1278,6 +1278,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     return rc;
 }
 
+
 /**
  * Initializes the per-VCPU PGM.
  *
@@ -1289,6 +1290,7 @@ VMMR3DECL(int) PGMR3InitCPU(PVM pVM)
     LogFlow(("PGMR3InitCPU\n"));
     return VINF_SUCCESS;
 }
+
 
 /**
  * Init paging.
@@ -2117,6 +2119,7 @@ VMMR3DECL(int) PGMR3Term(PVM pVM)
     return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 }
 
+
 /**
  * Terminates the per-VCPU PGM.
  *
@@ -2130,6 +2133,7 @@ VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
 {
     return 0;
 }
+
 
 /**
  * Execute state save operation.

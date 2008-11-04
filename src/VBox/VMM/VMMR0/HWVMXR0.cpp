@@ -105,7 +105,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     int rc = VMXEnable(pPageCpuPhys);
     if (VBOX_FAILURE(rc))
     {
-        if (pVM) 
+        if (pVM)
             VMXR0CheckError(pVM, rc);
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
@@ -562,7 +562,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
             {
                 RTGCUINTPTR intInfo;
 
-                intInfo  = (iGate == X86_XCPT_GP) ? X86_XCPT_DF : iGate;
+                intInfo  = (iGate == X86_XCPT_GP) ? (uint32_t)X86_XCPT_DF : iGate;
                 intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                 intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                 intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -862,7 +862,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
  *
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
- */ 
+ */
 static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
 {
     if (CPUMIsGuestInPAEModeEx(pCtx))
@@ -886,7 +886,7 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
  *
  * @param   pVM         The VM to operate on.
  * @param   pCtx        Guest context
- */ 
+ */
 static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
 {
     uint32_t u32TrapMask;
@@ -1127,13 +1127,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             if (CPUMIsGuestInPagedProtectedModeEx(pCtx))
             {
                 /* Disable cr3 read/write monitoring as we don't need it for EPT. */
-                pVM->hwaccm.s.vmx.proc_ctls &=  ~(  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT 
+                pVM->hwaccm.s.vmx.proc_ctls &=  ~(  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
                                                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT);
             }
             else
             {
                 /* Reenable cr3 read/write monitoring as our identity mapped page table is active. */
-                pVM->hwaccm.s.vmx.proc_ctls |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT 
+                pVM->hwaccm.s.vmx.proc_ctls |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
                                                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
             }
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
@@ -1250,7 +1250,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
             pVM->hwaccm.s.vmx.GCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
                                            | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
-            
+
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, pVM->hwaccm.s.vmx.GCPhysEPTP);
 #if HC_ARCH_BITS == 32
             rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_HIGH, (uint32_t)(pVM->hwaccm.s.vmx.GCPhysEPTP >> 32ULL));
@@ -3070,13 +3070,13 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
 
     LogFlow(("VMXR0InvalidatePage %VGv\n", GCVirt));
 
-    /* Only relevant if we want to use VPID. 
+    /* Only relevant if we want to use VPID.
      * In the nested paging case we still see such calls, but
      * can safely ignore them. (e.g. after cr3 updates)
      */
 #ifdef HWACCM_VTX_WITH_VPID
     /* Skip it if a TLB flush is already pending. */
-    if (   !fFlushPending 
+    if (   !fFlushPending
         && pVM->hwaccm.s.vmx.fVPID)
         vmxR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
 #endif /* HWACCM_VTX_WITH_VPID */
@@ -3136,7 +3136,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
         {
             Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
             Log(("Current stack %08x\n", &rc));
-            
+
             pVM->hwaccm.s.vmx.lasterror.ulLastInstrError = instrError;
             pVM->hwaccm.s.vmx.lasterror.ulLastExitReason = exitReason;
 

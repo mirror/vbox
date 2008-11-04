@@ -637,9 +637,9 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
                 PVMREQ pNext;
                 do
                 {
-                    pNext = pUVM->aCpu[i].vm.s.pReqs;
+                    pNext = pUVM->aCpus[i].vm.s.pReqs;
                     pReq->pNext = pNext;
-                } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpu[i].vm.s.pReqs, (void *)pReq, (void *)pNext));
+                } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpus[i].vm.s.pReqs, (void *)pReq, (void *)pNext));
 
                 /*
                  * Notify EMT.
@@ -682,9 +682,9 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = pUVM->aCpu[idTarget].vm.s.pReqs;
+            pNext = pUVM->aCpus[idTarget].vm.s.pReqs;
             pReq->pNext = pNext;
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpu[idTarget].vm.s.pReqs, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->aCpus[idTarget].vm.s.pReqs, (void *)pReq, (void *)pNext));
 
         /*
          * Notify EMT.
@@ -702,9 +702,8 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
             rc = VMR3ReqWait(pReq, cMillies);
         LogFlow(("VMR3ReqQueue: returns %Vrc\n", rc));
     }
-    else
-    if (    pReq->enmDest == VMREQDEST_ANY
-        &&  !pUVMCPU /* only EMT threads have a valid pointer stored in the TLS slot. */)
+    else if (    pReq->enmDest == VMREQDEST_ANY
+             &&  !pUVMCPU /* only EMT threads have a valid pointer stored in the TLS slot. */)
     {
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */
 
@@ -837,11 +836,10 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
     int rc = VINF_SUCCESS;
     while (rc <= VINF_SUCCESS)
     {
-        void *volatile *ppReqs;
-
         /*
          * Get pending requests.
          */
+        void *volatile *ppReqs;
         if (enmDest == VMREQDEST_ANY)
         {
             ppReqs = (void * volatile *)&pUVM->vm.s.pReqs;
@@ -850,7 +848,7 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMREQDEST enmDest)
         }
         else
         {
-            ppReqs = (void * volatile *)&pUVM->aCpu[enmDest].vm.s.pReqs;
+            ppReqs = (void * volatile *)&pUVM->aCpus[enmDest].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
                 VMCPU_FF_CLEAR(pUVM->pVM, enmDest, VM_FF_REQUEST);
         }

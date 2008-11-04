@@ -778,8 +778,9 @@ typedef struct VM
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
     uint32_t    u32Reserved2[8];
 
-    /** VMCPU array for the configured number of virtual CPUs. */
-    VMCPU       aCpu[1];
+    /** VMCPU array for the configured number of virtual CPUs.
+     * Must be aligned on a 64-byte boundrary.  */
+    VMCPU       aCpus[1];
 } VM;
 
 /** Pointer to a VM. */

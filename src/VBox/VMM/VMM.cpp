@@ -256,6 +256,7 @@ VMMR3DECL(int) VMMR3InitCPU(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * VMMR3Init worker that initiates the core code.
  *
@@ -764,6 +765,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     return rc;
 }
 
+
 /**
  * Terminates the per-VCPU VMM.
  *
@@ -775,7 +777,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
  */
 VMMR3DECL(int) VMMR3TermCPU(PVM pVM)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
 

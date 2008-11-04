@@ -2607,17 +2607,22 @@ typedef struct PGM
     STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
 #endif /* VBOX_WITH_STATISTICS */
-} PGM, *PPGM;
+} PGM;
+/** Pointer to the PGM instance data. */
+typedef PGM *PPGM;
 
 
 /**
- * PGMCPU Data (part of VMCPU)
+ * PGMCPU Data (part of VMCPU).
  */
 typedef struct PGMCPU
 {
     /** Offset to the VMCPU structure. */
     RTINT                           offVMCPU;
-} PGMCPU, *PPGMCPU;
+} PGMCPU;
+/** Pointer to the per-cpu PGM data. */
+typedef PGMCPU *PPGMCPU;
+
 
 /** @name PGM::fSyncFlags Flags
  * @{
