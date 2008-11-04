@@ -583,10 +583,12 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
-define def_vbox_slirp_cflags
-$(file)_CFLAGS = -Wno-sign-compare
-endef
-$(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+ ifneq ($(KBUILD_TARGET),win)
+  define def_vbox_slirp_cflags
+  $(file)_CFLAGS = -Wno-sign-compare
+  endef
+  $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
+ endif
 else
 NatAlias_TEMPLATE   = VBOXR3NP
 
