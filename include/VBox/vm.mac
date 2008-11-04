@@ -61,9 +61,9 @@ struc VM
     .offVMCPU           resd 1
     .u32Reserved        resd 5
 
-    .pfnVMMGCGuestToHostAsmGuestCtx RTGCPTR32_RES 1
-    .pfnVMMGCGuestToHostAsmHyperCtx RTGCPTR32_RES 1
-    .pfnVMMGCGuestToHostAsm         RTGCPTR32_RES 1
+    .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
+    .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1
+    .pfnVMMGCGuestToHostAsm         RTRCPTR_RES 1
 
     .uPadding1          RTHCPTR_RES 1
     .uPadding2          RTHCPTR_RES 1

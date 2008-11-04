@@ -495,8 +495,8 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
      *      -# setup stackframe and EIP to use the trampoline.
      *      -# do a generic hypervisor call.
      */
-    RTGCPTR32 GCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &GCPtrEP);
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (VBOX_SUCCESS(rc))
     {
         CPUMHyperSetCtxCore(pVM, NULL);
@@ -507,8 +507,8 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
         CPUMPushHyper(pVM, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVM, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVM, pVM->pVMRC);                 /* Param 0: pVM */
-        CPUMPushHyper(pVM, 3 * sizeof(RTGCPTR32));      /* trampoline param: stacksize.  */
-        CPUMPushHyper(pVM, GCPtrEP);                    /* Call EIP. */
+        CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
+        CPUMPushHyper(pVM, RCPtrEP);                    /* Call EIP. */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
 
         for (;;)

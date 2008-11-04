@@ -248,10 +248,10 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     /*
      * Resolve the GC handler.
      */
-    RTGCPTR32 pfnHandlerGC;
-    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerGC);
+    RTRCPTR pfnHandlerRC;
+    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerRC);
     if (VBOX_SUCCESS(rc))
-        return PGMR3HandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerGC, pszDesc);
+        return PGMR3HandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc);
 
     AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModRC, pszHandlerRC, rc));
     return rc;

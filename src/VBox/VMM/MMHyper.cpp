@@ -109,7 +109,7 @@ int mmR3HyperInit(PVM pVM)
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
         if (VBOX_SUCCESS(rc))
         {
-            pVM->pVMRC = (RTGCPTR32)GCPtr;
+            pVM->pVMRC = (RTRCPTR)GCPtr;
             pVM->pVMGC = pVM->pVMRC;
             for (uint32_t i = 0; i < pVM->cCPUs; i++)
                 pVM->aCpus[i].pVMRC = pVM->pVMRC;

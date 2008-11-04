@@ -755,7 +755,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
  *                          ordinal value rather than a string pointer.
  * @param   pRCPtrValue     Where to store the symbol value.
  */
-VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *pRCPtrValue = 0xfeedf00d;
@@ -811,7 +811,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
  *                          ordinal value rather than a string pointer.
  * @param   pRCPtrValue     Where to store the symbol value.
  */
-VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTGCPTR32 pRCPtrValue)
+VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
 #ifdef PDMLDR_FAKE_MODE
     *pRCPtrValue = 0xfeedf00d;
