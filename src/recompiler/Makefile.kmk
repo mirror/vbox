@@ -303,6 +303,10 @@ endif
 #
 # The VBoxREM import library.
 #
+# This is a HACK to get around (a) the cyclic dependency between VBoxVMM and
+# VBoxREM during linking and (b) the recursive build ordering which means VBoxREM
+# won't be built until after all the other DLLs.
+#
 VBoxREMImp_TEMPLATE         = VBOXR3
 if1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_INST             = $(INST_LIB)
