@@ -63,7 +63,6 @@ socreate()
     memset(so, 0, sizeof(struct socket));
     so->so_state = SS_NOFDREF;
     so->s = -1;
-    VBOX_SLIRP_LOCK_CREATE(&so->so_mutex);
   }
   return(so);
 }
@@ -91,7 +90,6 @@ sofree(PNATState pData, struct socket *so)
 #else
     /*Take global mutexes of udb and tcb, because we dont know which is mutex */
     /*XXX: don't forget to set correct so_type in corresponded attach operation */
-    VBOX_SLIRP_LOCK(so->so_mutex);
     if (so->so_emu==EMU_RSH && so->extra) {
           sofree(pData, so->extra);
           so->extra=NULL;
@@ -112,13 +110,10 @@ sofree(PNATState pData, struct socket *so)
     else if (so == udp_last_so)
       udp_last_so = &udb;
 
-#if 0
     if(so->so_next && so->so_prev) {
       remque(pData, so);  /* crashes if so is not in a queue */
     }
-#else
-      remque(pData, so);  /* crashes if so is not in a queue */
-#endif
+
     if (so->so_type == IPPROTO_UDP) {
         VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
     }
@@ -131,10 +126,9 @@ sofree(PNATState pData, struct socket *so)
     /* socket's mutex could be released because socket none accessible via queue anymore*/
 
     m_free(pData, so->so_m);
-    so->so_destroy = 1;
+    free(so);
 
 
-    VBOX_SLIRP_UNLOCK(so->so_mutex);
 #endif
 
 #ifndef VBOX_WITH_SYNC_SLIRP
@@ -155,9 +149,7 @@ soread(PNATState pData, struct socket *so)
         int len;
 	struct iovec iov[2];
 	int mss;
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	sb = &so->so_snd;
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
         len = sb->sb_datalen - sb->sb_cc;
 	mss = so->so_tcpcb->t_maxseg;
 
@@ -212,7 +204,6 @@ soread(PNATState pData, struct socket *so)
 		}
 	}
 
-        VBOX_SLIRP_LOCK(so->so_mutex);
 #ifdef HAVE_READV
 	nn = readv(so->s, (struct iovec *)iov, n);
 	DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
@@ -221,18 +212,15 @@ soread(PNATState pData, struct socket *so)
 #endif
 	if (nn <= 0) {
 		if (nn < 0 && (errno == EINTR || errno == EAGAIN)) {
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return 0;
                 }
 		else {
 			DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
 			sofcantrcvmore(so);
 			tcp_sockclosed(pData, sototcpcb(so));
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return -1;
 		}
 	}
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 
 #ifndef HAVE_READV
 	/*
@@ -273,7 +261,6 @@ void
 sorecvoob(PNATState pData, struct socket *so)
 {
 	struct tcpcb *tp;
-        VBOX_SLIRP_LOCK(so->so_mutex);
         tp = sototcpcb(so);
 
 	DEBUG_CALL("sorecvoob");
@@ -289,7 +276,6 @@ sorecvoob(PNATState pData, struct socket *so)
 	 */
 	soread(pData, so);
 	tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	tp->t_force = 1;
 	tcp_output(pData, tp);
 	tp->t_force = 0;
@@ -308,7 +294,6 @@ sosendoob(so)
 
 	int n, len;
 
-        VBOX_SLIRP_LOCK(so->so_mutex);
         sb = &so->so_rcv;
 
 	DEBUG_CALL("sosendoob");
@@ -354,7 +339,6 @@ sosendoob(so)
 	if (sb->sb_rptr >= (sb->sb_data + sb->sb_datalen))
 		sb->sb_rptr -= sb->sb_datalen;
 
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return n;
 }
 
@@ -369,7 +353,6 @@ sowrite(PNATState pData, struct socket *so)
 	struct sbuf *sb;
 	int len;
 	struct iovec iov[2];
-        VBOX_SLIRP_LOCK(so->so_mutex);
         sb = &so->so_rcv;
         len = sb->sb_cc;
 
@@ -379,7 +362,6 @@ sowrite(PNATState pData, struct socket *so)
 	if (so->so_urgc) {
 		sosendoob(so);
 		if (sb->sb_cc == 0) {
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return 0;
                 }
 	}
@@ -422,7 +404,6 @@ sowrite(PNATState pData, struct socket *so)
 #endif
 	/* This should never happen, but people tell me it does *shrug* */
 	if (nn < 0 && (errno == EAGAIN || errno == EINTR)) {
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return 0;
         }
 
@@ -431,7 +412,6 @@ sowrite(PNATState pData, struct socket *so)
 			so->so_state, errno));
 		sofcantsendmore(so);
 		tcp_sockclosed(pData, sototcpcb(so));
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return -1;
 	}
 
@@ -458,7 +438,6 @@ sowrite(PNATState pData, struct socket *so)
 	if ((so->so_state & SS_FWDRAIN) && sb->sb_cc == 0)
 		sofcantsendmore(so);
 
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return nn;
 }
 
@@ -474,7 +453,6 @@ sorecvfrom(PNATState pData, struct socket *so)
 	DEBUG_CALL("sorecvfrom");
 	DEBUG_ARG("so = %lx", (long)so);
 
-        VBOX_SLIRP_LOCK(so->so_mutex);
 
 	if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
 	  char buff[256];
@@ -561,7 +539,6 @@ sorecvfrom(PNATState pData, struct socket *so)
 	    udp_output(pData, so, m, &addr);
 	  } /* rx error */
 	} /* if ping packet */
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 /*
@@ -575,7 +552,6 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 #if 0
         struct sockaddr_in host_addr;
 #endif
-        VBOX_SLIRP_LOCK(so->so_mutex);
 
 	DEBUG_CALL("sosendto");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -628,7 +604,6 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	ret = sendto(so->s, m->m_data, m->m_len, 0,
 		     (struct sockaddr *)&addr, sizeof (struct sockaddr));
 	if (ret < 0) {
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return -1;
         }
 
@@ -639,7 +614,6 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	if (so->so_expire)
 		so->so_expire = curtime + SO_EXPIRE;
 	so->so_state = SS_ISFCONNECTED; /* So that it gets select()ed */
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return 0;
 }
 
@@ -675,7 +649,6 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	}
 
         VBOX_SLIRP_LOCK(pData->tcb_mutex);
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	insque(pData, so,&tcb);
         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
@@ -710,7 +683,6 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 		/* Restore the real errno */
 		errno = tmperrno;
 #endif
-                if(so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return NULL;
 	}
 	setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(int));
@@ -724,7 +696,6 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	so->s = s;
 
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return so;
 }
 
@@ -763,28 +734,23 @@ void
 soisfconnecting(so)
 	register struct socket *so;
 {
-    VBOX_SLIRP_LOCK(so->so_mutex);
 	so->so_state &= ~(SS_NOFDREF|SS_ISFCONNECTED|SS_FCANTRCVMORE|
 			  SS_FCANTSENDMORE|SS_FWDRAIN);
 	so->so_state |= SS_ISFCONNECTING; /* Clobber other states */
-    VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 void
 soisfconnected(so)
         register struct socket *so;
 {
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	so->so_state &= ~(SS_ISFCONNECTING|SS_FWDRAIN|SS_NOFDREF);
 	so->so_state |= SS_ISFCONNECTED; /* Clobber other states */
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 void
 sofcantrcvmore(so)
 	struct  socket *so;
 {
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	if ((so->so_state & SS_NOFDREF) == 0) {
 		shutdown(so->s,0);
 	}
@@ -793,14 +759,12 @@ sofcantrcvmore(so)
 	   so->so_state = SS_NOFDREF; /* Don't select it */ /* XXX close() here as well? */
 	else
 	   so->so_state |= SS_FCANTRCVMORE;
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 void
 sofcantsendmore(so)
 	struct socket *so;
 {
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	if ((so->so_state & SS_NOFDREF) == 0) {
             shutdown(so->s,1);           /* send FIN to fhost */
 	}
@@ -809,7 +773,6 @@ sofcantsendmore(so)
 	   so->so_state = SS_NOFDREF; /* as above */
 	else
 	   so->so_state |= SS_FCANTSENDMORE;
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 void
@@ -832,11 +795,9 @@ void
 sofwdrain(so)
 	struct socket *so;
 {
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	if (so->so_rcv.sb_cc)
 		so->so_state |= SS_FWDRAIN;
 	else
 		sofcantsendmore(so);
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 

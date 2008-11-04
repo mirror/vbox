@@ -77,7 +77,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("iphlen = %d", iphlen);
 
-        VBOX_SLIRP_LOCK(m->m_mutex);
 
 	udpstat.udps_ipackets++;
 
@@ -159,19 +158,12 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	 */
         VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
         so = udp_last_so;
-        if (so != &udb) {
-            VBOX_SLIRP_LOCK(so->so_mutex);
-        }
 
         VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 
 	if (so->so_lport != uh->uh_sport ||
 	    so->so_laddr.s_addr != ip->ip_src.s_addr) {
 		struct socket *tmp;
-                if (so != &udb) {
-                    /*we don't interesting in this socket any more*/
-                    VBOX_SLIRP_UNLOCK(so->so_mutex);
-                }
 #ifndef VBOX_WITH_SYNC_SLIRP
 		for (tmp = udb.so_next; tmp != &udb; tmp = tmp->so_next) {
 #else
@@ -185,7 +177,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
                         VBOX_SLIRP_UNLOCK(pData->udb_mutex);
                         break; /* end of loop*/
                     }
-                    VBOX_SLIRP_LOCK(tmp->so_mutex);
                     VBOX_SLIRP_UNLOCK(pData->udb_mutex);
                     tmp_next = tmp->so_next;
 #endif
@@ -194,7 +185,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 				so = tmp;
 				break;
 			}
-                        VBOX_SLIRP_UNLOCK(tmp->so_mutex);
                         VBOX_SLIRP_LOCK(pData->udb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                         tmp = tmp_next;
@@ -220,7 +210,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	   * create one
 	   */
 	  if ((so = socreate()) == NULL) goto bad;
-          VBOX_SLIRP_LOCK(so->so_mutex);
 	  if(udp_attach(pData, so) == -1) {
 	    DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
 			errno,strerror(errno)));
@@ -273,15 +262,10 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	*ip=save_ip;
 	so->so_m=m;         /* ICMP backup */
 
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
-        VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return;
 bad:
 	m_freem(pData, m);
 	/* if (opts) m_freem(opts); */
-        if (m != NULL) {
-            VBOX_SLIRP_UNLOCK(m->m_mutex);
-        }
 	return;
 }
 
@@ -291,10 +275,6 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 {
 	register struct udpiphdr *ui;
 	int error = 0;
-        if(so != NULL) {
-            VBOX_SLIRP_LOCK(so->so_mutex);
-        }
-        VBOX_SLIRP_LOCK(m->m_mutex);
 
 	DEBUG_CALL("udp_output");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -340,8 +320,6 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 	udpstat.udps_opackets++;
 
 	error = ip_output(pData, so, m);
-        if (so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
-        VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return (error);
 }
 
@@ -350,7 +328,6 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 {
     struct sockaddr_in saddr, daddr;
     int status;
-    VBOX_SLIRP_LOCK(so->so_mutex);
 
     saddr = *addr;
     if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
@@ -368,7 +345,6 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     daddr.sin_port = so->so_lport;
 
     status = udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
-    VBOX_SLIRP_UNLOCK(so->so_mutex);
     return status;
 }
 
@@ -376,7 +352,6 @@ int
 udp_attach(PNATState pData, struct socket *so)
 {
   struct sockaddr_in addr;
-    VBOX_SLIRP_LOCK(so->so_mutex);
 
   if((so->s = socket(AF_INET,SOCK_DGRAM,0)) != -1) {
     /*
@@ -410,7 +385,6 @@ udp_attach(PNATState pData, struct socket *so)
 #ifdef VBOX_WITH_SYNC_SLIRP
   so->so_type = IPPROTO_UDP;
 #endif
-  VBOX_SLIRP_UNLOCK(so->so_mutex);
   return(so->s);
 }
 
@@ -418,7 +392,6 @@ void
 udp_detach(PNATState pData, struct socket *so)
 {
 	/* Correctly update list if detaching last socket in list. */
-        VBOX_SLIRP_LOCK(so->so_mutex);
         VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
 	if (so == udp_last_so) udp_last_so = &udb;
         VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
@@ -427,9 +400,6 @@ udp_detach(PNATState pData, struct socket *so)
 
 	sofree(pData, so);
 
-        if (so != NULL) {
-            VBOX_SLIRP_UNLOCK(so->so_mutex);
-        }
 }
 
 static const struct tos_t udptos[] = {
@@ -449,9 +419,7 @@ udp_tos(so)
 	while(udptos[i].tos) {
 		if ((udptos[i].fport && ntohs(so->so_fport) == udptos[i].fport) ||
 		    (udptos[i].lport && ntohs(so->so_lport) == udptos[i].lport)) {
-                        VBOX_SLIRP_LOCK(so->so_mutex);
 		    	so->so_emu = udptos[i].emu;
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
 			return udptos[i].tos;
 		}
 		i++;
@@ -501,14 +469,6 @@ struct cu_header {
 	uint16_t	pkt_len;		/* packet length */
 } *cu_head;
 
-        VBOX_SLIRP_LOCK(so->so_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-#define return \
-                do {                                        \
-                    VBOX_SLIRP_UNLOCK(so->so_mutex);        \
-                    return;                                 \
-                }while(0)
-#endif
 
 	switch(so->so_emu) {
 
@@ -700,11 +660,6 @@ struct cu_header {
 
 		return;
 	}
-/*see macro definition in the begining of method*/
-#ifdef VBOX_WITH_SYNC_SLIRP
-    return;
-#undef return
-#endif
 }
 
 struct socket *
@@ -721,7 +676,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	}
 	so->s = socket(AF_INET,SOCK_DGRAM,0);
 	so->so_expire = curtime + SO_EXPIRE;
-        VBOX_SLIRP_LOCK(so->so_mutex);
         VBOX_SLIRP_LOCK(pData->udb_mutex);
 	insque(pData, so,&udb);
         VBOX_SLIRP_UNLOCK(pData->udb_mutex);
@@ -732,7 +686,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 
 	if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0) {
 		udp_detach(pData, so);
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return NULL;
 	}
 	setsockopt(so->s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));
@@ -754,7 +707,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	   so->so_expire = 0;
 
 	so->so_state = SS_ISFCONNECTED;
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 
 	return so;
 }

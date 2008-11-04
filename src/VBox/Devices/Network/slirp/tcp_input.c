@@ -255,10 +255,6 @@ do {                                                \
 #endif
 #endif
 
-        if (inso != NULL) {
-            VBOX_SLIRP_LOCK(inso->so_mutex);
-        }
-
 	/*
 	 * If called with m == 0, then we're continuing the connect
 	 */
@@ -268,7 +264,6 @@ do {                                                \
 		/* Re-set a few variables */
 		tp = sototcpcb(so);
 		m = so->so_m;
-                VBOX_SLIRP_LOCK(m->m_mutex);
 		so->so_m = 0;
 		ti = so->so_ti;
 		tiwin = ti->ti_win;
@@ -276,10 +271,6 @@ do {                                                \
 
 		goto cont_conn;
 	}
-        if (inso != NULL) {
-            VBOX_SLIRP_UNLOCK(inso->so_mutex);
-        }
-        VBOX_SLIRP_LOCK(m->m_mutex);
 
 
 	tcpstat.tcps_rcvtotal++;
@@ -373,15 +364,9 @@ do {                                                \
 	 * Locate pcb for segment.
 	 */
 findso:
-        if (so != NULL) {
-            VBOX_SLIRP_UNLOCK(so->so_mutex);
-        }
         VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
 	so = tcp_last_so;
         /* this checking for making sure that we're not trying to hold mutex on head list*/
-        if (tcp_last_so != &tcb) {
-            VBOX_SLIRP_LOCK(so->so_mutex);
-        }
         VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
 
 	if (so->so_fport != ti->ti_dport ||
@@ -389,13 +374,9 @@ findso:
 	    so->so_laddr.s_addr != ti->ti_src.s_addr ||
 	    so->so_faddr.s_addr != ti->ti_dst.s_addr) {
                 /*To make sure that we don't try to release mutex on head of the socket queue*/
-                if (so != &tcb) {
-                    VBOX_SLIRP_UNLOCK(so->so_mutex);
-                }
 		so = solookup(&tcb, ti->ti_src, ti->ti_sport,
 			       ti->ti_dst, ti->ti_dport);
 		if (so) {
-                        VBOX_SLIRP_LOCK(so->so_mutex);
                         VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
 			tcp_last_so = so;
                         VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
@@ -423,17 +404,13 @@ findso:
 	  if ((so = socreate()) == NULL)
 	    goto dropwithreset;
 
-          if (inso != NULL) VBOX_SLIRP_UNLOCK(inso->so_mutex);
 	  if (tcp_attach(pData, so) < 0) {
-            VBOX_SLIRP_UNLOCK(so->so_mutex);
-            VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
 	    free(so); /* Not sofree (if it failed, it's not insqued) */
 #ifdef VBOX_WITH_SYNC_SLIRP
             so = NULL;
 #endif
 	    goto dropwithreset;
 	  }
-          VBOX_SLIRP_LOCK(so->so_mutex);
 
 	  sbreserve(&so->so_snd, tcp_sndspace);
 	  sbreserve(&so->so_rcv, tcp_rcvspace);
@@ -549,9 +526,6 @@ findso:
 				sbdrop(&so->so_snd, acked);
 				tp->snd_una = ti->ti_ack;
 				m_freem(pData, m);
-                                if (m != NULL) {
-                                    VBOX_SLIRP_UNLOCK(m->m_mutex);
-                                }
 
 				/*
 				 * If all outstanding data are acked, stop
@@ -581,7 +555,6 @@ findso:
 				 */
 				if (so->so_snd.sb_cc)
 					(void) tcp_output(pData, tp);
-                                VBOX_SLIRP_UNLOCK(so->so_mutex);
 				return;
 			}
 		} else if (ti->ti_ack == tp->snd_una &&
@@ -621,10 +594,6 @@ findso:
 			 */
 			tp->t_flags |= TF_ACKNOW;
 			tcp_output(pData, tp);
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
-                        if (m != NULL) {
-                           VBOX_SLIRP_UNLOCK(m->m_mutex);
-                        }
 			return;
 		}
 	} /* header prediction */
@@ -725,9 +694,6 @@ findso:
 	    }
 	    tp = tcp_close(pData, tp);
 	    m_free(pData, m);
-            if (m != NULL) {
-                VBOX_SLIRP_UNLOCK(m->m_mutex);
-            }
 	  } else {
 	    /*
 	     * Haven't connected yet, save the current mbuf
@@ -740,10 +706,6 @@ findso:
 	    tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
 	    tp->t_state = TCPS_SYN_RECEIVED;
 	  }
-          VBOX_SLIRP_UNLOCK(so->so_mutex);
-          if (m != NULL) {
-            VBOX_SLIRP_UNLOCK(m->m_mutex);
-          }
 	  return;
 
 	cont_conn:
@@ -1502,10 +1464,6 @@ dodata:
 		(void) tcp_output(pData, tp);
 	}
 
-          VBOX_SLIRP_UNLOCK(so->so_mutex);
-          if (m != NULL) {
-            VBOX_SLIRP_UNLOCK(m->m_mutex);
-          }
 	return;
 
 dropafterack:
@@ -1518,10 +1476,6 @@ dropafterack:
 	m_freem(pData, m);
 	tp->t_flags |= TF_ACKNOW;
 	(void) tcp_output(pData, tp);
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
-        if (m != NULL) {
-          VBOX_SLIRP_UNLOCK(m->m_mutex);
-        }
 	return;
 
 dropwithreset:
@@ -1534,8 +1488,6 @@ dropwithreset:
 		    TH_RST|TH_ACK);
 	}
 
-        if (so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
-        if (m != NULL) VBOX_SLIRP_UNLOCK(m->m_mutex);
 	return;
 
 drop:
@@ -1543,11 +1495,6 @@ drop:
 	 * Drop space held by incoming segment and return.
 	 */
 	m_free(pData, m);
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
-        if (m != NULL) {
-          VBOX_SLIRP_UNLOCK(m->m_mutex);
-        }
-
 	return;
 #ifdef VBOX_WITH_SYNC_SLIRP
 #undef return

@@ -54,10 +54,6 @@ struct socket {
   struct sbuf so_rcv;		/* Receive buffer */
   struct sbuf so_snd;		/* Send buffer */
   void * extra;			/* Extra pointer */
-#ifdef VBOX_WITH_SYNC_SLIRP
-  RTSEMFASTMUTEX so_mutex;          /*per socket mutex*/
-  int   so_destroy;
-#endif
 };
 
 

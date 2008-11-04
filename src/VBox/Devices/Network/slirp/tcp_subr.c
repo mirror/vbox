@@ -275,7 +275,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
-        VBOX_SLIRP_LOCK(so->so_mutex);
 
 	u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
 	free(tp);
@@ -290,7 +289,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 	sbfree(&so->so_rcv);
 	sbfree(&so->so_snd);
 	sofree(pData, so);
-        if(so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
 	tcpstat.tcps_closed++;
 	return ((struct tcpcb *)0);
 }
@@ -452,7 +450,6 @@ tcp_connect(PNATState pData, struct socket *inso)
 
 	DEBUG_CALL("tcp_connect");
 	DEBUG_ARG("inso = %lx", (long)inso);
-        VBOX_SLIRP_LOCK(inso->so_mutex);
 
 	/*
 	 * If it's an SS_ACCEPTONCE socket, no need to socreate()
@@ -462,16 +459,12 @@ tcp_connect(PNATState pData, struct socket *inso)
 		/* FACCEPTONCE already have a tcpcb */
 		so = inso;
 	} else {
-                VBOX_SLIRP_UNLOCK(inso->so_mutex);
 		if ((so = socreate()) == NULL) {
 			/* If it failed, get rid of the pending connection */
 			closesocket(accept(inso->s,(struct sockaddr *)&addr,&addrlen));
-                        VBOX_SLIRP_UNLOCK(inso->so_mutex);
 			return;
 		}
-                VBOX_SLIRP_LOCK(so->so_mutex);
 		if (tcp_attach(pData, so) < 0) {
-                        if(so != NULL) VBOX_SLIRP_UNLOCK(so->so_mutex);
 			free(so); /* NOT sofree */
 			return;
 		}
@@ -483,10 +476,6 @@ tcp_connect(PNATState pData, struct socket *inso)
 
 	if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0) {
 		tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */
-                if (so != inso) {
-                    VBOX_SLIRP_UNLOCK(inso->so_mutex);
-                }
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
 		return;
 	}
 	fd_nonblock(s);
@@ -509,9 +498,6 @@ tcp_connect(PNATState pData, struct socket *inso)
 		so->so_state = SS_NOFDREF; /* Don't select it yet, even though we have an FD */
 					   /* if it's not FACCEPTONCE, it's already NOFDREF */
 	}
-        if (so != inso) {
-            VBOX_SLIRP_UNLOCK(inso->so_mutex);
-        }
 	so->s = s;
 
 	so->so_iptos = tcp_tos(so);
@@ -534,7 +520,6 @@ tcp_connect(PNATState pData, struct socket *inso)
 	tcp_iss += TCP_ISSINCR/2;
 	tcp_sendseqinit(tp);
 	tcp_output(pData, tp);
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 }
 
 /*
@@ -549,7 +534,6 @@ tcp_attach(PNATState pData, struct socket *so)
 
 
         VBOX_SLIRP_LOCK(pData->tcb_mutex);
-        VBOX_SLIRP_LOCK(so->so_mutex);
 	insque(pData, so, &tcb);
         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
@@ -558,7 +542,6 @@ tcp_attach(PNATState pData, struct socket *so)
         so->so_type = IPPROTO_TCP;
 #endif
 
-        VBOX_SLIRP_UNLOCK(so->so_mutex);
 	return 0;
 }
 
