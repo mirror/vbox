@@ -422,6 +422,10 @@ typedef enum VMMGCOPERATION
 
 __BEGIN_DECLS
 
+#ifdef IN_RING3
+int  vmmR3SwitcherInit(PVM pVM);
+void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
+#endif /* IN_RING3 */
 
 #ifdef IN_RING0
 /**

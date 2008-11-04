@@ -95,6 +95,7 @@ VMMR3_SOURCES   = \
 	VMReq.cpp \
 	VMM.cpp \
 	VMMGuruMeditation.cpp \
+	VMMSwitcher.cpp \
 	VMMTests.cpp \
 	HWACCM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
