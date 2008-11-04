@@ -1193,10 +1193,6 @@ endif
 LIB_PTHREAD      ?= pthread
 
 # Xcursor (consider an SDK for this).
-# (LIB_XCURSOR is legacy, remove in a month or two.)
-ifndef VBOX_XCURSOR_LIBS
- VBOX_XCURSOR_LIBS := $(LIB_XCURSOR)
-endif
 ifeq ($(VBOX_XCURSOR_LIBS),)
  ifeq ($(KBUILD_TARGET),solaris)
   VBOX_XCURSOR_LIBS := $(lastword $(wildcard $(PATH_DEVTOOLS_TRG)/libXcursor/*/lib/libXcursor.a))
