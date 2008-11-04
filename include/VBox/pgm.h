@@ -476,11 +476,13 @@ VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPaging
  * @{
  */
 VMMR3DECL(int)      PGMR3Init(PVM pVM);
+VMMR3DECL(int)      PGMR3InitCPU(PVM pVM);
 VMMR3DECL(int)      PGMR3InitDynMap(PVM pVM);
 VMMR3DECL(int)      PGMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)     PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(void)     PGMR3Reset(PVM pVM);
 VMMR3DECL(int)      PGMR3Term(PVM pVM);
+VMMR3DECL(int)      PGMR3TermCPU(PVM pVM);
 VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
 VMMR3DECL(int)      PGMR3ChangeShwPDMappings(PVM pVM, bool fEnable);
 VMMR3DECL(int)      PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode);

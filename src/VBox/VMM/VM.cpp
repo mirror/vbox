@@ -126,6 +126,7 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 static int               vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM);
 static int               vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
+static int               vmR3InitVMCpu(PVM pVM);
 static int               vmR3InitRing0(PVM pVM);
 static int               vmR3InitGC(PVM pVM);
 static int               vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
@@ -520,54 +521,59 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                     VMR3Relocate(pVM, 0);
                     LogFlow(("Ring-3 init succeeded\n"));
 
-                    /*
-                     * Init the Ring-0 components.
-                     */
-                    rc = vmR3InitRing0(pVM);
+                    /* Initialize the VM CPU components. */
+                    rc = vmR3InitVMCpu(pVM);
                     if (VBOX_SUCCESS(rc))
                     {
-                        /* Relocate again, because some switcher fixups depends on R0 init results. */
-                        VMR3Relocate(pVM, 0);
+                        /*
+                         * Init the Ring-0 components.
+                         */
+                        rc = vmR3InitRing0(pVM);
+                        if (VBOX_SUCCESS(rc))
+                        {
+                            /* Relocate again, because some switcher fixups depends on R0 init results. */
+                            VMR3Relocate(pVM, 0);
 
 #ifdef VBOX_WITH_DEBUGGER
-                        /*
-                         * Init the tcp debugger console if we're building
-                         * with debugger support.
-                         */
-                        void *pvUser = NULL;
-                        rc = DBGCTcpCreate(pVM, &pvUser);
-                        if (    VBOX_SUCCESS(rc)
-                            ||  rc == VERR_NET_ADDRESS_IN_USE)
-                        {
-                            pUVM->vm.s.pvDBGC = pvUser;
-#endif
                             /*
-                            * Init the Guest Context components.
-                            */
-                            rc = vmR3InitGC(pVM);
-                            if (VBOX_SUCCESS(rc))
+                             * Init the tcp debugger console if we're building
+                             * with debugger support.
+                             */
+                            void *pvUser = NULL;
+                            rc = DBGCTcpCreate(pVM, &pvUser);
+                            if (    VBOX_SUCCESS(rc)
+                                ||  rc == VERR_NET_ADDRESS_IN_USE)
                             {
+                                pUVM->vm.s.pvDBGC = pvUser;
+#endif
                                 /*
-                                 * Now we can safely set the VM halt method to default.
+                                 * Init the Guest Context components.
                                  */
-                                rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
-                                if (RT_SUCCESS(rc))
+                                rc = vmR3InitGC(pVM);
+                                if (VBOX_SUCCESS(rc))
                                 {
                                     /*
-                                    * Set the state and link into the global list.
+                                    * Now we can safely set the VM halt method to default.
                                     */
-                                    vmR3SetState(pVM, VMSTATE_CREATED);
-                                    pUVM->pNext = g_pUVMsHead;
-                                    g_pUVMsHead = pUVM;
-                                    return VINF_SUCCESS;
+                                    rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        /*
+                                        * Set the state and link into the global list.
+                                        */
+                                        vmR3SetState(pVM, VMSTATE_CREATED);
+                                        pUVM->pNext = g_pUVMsHead;
+                                        g_pUVMsHead = pUVM;
+                                        return VINF_SUCCESS;
+                                    }
                                 }
-                            }
 #ifdef VBOX_WITH_DEBUGGER
-                            DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
-                            pUVM->vm.s.pvDBGC = NULL;
-                        }
+                                DBGCTcpTerminate(pVM, pUVM->vm.s.pvDBGC);
+                                pUVM->vm.s.pvDBGC = NULL;
+                            }
 #endif
-                        //..
+                            //..
+                        }
                     }
                     vmR3Destroy(pVM);
                 }
@@ -751,6 +757,52 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
     }
 
     LogFlow(("vmR3InitRing3: returns %Vrc\n", rc));
+    return rc;
+}
+
+/**
+ * Initializes all VM CPU components of the VM
+ */
+static int vmR3InitVMCpu(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+
+    rc = CPUMR3InitCPU(pVM);
+    if (VBOX_SUCCESS(rc))
+    {
+        rc = HWACCMR3InitCPU(pVM);
+        if (VBOX_SUCCESS(rc))
+        {
+            rc = PGMR3InitCPU(pVM);
+            if (VBOX_SUCCESS(rc))
+            {
+                rc = TMR3InitCPU(pVM);
+                if (VBOX_SUCCESS(rc))
+                {
+                    rc = VMMR3InitCPU(pVM);
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        rc = EMR3InitCPU(pVM);
+                        if (VBOX_SUCCESS(rc))
+                            return VINF_SUCCESS;
+
+                        rc2 = VMMR3TermCPU(pVM);
+                        AssertRC(rc2);
+                    }
+                    rc2 = TMR3TermCPU(pVM);
+                    AssertRC(rc2);
+                }
+                rc2 = PGMR3TermCPU(pVM);
+                AssertRC(rc2);
+            }
+            rc2 = HWACCMR3TermCPU(pVM);
+            AssertRC(rc2);
+        }
+        rc2 = CPUMR3TermCPU(pVM);
+        AssertRC(rc2);
+    }
+    LogFlow(("vmR3InitVMCpu: returns %Vrc\n", rc));
     return rc;
 }
 

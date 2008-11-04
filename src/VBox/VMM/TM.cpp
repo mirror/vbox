@@ -600,6 +600,17 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Initializes the per-VCPU TM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) TMR3InitCPU(PVM pVM)
+{
+    LogFlow(("TMR3InitCPU\n"));
+    return VINF_SUCCESS;
+}
 
 /**
  * Checks if the host CPU has a fixed TSC frequency.
@@ -872,6 +883,19 @@ VMMR3DECL(int) TMR3Term(PVM pVM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Terminates the per-VCPU TM.
+ *
+ * Termination means cleaning up and freeing all resources,
+ * the VM it self is at this point powered off or suspended.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) TMR3TermCPU(PVM pVM)
+{
+    return 0;
+}
 
 /**
  * The VM is being reset.

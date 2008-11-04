@@ -217,6 +217,17 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Initializes the per-VCPU CPUM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) CPUMR3InitCPU(PVM pVM)
+{
+    LogFlow(("CPUMR3InitCPU\n"));
+    return VINF_SUCCESS;
+}
 
 /**
  * Initializes the emulated CPU's cpuid information.
@@ -645,6 +656,19 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
     return 0;
 }
 
+/**
+ * Terminates the per-VCPU CPUM.
+ *
+ * Termination means cleaning up and freeing all resources,
+ * the VM it self is at this point powered off or suspended.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
+{
+    return 0;
+}
 
 /**
  * Resets the CPU.

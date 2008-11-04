@@ -210,6 +210,18 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
 }
 
 /**
+ * Initializes the per-VCPU HWACCM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
+{
+    LogFlow(("HWACCMR3InitCPU\n"));
+    return VINF_SUCCESS;
+}
+
+/**
  * Turns off normal raw mode features
  *
  * @param   pVM         The VM to operate on.
@@ -830,6 +842,20 @@ VMMR3DECL(int) HWACCMR3Term(PVM pVM)
         MMHyperFree(pVM, pVM->hwaccm.s.paStatExitReason);
         pVM->hwaccm.s.paStatExitReason = NULL;
     }
+    return 0;
+}
+
+/**
+ * Terminates the per-VCPU HWACCM.
+ *
+ * Termination means cleaning up and freeing all resources,
+ * the VM it self is at this point powered off or suspended.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
+{
     return 0;
 }
 
