@@ -76,13 +76,11 @@ ip_input(PNATState pData, struct mbuf *m)
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("m_len = %d", m->m_len);
 
-        VBOX_SLIRP_LOCK(m->m_mutex);
 
 	ipstat.ips_total++;
 
 	if (m->m_len < sizeof (struct ip)) {
 		ipstat.ips_toosmall++;
-                VBOX_SLIRP_UNLOCK(m->m_mutex);
 		return;
 	}
 
@@ -196,13 +194,10 @@ ip_input(PNATState pData, struct mbuf *m)
 			ipstat.ips_fragments++;
 			ip = ip_reass(pData, (struct ipasfrag *)ip, fp);
 			if (ip == 0) {
-                            VBOX_SLIRP_UNLOCK(m->m_mutex);
                             return;
                         }
 			ipstat.ips_reassembled++;
-                        VBOX_SLIRP_UNLOCK(m->m_mutex);
 			m = dtom(pData, ip);
-                        VBOX_SLIRP_LOCK(m->m_mutex);
 		} else
 			if (fp)
 		   	   ip_freef(pData, fp);
@@ -228,15 +223,9 @@ ip_input(PNATState pData, struct mbuf *m)
 		ipstat.ips_noproto++;
 		m_free(pData, m);
 	}
-        if (m != NULL) {
-                VBOX_SLIRP_UNLOCK(m->m_mutex);
-        }
 	return;
 bad:
 	m_freem(pData, m);
-        if (m != NULL) {
-                VBOX_SLIRP_UNLOCK(m->m_mutex);
-        }
 	return;
 }
 

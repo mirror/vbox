@@ -383,26 +383,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                     }
 #endif
                     so_next = so->so_next;
-#ifdef VBOX_WITH_SYNC_SLIRP
-                    VBOX_SLIRP_LOCK(so->so_mutex);
-                    while (so->so_destroy == 1) {
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
-                        VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
-                        free(so);
-                        so = so_next;
-                        so_next = so->so_next;
-                        if (so == &tcb) {
-                            goto tcp_loop_begin;
-                        }
-                        VBOX_SLIRP_LOCK(so->so_mutex);
-                    }
-#endif
                     VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
 			 * See if we need a tcp_fasttimo
 			 */
-			if (time_fasttimo == 0 && so->so_tcpcb->t_flags & TF_DELACK)
+			if (time_fasttimo == 0
+                            && so->so_tcpcb
+                            &&  so->so_tcpcb->t_flags & TF_DELACK)
 			   time_fasttimo = curtime; /* Flag when we want a fasttimo */
 
 			/*
@@ -450,7 +438,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			}
                 before_loop_ends:
                         /*Release of global tcb mutex happens in the head of loop*/
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
                         VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                         so = so_next;
@@ -472,7 +459,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                     }
 #endif
                     so_next = so->so_next;
-                    VBOX_SLIRP_LOCK(so->so_mutex);
                     VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 			/*
@@ -501,7 +487,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 			}
                         before_udp_loop_end:
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
                         VBOX_SLIRP_LOCK(pData->udb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                         so = so_next;
@@ -590,19 +575,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     so_next = so->so_next;
 
 
-                    VBOX_SLIRP_LOCK(so->so_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                    while (so->so_destroy == 1) {
-                        VBOX_SLIRP_UNLOCK(so->so_mutex);
-                        VBOX_SLIRP_LOCK_DESTROY(so->so_mutex);
-                        free(so);
-                        so = so_next;
-                        so_next = so->so_next;
-                        if (so == &tcb)
-                            goto loop_begin;
-                        VBOX_SLIRP_LOCK(so->so_mutex);
-                    }
-#endif
                     VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 			/*
@@ -718,7 +690,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			} /* SS_ISFCONNECTING */
 #endif
                     before_loop_ends:
-                    VBOX_SLIRP_UNLOCK(so->so_mutex);
                     VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                     so = so_next;
@@ -742,13 +713,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                     }
 #endif
 		    so_next = so->so_next;
-                    VBOX_SLIRP_LOCK(so->so_mutex);
                     VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
                             sorecvfrom(pData, so);
                         }
-                    VBOX_SLIRP_UNLOCK(so->so_mutex);
                     VBOX_SLIRP_LOCK(pData->udb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                     so = so_next;
@@ -883,7 +852,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         m = m_get(pData);
         if (!m)
             return;
-        VBOX_SLIRP_LOCK(m->m_mutex);
         /* Note: we add to align the IP header */
         if (M_FREEROOM(m) < pkt_len + 2) {
             m_inc(m, pkt_len + 2);
@@ -895,7 +863,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         m->m_len -= 2 + ETH_HLEN;
 
         ip_input(pData, m);
-        VBOX_SLIRP_UNLOCK(m->m_mutex);
         break;
     default:
         break;

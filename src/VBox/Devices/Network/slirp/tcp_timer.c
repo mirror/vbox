@@ -63,7 +63,6 @@ tcp_fasttimo(PNATState pData)
                 break;
             }
             so_next = so->so_next;
-            VBOX_SLIRP_LOCK(so->so_mutex);
             VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 #endif
 		if ((tp = (struct tcpcb *)so->so_tcpcb) &&
@@ -73,7 +72,6 @@ tcp_fasttimo(PNATState pData)
 			tcpstat.tcps_delack++;
 			(void) tcp_output(pData, tp);
 		}
-                VBOX_SLIRP_UNLOCK(so->so_mutex);
                 VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 so = so_next;
@@ -116,7 +114,6 @@ tcp_slowtimo(PNATState pData)
                     break;
                 }
                 ipnxt = ip->so_next;
-                VBOX_SLIRP_LOCK(ip->so_mutex);
                 VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 #endif
 		ipnxt = ip->so_next;
@@ -136,7 +133,6 @@ tcp_slowtimo(PNATState pData)
 tpgone:
 		;
 before_loop_ends:
-                VBOX_SLIRP_UNLOCK(ip->so_mutex);
                 VBOX_SLIRP_LOCK(pData->tcb_mutex);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 ip=ipnxt;
