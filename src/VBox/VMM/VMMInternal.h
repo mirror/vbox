@@ -350,6 +350,7 @@ typedef struct VMM
 /** Pointer to VMM. */
 typedef VMM *PVMM;
 
+
 /**
  * VMMCPU Data (part of VMCPU)
  */

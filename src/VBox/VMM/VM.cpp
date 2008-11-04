@@ -191,7 +191,7 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  */
 VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
 {
-    LogFlow(("VMR3Create: cCPUs=%d pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", cCPUs, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
+    LogFlow(("VMR3Create: cCPUs=%RU32 pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", cCPUs, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
 
     /*
      * Because of the current hackiness of the applications
@@ -238,6 +238,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
              * Call vmR3CreateU in the EMT thread and wait for it to finish.
              */
             PVMREQ pReq;
+            /** @todo SMP: VMREQDEST_ANY -> VMREQDEST_CPU0 */
             rc = VMR3ReqCallU(pUVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU,
                               4, pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
@@ -377,11 +378,12 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
  */
 static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
 {
+    uint32_t i;
+
     /*
-     * Create the UVM, initialize the fundamental stuff (VM+MMR3Heap+STAM)
-     * and start the emulation thread (EMT).
+     * Create and initialize the UVM.
      */
-    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpu[cCPUs]));
+    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpus[cCPUs]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
     pUVM->u32Magic = UVM_MAGIC;
 
@@ -394,61 +396,67 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
     pUVM->vm.s.enmHaltMethod = VMHALTMETHOD_BOOTSTRAP;
 
+    /* Initialize the VMCPU array in the UVM. */
+    for (i = 0; i < cCPUs; i++)
+    {
+        pUVM->aCpus[i].pUVM  = pUVM;
+        pUVM->aCpus[i].idCPU = i;
+    }
+
     /* Allocate a TLS entry to store the VMINTUSERPERVMCPU pointer. */
     int rc = RTTlsAllocEx(&pUVM->vm.s.idxTLS, NULL);
     AssertRC(rc);
-    if (RT_FAILURE(rc))
-    {
-        RTMemFree(pUVM);
-        return rc;
-    }
-
-    /* Initialize the VMCPU array in the UVM. */
-    for (unsigned i=0;i<cCPUs;i++)
-    {
-        pUVM->aCpu[i].pUVM  = pUVM;
-        pUVM->aCpu[i].idCPU = i;
-    }
-
-    rc = RTSemEventCreate(&pUVM->vm.s.EventSemWait);
     if (RT_SUCCESS(rc))
     {
-        rc = STAMR3InitUVM(pUVM);
+        rc = RTSemEventCreate(&pUVM->vm.s.EventSemWait);
         if (RT_SUCCESS(rc))
         {
-            rc = MMR3InitUVM(pUVM);
+            /*
+             * Init fundamental (sub-)components - STAM, MMR3Heap and PDMLdr.
+             */
+            rc = STAMR3InitUVM(pUVM);
             if (RT_SUCCESS(rc))
             {
-                rc = PDMR3InitUVM(pUVM);
+                rc = MMR3InitUVM(pUVM);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Start the emulation threads for all VMCPUs. */
-                    for (unsigned i=0;i<cCPUs;i++)
-                    {
-                        rc = RTThreadCreate(&pUVM->aCpu[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpu[i], _1M,
-                                            RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
-                        if (RT_FAILURE(rc))
-                            break;
-
-                        pUVM->aCpu[i].vm.s.NativeThreadEMT = RTThreadGetNative(pUVM->aCpu[i].vm.s.ThreadEMT);
-                    }
-
+                    rc = PDMR3InitUVM(pUVM);
                     if (RT_SUCCESS(rc))
                     {
-                        *ppUVM = pUVM;
-                        return VINF_SUCCESS;
-                    }
+                        /*
+                         * Start the emulation threads for all VMCPUs.
+                         */
+                        for (i = 0; i < cCPUs; i++)
+                        {
+                            rc = RTThreadCreate(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
+                                                RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
+                            if (RT_FAILURE(rc))
+                                break;
 
-                    /* bail out. */
-                    PDMR3TermUVM(pUVM);
+                            pUVM->aCpus[i].vm.s.NativeThreadEMT = RTThreadGetNative(pUVM->aCpus[i].vm.s.ThreadEMT);
+                        }
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            *ppUVM = pUVM;
+                            return VINF_SUCCESS;
+                        }
+
+                        /* bail out. */
+                        while (i-- > 0)
+                        {
+                            /** @todo rainy day: terminate the EMTs. */
+                        }
+                        PDMR3TermUVM(pUVM);
+                    }
+                    MMR3TermUVM(pUVM);
                 }
-                MMR3TermUVM(pUVM);
+                STAMR3TermUVM(pUVM);
             }
-            STAMR3TermUVM(pUVM);
+            RTSemEventDestroy(pUVM->vm.s.EventSemWait);
         }
-        RTSemEventDestroy(pUVM->vm.s.EventSemWait);
+        RTTlsFree(pUVM->vm.s.idxTLS);
     }
-    RTTlsFree(pUVM->vm.s.idxTLS);
     RTMemFree(pUVM);
     return rc;
 }
@@ -494,6 +502,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCPUs == cCPUs);
+        AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCPUs=%RU32\n",
              pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCPUs));
@@ -502,12 +511,11 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->offVMCPU = RT_OFFSETOF(VM, aCpu);
 
         for (uint32_t i = 0; i < pVM->cCPUs; i++)
         {
-            pVM->aCpu[i].hNativeThread = pUVM->aCpu[i].vm.s.NativeThreadEMT;
-            Assert(pVM->aCpu[i].hNativeThread != NIL_RTNATIVETHREAD);
+            pVM->aCpus[i].hNativeThread = pUVM->aCpus[i].vm.s.NativeThreadEMT;
+            Assert(pVM->aCpus[i].hNativeThread != NIL_RTNATIVETHREAD);
         }
 
 
@@ -791,6 +799,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
     return rc;
 }
 
+
 /**
  * Initializes all VM CPU components of the VM
  */
@@ -816,7 +825,10 @@ static int vmR3InitVMCpu(PVM pVM)
                     {
                         rc = EMR3InitCPU(pVM);
                         if (VBOX_SUCCESS(rc))
+                        {
+                            LogFlow(("vmR3InitVMCpu: returns %Rrc\n", VINF_SUCCESS));
                             return VINF_SUCCESS;
+                        }
 
                         rc2 = VMMR3TermCPU(pVM);
                         AssertRC(rc2);
@@ -1588,7 +1600,7 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
          */
         Assert(pUVM->vm.s.fTerminateEMT);
         /** @todo SMP */
-        rc = RTThreadWait(pUVM->aCpu[0].vm.s.ThreadEMT, 30000, NULL);
+        rc = RTThreadWait(pUVM->aCpus[0].vm.s.ThreadEMT, 30000, NULL);
         AssertMsgRC(rc, ("EMT thread wait failed, rc=%Rrc\n", rc));
 
         /*
@@ -1743,7 +1755,7 @@ static void vmR3DestroyUVM(PUVM pUVM)
         RTSemEventSignal(pUVM->vm.s.EventSemWait);
 
         /** @todo SMP */
-        int rc2 = RTThreadWait(pUVM->aCpu[0].vm.s.ThreadEMT, 2000, NULL);
+        int rc2 = RTThreadWait(pUVM->aCpus[0].vm.s.ThreadEMT, 2000, NULL);
         AssertRC(rc2);
     }
     RTSemEventDestroy(pUVM->vm.s.EventSemWait);
@@ -3165,6 +3177,7 @@ DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal,
     }
 }
 
+
 /**
  * Returns the VMCPU id of the current EMT thread.
  *
@@ -3178,6 +3191,7 @@ VMMR3DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
     AssertMsg(pUVMCPU, ("RTTlsGet %d failed!\n", pVM->pUVM->vm.s.idxTLS));
     return pUVMCPU->idCPU;
 }
+
 
 /**
  * Returns the native handle of the current EMT VMCPU thread.
@@ -3196,6 +3210,7 @@ VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThread(PVM pVM)
     return pUVMCPU->vm.s.NativeThreadEMT;
 }
 
+
 /**
  * Returns the native handle of the current EMT VMCPU thread.
  *
@@ -3213,6 +3228,7 @@ VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThreadU(PUVM pUVM)
     return pUVMCPU->vm.s.NativeThreadEMT;
 }
 
+
 /**
  * Returns the handle of the current EMT VMCPU thread.
  *
@@ -3229,6 +3245,7 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThread(PVM pVM)
 
     return pUVMCPU->vm.s.ThreadEMT;
 }
+
 
 /**
  * Returns the handle of the current EMT VMCPU thread.

@@ -32,18 +32,17 @@
 #ifndef ___VBox_uvm_h
 #define ___VBox_uvm_h
 
-
 #include <VBox/types.h>
 
-/* Forward decl. */
-struct UVM;
 
 /**
  * Per virtual CPU ring-3 (user mode) data.
  */
 typedef struct UVMCPU
 {
-    struct UVM                     *pUVM;
+    /** Pointer to the UVM structure.  */
+    PUVM                            pUVM;
+    /** The virtual CPU ID.  */
     RTCPUID                         idCPU;
 
     /** The VM internal data. */
@@ -54,7 +53,10 @@ typedef struct UVMCPU
 #endif
         uint8_t                     padding[768];
     } vm;
-} UVMCPU, *PUVMCPU;
+} UVMCPU;
+/** Pointer to the per virtual CPU ring-3 (user mode) data. */
+typedef UVMCPU *PUVMCPU;
+
 
 /**
  * The ring-3 (user mode) VM structure.
@@ -114,8 +116,8 @@ typedef struct UVM
         uint8_t                 padding[256];
     } stam;
 
-    /* Per virtual CPU data. */
-    UVMCPU                      aCpu[1];
+    /** Per virtual CPU data. */
+    UVMCPU                      aCpus[1];
 } UVM;
 
 /** The UVM::u32Magic value (Brad Mehldau). */

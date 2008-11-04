@@ -217,6 +217,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Initializes the per-VCPU CPUM.
  *
@@ -228,6 +229,7 @@ VMMR3DECL(int) CPUMR3InitCPU(PVM pVM)
     LogFlow(("CPUMR3InitCPU\n"));
     return VINF_SUCCESS;
 }
+
 
 /**
  * Initializes the emulated CPU's cpuid information.
@@ -656,6 +658,7 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
     return 0;
 }
 
+
 /**
  * Terminates the per-VCPU CPUM.
  *
@@ -669,6 +672,7 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
 {
     return 0;
 }
+
 
 /**
  * Resets the CPU.
