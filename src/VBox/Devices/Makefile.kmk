@@ -22,6 +22,8 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+VBOX_PATH_DEVICES_SRC := $(PATH_SUB_CURRENT)
+
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
 ifdef VBOX_WITH_VMI
@@ -37,8 +39,8 @@ ifdef VBOX_WITH_INTEL_PXE
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
 else
  # Subdir with complex makefile.
- SUBDIRS_LIBRARIES += PC/Etherboot-src
- SUBDIRS_CLEAN     += PC/Etherboot-src
+ SUBDIRS_LIBRARIES += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
+ SUBDIRS_CLEAN     += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
 endif
 
 #
