@@ -53,7 +53,7 @@ VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3LogModifyGroups, 2, pVM, pszGroupSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     return rc;
@@ -70,7 +70,7 @@ VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
 static DECLCALLBACK(int) dbgfR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
 {
     int rc = RTLogGroupSettings(NULL, pszGroupSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = VMMR3UpdateLoggers(pVM);
     return rc;
 }
@@ -90,7 +90,7 @@ VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3LogModifyFlags, 2, pVM, pszFlagSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     return rc;
@@ -107,7 +107,7 @@ VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
 static DECLCALLBACK(int) dbgfR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
 {
     int rc = RTLogFlags(NULL, pszFlagSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = VMMR3UpdateLoggers(pVM);
     return rc;
 }
@@ -127,7 +127,7 @@ VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3LogModifyDestinations, 2, pVM, pszDestSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     return rc;
@@ -144,7 +144,7 @@ VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
 static DECLCALLBACK(int) dbgfR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
 {
     int rc = VERR_NOT_IMPLEMENTED; //RTLogDestination(NULL, pszDestSettings);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = VMMR3UpdateLoggers(pVM);
     return rc;
 }

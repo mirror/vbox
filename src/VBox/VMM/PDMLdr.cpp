@@ -287,7 +287,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     int rc = SUPR3HardenedVerifyFile(pModule->szFilename, "pdmR3LoadR3U", NULL);
     if (RT_SUCCESS(rc))
         rc = RTLdrLoad(pModule->szFilename, &pModule->hLdrMod);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pModule->pNext = pUVM->pdm.s.pModules;
         pUVM->pdm.s.pModules = pModule;
@@ -341,7 +341,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
         {
             RTRCPTR RCPtr = 0;
             rc = VMMR3GetImportRC(pVM, pszSymbol, &RCPtr);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 *pValue = RCPtr;
         }
         else if (   !strncmp(pszSymbol, "TM", 2)
@@ -349,7 +349,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
         {
             RTRCPTR RCPtr = 0;
             rc = TMR3GetImportRC(pVM, pszSymbol, &RCPtr);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 *pValue = RCPtr;
         }
         else
@@ -357,7 +357,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
             AssertMsg(!pszModule, ("Unknown builtin symbol '%s' for module '%s'!\n", pszSymbol, pModule->szName)); NOREF(pModule);
             rc = VERR_SYMBOL_NOT_FOUND;
         }
-        if (VBOX_SUCCESS(rc) || pszModule)
+        if (RT_SUCCESS(rc) || pszModule)
             return rc;
     }
 
@@ -374,7 +374,7 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
         {
             /* Search for the symbol. */
             int rc = RTLdrGetSymbolEx(pCur->hLdrMod, pCur->pvBits, pCur->ImageBase, pszSymbol, pValue);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 AssertMsg(*pValue - pCur->ImageBase < RTLdrSize(pCur->hLdrMod),
                           ("%RRv-%RRv %s %RRv\n", (RTRCPTR)pCur->ImageBase,
@@ -454,7 +454,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     int rc = SUPR3HardenedVerifyFile(pszFilename, "PDMR3LdrLoadRC", NULL);
     if (RT_SUCCESS(rc))
         rc = RTLdrOpen(pszFilename, &pModule->hLdrMod);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Allocate space in the hypervisor.
@@ -462,11 +462,11 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
         size_t cb = RTLdrSize(pModule->hLdrMod);
         cb = RT_ALIGN_Z(cb, PAGE_SIZE);
         rc = SUPPageAlloc(cb >> PAGE_SHIFT, &pModule->pvBits);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTGCPTR GCPtr;
             rc = MMR3HyperMapHCRam(pVM, pModule->pvBits, cb, true, pModule->szName, &GCPtr);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
@@ -479,7 +479,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                 Args.pVM = pVM;
                 Args.pModule = pModule;
                 rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmR3GetImportRC, &Args);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /*
                      * Insert the module.
@@ -515,7 +515,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     RTMemTmpFree(pszFile);
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return VMSetError(pVM, rc, RT_SRC_POS, N_("Cannot load GC module %s"), pszFilename);
     return rc;
 }
@@ -573,7 +573,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
      */
     void *pvImageBase;
     int rc = SUPLoadModule(pszFilename, pszName, &pvImageBase);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pModule->hLdrMod = NIL_RTLDRMOD;
         pModule->ImageBase = (uintptr_t)pvImageBase;
@@ -601,7 +601,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
     LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Vrc\n", pszName, rc));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
-    if (VBOX_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
+    if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
         return VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
     return rc;
 }
@@ -635,7 +635,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *p
         {
             RTUINTPTR Value = 0;
             int rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pszSymbol, &Value);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 *ppvValue = (void *)(uintptr_t)Value;
                 Assert((uintptr_t)*ppvValue == Value);
@@ -689,7 +689,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *p
             &&  !strcmp(pModule->szName, pszModule))
         {
             int rc = SUPGetSymbolR0((void *)(uintptr_t)pModule->ImageBase, pszSymbol, (void **)ppvValue);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgRC(rc, ("Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
                 LogRel(("PDMGetSymbol: Couldn't find symbol '%s' in module '%s'\n", pszSymbol, pszModule));
@@ -779,7 +779,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
         {
             RTUINTPTR Value;
             int rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pszSymbol, &Value);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 *pRCPtrValue = (RTGCPTR)Value;
                 Assert(*pRCPtrValue == Value);
@@ -966,7 +966,7 @@ static char *pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fSha
 
     rc = fShared ? RTPathSharedLibs(szPath, sizeof(szPath))
                  : RTPathAppPrivateArch(szPath, sizeof(szPath));
-    if (!VBOX_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
         AssertMsgFailed(("RTPathProgram(,%d) failed rc=%d!\n", sizeof(szPath), rc));
         return NULL;
@@ -1141,7 +1141,7 @@ VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvA
                              pCur->ImageBase,
                              pCur->eType == PDMMOD_TYPE_RC ? RTLdrSize(pCur->hLdrMod) : 0,
                              pCur->eType == PDMMOD_TYPE_RC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     return VINF_SUCCESS;

@@ -64,7 +64,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, PDBGFADDRESS pAddress, RTSEL Sel, R
     {
         SELMSELINFO SelInfo;
         int rc = SELMR3GetSelectorInfo(pVM, Sel, &SelInfo);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* check limit. */

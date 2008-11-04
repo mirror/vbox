@@ -107,7 +107,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
     int rc = VINF_SUCCESS;
     if (pszHandlerR0)
         rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszModR0, pszHandlerR0, &pfnHandlerR0);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Resolve the GC handler.
@@ -116,7 +116,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
         if (pszHandlerRC)
             rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerRC);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             return PGMHandlerPhysicalRegisterEx(pVM, enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3,
                                                 pfnHandlerR0, pvUserR0, pfnHandlerRC, pvUserRC, pszDesc);
 
@@ -250,7 +250,7 @@ VMMR3DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
      */
     RTRCPTR pfnHandlerRC;
     int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, pszHandlerRC, &pfnHandlerRC);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return PGMR3HandlerVirtualRegisterEx(pVM, enmType, GCPtr, GCPtrLast, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc);
 
     AssertMsgFailed(("Failed to resolve %s.%s, rc=%Vrc.\n", pszModRC, pszHandlerRC, rc));
@@ -325,7 +325,7 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
     unsigned cPages = (RT_ALIGN((RTGCUINTPTR)GCPtrLast + 1, PAGE_SIZE) - ((RTGCUINTPTR)GCPtr & PAGE_BASE_GC_MASK)) >> PAGE_SHIFT;
     PPGMVIRTHANDLER pNew;
     int rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMVIRTHANDLER, aPhysToVirt[cPages]), 0, MM_TAG_PGM_HANDLERS, (void **)&pNew); /** @todo r=bird: incorrect member name PhysToVirt? */
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     pNew->Core.Key      = GCPtr;

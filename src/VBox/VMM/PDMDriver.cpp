@@ -105,7 +105,7 @@ VMMR3DECL(int) PDMR3RegisterDrivers(PVM pVM, FNPDMVBOXDRIVERSREGISTER pfnCallbac
     RegCB.pVM               = pVM;
 
     int rc = pfnCallback(&RegCB.Core, VBOX_VERSION);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         AssertMsgFailed(("VBoxDriversRegister failed with rc=%Vrc\n"));
 
     return rc;
@@ -145,7 +145,7 @@ int pdmR3DrvInit(PVM pVM)
     int rc = CFGMR3QueryBool(pDriversNode, "LoadBuiltin", &fLoadBuiltin);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
         fLoadBuiltin = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
         return rc;
@@ -158,7 +158,7 @@ int pdmR3DrvInit(PVM pVM)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DrvLoad(pVM, &RegCB, pszFilename, "VBoxDD");
         RTMemTmpFree(pszFilename);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -177,7 +177,7 @@ int pdmR3DrvInit(PVM pVM)
             AssertMsgFailed(("configuration error: The module name is too long, cchName=%d.\n", CFGMR3GetNameLen(pCur)));
             return VERR_PDM_MODULE_NAME_TOO_LONG;
         }
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
             return rc;
@@ -188,7 +188,7 @@ int pdmR3DrvInit(PVM pVM)
         rc = CFGMR3QueryString(pCur, "Path", &szFilename[0], sizeof(szFilename));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             strcpy(szFilename, szName);
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
             return rc;
@@ -215,7 +215,7 @@ int pdmR3DrvInit(PVM pVM)
          * Load the module and register it's drivers.
          */
         rc = pdmR3DrvLoad(pVM, &RegCB, szFilename, szName);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -239,18 +239,18 @@ static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename
      * Load it.
      */
     int rc = pdmR3LoadR3U(pVM->pUVM, pszFilename, pszName);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Get the registration export and call it.
          */
         FNPDMVBOXDRIVERSREGISTER *pfnVBoxDriversRegister;
         rc = PDMR3LdrGetSymbolR3(pVM, pszName, "VBoxDriversRegister", (void **)&pfnVBoxDriversRegister);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log(("PDM: Calling VBoxDriversRegister (%p) of %s (%s)\n", pfnVBoxDriversRegister, pszName, pszFilename));
             rc = pfnVBoxDriversRegister(&pRegCB->Core, VBOX_VERSION);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded driver module %s (%s).\n", pszName, pszFilename));
             else
                 AssertMsgFailed(("VBoxDriversRegister failed with rc=%Vrc\n"));
@@ -512,7 +512,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
         {
             char *pszName;
             rc = CFGMR3QueryStringAlloc(pNode, "Driver", &pszName);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Find the driver and allocate instance data.
@@ -525,7 +525,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                     PCFGMNODE pConfigNode = CFGMR3GetChild(pNode, "Config");
                     if (!pConfigNode)
                         rc = CFGMR3InsertNode(pNode, "Config", &pConfigNode);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         CFGMR3SetRestrictedRoot(pConfigNode);
 
@@ -562,7 +562,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
 
                             Log(("PDM: Constructing driver '%s' instance %d...\n", pNew->pDrvReg->szDriverName, pNew->iInstance));
                             rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 *ppBaseInterface = &pNew->IBase;
                                 rc = VINF_SUCCESS;
@@ -700,17 +700,17 @@ static DECLCALLBACK(int) pdmR3DrvHlp_MountPrepare(PPDMDRVINS pDrvIns, const char
      * Construct the basic attached driver configuration.
      */
     int rc = CFGMR3InsertNode(pDrvIns->Internal.s.pCfgHandle, "AttachedDriver", &pNode);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = CFGMR3InsertString(pNode, "Driver", pszCoreDriver);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             PCFGMNODE pCfg;
             rc = CFGMR3InsertNode(pNode, "Config", &pCfg);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = CFGMR3InsertString(pCfg, "Path", pszFilename);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     LogFlow(("pdmR3DrvHlp_MountPrepare: caller='%s'/%d: returns %Vrc (Driver=%s)\n",
                              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, rc, pszCoreDriver));

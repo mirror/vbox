@@ -833,7 +833,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage
      */
     uint32_t cbWritten;
     int rc2 = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, &cbWritten);
-    if (VBOX_SUCCESS(rc2))
+    if (RT_SUCCESS(rc2))
         pRegFrame->rip += pCpu->opsize;
     else if (rc2 == VERR_EM_INTERPRETER)
     {
@@ -950,7 +950,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
      */
     uint32_t cb;
     int rc = EMInterpretInstructionCPU(pVM, pCpu, pRegFrame, pvFault, &cb);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pRegFrame->rip += pCpu->opsize;
     else if (rc == VERR_EM_INTERPRETER)
     {
@@ -1318,7 +1318,7 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                 if ((PGMPOOLKIND)pPage->enmKind == enmKind)
                 {
                     int rc = pgmPoolTrackAddUser(pPool, pPage, iUser, iUserTable);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         *ppPage = pPage;
                         STAM_COUNTER_INC(&pPool->StatCacheHits);
@@ -2093,7 +2093,7 @@ static int pgmPoolTrackFreeOneUser(PPGMPOOL pPool, uint16_t iUser)
     do
     {
         int rc2 = pgmPoolCacheFreeOne(pPool, iUser);
-        if (VBOX_FAILURE(rc2) && rc == VINF_SUCCESS)
+        if (RT_FAILURE(rc2) && rc == VINF_SUCCESS)
             rc = rc2;
     } while (pPool->iUserFreeHead == NIL_PGMPOOL_USER_INDEX);
     return rc;
@@ -2139,7 +2139,7 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
     if (i == NIL_PGMPOOL_USER_INDEX)
     {
         int rc = pgmPoolTrackFreeOneUser(pPool, iUser);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         i = pPool->iUserFreeHead;
     }
@@ -2243,7 +2243,7 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
     if (i == NIL_PGMPOOL_USER_INDEX)
     {
         int rc = pgmPoolTrackFreeOneUser(pPool, iUser);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         i = pPool->iUserFreeHead;
     }
@@ -3919,7 +3919,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
 #else
         int rc = CTXALLMID(VMM, CallHost)(pPool->CTX_SUFF(pVM), VMMCALLHOST_PGM_POOL_GROW, 0);
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         STAM_PROFILE_ADV_RESUME(&pPool->StatAlloc, a);
         if (pPool->iFreeHead != NIL_PGMPOOL_IDX)
@@ -3975,7 +3975,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     if (pPool->fCacheEnabled)
     {
         int rc2 = pgmPoolCacheAlloc(pPool, GCPhys, enmKind, iUser, iUserTable, ppPage);
-        if (VBOX_SUCCESS(rc2))
+        if (RT_SUCCESS(rc2))
         {
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
             LogFlow(("pgmPoolAlloc: cached returns %Vrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
@@ -3992,7 +3992,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     if (iNew == NIL_PGMPOOL_IDX)
     {
         rc = pgmPoolMakeMoreFreePages(pPool, iUser);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (rc != VERR_PGM_POOL_CLEARED)
             {
@@ -4036,7 +4036,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
      * Insert into the tracking and cache. If this fails, free the page.
      */
     int rc3 = pgmPoolTrackInsert(pPool, pPage, GCPhys, iUser, iUserTable);
-    if (VBOX_FAILURE(rc3))
+    if (RT_FAILURE(rc3))
     {
         if (rc3 != VERR_PGM_POOL_CLEARED)
         {

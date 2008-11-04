@@ -219,7 +219,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
     {
         PGSTPT pPT;
         int rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /*
@@ -332,7 +332,7 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
              */
             PGSTPT pPT;
             int rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
 
             unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
@@ -440,10 +440,10 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     RTHCPHYS    HCPhysGuestCR3;
     RTHCPTR     HCPtrGuestCR3;
     int rc = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhysCR3 & GST_CR3_PAGE_MASK, &HCPtrGuestCR3, &HCPhysGuestCR3);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = PGMMap(pVM, (RTGCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -468,7 +468,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     RTHCPHYS    HCPhys;
                     RTGCPHYS    GCPhys = pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[i].u & X86_PDPE_PG_MASK;
                     int rc2 = pgmRamGCPhys2HCPtrAndHCPhysWithFlags(&pVM->pgm.s, GCPhys, &HCPtr, &HCPhys);
-                    if (VBOX_SUCCESS(rc2))
+                    if (RT_SUCCESS(rc2))
                     {
                         rc = PGMMap(pVM, GCPtr, HCPhys & X86_PTE_PAE_PG_MASK, PAGE_SIZE, 0);
                         AssertRCReturn(rc, rc);
@@ -623,7 +623,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                                       : PGMPOOL_IDX_PD,
                                       GCPhysCR3);
 # endif /* PGMPOOL_WITH_MIXED_PT_CR3 */
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
                              rc, pVM->pgm.s.GCPhysGstCR3Monitored, GCPhysCR3));
@@ -643,7 +643,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
     if (pVM->pgm.s.GCPhysGstCR3Monitored != GCPhysCR3)
     {
         rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PDPT, GCPhysCR3);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
                              rc, pVM->pgm.s.GCPhysGstCR3Monitored, GCPhysCR3));
@@ -667,7 +667,7 @@ PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 rc = pgmPoolMonitorMonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i, GCPhys);
             }
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("PGMHandlerPhysicalModify/PGMR3HandlerPhysicalRegister failed, rc=%Rrc GCPhysGstCR3Monitored=%RGp GCPhysCR3=%RGp\n",
                                  rc, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i], GCPhys));
@@ -743,7 +743,7 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
             Assert(pVM->pgm.s.enmShadowMode == PGMMODE_PAE || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX);
             int rc2 = pgmPoolMonitorUnmonitorCR3(pVM->pgm.s.CTX_SUFF(pPool), PGMPOOL_IDX_PAE_PD_0 + i);
             AssertRC(rc2);
-            if (VBOX_FAILURE(rc2))
+            if (RT_FAILURE(rc2))
                 rc = rc2;
             pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
@@ -812,7 +812,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                  */
                 PGSTPT pPT;
                 int rc = PGM_GCPHYS_2_PTR(pState->pVM, Pde.u & GST_PDE_PG_MASK, &pPT);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     for (unsigned iPTE = (GCPtr >> GST_PT_SHIFT) & GST_PT_MASK;
                          iPTE < RT_ELEMENTS(pPT->a) && iPage < pCur->cPages;
@@ -994,7 +994,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
      */
     uint32_t cb;
     int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
-    if (VBOX_SUCCESS(rc) && cb)
+    if (RT_SUCCESS(rc) && cb)
     {
         /*
          * Check if the modified PDEs are present and mappings.
@@ -1036,7 +1036,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
     }
     else
     {
-        Assert(VBOX_FAILURE(rc));
+        Assert(RT_FAILURE(rc));
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
         Log(("pgmXXGst32BitWriteHandlerCR3: returns %Rrc\n", rc));
@@ -1072,7 +1072,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
      */
     uint32_t cb;
     int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
-    if (VBOX_SUCCESS(rc) && cb)
+    if (RT_SUCCESS(rc) && cb)
     {
         /*
          * Check if any of the PDs have changed.
@@ -1104,7 +1104,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
     }
     else
     {
-        Assert(VBOX_FAILURE(rc));
+        Assert(RT_FAILURE(rc));
         STAM_COUNTER_INC(&pVM->pgm.s.StatRZGuestCR3WriteUnhandled);
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
@@ -1138,7 +1138,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
      */
     uint32_t cb;
     int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
-    if (VBOX_SUCCESS(rc) && cb)
+    if (RT_SUCCESS(rc) && cb)
     {
         /*
          * Figure out which of the 4 PDs this is.
@@ -1187,7 +1187,7 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
     }
     else
     {
-        Assert(VBOX_FAILURE(rc));
+        Assert(RT_FAILURE(rc));
         if (rc == VERR_EM_INTERPRETER)
             rc = VINF_EM_RAW_EMULATE_INSTR_PD_FAULT;
         else

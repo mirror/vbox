@@ -59,7 +59,7 @@ int mmR3HeapCreateU(PUVM pUVM, PMMHEAP *ppHeap)
     if (pHeap)
     {
         int rc = RTCritSectInit(&pHeap->Lock);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Initialize the global stat record.

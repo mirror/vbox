@@ -384,7 +384,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #else
             rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #endif
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 Log(("TRPMForwardTrap: caller=%VGv\n", pCallerGC));
             }
@@ -453,7 +453,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #else
         rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /* The page might be out of sync. */ /** @todo might cross a page boundary) */
             Log(("Page %VGv out of sync -> prefetch and try again\n", pIDTEntry));
@@ -469,7 +469,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
             rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
         }
-        if (    VBOX_SUCCESS(rc)
+        if (    RT_SUCCESS(rc)
             &&  GuestIdte.Gen.u1Present
             &&  (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32 || GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
             &&  (GuestIdte.Gen.u2DPL == 3 || GuestIdte.Gen.u2DPL == 0)
@@ -513,7 +513,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #else
                 rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     /* The page might be out of sync. */ /** @todo might cross a page boundary) */
                     Log(("Page %VGv out of sync -> prefetch and try again\n", pGdtEntry));
@@ -528,7 +528,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #else
                     rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
 #endif
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         Log(("MMGCRamRead failed with %Vrc\n", rc));
                         goto failure;
@@ -547,7 +547,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 if (!fConforming && dpl < cpl)  /* to inner privilege level */
                 {
                     rc = SELMGetRing1Stack(pVM, &ss_r0, &esp_r0);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         goto failure;
 
                     Assert((ss_r0 & X86_SEL_RPL) == 1);
@@ -596,7 +596,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     goto failure;
                 PGMPAGEMAPLOCK PageMappingLock;
                 rc = PGMPhysGCPtr2CCPtr(pVM, pTrapStackGC, (void **)&pTrapStack, &PageMappingLock);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     AssertRC(rc);
                     goto failure;

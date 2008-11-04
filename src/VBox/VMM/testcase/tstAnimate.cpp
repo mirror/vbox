@@ -68,7 +68,7 @@ static int scriptGPReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
     uint32_t u32;
     int rc = RTStrToUInt32Ex(pszValue, NULL, 16, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     return ((PFNSETGUESTGPR)(uintptr_t)pvUser)(pVM, u32);
 }
@@ -79,7 +79,7 @@ static int scriptSelReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
     uint16_t u16;
     int rc = RTStrToUInt16Ex(pszValue, NULL, 16, &u16);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     return ((PFNSETGUESTSEL)(uintptr_t)pvUser)(pVM, u16);
 }
@@ -90,7 +90,7 @@ static int scriptSysReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 {
     uint32_t u32;
     int rc = RTStrToUInt32Ex(pszValue, NULL, 16, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     return ((PFNSETGUESTSYS)(uintptr_t)pvUser)(pVM, u32);
 }
@@ -109,12 +109,12 @@ static int scriptDtrReg(PVM pVM, char *pszVar, char *pszValue, void *pvUser)
 
     uint32_t u32;
     int rc = RTStrToUInt32Ex(pszValue, NULL, 16, &u32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     uint16_t u16;
     rc = RTStrToUInt16Ex(pszPart2, NULL, 16, &u16);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return ((PFNSETGUESTDTR)(uintptr_t)pvUser)(pVM, u32, u16);
@@ -194,7 +194,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
     RTPrintf("info: running script...\n");
     uint64_t cb;
     int rc = RTFileGetSize(File, &cb);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (cb == 0)
             return VINF_SUCCESS;
@@ -204,7 +204,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
             if (pszBuf)
             {
                 rc = RTFileRead(File, pszBuf, cb, NULL);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     pszBuf[cb] = '\0';
 
@@ -240,7 +240,7 @@ static DECLCALLBACK(int) scriptRun(PVM pVM, RTFILE File)
                             /* process the line */
                             RTPrintf("debug: executing script line '%s'\n",  psz);
                             rc = scriptCommand(pVM, psz, pszEnd - psz);
-                            if (VBOX_FAILURE(rc))
+                            if (RT_FAILURE(rc))
                             {
                                 RTPrintf("error: '%s' failed: %Vrc\n", psz, rc);
                                 break;
@@ -279,7 +279,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
     RTPrintf("info: loading memory...\n");
 
     int rc = RTFileSeek(File, off, RTFILE_SEEK_BEGIN, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTGCPHYS GCPhys = 0;
         for (;;)
@@ -291,11 +291,11 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
             size_t cbRead = 0;
             uint8_t au8Page[PAGE_SIZE * 16];
             rc = RTFileRead(File, &au8Page, sizeof(au8Page), &cbRead);
-            if (VBOX_SUCCESS(rc) && !cbRead)
+            if (RT_SUCCESS(rc) && !cbRead)
                 rc = RTFileRead(File, &au8Page, sizeof(au8Page), &cbRead);
-            if (VBOX_SUCCESS(rc) && !cbRead)
+            if (RT_SUCCESS(rc) && !cbRead)
                 rc = VERR_EOF;
-            if (VBOX_FAILURE(rc) || rc == VINF_EOF)
+            if (RT_FAILURE(rc) || rc == VINF_EOF)
             {
                 if (rc == VERR_EOF)
                     rc = VINF_SUCCESS;
@@ -330,7 +330,7 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PVM pVM, void *pvUser)
     int rc;
     int rcAll = VINF_SUCCESS;
     bool fIOAPIC = false;
-#define UPDATERC() do { if (VBOX_FAILURE(rc) && VBOX_SUCCESS(rcAll)) rcAll = rc; } while (0)
+#define UPDATERC() do { if (RT_FAILURE(rc) && RT_SUCCESS(rcAll)) rcAll = rc; } while (0)
 
     /*
      * Create VM default values.
@@ -680,7 +680,7 @@ int main(int argc, char **argv)
                 case 'o':
                 {
                     int rc = RTStrToUInt64Ex(argv[++i], NULL, 0, &offRawMem);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstAnimate: Syntax error: Invalid offset given to -o.\n");
                         return 1;
@@ -692,7 +692,7 @@ int main(int argc, char **argv)
                 {
                     char *pszNext;
                     int rc = RTStrToUInt64Ex(argv[++i], &pszNext, 0, &cbMem);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstAnimate: Syntax error: Invalid memory size given to -m.\n");
                         return 1;
@@ -726,7 +726,7 @@ int main(int argc, char **argv)
                 case 'w':
                 {
                     int rc = RTStrToUInt32Ex(argv[++i], NULL, 0, &u32WarpDrive);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstAnimate: Syntax error: Invalid number given to -w.\n");
                         return 1;
@@ -774,7 +774,7 @@ int main(int argc, char **argv)
     if (pszRawMem)
     {
         rc = RTFileOpen(&FileRawMem, pszRawMem, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszRawMem, rc);
             return 1;
@@ -784,7 +784,7 @@ int main(int argc, char **argv)
     if (pszScript)
     {
         rc = RTFileOpen(&FileScript, pszScript, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("tstAnimate: error: Failed to open '%s': %Vrc\n", pszScript, rc);
             return 1;
@@ -818,7 +818,7 @@ int main(int argc, char **argv)
     PRTLOGGER pRelLogger;
     rc = RTLogCreate(&pRelLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all", "VBOX_RELEASE_LOG",
                      RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE, "./tstAnimate.log");
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         RTLogRelSetDefaultInstance(pRelLogger);
     else
         RTPrintf("tstAnimate: rtLogCreateEx failed - %Vrc\n", rc);
@@ -828,7 +828,7 @@ int main(int argc, char **argv)
      */
     PVM pVM;
     rc = VMR3Create(1, NULL, NULL, cfgmR3CreateDefault, &cbMem, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Load memory.
@@ -841,7 +841,7 @@ int main(int argc, char **argv)
         AssertReleaseRC(rc);
         rc = pReq1->iStatus;
         VMR3ReqFree(pReq1);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Load register script.
@@ -853,7 +853,7 @@ int main(int argc, char **argv)
                 rc = pReq1->iStatus;
                 VMR3ReqFree(pReq1);
             }
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 if (fPowerOn)
                 {
@@ -863,7 +863,7 @@ int main(int argc, char **argv)
                     if (u32WarpDrive != 100)
                     {
                         rc = TMVirtualSetWarpDrive(pVM, u32WarpDrive);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             RTPrintf("warning: TMVirtualSetWarpDrive(,%u) -> %Vrc\n", u32WarpDrive, rc);
                     }
 
@@ -874,7 +874,7 @@ int main(int argc, char **argv)
                     RTPrintf("info: powering on the VM...\n");
                     RTLogGroupSettings(NULL, "+REM_DISAS.e.l.f");
                     rc = REMR3DisasEnableStepping(pVM, true);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)EMR3RawSetMode, 2, pVM, EMRAW_NONE);
                         AssertReleaseRC(rc);
@@ -883,7 +883,7 @@ int main(int argc, char **argv)
                         DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
                         if (fPowerOn)
                             rc = VMR3PowerOn(pVM);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             RTPrintf("info: VM is running\n");
                             signal(SIGINT, SigInterrupt);
@@ -913,13 +913,13 @@ int main(int argc, char **argv)
         }
         else if (FileRawMem == NIL_RTFILE) /* loadMem complains, SSMR3Load doesn't */
             RTPrintf("tstAnimate: error: SSMR3Load failed: rc=%Vrc\n", rc);
-        rcRet = VBOX_SUCCESS(rc) ? 0 : 1;
+        rcRet = RT_SUCCESS(rc) ? 0 : 1;
 
         /*
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc))
+        if (!RT_SUCCESS(rc))
         {
             RTPrintf("tstAnimate: error: failed to destroy vm! rc=%Vrc\n", rc);
             rcRet++;

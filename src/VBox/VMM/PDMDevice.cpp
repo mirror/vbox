@@ -262,7 +262,7 @@ int pdmR3DevInit(PVM pVM)
         rc = CFGMR3QueryBool(paDevs[i].pNode, "Trusted", &fTrusted);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             fTrusted = false;
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("configuration error: failed to query boolean \"Trusted\", rc=%Vrc\n", rc));
             return rc;
@@ -272,7 +272,7 @@ int pdmR3DevInit(PVM pVM)
         if (!pConfigNode)
         {
             rc = CFGMR3InsertNode(paDevs[i].pNode, "Config", &pConfigNode);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("Failed to create Config node! rc=%Vrc\n", rc));
                 return rc;
@@ -290,7 +290,7 @@ int pdmR3DevInit(PVM pVM)
             rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PDM_DEVICE, (void **)&pDevIns);
         else
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Failed to allocate %d bytes of instance data for device '%s'. rc=%Vrc\n",
                              cb, paDevs[i].pDev->pDevReg->szDeviceName, rc));
@@ -357,7 +357,7 @@ int pdmR3DevInit(PVM pVM)
          */
         Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
         rc = pDevIns->pDevReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             LogRel(("PDM: Failed to construct '%s'/%d! %Vra\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
             /* because we're damn lazy right now, we'll say that the destructor will be called even if the constructor fails. */
@@ -383,7 +383,7 @@ int pdmR3DevInit(PVM pVM)
         pdmLock(pVM);
         rc = pVM->pdm.s.aPciBuses[0].pfnFakePCIBIOSR3(pVM->pdm.s.aPciBuses[0].pDevInsR3);
         pdmUnlock(pVM);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("PCI BIOS fake failed rc=%Vrc\n", rc));
             return rc;
@@ -395,7 +395,7 @@ int pdmR3DevInit(PVM pVM)
         if (pDevIns->pDevReg->pfnInitComplete)
         {
             rc = pDevIns->pDevReg->pfnInitComplete(pDevIns);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("InitComplete on device '%s'/%d failed with rc=%Vrc\n",
                                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
@@ -456,7 +456,7 @@ static int pdmR3DevLoadModules(PVM pVM)
     int rc = CFGMR3QueryBool(pDevicesNode, "LoadBuiltin", &fLoadBuiltin);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
         fLoadBuiltin = true;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Querying boolean \"LoadBuiltin\" failed with %Vrc\n", rc));
         return rc;
@@ -469,7 +469,7 @@ static int pdmR3DevLoadModules(PVM pVM)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD");
         RTMemTmpFree(pszFilename);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* make filename */
@@ -478,7 +478,7 @@ static int pdmR3DevLoadModules(PVM pVM)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DevLoad(pVM, &RegCB, pszFilename, "VBoxDD2");
         RTMemTmpFree(pszFilename);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -498,7 +498,7 @@ static int pdmR3DevLoadModules(PVM pVM)
             AssertMsgFailed(("configuration error: The module name is too long, cchName=%d.\n", CFGMR3GetNameLen(pCur)));
             return VERR_PDM_MODULE_NAME_TOO_LONG;
         }
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("CFGMR3GetName -> %Vrc.\n", rc));
             return rc;
@@ -509,7 +509,7 @@ static int pdmR3DevLoadModules(PVM pVM)
         rc = CFGMR3QueryString(pCur, "Path", &szFilename[0], sizeof(szFilename));
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             strcpy(szFilename, szName);
-        else if (VBOX_FAILURE(rc))
+        else if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("configuration error: Failure to query the module path, rc=%Vrc.\n", rc));
             return rc;
@@ -536,7 +536,7 @@ static int pdmR3DevLoadModules(PVM pVM)
          * Load the module and register it's devices.
          */
         rc = pdmR3DevLoad(pVM, &RegCB, szFilename, szName);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
 
@@ -559,18 +559,18 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
      * Load it.
      */
     int rc = pdmR3LoadR3U(pVM->pUVM, pszFilename, pszName);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Get the registration export and call it.
          */
         FNPDMVBOXDEVICESREGISTER *pfnVBoxDevicesRegister;
         rc = PDMR3LdrGetSymbolR3(pVM, pszName, "VBoxDevicesRegister", (void **)&pfnVBoxDevicesRegister);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log(("PDM: Calling VBoxDevicesRegister (%p) of %s (%s)\n", pfnVBoxDevicesRegister, pszName, pszFilename));
             rc = pfnVBoxDevicesRegister(&pRegCB->Core, VBOX_VERSION);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 Log(("PDM: Successfully loaded device module %s (%s).\n", pszName, pszFilename));
             else
                 AssertMsgFailed(("VBoxDevicesRegister failed with rc=%Vrc for module %s (%s)\n", rc, pszName, pszFilename));
@@ -798,7 +798,7 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
      */
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Can we attach anything at runtime?
@@ -854,7 +854,7 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
      */
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Can we detach anything at runtime?

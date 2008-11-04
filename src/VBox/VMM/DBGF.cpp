@@ -135,9 +135,9 @@ DECLINLINE(DBGFCMD) dbgfR3SetCmd(PVM pVM, DBGFCMD enmCmd)
 VMMR3DECL(int) DBGFR3Init(PVM pVM)
 {
     int rc = dbgfR3InfoInit(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = dbgfR3SymInit(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = dbgfR3BpInit(pVM);
     return rc;
 }
@@ -408,7 +408,7 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
 static int dbgfR3SendEvent(PVM pVM)
 {
     int rc = RTSemPing(&pVM->dbgf.s.PingPong);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = dbgfR3VMMWait(pVM);
 
     pVM->dbgf.s.fStoppedInHyper = false;
@@ -427,7 +427,7 @@ static int dbgfR3SendEvent(PVM pVM)
 VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -476,7 +476,7 @@ VMMR3DECL(int) DBGFR3EventSrc(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFi
 VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszFile, unsigned uLine, const char *pszFunction, const char *pszFormat, va_list args)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -515,7 +515,7 @@ VMMR3DECL(int) DBGFR3EventSrcV(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszF
 VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char *pszMsg1, const char *pszMsg2)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -540,7 +540,7 @@ VMMR3DECL(int) DBGFR3EventAssertion(PVM pVM, DBGFEVENTTYPE enmEvent, const char 
 VMMR3DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -599,7 +599,7 @@ static int dbgfR3VMMWait(PVM pVM)
         for (;;)
         {
             int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 250);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 break;
             if (rc != VERR_TIMEOUT)
             {
@@ -644,7 +644,7 @@ static int dbgfR3VMMWait(PVM pVM)
                             break;
                     }
                 }
-                else if (VBOX_FAILURE(rc))
+                else if (RT_FAILURE(rc))
                 {
                     LogFlow(("dbgfR3VMMWait: returns %Vrc\n", rc));
                     return rc;
@@ -661,7 +661,7 @@ static int dbgfR3VMMWait(PVM pVM)
         int rc = dbgfR3VMMCmd(pVM, enmCmd, &CmdData, &fResumeExecution);
         if (fResumeExecution)
         {
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 rcRet = rc;
             else if (    rc >= VINF_EM_FIRST
                      &&  rc <= VINF_EM_LAST
@@ -776,7 +776,7 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
     {
         Log2(("DBGF: Emulation thread: sending event %d\n", pVM->dbgf.s.DbgEvent.enmType));
         int rc2 = RTSemPing(&pVM->dbgf.s.PingPong);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             AssertRC(rc2);
             *pfResumeExecution = true;
@@ -927,7 +927,7 @@ VMMR3DECL(int) DBGFR3EventWait(PVM pVM, unsigned cMillies, PCDBGFEVENT *ppEvent)
      * Wait.
      */
     int rc = RTSemPongWait(&pVM->dbgf.s.PingPong, cMillies);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *ppEvent = &pVM->dbgf.s.DbgEvent;
         Log2(("DBGF: Debugger thread: receiving event %d\n", (*ppEvent)->enmType));

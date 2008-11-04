@@ -181,7 +181,7 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
      */
     bool fEnabled;
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "CSAMEnabled", &fEnabled);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
 #ifdef CSAM_ENABLE
         fEnabled = true;
 #else
@@ -198,7 +198,7 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
     if (!fRegisteredCmds)
     {
         int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
 #endif
@@ -486,7 +486,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         if(pVM->csam.s.pPDBitmapHC[i])
         {
             rc = MMHyperAlloc(pVM, CSAM_PAGE_BITMAP_SIZE, 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDBitmapHC[i]);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("MMR3HyperAlloc failed with %d\n", rc));
                 return rc;
@@ -615,7 +615,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigne
     for (int i=0;i<orgsize;i++)
     {
         int rc = PATMR3QueryOpcode(pVM, (RTRCPTR)pSrc, pDest);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pSrc++;
             pDest++;
@@ -747,8 +747,8 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
             cpu.mode = (pPage->fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             rc = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
-            Assert(VBOX_SUCCESS(rc));
-            if (VBOX_FAILURE(rc))
+            Assert(RT_SUCCESS(rc));
+            if (RT_FAILURE(rc))
                 break;
         }
         break;
@@ -815,7 +815,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (PATMR3HasBeenPatched(pVM, pCurInstrGC) == false)
         {
             rc = PATMR3InstallPatch(pVM, pCurInstrGC, (pPage->fCode32) ? PATMFL_CODE32 : 0);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("PATMR3InstallPatch failed with %d\n", rc));
                 return VWRN_CONTINUE_ANALYSIS;
@@ -930,12 +930,12 @@ static int csamAnalyseCallCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCP
                 STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
                 rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
-                if (VBOX_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
+                if (RT_SUCCESS(rc2)) Log(("CSAM Call Analysis: %s", szOutput));
 #else
                 rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
 #endif
                 STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
-                if (VBOX_FAILURE(rc2))
+                if (RT_FAILURE(rc2))
                 {
                     Log(("Disassembly failed at %VRv with %Vrc (probably page not present) -> return to caller\n", pCurInstrGC, rc2));
                     goto done;
@@ -1140,12 +1140,12 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
         STAM_PROFILE_START(&pVM->csam.s.StatTimeDisasm, a);
 #ifdef DEBUG
         rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, szOutput);
-        if (VBOX_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
+        if (RT_SUCCESS(rc2)) Log(("CSAM Analysis: %s", szOutput));
 #else
         rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
 #endif
         STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
         {
             Log(("Disassembly failed at %VRv with %Vrc (probably page not present) -> return to caller\n", pCurInstrGC, rc2));
             rc = VINF_SUCCESS;
@@ -1357,7 +1357,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     Assert((pInstr & PAGE_OFFSET_MASK) == 0);
 
     rc = PGMPhysSimpleReadGCPtr(pVM, &val[0], pInstr, sizeof(val[0]));
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         Log(("csamR3CalcPageHash: page %VRv not present!!\n", pInstr));
@@ -1365,7 +1365,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVM, &val[1], pInstr+1024, sizeof(val[0]));
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         Log(("csamR3CalcPageHash: page %VRv not present!!\n", pInstr));
@@ -1373,7 +1373,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVM, &val[2], pInstr+2048, sizeof(val[0]));
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         Log(("csamR3CalcPageHash: page %VRv not present!!\n", pInstr));
@@ -1381,7 +1381,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVM, &val[3], pInstr+3072, sizeof(val[0]));
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         Log(("csamR3CalcPageHash: page %VRv not present!!\n", pInstr));
@@ -1389,7 +1389,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     }
 
     rc = PGMPhysSimpleReadGCPtr(pVM, &val[4], pInstr+4092, sizeof(val[0]));
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
     if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
     {
         Log(("csamR3CalcPageHash: page %VRv not present!!\n", pInstr));
@@ -1444,7 +1444,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
         return rc;
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (    (fFlags & X86_PTE_US)
             ||  rc == VERR_PGM_PHYS_PAGE_RESERVED
@@ -1543,7 +1543,7 @@ VMMR3DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
     if (pPageRec)
     {
         rc = csamRemovePageRecord(pVM, addr);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             PATMR3FlushPage(pVM, addr);
         return VINF_SUCCESS;
     }
@@ -1628,7 +1628,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     pPage->page.fMonitorActive       = false;
     pPage->page.pBitmap              = (uint8_t *)MMR3HeapAllocZ(pVM, MM_TAG_CSAM_PATCH, PAGE_SIZE/sizeof(uint8_t));
     rc = PGMGstGetPage(pVM, GCPtr, &pPage->page.fFlags, &pPage->page.GCPhys);
-    AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
 
     pPage->page.u64Hash   = csamR3CalcPageHash(pVM, GCPtr);
     ret = RTAvlPVInsert(&pVM->csam.s.pPageTree, &pPage->Core);
@@ -1648,8 +1648,8 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         int rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtr, GCPtr + (PAGE_SIZE - 1) /* inclusive! */,
                                              (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
                                              csamGetMonitorDescription(enmTag));
-        AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %VRv failed with %Vrc\n", GCPtr, rc));
-        if (VBOX_FAILURE(rc))
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %VRv failed with %Vrc\n", GCPtr, rc));
+        if (RT_FAILURE(rc))
             Log(("PGMR3HandlerVirtualRegisterEx for %VRv failed with %Vrc\n", GCPtr, rc));
 
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
@@ -1730,7 +1730,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         uint64_t fFlags;
 
         rc = PGMGstGetPage(pVM, pPageAddrGC, &fFlags, NULL);
-        AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
         if (    rc == VINF_SUCCESS
             &&  (fFlags & X86_PTE_US))
         {
@@ -1758,8 +1758,8 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, pPageAddrGC, pPageAddrGC + (PAGE_SIZE - 1) /* inclusive! */,
                                          (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
                                          csamGetMonitorDescription(enmTag));
-        AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %VRv failed with %Vrc\n", pPageAddrGC, rc));
-        if (VBOX_FAILURE(rc))
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %VRv failed with %Vrc\n", pPageAddrGC, rc));
+        if (RT_FAILURE(rc))
             Log(("PGMR3HandlerVirtualRegisterEx for %VRv failed with %Vrc\n", pPageAddrGC, rc));
 
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
@@ -2191,7 +2191,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
             uint64_t fFlags;
 
             rc = PGMGstGetPage(pVM, GCPtr, &fFlags, NULL);
-            AssertMsg(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
+            AssertMsg(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("rc = %Vrc\n", rc));
             if (    rc == VINF_SUCCESS
                 &&  (fFlags & X86_PTE_US))
             {
@@ -2329,7 +2329,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     {
         /* Just convert the IDT address to a HC pointer. The whole IDT fits in one page. */
         rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrIDT, (PRTHCPTR)&pGuestIdte);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));
             STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
@@ -2340,7 +2340,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     {
         /* Slow method when it crosses a page boundary. */
         rc = PGMPhysSimpleReadGCPtr(pVM, aIDT, GCPtrIDT,  cGates*sizeof(VBOXIDTE));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));
             STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
@@ -2367,7 +2367,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             pHandler = SELMToFlatBySel(pVM, pGuestIdte->Gen.u16SegSel, pHandler);
 
             rc = SELMR3GetSelectorInfo(pVM, pGuestIdte->Gen.u16SegSel, &selInfo);
-            if (    VBOX_FAILURE(rc)
+            if (    RT_FAILURE(rc)
                 ||  selInfo.GCPtrBase != 0
                 ||  selInfo.cbLimit != ~0U
                )
@@ -2414,7 +2414,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                         &&  cpu.pCurInstr->param1 == OP_PARM_REG_CS)
                     {
                         rc = PATMR3InstallPatch(pVM, pHandler - aOpenBsdPushCSOffset[i], PATMFL_CODE32 | PATMFL_GUEST_SPECIFIC);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                             Log(("Installed OpenBSD interrupt handler prefix instruction (push cs) patch\n"));
                     }
                 }
@@ -2446,7 +2446,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             Log(("Installing %s gate handler for 0x%X at %VRv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
 
             rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
-            if (VBOX_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
+            if (RT_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
             {
                 Log(("Gate handler 0x%X is SAFE!\n", iGate));
 
@@ -2454,7 +2454,7 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
                 if (pNewHandlerGC)
                 {
                     rc = TRPMR3SetGuestTrapHandler(pVM, iGate, pNewHandlerGC);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         Log(("TRPMR3SetGuestTrapHandler %d failed with %Vrc\n", iGate, rc));
                 }
             }

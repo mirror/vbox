@@ -194,7 +194,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
 {
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
@@ -376,7 +376,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      * Ensure that we've got a page handy, take it and use it.
      */
     int rc = pgmPhysEnsureHandyPage(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Assert(rc == VERR_EM_NO_MEMORY);
         return rc;
@@ -531,7 +531,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
             Assert(pMap);
 #else
             int rc = pgmR3PhysChunkMap(pVM, idChunk, &pMap);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
 #endif
         }
@@ -600,7 +600,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
         void *pv;
         PPGMPAGEMAP pMap;
         int rc = pgmPhysPageMap(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         pTlbe->pMap = pMap;
         pTlbe->pv = pv;
@@ -769,7 +769,7 @@ VMMDECL(int) PGMPhysGCPtr2CCPtr(PVM pVM, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPL
 {
     RTGCPHYS GCPhys;
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2CCPtr(pVM, GCPhys, ppv, pLock);
     return rc;
 }
@@ -802,7 +802,7 @@ VMMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv
 {
     RTGCPHYS GCPhys;
     int rc = PGMPhysGCPtr2GCPhys(pVM, GCPtr, &GCPhys);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, ppv, pLock);
     return rc;
 }
@@ -879,7 +879,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
     PPGMRAMRANGE pRam;
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #ifndef PGM_IGNORE_RAM_FLAGS_RESERVED
@@ -924,7 +924,7 @@ VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRa
 {
     RTHCPTR HCPtr;
     int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &HCPtr);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return HCPtr;
     return NIL_RTHCPTR;
 }
@@ -943,7 +943,7 @@ VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRa
 VMMDECL(int) PGMPhysGCPtr2GCPhys(PVM pVM, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
-    if (pGCPhys && VBOX_SUCCESS(rc))
+    if (pGCPhys && RT_SUCCESS(rc))
         *pGCPhys |= (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
     return rc;
 }
@@ -963,7 +963,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 {
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
     return rc;
 }
@@ -987,7 +987,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr) /** @to
 
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
     return rc;
 }
@@ -1022,7 +1022,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
     {
         PX86PD pPD;
         rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAGE_MASK, &pPD);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             X86PDE Pde = pPD->a[(RTGCUINTPTR)GCPtr >> X86_PD_SHIFT];
             if (Pde.n.u1Present)
@@ -1035,7 +1035,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
                 {   /* (normal page) */
                     PX86PT pPT;
                     rc = PGM_GCPHYS_2_PTR(pVM, Pde.u & X86_PDE_PG_MASK, &pPT);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         X86PTE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_SHIFT) & X86_PT_MASK];
                         if (Pte.n.u1Present)
@@ -1055,14 +1055,14 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
 
         PX86PDPT pPdpt;
         rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAE_PAGE_MASK, &pPdpt);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             X86PDPE Pdpe = pPdpt->a[((RTGCUINTPTR)GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
             if (Pdpe.n.u1Present)
             {
                 PX86PDPAE pPD;
                 rc = PGM_GCPHYS_2_PTR(pVM, Pdpe.u & X86_PDPE_PG_MASK, &pPD);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     X86PDEPAE Pde = pPD->a[((RTGCUINTPTR)GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK];
                     if (Pde.n.u1Present)
@@ -1075,7 +1075,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
                         {   /* (normal page) */
                             PX86PTPAE pPT;
                             rc = PGM_GCPHYS_2_PTR(pVM, (Pde.u & X86_PDE_PAE_PG_MASK), &pPT);
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 X86PTEPAE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK];
                                 if (Pte.n.u1Present)
@@ -1253,7 +1253,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     PPGMVIRTHANDLER pNode;
                     unsigned iPage;
                     int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pNode, &iPage);
-                    if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerR3)
+                    if (RT_SUCCESS(rc2) && pNode->pfnHandlerR3)
                     {
                         size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
                         if (cbRange < cb)
@@ -1501,7 +1501,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         PPGMVIRTHANDLER pVirtNode;
                         unsigned iPage;
                         int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pVirtNode, &iPage);
-                        if (VBOX_SUCCESS(rc2) && pVirtNode->pfnHandlerR3)
+                        if (RT_SUCCESS(rc2) && pVirtNode->pfnHandlerR3)
                         {
                             size_t cbRange = pVirtNode->Core.KeyLast - GCPhys + 1;
                             if (cbRange < cb)
@@ -1517,8 +1517,8 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                             rc2 = pVirtNode->pfnHandlerR3(pVM, (RTGCPTR)GCPtr, pvDst, (void *)pvBuf, cb, PGMACCESSTYPE_WRITE, 0);
                             if (    (   rc2 != VINF_PGM_HANDLER_DO_DEFAULT
                                      && rc == VINF_PGM_HANDLER_DO_DEFAULT)
-                                ||  (   VBOX_FAILURE(rc2)
-                                     && VBOX_SUCCESS(rc)))
+                                ||  (   RT_FAILURE(rc2)
+                                     && RT_SUCCESS(rc)))
                                 rc = rc2;
                         }
 #endif /* IN_RING3 */
@@ -1550,7 +1550,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         PPGMVIRTHANDLER pNode;
                         unsigned iPage;
                         int rc2 = pgmHandlerVirtualFindByPhysAddr(pVM, GCPhys, &pNode, &iPage);
-                        if (VBOX_SUCCESS(rc2) && pNode->pfnHandlerR3)
+                        if (RT_SUCCESS(rc2) && pNode->pfnHandlerR3)
                         {
                             size_t cbRange = pNode->Core.KeyLast - GCPhys + 1;
                             if (cbRange < cb)
@@ -2283,7 +2283,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
         RTGCPHYS GCPhys;
         uint64_t fFlags;
         rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc, &fFlags, &GCPhys);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
             void *pvSrc;
@@ -2322,9 +2322,9 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
         uint64_t fFlags2;
         RTGCPHYS GCPhys2;
         rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc, &fFlags1, &GCPhys1);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = PGM_GST_PFN(GetPage,pVM)(pVM, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
             AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%VGv\n", cb, cb1, cb2, GCPtrSrc));

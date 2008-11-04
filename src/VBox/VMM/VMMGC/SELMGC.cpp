@@ -65,7 +65,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      */
     X86DESC Desc;
     int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
 
     /*
@@ -200,7 +200,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
         /** @todo should check if any affected selectors are loaded. */
         uint32_t cb;
         rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-        if (VBOX_SUCCESS(rc) && cb)
+        if (RT_SUCCESS(rc) && cb)
         {
             unsigned iGDTE1 = offRange / sizeof(X86DESC);
             int rc2 = selmGCSyncGDTEntry(pVM, pRegFrame, iGDTE1);
@@ -216,12 +216,12 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                     return rc;
                 }
             }
-            if (rc == VINF_SUCCESS || VBOX_FAILURE(rc2))
+            if (rc == VINF_SUCCESS || RT_FAILURE(rc2))
                 rc = rc2;
         }
         else
         {
-            Assert(VBOX_FAILURE(rc));
+            Assert(RT_FAILURE(rc));
             if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
         }
@@ -286,7 +286,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
      */
     uint32_t cb;
     int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-    if (VBOX_SUCCESS(rc) && cb)
+    if (RT_SUCCESS(rc) && cb)
     {
         PCVBOXTSS pGuestTSS = (PVBOXTSS)pVM->selm.s.GCPtrGuestTss;
         if (    pGuestTSS->esp0 !=  pVM->selm.s.Tss.esp1
@@ -312,11 +312,11 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                 for (uint32_t i = 0; i < sizeof(pVM->selm.s.Tss.IntRedirBitmap) / 8;i++)
                 {
                     rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8], (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, 8);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         /* Shadow page table might be out of sync */
                         rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                         {
                             AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Vrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
                             break;
@@ -332,7 +332,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     }
     else
     {
-        Assert(VBOX_FAILURE(rc));
+        Assert(RT_FAILURE(rc));
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
         STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSUnhandled);
         if (rc == VERR_EM_INTERPRETER)
@@ -426,7 +426,7 @@ l_tryagain:
         rc |= MMGCRamRead(pVM, &tss.offIoBitmap, GCPtrGuestTss + RT_OFFSETOF(VBOXTSS, offIoBitmap), sizeof(tss.offIoBitmap));
 #endif
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (!fTriedAlready)
             {

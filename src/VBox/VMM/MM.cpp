@@ -244,13 +244,13 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
      * Init the page pool.
      */
     int rc = mmR3PagePoolInit(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Init the hypervisor related stuff.
          */
         rc = mmR3HyperInit(pVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Register the saved state data unit.
@@ -258,7 +258,7 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
             rc = SSMR3RegisterInternal(pVM, "mm", 1, MM_SAVED_STATE_VERSION, sizeof(uint32_t) * 2,
                                        NULL, mmR3Save, NULL,
                                        NULL, mmR3Load, NULL);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 return rc;
 
             /* .... failure .... */
@@ -557,7 +557,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         rc = SSMR3GetUInt(pSSM, &cb1);
         cPages = cb1 >> PAGE_SHIFT;
     }
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (cPages != pVM->mm.s.cBasePages)
     {
@@ -574,7 +574,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         rc = SSMR3GetUInt(pSSM, &cb1);
         cb = cb1;
     }
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (cb != pVM->mm.s.cbRamBase)
     {
@@ -720,7 +720,7 @@ int mmR3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
      * Lock the memory.
      */
     int rc = SUPPageLock(pv, cPages, &pLockedMem->aPhysPages[0]);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Setup the reserved field.
@@ -786,7 +786,7 @@ int mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage
     {
         RTHCPHYS HCPhys = pPhysPage->Phys;
         int rc = PGMMap(pVM, Addr, HCPhys, PAGE_SIZE, fFlags);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             /** @todo how the hell can we do a proper bailout here. */
             return rc;
@@ -822,7 +822,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      * Try page tables.
      */
     int rc = MMPagePhys2PageTry(pVM, HCPhys, ppv);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return rc;
 
     /*

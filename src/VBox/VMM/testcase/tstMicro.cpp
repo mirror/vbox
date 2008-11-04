@@ -85,7 +85,7 @@ static void PrintHeaderInstr(void)
 
 static void PrintResultInstr(PTSTMICRO pTst, TSTMICROTEST enmTest, int rc, uint64_t cMinTicks, uint64_t cAvgTicks, uint64_t cMaxTicks)
 {
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu - %Vrc cr2=%x err=%x eip=%x!\n",
                  GetDescription(enmTest),
                  cMinTicks,
@@ -116,7 +116,7 @@ static void PrintHeaderTraps(void)
 
 static void PrintResultTrap(PTSTMICRO pTst, TSTMICROTEST enmTest, int rc)
 {
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTPrintf(TESTCASE ": %-25s  %10llu  %10llu  %10llu  %10llu  %10llu - %Vrc cr2=%x err=%x eip=%x!\n",
                  GetDescription(enmTest),
                  pTst->aResults[enmTest].cTotalTicks,
@@ -203,28 +203,28 @@ static DECLCALLBACK(int) doit(PVM pVM)
      * Loading the module and resolve the entry point.
      */
     int rc = PDMR3LdrLoadRC(pVM, NULL, "tstMicroGC.gc");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEntry;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &RCPtrEntry);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrStart;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &RCPtrStart);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEnd;
     rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &RCPtrEnd);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Vra\n", rc);
         return rc;
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
      */
     PTSTMICRO pTst;
     rc = MMHyperAlloc(pVM, RT_ALIGN_Z(sizeof(*pTst), PAGE_SIZE), PAGE_SIZE, MM_TAG_VM, (void **)&pTst);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": Failed to resolve allocate instance memory (%d bytes), rc=%Vra\n", sizeof(*pTst), rc);
         return rc;
@@ -245,7 +245,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
 
     /* the page must be writable from user mode */
     rc = PGMMapModifyPage(pVM, pTst->RCPtr, sizeof(*pTst), X86_PTE_US | X86_PTE_RW, ~(uint64_t)(X86_PTE_US | X86_PTE_RW));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
         return rc;
@@ -253,7 +253,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
 
     /* all the code must be executable from R3. */
     rc = PGMMapModifyPage(pVM, RCPtrStart, RCPtrEnd - RCPtrStart + PAGE_SIZE, X86_PTE_US, ~(uint64_t)X86_PTE_US);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf(TESTCASE ": PGMMapModifyPage -> rc=%Vra\n", rc);
         return rc;
@@ -270,7 +270,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
         size_t  cb = 0;
         char    sz[256];
         int rc = DBGFR3DisasInstrEx(pVM, CPUMGetHyperCS(pVM), GCPtr, 0, sz, sizeof(sz), &cb);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             RTLogPrintf("%s\n", sz);
         else
         {
@@ -298,7 +298,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
         for (int c = 0; c < 100; c++)
         {
             int rc2 = VMMR3CallRC(pVM, RCPtrEntry, 2, pTst->RCPtr, enmTest);
-            if (VBOX_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
             {
                 uint64_t u64 = pTst->aResults[enmTest].cTotalTicks;
                 if (cMin > u64)
@@ -308,7 +308,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
                 cTotal += u64;
                 cSamples++;
             }
-            else if (VBOX_SUCCESS(rc))
+            else if (RT_SUCCESS(rc))
                 rc = rc2;
         }
         uint64_t cAvg = cTotal / (cSamples ? cSamples : 1);
@@ -347,7 +347,7 @@ int main(int argc, char **argv)
      */
     PVM pVM;
     int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Do testing.
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc))
+        if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;

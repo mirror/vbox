@@ -834,7 +834,7 @@ Assert(pHeap == pVM->mm.s.CTX_SUFF(pHyperHeap));
      */
 #ifdef VBOX_WITH_STATISTICS
     pStat->cFrees++;
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pStat->cbFreed        += cbChunk;
         pStat->cbCurAllocated -= cbChunk;

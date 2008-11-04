@@ -131,7 +131,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      */
     PPGMMAPPING pNew;
     int rc = MMHyperAlloc(pVM, RT_OFFSETOF(PGMMAPPING, aPTs[cPTs]), 0, MM_TAG_PGM, (void **)&pNew);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     pNew->GCPtr         = GCPtr;
     pNew->GCPtrLast     = GCPtrLast;
@@ -147,7 +147,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
      */
     uint8_t *pbPTs;
     rc = MMHyperAlloc(pVM, PAGE_SIZE * 3 * cPTs, PAGE_SIZE, MM_TAG_PGM, (void **)&pbPTs);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         MMHyperFree(pVM, pNew);
         return VERR_NO_MEMORY;
@@ -529,10 +529,10 @@ VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
 
     const unsigned cPages = cbPages >> PAGE_SHIFT;
     int rc = pgmR3MapIntermediateCheckOne(pVM, uAddress, cPages, pVM->pgm.s.apInterPTs[0], pVM->pgm.s.apInterPaePTs[0]);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pgmR3MapIntermediateCheckOne(pVM, (uintptr_t)HCPhys, cPages, pVM->pgm.s.apInterPTs[1], pVM->pgm.s.apInterPaePTs[1]);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -1140,7 +1140,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
         {
             unsigned cbRead = RT_MIN(cb, PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK));
             int rc = PGMR3MapRead(pVM, pvDst, GCPtrSrc, cbRead);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return rc;
             cb -= cbRead;
             if (!cb)
@@ -1180,7 +1180,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
                  */
                 void *pvPage;
                 int rc = MMR3HCPhys2HCVirt(pVM, HCPhys, &pvPage);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     return rc;
 
                 memcpy(pvDst, (char *)pvPage + (GCPtrSrc & PAGE_OFFSET_MASK), cb);

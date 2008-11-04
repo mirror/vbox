@@ -498,7 +498,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "trpm", 1, TRPM_SAVED_STATE_VERSION, sizeof(TRPM),
                                    NULL, trpmR3Save, NULL,
                                    NULL, trpmR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -836,7 +836,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
     RTUINT fSyncIDT;
     int rc = SSMR3GetUInt(pSSM, &fSyncIDT);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fSyncIDT & ~1)
     {
@@ -852,7 +852,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /* check the separator */
     uint32_t u32Sep;
     rc = SSMR3GetU32(pSSM, &u32Sep);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Sep != (uint32_t)~0)
     {
@@ -868,7 +868,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         /* gate number / terminator */
         uint32_t iTrap;
         rc = SSMR3GetU32(pSSM, &iTrap);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (iTrap == (uint32_t)~0)
             break;
@@ -884,7 +884,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         SSMR3GetGCPtr(pSSM, &GCPtrHandler);
         VBOXIDTE Idte;
         rc = SSMR3GetMem(pSSM, &Idte, sizeof(Idte));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         Assert(GCPtrHandler);
         pTrpm->aIdt[iTrap] = Idte;
@@ -983,7 +983,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM)
      */
     X86DESC  Idte3;
     rc = PGMPhysSimpleReadGCPtr(pVM, &Idte3, IDTR.pIdt + sizeof(Idte3) * 3,  sizeof(Idte3));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgRC(rc, ("Failed to read IDT[3]! rc=%Vrc\n", rc));
         return DBGFSTOP(pVM);
@@ -1207,7 +1207,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
      */
     VBOXIDTE GuestIdte;
     int rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, GCPtrIDT + iTrap * sizeof(GuestIdte),  sizeof(GuestIdte));
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgRC(rc, ("Failed to read IDTE! rc=%Vrc\n", rc));
         return rc;
@@ -1317,7 +1317,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
          */
         PVBOXIDTE   pIDTE;
         int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrIDTE, (void **)&pIDTE);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Inner Loop: Iterate the data on this page looking for an entry equal to GCPtr.
@@ -1387,7 +1387,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
         uint8_t u8Interrupt;
         rc = PDMGetInterrupt(pVM, &u8Interrupt);
         Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (HWACCMR3IsActive(pVM))
             {
@@ -1410,7 +1410,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
 
                 /* There's a handler -> let's execute it in raw mode */
                 rc = TRPMForwardTrap(pVM, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
-                if (rc == VINF_SUCCESS /* Don't use VBOX_SUCCESS */)
+                if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
                 {
                     Assert(!VM_FF_ISPENDING(pVM, VM_FF_SELM_SYNC_GDT | VM_FF_SELM_SYNC_LDT | VM_FF_TRPM_SYNC_IDT | VM_FF_SELM_SYNC_TSS));
 
@@ -1430,7 +1430,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent)
             uint8_t u8Interrupt;
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
             Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Vrc\n", u8Interrupt, u8Interrupt, rc));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
                 AssertRC(rc);

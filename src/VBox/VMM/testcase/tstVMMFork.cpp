@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
     int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Do testing.
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc))
+        if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcErrors++;

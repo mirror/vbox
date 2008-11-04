@@ -95,7 +95,7 @@ VMMR0DECL(int) ModuleInit(void)
                 g_pIntNet = NULL;
                 LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
                 rc = INTNETR0Create(&g_pIntNet);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
                     return VINF_SUCCESS;
@@ -626,7 +626,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation)
             if (!HWACCMR0SuspendPending())
             {
                 rc = HWACCMR0Enter(pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM); /* this may resume code. */
                     int rc2 = HWACCMR0Leave(pVM);

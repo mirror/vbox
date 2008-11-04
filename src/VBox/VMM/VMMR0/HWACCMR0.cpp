@@ -201,10 +201,10 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 HWACCMR0Globals.lLastError = RTMpOnAll(HWACCMR0InitCPU, (void *)u32VendorEBX, aRc);
 
                 /* Check the return code of all invocations. */
-                if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
+                if (RT_SUCCESS(HWACCMR0Globals.lLastError))
                     HWACCMR0Globals.lLastError = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
-                if (VBOX_SUCCESS(HWACCMR0Globals.lLastError))
+                if (RT_SUCCESS(HWACCMR0Globals.lLastError))
                 {
                     /* Reread in case we've changed it. */
                     HWACCMR0Globals.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
@@ -266,7 +266,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
 
                         /* Enter VMX Root Mode */
                         rc = VMXEnable(pScatchPagePhys);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                         {
                             /* KVM leaves the CPU in VMX root mode. Not only is this not allowed, it will crash the host when we enter raw mode, because
                              * (a) clearing X86_CR4_VMXE in CR4 causes a #GP    (we no longer modify this bit)
@@ -287,7 +287,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                         ASMSetFlags(fFlags);
 
                         RTR0MemObjFree(pScatchMemObj, false);
-                        if (VBOX_FAILURE(HWACCMR0Globals.lLastError))
+                        if (RT_FAILURE(HWACCMR0Globals.lLastError))
                             return HWACCMR0Globals.lLastError;
                     }
                     else
@@ -328,12 +328,12 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 AssertRC(rc);
 
                 /* Check the return code of all invocations. */
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
                 AssertMsgRC(rc, ("HWACCMR0InitCPU failed for cpu %d with rc=%d\n", idCpu, rc));
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Query AMD features. */
                     ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
@@ -407,7 +407,7 @@ static int hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pid
     {
         if (RTMpIsCpuOnline(i))
         {
-            if (VBOX_FAILURE(paRc[i]))
+            if (RT_FAILURE(paRc[i]))
             {
                 rc      = paRc[i];
                 *pidCpu = i;
@@ -569,7 +569,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM, HWACCMSTATE enmNewHwAccmState)
         int rc = RTMpOnAll(HWACCMR0EnableCPU, (void *)pVM, aRc);
 
         /* Check the return code of all invocations. */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 
         AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
@@ -625,7 +625,7 @@ static DECLCALLBACK(void) HWACCMR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
 
     paRc[idCpu]  = HWACCMR0Globals.pfnEnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
     AssertRC(paRc[idCpu]);
-    if (VBOX_SUCCESS(paRc[idCpu]))
+    if (RT_SUCCESS(paRc[idCpu]))
         pCpu->fConfigured = true;
 
     return;
@@ -708,10 +708,10 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
             rc = RTMpOnAll(HWACCMR0InitCPU, (void *)((HWACCMR0Globals.vmx.fSupported) ? X86_CPUID_VENDOR_INTEL_EBX : X86_CPUID_VENDOR_AMD_EBX), aRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
 #ifdef LOG_ENABLED
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 SUPR0Printf("hwaccmR0PowerCallback HWACCMR0InitCPU failed with %d\n", rc);
 #endif
 

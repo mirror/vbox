@@ -115,7 +115,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 if (!pChild)
                 {
                     int rc = CFGMR3InsertNode(pNode, pszCur, &pChild);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         *pszCurEnd = '/';
                         RTPrintf("%s(%d): error: failed to create node '%s', rc=%d.\n", pArgs->pszFilename, iLine, psz, rc);
@@ -214,7 +214,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 *psz++ = '\0';
 
                 int rc = CFGMR3InsertString(pNode, pszName, psz);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     RTPrintf("%s(%d): error: failed to insert string value named '%s' and with value '%s', rc=%d.\n",
                              pArgs->pszFilename, iLine, pszName, psz, rc);
@@ -259,7 +259,7 @@ static DECLCALLBACK(int) ConfigConstructor(PVM pVM, void *pvArgs)
                 }
 
                 int rc = CFGMR3InsertInteger(pNode, pszName, u64);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     RTPrintf("%s(%d): error: failed to insert integer value named '%s' and with value %#llx, rc=%d.\n",
                              pArgs->pszFilename, iLine, pszName, u64, rc);
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
      */
     PVM pVM;
     int rc = VMR3Create(1, NULL, NULL, Args.pszFilename ? ConfigConstructor : NULL, &Args, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Power it on if that was requested.
@@ -363,11 +363,11 @@ int main(int argc, char **argv)
         {
             PVMREQ pReq;
             rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
                 VMR3ReqFree(pReq);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     RTPrintf(TESTCASE ": info: VMR3PowerOn succeeded. rc=%d\n", rc);
                     RTPrintf(TESTCASE ": info: main thread is taking a nap...\n");
@@ -378,11 +378,11 @@ int main(int argc, char **argv)
                      * Power Off the VM.
                      */
                     rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = pReq->iStatus;
                         VMR3ReqFree(pReq);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                             RTPrintf(TESTCASE ": info: Successfully powered off the VM. rc=%d\n", rc);
                         else
                         {
@@ -408,7 +408,7 @@ int main(int argc, char **argv)
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc))
+        if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;

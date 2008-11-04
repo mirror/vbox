@@ -135,7 +135,7 @@ static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
                          pVM, _4K, _1G, pszFormat, pvVA);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
 
@@ -157,7 +157,7 @@ static void PassVA(PVM pVM, const char *pszFormat, ...)
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
                          pVM, _4K, _1G, pszFormat, &va1);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     va_end(va1);
@@ -185,7 +185,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
         for (iReq = 0; iReq < cReqs; iReq++)
         {
             rc = VMR3ReqAlloc(pVM, &apReq[iReq], VMREQTYPE_INTERNAL, VMREQDEST_ANY);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Vrc (alloc)\n", i, iReq, cReqs, rc);
                 return rc;
@@ -201,7 +201,7 @@ static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
                 return VERR_GENERAL_FAILURE;
             }
             rc = VMR3ReqFree(apReq[iReq]);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 RTPrintf(TESTCASE ": i=%d iReq=%d cReqs=%d rc=%Vrc (free)\n", i, iReq, cReqs, rc);
                 return rc;
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
      */
     PVM pVM;
     int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Do testing.
@@ -234,20 +234,20 @@ int main(int argc, char **argv)
         uint64_t u64StartTS = RTTimeNanoTS();
         RTTHREAD Thread0;
         rc = RTThreadCreate(&Thread0, Thread, pVM, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "REQ1");
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTTHREAD Thread1;
             rc = RTThreadCreate(&Thread1, Thread, pVM, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "REQ1");
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 int rcThread1;
                 rc = RTThreadWait(Thread1, RT_INDEFINITE_WAIT, &rcThread1);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
                     g_cErrors++;
                 }
-                if (VBOX_FAILURE(rcThread1))
+                if (RT_FAILURE(rcThread1))
                     g_cErrors++;
             }
             else
@@ -258,12 +258,12 @@ int main(int argc, char **argv)
 
             int rcThread0;
             rc = RTThreadWait(Thread0, RT_INDEFINITE_WAIT, &rcThread0);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 RTPrintf(TESTCASE ": RTThreadWait(Thread1,,) failed, rc=%Vrc\n", rc);
                 g_cErrors++;
             }
-            if (VBOX_FAILURE(rcThread0))
+            if (RT_FAILURE(rcThread0))
                 g_cErrors++;
         }
         else
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc))
+        if (!RT_SUCCESS(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%Vrc\n", rc);
             g_cErrors++;

@@ -339,22 +339,22 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
      * Initialize sub compontents.
      */
     rc = pdmR3CritSectInit(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, "PDM");
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = pdmR3LdrInitU(pVM->pUVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = pdmR3DrvInit(pVM);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = pdmR3DevInit(pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
                     rc = pdmR3AsyncCompletionInit(pVM);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
 #endif
                     {
                         /*
@@ -363,7 +363,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
                         rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
                                                    NULL, pdmR3Save, NULL,
                                                    pdmR3LoadPrep, pdmR3Load, NULL);
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             LogFlow(("PDM: Successfully initialized\n"));
                             return rc;
@@ -726,7 +726,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /* APIC interrupt */
     RTUINT fInterruptPending = 0;
     int rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fInterruptPending & ~1)
     {
@@ -740,7 +740,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /* PIC interrupt */
     fInterruptPending = 0;
     rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fInterruptPending & ~1)
     {
@@ -754,7 +754,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     /* DMA pending */
     RTUINT fDMAPending = 0;
     rc = SSMR3GetUInt(pSSM, &fDMAPending);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (fDMAPending & ~1)
     {
@@ -778,7 +778,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* Get the separator / terminator. */
         uint32_t    u32Sep;
         int rc = SSMR3GetU32(pSSM, &u32Sep);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == (uint32_t)~0)
             break;
@@ -788,11 +788,11 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* get the name and instance number. */
         char szDeviceName[sizeof(pDevIns->pDevReg->szDeviceName)];
         rc = SSMR3GetStrZ(pSSM, szDeviceName, sizeof(szDeviceName));
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         RTUINT iInstance;
         rc = SSMR3GetUInt(pSSM, &iInstance);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         /* compare */
@@ -1229,7 +1229,7 @@ VMMR3DECL(int) PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIns
      */
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *ppBase = pLun->pBase;
         LogFlow(("PDMR3QueryDeviceLun: return VINF_SUCCESS and *ppBase=%p\n", *ppBase));
@@ -1262,7 +1262,7 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
      */
     PPDMLUN pLun;
     int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (pLun->pTop)
         {

@@ -283,7 +283,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
 
                 rc = EMInterpretIret(pVM, pRegFrame);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret);
 
@@ -510,7 +510,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
             rc = DISCoreOne(&cpu, (RTUINTPTR)&pRec->patch.aPrivInstr[0], &cbOp);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Vrc\n", rc));
                 PATM_STAT_FAULT_INC(&pRec->patch);

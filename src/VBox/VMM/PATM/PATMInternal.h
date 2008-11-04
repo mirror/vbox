@@ -710,7 +710,7 @@ inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPT
     disinfo.fReadFlags = fReadFlags;
     (pCpu)->pfnReadBytes  = patmReadBytes;
     (pCpu)->apvUserData[0] = &disinfo;
-    return VBOX_SUCCESS(DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput));
+    return RT_SUCCESS(DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput));
 }
 #endif /* !IN_GC */
 

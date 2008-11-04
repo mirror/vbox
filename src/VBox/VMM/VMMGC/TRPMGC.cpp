@@ -125,7 +125,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     {
         uint32_t cb;
         int rc = EMInterpretInstruction(pVM, pRegFrame, pvFault, &cb);
-        if (VBOX_SUCCESS(rc) && cb)
+        if (RT_SUCCESS(rc) && cb)
         {
             uint32_t iGate1 = (offRange + cb - 1)/sizeof(VBOXIDTE);
 

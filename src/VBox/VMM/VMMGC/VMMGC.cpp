@@ -300,13 +300,13 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
                  * Test the use of a temporary #PF handler.
                  */
                 rc = TRPMGCSetTempHandler(pVM, X86_XCPT_PF, uArg != 4 ? vmmGCTestTmpPFHandler : vmmGCTestTmpPFHandlerCorruptFS);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = vmmGCTestTrap0e();
 
                     /* in case it didn't fire. */
                     int rc2 = TRPMGCSetTempHandler(pVM, X86_XCPT_PF, NULL);
-                    if (VBOX_FAILURE(rc2) && VBOX_SUCCESS(rc))
+                    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
@@ -328,7 +328,7 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
  * Temporary #PF trap handler for the #PF test case.
  *
  * @returns VBox status code (appropriate for GC return).
- *          In this context VBOX_SUCCESS means to restart the instruction.
+ *          In this context RT_SUCCESS means to restart the instruction.
  * @param   pVM         VM handle.
  * @param   pRegFrame   Trap register frame.
  */
@@ -347,7 +347,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
  * Temporary #PF trap handler for the #PF test case, this one messes up the fs selector.
  *
  * @returns VBox status code (appropriate for GC return).
- *          In this context VBOX_SUCCESS means to restart the instruction.
+ *          In this context RT_SUCCESS means to restart the instruction.
  * @param   pVM         VM handle.
  * @param   pRegFrame   Trap register frame.
  */

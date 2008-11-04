@@ -249,7 +249,7 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     if (!fRegisteredCmds)
     {
         int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
 #endif
@@ -897,7 +897,7 @@ VMMR3DECL(int) STAMR3SnapshotU(PUVM pUVM, const char *pszPat, char **ppszSnapsho
     STAM_UNLOCK_RD(pUVM);
     stamR3SnapshotPrintf(&State, "</Statistics>\n");
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = State.rc;
     else
     {
@@ -1888,7 +1888,7 @@ static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
      * Execute reset.
      */
     int rc = STAMR3ResetU(pUVM, cArgs ? paArgs[0].u.pszString : NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "info: Statistics reset.\n");
 
     return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Restting statistics.\n");
