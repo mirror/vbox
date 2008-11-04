@@ -376,6 +376,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 #else
                 while (1) {
+                    tcp_loop_begin:
                     if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
@@ -390,6 +391,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                         free(so);
                         so = so_next;
                         so_next = so->so_next;
+                        if (so == &tcb) {
+                            goto tcp_loop_begin;
+                        }
                         VBOX_SLIRP_LOCK(so->so_mutex);
                     }
 #endif
@@ -577,6 +581,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 #else
                 while (1) {
+                    loop_begin:
                     if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
@@ -593,6 +598,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         free(so);
                         so = so_next;
                         so_next = so->so_next;
+                        if (so == &tcb)
+                            goto loop_begin;
                         VBOX_SLIRP_LOCK(so->so_mutex);
                     }
 #endif
