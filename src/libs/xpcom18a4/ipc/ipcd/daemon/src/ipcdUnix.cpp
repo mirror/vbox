@@ -112,10 +112,9 @@ static Status AcquireDaemonLock(const char *baseDir)
     lockFile[dirLen] = '/';
     memcpy(lockFile + dirLen + 1, lockName, sizeof(lockName));
 
-#if 0
 #ifdef VBOX
     //
-    // Security checks
+    // Security checks for the directory
     //
     struct stat st;
     if (stat(baseDir, &st) == -1)
@@ -136,26 +135,22 @@ static Status AcquireDaemonLock(const char *baseDir)
         return ELockFileOwner;
     }
 #endif
-#endif
 
     //
     // open lock file.  it remains open until we shutdown.
     //
     ipcLockFD = open(lockFile, O_WRONLY|O_CREAT, S_IWUSR|S_IRUSR);
 
-#if 0
 #ifndef VBOX
     free(lockFile);
-#endif
 #endif
 
     if (ipcLockFD == -1)
         return ELockFileOpen;
 
-#if 0
 #ifdef VBOX
     //
-    // Security checks
+    // Security checks for the lock file
     //
     if (fstat(ipcLockFD, &st) == -1)
     {
@@ -179,7 +174,6 @@ static Status AcquireDaemonLock(const char *baseDir)
     }
 
     free(lockFile);
-#endif
 #endif
 
     //
