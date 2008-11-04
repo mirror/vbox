@@ -65,10 +65,8 @@ __END_DECLS
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
 /** Pointer to the internal networking service instance. */
 PINTNET g_pIntNet = 0;
-#endif
 
 
 /**
@@ -94,7 +92,6 @@ VMMR0DECL(int) ModuleInit(void)
             rc = HWACCMR0Init();
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
                 LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
                 g_pIntNet = NULL;
                 LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
@@ -106,10 +103,6 @@ VMMR0DECL(int) ModuleInit(void)
                 }
                 g_pIntNet = NULL;
                 LogFlow(("ModuleTerm: returns %Vrc\n", rc));
-#else
-                LogFlow(("ModuleInit: returns success.\n"));
-                return VINF_SUCCESS;
-#endif
             }
         }
     }
@@ -127,7 +120,6 @@ VMMR0DECL(void) ModuleTerm(void)
 {
     LogFlow(("ModuleTerm:\n"));
 
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
     /*
      * Destroy the internal networking instance.
      */
@@ -136,7 +128,6 @@ VMMR0DECL(void) ModuleTerm(void)
         INTNETR0Destroy(g_pIntNet);
         g_pIntNet = NULL;
     }
-#endif
 
     /* Global HWACCM cleanup */
     HWACCMR0Term();
@@ -897,7 +888,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
         }
 
 
-#ifdef VBOX_WITH_INTERNAL_NETWORKING
         /*
          * Requests to the internal networking service.
          */
@@ -959,7 +949,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             if (!g_pIntNet)
                 return VERR_NOT_SUPPORTED;
             return INTNETR0IfWaitReq(g_pIntNet, pSession, (PINTNETIFWAITREQ)pReqHdr);
-#endif /* VBOX_WITH_INTERNAL_NETWORKING */
 
         /*
          * For profiling.
