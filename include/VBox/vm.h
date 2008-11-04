@@ -94,13 +94,11 @@ typedef struct VMCPU
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
     VMCPUID                 idCpu;
-    /** The native ring-3 handle. */
-    RTNATIVETHREAD          hNativeThreadR3;
-    /** The native ring-0 handle. */
-    RTNATIVETHREAD          hNativeThreadR0;
+    /** The native thread handle. */
+    RTNATIVETHREAD          hNativeThread;
 
     /** Align the next bit on a 64-byte boundary. */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 8 : 4];
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 1 : 6];
 
     /** CPUM part. */
     union

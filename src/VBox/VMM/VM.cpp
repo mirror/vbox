@@ -469,12 +469,12 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
      * Request GVMM to create a new VM for us.
      */
     GVMMCREATEVMREQ CreateVMReq;
-    CreateVMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    CreateVMReq.Hdr.cbReq = sizeof(CreateVMReq);
-    CreateVMReq.pSession = pUVM->vm.s.pSession;
-    CreateVMReq.pVMR0 = NIL_RTR0PTR;
-    CreateVMReq.pVMR3 = NULL;
-    CreateVMReq.cCPUs = cCPUs;
+    CreateVMReq.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
+    CreateVMReq.Hdr.cbReq       = sizeof(CreateVMReq);
+    CreateVMReq.pSession        = pUVM->vm.s.pSession;
+    CreateVMReq.pVMR0           = NIL_RTR0PTR;
+    CreateVMReq.pVMR3           = NULL;
+    CreateVMReq.cCPUs           = cCPUs;
     rc = SUPCallVMMR0Ex(NIL_RTR0PTR, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
     if (RT_SUCCESS(rc))
     {
@@ -489,7 +489,13 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->NativeThreadEMT = pVM->aCpu[0].hNativeThreadR3 = pUVM->vm.s.NativeThreadEMT;
+        pVM->NativeThreadEMT = pUVM->aCpu[0].vm.s.NativeThreadEMT;
+
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            pVM->aCpu[i].hNativeThread = pUVM->aCpu[i].vm.s.NativeThreadEMT;
+            Assert(pVM->aCpu[i].hNativeThread!= NIL_RTNATIVETHREAD);
+        }
 
         /*
          * Init the configuration.
