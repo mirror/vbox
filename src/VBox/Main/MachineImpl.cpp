@@ -3084,6 +3084,13 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
             property.mFlags = fFlags;
             mHWData->mGuestProperties.push_back(property);
         }
+        if (   SUCCEEDED (rc)
+            && (   matchAll
+                || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
+                                                utf8Name.raw(), RTSTR_MAX, NULL)
+              )
+          )
+            mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
     }
     else
     {
@@ -3099,13 +3106,6 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
                                                  true /* isSetter */,
                                                  &dummy, &dummy64, &dummy);
     }
-    if (   SUCCEEDED (rc)
-        && (   matchAll
-            || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
-                                             utf8Name.raw(), RTSTR_MAX, NULL)
-           )
-       )
-        mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
