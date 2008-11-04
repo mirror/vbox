@@ -62,7 +62,7 @@ VMCtrlPause(void)
         gConsole->inputGrabEnd();
 
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Suspend, 1, pVM);
     AssertRC(rcVBox);
     if (VBOX_SUCCESS(rcVBox))
@@ -83,7 +83,7 @@ VMCtrlResume(void)
         return VERR_VM_INVALID_VM_STATE;
 
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Resume, 1, pVM);
     AssertRC(rcVBox);
     if (VBOX_SUCCESS(rcVBox))
@@ -101,7 +101,7 @@ int
 VMCtrlReset(void)
 {
     PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+    int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Reset, 1, pVM);
     AssertRC(rcVBox);
     if (VBOX_SUCCESS(rcVBox))
@@ -159,7 +159,7 @@ DECLCALLBACK(int) VMSaveThread(RTTHREAD Thread, void *pvUser)
     int rc;
 
     startProgressInfo("Saving");
-    rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+    rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                      (PFNRT)VMR3Save, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
     endProgressInfo();
     if (VBOX_SUCCESS(rc))
@@ -192,7 +192,7 @@ VMCtrlSave(void (*pfnQuit)(void))
     if (machineState == VMSTATE_RUNNING)
     {
         PVMREQ pReq;
-        rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+        rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)VMR3Suspend, 1, pVM);
         AssertRC(rc);
         if (VBOX_SUCCESS(rc))

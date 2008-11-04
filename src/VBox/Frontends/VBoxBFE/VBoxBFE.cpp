@@ -964,7 +964,7 @@ leave:
         {
             /* Power off VM */
             PVMREQ pReq;
-            rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
+            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
         }
 
         /* And destroy it */
@@ -1273,13 +1273,13 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             && RTPathExists(g_pszStateFile))
         {
             startProgressInfo("Restoring");
-            rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
             endProgressInfo();
             if (VBOX_SUCCESS(rc))
             {
                 VMR3ReqFree(pReq);
-                rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT,
+                rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)VMR3Resume, 1, pVM);
                 if (VBOX_SUCCESS(rc))
                 {
@@ -1293,7 +1293,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         }
         else
         {
-            rc = VMR3ReqCall(pVM, VMREQDEST_ALL, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
+            rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
             if (VBOX_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
