@@ -98,7 +98,7 @@ typedef struct VMCPU
     RTNATIVETHREAD          hNativeThread;
 
     /** Align the next bit on a 64-byte boundary. */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 1 : 6];
+    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 9 : 6];
 
     /** CPUM part. */
     union
