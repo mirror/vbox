@@ -3097,7 +3097,8 @@ else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_LDFLAGS += $(VBOX_LD_as_needed)
   TEMPLATE_VBOXQT4GUIEXE_LIBS += \
     $(VBOX_XCURSOR_LIBS) \
-	Xext
+	Xext \
+	X11
   TEMPLATE_VBOXQT4GUIEXE_LIBPATH += \
     $(VBOX_LIBPATH_X11)
  else ifeq ($(KBUILD_TARGET),darwin)
