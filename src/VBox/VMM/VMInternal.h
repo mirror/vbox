@@ -261,10 +261,6 @@ typedef struct VMINTUSERPERVM
      * Mainly for creation and destruction.. */
     PSUPDRVSESSION                  pSession;
 
-    /** The handle to the EMT thread. */
-    RTTHREAD                        ThreadEMT;
-    /** The native of the EMT thread. */
-    RTNATIVETHREAD                  NativeThreadEMT;
     /** Wait event semaphore. */
     RTSEMEVENT                      EventSemWait;
     /** Wait/Idle indicator. */

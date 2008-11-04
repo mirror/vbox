@@ -425,10 +425,12 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
                     /* Start the emulation threads for all VMCPUs. */
                     for (unsigned i=0;i<cCPUs;i++)
                     {
-                        rc = RTThreadCreate(&pUVM->vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpu[i], _1M,
+                        rc = RTThreadCreate(&pUVM->aCpu[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpu[i], _1M,
                                             RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "EMT");
                         if (RT_FAILURE(rc))
                             break;
+
+                        pUVM->aCpu[i].vm.s.NativeThreadEMT = RTThreadGetNative(pUVM->aCpu[i].vm.s.ThreadEMT);
                     }
 
                     if (RT_SUCCESS(rc))
@@ -500,7 +502,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
-        pVM->NativeThreadEMT = pUVM->aCpu[0].vm.s.NativeThreadEMT;
         pVM->offVMCPU = RT_OFFSETOF(VM, aCpu);
 
         for (uint32_t i = 0; i < pVM->cCPUs; i++)
@@ -551,7 +552,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
                     VMR3Relocate(pVM, 0);
                     LogFlow(("Ring-3 init succeeded\n"));
 
-                    /* Initialize the VM CPU components. */
+                    /* Initialize the VMCPU components. */
                     rc = vmR3InitVMCpu(pVM);
                     if (VBOX_SUCCESS(rc))
                     {
@@ -1586,7 +1587,8 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
          * Wait for the EMT thread to terminate.
          */
         Assert(pUVM->vm.s.fTerminateEMT);
-        rc = RTThreadWait(pUVM->vm.s.ThreadEMT, 30000, NULL);
+        /** @todo SMP */
+        rc = RTThreadWait(pUVM->aCpu[0].vm.s.ThreadEMT, 30000, NULL);
         AssertMsgRC(rc, ("EMT thread wait failed, rc=%Rrc\n", rc));
 
         /*
@@ -1740,7 +1742,8 @@ static void vmR3DestroyUVM(PUVM pUVM)
         }
         RTSemEventSignal(pUVM->vm.s.EventSemWait);
 
-        int rc2 = RTThreadWait(pUVM->vm.s.ThreadEMT, 2000, NULL);
+        /** @todo SMP */
+        int rc2 = RTThreadWait(pUVM->aCpu[0].vm.s.ThreadEMT, 2000, NULL);
         AssertRC(rc2);
     }
     RTSemEventDestroy(pUVM->vm.s.EventSemWait);
@@ -3162,3 +3165,84 @@ DECLCALLBACK(void) vmR3SetRuntimeErrorV(PVM pVM, bool fFatal,
     }
 }
 
+/**
+ * Returns the VMCPU id of the current EMT thread.
+ *
+ * @param   pVM             The VM handle.
+ * @thread  EMT
+ */
+VMMR3DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
+{
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pVM->pUVM->vm.s.idxTLS);
+
+    AssertMsg(pUVMCPU, ("RTTlsGet %d failed!\n", pVM->pUVM->vm.s.idxTLS));
+    return pUVMCPU->idCPU;
+}
+
+/**
+ * Returns the native handle of the current EMT VMCPU thread.
+ *
+ * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
+ * @param   pVM             The VM handle.
+ * @thread  EMT
+ */
+VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThread(PVM pVM)
+{
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pVM->pUVM->vm.s.idxTLS);
+
+    if (!pUVMCPU)
+        return NIL_RTNATIVETHREAD;
+
+    return pUVMCPU->vm.s.NativeThreadEMT;
+}
+
+/**
+ * Returns the native handle of the current EMT VMCPU thread.
+ *
+ * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
+ * @param   pVM             The VM handle.
+ * @thread  EMT
+ */
+VMMR3DECL(RTNATIVETHREAD) VMR3GetVMCPUNativeThreadU(PUVM pUVM)
+{
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+
+    if (!pUVMCPU)
+        return NIL_RTNATIVETHREAD;
+
+    return pUVMCPU->vm.s.NativeThreadEMT;
+}
+
+/**
+ * Returns the handle of the current EMT VMCPU thread.
+ *
+ * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
+ * @param   pVM             The VM handle.
+ * @thread  EMT
+ */
+VMMR3DECL(RTTHREAD) VMR3GetVMCPUThread(PVM pVM)
+{
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pVM->pUVM->vm.s.idxTLS);
+
+    if (!pUVMCPU)
+        return NIL_RTTHREAD;
+
+    return pUVMCPU->vm.s.ThreadEMT;
+}
+
+/**
+ * Returns the handle of the current EMT VMCPU thread.
+ *
+ * @returns Handle if this is an EMT thread; NIL_RTNATIVETHREAD otherwise
+ * @param   pVM             The VM handle.
+ * @thread  EMT
+ */
+VMMR3DECL(RTTHREAD) VMR3GetVMCPUThreadU(PUVM pUVM)
+{
+    PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pUVM->vm.s.idxTLS);
+
+    if (!pUVMCPU)
+        return NIL_RTTHREAD;
+
+    return pUVMCPU->vm.s.ThreadEMT;
+}

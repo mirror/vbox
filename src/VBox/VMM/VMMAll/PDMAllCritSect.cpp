@@ -29,6 +29,7 @@
 #include <VBox/mm.h>
 #include <VBox/vm.h>
 #include <VBox/err.h>
+#include <VBox/hwaccm.h>
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -66,13 +67,16 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
 
+    RTCPUID idCPU = VM_GET_VMCPUID(pVM);
+
     /*
-     * Try take the lock.
+     * Try to take the lock.
      */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
     {
         pCritSect->s.Core.cNestings = 1;
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVM->NativeThreadEMT);
+        Assert(pVM->aCpu[idCPU].hNativeThread);
+        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVM->aCpu[idCPU].hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
         return VINF_SUCCESS;
     }
@@ -80,7 +84,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
     /*
      * Nested?
      */
-    if (pCritSect->s.Core.NativeThreadOwner == pVM->NativeThreadEMT)
+    if (pCritSect->s.Core.NativeThreadOwner == pVM->aCpu[idCPU].hNativeThread)
     {
         pCritSect->s.Core.cNestings++;
         ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
@@ -158,7 +162,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     Assert(pCritSect->s.Core.cLockers >= 0);
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
-    Assert(pCritSect->s.Core.NativeThreadOwner == pVM->NativeThreadEMT);
+    AssertMsg(pCritSect->s.Core.NativeThreadOwner == pVM->aCpu[VM_GET_VMCPUID(pVM)].hNativeThread, ("Owner %RX64 emt=%RX64\n", pCritSect->s.Core.NativeThreadOwner, pVM->aCpu[VM_GET_VMCPUID(pVM)].hNativeThread));
 
     /*
      * Deal with nested attempts first.
@@ -182,7 +186,8 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
             return;
 
         /* darn, someone raced in on us. */
-        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVM->NativeThreadEMT);
+        Assert(pVM->aCpu[VM_GET_VMCPUID(pVM)].hNativeThread);
+        ASMAtomicXchgSize(&pCritSect->s.Core.NativeThreadOwner, pVM->aCpu[VM_GET_VMCPUID(pVM)].hNativeThread);
         STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
     }
     pCritSect->s.Core.cNestings = 1;
@@ -216,7 +221,7 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
 #else
     PVM pVM = pCritSect->s.CTX_SUFF(pVM);
     Assert(pVM);
-    return pCritSect->s.Core.NativeThreadOwner == pVM->NativeThreadEMT;
+    return pCritSect->s.Core.NativeThreadOwner == pVM->aCpu[VM_GET_VMCPUID(pVM)].hNativeThread;
 #endif
 }
 

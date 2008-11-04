@@ -364,7 +364,7 @@ typedef struct VMCPU *PVMCPU;
 # define VM_IS_EMT(pVM)                     true
 #else
 /** @todo need to rework this macro for the case of multiple emulation threads for SMP */
-# define VM_IS_EMT(pVM)                     ((pVM)->NativeThreadEMT == RTThreadNativeSelf())
+# define VM_IS_EMT(pVM)                     (VMR3GetVMCPUNativeThread(pVM) == RTThreadNativeSelf())
 #endif
 
 /** @def VM_ASSERT_EMT
@@ -377,7 +377,7 @@ typedef struct VMCPU *PVMCPU;
 #else
 # define VM_ASSERT_EMT(pVM) \
     AssertMsg(VM_IS_EMT(pVM), \
-        ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), pVM->NativeThreadEMT))
+        ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), VMR3GetVMCPUNativeThread(pVM)))
 #endif
 
 /** @def VM_ASSERT_EMT_RETURN
@@ -390,8 +390,20 @@ typedef struct VMCPU *PVMCPU;
 #else
 # define VM_ASSERT_EMT_RETURN(pVM, rc) \
     AssertMsgReturn(VM_IS_EMT(pVM), \
-        ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), pVM->NativeThreadEMT), \
+        ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd\n", RTThreadNativeSelf(), VMR3GetVMCPUNativeThread(pVM)), \
         (rc))
+#endif
+
+
+/** @def VM_GET_VMCPUID
+ * Returns the VMCPU id of the current EMT thread.
+ */
+#ifdef IN_GC
+# define VM_GET_VMCPUID(pVM)                       0
+#elif defined(IN_RING0)
+# define VM_GET_VMCPUID(pVM)                       HWACCMGetVMCPUId(pVM)
+#else
+# define VM_GET_VMCPUID(pVM)                       VMR3GetVMCPUId(pVM)
 #endif
 
 /**
@@ -516,7 +528,7 @@ typedef struct VM
     RTTHREAD            uPadding1;
     /** The native handle of ThreadEMT. Getting the native handle
      * is generally faster than getting the IPRT one (except on OS/2 :-). */
-    RTNATIVETHREAD      NativeThreadEMT;
+    RTNATIVETHREAD      uPadding2;
     /** @} */
 
 
