@@ -256,7 +256,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     *(uint32_t *)pVM->hwaccm.s.vmx.pVMCS  = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
     /* Clear VM Control Structure. */
-    Log(("pVMCSPhys  = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
+    Log(("pVMCSPhys  = %RHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
     rc = VMXClearVMCS(pVM->hwaccm.s.vmx.pVMCSPhys);
     if (RT_FAILURE(rc))
         goto vmx_end;
@@ -776,7 +776,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR4,               ASMGetCR4());
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_CR0 %08x\n", ASMGetCR0()));
-        Log2(("VMX_VMCS_HOST_CR3 %VHp\n", ASMGetCR3()));
+        Log2(("VMX_VMCS_HOST_CR3 %RHp\n", ASMGetCR3()));
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
@@ -806,8 +806,8 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
         ASMGetIDTR(&idtr);
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_IDTR_BASE, idtr.pIdt);
         AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_GDTR_BASE %VHv\n", gdtr.pGdt));
-        Log2(("VMX_VMCS_HOST_IDTR_BASE %VHv\n", idtr.pIdt));
+        Log2(("VMX_VMCS_HOST_GDTR_BASE %RHv\n", gdtr.pGdt));
+        Log2(("VMX_VMCS_HOST_IDTR_BASE %RHv\n", idtr.pIdt));
 
         /* Save the base address of the TR selector. */
         if (SelTR > gdtr.cbGdt)
@@ -824,12 +824,12 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 #endif
         rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
         AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_TR_BASE %VHv\n", trBase));
+        Log2(("VMX_VMCS_HOST_TR_BASE %RHv\n", trBase));
 
         /* FS and GS base. */
 #if HC_ARCH_BITS == 64
-        Log2(("MSR_K8_FS_BASE = %VHv\n", ASMRdMsr(MSR_K8_FS_BASE)));
-        Log2(("MSR_K8_GS_BASE = %VHv\n", ASMRdMsr(MSR_K8_GS_BASE)));
+        Log2(("MSR_K8_FS_BASE = %RX64\n", ASMRdMsr(MSR_K8_FS_BASE)));
+        Log2(("MSR_K8_GS_BASE = %RX64\n", ASMRdMsr(MSR_K8_GS_BASE)));
         rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,         ASMRdMsr(MSR_K8_FS_BASE));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,         ASMRdMsr(MSR_K8_GS_BASE));
 #endif
@@ -842,11 +842,11 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
 #if HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_ESP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_EIP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
-        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
-        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX32\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %RX32\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP)));
 #else
-        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", ASMRdMsr(MSR_IA32_SYSENTER_EIP)));
-        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", ASMRdMsr(MSR_IA32_SYSENTER_ESP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX64\n", ASMRdMsr(MSR_IA32_SYSENTER_EIP)));
+        Log2(("VMX_VMCS_HOST_SYSENTER_ESP %RX64\n", ASMRdMsr(MSR_IA32_SYSENTER_ESP)));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_ESP,      ASMRdMsr(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_EIP,      ASMRdMsr(MSR_IA32_SYSENTER_EIP));
 #endif
@@ -1243,7 +1243,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%VHp vs %VHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
+            AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%RHp vs %RHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
             pVM->hwaccm.s.vmx.GCPhysEPTP = PGMGetEPTCR3(pVM);
 
             Assert(!(pVM->hwaccm.s.vmx.GCPhysEPTP & 0xfff));
@@ -3161,7 +3161,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR3, &val);
-            Log(("VMX_VMCS_HOST_CR3 %VHp\n", val));
+            Log(("VMX_VMCS_HOST_CR3 %RHp\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR4, &val);
             Log(("VMX_VMCS_HOST_CR4 %08x\n", val));
@@ -3227,26 +3227,26 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             }
 
             VMXReadVMCS(VMX_VMCS_HOST_TR_BASE, &val);
-            Log(("VMX_VMCS_HOST_TR_BASE %VHv\n", val));
+            Log(("VMX_VMCS_HOST_TR_BASE %RHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_GDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_GDTR_BASE %VHv\n", val));
+            Log(("VMX_VMCS_HOST_GDTR_BASE %RHv\n", val));
             VMXReadVMCS(VMX_VMCS_HOST_IDTR_BASE, &val);
-            Log(("VMX_VMCS_HOST_IDTR_BASE %VHv\n", val));
+            Log(("VMX_VMCS_HOST_IDTR_BASE %RHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_CS, &val);
             Log(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_EIP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_EIP %VHv\n", val));
+            Log(("VMX_VMCS_HOST_SYSENTER_EIP %RHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_SYSENTER_ESP, &val);
-            Log(("VMX_VMCS_HOST_SYSENTER_ESP %VHv\n", val));
+            Log(("VMX_VMCS_HOST_SYSENTER_ESP %RHv\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_RSP, &val);
-            Log(("VMX_VMCS_HOST_RSP %VHv\n", val));
+            Log(("VMX_VMCS_HOST_RSP %RHv\n", val));
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
-            Log(("VMX_VMCS_HOST_RIP %VHv\n", val));
+            Log(("VMX_VMCS_HOST_RIP %RHv\n", val));
 
 # if HC_ARCH_BITS == 64
             Log(("MSR_K6_EFER       = %VX64\n", ASMRdMsr(MSR_K6_EFER)));

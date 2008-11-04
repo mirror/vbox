@@ -1101,7 +1101,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv HCPHYS  %VHp %s\n",
+                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv HCPHYS  %RHp %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.HCPhys.pvR3, pLookup->u.HCPhys.HCPhys,

@@ -585,9 +585,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: MSR_IA32_VMX_CR4_FIXED1       = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1));
             LogRel(("HWACCM: MSR_IA32_VMX_VMCS_ENUM        = %VX64\n", pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum));
 
-            LogRel(("HWACCM: VMCS physaddr                 = %VHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
-            LogRel(("HWACCM: TPR shadow physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
-            LogRel(("HWACCM: MSR bitmap physaddr           = %VHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
+            LogRel(("HWACCM: VMCS physaddr                 = %RHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
+            LogRel(("HWACCM: TPR shadow physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
+            LogRel(("HWACCM: MSR bitmap physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
 
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -656,7 +656,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 if (pVM->hwaccm.s.fNestedPaging)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
-                    LogRel(("HWACCM: EPT root page                 = %VHp\n", PGMGetEPTCR3(pVM)));
+                    LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetEPTCR3(pVM)));
                 }
                 if (pVM->hwaccm.s.vmx.fVPID)
                     LogRel(("HWACCM: Enabled VPID\n"));

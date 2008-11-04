@@ -147,7 +147,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
         pVM->csam.s.pPDGCBitmapHC[pgdir] = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC[pgdir]);
         if (!pVM->csam.s.pPDGCBitmapHC[pgdir])
         {
-            Log(("MMHyperHC2GC failed for %VHv\n", pVM->csam.s.pPDBitmapHC[pgdir]));
+            Log(("MMHyperHC2GC failed for %RHv\n", pVM->csam.s.pPDBitmapHC[pgdir]));
             return rc;
         }
 #endif

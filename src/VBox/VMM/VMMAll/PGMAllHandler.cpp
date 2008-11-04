@@ -952,7 +952,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             /* Do the actual remapping here. This page now serves as an alias for the backing memory specified. */
             pPage->HCPhys = pPageRemap->HCPhys;
 
-            LogFlow(("PGMHandlerPhysicalPageAlias %VGp -> %VGp - %VHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
+            LogFlow(("PGMHandlerPhysicalPageAlias %VGp -> %VGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
 #ifndef IN_GC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
@@ -1386,7 +1386,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
 
         if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
-            AssertMsgFailed(("virt handler state mismatch. HCPhys=%VHp GCPhysGst=%VGp iPage=%#x %VGv state=%d expected>=%d %s\n",
+            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%VGp iPage=%#x %VGv state=%d expected>=%d %s\n",
                              pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;

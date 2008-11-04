@@ -110,7 +110,7 @@ static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
     int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0PicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3PicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
+    LogFlow(("pdmR3PicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pR0Helpers));
     return pR0Helpers;
 }
@@ -241,7 +241,7 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
     int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0ApicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3ApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
+    LogFlow(("pdmR3ApicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pR0Helpers));
     return pR0Helpers;
 }
@@ -328,7 +328,7 @@ static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDe
     int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0IoApicHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
+    LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pR0Helpers));
     return pR0Helpers;
 }
@@ -428,7 +428,7 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns)
     int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0PciHlp", &pR0Helpers);
     AssertReleaseRC(rc);
     AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %VHv\n",
+    LogFlow(("pdmR3IoApicHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pR0Helpers));
     return pR0Helpers;
 }

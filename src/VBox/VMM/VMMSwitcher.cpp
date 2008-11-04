@@ -153,7 +153,7 @@ int vmmR3SwitcherInit(PVM pVM)
             }
             while (i-- > 0)
             {
-                LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%VHp\n",
+                LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%RHp\n",
                         i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
                 SUPContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
             }
@@ -182,7 +182,7 @@ int vmmR3SwitcherInit(PVM pVM)
         {
             pVM->vmm.s.pvCoreCodeRC = GCPtr;
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-            LogRel(("CoreCode: R3=%VHv R0=%VHv GC=%VRv Phys=%VHp cb=%#x\n",
+            LogRel(("CoreCode: R3=%RHv R0=%RHv GC=%VRv Phys=%RHp cb=%#x\n",
                     pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.pvCoreCodeR0, pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
 
             /*

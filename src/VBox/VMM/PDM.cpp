@@ -1350,7 +1350,7 @@ VMMR3DECL(int) PDMR3RegisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvHeap,
 {
     Assert(pVM->pdm.s.pvVMMDevHeap == NULL);
 
-    Log(("PDMR3RegisterVMMDevHeap %VGp %VHv %x\n", GCPhys, pvHeap, cbSize));
+    Log(("PDMR3RegisterVMMDevHeap %VGp %RHv %x\n", GCPhys, pvHeap, cbSize));
     pVM->pdm.s.pvVMMDevHeap     = pvHeap;
     pVM->pdm.s.GCPhysVMMDevHeap = GCPhys;
     pVM->pdm.s.cbVMMDevHeap     = cbSize;
@@ -1409,7 +1409,7 @@ VMMR3DECL(int) PDMR3VMMDevHeapAlloc(PVM pVM, unsigned cbSize, RTR3PTR *ppv)
  */
 VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
 {
-    Log(("PDMR3VMMDevHeapFree %VHv\n", pv));
+    Log(("PDMR3VMMDevHeapFree %RHv\n", pv));
 
     /** @todo not a real heap as there's currently only one user. */
     pVM->pdm.s.cbVMMDevHeapLeft = pVM->pdm.s.cbVMMDevHeap;
