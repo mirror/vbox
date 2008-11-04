@@ -412,6 +412,16 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     fileExitAction->setMenuRole (QAction::QuitRole);
     fileExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    trayShowWindowAction = new QAction (this);
+    trayShowWindowAction->setIcon (VBoxGlobal::iconSet (":/VirtualBox_16px.png"));
+    trayShowWindowAction->setText (tr ("Sun xVM VirtualBox"));
+    
+    trayExitAction = new QAction (this);
+    trayExitAction->setMenuRole (QAction::QuitRole);
+    trayExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
+#endif
+
     vmNewAction = new QAction (this);
     vmNewAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
@@ -455,7 +465,21 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mHelpActions.setup (this);
 
-    /* Subwidgets */
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    if (QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        /* tray menu */
+        trayIconMenu = new QMenu(this);
+
+        /* tray icon */
+        trayIcon = new QSystemTrayIcon  (this);
+        trayIcon->setIcon(QIcon (":/VirtualBox_16px.png"));
+        trayIcon->setContextMenu (trayIconMenu);
+
+        connect(trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
+                this, SLOT(iconActivated(QSystemTrayIcon::ActivationReason)));
+    }
+#endif
 
     /* Central widget @ horizontal layout */
     setCentralWidget (new QWidget (this));
@@ -639,6 +663,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (fileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
     connect (fileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
     connect (vmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
+
     connect (vmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
     connect (vmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
     connect (vmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
@@ -646,6 +671,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (vmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
     connect (vmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
     connect (vmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    connect (trayShowWindowAction, SIGNAL (triggered()), this, SLOT(showWindow()));
+#endif
 
     connect (mVMListView, SIGNAL (currentChanged()),
              this, SLOT (vmListViewCurrentChanged()));
@@ -698,7 +727,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Save vm selector position */
     {
-        VBoxVMItem *item = mVMListView->selectedItem();
+        VBoxVMItem *item = getSelectedItem();
         QString curVMId = item ?
             QString (item->id()) :
             QString::null;
@@ -711,6 +740,53 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 //
 // Public slots
 /////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+void VBoxSelectorWnd::iconActivated(QSystemTrayIcon::ActivationReason aReason)
+{
+    switch (aReason)
+    {
+
+    case QSystemTrayIcon::Context:
+
+        refreshSysTray();
+        break;
+
+    case QSystemTrayIcon::Trigger:
+        break;
+
+    case QSystemTrayIcon::DoubleClick:
+
+        showWindow();
+        break;
+
+    case QSystemTrayIcon::MiddleClick:
+        break;
+
+    default:
+        break;
+    }
+}
+#endif
+
+VBoxVMItem* VBoxSelectorWnd::getSelectedItem()
+{
+    VBoxVMItem* pItem = NULL;
+
+    if (NULL == pItem)
+        pItem = mVMListView->selectedItem();
+
+    /* pItem can be NULL here, so don't assert. */
+    return pItem;
+}
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+void VBoxSelectorWnd::showWindow()
+{
+    showNormal();
+    setFocus();
+}
+#endif
 
 void VBoxSelectorWnd::fileMediaMgr()
 {
@@ -768,7 +844,7 @@ void VBoxSelectorWnd::vmNew()
 /**
  *  Opens the VM settings dialog.
  */
-void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl)
+void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl, const QUuid& a_Uuid)
 {
     if (!aCategory.isEmpty() && aCategory [0] != '#')
     {
@@ -777,7 +853,9 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         return;
     }
 
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
@@ -818,9 +896,11 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     session.Close();
 }
 
-void VBoxSelectorWnd::vmDelete()
+void VBoxSelectorWnd::vmDelete(const QUuid& a_Uuid)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
@@ -878,16 +958,18 @@ void VBoxSelectorWnd::vmDelete()
     }
 }
 
-void VBoxSelectorWnd::vmStart()
+void VBoxSelectorWnd::vmStart(const QUuid& a_Uuid)
 {
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
+
+    AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
+
     /* we always get here when mVMListView emits the activated() signal,
      * so we must explicitly check if the action is enabled or not. */
-    if (!vmStartAction->isEnabled())
+    if (!item->vmActionStart()->isEnabled())
         return;
-
-    VBoxVMItem *item = mVMListView->selectedItem();
-
-    AssertMsg (item, ("Item must be always selected here"));
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
@@ -955,9 +1037,11 @@ void VBoxSelectorWnd::vmStart()
 #endif
 }
 
-void VBoxSelectorWnd::vmDiscard()
+void VBoxSelectorWnd::vmDiscard(const QUuid& a_Uuid)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -989,9 +1073,11 @@ void VBoxSelectorWnd::vmDiscard()
     session.Close();
 }
 
-void VBoxSelectorWnd::vmPause (bool aPause)
+void VBoxSelectorWnd::vmPause (bool aPause, const QUuid& a_Uuid)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -1020,9 +1106,11 @@ void VBoxSelectorWnd::vmPause (bool aPause)
     session.Close();
 }
 
-void VBoxSelectorWnd::vmRefresh()
+void VBoxSelectorWnd::vmRefresh(const QUuid& a_Uuid)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
 
     AssertMsgReturn (item, ("Item must be always selected here"), (void) 0);
 
@@ -1032,12 +1120,70 @@ void VBoxSelectorWnd::vmRefresh()
                    true /* aDescription */);
 }
 
-void VBoxSelectorWnd::vmShowLogs()
+void VBoxSelectorWnd::vmShowLogs(const QUuid& a_Uuid)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    if (NULL == item)
+        item = getSelectedItem();
+
     CMachine machine = item->machine();
     VBoxVMLogViewer::createLogViewer (this, machine);
 }
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+void VBoxSelectorWnd::refreshSysTray()
+{
+    if (false == QSystemTrayIcon::isSystemTrayAvailable())
+        return;
+
+    Assert(trayIcon);
+    Assert(trayIconMenu);
+
+    trayIcon->setVisible (true);
+    trayIconMenu->clear();
+    trayIconMenu->addAction (trayExitAction);
+    trayIconMenu->addSeparator();
+
+    VBoxVMItem* pItem = NULL;
+    QMenu* pSubMenu = NULL;
+    for (int i = 0; i < mVMModel->rowCount(); i++)
+    {
+        pItem = mVMModel->itemByRow(i);
+        Assert(pItem);
+
+        pSubMenu = new QMenu (pItem->name());
+        Assert(pSubMenu);
+        pSubMenu->setIcon (pItem->osIcon());
+        if(pItem->accessible())
+        {
+            pSubMenu->addAction (pItem->vmActionConfig());
+            pSubMenu->addAction (pItem->vmActionDelete());
+            pSubMenu->addSeparator();
+            pSubMenu->addAction (pItem->vmActionStart());
+            pSubMenu->addAction (pItem->vmActionDiscard());
+            if (pItem->running())
+            {
+                pSubMenu->addSeparator();
+                pSubMenu->addAction (pItem->vmActionPause());
+            }
+            pSubMenu->addSeparator();
+            pSubMenu->addAction (pItem->vmActionShowLogs());
+        }
+        else
+        {
+            pSubMenu->addAction (pItem->vmActionDelete());
+            pSubMenu->addAction (pItem->vmActionRefresh());
+        }
+
+        trayIconMenu->addMenu (pSubMenu);
+    }
+
+    trayIconMenu->addSeparator();
+    trayIconMenu->addAction (fileExitAction);
+
+    trayIconMenu->setVisible (true);
+}
+#endif
 
 void VBoxSelectorWnd::refreshVMList()
 {
@@ -1045,10 +1191,14 @@ void VBoxSelectorWnd::refreshVMList()
     CMachineVector vec = vbox.GetMachines2();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
-        mVMModel->addItem (new VBoxVMItem (*m));
+        mVMModel->addItem (new VBoxVMItem (*m, this));
     mVMModel->sort();
 
     vmListViewCurrentChanged();
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    refreshSysTray();
+#endif
 }
 
 void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
@@ -1246,10 +1396,10 @@ void VBoxSelectorWnd::retranslateUi()
 /////////////////////////////////////////////////////////////////////////////
 
 void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
-                                               bool aRefreshSnapshots,
-                                               bool aRefreshDescription)
+                                                bool aRefreshSnapshots,
+                                                bool aRefreshDescription)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    VBoxVMItem *item = getSelectedItem();
 
     if (item && item->accessible())
     {
@@ -1478,7 +1628,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
         CMachine m = vbox.GetMachine (e.id);
         if (!m.isNull())
         {
-            mVMModel->addItem (new VBoxVMItem (m));
+            mVMModel->addItem (new VBoxVMItem (m, this));
             mVMModel->sort();
             /* Make sure the description, ... pages are properly updated.
              * Actualy we haven't call the next method, but unfortunately Qt

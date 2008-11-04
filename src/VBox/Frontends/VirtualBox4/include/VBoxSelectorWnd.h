@@ -32,6 +32,10 @@
 
 /* Qt includes */
 #include <QMainWindow>
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    #include <QSystemTrayIcon>
+#endif
+#include <QUuid>
 
 class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
@@ -65,19 +69,28 @@ signals:
 public slots:
 
     void fileMediaMgr();
+    VBoxVMItem* getSelectedItem();
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    void iconActivated(QSystemTrayIcon::ActivationReason aReason);
+    void showWindow();
+#endif
     void fileSettings();
     void fileExit();
 
     void vmNew();
     void vmSettings (const QString &aCategory = QString::null,
-                     const QString &aControl = QString::null);
-    void vmDelete();
-    void vmStart();
-    void vmDiscard();
-    void vmPause (bool);
-    void vmRefresh();
-    void vmShowLogs();
+                     const QString &aControl = QString::null,
+                     const QUuid& = "");
+    void vmDelete(const QUuid& = "");
+    void vmStart (const QUuid& = "");
+    void vmDiscard(const QUuid& = "");
+    void vmPause (bool, const QUuid& = "");
+    void vmRefresh(const QUuid& = "");
+    void vmShowLogs(const QUuid& = "");
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    void refreshSysTray();
+#endif
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
                                           bool aSnapshots,
@@ -128,6 +141,10 @@ private:
     QAction *fileSettingsAction;
     QAction *fileExitAction;
     QAction *vmNewAction;
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    QAction *trayShowWindowAction;
+    QAction *trayExitAction;
+#endif
     QAction *vmConfigAction;
     QAction *vmDeleteAction;
     QAction *vmStartAction;
@@ -137,6 +154,12 @@ private:
     QAction *vmShowLogsAction;
 
     VBoxHelpActions mHelpActions;
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    /* The systray icon */
+    QSystemTrayIcon *trayIcon;
+    QMenu *trayIconMenu;
+#endif
 
     /* The vm list view/model */
     VBoxVMListView *mVMListView;
