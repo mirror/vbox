@@ -459,7 +459,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
             return i ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
         }
         pPage->Core.Key  = MMPage2Phys(pVM, pPage->pvPageR3);
-        LogFlow(("PGMR3PoolGrow: insert page %VHp\n", pPage->Core.Key));
+        LogFlow(("PGMR3PoolGrow: insert page %RHp\n", pPage->Core.Key));
         pPage->GCPhys    = NIL_RTGCPHYS;
         pPage->enmKind   = PGMPOOLKIND_FREE;
         pPage->idx       = pPage - &pPool->aPages[0];

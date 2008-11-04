@@ -1836,7 +1836,7 @@ VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
      * Pass it on to PGMDynMapHCPage.
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
-    //Log(("PGMDynMapGCPage: GCPhys=%VGp HCPhys=%VHp\n", GCPhys, HCPhys));
+    //Log(("PGMDynMapGCPage: GCPhys=%VGp HCPhys=%RHp\n", GCPhys, HCPhys));
     return PGMDynMapHCPage(pVM, HCPhys, ppv);
 }
 
@@ -1926,7 +1926,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
         *ppv = pv;
         STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
-        //Log(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
+        //Log(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
         return VINF_SUCCESS;
     }
     Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
@@ -1946,7 +1946,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
     *ppv = pv;
     ASMInvalidatePage(pv);
-    Log4(("PGMGCDynMapHCPage: HCPhys=%VHp pv=%VGv iPage=%d\n", HCPhys, pv, iPage));
+    Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%VGv iPage=%d\n", HCPhys, pv, iPage));
     return VINF_SUCCESS;
 
 #else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */

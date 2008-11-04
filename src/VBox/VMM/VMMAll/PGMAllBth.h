@@ -1309,7 +1309,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
 {
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     STAM_PROFILE_START(&pVM->pgm.s.StatTrackDeref, a);
-    LogFlow(("SyncPageWorkerTrackDeref: Damn HCPhys=%VHp pShwPage->idx=%#x!!!\n", HCPhys, pShwPage->idx));
+    LogFlow(("SyncPageWorkerTrackDeref: Damn HCPhys=%RHp pShwPage->idx=%#x!!!\n", HCPhys, pShwPage->idx));
 
     /** @todo If this turns out to be a bottle neck (*very* likely) two things can be done:
      *      1. have a medium sized HCPhys -> GCPhys TLB (hash?)
@@ -1338,7 +1338,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVM pVM, PPGMPOOLPAGE pS
     }
 
     for (;;)
-        AssertReleaseMsgFailed(("HCPhys=%VHp wasn't found!\n", HCPhys));
+        AssertReleaseMsgFailed(("HCPhys=%RHp wasn't found!\n", HCPhys));
 # else  /* !PGMPOOL_WITH_GCPHYS_TRACKING */
     pShwPage->cPresent--;
     pVM->pgm.s.CTX_SUFF(pPool)->cPresent--;
@@ -1376,7 +1376,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVM pVM, PPGMPOOLPAGE p
         u16 = pgmPoolTrackPhysExtAddref(pVM, u16, pShwPage->idx);
 
     /* write back, trying to be clever... */
-    Log2(("SyncPageWorkerTrackAddRef: u16=%#x pPage->HCPhys=%VHp->%VHp iPTDst=%#x\n",
+    Log2(("SyncPageWorkerTrackAddRef: u16=%#x pPage->HCPhys=%RHp->%RHp iPTDst=%#x\n",
           u16, pPage->HCPhys, (pPage->HCPhys & MM_RAM_FLAGS_NO_REFS_MASK) | ((uint64_t)u16 << MM_RAM_FLAGS_CREFS_SHIFT), iPTDst));
     *((uint16_t *)&pPage->HCPhys + 3) = u16; /** @todo PAGE FLAGS */
 # endif /* PGMPOOL_WITH_GCPHYS_TRACKING */
@@ -3659,7 +3659,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
     rc = pgmRamGCPhys2HCPhys(pPGM, cr3 & GST_CR3_PAGE_MASK, &HCPhys);
-    AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%VHp HCPhyswShw=%VHp (cr3)\n", HCPhys, HCPhysShw), false);
+    AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
     rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
@@ -4036,7 +4036,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (HCPhys & SHW_PTE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4065,7 +4065,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4089,7 +4089,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                                 {
                                     if (PteDst.n.u1Present)
                                     {
-                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VHp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%RHp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                         GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;
@@ -4265,7 +4265,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (HCPhys & X86_PTE_PAE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4293,7 +4293,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%VHp HCPhys=%VHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %VGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;

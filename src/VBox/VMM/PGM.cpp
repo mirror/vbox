@@ -1492,7 +1492,7 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-        LogRel(("Debug: HCPhys32BitPD=%VHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
+        LogRel(("Debug: HCPhys32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhys32BitPD,
                 pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
                 pVM->pgm.s.HCPhysPaePDPT,
@@ -3609,7 +3609,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                                 const int iPDE = (uint32_t)(off >> X86_PD_SHIFT);
                                 const int iSub = (int)((off >> X86_PD_PAE_SHIFT) & 1); /* MSC is a pain sometimes */
                                 if ((iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0) != HCPhysPT)
-                                    pHlp->pfnPrintf(pHlp, "%0*llx error! Mapping error! PT %d has HCPhysPT=%VHp not %VHp is in the PD.\n",
+                                    pHlp->pfnPrintf(pHlp, "%0*llx error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
                                                     fLongMode ? 16 : 8, u64AddressPT, iPDE,
                                                     iSub ? pMap->aPTs[iPDE].HCPhysPaePT1 : pMap->aPTs[iPDE].HCPhysPaePT0, HCPhysPT);
                                 pPT = &pMap->aPTs[iPDE].paPaePTsR3[iSub];
@@ -3868,7 +3868,7 @@ int  pgmR3DumpHierarchyHC32BitPD(PVM pVM, uint32_t cr3, uint32_t cr4, unsigned c
                             {
                                 int iPDE = (u32Address - pMap->GCPtr) >> X86_PD_SHIFT;
                                 if (pMap->aPTs[iPDE].HCPhysPT != HCPhys)
-                                    pHlp->pfnPrintf(pHlp, "%08x error! Mapping error! PT %d has HCPhysPT=%VHp not %VHp is in the PD.\n",
+                                    pHlp->pfnPrintf(pHlp, "%08x error! Mapping error! PT %d has HCPhysPT=%RHp not %RHp is in the PD.\n",
                                                     u32Address, iPDE, pMap->aPTs[iPDE].HCPhysPT, HCPhys);
                                 pPT = pMap->aPTs[iPDE].pPTR3;
                             }

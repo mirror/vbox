@@ -316,7 +316,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                     PCX86PTE pGstPte = (PCX86PTE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %VHp GCPhys %VGp\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
+                    Log4(("pgmPoolMonitorChainChanging 32_32: deref %RHp GCPhys %VGp\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK,
                                                pGstPte->u & X86_PTE_PG_MASK);
@@ -335,7 +335,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                         PCX86PTE pGstPte = (PCX86PTE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %VHp GCPhys %VGp\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
+                        Log4(("pgmPoolMonitorChainChanging pae_32: deref %RHp GCPhys %VGp\n", uShw.pPT->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                    uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK,
                                                    pGstPte->u & X86_PTE_PG_MASK);
@@ -352,7 +352,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                     PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                    Log4(("pgmPoolMonitorChainChanging pae: deref %VHp GCPhys %VGp\n", uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                    Log4(("pgmPoolMonitorChainChanging pae: deref %RHp GCPhys %VGp\n", uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK,
                                                pGstPte->u & X86_PTE_PAE_PG_MASK);
@@ -372,7 +372,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     {
 #  ifdef PGMPOOL_WITH_GCPHYS_TRACKING
                         PCX86PTEPAE pGstPte = (PCX86PTEPAE)pgmPoolMonitorGCPtr2CCPtr(pPool, pvAddress, GCPhysFault, sizeof(*pGstPte));
-                        Log4(("pgmPoolMonitorChainChanging pae: deref %VHp GCPhys %VGp\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
+                        Log4(("pgmPoolMonitorChainChanging pae: deref %RHp GCPhys %VGp\n", uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK, pGstPte->u & X86_PTE_PAE_PG_MASK));
                         pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                 uShw.pPTPae->a[iShw2].u & X86_PTE_PAE_PG_MASK,
                                                 pGstPte->u & X86_PTE_PAE_PG_MASK);
@@ -3123,7 +3123,7 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
             Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
 #ifdef LOG_ENABLED
 RTHCPHYS HCPhysPage = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]);
-Log(("pgmPoolTracDerefGCPhys %VHp vs %VHp\n", HCPhysPage, HCPhys));
+Log(("pgmPoolTracDerefGCPhys %RHp vs %RHp\n", HCPhysPage, HCPhys));
 #endif
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
@@ -3134,7 +3134,7 @@ Log(("pgmPoolTracDerefGCPhys %VHp vs %VHp\n", HCPhysPage, HCPhys));
         }
         pRam = pRam->CTX_SUFF(pNext);
     }
-    AssertFatalMsgFailed(("HCPhys=%VHp GCPhys=%VGp\n", HCPhys, GCPhys));
+    AssertFatalMsgFailed(("HCPhys=%RHp GCPhys=%VGp\n", HCPhys, GCPhys));
 }
 
 
@@ -3182,7 +3182,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
         {
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
-                Log4(("pgmPoolTracDerefGCPhysHint: Linear HCPhys=%VHp GCPhysHint=%VGp GCPhysReal=%VGp\n",
+                Log4(("pgmPoolTracDerefGCPhysHint: Linear HCPhys=%RHp GCPhysHint=%VGp GCPhysReal=%VGp\n",
                       HCPhys, GCPhysHint, pRam->GCPhys + (iPage << PAGE_SHIFT)));
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
@@ -3191,7 +3191,7 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
         pRam = pRam->CTX_SUFF(pNext);
     }
 
-    AssertFatalMsgFailed(("HCPhys=%VHp GCPhysHint=%VGp\n", HCPhys, GCPhysHint));
+    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%VGp\n", HCPhys, GCPhysHint));
 }
 
 
@@ -3798,7 +3798,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     int rc = VINF_SUCCESS;
     STAM_PROFILE_START(&pPool->StatFlushPage, f);
-    LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%VHp, .idx=%d, .enmKind=%d, .GCPhys=%VGp}\n",
+    LogFlow(("pgmPoolFlushPage: pPage=%p:{.Key=%RHp, .idx=%d, .enmKind=%d, .GCPhys=%VGp}\n",
              pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, pPage->GCPhys));
 
     /*
@@ -3880,7 +3880,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
     STAM_PROFILE_START(&pPool->StatFree, a);
-    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%VHp, .idx=%d, enmKind=%d} iUser=%#x iUserTable=%#x\n",
+    LogFlow(("pgmPoolFreeByPage: pPage=%p:{.Key=%RHp, .idx=%d, enmKind=%d} iUser=%#x iUserTable=%#x\n",
              pPage, pPage->Core.Key, pPage->idx, pPage->enmKind, iUser, iUserTable));
     Assert(pPage->idx >= PGMPOOL_IDX_FIRST);
 #ifdef PGMPOOL_WITH_USER_TRACKING
@@ -3978,7 +3978,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
         if (RT_SUCCESS(rc2))
         {
             STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
-            LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%VHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
+            LogFlow(("pgmPoolAlloc: cached returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d}\n", rc2, *ppPage, (*ppPage)->Core.Key, (*ppPage)->idx));
             return rc2;
         }
     }
@@ -4071,7 +4071,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     }
 
     *ppPage = pPage;
-    LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%VHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
+    LogFlow(("pgmPoolAlloc: returns %Rrc *ppPage=%p:{.Key=%RHp, .idx=%d, .fCached=%RTbool, .fMonitored=%RTbool}\n",
              rc, pPage, pPage->Core.Key, pPage->idx, pPage->fCached, pPage->fMonitored));
     STAM_PROFILE_ADV_STOP(&pPool->StatAlloc, a);
     return rc;
@@ -4088,7 +4088,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
  */
 void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 {
-    LogFlow(("pgmPoolFree: HCPhys=%VHp iUser=%#x iUserTable=%#x\n", HCPhys, iUser, iUserTable));
+    LogFlow(("pgmPoolFree: HCPhys=%RHp iUser=%#x iUserTable=%#x\n", HCPhys, iUser, iUserTable));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, HCPhys), iUser, iUserTable);
 }
@@ -4107,7 +4107,7 @@ PPGMPOOLPAGE pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys)
     /** @todo profile this! */
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE pPage = pgmPoolGetPage(pPool, HCPhys);
-    Log3(("pgmPoolGetPageByHCPhys: HCPhys=%VHp -> %p:{.idx=%d .GCPhys=%VGp .enmKind=%d}\n",
+    Log3(("pgmPoolGetPageByHCPhys: HCPhys=%RHp -> %p:{.idx=%d .GCPhys=%VGp .enmKind=%d}\n",
           HCPhys, pPage, pPage->idx, pPage->GCPhys, pPage->enmKind));
     return pPage;
 }

@@ -505,7 +505,7 @@ VMMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortS
                                      R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                      R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3IOPortRegisterR3: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VHv pfnOutCallback=%#x pfnInCallback=%#x pfnOutStrCallback=%#x pfnInStrCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3IOPortRegisterR3: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RHv pfnOutCallback=%#x pfnInCallback=%#x pfnOutStrCallback=%#x pfnInStrCallback=%#x pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pszDesc, pfnOutStrCallback, pfnInStrCallback));
 
     /*
@@ -708,7 +708,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                       const char *pszDesc)
 {
-    LogFlow(("IOMR3IOPortRegisterR0: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VHv pfnOutCallback=%VHv pfnInCallback=%VHv pfnOutStrCallback=%VHv  pfnInStrCallback=%VHv pszDesc=%s\n",
+    LogFlow(("IOMR3IOPortRegisterR0: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RHv pfnOutCallback=%RHv pfnInCallback=%RHv pfnOutStrCallback=%RHv  pfnInStrCallback=%RHv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
 
     /*
@@ -1184,7 +1184,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneR3(PAVLROIOPORTNODECORE pNode, void *
     PIOMIOPORTRANGER3 pRange = (PIOMIOPORTRANGER3)pNode;
     PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
     pHlp->pfnPrintf(pHlp,
-                    "%04x-%04x %VHv %VHv %VHv %VHv %s\n",
+                    "%04x-%04x %p %p %p %p %s\n",
                     pRange->Core.Key,
                     pRange->Core.KeyLast,
                     pRange->pDevIns,
@@ -1289,39 +1289,39 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (pVM->iom.s.pRangeLastReadR3)
     {
         PIOMIOPORTRANGER3 pRange = pVM->iom.s.pRangeLastReadR3;
-        pHlp->pfnPrintf(pHlp, "R3 Read  Ports: %#04x-%#04x %VHv %s\n",
+        pHlp->pfnPrintf(pHlp, "R3 Read  Ports: %#04x-%#04x %p %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastReadR3)
     {
         PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastReadR3;
-        pHlp->pfnPrintf(pHlp, "R3 Read  Stats: %#04x %VHv\n",
+        pHlp->pfnPrintf(pHlp, "R3 Read  Stats: %#04x %p\n",
                         pRange->Core.Key, pRange);
     }
 
     if (pVM->iom.s.pRangeLastWriteR3)
     {
         PIOMIOPORTRANGER3 pRange = pVM->iom.s.pRangeLastWriteR3;
-        pHlp->pfnPrintf(pHlp, "R3 Write Ports: %#04x-%#04x %VHv %s\n",
+        pHlp->pfnPrintf(pHlp, "R3 Write Ports: %#04x-%#04x %p %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastWriteR3)
     {
         PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastWriteR3;
-        pHlp->pfnPrintf(pHlp, "R3 Write Stats: %#04x %VHv\n",
+        pHlp->pfnPrintf(pHlp, "R3 Write Stats: %#04x %p\n",
                         pRange->Core.Key, pRange);
     }
 
     if (pVM->iom.s.pRangeLastReadR0)
     {
         PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastReadR0);
-        pHlp->pfnPrintf(pHlp, "R0 Read  Ports: %#04x-%#04x %VHv %s\n",
+        pHlp->pfnPrintf(pHlp, "R0 Read  Ports: %#04x-%#04x %p %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastReadR0)
     {
         PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastReadR0);
-        pHlp->pfnPrintf(pHlp, "R0 Read  Stats: %#04x %VHv\n",
+        pHlp->pfnPrintf(pHlp, "R0 Read  Stats: %#04x %p\n",
                         pRange->Core.Key, pRange);
     }
 
@@ -1334,7 +1334,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (pVM->iom.s.pStatsLastWriteR0)
     {
         PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastWriteR0);
-        pHlp->pfnPrintf(pHlp, "R0 Write Stats: %#04x %VHv\n",
+        pHlp->pfnPrintf(pHlp, "R0 Write Stats: %#04x %p\n",
                         pRange->Core.Key, pRange);
     }
 }
@@ -1362,7 +1362,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
     int rc;
 
@@ -1516,7 +1516,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%VHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
