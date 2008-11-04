@@ -90,33 +90,33 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
     if (    pDevIns->pDevReg->szRCMod[0]
         &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
-        RTGCPTR32 GCPtrIn = 0;
+        RTRCPTR RCPtrIn = NIL_RTRCPTR;
         if (pszIn)
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszIn, &GCPtrIn);
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszIn, &RCPtrIn);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pDevReg->szRCMod, pszIn));
         }
-        RTGCPTR32 GCPtrOut = 0;
+        RTRCPTR RCPtrOut = NIL_RTRCPTR;
         if (pszOut && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOut, &GCPtrOut);
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOut, &RCPtrOut);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pDevReg->szRCMod, pszOut));
         }
-        RTGCPTR32 GCPtrInStr = 0;
+        RTRCPTR RCPtrInStr = NIL_RTRCPTR;
         if (pszInStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszInStr, &GCPtrInStr);
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszInStr, &RCPtrInStr);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pDevReg->szRCMod, pszInStr));
         }
-        RTGCPTR32 GCPtrOutStr = 0;
+        RTRCPTR RCPtrOutStr = NIL_RTRCPTR;
         if (pszOutStr && VBOX_SUCCESS(rc))
         {
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOutStr, &GCPtrOutStr);
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszOutStr, &RCPtrOutStr);
             AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pDevReg->szRCMod, pszOutStr));
         }
 
         if (VBOX_SUCCESS(rc))
-            rc = IOMR3IOPortRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, GCPtrOut, GCPtrIn, GCPtrOutStr, GCPtrInStr, pszDesc);
+            rc = IOMR3IOPortRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
     }
     else
     {
@@ -235,19 +235,22 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
     if (    pDevIns->pDevReg->szRCMod[0]
         &&  (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC))
     {
-        RTGCPTR32 GCPtrWrite = 0;
+        RTRCPTR RCPtrWrite = NIL_RTRCPTR;
         if (pszWrite)
-            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszWrite, &GCPtrWrite);
-        RTGCPTR32 GCPtrRead = 0;
+            rc = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszWrite, &RCPtrWrite);
+
+        RTRCPTR RCPtrRead = NIL_RTRCPTR;
         int rc2 = VINF_SUCCESS;
         if (pszRead)
-            rc2 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszRead, &GCPtrRead);
-        RTGCPTR32 GCPtrFill = 0;
+            rc2 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszRead, &RCPtrRead);
+
+        RTRCPTR RCPtrFill = NIL_RTRCPTR;
         int rc3 = VINF_SUCCESS;
         if (pszFill)
-            rc3 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszFill, &GCPtrFill);
+            rc3 = PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3, pDevIns->pDevReg->szRCMod, pszFill, &RCPtrFill);
+
         if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(rc2) && VBOX_SUCCESS(rc3))
-            rc = IOMR3MMIORegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, GCPtrWrite, GCPtrRead, GCPtrFill);
+            rc = IOMR3MMIORegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
         else
         {
             AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pDevReg->szRCMod, pszWrite));
