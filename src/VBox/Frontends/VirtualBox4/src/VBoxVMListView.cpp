@@ -135,7 +135,7 @@ static WId FindWindowIdFromPid (ULONG aPid)
 #endif
 
 VBoxVMItem::VBoxVMItem (const CMachine &aM, QObject* pParent)
-    : mMachine (aM), mParent(pParent)
+    : mParent(pParent), mMachine (aM)
 {
     vmConfigAction = new QAction (this);
     vmConfigAction->setIcon (VBoxGlobal::iconSetFull (
