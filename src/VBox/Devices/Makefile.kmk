@@ -562,7 +562,7 @@ Drivers_SOURCES    = \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 ifndef VBOX_USE_NAT
-Drivers_SOURCES += \
+VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \
 	Network/slirp/bootp.c \
 	Network/slirp/cksum.c \
@@ -582,6 +582,11 @@ Drivers_SOURCES += \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
+Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
+define def_vbox_slirp_cflags
+$(file)_CFLAGS = -Wno-sign-compare
+endef
+$(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
 else
 NatAlias_TEMPLATE   = VBOXR3NP
 
