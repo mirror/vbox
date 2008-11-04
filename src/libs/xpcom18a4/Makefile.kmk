@@ -1159,6 +1159,8 @@ VBoxXPCOM_LIBS = \
 	$(TARGET_VBox-xpcom-proxy) \
 	$(TARGET_VBox-xpcom-nspr) \
 	$(TARGET_VBoxXPCOMGlue_s)
+VBoxXPCOM_LIBS.linux = \
+	pthread dl
 
 ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
