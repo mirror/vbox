@@ -55,7 +55,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
 {
     PUVMCPU pUVMCPU = (PUVMCPU)pvArgs;
     PUVM    pUVM    = pUVMCPU->pUVM;
-    RTCPUID idCPU   = pUVMCPU->idCPU;
+    RTCPUID idCpu   = pUVMCPU->idCpu;
     int     rc;
 
     AssertReleaseMsg(VALID_PTR(pUVM) && pUVM->u32Magic == UVM_MAGIC,
@@ -183,7 +183,7 @@ DECLCALLBACK(int) vmR3EmulationThread(RTTHREAD ThreadSelf, void *pvArgs)
             &&  pUVM->pVM->enmVMState == VMSTATE_RUNNING)
         {
             PVM pVM = pUVM->pVM;
-            rc = EMR3ExecuteVM(pVM);
+            rc = EMR3ExecuteVM(pVM, idCpu);
             Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
             if (   EMGetState(pVM) == EMSTATE_GURU_MEDITATION
                 && pVM->enmVMState == VMSTATE_RUNNING)

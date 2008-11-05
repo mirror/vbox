@@ -628,7 +628,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         for (unsigned i=0;i<pUVM->pVM->cCPUs;i++)
         {
             if (   !pUVMCPU
-                ||  pUVMCPU->idCPU != i)
+                ||  pUVMCPU->idCpu != i)
             {
                 /*
                  * Insert it.
@@ -670,7 +670,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
     }
     else
     if (    pReq->enmDest  != VMREQDEST_ANY  /* for a specific VMCPU? */
-        &&  pUVMCPU->idCPU != (unsigned)pReq->enmDest)
+        &&  pUVMCPU->idCpu != (unsigned)pReq->enmDest)
     {
         RTCPUID  idTarget = (RTCPUID)pReq->enmDest;
         unsigned fFlags = ((VMREQ volatile *)pReq)->fFlags;     /* volatile paranoia */

@@ -1069,7 +1069,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
 #endif
@@ -1106,8 +1106,9 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM)
  * Executes guest code (Intel VT-x and AMD-V).
  *
  * @param   pVM         VM handle.
+ * @param   idCpu       VMCPU id.
  */
-VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
+VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu)
 {
     Log2(("VMMR3HwAccRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVM), CPUMGetGuestEIP(pVM)));
 
@@ -1119,7 +1120,7 @@ VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HWACC_RUN, idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
 #endif
@@ -1203,7 +1204,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
 #endif
@@ -1259,7 +1260,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN);
+            rc = SUPCallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVM->vmm.s.iLastGZRc;
 #endif

@@ -400,7 +400,7 @@ static int vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM)
     for (i = 0; i < cCPUs; i++)
     {
         pUVM->aCpus[i].pUVM  = pUVM;
-        pUVM->aCpus[i].idCPU = i;
+        pUVM->aCpus[i].idCpu = i;
     }
 
     /* Allocate a TLS entry to store the VMINTUSERPERVMCPU pointer. */
@@ -3189,7 +3189,7 @@ VMMR3DECL(RTCPUID) VMR3GetVMCPUId(PVM pVM)
     PUVMCPU pUVMCPU = (PUVMCPU)RTTlsGet(pVM->pUVM->vm.s.idxTLS);
 
     AssertMsg(pUVMCPU, ("RTTlsGet %d failed!\n", pVM->pUVM->vm.s.idxTLS));
-    return pUVMCPU->idCPU;
+    return pUVMCPU->idCpu;
 }
 
 

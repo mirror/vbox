@@ -43,7 +43,7 @@ typedef struct UVMCPU
     /** Pointer to the UVM structure.  */
     PUVM                            pUVM;
     /** The virtual CPU ID.  */
-    RTCPUID                         idCPU;
+    RTCPUID                         idCpu;
 
     /** The VM internal data. */
     struct

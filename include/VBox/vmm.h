@@ -134,7 +134,7 @@ VMMR3DECL(int)      VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pR
 VMMR3DECL(int)      VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3DECL(int)      VMMR3DisableSwitcher(PVM pVM);
 VMMR3DECL(int)      VMMR3RawRunGC(PVM pVM);
-VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM);
+VMMR3DECL(int)      VMMR3HwAccRunGC(PVM pVM, RTCPUID idCpu);
 VMMR3DECL(int)      VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...);
 VMMR3DECL(int)      VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args);
 VMMR3DECL(int)      VMMR3ResumeHyper(PVM pVM);
@@ -276,7 +276,7 @@ typedef struct GCFGMVALUEREQ
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
 VMMR0DECL(int)      VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
-VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMMR0OPERATION enmOperation);
+VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, unsigned idCPU, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uArg);
 

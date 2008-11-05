@@ -1057,8 +1057,9 @@ static int emR3RawStep(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
+ * @param   idCpu   VMCPU id.
  */
-static int emR3HwAccStep(PVM pVM)
+static int emR3HwAccStep(PVM pVM, RTCPUID idCpu)
 {
     Assert(pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC);
 
@@ -1086,7 +1087,7 @@ static int emR3HwAccStep(PVM pVM)
      */
     do
     {
-        rc = VMMR3HwAccRunGC(pVM);
+        rc = VMMR3HwAccRunGC(pVM, idCpu);
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
     VM_FF_CLEAR(pVM, VM_FF_RESUME_GUEST_MASK);
@@ -1126,7 +1127,7 @@ void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 }
 
 
-void emR3SingleStepExecHwAcc(PVM pVM, uint32_t cIterations)
+void emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
 
@@ -1137,7 +1138,7 @@ void emR3SingleStepExecHwAcc(PVM pVM, uint32_t cIterations)
     {
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
-        emR3HwAccStep(pVM);
+        emR3HwAccStep(pVM, idCpu);
     }
     Log(("Single step END:\n"));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
@@ -2760,15 +2761,16 @@ static int emR3RawExecute(PVM pVM, bool *pfFFDone)
  *          VINF_EM_RESCHEDULE_REM, VINF_EM_SUSPEND, VINF_EM_RESET and VINF_EM_TERMINATE.
  *
  * @param   pVM         VM handle.
+ * @param   idCpu       VMCPU id.
  * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  */
-static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
+static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
 {
     int      rc = VERR_INTERNAL_ERROR;
     PCPUMCTX pCtx = pVM->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%RGv)\n", pCtx->cs, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", idCpu, pCtx->cs, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
@@ -2817,7 +2819,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
         STAM_PROFILE_ADV_STOP(&pVM->em.s.StatHwAccEntry, a);
         STAM_PROFILE_START(&pVM->em.s.StatHwAccExec, x);
         VMMR3Unlock(pVM);
-        rc = VMMR3HwAccRunGC(pVM);
+        rc = VMMR3HwAccRunGC(pVM, idCpu);
         VMMR3Lock(pVM);
         STAM_PROFILE_STOP(&pVM->em.s.StatHwAccExec, x);
 
@@ -3296,8 +3298,9 @@ static int emR3ForcedActions(PVM pVM, int rc)
  *
  * @returns VBox status code, informational status codes may indicate failure.
  * @param   pVM         The VM to operate on.
+ * @param   idCpu       VMCPU id.
  */
-VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
+VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
 {
     LogFlow(("EMR3ExecuteVM: pVM=%p enmVMState=%d  enmState=%d (%s) fForceRAW=%d\n", pVM, pVM->enmVMState,
              pVM->em.s.enmState, EMR3GetStateName(pVM->em.s.enmState), pVM->em.s.fForceRAW));
@@ -3543,7 +3546,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM)
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
-                    rc = emR3HwAccExecute(pVM, &fFFDone);
+                    rc = emR3HwAccExecute(pVM, idCpu, &fFFDone);
                     break;
 
                 /*
