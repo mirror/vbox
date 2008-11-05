@@ -216,7 +216,7 @@ HRESULT VirtualBoxBaseProto::addCaller (State *aState /* = NULL */,
                 mInitUninitSem = NIL_RTSEMEVENTMULTI;
             }
 
-            if (mState == Ready)
+            if (mState == Ready || (aLimited && mState == Limited))
                 rc = S_OK;
             else
             {
