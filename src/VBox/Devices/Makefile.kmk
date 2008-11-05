@@ -39,7 +39,10 @@ ifdef VBOX_WITH_INTEL_PXE
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
 else
  # Subdir with complex makefile.
- SUBDIRS_AFTER += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
+ SUBDIRS_LIBRARIES += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
+ SUBDIRS_CLEAN     += $(VBOX_PATH_DEVICES_SRC)/PC/Etherboot-src
+ # Disable the unsafe pass order optimizations.
+ KBUILD_SAFE_PARALLEL = 1
 endif
 
 #
