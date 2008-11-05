@@ -1456,7 +1456,7 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
-    LogFlow(("PGMFlushTLB: cr3=%VX64 OldCr3=%VX64 fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
+    LogFlow(("PGMFlushTLB: cr3=%RX64 OldCr3=%RX64 fGlobal=%d\n", cr3, pVM->pgm.s.GCPhysCR3, fGlobal));
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -1523,7 +1523,7 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
  */
 VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
 {
-    LogFlow(("PGMUpdateCR3: cr3=%VX64 OldCr3=%VX64\n", cr3, pVM->pgm.s.GCPhysCR3));
+    LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVM->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
     Assert(pVM->pgm.s.fMappingsFixed);
@@ -1587,7 +1587,7 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
     /* If global pages are not supported, then all flushes are global */
     if (!(cr4 & X86_CR4_PGE))
         fGlobal = true;
-    LogFlow(("PGMSyncCR3: cr0=%VX64 cr3=%VX64 cr4=%VX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
+    LogFlow(("PGMSyncCR3: cr0=%RX64 cr3=%RX64 cr4=%RX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
              VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL)));
 
     /*

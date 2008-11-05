@@ -636,7 +636,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
     if (pVM->hwaccm.s.Event.fPending)
     {
-        Log(("Reinjecting event %VX64 %08x at %RGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
+        Log(("Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
         rc = VMXR0InjectEvent(pVM, pCtx, pVM->hwaccm.s.Event.intInfo, 0, pVM->hwaccm.s.Event.errCode);
         AssertRC(rc);
@@ -1985,11 +1985,11 @@ ResumeExecution:
             rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
             pVM->hwaccm.s.Event.errCode  = val;
-            Log(("Pending inject %VX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
         {
-            Log(("Pending inject %VX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
             pVM->hwaccm.s.Event.errCode  = 0;
         }
     }
@@ -2204,7 +2204,7 @@ ResumeExecution:
                     rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr[7]);
                     AssertRC(rc);
 
-                    Log(("Trap %x (debug) at %RGv exit qualification %VX64\n", vector, (RTGCPTR)pCtx->rip, exitQualification));
+                    Log(("Trap %x (debug) at %RGv exit qualification %RX64\n", vector, (RTGCPTR)pCtx->rip, exitQualification));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
@@ -3249,11 +3249,11 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             Log(("VMX_VMCS_HOST_RIP %RHv\n", val));
 
 # if HC_ARCH_BITS == 64
-            Log(("MSR_K6_EFER       = %VX64\n", ASMRdMsr(MSR_K6_EFER)));
-            Log(("MSR_K6_STAR       = %VX64\n", ASMRdMsr(MSR_K6_STAR)));
-            Log(("MSR_K8_LSTAR      = %VX64\n", ASMRdMsr(MSR_K8_LSTAR)));
-            Log(("MSR_K8_CSTAR      = %VX64\n", ASMRdMsr(MSR_K8_CSTAR)));
-            Log(("MSR_K8_SF_MASK    = %VX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
+            Log(("MSR_K6_EFER       = %RX64\n", ASMRdMsr(MSR_K6_EFER)));
+            Log(("MSR_K6_STAR       = %RX64\n", ASMRdMsr(MSR_K6_STAR)));
+            Log(("MSR_K8_LSTAR      = %RX64\n", ASMRdMsr(MSR_K8_LSTAR)));
+            Log(("MSR_K8_CSTAR      = %RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
+            Log(("MSR_K8_SF_MASK    = %RX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
 # endif
 #endif /* VBOX_STRICT */
         }

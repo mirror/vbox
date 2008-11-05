@@ -758,7 +758,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
-                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Rrc fPageShw=%VX64\n", rc, fPageShw));
+                        AssertMsg(RT_SUCCESS(rc) && fPageShw & X86_PTE_RW, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
@@ -1241,7 +1241,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                     &&  (   PdeSrc.b.u1Dirty /** @todo rainy day: What about read-only 4M pages? not very common, but still... */
                          || (PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY)))
                 {
-                    LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%VX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
+                    LogFlow(("Skipping flush for big page containing %RGv (PD=%X .u=%RX64)-> nothing has changed!\n", GCPtrPage, iPDSrc, PdeSrc.u));
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePage4MBPagesSkip));
                     return VINF_SUCCESS;
                 }

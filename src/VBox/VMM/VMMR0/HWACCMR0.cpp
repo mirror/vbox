@@ -1118,7 +1118,7 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *
 # if HC_ARCH_BITS == 64
     uint64_t    u32Base =  X86DESC64_BASE(*pDesc);
 
-    Log(("%s %04x - %VX64 %VX64 - base=%VX64 limit=%08x dpl=%d %s\n", pszMsg,
+    Log(("%s %04x - %RX64 %RX64 - base=%RX64 limit=%08x dpl=%d %s\n", pszMsg,
          Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # else
     uint32_t    u32Base =  X86DESC_BASE(*pDesc);

@@ -1044,9 +1044,9 @@ ResumeExecution:
         Log(("ctrl.u32InterceptException        %x\n",      pVMCB->ctrl.u32InterceptException));
         Log(("ctrl.u32InterceptCtrl1            %x\n",      pVMCB->ctrl.u32InterceptCtrl1));
         Log(("ctrl.u32InterceptCtrl2            %x\n",      pVMCB->ctrl.u32InterceptCtrl2));
-        Log(("ctrl.u64IOPMPhysAddr              %VX64\n",   pVMCB->ctrl.u64IOPMPhysAddr));
-        Log(("ctrl.u64MSRPMPhysAddr             %VX64\n",   pVMCB->ctrl.u64MSRPMPhysAddr));
-        Log(("ctrl.u64TSCOffset                 %VX64\n",   pVMCB->ctrl.u64TSCOffset));
+        Log(("ctrl.u64IOPMPhysAddr              %RX64\n",   pVMCB->ctrl.u64IOPMPhysAddr));
+        Log(("ctrl.u64MSRPMPhysAddr             %RX64\n",   pVMCB->ctrl.u64MSRPMPhysAddr));
+        Log(("ctrl.u64TSCOffset                 %RX64\n",   pVMCB->ctrl.u64TSCOffset));
 
         Log(("ctrl.TLBCtrl.u32ASID              %x\n",      pVMCB->ctrl.TLBCtrl.n.u32ASID));
         Log(("ctrl.TLBCtrl.u1TLBFlush           %x\n",      pVMCB->ctrl.TLBCtrl.n.u1TLBFlush));
@@ -1064,17 +1064,17 @@ ResumeExecution:
         Log(("ctrl.IntCtrl.u8VIrqVector         %x\n",      pVMCB->ctrl.IntCtrl.n.u8VIrqVector));
         Log(("ctrl.IntCtrl.u24Reserved          %x\n",      pVMCB->ctrl.IntCtrl.n.u24Reserved));
 
-        Log(("ctrl.u64IntShadow                 %VX64\n",   pVMCB->ctrl.u64IntShadow));
-        Log(("ctrl.u64ExitCode                  %VX64\n",   pVMCB->ctrl.u64ExitCode));
-        Log(("ctrl.u64ExitInfo1                 %VX64\n",   pVMCB->ctrl.u64ExitInfo1));
-        Log(("ctrl.u64ExitInfo2                 %VX64\n",   pVMCB->ctrl.u64ExitInfo2));
+        Log(("ctrl.u64IntShadow                 %RX64\n",   pVMCB->ctrl.u64IntShadow));
+        Log(("ctrl.u64ExitCode                  %RX64\n",   pVMCB->ctrl.u64ExitCode));
+        Log(("ctrl.u64ExitInfo1                 %RX64\n",   pVMCB->ctrl.u64ExitInfo1));
+        Log(("ctrl.u64ExitInfo2                 %RX64\n",   pVMCB->ctrl.u64ExitInfo2));
         Log(("ctrl.ExitIntInfo.u8Vector         %x\n",      pVMCB->ctrl.ExitIntInfo.n.u8Vector));
         Log(("ctrl.ExitIntInfo.u3Type           %x\n",      pVMCB->ctrl.ExitIntInfo.n.u3Type));
         Log(("ctrl.ExitIntInfo.u1ErrorCodeValid %x\n",      pVMCB->ctrl.ExitIntInfo.n.u1ErrorCodeValid));
         Log(("ctrl.ExitIntInfo.u19Reserved      %x\n",      pVMCB->ctrl.ExitIntInfo.n.u19Reserved));
         Log(("ctrl.ExitIntInfo.u1Valid          %x\n",      pVMCB->ctrl.ExitIntInfo.n.u1Valid));
         Log(("ctrl.ExitIntInfo.u32ErrorCode     %x\n",      pVMCB->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log(("ctrl.NestedPaging                 %VX64\n",   pVMCB->ctrl.NestedPaging.au64));
+        Log(("ctrl.NestedPaging                 %RX64\n",   pVMCB->ctrl.NestedPaging.au64));
         Log(("ctrl.EventInject.u8Vector         %x\n",      pVMCB->ctrl.EventInject.n.u8Vector));
         Log(("ctrl.EventInject.u3Type           %x\n",      pVMCB->ctrl.EventInject.n.u3Type));
         Log(("ctrl.EventInject.u1ErrorCodeValid %x\n",      pVMCB->ctrl.EventInject.n.u1ErrorCodeValid));
@@ -1082,75 +1082,75 @@ ResumeExecution:
         Log(("ctrl.EventInject.u1Valid          %x\n",      pVMCB->ctrl.EventInject.n.u1Valid));
         Log(("ctrl.EventInject.u32ErrorCode     %x\n",      pVMCB->ctrl.EventInject.n.u32ErrorCode));
 
-        Log(("ctrl.u64NestedPagingCR3           %VX64\n",   pVMCB->ctrl.u64NestedPagingCR3));
-        Log(("ctrl.u64LBRVirt                   %VX64\n",   pVMCB->ctrl.u64LBRVirt));
+        Log(("ctrl.u64NestedPagingCR3           %RX64\n",   pVMCB->ctrl.u64NestedPagingCR3));
+        Log(("ctrl.u64LBRVirt                   %RX64\n",   pVMCB->ctrl.u64LBRVirt));
 
         Log(("guest.CS.u16Sel                   %04X\n",    pVMCB->guest.CS.u16Sel));
         Log(("guest.CS.u16Attr                  %04X\n",    pVMCB->guest.CS.u16Attr));
         Log(("guest.CS.u32Limit                 %X\n",      pVMCB->guest.CS.u32Limit));
-        Log(("guest.CS.u64Base                  %VX64\n",   pVMCB->guest.CS.u64Base));
+        Log(("guest.CS.u64Base                  %RX64\n",   pVMCB->guest.CS.u64Base));
         Log(("guest.DS.u16Sel                   %04X\n",    pVMCB->guest.DS.u16Sel));
         Log(("guest.DS.u16Attr                  %04X\n",    pVMCB->guest.DS.u16Attr));
         Log(("guest.DS.u32Limit                 %X\n",      pVMCB->guest.DS.u32Limit));
-        Log(("guest.DS.u64Base                  %VX64\n",   pVMCB->guest.DS.u64Base));
+        Log(("guest.DS.u64Base                  %RX64\n",   pVMCB->guest.DS.u64Base));
         Log(("guest.ES.u16Sel                   %04X\n",    pVMCB->guest.ES.u16Sel));
         Log(("guest.ES.u16Attr                  %04X\n",    pVMCB->guest.ES.u16Attr));
         Log(("guest.ES.u32Limit                 %X\n",      pVMCB->guest.ES.u32Limit));
-        Log(("guest.ES.u64Base                  %VX64\n",   pVMCB->guest.ES.u64Base));
+        Log(("guest.ES.u64Base                  %RX64\n",   pVMCB->guest.ES.u64Base));
         Log(("guest.FS.u16Sel                   %04X\n",    pVMCB->guest.FS.u16Sel));
         Log(("guest.FS.u16Attr                  %04X\n",    pVMCB->guest.FS.u16Attr));
         Log(("guest.FS.u32Limit                 %X\n",      pVMCB->guest.FS.u32Limit));
-        Log(("guest.FS.u64Base                  %VX64\n",   pVMCB->guest.FS.u64Base));
+        Log(("guest.FS.u64Base                  %RX64\n",   pVMCB->guest.FS.u64Base));
         Log(("guest.GS.u16Sel                   %04X\n",    pVMCB->guest.GS.u16Sel));
         Log(("guest.GS.u16Attr                  %04X\n",    pVMCB->guest.GS.u16Attr));
         Log(("guest.GS.u32Limit                 %X\n",      pVMCB->guest.GS.u32Limit));
-        Log(("guest.GS.u64Base                  %VX64\n",   pVMCB->guest.GS.u64Base));
+        Log(("guest.GS.u64Base                  %RX64\n",   pVMCB->guest.GS.u64Base));
 
         Log(("guest.GDTR.u32Limit               %X\n",      pVMCB->guest.GDTR.u32Limit));
-        Log(("guest.GDTR.u64Base                %VX64\n",   pVMCB->guest.GDTR.u64Base));
+        Log(("guest.GDTR.u64Base                %RX64\n",   pVMCB->guest.GDTR.u64Base));
 
         Log(("guest.LDTR.u16Sel                 %04X\n",    pVMCB->guest.LDTR.u16Sel));
         Log(("guest.LDTR.u16Attr                %04X\n",    pVMCB->guest.LDTR.u16Attr));
         Log(("guest.LDTR.u32Limit               %X\n",      pVMCB->guest.LDTR.u32Limit));
-        Log(("guest.LDTR.u64Base                %VX64\n",   pVMCB->guest.LDTR.u64Base));
+        Log(("guest.LDTR.u64Base                %RX64\n",   pVMCB->guest.LDTR.u64Base));
 
         Log(("guest.IDTR.u32Limit               %X\n",      pVMCB->guest.IDTR.u32Limit));
-        Log(("guest.IDTR.u64Base                %VX64\n",   pVMCB->guest.IDTR.u64Base));
+        Log(("guest.IDTR.u64Base                %RX64\n",   pVMCB->guest.IDTR.u64Base));
 
         Log(("guest.TR.u16Sel                   %04X\n",    pVMCB->guest.TR.u16Sel));
         Log(("guest.TR.u16Attr                  %04X\n",    pVMCB->guest.TR.u16Attr));
         Log(("guest.TR.u32Limit                 %X\n",      pVMCB->guest.TR.u32Limit));
-        Log(("guest.TR.u64Base                  %VX64\n",   pVMCB->guest.TR.u64Base));
+        Log(("guest.TR.u64Base                  %RX64\n",   pVMCB->guest.TR.u64Base));
 
         Log(("guest.u8CPL                       %X\n",      pVMCB->guest.u8CPL));
-        Log(("guest.u64CR0                      %VX64\n",   pVMCB->guest.u64CR0));
-        Log(("guest.u64CR2                      %VX64\n",   pVMCB->guest.u64CR2));
-        Log(("guest.u64CR3                      %VX64\n",   pVMCB->guest.u64CR3));
-        Log(("guest.u64CR4                      %VX64\n",   pVMCB->guest.u64CR4));
-        Log(("guest.u64DR6                      %VX64\n",   pVMCB->guest.u64DR6));
-        Log(("guest.u64DR7                      %VX64\n",   pVMCB->guest.u64DR7));
+        Log(("guest.u64CR0                      %RX64\n",   pVMCB->guest.u64CR0));
+        Log(("guest.u64CR2                      %RX64\n",   pVMCB->guest.u64CR2));
+        Log(("guest.u64CR3                      %RX64\n",   pVMCB->guest.u64CR3));
+        Log(("guest.u64CR4                      %RX64\n",   pVMCB->guest.u64CR4));
+        Log(("guest.u64DR6                      %RX64\n",   pVMCB->guest.u64DR6));
+        Log(("guest.u64DR7                      %RX64\n",   pVMCB->guest.u64DR7));
 
-        Log(("guest.u64RIP                      %VX64\n",   pVMCB->guest.u64RIP));
-        Log(("guest.u64RSP                      %VX64\n",   pVMCB->guest.u64RSP));
-        Log(("guest.u64RAX                      %VX64\n",   pVMCB->guest.u64RAX));
-        Log(("guest.u64RFlags                   %VX64\n",   pVMCB->guest.u64RFlags));
+        Log(("guest.u64RIP                      %RX64\n",   pVMCB->guest.u64RIP));
+        Log(("guest.u64RSP                      %RX64\n",   pVMCB->guest.u64RSP));
+        Log(("guest.u64RAX                      %RX64\n",   pVMCB->guest.u64RAX));
+        Log(("guest.u64RFlags                   %RX64\n",   pVMCB->guest.u64RFlags));
 
-        Log(("guest.u64SysEnterCS               %VX64\n",   pVMCB->guest.u64SysEnterCS));
-        Log(("guest.u64SysEnterEIP              %VX64\n",   pVMCB->guest.u64SysEnterEIP));
-        Log(("guest.u64SysEnterESP              %VX64\n",   pVMCB->guest.u64SysEnterESP));
+        Log(("guest.u64SysEnterCS               %RX64\n",   pVMCB->guest.u64SysEnterCS));
+        Log(("guest.u64SysEnterEIP              %RX64\n",   pVMCB->guest.u64SysEnterEIP));
+        Log(("guest.u64SysEnterESP              %RX64\n",   pVMCB->guest.u64SysEnterESP));
 
-        Log(("guest.u64EFER                     %VX64\n",   pVMCB->guest.u64EFER));
-        Log(("guest.u64STAR                     %VX64\n",   pVMCB->guest.u64STAR));
-        Log(("guest.u64LSTAR                    %VX64\n",   pVMCB->guest.u64LSTAR));
-        Log(("guest.u64CSTAR                    %VX64\n",   pVMCB->guest.u64CSTAR));
-        Log(("guest.u64SFMASK                   %VX64\n",   pVMCB->guest.u64SFMASK));
-        Log(("guest.u64KernelGSBase             %VX64\n",   pVMCB->guest.u64KernelGSBase));
-        Log(("guest.u64GPAT                     %VX64\n",   pVMCB->guest.u64GPAT));
-        Log(("guest.u64DBGCTL                   %VX64\n",   pVMCB->guest.u64DBGCTL));
-        Log(("guest.u64BR_FROM                  %VX64\n",   pVMCB->guest.u64BR_FROM));
-        Log(("guest.u64BR_TO                    %VX64\n",   pVMCB->guest.u64BR_TO));
-        Log(("guest.u64LASTEXCPFROM             %VX64\n",   pVMCB->guest.u64LASTEXCPFROM));
-        Log(("guest.u64LASTEXCPTO               %VX64\n",   pVMCB->guest.u64LASTEXCPTO));
+        Log(("guest.u64EFER                     %RX64\n",   pVMCB->guest.u64EFER));
+        Log(("guest.u64STAR                     %RX64\n",   pVMCB->guest.u64STAR));
+        Log(("guest.u64LSTAR                    %RX64\n",   pVMCB->guest.u64LSTAR));
+        Log(("guest.u64CSTAR                    %RX64\n",   pVMCB->guest.u64CSTAR));
+        Log(("guest.u64SFMASK                   %RX64\n",   pVMCB->guest.u64SFMASK));
+        Log(("guest.u64KernelGSBase             %RX64\n",   pVMCB->guest.u64KernelGSBase));
+        Log(("guest.u64GPAT                     %RX64\n",   pVMCB->guest.u64GPAT));
+        Log(("guest.u64DBGCTL                   %RX64\n",   pVMCB->guest.u64DBGCTL));
+        Log(("guest.u64BR_FROM                  %RX64\n",   pVMCB->guest.u64BR_FROM));
+        Log(("guest.u64BR_TO                    %RX64\n",   pVMCB->guest.u64BR_TO));
+        Log(("guest.u64LASTEXCPFROM             %RX64\n",   pVMCB->guest.u64LASTEXCPFROM));
+        Log(("guest.u64LASTEXCPTO               %RX64\n",   pVMCB->guest.u64LASTEXCPTO));
 
 #endif
         rc = VERR_SVM_UNABLE_TO_START_VM;
@@ -1226,7 +1226,7 @@ ResumeExecution:
     if (    pVMCB->ctrl.ExitIntInfo.n.u1Valid
         &&  pVMCB->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT /* we don't care about 'int xx' as the instruction will be restarted. */)
     {
-        Log(("Pending inject %VX64 at %RGv exit=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitCode));
+        Log(("Pending inject %RX64 at %RGv exit=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitCode));
 
 #ifdef LOG_ENABLED
         SVM_EVENT Event;
