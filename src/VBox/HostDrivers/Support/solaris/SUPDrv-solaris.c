@@ -663,7 +663,7 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cre
         ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
     {
-        *pVal = supdrvIOCtlFast(Cmd, 0 /* @todo VMCPU id. */, &g_DevExt, pSession);
+        *pVal = supdrvIOCtlFast(Cmd, pArgs, &g_DevExt, pSession);
         return 0;
     }
 
