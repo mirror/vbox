@@ -28,3 +28,8 @@
 #ifdef VBOX_WITH_64_BITS_GUESTS
 #define TARGET_X86_64
 #endif
+
+/* Uncomment to see all phys memory accesses */
+/* #define VBOX_DEBUG_PHYS */
+/* Uncomment to see emulated CPU state changes */
+/* #define VBOX_DUMP_STATE */
