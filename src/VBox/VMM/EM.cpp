@@ -1212,7 +1212,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
      */
     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
-        Log(("emR3RawExecuteInstruction: In patch block. eip=%VRv\n", pCtx->eip));
+        Log(("emR3RawExecuteInstruction: In patch block. eip=%VRv\n", (RTRCPTR)pCtx->eip));
 
         RTGCPTR pNewEip;
         rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
