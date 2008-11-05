@@ -556,7 +556,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
         rc = rtR0MemObjLinuxVMap(pMemLnx, fExecutable);
         if (RT_SUCCESS(rc))
         {
-#ifdef RT_STRICT
+#if defined(RT_STRICT) && defined(RT_ARCH_AMD64)
             size_t iPage = pMemLnx->cPages;
             while (iPage-- > 0)
                 Assert(page_to_phys(pMemLnx->apPages[iPage]) < _4G);
