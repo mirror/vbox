@@ -853,7 +853,9 @@ DECLINLINE(void) gen_update_eip(target_ulong pc)
 #endif /* VBOX */
 {
     gen_jmp_im(pc);
-
+#if defined (VBOX) && defined(VBOX_DUMP_STATE)
+     tcg_gen_helper_0_0(helper_dump_state);
+#endif
 }
 #endif
 
