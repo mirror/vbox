@@ -283,7 +283,7 @@ inline bool operator!= (const BSTR l, const Bstr &r) { return r.operator!= (l); 
 
 /**
  *  Helper class that represents UTF8 (|char *|) strings. Useful in
- *  conjunction with Bstr to simplify conversions beetween UTF16 (|BSTR|)
+ *  conjunction with Bstr to simplify conversions between UTF16 (|BSTR|)
  *  and UTF8.
  *
  *  This class uses COM/XPCOM-provided memory management routines to allocate
@@ -628,7 +628,7 @@ public:
 };
 
 /**
- * THe BstrFmt class is a shortcut to <tt>Bstr (Utf8StrFmt (...))</tt>.
+ * The BstrFmt class is a shortcut to <tt>Bstr (Utf8StrFmt (...))</tt>.
  */
 class BstrFmt : public Bstr
 {
@@ -651,7 +651,7 @@ public:
 };
 
 /**
- * THe BstrFmtVA class is a shortcut to <tt>Bstr (Utf8StrFmtVA (...))</tt>.
+ * The BstrFmtVA class is a shortcut to <tt>Bstr (Utf8StrFmtVA (...))</tt>.
  */
 class BstrFmtVA : public Bstr
 {

@@ -228,7 +228,7 @@ public:
     operator C* () const { return p; }
 
     /**
-     *  Derefereces the instance (redirects the -> operator to the managed
+     *  Dereferences the instance (redirects the -> operator to the managed
      *  pointer).
      */
     NoAddRefRelease <C> *operator-> () const
@@ -343,7 +343,7 @@ public:
     }
 
     /**
-     *  Createas an in-process object of the given class ID and starts to
+     *  Creates an in-process object of the given class ID and starts to
      *  manage a reference to the created object in case of success.
      */
     HRESULT createInprocObject (const CLSID &clsid)
@@ -367,7 +367,7 @@ public:
     }
 
     /**
-     *  Createas a local (out-of-process) object of the given class ID and starts
+     *  Creates a local (out-of-process) object of the given class ID and starts
      *  to manage a reference to the created object in case of success.
      *
      *  Note: In XPCOM, the out-of-process functionality is currently emulated
@@ -393,7 +393,7 @@ public:
 
 #ifdef VBOX_WITH_XPCOM
     /**
-     *  Createas an object of the given class ID on the specified server and
+     *  Creates an object of the given class ID on the specified server and
      *  starts to manage a reference to the created object in case of success.
      *
      *  @param serverName   Name of the server to create an object within.
