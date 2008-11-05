@@ -112,7 +112,6 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fFile, int
 static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fFile, cred_t *pCred);
 static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg);
 static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg);
-static int VBoxNetFltSolarisModWriteService(queue_t *pQueue);
 
 /**
  * OS specific hooks invoked from common VBoxNetFlt ring-0.
@@ -164,7 +163,7 @@ static struct qinit g_VBoxNetFltSolarisReadQ =
 static struct qinit g_VBoxNetFltSolarisWriteQ =
 {
     VBoxNetFltSolarisModWritePut,
-    VBoxNetFltSolarisModWriteService,
+    NULL,                           /* service */
     NULL,                           /* open */
     NULL,                           /* close */
     NULL,                           /* admin (reserved) */
@@ -854,6 +853,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
 /**
  * Read side put procedure for processing messages in the read queue.
+ * All streams, bound and unbound share this read procedure.
  *
  * @param   pQueue      Pointer to the queue.
  * @param   pMsg        Pointer to the message.
@@ -904,6 +904,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         && pPromiscStream->fRawMode)
                     {
                         vboxNetFltSolarisRecv(pThis, pStream, pQueue, pMsg);
+                        pMsg = NULL;
                         fSendUpstream = false;
                     }
                     break;
@@ -924,6 +925,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                             {
                                 LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Invalid notification size; expected>=%d got=%d\n",
                                             DL_NOTIFY_IND_SIZE, MBLKL(pMsg)));
+
                                 fSendUpstream = false;
                                 break;
                             }
@@ -986,7 +988,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                              * Swallow our bind request acknowledgement.
                              */
                             LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_BIND_ACK. Bound to requested SAP!\n"));
-                            freemsg(pMsg);
                             fSendUpstream = false;
                             break;
                         }
@@ -997,7 +998,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                              * Swallow our physical address request acknowledgement.
                              */
                             vboxNetFltSolarisCachePhysAddr(pThis, pMsg);
-                            freemsg(pMsg);
                             fSendUpstream = false;
                             break;
                         }
@@ -1019,7 +1019,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                 pPromiscStream->fPromisc = false;
                             }
 
-                            freemsg(pMsg);
                             fSendUpstream = false;
                             break;
                         }
@@ -1039,7 +1038,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Mode acknowledgement. RawMode is %s\n",
                                 pPromiscStream->fRawMode ? "ON" : "OFF"));
 
-                        freemsg(pMsg);
                         fSendUpstream = false;
                     }
                     break;
@@ -1066,12 +1064,18 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     if (fSendUpstream)
     {
         /*
-         * Pass foward messages when adjacent module can receive, otherwise queue them.
+         * Don't queue up things here, can cause bad things to happen when the system
+         * is under heavy loads and we need to jam across high priority messages which
+         * if it's not done properly will end up in an infinite loop.
          */
-        if (canputnext(pQueue))
-            putnext(pQueue, pMsg);
-        else
-            putbq(pQueue, pMsg);
+        putnext(pQueue, pMsg);
+    }
+    else if (pMsg)
+    {
+        /*
+         * We need to free up the message if we don't pass it through.
+         */
+        freemsg(pMsg);
     }
 
     return 0;
@@ -1080,6 +1084,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 
 /**
  * Write side put procedure for processing messages in the write queue.
+ * All streams, bound and unbound share this write procedure.
  *
  * @param   pQueue      Pointer to the queue.
  * @param   pMsg        Pointer to the message.
@@ -1090,48 +1095,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
 {
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut pQueue=%p pMsg=%p\n", pQueue, pMsg));
 
-    if (pMsg)
-    {
-        /*
-         * Pass foward messages when adjacent module can receive, otherwise queue them.
-         */
-        if (canputnext(pQueue))
-            putnext(pQueue, pMsg);
-        else
-            putbq(pQueue, pMsg);
-    }
-
-    return 0;
-}
-
-
-/**
- * Write side service procedure for deferred message processing on the write queue.
- *
- * @param   pQueue      Pointer to the queue.
- *
- * @returns corresponding solaris error code.
- */
-static int VBoxNetFltSolarisModWriteService(queue_t *pQueue)
-{
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWriteService pQueue=%p\n", pQueue));
-
-    /*
-     * Implement just the flow controlled service draining of the queue.
-     * Nothing else to do here, we handle all the important stuff in the Put procedure.
-     */
-    mblk_t *pMsg;
-    while (pMsg = getq(pQueue))
-    {
-        if (canputnext(pQueue))
-            putnext(pQueue, pMsg);
-        else
-        {
-            putbq(pQueue, pMsg);
-            break;
-        }
-    }
-
+    putnext(pQueue, pMsg);
     return 0;
 }
 
