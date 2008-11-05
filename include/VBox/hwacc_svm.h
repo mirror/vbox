@@ -696,8 +696,8 @@ DECLASM(int) SVMVMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCt
 DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 #ifdef IN_RING0
-VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt);
-VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
+VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys);
 #endif /* IN_RING0 */
 
 /** @} */

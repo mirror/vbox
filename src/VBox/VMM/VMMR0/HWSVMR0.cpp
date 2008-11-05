@@ -390,24 +390,25 @@ inline void SVMR0InjectEvent(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT*
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   pVMCB       SVM control block
  * @param   pCtx        CPU Context
  */
-static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
+static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
 {
     int rc;
 
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
-    if (pVM->hwaccm.s.Event.fPending)
+    if (pVCpu->hwaccm.s.Event.fPending)
     {
         SVM_EVENT Event;
 
-        Log(("Reinjecting event %08x %08x at %RGv\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip));
+        Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
-        Event.au64[0] = pVM->hwaccm.s.Event.intInfo;
+        Event.au64[0] = pVCpu->hwaccm.s.Event.intInfo;
         SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-        pVM->hwaccm.s.Event.fPending = false;
+        pVCpu->hwaccm.s.Event.fPending = false;
         return VINF_SUCCESS;
     }
 
@@ -524,7 +525,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVMCPU      The VM CPU to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  */
 VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 {
@@ -541,7 +542,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVMCPU      The VM CPU to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -559,7 +560,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
         SVM_WRITE_SELREG(CS, cs);
         SVM_WRITE_SELREG(SS, ss);
@@ -570,26 +571,26 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Guest CPU context: LDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_LDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_LDTR)
     {
         SVM_WRITE_SELREG(LDTR, ldtr);
     }
 
     /* Guest CPU context: TR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
         SVM_WRITE_SELREG(TR, tr);
     }
 
     /* Guest CPU context: GDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_GDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_GDTR)
     {
         pVMCB->guest.GDTR.u32Limit = pCtx->gdtr.cbGdt;
         pVMCB->guest.GDTR.u64Base  = pCtx->gdtr.pGdt;
     }
 
     /* Guest CPU context: IDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_IDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_IDTR)
     {
         pVMCB->guest.IDTR.u32Limit = pCtx->idtr.cbIdt;
         pVMCB->guest.IDTR.u64Base  = pCtx->idtr.pIdt;
@@ -603,7 +604,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVMCB->guest.u64SysEnterESP = pCtx->SysEnter.esp;
 
     /* Control registers */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
     {
         val = pCtx->cr0;
         if (!CPUMIsGuestFPUStateActive(pVM))
@@ -619,10 +620,10 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 Log(("Forcing X86_CR0_NE!!!\n"));
 
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
-                if (!pVM->hwaccm.s.fFPUOldStyleOverride)
+                if (!pVCpu->hwaccm.s.fFPUOldStyleOverride)
                 {
                     pVMCB->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
-                    pVM->hwaccm.s.fFPUOldStyleOverride = true;
+                    pVCpu->hwaccm.s.fFPUOldStyleOverride = true;
                 }
             }
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
@@ -642,7 +643,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* CR2 as well */
     pVMCB->guest.u64CR2 = pCtx->cr2;
 
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
         /* Save our shadow CR3 register. */
         if (pVM->hwaccm.s.fNestedPaging)
@@ -658,7 +659,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
     {
         val = pCtx->cr4;
         if (!pVM->hwaccm.s.fNestedPaging)
@@ -697,7 +698,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Debug registers. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
     {
         pCtx->dr[6] |= X86_DR6_INIT_VAL;                                          /* set all reserved bits to 1. */
         pCtx->dr[6] &= ~RT_BIT(12);                                               /* must be zero. */
@@ -788,7 +789,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     /* Done. */
-    pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
+    pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
     return VINF_SUCCESS;
 }
@@ -799,7 +800,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVMCPU      The VM CPU to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -881,7 +882,7 @@ ResumeExecution:
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
-    rc = SVMR0CheckPendingInterrupt(pVM, pVMCB, pCtx);
+    rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
     if (RT_FAILURE(rc))
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
@@ -922,13 +923,13 @@ ResumeExecution:
 
 #ifdef LOG_ENABLED
     pCpu = HWACCMR0GetCurrentCpu();
-    if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
-        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+    if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
+        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
-        if (pVM->hwaccm.s.idLastCpu != pCpu->idCpu)
-            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.idLastCpu, pCpu->idCpu));
+        if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
+            Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu, pCpu->idCpu));
         else
-            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+            Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     }
     if (pCpu->fFlushTLB)
         Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
@@ -954,20 +955,20 @@ ResumeExecution:
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
-    if (    pVM->hwaccm.s.idLastCpu != pCpu->idCpu
+    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
             /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
         /* Force a TLB flush on VM entry. */
-        pVM->hwaccm.s.fForceTLBFlush = true;
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
     else
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
-    pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
-    if (    pVM->hwaccm.s.fForceTLBFlush
+    if (    pVCpu->hwaccm.s.fForceTLBFlush
         && !pVM->hwaccm.s.svm.fAlwaysFlushTLB)
     {
         if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
@@ -981,24 +982,24 @@ ResumeExecution:
         else
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
 
-        pVM->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
-        pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
+        pVCpu->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+        pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
     }
     else
     {
         Assert(!pCpu->fFlushTLB || pVM->hwaccm.s.svm.fAlwaysFlushTLB);
 
         /* We never increase uCurrentASID in the fAlwaysFlushTLB (erratum 170) case. */
-        if (!pCpu->uCurrentASID || !pVM->hwaccm.s.uCurrentASID)
-            pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
+        if (!pCpu->uCurrentASID || !pVCpu->hwaccm.s.uCurrentASID)
+            pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
 
-        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVM->hwaccm.s.fForceTLBFlush);
-        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVM->hwaccm.s.fForceTLBFlush;
+        Assert(!pVM->hwaccm.s.svm.fAlwaysFlushTLB || pVCpu->hwaccm.s.fForceTLBFlush);
+        pVMCB->ctrl.TLBCtrl.n.u1TLBFlush = pVCpu->hwaccm.s.fForceTLBFlush;
     }
-    AssertMsg(pVM->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVM->hwaccm.s.uCurrentASID >= 1 && pVM->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.uCurrentASID));
-    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVM->hwaccm.s.uCurrentASID;
+    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
+    pVMCB->ctrl.TLBCtrl.n.u32ASID = pVCpu->hwaccm.s.uCurrentASID;
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVMCB->ctrl.TLBCtrl.n.u1TLBFlush)
@@ -1008,8 +1009,8 @@ ResumeExecution:
 #endif
 
     /* In case we execute a goto ResumeExecution later on. */
-    pVM->hwaccm.s.svm.fResumeVM      = true;
-    pVM->hwaccm.s.fForceTLBFlush = pVM->hwaccm.s.svm.fAlwaysFlushTLB;
+    pVCpu->hwaccm.s.fResumeVM      = true;
+    pVCpu->hwaccm.s.fForceTLBFlush = pVM->hwaccm.s.svm.fAlwaysFlushTLB;
 
     Assert(sizeof(pVCpu->hwaccm.s.svm.pVMCBPhys) == 8);
     Assert(pVMCB->ctrl.u32InterceptCtrl2 == ( SVM_CTRL2_INTERCEPT_VMRUN         /* required */
@@ -1236,15 +1237,15 @@ ResumeExecution:
     pCtx->dr[7] = pVMCB->guest.u64DR7;
 
     /* Check if an injected event was interrupted prematurely. */
-    pVM->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
+    pVCpu->hwaccm.s.Event.intInfo = pVMCB->ctrl.ExitIntInfo.au64[0];
     if (    pVMCB->ctrl.ExitIntInfo.n.u1Valid
         &&  pVMCB->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT /* we don't care about 'int xx' as the instruction will be restarted. */)
     {
-        Log(("Pending inject %RX64 at %RGv exit=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitCode));
+        Log(("Pending inject %RX64 at %RGv exit=%08x\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitCode));
 
 #ifdef LOG_ENABLED
         SVM_EVENT Event;
-        Event.au64[0] = pVM->hwaccm.s.Event.intInfo;
+        Event.au64[0] = pVCpu->hwaccm.s.Event.intInfo;
 
         if (    exitCode == SVM_EXIT_EXCEPTION_E
             &&  Event.n.u8Vector == 0xE)
@@ -1253,14 +1254,14 @@ ResumeExecution:
         }
 #endif
 
-        pVM->hwaccm.s.Event.fPending = true;
+        pVCpu->hwaccm.s.Event.fPending = true;
         /* Error code present? (redundant) */
         if (pVMCB->ctrl.ExitIntInfo.n.u1ErrorCodeValid)
         {
-            pVM->hwaccm.s.Event.errCode  = pVMCB->ctrl.ExitIntInfo.n.u32ErrorCode;
+            pVCpu->hwaccm.s.Event.errCode  = pVMCB->ctrl.ExitIntInfo.n.u32ErrorCode;
         }
         else
-            pVM->hwaccm.s.Event.errCode  = 0;
+            pVCpu->hwaccm.s.Event.errCode  = 0;
     }
 #ifdef VBOX_WITH_STATISTICS
     if (exitCode == SVM_EXIT_NPF)
@@ -1335,7 +1336,7 @@ ResumeExecution:
 
                 /* Continue execution. */
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+                pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
 
                 goto ResumeExecution;
             }
@@ -1640,16 +1641,16 @@ ResumeExecution:
         switch (exitCode - SVM_EXIT_WRITE_CR0)
         {
         case 0:
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
         case 2:
             break;
         case 3:
             Assert(!pVM->hwaccm.s.fNestedPaging);
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
             break;
         case 4:
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
             break;
         case 8:
             break;
@@ -1666,7 +1667,7 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBCRxChange);
 
             /* Must be set by PGMSyncCR3 */
-            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PROTECTED || pVM->hwaccm.s.fForceTLBFlush);
+            Assert(PGMGetGuestMode(pVM) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush);
         }
         if (rc == VINF_SUCCESS)
         {
@@ -1732,7 +1733,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
 
             /* Only resume if successful. */
             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2035,14 +2036,14 @@ end:
     {
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_HOST_CONTEXT;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_HOST_CONTEXT;
     }
     else
     {
         /* On the next entry we'll sync everything. */
         /** @todo we can do better than this */
         /* Not in the VINF_PGM_CHANGE_MODE though! */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
     }
 
     /* translate into a less severe return code */
@@ -2065,11 +2066,11 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
-    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVM->hwaccm.s.idLastCpu, pVM->hwaccm.s.uCurrentASID));
-    pVM->hwaccm.s.svm.fResumeVM = false;
+    LogFlow(("SVMR0Enter cpu%d last=%d asid=%d\n", pCpu->idCpu, pVCpu->hwaccm.s.idLastCpu, pVCpu->hwaccm.s.uCurrentASID));
+    pVCpu->hwaccm.s.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
-    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_LDTR;
+    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_LDTR;
 
     return VINF_SUCCESS;
 }
@@ -2099,7 +2100,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVMCB->ctrl.u16InterceptWrDRx = 0xFFFF;
 
         /* Resync the debug registers the next time. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
     }
     else
         Assert(pVMCB->ctrl.u16InterceptRdDRx == 0xFFFF && pVMCB->ctrl.u16InterceptWrDRx == 0xFFFF);
@@ -2198,11 +2199,12 @@ static int SVMR0InterpretInvpg(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uASID)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   GCVirt      Page to invalidate
  */
-VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
+VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVM->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVCpu->hwaccm.s.fForceTLBFlush;
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
@@ -2229,13 +2231,14 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   GCPhys      Page to invalidate
  */
-VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
     Assert(pVM->hwaccm.s.fNestedPaging);
     /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
-    pVM->hwaccm.s.fForceTLBFlush = true;
+    pVCpu->hwaccm.s.fForceTLBFlush = true;
     STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBInvlpga);
     return VINF_SUCCESS;
 }
