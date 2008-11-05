@@ -91,7 +91,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
             {
                 case VDCFGVALUETYPE_INTEGER:
                     {
-                        dt = DataType::Int32Type;
+                        dt = DataType_Int32Type;
                         /* If there is a default value get them in the right format */
                         if (pa->pDefaultValue)
                             defaults = Utf8StrFmt ("%d", pa->pDefaultValue->Integer.u64);
@@ -99,7 +99,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                     }
                 case VDCFGVALUETYPE_BYTES:
                     {
-                        dt = DataType::Int8Type;
+                        dt = DataType_Int8Type;
                         /* If there is a default value get them in the right format */
                         if (pa->pDefaultValue)
                         {
@@ -112,7 +112,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                     }
                 case VDCFGVALUETYPE_STRING:
                     {
-                        dt = DataType::StringType;
+                        dt = DataType_StringType;
                         /* If there is a default value get them in the right format */
                         if (pa->pDefaultValue)
                             defaults = pa->pDefaultValue->String.psz;
@@ -123,7 +123,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
             const Property prop = { Utf8Str (pa->pszKey),
                                     Utf8Str (""),
                                     dt,
-                                    pa->uKeyFlags,
+                                    static_cast<unsigned int> (pa->uKeyFlags),
                                     defaults };
             unconst (mData.properties).push_back (prop);
             ++ pa;
