@@ -459,23 +459,23 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         rc = dbgfR3DisasInstrRead(GCPtr, pau8Bits, cbBits, &State);
         AssertRC(rc);
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
-            RTStrPrintf(pszOutput, cchOutput, "%.*Vhxs%*s %s",
+            RTStrPrintf(pszOutput, cchOutput, "%.*Rhxs%*s %s",
                         cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                         szBuf);
         else if (fRealModeAddress)
-            RTStrPrintf(pszOutput, cchOutput, "%04x:%04x %.*Vhxs%*s %s",
+            RTStrPrintf(pszOutput, cchOutput, "%04x:%04x %.*Rhxs%*s %s",
                         Sel, (unsigned)GCPtr,
                         cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                         szBuf);
         else if (Sel == DBGF_SEL_FLAT)
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%RGv %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%RGv %.*Rhxs%*s %s",
                             GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);
             else
-                RTStrPrintf(pszOutput, cchOutput, "%08RX32 %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%08RX32 %.*Rhxs%*s %s",
                             (uint32_t)GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);
@@ -483,12 +483,12 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         else
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%04x:%RGv %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%04x:%RGv %.*Rhxs%*s %s",
                             Sel, GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);
             else
-                RTStrPrintf(pszOutput, cchOutput, "%04x:%08RX32 %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%04x:%08RX32 %.*Rhxs%*s %s",
                             Sel, (uint32_t)GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);

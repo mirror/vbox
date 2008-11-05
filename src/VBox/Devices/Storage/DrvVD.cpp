@@ -326,7 +326,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
     if (RT_SUCCESS(rc))
-        Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Vhxd\n", __FUNCTION__,
+        Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
@@ -340,7 +340,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
     LogFlow(("%s: off=%#llx pvBuf=%p cbWrite=%d\n", __FUNCTION__,
              off, pvBuf, cbWrite));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Vhxd\n", __FUNCTION__,
+    Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Rhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
     int rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));

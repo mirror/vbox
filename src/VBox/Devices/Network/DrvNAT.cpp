@@ -149,7 +149,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n"
-          "%.*Vhxd\n",
+          "%.*Rhxd\n",
           pvBuf, cb, cb, pvBuf));
 
 #ifndef VBOX_WITH_SYNC_SLIRP
@@ -368,7 +368,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n"
-          "%.*Vhxd\n",
+          "%.*Rhxd\n",
           pu8Buf, cb, pThis,
           cb, pu8Buf));
 

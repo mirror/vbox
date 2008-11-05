@@ -243,7 +243,7 @@ static DECLCALLBACK(int) drvMediaISORead(PPDMIMEDIA pInterface, uint64_t off, vo
         if (RT_SUCCESS(rc))
         {
             Log2(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
-                  "%16.*Vhxd\n",
+                  "%16.*Rhxd\n",
                   off, pvBuf, cbRead, pThis->pszFilename,
                   cbRead, pvBuf));
         }

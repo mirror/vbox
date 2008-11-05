@@ -3863,7 +3863,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     {
         *pu32 = pThis->pu8VBEExtraData[pThis->u16VBEExtraAddress] & 0xFF;
 
-        Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Vhxs\n", cb, cb, pu32));
+        Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
         return VINF_SUCCESS;
     }
 
@@ -3872,7 +3872,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         *pu32 = pThis->pu8VBEExtraData[pThis->u16VBEExtraAddress]
               | pThis->pu8VBEExtraData[pThis->u16VBEExtraAddress + 1] << 8;
 
-        Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Vhxs\n", cb, cb, pu32));
+        Log(("vbeIOPortReadVBEExtra: cb=%#x %.*Rhxs\n", cb, cb, pu32));
         return VINF_SUCCESS;
     }
     Log(("vbeIOPortReadVBEExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
@@ -4290,7 +4290,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         //case 8: *pu32 = p->au64[0]; break;
         default: AssertFailed(); break;
     }
-    Log(("vbeIOPortReadCMDLogo: LogoOffset=%#x(%d) cb=%#x %.*Vhxs\n", pThis->offLogoData, pThis->offLogoData, cb, cb, pu32));
+    Log(("vbeIOPortReadCMDLogo: LogoOffset=%#x(%d) cb=%#x %.*Rhxs\n", pThis->offLogoData, pThis->offLogoData, cb, cb, pu32));
 
     pThis->LogoCommand = LOGO_CMD_NOP;
     pThis->offLogoData += cb;

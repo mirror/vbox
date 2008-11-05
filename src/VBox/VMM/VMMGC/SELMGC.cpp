@@ -85,10 +85,10 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
     {
         if (Desc.Gen.u1Present)
         {
-            Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Vhxs: detected conflict!!\n", Sel, &Desc));
+            Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: detected conflict!!\n", Sel, &Desc));
             return VINF_SELM_SYNC_GDT;
         }
-        Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Vhxs: potential conflict (still not present)!\n", Sel, &Desc));
+        Log(("selmGCSyncGDTEntry: Sel=%d Desc=%.8Rhxs: potential conflict (still not present)!\n", Sel, &Desc));
 
         /* Note: we can't continue below or else we'll change the shadow descriptor!! */
         /* When the guest makes the selector present, then we'll do a GDT sync. */

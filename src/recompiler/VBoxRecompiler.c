@@ -2816,7 +2816,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 
     cpu_register_physical_memory(GCPhys, cb, GCPhys | (fShadow ? 0 : IO_MEM_ROM));
 
-    Log2(("%.64Vhxd\n", (char *)pvCopy + cb - 64));
+    Log2(("%.64Rhxd\n", (char *)pvCopy + cb - 64));
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;

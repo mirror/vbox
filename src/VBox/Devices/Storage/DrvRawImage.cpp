@@ -261,7 +261,7 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
-                  "%16.*Vhxd\n",
+                  "%16.*Rhxd\n",
                   off, pvBuf, cbRead, pThis->pszFilename,
                   cbRead, pvBuf));
         }
@@ -295,7 +295,7 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n"
-                  "%16.*Vhxd\n",
+                  "%16.*Rhxd\n",
                   off, pvBuf, cbWrite, pThis->pszFilename,
                   cbWrite, pvBuf));
         }

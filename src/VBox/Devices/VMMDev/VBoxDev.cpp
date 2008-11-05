@@ -1091,7 +1091,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pRequestHeader;
 
                 Log2(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
-                Log2(("%.*Vhxd\n", pRequestHeader->size, pRequestHeader));
+                Log2(("%.*Rhxd\n", pRequestHeader->size, pRequestHeader));
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
                 bool f64Bits = (pRequestHeader->requestType == VMMDevReq_HGCMCall64);

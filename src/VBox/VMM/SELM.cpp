@@ -1571,7 +1571,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
                         rc = PGMPhysSimpleReadGCPtr(pVM, &pVM->selm.s.Tss.IntRedirBitmap, GCPtrTss + offRedirBitmap, sizeof(tss.IntRedirBitmap));
                         AssertRC(rc);
                         Log2(("Redirection bitmap:\n"));
-                        Log2(("%.*Vhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
+                        Log2(("%.*Rhxd\n", sizeof(tss.IntRedirBitmap), &pVM->selm.s.Tss.IntRedirBitmap));
                     }
                 }
             }

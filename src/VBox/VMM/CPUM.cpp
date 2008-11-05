@@ -983,15 +983,15 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         {
             if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
                 LogRel(("cpumR3Load: CpuId mismatch! (ignored due to SSMAFTER_DEBUG_IT)\n"
-                        "Saved=%.*Vhxs\n"
-                        "Real =%.*Vhxs\n",
+                        "Saved=%.*Rhxs\n"
+                        "Real =%.*Rhxs\n",
                         sizeof(au32CpuIdSaved), au32CpuIdSaved,
                         sizeof(au32CpuId), au32CpuId));
             else
             {
                 LogRel(("cpumR3Load: CpuId mismatch!\n"
-                        "Saved=%.*Vhxs\n"
-                        "Real =%.*Vhxs\n",
+                        "Saved=%.*Rhxs\n"
+                        "Real =%.*Rhxs\n",
                         sizeof(au32CpuIdSaved), au32CpuIdSaved,
                         sizeof(au32CpuId), au32CpuId));
                 rc = VERR_SSM_LOAD_CPUID_MISMATCH;

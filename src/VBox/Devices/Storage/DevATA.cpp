@@ -1435,7 +1435,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     cbTransfer = s->cbElementaryTransfer;
 
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
-        Log3(("ATAPI PT data write (%d): %.*Vhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
+        Log3(("ATAPI PT data write (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
 
     /* Simple heuristics: if there is at least one sector of data
      * to transfer, it's worth updating the LEDs. */
@@ -1576,13 +1576,13 @@ static bool atapiPassthroughSS(ATADevState *s)
                 /* Make sure that the real drive cannot be identified.
                  * Motivation: changing the VM configuration should be as
                  *             invisible as possible to the guest. */
-                Log3(("ATAPI PT inquiry data before (%d): %.*Vhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
+                Log3(("ATAPI PT inquiry data before (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
                 ataSCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
             }
             if (cbTransfer)
-                Log3(("ATAPI PT data read (%d): %.*Vhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
+                Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
         }
         s->iSourceSink = ATAFN_SS_NULL;
         atapiCmdOK(s);
@@ -2755,7 +2755,7 @@ static void atapiParseCmd(ATADevState *s)
 #else /* !DEBUG */
     Log(("%s: LUN#%d DMA=%d CMD=%#04x\n", __FUNCTION__, s->iLUN, s->fDMA, pbPacket[0]));
 #endif /* !DEBUG */
-    Log2(("%s: limit=%#x packet: %.*Vhxs\n", __FUNCTION__, s->uATARegLCyl | (s->uATARegHCyl << 8), ATAPI_PACKET_SIZE, pbPacket));
+    Log2(("%s: limit=%#x packet: %.*Rhxs\n", __FUNCTION__, s->uATARegLCyl | (s->uATARegHCyl << 8), ATAPI_PACKET_SIZE, pbPacket));
 
     if (s->fATAPIPassthrough)
         atapiParseCmdPassthrough(s);
@@ -3665,7 +3665,7 @@ static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, con
     }
     else
         Log2(("%s: DUMMY data\n", __FUNCTION__));
-    Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
+    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
     return VINF_SUCCESS;
 }
 
@@ -3700,7 +3700,7 @@ static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint
         Log2(("%s: DUMMY data\n", __FUNCTION__));
         memset(pbBuf, '\xff', cbSize);
     }
-    Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
+    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
     return VINF_SUCCESS;
 }
 
@@ -4850,7 +4850,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 #endif /* IN_RC */
 
         if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
+            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
         s->iIOBufferPIODataStart += cbTransfer;
         *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
         *pcTransfer = cTransfer - cTransAvailable;
@@ -4907,7 +4907,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 #endif /* IN_RC */
 
         if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
+            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
         s->iIOBufferPIODataStart += cbTransfer;
         *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
         *pcTransfer = cTransfer - cTransAvailable;
