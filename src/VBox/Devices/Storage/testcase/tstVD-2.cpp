@@ -48,7 +48,7 @@ static int tstVDBackendInfo(void)
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
             return rc; \
     } while (0)
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     RTPrintf("tstVD-2: TESTING...\n");
 
     rc = tstVDBackendInfo();
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD-2: getting backend info test failed! rc=%Vrc\n", rc);
         g_cErrors++;

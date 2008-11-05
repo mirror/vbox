@@ -455,7 +455,7 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
             {
                 /* request storage for the full request */
                 rc = VbglGRAlloc(&reqFull, cbRequestSize, reqHeader.requestType);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: could not allocate request structure! rc = %d\n", rc));
                     rc = -EFAULT;
@@ -485,10 +485,10 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 }
 
                 /* failed? */
-                if (VBOX_FAILURE(rrc) || VBOX_FAILURE(reqFull->rc))
+                if (RT_FAILURE(rrc) || RT_FAILURE(reqFull->rc))
                 {
                     LogRelFunc(("VBOXGUEST_IOCTL_VMMREQUEST: request execution failed!\n"));
-                    rc = VBOX_FAILURE(rrc) ? -RTErrConvertToErrno(rrc)
+                    rc = RT_FAILURE(rrc) ? -RTErrConvertToErrno(rrc)
                                            : -RTErrConvertToErrno(reqFull->rc);
                 }
                 else
@@ -676,7 +676,7 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
 
         /* make a copy of the event mask */
         rcVBox = VbglGRPerform (&vboxDev->irqAckRequest->header);
-        if (VBOX_SUCCESS(rcVBox) && VBOX_SUCCESS(vboxDev->irqAckRequest->header.rc))
+        if (RT_SUCCESS(rcVBox) && RT_SUCCESS(vboxDev->irqAckRequest->header.rc))
         {
             if (RT_LIKELY (vboxDev->irqAckRequest->events))
             {
@@ -728,14 +728,14 @@ static int vboxadd_reserve_hypervisor(void)
         sizeof(VMMDevReqHypervisorInfo),
         VMMDevReq_GetHypervisorInfo
         );
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
         goto bail_out;
     }
     /* query the hypervisor information */
     rcVBox = VbglGRPerform(&req->header);
-    if (VBOX_SUCCESS(rcVBox) && VBOX_SUCCESS(req->header.rc))
+    if (RT_SUCCESS(rcVBox) && RT_SUCCESS(req->header.rc))
     {
         /* are we supposed to make a reservation? */
         if (req->hypervisorSize)
@@ -754,7 +754,7 @@ static int vboxadd_reserve_hypervisor(void)
                 req->header.requestType = VMMDevReq_SetHypervisorInfo;
                 req->header.rc          = VERR_GENERAL_FAILURE;
                 rcVBox = VbglGRPerform(&req->header);
-                if (VBOX_SUCCESS(rcVBox) && VBOX_SUCCESS(req->header.rc))
+                if (RT_SUCCESS(rcVBox) && RT_SUCCESS(req->header.rc))
                 {
                     /* store mapping for future unmapping */
                     vboxDev->hypervisorStart = hypervisorArea;
@@ -805,7 +805,7 @@ static int vboxadd_free_hypervisor(void)
         sizeof(VMMDevReqHypervisorInfo),
         VMMDevReq_SetHypervisorInfo
         );
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
         goto bail_out;
@@ -814,7 +814,7 @@ static int vboxadd_free_hypervisor(void)
     req->hypervisorStart = 0;
     req->hypervisorSize  = 0;
     rcVBox = VbglGRPerform(&req->header);
-    if (VBOX_SUCCESS(rcVBox) && VBOX_SUCCESS(req->header.rc))
+    if (RT_SUCCESS(rcVBox) && RT_SUCCESS(req->header.rc))
     {
         /* now we can free the associated IO space mapping */
         iounmap(vboxDev->hypervisorStart);
@@ -993,7 +993,7 @@ static __init int init(void)
 
     /* initialize VBGL subsystem */
     rcVBox = VbglInit(vboxDev->io_port, vboxDev->pVMMDevMemory);
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("could not initialize VBGL subsystem! rc = %Vrc\n", rcVBox));
         err = -ENXIO;
@@ -1003,7 +1003,7 @@ static __init int init(void)
     /* report guest information to host, this must be done as the very first request */
     rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&infoReq,
                          sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         err = -ENOMEM;
@@ -1018,7 +1018,7 @@ static __init int init(void)
     infoReq->guestInfo.osType = VBOXOSTYPE_Linux24;
 #endif
     rcVBox = VbglGRPerform(&infoReq->header);
-    if (VBOX_FAILURE(rcVBox) || VBOX_FAILURE(infoReq->header.rc))
+    if (RT_FAILURE(rcVBox) || RT_FAILURE(infoReq->header.rc))
     {
         LogRelFunc(("error reporting guest info to host! rc = %Vrc, header.rc = %Vrc\n",
                     rcVBox, infoReq->header.rc));
@@ -1038,7 +1038,7 @@ static __init int init(void)
         rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vmmreqGuestCaps,
                               sizeof(VMMDevReqGuestCapabilities2),
                               VMMDevReq_SetGuestCapabilities);
-        if (VBOX_FAILURE(rcVBox))
+        if (RT_FAILURE(rcVBox))
         {
             LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
             err = -ENOMEM;
@@ -1064,7 +1064,7 @@ static __init int init(void)
     /* allocate a VMM request structure for use in the ISR */
     rcVBox = VbglGRAlloc((VMMDevRequestHeader**)&vboxDev->irqAckRequest,
                          sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
         err = -ENOMEM;

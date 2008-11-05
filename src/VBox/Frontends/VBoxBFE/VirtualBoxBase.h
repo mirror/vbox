@@ -127,7 +127,7 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #if defined (DEBUG)
 #define ComAssertMsgRC(vrc, msg)    AssertMsgRC (vrc, msg)
 #else
-#define ComAssertMsgRC(vrc, msg)    ComAssertMsg (VBOX_SUCCESS (vrc), msg)
+#define ComAssertMsgRC(vrc, msg)    ComAssertMsg (RT_SUCCESS (vrc), msg)
 #endif
 
 
@@ -182,10 +182,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
     do { ComAssertMsg (expr, a); if (!(expr)) return (ret); } while (0)
 /** Special version of ComAssertRC that returns ret if vrc does not succeed */
 #define ComAssertRCRet(vrc, ret)            \
-    do { ComAssertRC (vrc); if (!VBOX_SUCCESS (vrc)) return (ret); } while (0)
+    do { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) return (ret); } while (0)
 /** Special version of ComAssertMsgRC that returns ret if vrc does not succeed */
 #define ComAssertMsgRCRet(vrc, msg, ret)    \
-    do { ComAssertMsgRC (vrc, msg); if (!VBOX_SUCCESS (vrc)) return (ret); } while (0)
+    do { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) return (ret); } while (0)
 /** Special version of ComAssertFailed that returns ret */
 #define ComAssertFailedRet(ret)             \
     do { ComAssertFailed(); return (ret); } while (0)
@@ -205,10 +205,10 @@ static inline int setError(int iNum, const char *pszFormat, ...)
     if (1)  { ComAssertMsg (expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertRC that evaulates eval and breaks if vrc does not succeed */
 #define ComAssertRCBreak(vrc, eval)               \
-    if (1)  { ComAssertRC (vrc); if (!VBOX_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertMsgRC that evaulates eval and breaks if vrc does not succeed */
 #define ComAssertMsgRCBreak(vrc, msg, eval)       \
-    if (1)  { ComAssertMsgRC (vrc, msg); if (!VBOX_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertFailed that vaulates eval and breaks */
 #define ComAssertFailedBreak(eval)              \
     if (1)  { ComAssertFailed(); { eval; break; } } else do {} while (0)

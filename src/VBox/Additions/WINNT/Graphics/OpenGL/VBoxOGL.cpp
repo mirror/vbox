@@ -181,8 +181,8 @@ BOOL VBoxOGLThreadAttach()
 
     int rc = vboxHGCMCall(&parms, sizeof (parms));
 
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(parms.hdr.result))
+    if (    RT_FAILURE(rc)
+        ||  RT_FAILURE(parms.hdr.result))
     {
         DbgPrintf(("GL_VERSION failed with %x %x\n", rc, parms.hdr.result));
         return FALSE;
@@ -368,8 +368,8 @@ uint64_t VBoxOGLFlush()
     pCtx->pCurrentCmd = pCtx->pCmdBuffer;
     pCtx->cCommands   = 0;
 
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(parms.hdr.result))
+    if (    RT_FAILURE(rc)
+        ||  RT_FAILURE(parms.hdr.result))
     {
         DbgPrintf(("GL_FLUSH failed with %x %x\n", rc, parms.hdr.result));
         return 0;
@@ -430,8 +430,8 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
     pCtx->pCurrentCmd = pCtx->pCmdBuffer;
     pCtx->cCommands   = 0;
 
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(parms.hdr.result))
+    if (    RT_FAILURE(rc)
+        ||  RT_FAILURE(parms.hdr.result))
     {
         DbgPrintf(("GL_FLUSH failed with %x %x\n", rc, parms.hdr.result));
         return 0;
@@ -449,7 +449,7 @@ uint64_t VBoxOGLFlushPtr(void *pLastParam, uint32_t cbParam)
  * Check if an OpenGL extension is available on the host
  *
  * @returns available or not
- * @param   pszExtFunctionName  
+ * @param   pszExtFunctionName
  */
 bool VBoxIsExtensionAvailable(const char *pszExtFunctionName)
 {
@@ -464,8 +464,8 @@ bool VBoxIsExtensionAvailable(const char *pszExtFunctionName)
 
     int rc = vboxHGCMCall(&parms, sizeof (parms));
 
-    if (    VBOX_FAILURE(rc)
-        ||  VBOX_FAILURE(parms.hdr.result))
+    if (    RT_FAILURE(rc)
+        ||  RT_FAILURE(parms.hdr.result))
     {
         DbgPrintf(("GLCHECKEXT failed with %x %x\n", rc, parms.hdr.result));
         return false;

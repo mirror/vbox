@@ -68,7 +68,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevDisplayChangeRequest), VMMDevReq_GetDisplayChangeRequest);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR allocating request, rc = %Vrc\n", rc));
     }
@@ -78,7 +78,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
 
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             if (xres)
                 *xres = req->xres;
@@ -111,7 +111,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
     VMMDevVideoModeSupportedRequest *req = NULL;
 
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevVideoModeSupportedRequest), VMMDevReq_VideoModeSupported);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Vrc\n", rc));
         /* Most likely the VBoxGuest driver is not loaded.
@@ -125,7 +125,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
         req->height = height;
         req->bpp    = bpp;
         rc = VbglGRPerform(&req->header);
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             bRC = req->fSupported;
         }
@@ -150,14 +150,14 @@ ULONG vboxGetHeightReduction()
     VMMDevGetHeightReductionRequest *req = NULL;
 
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHeightReductionRequest), VMMDevReq_GetHeightReduction);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR allocating request, rc = %Vrc\n", rc));
     }
     else
     {
         rc = VbglGRPerform(&req->header);
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             retHeight = (ULONG)req->heightReduction;
         }
@@ -184,7 +184,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR allocating request, rc = %Vrc\n", rc));
     }
@@ -192,7 +192,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
     {
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             if (req->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
             {
@@ -313,7 +313,7 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMousePointer) + cbData, VMMDevReq_SetPointerShape);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR allocating request, rc = %Vrc\n", rc));
     }
@@ -341,7 +341,7 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
 
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             bRC = TRUE;
         }

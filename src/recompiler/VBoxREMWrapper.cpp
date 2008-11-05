@@ -1821,7 +1821,7 @@ static int remLoadLinuxObj(void)
      */
     strcpy(&szPath[offFilename], "/VBoxREM2.rel");
     rc = RTLdrOpen(szPath, &g_ModREM2);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         g_pvREM2 = RTMemExecAlloc(RTLdrSize(g_ModREM2));
         if (g_pvREM2)
@@ -1833,7 +1833,7 @@ static int remLoadLinuxObj(void)
                     "REM: (gdb) add-symbol-file %s 0x%p\n",
                     szPath, g_pvREM2, RTLdrSize(g_ModREM2), szPath, g_pvREM2));
             rc = RTLdrGetBits(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, remGetImport, NULL);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Resolve exports.
@@ -1844,10 +1844,10 @@ static int remLoadLinuxObj(void)
                     RTUINTPTR Value;
                     rc = RTLdrGetSymbolEx(g_ModREM2, g_pvREM2, (RTUINTPTR)g_pvREM2, g_aExports[i].pszName, &Value);
                     AssertMsgRC(rc, ("%s rc=%Vrc\n", g_aExports[i].pszName, rc));
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     rc = remGenerateExportGlue(&Value, &g_aExports[i]);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     *(void **)g_aExports[i].pv = (void *)(uintptr_t)Value;
                 }
@@ -1909,7 +1909,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     if (!pfnREMR3Init)
     {
         int rc = remLoadLinuxObj();
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
     }
     return pfnREMR3Init(pVM);

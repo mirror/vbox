@@ -105,7 +105,7 @@ int main(int argc, char **argv)
      */
     PSUPDRVSESSION pSession = NIL_RTR0PTR;
     int rc = SUPR3Init(&pSession);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (g_pSUPGlobalInfoPage)
         {

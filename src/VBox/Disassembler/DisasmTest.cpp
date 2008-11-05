@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
             memset(&cpu, 0, sizeof(cpu));
             cpu.mode = CPUMODE_32BIT;
-            if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
             {
                 printf(szOutput);
             }
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
             memset(&cpu, 0, sizeof(cpu));
             cpu.mode = CPUMODE_64BIT;
-            if (VBOX_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
+            if (RT_SUCCESS(DISInstr(&cpu, pInstr, 0, &cb, szOutput)))
                 printf(szOutput);
             else
             {

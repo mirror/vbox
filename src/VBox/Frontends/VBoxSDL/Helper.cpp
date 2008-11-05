@@ -128,7 +128,7 @@ DECLCALLBACK(int) xpcomEventThread(RTTHREAD thread, void *pvUser)
 int startXPCOMEventQueueThread(int eqFD)
 {
     int rc = RTSemEventCreate(&g_EventSemXPCOMQueueThread);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTTHREAD Thread;
         rc = RTThreadCreate(&Thread, xpcomEventThread, (void *)eqFD, 0, RTTHREADTYPE_MSG_PUMP, 0, "XPCOMEvent");

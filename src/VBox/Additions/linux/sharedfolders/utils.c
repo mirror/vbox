@@ -156,7 +156,7 @@ sf_stat (const char *caller, struct sf_glob_info *sf_g,
         LogFunc(("calling vboxCallCreate, file %s, flags %#x\n",
                  path->String.utf8, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, path, &params);
-        if (VBOX_FAILURE (rc)) {
+        if (RT_FAILURE (rc)) {
                 LogFunc(("vboxCallCreate(%s) failed.  caller=%s, rc=%Vrc\n",
                          path->String.utf8, rc, caller));
                 return -EPROTO;
@@ -619,7 +619,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                 b->used_bytes += buf_size;
                 b = NULL;
 
-                if (VBOX_FAILURE (rc)) {
+                if (RT_FAILURE (rc)) {
                         break;
                 }
         }
@@ -642,7 +642,7 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS *stat)
         cbBuffer = sizeof(SHFLVolumeInfo);
         rc = vboxCallFSInfo(&client_handle, &sf_g->map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
                             &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return -RTErrConvertToErrno(rc);
 
         stat->f_type        = NFS_SUPER_MAGIC; /* XXX vboxsf type? */

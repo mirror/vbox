@@ -182,7 +182,7 @@ static int suplibOsCreateService(void)
     {
         char szDriver[RTPATH_MAX];
         int rc = RTPathProgram(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             strcat(szDriver, "\\VBoxDrv.sys");
             SC_HANDLE hService = CreateService(hSMgrCreate,
@@ -333,7 +333,7 @@ static int suplibOsUpdateService(void)
         {
             char szDriver[RTPATH_MAX];
             int rc = RTPathProgram(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 strcat(szDriver, "\\VBoxDrv.sys");
 

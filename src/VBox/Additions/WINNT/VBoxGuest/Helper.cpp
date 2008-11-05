@@ -198,7 +198,7 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 
     dprintf(("hlpVBoxReportGuestInfo: VbglGRAlloc rc = %d\n", rc));
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         req->guestInfo.additionsVersion = VMMDEV_VERSION;
 
@@ -231,16 +231,16 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev."
                       "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
         }
 
-        rc = VBOX_SUCCESS(rc) ? req->header.rc : rc;
+        rc = RT_SUCCESS(rc) ? req->header.rc : rc;
 
         VbglGRFree (&req->header);
     }
 
-    return VBOX_FAILURE(rc) ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;
+    return RT_FAILURE(rc) ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;
 }

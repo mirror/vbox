@@ -68,7 +68,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             VDDestroy(pVD); \
             return rc; \
@@ -99,7 +99,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     {
         RTFILE File;
         rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTFileClose(File);
             return VERR_INTERNAL_ERROR;
@@ -125,7 +125,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             VDDestroy(pVD); \
             return rc; \
@@ -152,7 +152,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
     VDClose(pVD, true);
     RTFILE File;
     rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
         return VERR_INTERNAL_ERROR;
@@ -348,7 +348,7 @@ typedef struct Segment *PSEGMENT;
 static void initializeRandomGenerator(PRNDCTX pCtx, uint32_t u32Seed)
 {
     int rc = RTPRandInit(pCtx, u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTPrintf("ERROR: Failed to initialize random generator. RC=%Vrc\n", rc);
     else
     {
@@ -463,7 +463,7 @@ static int readAndCompareSegments(PVBOXHDD pVD, void *pvBuf, PSEGMENT pSegment)
     while (pSegment->u32Length)
     {
         int rc = VDRead(pVD, pSegment->u64Offset, pvBuf, pSegment->u32Length);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("ERROR: Failed to read from virtual disk\n");
             return rc;
@@ -508,7 +508,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             if (pvBuf) \
                 RTMemFree(pvBuf); \
@@ -534,12 +534,12 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
 
     RTFILE File;
     rc = RTFileOpen(&File, pszBaseFilename, RTFILE_O_READ);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
         rc = VDGetFormat(pszBaseFilename, &pszFormat);
         RTPrintf("VDGetFormat() pszFormat=%s rc=%Vrc\n", pszFormat, rc);
-        if (VBOX_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
+        if (RT_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
         {
             rc = VERR_GENERAL_FAILURE;
             RTPrintf("VDGetFormat() returned incorrect backend name\n");
@@ -632,7 +632,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             if (pvBuf) \
                 RTMemFree(pvBuf); \
@@ -658,7 +658,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
 
     RTFILE File;
     rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
         RTFileDelete(pszFilename);
@@ -711,7 +711,7 @@ static int tstVmdkRename(const char *src, const char *dst)
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             VDDestroy(pVD); \
             return rc; \
@@ -745,11 +745,11 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
                                    unsigned uFlags)
 {
     int rc = tstVDCreateDelete("VMDK", src, cbSize, enmType, uFlags, false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = tstVmdkRename(src, dst);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     PVBOXHDD pVD = NULL;
@@ -761,7 +761,7 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             VDCloseAll(pVD); \
             return rc; \
@@ -800,28 +800,28 @@ static void tstVmdk()
 {
     int rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", "tmpVDRename.vmdk", _4G,
                                  VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK rename (single extent, embedded descriptor, same dir) test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", "tmpVDRename.vmdk", _4G,
                                  VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, same dir) test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
                                  VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK rename (single extent, embedded descriptor, another dir) test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
                                  VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, another dir) test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -829,12 +829,12 @@ static void tstVmdk()
 
     RTFILE File;
     rc = RTFileOpen(&File, DST_PATH, RTFILE_O_CREATE | RTFILE_O_WRITE);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         RTFileClose(File);
 
     rc = tstVmdkCreateRenameOpen("tmpVDCreate.vmdk", DST_PATH, _4G,
                                  VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTPrintf("tstVD: VMDK rename (multiple extent, separate descriptor, another dir, already exists) test failed!\n");
         g_cErrors++;
@@ -890,7 +890,7 @@ int main(int argc, char *argv[])
     if (!RTDirExists("tmp"))
     {
         rc = RTDirCreate("tmp", RTFS_UNIX_IRWXU);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf("tstVD: Failed to create 'tmp' directory! rc=%Vrc\n", rc);
             g_cErrors++;
@@ -901,7 +901,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -909,13 +909,13 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            false);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVDOpenDelete("VMDK", "tmpVDCreate.vmdk");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK delete test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -927,7 +927,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic VDI create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -935,7 +935,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VDI", "tmpVDCreate.vdi", 2 * _4G,
                            VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: fixed VDI create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -945,7 +945,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -953,7 +953,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_VMDK_IMAGE_FLAGS_SPLIT_2G,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic split VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -961,7 +961,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: fixed VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -969,7 +969,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VMDK", "tmpVDCreate.vmdk", 2 * _4G,
                            VD_IMAGE_TYPE_FIXED, VD_VMDK_IMAGE_FLAGS_SPLIT_2G,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: fixed split VMDK create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -979,7 +979,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
                            VD_IMAGE_TYPE_NORMAL, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: dynamic VHD create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -987,7 +987,7 @@ int main(int argc, char *argv[])
     rc = tstVDCreateDelete("VHD", "tmpVDCreate.vhd", 2 * _4G,
                            VD_IMAGE_TYPE_FIXED, VD_IMAGE_FLAGS_NONE,
                            true);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: fixed VHD create test failed! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -995,13 +995,13 @@ int main(int argc, char *argv[])
 #endif /* VHD_TEST */
 #ifdef VDI_TEST
     rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VDI test failed (new image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVDOpenCreateWriteMerge("VDI", "tmpVDBase.vdi", "tmpVDDiff.vdi", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VDI test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -1009,13 +1009,13 @@ int main(int argc, char *argv[])
 #endif /* VDI_TEST */
 #ifdef VMDK_TEST
     rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK test failed (new image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
     rc = tstVDOpenCreateWriteMerge("VMDK", "tmpVDBase.vmdk", "tmpVDDiff.vmdk", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VMDK test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;
@@ -1023,14 +1023,14 @@ int main(int argc, char *argv[])
 #endif /* VMDK_TEST */
 #ifdef VHD_TEST
     rc = tstVDCreateWriteOpenRead("VHD", "tmpVDCreate.vhd", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VHD test failed (creating image)! rc=%Vrc\n", rc);
         g_cErrors++;
     }
 
     rc = tstVDOpenCreateWriteMerge("VHD", "tmpVDBase.vhd", "tmpVDDiff.vhd", u32Seed);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstVD: VHD test failed (existing image)! rc=%Vrc\n", rc);
         g_cErrors++;

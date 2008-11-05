@@ -379,10 +379,10 @@ STDMETHODIMP VMDisplay::InvalidateAndUpdate()
     PVMREQ pReq;
     int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)VMDisplay::doInvalidateAndUpdate, 1, mpDrv);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);
 
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
         rc = E_FAIL;
 
     LogFlow (("VMDisplay::InvalidateAndUpdate(): END: rc=%08X\n", rc));
@@ -1257,7 +1257,7 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     void *pv;
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;

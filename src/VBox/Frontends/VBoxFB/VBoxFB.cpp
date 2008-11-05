@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
             case 's':
             {
                 // UUID as string, parse it
-                if (!VBOX_SUCCESS(RTUuidFromStr((PRTUUID)&uuid, optarg)))
+                if (!RT_SUCCESS(RTUuidFromStr((PRTUUID)&uuid, optarg)))
                 {
                     printf("Error, invalid UUID format given!\n");
                     showusage();

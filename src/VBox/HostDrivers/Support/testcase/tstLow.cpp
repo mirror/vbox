@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     RTPrintf("tstLow: TESTING...\n");
 
     rc = SUPR3Init(NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Allocate a bit of contiguous memory.
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
         void *pvPages0 = (void *)0x77777777;
         memset(&aPages0[0], 0x8f, sizeof(aPages0));
         rc = SUPLowAlloc(ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* check that the pages are below 4GB and valid. */
             for (unsigned iPage = 0; iPage < ELEMENTS(aPages0); iPage++)
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
             void *pvPages1 = (void *)0x77777777;
             memset(&aPages1[0], 0x8f, sizeof(aPages1));
             rc = SUPLowAlloc(cPages, &pvPages1, NULL, aPages1);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* check that the pages are below 4GB and valid. */
                 for (unsigned iPage = 0; iPage < cPages; iPage++)

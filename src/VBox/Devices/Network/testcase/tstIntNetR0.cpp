@@ -252,7 +252,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         if (RT_SUCCESS(rc))
             rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, NULL, 0);
 #endif
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             g_cErrors++;
             RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Vrc (%d)\n", cb, rc, INTNETRingGetWritable(&pArgs->pBuf->Send));
@@ -270,7 +270,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     for (unsigned c = 0; c < 20; c++)
     {
         int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             g_cErrors++;
             RTPrintf("tstIntNetR0: send failed, rc=%Vrc\n", rc);
@@ -432,7 +432,7 @@ int main(int argc, char **argv)
     RTPrintf("tstIntNetR0: TESTING cbSend=%d cbRecv=%d ...\n", cbSend, cbRecv);
     PINTNET pIntNet;
     int rc = INTNETR0Create(&pIntNet);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("tstIntNetR0: INTNETR0Create failed, rc=%Vrc\n");
         return 1;
@@ -443,39 +443,39 @@ int main(int argc, char **argv)
      */
     INTNETIFHANDLE hIf0 = INTNET_HANDLE_INVALID;
     rc = INTNETR0Open(pIntNet, g_pSession, "test", kIntNetTrunkType_None, "", 0, 1536*2 + 4, 0x8000, &hIf0);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (hIf0 != INTNET_HANDLE_INVALID)
         {
             INTNETIFHANDLE hIf1 = INTNET_HANDLE_INVALID;
             rc = INTNETR0Open(pIntNet, g_pSession, "test", kIntNetTrunkType_None, NULL, 0, 1536*2 + 4, 0x8000, &hIf1);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 if (hIf1 != INTNET_HANDLE_INVALID)
                 {
                     PINTNETBUF pBuf0;
                     rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf0, g_pSession, &pBuf0);
-                    if (VBOX_FAILURE(rc) || !pBuf0)
+                    if (RT_FAILURE(rc) || !pBuf0)
                     {
                         RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf0=%p rc=%Vrc\n", pBuf0, rc);
                         g_cErrors++;
                     }
                     PINTNETBUF pBuf1;
                     rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf1, g_pSession, &pBuf1);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf1=%p rc=%Vrc\n", pBuf1, rc);
                         g_cErrors++;
                     }
 
                     rc = INTNETR0IfSetActive(pIntNet, hIf0, g_pSession, true);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
                         g_cErrors++;
                     }
                     rc = INTNETR0IfSetActive(pIntNet, hIf1, g_pSession, true);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
                         g_cErrors++;
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
                      * Send and receive.
                      */
                     rc = INTNETR0IfSend(pIntNet, hIf0, g_pSession, &g_TestFrame0, sizeof(g_TestFrame0));
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
                         if (rc != VERR_TIMEOUT)
@@ -540,7 +540,7 @@ int main(int argc, char **argv)
                              * Send a packet from If1 just to set its MAC address.
                              */
                             rc = INTNETR0IfSend(pIntNet, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
-                            if (VBOX_FAILURE(rc))
+                            if (RT_FAILURE(rc))
                             {
                                 RTPrintf("tstIntNetR0: INTNETIfSend returned %Vrc! (hIf1)\n", rc);
                                 g_cErrors++;
@@ -574,13 +574,13 @@ int main(int argc, char **argv)
                                 RTTHREAD ThreadSend0 = NIL_RTTHREAD;
                                 RTTHREAD ThreadSend1 = NIL_RTTHREAD;
                                 rc = RTThreadCreate(&ThreadRecv0, ReceiveThread, &Args0, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "RECV0");
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                     rc = RTThreadCreate(&ThreadRecv1, ReceiveThread, &Args1, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "RECV1");
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                     rc = RTThreadCreate(&ThreadSend0, SendThread, &Args0, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND0");
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                     rc = RTThreadCreate(&ThreadSend1, SendThread, &Args1, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND1");
-                                if (VBOX_SUCCESS(rc))
+                                if (RT_SUCCESS(rc))
                                 {
                                     int rc2 = VINF_SUCCESS;
                                     rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2);
@@ -592,7 +592,7 @@ int main(int argc, char **argv)
                                     }
 #endif
                                     AssertRC(rc);
-                                    if (VBOX_SUCCESS(rc))
+                                    if (RT_SUCCESS(rc))
                                     {
                                         ThreadSend0 = NIL_RTTHREAD;
                                         rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL);
@@ -607,8 +607,8 @@ int main(int argc, char **argv)
                                         if (RT_SUCCESS(rc))
                                             ThreadSend1 = NIL_RTTHREAD;
                                     }
-                                    if (    VBOX_SUCCESS(rc)
-                                        &&  VBOX_SUCCESS(rc2))
+                                    if (    RT_SUCCESS(rc)
+                                        &&  RT_SUCCESS(rc2))
                                     {
                                         /*
                                          * Wait a bit for the receivers to finish up.
@@ -630,7 +630,7 @@ int main(int argc, char **argv)
                                         rc = RTThreadWait(ThreadRecv0, 5000, &rc2);
                                         if (RT_SUCCESS(rc))
                                             ThreadRecv0 = NIL_RTTHREAD;
-                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
+                                        if (RT_FAILURE(rc) || RT_FAILURE(rc2))
                                         {
                                             RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
                                             g_cErrors++;
@@ -639,14 +639,14 @@ int main(int argc, char **argv)
                                         rc = RTThreadWait(ThreadRecv1, 5000, &rc2);
                                         if (RT_SUCCESS(rc))
                                             ThreadRecv1 = NIL_RTTHREAD;
-                                        if (VBOX_FAILURE(rc) || VBOX_FAILURE(rc2))
+                                        if (RT_FAILURE(rc) || RT_FAILURE(rc2))
                                         {
                                             RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
                                             g_cErrors++;
                                         }
 
                                         rc = INTNETR0IfClose(pIntNet, hIf0, g_pSession);
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                         {
                                             hIf0 = INTNET_HANDLE_INVALID;
                                             pBuf0 = NULL;
@@ -658,7 +658,7 @@ int main(int argc, char **argv)
                                         }
 
                                         rc = INTNETR0IfClose(pIntNet, hIf1, g_pSession);
-                                        if (VBOX_SUCCESS(rc))
+                                        if (RT_SUCCESS(rc))
                                         {
                                             hIf1 = INTNET_HANDLE_INVALID;
                                             pBuf1 = NULL;

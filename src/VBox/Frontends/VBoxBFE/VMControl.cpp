@@ -65,7 +65,7 @@ VMCtrlPause(void)
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Suspend, 1, pVM);
     AssertRC(rcVBox);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -86,7 +86,7 @@ VMCtrlResume(void)
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Resume, 1, pVM);
     AssertRC(rcVBox);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -104,7 +104,7 @@ VMCtrlReset(void)
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Reset, 1, pVM);
     AssertRC(rcVBox);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -121,7 +121,7 @@ VMCtrlACPIPowerButton(void)
 {
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
         PPDMIACPIPORT pPort =
@@ -139,7 +139,7 @@ VMCtrlACPISleepButton(void)
 {
     PPDMIBASE pBase;
     int vrc = PDMR3QueryDeviceLun (pVM, "acpi", 0, 0, &pBase);
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
         PPDMIACPIPORT pPort =
@@ -162,7 +162,7 @@ DECLCALLBACK(int) VMSaveThread(RTTHREAD Thread, void *pvUser)
     rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                      (PFNRT)VMR3Save, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
     endProgressInfo();
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -195,7 +195,7 @@ VMCtrlSave(void (*pfnQuit)(void))
         rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                          (PFNRT)VMR3Suspend, 1, pVM);
         AssertRC(rc);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = pReq->iStatus;
             VMR3ReqFree(pReq);
@@ -205,7 +205,7 @@ VMCtrlSave(void (*pfnQuit)(void))
     RTTHREAD thread;
     rc = RTThreadCreate(&thread, VMSaveThread, (void*)pfnQuit, 0,
                         RTTHREADTYPE_MAIN_WORKER, 0, "Save");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Error: Thread creation failed with %d\n", rc);
         return rc;

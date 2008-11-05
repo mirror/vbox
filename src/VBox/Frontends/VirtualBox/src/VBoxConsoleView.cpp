@@ -3484,13 +3484,13 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         rc = DarwinCursorCreate (me->width(), me->height(), me->xHot(), me->yHot(), me->hasAlpha(),
                                  srcAndMaskPtr, srcShapePtr, &mDarwinCursor);
         AssertRC (rc);
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             /** @todo check current mouse coordinates. */
             rc = DarwinCursorSet (&mDarwinCursor);
             AssertRC (rc);
         }
-        ok = VBOX_SUCCESS (rc);
+        ok = RT_SUCCESS (rc);
         NOREF (srcShapePtrScan);
 
 #else

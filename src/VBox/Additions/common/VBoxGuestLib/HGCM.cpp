@@ -54,7 +54,7 @@ DECLINLINE(int) vbglHandleHeapEnter (void)
 {
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHGCMHandle);
 
-    VBGL_HGCM_ASSERTMsg(VBOX_SUCCESS(rc),
+    VBGL_HGCM_ASSERTMsg(RT_SUCCESS(rc),
                         ("Failed to request handle heap mutex, rc = %Vrc\n", rc));
 
     return rc;
@@ -71,7 +71,7 @@ struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc (void)
     int rc = vbglHandleHeapEnter ();
     uint32_t i;
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return NULL;
 
     p = NULL;
@@ -107,7 +107,7 @@ void vbglHGCMHandleFree (struct VBGLHGCMHANDLEDATA *pHandle)
 
     rc = vbglHandleHeapEnter ();
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
         return;
 
     VBGL_HGCM_ASSERTMsg(pHandle->fAllocated,
@@ -138,11 +138,11 @@ DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo
     {
         rc = vbglDriverOpen (&pHandleData->driver);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = vbglDriverIOCtl (&pHandleData->driver, VBOXGUEST_IOCTL_HGCM_CONNECT, pData, sizeof (*pData));
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 *pHandle = pHandleData;
             }
@@ -152,7 +152,7 @@ DECLVBGL(int) VbglHGCMConnect (VBGLHGCMHANDLE *pHandle, VBoxGuestHGCMConnectInfo
             }
         }
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             vbglHGCMHandleFree (pHandleData);
         }

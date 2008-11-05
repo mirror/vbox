@@ -2654,7 +2654,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
     }
 
     /* return the network connection GUID on success */
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         /* remove the curly bracket at the end */
         pCfgGuidString [_tcslen (pCfgGuidString) - 1] = '\0';
@@ -2730,7 +2730,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
         if (hkeyNetwork)
             RegCloseKey (hkeyNetwork);
 
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             break;
 
         /*
@@ -2872,7 +2872,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
         if (hDeviceInfo != INVALID_HANDLE_VALUE)
             SetupDiDestroyDeviceInfoList (hDeviceInfo);
 
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             break;
     }
     while (0);
@@ -2919,9 +2919,9 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
             vrc = aClient->write (Utf8Str (d->name));
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -2930,7 +2930,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
 
                 switch (reply)
                 {
@@ -2939,7 +2939,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the GUID */
                         Guid guid;
                         vrc = aClient->read (guid);
-                        if (VBOX_FAILURE (vrc)) break;
+                        if (RT_FAILURE (vrc)) break;
 
                         LogFlowFunc (("Network connection GUID = {%Vuuid}\n", guid.raw()));
 
@@ -2954,7 +2954,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (VBOX_FAILURE (vrc)) break;
+                        if (RT_FAILURE (vrc)) break;
 
                         rc = setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -2980,9 +2980,9 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
             vrc = aClient->write (d->guid);
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -2991,7 +2991,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
 
                 switch (reply)
                 {
@@ -3007,7 +3007,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (VBOX_FAILURE (vrc)) break;
+                        if (RT_FAILURE (vrc)) break;
 
                         rc = setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -3060,19 +3060,19 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 
             Utf8Str name;
             vrc = aClient->read (name);
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
 
             Guid guid;
             Utf8Str errMsg;
             vrc = createNetworkInterface (aClient, name, guid, errMsg);
 
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::CreateHostNetworkInterface_OK);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (guid);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
             }
             else
             {
@@ -3080,9 +3080,9 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Vrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
             }
 
             break;
@@ -3093,16 +3093,16 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
 
             Guid guid;
             vrc = aClient->read (guid);
-            if (VBOX_FAILURE (vrc)) break;
+            if (RT_FAILURE (vrc)) break;
 
             Utf8Str errMsg;
             vrc = removeNetworkInterface (aClient, guid, errMsg);
 
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
             {
                 /* write parameter-less success */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
             }
             else
             {
@@ -3110,9 +3110,9 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Vrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (VBOX_FAILURE (vrc)) break;
+                if (RT_FAILURE (vrc)) break;
             }
 
             break;

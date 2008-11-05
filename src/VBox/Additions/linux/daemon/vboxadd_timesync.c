@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
         /* perform VMM request */
         if (ioctl(fd, VBOXGUEST_IOCTL_VMMREQUEST(0), (void*)&req) >= 0)
         {
-            if (VBOX_SUCCESS(req.header.rc))
+            if (RT_SUCCESS(req.header.rc))
             {
                 /* Adapt time smoothly and try to prevent negative time differences. */
                 uint64_t u64Now;

@@ -74,7 +74,7 @@ DECLCALLBACK(void) VMStatus::drvUnitChanged(PPDMILEDCONNECTORS pInterface, unsig
     {
         PPDMLED pLed;
         int rc = pData->pLedPorts->pfnQueryStatusLed(pData->pLedPorts, iLUN, &pLed);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             pLed = NULL;
         ASMAtomicXchgPtr((void * volatile *)&pData->papLeds[iLUN - pData->iFirstLUN], pLed);
         Log(("drvUnitChanged: iLUN=%d pLed=%p\n", iLUN, pLed));
@@ -163,7 +163,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Read config.
      */
     rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Vrc\n", rc));
         return rc;
@@ -172,7 +172,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryU32(pCfgHandle, "First", &pData->iFirstLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->iFirstLUN = 0;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Vrc\n", rc));
         return rc;
@@ -181,7 +181,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryU32(pCfgHandle, "Last", &pData->iLastLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->iLastLUN = 0;
-    else if (VBOX_FAILURE(rc))
+    else if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Vrc\n", rc));
         return rc;

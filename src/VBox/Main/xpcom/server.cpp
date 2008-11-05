@@ -496,11 +496,11 @@ public:
         LogFlowFunc (("\n"));
 
         /* create a critsect to protect object construction */
-        if (VBOX_FAILURE (RTCritSectInit (&sLock)))
+        if (RT_FAILURE (RTCritSectInit (&sLock)))
             return NS_ERROR_OUT_OF_MEMORY;
 
         int vrc = RTTimerLRCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
             return NS_ERROR_FAILURE;

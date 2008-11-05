@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 {
     RTR3Init();
     int rc = SUPUninstall();
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         printf("uninstalled successfully\n");
         return 0;

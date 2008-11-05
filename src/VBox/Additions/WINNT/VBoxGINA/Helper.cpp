@@ -173,7 +173,7 @@ bool credentialsPollerCreate(void)
     /* create the poller thread */
     int rc = RTThreadCreate(&gThreadPoller, credentialsPoller, NULL, 0, RTTHREADTYPE_INFREQUENT_POLLER,
                             RTTHREADFLAGS_WAITABLE, "creds");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("VBoxGINA::credentialsPollerCreate: failed to create thread, rc = %Vrc\n", rc));
         return false;

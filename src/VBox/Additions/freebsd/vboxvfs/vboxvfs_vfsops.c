@@ -145,7 +145,7 @@ static int vboxvfs_mount(struct mount *mp, struct thread *td)
     rc = vboxCallMapFolder (&g_vboxSFClient, pShFlShareName, &pShFlGlobalInfo->map);
     RTMemFree(pShFlShareName);
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         RTMemFree(pShFlGlobalInfo);
         printf("vboxCallMapFolder failed rc=%d\n", rc);
@@ -174,7 +174,7 @@ static int vboxvfs_unmount(struct mount *mp, int mntflags, struct thread *td)
     int flags = 0;
 
     rc = vboxCallUnmapFolder(&g_vboxSFClient, &pShFlGlobalInfo->map);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         printf("Failed to unmap shared folder\n");
 
     if (mntflags & MNT_FORCE)
@@ -222,12 +222,12 @@ int vboxvfs_init(struct vfsconf *vfsp)
 
     /* Initialize the R0 guest library. */
     rc = vboxInit();
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return ENXIO;
 
     /* Connect to the host service. */
     rc = vboxConnect(&g_vboxSFClient);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         printf("Failed to get connection to host! rc=%d\n", rc);
         vboxUninit();
@@ -235,7 +235,7 @@ int vboxvfs_init(struct vfsconf *vfsp)
     }
 
     rc = vboxCallSetUtf8 (&g_vboxSFClient);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         printf("vboxCallSetUtf8 failed, rc=%d\n", rc);
         vboxDisconnect(&g_vboxSFClient);

@@ -245,13 +245,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
     EMRAWMODE rawModeFlag = enable ? EMRAW_RING3_DISABLE : EMRAW_RING3_ENABLE;
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
     }
 
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
         return S_OK;
 
     AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Vrc\n",
@@ -314,13 +314,13 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
     EMRAWMODE rawModeFlag = enable ? EMRAW_RING0_DISABLE : EMRAW_RING0_ENABLE;
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
     }
 
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
         return S_OK;
 
     AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Vrc\n",
@@ -437,7 +437,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled)(BOOL enable)
         vrc = CSAMEnableScanning(pVM);
     else
         vrc = CSAMDisableScanning(pVM);
-    if (VBOX_FAILURE(vrc))
+    if (RT_FAILURE(vrc))
     {
         /** @todo handle error case */
     }
@@ -498,7 +498,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled)(BOOL aEnabled)
 
 #ifdef LOG_ENABLED
     int vrc = DBGFR3LogModifyFlags(pVM, aEnabled ? "enabled" : "disabled");
-    if (VBOX_FAILURE(vrc))
+    if (RT_FAILURE(vrc))
     {
         /** @todo handle error code. */
     }
@@ -652,7 +652,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG pct)
     CheckComRCReturnRC (pVM.rc());
 
     int vrc = TMVirtualSetWarpDrive(pVM, pct);
-    if (VBOX_FAILURE(vrc))
+    if (RT_FAILURE(vrc))
     {
         /** @todo handle error code. */
     }

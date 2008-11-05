@@ -208,7 +208,7 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
     char hostPathFull [RTPATH_MAX];
     int vrc = RTPathAbsEx (NULL, hostPath,
                            hostPathFull, sizeof (hostPathFull));
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_INVALIDARG,
             tr ("Invalid shared folder path: '%s' (%Vrc)"), hostPath.raw(), vrc);
 
@@ -298,7 +298,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     int vrc = RTPathExists(hostPath) ? RTPathReal (hostPath, hostPathFull,
                                                    sizeof (hostPathFull))
                                      : VERR_PATH_NOT_FOUND;
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         *aAccessible = TRUE;
         return S_OK;

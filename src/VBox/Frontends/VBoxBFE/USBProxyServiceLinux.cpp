@@ -101,7 +101,7 @@ USBProxyServiceLinux::USBProxyServiceLinux (HostUSB *aHost, const char *aUsbfsRo
     if (pszDevices)
     {
         rc = RTFileOpen (&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             /*
              * Check that we're actually on the usbfs.
@@ -123,7 +123,7 @@ USBProxyServiceLinux::USBProxyServiceLinux (HostUSB *aHost, const char *aUsbfsRo
                              * Start the poller thread.
                              */
                             rc = start();
-                            if (VBOX_SUCCESS (rc))
+                            if (RT_SUCCESS (rc))
                             {
                                 RTStrFree (pszDevices);
                                 LogFlowMember (("USBProxyServiceLinux::USBProxyServiceLinux: returns successfully - mFile=%d mStream=%p mWakeupPipeR/W=%d/%d\n",
@@ -268,7 +268,7 @@ int USBProxyServiceLinux::wait (unsigned aMillies)
 int USBProxyServiceLinux::interruptWait (void)
 {
     int rc = RTFileWrite (mWakeupPipeW, "Wakeup!", sizeof("Wakeup!") - 1, NULL);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
         fsync (mWakeupPipeW);
     return rc;
 }
@@ -377,7 +377,7 @@ static int usbReadNum (const char *pszValue, unsigned uBase, uint32_t u32Mask, P
         else
         {
             int rc = usbReadSkipSuffix (&pszNext);
-            if (VBOX_FAILURE (rc))
+            if (RT_FAILURE (rc))
                 return rc;
         }
 
@@ -466,7 +466,7 @@ static int usbReadBCD (const char *pszValue, unsigned uBase, uint16_t *pu16, cha
          * Validate and skip stuff following the number.
          */
         int rc = usbReadSkipSuffix (&pszNext);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             return rc;
         *ppszNext = pszNext;
 
@@ -574,7 +574,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
 
         rewind (mStream);
         int rc = VINF_SUCCESS;
-        while (     VBOX_SUCCESS (rc)
+        while (     RT_SUCCESS (rc)
                &&   fgets (szLine, sizeof (szLine), mStream))
         {
             char   *psz;
@@ -661,7 +661,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
 
 
                     /* parse the line. */
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("Bus="))
                             rc = usbRead8 (pszValue, 10, &Dev.bBus, &psz);
@@ -707,7 +707,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                  * |__Device info tag #1
                  */
                 case 'D':
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("Ver="))
                             rc = usbReadBCD (pszValue, 16, &Dev.bcdUSB, &psz);
@@ -736,7 +736,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                  * |__Device info tag #2
                  */
                 case 'P':
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("Vendor="))
                             rc = usbRead16 (pszValue, 16, &Dev.idVendor, &psz);
@@ -762,7 +762,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                     else if (PREFIX ("SerialNumber="))
                     {
                         rc = usbReadStr (pszValue, &Dev.pszSerialNumber);
-                        if (VBOX_SUCCESS (rc))
+                        if (RT_SUCCESS (rc))
                             Dev.u64SerialHash = calcSerialHash (pszValue);
                     }
                     break;
@@ -780,7 +780,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                 {
                     USBCONFIG Cfg = {0};
                     Cfg.fActive = psz[-2] == '*';
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("#Ifs="))
                             rc = usbRead8 (pszValue, 10, &Cfg.bNumInterfaces, &psz);
@@ -794,7 +794,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                             psz = usbReadSkip (psz);
                         psz = RTStrStripL (psz);
                     }
-                    if (VBOX_SUCCESS (rc))
+                    if (RT_SUCCESS (rc))
                     {
                         if (iCfg < Dev.bNumConfigurations)
                         {
@@ -846,7 +846,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                 {
                     USBINTERFACE If = {0};
                     bool fIfAdopted = false;
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("If#="))
                             rc = usbRead8 (pszValue, 10, &If.bInterfaceNumber, &psz);
@@ -877,7 +877,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                             psz = usbReadSkip (psz);
                         psz = RTStrStripL (psz);
                     }
-                    if (VBOX_SUCCESS (rc))
+                    if (RT_SUCCESS (rc))
                     {
                         if (pCfg && If.bInterfaceNumber < pCfg->bNumInterfaces)
                         {
@@ -952,7 +952,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                 case 'E':
                 {
                     USBENDPOINT Ep = {0};
-                    while (*psz && VBOX_SUCCESS (rc))
+                    while (*psz && RT_SUCCESS (rc))
                     {
                         if (PREFIX ("Ad="))
                             rc = usbRead8 (pszValue, 16, &Ep.bEndpointAddress, &psz);
@@ -966,7 +966,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
                             psz = usbReadSkip (psz);
                         psz = RTStrStripL (psz);
                     }
-                    if (VBOX_SUCCESS (rc))
+                    if (RT_SUCCESS (rc))
                     {
                         if (pIf && iEp < pIf->bNumEndpoints)
                         {
@@ -1039,7 +1039,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
         /*
          * Success?
          */
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
             LogFlow (("USBProxyServiceLinux::getDevices: rc=%Vrc\n", rc));
             while (pFirst)

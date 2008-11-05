@@ -324,7 +324,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "rem", 1, REM_SAVED_STATE_VERSION, sizeof(uint32_t) * 10,
                                    NULL, remR3Save, NULL,
                                    NULL, remR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64))
@@ -335,7 +335,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     if (!fRegisteredCmds)
     {
         int rc = DBGCRegisterCommands(&g_aCmds[0], ELEMENTS(g_aCmds));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
 #endif
@@ -525,7 +525,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
     uint32_t u32Sep;
     int rc = SSMR3GetU32(pSSM, &u32Sep);            /* separator */
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Sep != ~0U)
     {
@@ -544,7 +544,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
          * Load the REM stuff.
          */
         rc = SSMR3GetUInt(pSSM, &pRem->cInvalidatedPages);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
         if (pRem->cInvalidatedPages > ELEMENTS(pRem->aGCPtrInvalidatedPages))
         {
@@ -557,12 +557,12 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     }
 
     rc = SSMR3GetUInt(pSSM, &pVM->rem.s.u32PendingInterrupt);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* check the terminator. */
     rc = SSMR3GetU32(pSSM, &u32Sep);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     if (u32Sep != ~0U)
     {
@@ -751,7 +751,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
      */
     int rc = REMR3State(pVM);
     pVM->rem.s.fFlushTBs = fFlushTBs;
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
         Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
@@ -1348,7 +1348,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
 bool remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
 {
     int rc = PATMR3QueryOpcode(env->pVM, GCPtrInstr, pu8Byte);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return true;
     return false;
 }
@@ -1389,7 +1389,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
      * Let PGM do the rest.
      */
     int rc = PGMInvalidatePage(pVM, GCPtr);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("remR3FlushPage %VGv failed with %d!!\n", GCPtr, rc));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
@@ -2003,7 +2003,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     TRPMEVENT   enmType;
     uint8_t     u8TrapNo;
     int rc = TRPMQueryTrap(pVM, &u8TrapNo, &enmType);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
 #ifdef DEBUG
         if (u8TrapNo == 0x80)
@@ -2773,7 +2773,7 @@ void remR3GrowDynRange(unsigned long physaddr)
     LogFlow(("remR3GrowDynRange %VGp\n", physaddr));
     const RTGCPHYS GCPhys = physaddr;
     rc = PGM3PhysGrowRange(pVM, &GCPhys);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         return;
 
     LogRel(("\nUnable to allocate guest RAM chunk at %VGp\n", physaddr));
@@ -3411,7 +3411,7 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 
     rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)remR3DisasEnableStepping, 2, pVM, fEnable);
     AssertRC(rc);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
     return rc;
@@ -3434,10 +3434,10 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
 
     /* convert the argument and change the mode. */
     rc = pCmdHlp->pfnVarToBool(pCmdHlp, &paArgs[0], &fEnable);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "boolean conversion failed!\n");
     rc = REMR3DisasEnableStepping(pVM, fEnable);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "REMR3DisasEnableStepping failed!\n");
     return rc;
 }
@@ -3482,7 +3482,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
                                             env->cr[3],
                                             env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
                                             &pvPC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (!PATMIsPatchGCAddr(env->pVM, GCPtrPC))
                 return false;
@@ -3494,7 +3494,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     {
         /* physical address */
         int rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16, &pvPC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return false;
     }
 
@@ -3577,7 +3577,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
                                             env->cr[3],
                                             env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE),
                                             &pvPC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             if (!PATMIsPatchGCAddr(pVM, GCPtrPC))
                 return false;
@@ -3590,7 +3590,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
 
         /* physical address */
         int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, 16, &pvPC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return false;
     }
 
@@ -3654,7 +3654,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     if (fLog)
         rc = DBGFR3DisasInstrCurrentLogInternal(pVM, pszPrefix);
 
-    return VBOX_SUCCESS(rc);
+    return RT_SUCCESS(rc);
 #endif
 }
 
@@ -3737,7 +3737,7 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
                                         0,
                                         szBuf, sizeof(szBuf),
                                         &cbInstr);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 RTLogPrintf("%VGp %s\n", uCode, szBuf);
             else
             {
@@ -3769,7 +3769,7 @@ const char *lookup_symbol(target_ulong orig_addr)
     DBGFSYMBOL Sym;
     PVM pVM = cpu_single_env->pVM;
     int rc = DBGFR3SymbolByAddr(pVM, orig_addr, &off, &Sym);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         static char szSym[sizeof(Sym.szName) + 48];
         if (!off)
@@ -4061,7 +4061,7 @@ int cpu_get_pic_interrupt(CPUState *env)
         rc = PDMGetInterrupt(env->pVM, &u8Interrupt);
 
     LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Vrc\n", u8Interrupt, rc));
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (VM_FF_ISPENDING(env->pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
             env->interrupt_request |= CPU_INTERRUPT_HARD;
@@ -4083,7 +4083,7 @@ uint64_t cpu_get_apic_base(CPUX86State *env)
 {
     uint64_t u64;
     int rc = PDMApicGetBase(env->pVM, &u64);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("cpu_get_apic_base: returns %#llx \n", u64));
         return u64;
@@ -4102,7 +4102,7 @@ uint8_t cpu_get_apic_tpr(CPUX86State *env)
 {
     uint8_t u8;
     int rc = PDMApicGetTPR(env->pVM, &u8, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("cpu_get_apic_tpr: returns %#x\n", u8));
         return u8;
@@ -4116,7 +4116,7 @@ uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg)
 {
     uint64_t value;
     int rc = PDMApicReadMSR(env->pVM, 0/* cpu */, reg, &value);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         LogFlow(("cpu_apic_rdms returns %#x\n", value));
         return value;

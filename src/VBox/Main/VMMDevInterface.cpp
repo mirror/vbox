@@ -131,7 +131,7 @@ int VMMDev::WaitCredentialsJudgement (uint32_t u32Timeout, uint32_t *pu32Credent
 
     int rc = RTSemEventWait (mCredentialsEvent, u32Timeout);
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         *pu32CredentialsFlags = mu32CredentialsFlags;
     }
@@ -755,7 +755,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
      */
     void *pv;
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;
@@ -767,8 +767,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 #ifdef VBOX_WITH_HGCM
     rc = pData->pVMMDev->hgcmLoadService (VBOXSHAREDFOLDERS_DLL,
                                           "VBoxSharedFolders");
-    pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
-    if (VBOX_SUCCESS(rc))
+    pData->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
+    if (RT_SUCCESS(rc))
     {
         PPDMLED       pLed;
         PPDMILEDPORTS pLedPort;
@@ -781,7 +781,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             return VERR_PDM_MISSING_INTERFACE_ABOVE;
         }
         rc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
-        if (VBOX_SUCCESS(rc) && pLed)
+        if (RT_SUCCESS(rc) && pLed)
         {
             VBOXHGCMSVCPARM  parm;
 
@@ -803,11 +803,11 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
     /* Check CFGM option. */
     rc = CFGMR3QueryBool(pCfgHandle, "OpenGLEnabled", &fEnabled);
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  fEnabled)
     {
         rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedOpenGL", "VBoxSharedOpenGL");
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             LogRel(("Shared OpenGL service loaded.\n"));
         }
@@ -818,10 +818,10 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     }
 
     rc = CFGMR3QueryBool(pCfgHandle, "crOpenGLEnabled", &fEnabled);
-    if ( VBOX_SUCCESS(rc) &&  fEnabled)
+    if ( RT_SUCCESS(rc) &&  fEnabled)
     {
         rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             LogRel(("Shared Chromium OpenGL service loaded.\n"));
 
@@ -832,9 +832,9 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             //parm.u.pointer.addr = static_cast <IConsole *> (pData->pVMMDev->getParent());
             parm.u.pointer.addr = pData->pVMMDev->getParent()->getDisplay()->getFramebuffer();
             parm.u.pointer.size = sizeof(IFramebuffer *);
-    
+
             rc = HGCMHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
-            if (!VBOX_SUCCESS(rc))
+            if (!RT_SUCCESS(rc))
                 AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Vrc\n", rc));
         }
         else

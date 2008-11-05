@@ -123,7 +123,7 @@ static Bool vbox_vmmcall (ScrnInfoPtr pScrn, VBOXPtr pVBox,
                  "Ioctl call failed during a request to the virtual machine: %s\n",
                  strerror (errno));
     else
-        if (VBOX_FAILURE (hdrp->rc))
+        if (RT_FAILURE (hdrp->rc))
             RETERROR(pScrn->scrnIndex, FALSE,
                      "A request to the virtual machine returned %d\n",
                      hdrp->rc);
@@ -368,7 +368,7 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     }
     rc = vmmdevInitRequest ((VMMDevRequestHeader *) pVBox->reqf,
                             VMMDevReq_VideoAccelFlush);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Could not initialise VBVA flush request: return value %d\n", rc);
@@ -385,7 +385,7 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     }
     rc = vmmdevInitRequest ((VMMDevRequestHeader *) pVBox->reqe,
                             VMMDevReq_VideoAccelEnable);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Could not initialise VBVA enable request: return value = %d\n",
@@ -469,7 +469,7 @@ vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
     }
     if (rc) {
         vrc = vmmdevInitRequest (p, VMMDevReq_SetPointerShape);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             xf86DrvMsg(scrnIndex, X_ERROR,
                        "Could not init VMM request: vrc = %d\n", vrc);
@@ -653,7 +653,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
 
     rc = vmmdevInitRequest ((VMMDevRequestHeader *) p,
                             VMMDevReq_SetPointerShape);
-    if (VBOX_FAILURE (rc)) {
+    if (RT_FAILURE (rc)) {
         xfree(p);
         RETERROR(scrnIndex, NULL,
                  "Could not init VMM request: rc = %d\n", rc);

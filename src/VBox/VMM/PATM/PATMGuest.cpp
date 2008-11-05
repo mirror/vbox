@@ -111,7 +111,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     /* check the epilog of KiFastSystemCall */
     lpfnKiFastSystemCall = pInstrGC - 2;
     rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, lpfnKiFastSystemCall, sizeof(uFnKiFastSystemCall));
-    if (    VBOX_FAILURE(rc)
+    if (    RT_FAILURE(rc)
         ||  memcmp(uFnKiFastSystemCall, uTemp, sizeof(uFnKiFastSystemCall)))
     {
         return VERR_PATCHING_REFUSED;
@@ -121,7 +121,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     for (i=0;i<64;i++)
     {
         rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC + i, sizeof(uFnKiIntSystemCall));
-        if(VBOX_FAILURE(rc))
+        if(RT_FAILURE(rc))
         {
             break;
         }
@@ -152,7 +152,7 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
     uTemp[0] = 0xE9;
     *(RTGCPTR32 *)&uTemp[1] = lpfnKiIntSystemCall - (pInstrGC + SIZEOF_NEARJUMP32);
     rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pInstrGC, uTemp, SIZEOF_NEARJUMP32);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("MMR3PhysWriteGCVirt failed with rc=%d!!\n", rc));
         return VERR_PATCHING_REFUSED;
@@ -189,7 +189,7 @@ int PATMPatchOpenBSDHandlerPrefix(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
     /* Guest OS specific patch; check heuristics first */
 
     rc = PGMPhysSimpleReadGCPtr(pVM, uTemp, pInstrGC, RT_MAX(sizeof(uFnOpenBSDHandlerPrefix1), sizeof(uFnOpenBSDHandlerPrefix2)));
-    if (    VBOX_FAILURE(rc)
+    if (    RT_FAILURE(rc)
         || (    memcmp(uFnOpenBSDHandlerPrefix1, uTemp, sizeof(uFnOpenBSDHandlerPrefix1))
             &&  memcmp(uFnOpenBSDHandlerPrefix2, uTemp, sizeof(uFnOpenBSDHandlerPrefix2))))
     {
@@ -223,7 +223,7 @@ int PATMInstallGuestSpecificPatch(PVM pVM, PDISCPUSTATE pCpu, RTGCPTR32 pInstrGC
         pPatchRec->patch.flags |= PATMFL_SYSENTER_XP | PATMFL_USER_MODE | PATMFL_GUEST_SPECIFIC;
 
         rc = PATMPatchSysenterXP(pVM, pInstrGC, pPatchRec);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             return VERR_PATCHING_REFUSED;
         }

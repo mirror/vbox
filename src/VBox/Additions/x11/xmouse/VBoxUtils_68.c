@@ -43,7 +43,7 @@ int VBoxMouseInit(void)
     }
 
     rc = VbglR3SetMouseStatus(VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE | VBOXGUEST_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
                errno, strerror(errno));
@@ -63,7 +63,7 @@ int VBoxMouseQueryPosition(unsigned int *puAbsXPos, unsigned int *puAbsYPos)
     AssertPtrReturn(puAbsXPos, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puAbsYPos, VERR_INVALID_PARAMETER);
     rc = VbglR3GetMouseStatus(NULL, &pointerXPos, &pointerYPos);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         *puAbsXPos = pointerXPos;
         *puAbsYPos = pointerYPos;
@@ -149,7 +149,7 @@ int VBoxMouseQueryPosition(unsigned int *abs_x, unsigned int *abs_y)
 /** @todo r=bird: Michael, ditto. */
     if (ioctl(g_vboxaddHandle, VBOXGUEST_IOCTL_VMMREQUEST(vmmdevGetRequestSize(VMMDevReq_GetMouseStatus)), (void*)g_vmmreqMouseStatus) >= 0)
     {
-        if (VBOX_SUCCESS(g_vmmreqMouseStatus->header.rc))
+        if (RT_SUCCESS(g_vmmreqMouseStatus->header.rc))
         {
             /* does the host want absolute coordinates? */
             if (g_vmmreqMouseStatus->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)

@@ -3461,7 +3461,7 @@ bool VBoxConsoleWnd::dbgCreated()
     if (dbg_gui)
         return true;
     int rc = DBGGuiCreate (csession.raw(), &dbg_gui);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         dbgAdjustRelativePos();
         return true;

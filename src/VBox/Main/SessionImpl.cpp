@@ -953,7 +953,7 @@ HRESULT Session::grabIPCSemaphore()
 
     /* wait until thread init is completed */
     vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
-    AssertReturn (VBOX_SUCCESS (vrc) || vrc == VERR_INTERRUPTED, E_FAIL);
+    AssertReturn (RT_SUCCESS (vrc) || vrc == VERR_INTERRUPTED, E_FAIL);
 
     /* the thread must succeed */
     AssertReturn ((bool) data [2], E_FAIL);
@@ -1015,7 +1015,7 @@ void Session::releaseIPCSemaphore()
 
         /* wait for the thread to finish */
         vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
-        Assert (VBOX_SUCCESS (vrc) || vrc == VERR_INTERRUPTED);
+        Assert (RT_SUCCESS (vrc) || vrc == VERR_INTERRUPTED);
 
         mIPCThread = NIL_RTTHREAD;
     }

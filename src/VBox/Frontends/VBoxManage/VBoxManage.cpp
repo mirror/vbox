@@ -3348,7 +3348,7 @@ static int handleModifyHardDisk(int argc, char *argv[],
 
         RTPrintf("Shrinking '%lS': 0%%", fileName.raw());
         int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), hardDiskProgressCallback, &uProcent);
-        if (VBOX_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
         {
             RTPrintf("Error while shrinking hard disk image: %Vrc\n", vrc);
             rc = E_FAIL;
@@ -3438,7 +3438,7 @@ static int handleConvertDDImage(int argc, char *argv[])
         File = 0;
     else
         rc = RTFileOpen(&File, argv[arg], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("File=\"%s\" open error: %Rrf\n", argv[arg], rc);
         return rc;
@@ -3450,7 +3450,7 @@ static int handleConvertDDImage(int argc, char *argv[])
         cbFile = RTStrToUInt64(argv[arg + 2]);
     else
         rc = RTFileGetSize(File, &cbFile);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (enmImgType == VDI_IMAGE_TYPE_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
         char pszComment[256];
@@ -3459,11 +3459,11 @@ static int handleConvertDDImage(int argc, char *argv[])
                                 enmImgType,
                                 cbFile,
                                 pszComment, NULL, NULL);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             PVDIDISK pVdi = VDIDiskCreate();
             rc = VDIDiskOpenImage(pVdi, argv[arg + 1], VDI_OPEN_FLAGS_NORMAL);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* alloc work buffer. */
                 size_t cbBuffer = VDIDiskGetBufferSize(pVdi);
@@ -3477,10 +3477,10 @@ static int handleConvertDDImage(int argc, char *argv[])
                         size_t cbToRead = cbFile - offFile >= (uint64_t) cbBuffer ?
                             cbBuffer : (size_t) (cbFile - offFile);
                         rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
-                        if (VBOX_FAILURE(rc) || !cbRead)
+                        if (RT_FAILURE(rc) || !cbRead)
                             break;
                         rc = VDIDiskWrite(pVdi, offFile, pvBuf, cbRead);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             break;
                         offFile += cbRead;
                     }
@@ -3493,7 +3493,7 @@ static int handleConvertDDImage(int argc, char *argv[])
                 VDIDiskCloseImage(pVdi);
             }
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 /* delete image on error */
                 RTPrintf("Failed (%Vrc)!\n", rc);
@@ -3560,7 +3560,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             i++;
             char *pszNext;
             int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
-            if (VBOX_FAILURE(rc) || *pszNext != '\0' || lun >= 16384)
+            if (RT_FAILURE(rc) || *pszNext != '\0' || lun >= 16384)
                 return errorArgument("Invalid LUN number '%s'", argv[i]);
             if (lun <= 255)
             {
@@ -3580,7 +3580,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             i++;
             char *pszNext;
             int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
-            if (VBOX_FAILURE(rc) || *pszNext != '\0')
+            if (RT_FAILURE(rc) || *pszNext != '\0')
                 return errorArgument("Invalid encoded LUN number '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-username") == 0)
@@ -3683,7 +3683,7 @@ static int handleCreateVM(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            if (VBOX_FAILURE(RTUuidFromStr(&id, argv[i])))
+            if (RT_FAILURE(RTUuidFromStr(&id, argv[i])))
                 return errorArgument("Invalid UUID format %s\n", argv[i]);
         }
         else if (strcmp(argv[i], "-register") == 0)
@@ -3741,7 +3741,7 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
     uint32_t u32;
     char *pszNext;
     int rc = RTStrToUInt32Ex(psz, &pszNext, 10, &u32);
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  *pszNext == '\0'
         &&  u32 >= 1
         &&  u32 <= cMaxNum)
@@ -4798,7 +4798,7 @@ static int handleModifyVM(int argc, char *argv[],
                 {
                     /* 2nd try: try with the real name, important on Linux+libhal */
                     char szPathReal[RTPATH_MAX];
-                    if (VBOX_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
+                    if (RT_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
                     {
                         errorArgument("Invalid host DVD drive name");
                         rc = E_FAIL;

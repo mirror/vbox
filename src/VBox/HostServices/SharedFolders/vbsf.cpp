@@ -129,7 +129,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 
     rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
     *(pszStartComponent-1) = RTPATH_DELIMITER;
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto end;
 
     for(;;)
@@ -161,7 +161,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     }
 
 end:
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         Log(("vbsfCorrectCasing %s failed with %d\n", pszStartComponent, rc));
 
     if (pDirEntry)
@@ -195,7 +195,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         char *utf8Root;
 
         rc = RTUtf16ToUtf8 (pwszRoot, &utf8Root);
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             size_t cbUtf8Root, cbUtf8FullPath;
             char *utf8FullPath;
@@ -288,7 +288,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             uint32_t cb = cbFullPath;
 
             rc = RTUtf16ToUtf8Ex (pwszRoot, RTSTR_MAX, &pszFullPath, cb, NULL);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 AssertFailed();
 #ifdef RT_OS_DARWIN
@@ -335,7 +335,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     src++;  /* we already appended a delimiter to the first part */
 
                 rc = RTUtf16ToUtf8Ex (src, RTSTR_MAX, &dst, cb, NULL);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     AssertFailed();
 #ifdef RT_OS_DARWIN
@@ -362,7 +362,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 #endif
     }
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         /* When the host file system is case sensitive and the guest expects a case insensitive fs, then problems can occur */
         if (     vbsfIsHostMappingCaseSensitive (root)
@@ -437,9 +437,9 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
                     src--;
                 }
-                Assert(*src == RTPATH_DELIMITER && VBOX_SUCCESS(rc));
+                Assert(*src == RTPATH_DELIMITER && RT_SUCCESS(rc));
                 if (    *src == RTPATH_DELIMITER
-                    &&  VBOX_SUCCESS(rc))
+                    &&  RT_SUCCESS(rc))
                 {
                     src++;
                     for(;;)
@@ -471,7 +471,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                         {
                             /* path component is invalid; try to correct the casing */
                             rc = vbsfCorrectCasing(pszFullPath, src);
-                            if (VBOX_FAILURE(rc))
+                            if (RT_FAILURE(rc))
                             {
                                 if (!fEndOfString)
                                     *end = RTPATH_DELIMITER; /* restore the original full path */
@@ -485,7 +485,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                         *end = RTPATH_DELIMITER;
                         src = end + 1;
                     }
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         Log(("Unable to find suitable component rc=%d\n", rc));
                 }
                 else
@@ -1044,7 +1044,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 
     rc = vbsfBuildFullPath (pClient, root, pPath, cbPath, &pszFullPath, &cbFullPathRoot);
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         /* Reset return values in case client forgot to do so. */
         pParms->Result = SHFL_NO_RESULT;
@@ -1298,14 +1298,14 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
             rc = vbsfBuildFullPath (pClient, root, pPath, pPath->u16Size, &pszFullPath, NULL, true);
 
-            if (VBOX_SUCCESS (rc))
+            if (RT_SUCCESS (rc))
             {
                 rc = RTDirOpenFiltered (&pHandle->dir.SearchHandle, pszFullPath, RTDIRFILTER_WINNT);
 
                 /* free the path string */
                 vbsfFreeFullPath(pszFullPath);
 
-                if (VBOX_FAILURE (rc))
+                if (RT_FAILURE (rc))
                     goto end;
             }
             else
@@ -1627,7 +1627,7 @@ int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, 
     ShflStringInitBuffer(&dummy, sizeof(dummy));
     rc = vbsfBuildFullPath (pClient, root, &dummy, 0, &pszFullPath, NULL);
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         rc = RTFsQuerySizes(pszFullPath, &pSFDEntry->ullTotalAllocationBytes, &pSFDEntry->ullAvailableAllocationBytes, &pSFDEntry->ulBytesPerAllocationUnit, &pSFDEntry->ulBytesPerSector);
         if (rc != VINF_SUCCESS)
@@ -1802,7 +1802,7 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
     char *pszFullPath = NULL;
 
     rc = vbsfBuildFullPath (pClient, root, pPath, cbPath, &pszFullPath, NULL);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         /* is the guest allowed to write to this share? */
         bool fWritable;
@@ -1810,7 +1810,7 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
         if (RT_FAILURE(rc) || !fWritable)
             rc = VERR_WRITE_PROTECT;
 
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             if (flags & SHFL_REMOVE_FILE)
                 rc = RTFileDelete(pszFullPath);
@@ -1853,7 +1853,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
         return rc;
 
     rc = vbsfBuildFullPath (pClient, root, pDest, pDest->u16Size, &pszFullPathDest, NULL);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         Log(("Rename %s to %s\n", pszFullPathSrc, pszFullPathDest));
 
@@ -1863,7 +1863,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
         if (RT_FAILURE(rc) || !fWritable)
             rc = VERR_WRITE_PROTECT;
 
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             if (flags & SHFL_RENAME_FILE)
             {
