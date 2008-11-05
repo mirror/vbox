@@ -263,8 +263,10 @@ int main()
     /* hwaccm - 32-bit gcc won't align uint64_t naturally, so check. */
     CHECK_MEMBER_ALIGNMENT(HWACCM, u64RegisterMask, 8);
     CHECK_MEMBER_ALIGNMENT(HWACCM, vmx.hostCR4, 8);
-    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, Event.intInfo, 8);
+    CHECK_MEMBER_ALIGNMENT(HWACCM, vmx.msr.feature_ctrl, 8);
     CHECK_MEMBER_ALIGNMENT(HWACCM, StatEntry, 8);
+    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, vmx.proc_ctls, 8);
+    CHECK_MEMBER_ALIGNMENT(HWACCMCPU, Event.intInfo, 8);
 
 
     /*
