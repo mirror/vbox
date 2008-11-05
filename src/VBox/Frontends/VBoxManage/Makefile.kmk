@@ -54,7 +54,7 @@ ifneq ($(KBUILD_TARGET),win)
  # Some later revisions of version 4.3.1 are known to work so we assume
  # that version 4.3.2 or later has this bug definitely fixed.
  VBoxManage_CXXFLAGS.release += \
-	$(if $(int-lt $(VBOX_GCC_VERSION_CXX),40300)$(int-gt $(VBOX_GCC_VERSION_CXX),40301),,--param max-fields-for-field-sensitive=0)
+	$(if $(VBOX_GCC_VERSION_CXX),$(if $(int-lt $(VBOX_GCC_VERSION_CXX),40300)$(int-gt $(VBOX_GCC_VERSION_CXX),40301),,--param max-fields-for-field-sensitive=0),)
 endif
 ifndef VBOX_ONLY_DOCS
  VBoxManage_LIBS      += $(LIB_DDU)
