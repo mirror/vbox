@@ -164,7 +164,7 @@ static int trpmGCExitTrap(PVM pVM, int rc, PCPUMCTXCORE pRegFrame)
     /* Clear pending inhibit interrupt state if required. (necessary for dispatching interrupts later on) */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %VGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM)));
+        Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVM)));
         if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVM))
         {
             /** @note we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
@@ -772,7 +772,7 @@ DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PCPUMCTXCORE pRegFrame)
  */
 static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
 {
-    LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%08RX32 uErr=%VGv\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
+    LogFlow(("trpmGCTrap0dHandler: cs:eip=%RTsel:%08RX32 uErr=%RGv\n", pRegFrame->ss, pRegFrame->eip, pTrpm->uActiveErrorCode));
 
     /*
      * Convert and validate CS.
@@ -812,7 +812,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
                       NULL, NULL, &Cpu, &cbOp);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("DISCoreOneEx failed to PC=%VGv rc=%Rrc\n", PC, rc));
+        AssertMsgFailed(("DISCoreOneEx failed to PC=%RGv rc=%Rrc\n", PC, rc));
         STAM_PROFILE_STOP(&pVM->trpm.s.StatTrap0dDisasm, a);
         return trpmGCExitTrap(pVM, VINF_EM_RAW_EMULATE_INSTR, pRegFrame);
     }

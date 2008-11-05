@@ -116,7 +116,7 @@ static int dbgfR3SymbolInit(PVM pVM)
         pSym->szName[0] = '\0';
         if (RTAvlrGCPtrInsert(&pVM->dbgf.s.SymbolTree, &pSym->Core))
             return VINF_SUCCESS;
-        AssertReleaseMsgFailed(("Failed to insert %VGv-%VGv!\n", pSym->Core.Key, pSym->Core.KeyLast));
+        AssertReleaseMsgFailed(("Failed to insert %RGv-%RGv!\n", pSym->Core.Key, pSym->Core.KeyLast));
         return VERR_INTERNAL_ERROR;
     }
     return VERR_NO_MEMORY;
@@ -180,10 +180,10 @@ static int dbgfR3SymbolInsert(PVM pVM, const char *pszName, RTGCPTR Address, siz
                     return VINF_SUCCESS;
                 }
             }
-            AssertReleaseMsgFailed(("Failed to insert %VGv-%VGv!\n", pSym->Core.Key, pSym->Core.KeyLast));
+            AssertReleaseMsgFailed(("Failed to insert %RGv-%RGv!\n", pSym->Core.Key, pSym->Core.KeyLast));
         }
         else
-            AssertMsgFailed(("pOld! %VGv %s\n", pSym->Core.Key, pszName));
+            AssertMsgFailed(("pOld! %RGv %s\n", pSym->Core.Key, pszName));
         return VERR_INTERNAL_ERROR;
 
     }
@@ -569,7 +569,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR Ad
                     ImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszName, (char *)(void *)pszName, ModuleAddress, cbImage);
                 if (ImageBase)
                 {
-                    AssertMsg(ModuleAddress == 0 || ModuleAddress == ImageBase, ("ModuleAddres=%VGv ImageBase=%llx\n", ModuleAddress, ImageBase));
+                    AssertMsg(ModuleAddress == 0 || ModuleAddress == ImageBase, ("ModuleAddres=%RGv ImageBase=%llx\n", ModuleAddress, ImageBase));
                     ModuleAddress = ImageBase;
                 }
                 else
@@ -644,7 +644,7 @@ VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINT
     if (pVM->dbgf.s.fSymInited)
     {
         if (!SymUnloadModule64(pVM, OldImageBase))
-            Log(("SymUnloadModule64(,%VGv) failed, lasterr=%d\n", OldImageBase, GetLastError()));
+            Log(("SymUnloadModule64(,%RGv) failed, lasterr=%d\n", OldImageBase, GetLastError()));
 
         DWORD64 LoadedImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszFilename, (char *)(void *)pszName, NewImageBase, cbImage);
         if (!LoadedImageBase)

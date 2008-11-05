@@ -291,7 +291,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
     const unsigned cbWrite = (pCpu) ? pgmPoolDisasWriteSize(pCpu) : 0;
 
-    LogFlow(("pgmPoolMonitorChainChanging: %VGv phys=%VGp kind=%d cbWrite=%d\n", pvAddress, GCPhysFault, pPage->enmKind, cbWrite));
+    LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%VGp kind=%d cbWrite=%d\n", pvAddress, GCPhysFault, pPage->enmKind, cbWrite));
 
     for (;;)
     {
@@ -751,7 +751,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCOR
         && (pRegFrame->rsp - pvFault) < 32)
     {
         /* Fault caused by stack writes while trying to inject an interrupt event. */
-        Log(("pgmPoolMonitorIsReused: reused %VGv for interrupt stack (rsp=%VGv).\n", pvFault, pRegFrame->rsp));
+        Log(("pgmPoolMonitorIsReused: reused %RGv for interrupt stack (rsp=%RGv).\n", pvFault, pRegFrame->rsp));
         return true;
     }
 #else
@@ -996,7 +996,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), a);
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    LogFlow(("pgmPoolAccessHandler: pvFault=%VGv pPage=%p:{.idx=%d} GCPhysFault=%VGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
+    LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%VGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
     /*
      * We should ALWAYS have the list head as user parameter. This
@@ -1054,7 +1054,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
         /* REP prefix, don't bother. */
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,RepPrefix));
-        Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x rip=%VGv opcode=%d prefix=%#x\n",
+        Log4(("pgmPoolAccessHandler: eax=%#x ecx=%#x edi=%#x esi=%#x rip=%RGv opcode=%d prefix=%#x\n",
               pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, Cpu.pCurInstr->opcode, Cpu.prefix));
     }
 

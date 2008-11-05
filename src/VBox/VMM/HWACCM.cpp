@@ -774,7 +774,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
  */
 VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
 {
-    Log(("HWACCMR3Relocate to %VGv\n", MMHyperGetArea(pVM, 0)));
+    Log(("HWACCMR3Relocate to %RGv\n", MMHyperGetArea(pVM, 0)));
     return;
 }
 

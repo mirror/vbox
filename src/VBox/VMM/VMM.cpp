@@ -624,7 +624,7 @@ VMMR3DECL(int) VMMR3TermCPU(PVM pVM)
  */
 VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
-    LogFlow(("VMMR3Relocate: offDelta=%VGv\n", offDelta));
+    LogFlow(("VMMR3Relocate: offDelta=%RGv\n", offDelta));
 
     /*
      * Recalc the RC address.

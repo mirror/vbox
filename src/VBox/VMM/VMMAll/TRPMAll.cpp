@@ -207,7 +207,7 @@ VMMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, TRPMEVENT enmType)
  */
 VMMDECL(void)  TRPMSetErrorCode(PVM pVM, RTGCUINT uErrorCode)
 {
-    Log2(("TRPMSetErrorCode: uErrorCode=%VGv\n", uErrorCode)); /** @todo RTGCUINT mess! */
+    Log2(("TRPMSetErrorCode: uErrorCode=%RGv\n", uErrorCode)); /** @todo RTGCUINT mess! */
     AssertMsg(pVM->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
     pVM->trpm.s.uActiveErrorCode = uErrorCode;
 #ifdef VBOX_STRICT
@@ -239,7 +239,7 @@ VMMDECL(void)  TRPMSetErrorCode(PVM pVM, RTGCUINT uErrorCode)
  */
 VMMDECL(void)  TRPMSetFaultAddress(PVM pVM, RTGCUINTPTR uCR2)
 {
-    Log2(("TRPMSetFaultAddress: uCR2=%VGv\n", uCR2));
+    Log2(("TRPMSetFaultAddress: uCR2=%RGv\n", uCR2));
     AssertMsg(pVM->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
     AssertMsg(pVM->trpm.s.uActiveVector == 0xe, ("Not trap 0e!\n"));
     pVM->trpm.s.uActiveCR2 = uCR2;
@@ -385,7 +385,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
             rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
 #  endif
             if (RT_SUCCESS(rc))
-                Log(("TRPMForwardTrap: caller=%VGv\n", pCallerGC));
+                Log(("TRPMForwardTrap: caller=%RGv\n", pCallerGC));
         }
         /* no break */
     case 8:
@@ -454,7 +454,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         if (RT_FAILURE(rc))
         {
             /* The page might be out of sync. */ /** @todo might cross a page boundary) */
-            Log(("Page %VGv out of sync -> prefetch and try again\n", pIDTEntry));
+            Log(("Page %RGv out of sync -> prefetch and try again\n", pIDTEntry));
             rc = PGMPrefetchPage(pVM, pIDTEntry); /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
             if (rc != VINF_SUCCESS)
             {
@@ -514,7 +514,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 if (RT_FAILURE(rc))
                 {
                     /* The page might be out of sync. */ /** @todo might cross a page boundary) */
-                    Log(("Page %VGv out of sync -> prefetch and try again\n", pGdtEntry));
+                    Log(("Page %RGv out of sync -> prefetch and try again\n", pGdtEntry));
                     rc = PGMPrefetchPage(pVM, pGdtEntry);  /** @todo r=bird: rainy day: this isn't entirely safe because of access bit virtualiziation and CSAM. */
                     if (rc != VINF_SUCCESS)
                     {
@@ -605,7 +605,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     /** if eflags.Bits.u1VM then push gs, fs, ds, es */
                     if (eflags.Bits.u1VM)
                     {
-                        Log(("TRAP%02X: (VM) Handler %04X:%VGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
+                        Log(("TRAP%02X: (VM) Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
                         pTrapStack[--idx] = pRegFrame->gs;
                         pTrapStack[--idx] = pRegFrame->fs;
                         pTrapStack[--idx] = pRegFrame->ds;
@@ -615,7 +615,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                         pRegFrame->ds = pRegFrame->es = pRegFrame->fs = pRegFrame->gs = 0;
                     }
                     else
-                        Log(("TRAP%02X: Handler %04X:%VGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
+                        Log(("TRAP%02X: Handler %04X:%RGv Stack %04X:%08X RPL=%d CR2=%08X\n", iGate, GuestIdte.Gen.u16SegSel, pHandler, ss_r0, esp_r0, (pRegFrame->ss & X86_SEL_RPL), pVM->trpm.s.uActiveCR2));
 
                     if (!fConforming && dpl < cpl)
                     {
@@ -711,13 +711,13 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 #endif
                 }
                 else
-                    Log(("TRAP%02X: PGMVerifyAccess %VGv failed with %Rrc -> forward to REM\n", iGate, pTrapStackGC, rc));
+                    Log(("TRAP%02X: PGMVerifyAccess %RGv failed with %Rrc -> forward to REM\n", iGate, pTrapStackGC, rc));
             }
             else
                 Log(("SELMValidateAndConvertCSAddr failed with %Rrc\n", rc));
         }
         else
-            Log(("MMRamRead %VGv size %d failed with %Rrc\n", (RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate, sizeof(GuestIdte), rc));
+            Log(("MMRamRead %RGv size %d failed with %Rrc\n", (RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate, sizeof(GuestIdte), rc));
     }
     else
     {

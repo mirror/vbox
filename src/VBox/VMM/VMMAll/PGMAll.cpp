@@ -359,7 +359,7 @@ typedef struct PGMHVUSTATE
  */
 VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%VGv eip=%VGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%RGv eip=%RGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
     STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
@@ -492,7 +492,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
     int rc = PGMGstGetPage(pVM, (RTGCPTR)Addr, &fPage, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("PGMIsValidAccess: access violation for %VGv rc=%d\n", Addr, rc));
+        Log(("PGMIsValidAccess: access violation for %RGv rc=%d\n", Addr, rc));
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
@@ -508,7 +508,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
         || (fWrite && !(fPage & X86_PTE_RW))
         || (fUser  && !(fPage & X86_PTE_US)) )
     {
-        Log(("PGMIsValidAccess: access violation for %VGv attr %#llx vs %d:%d\n", Addr, fPage, fWrite, fUser));
+        Log(("PGMIsValidAccess: access violation for %RGv attr %#llx vs %d:%d\n", Addr, fPage, fWrite, fUser));
         return VINF_EM_RAW_GUEST_TRAP;
     }
     if (    RT_SUCCESS(rc)
@@ -540,7 +540,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
     int rc = PGMGstGetPage(pVM, (RTGCPTR)Addr, &fPageGst, NULL);
     if (RT_FAILURE(rc))
     {
-        Log(("PGMVerifyAccess: access violation for %VGv rc=%d\n", Addr, rc));
+        Log(("PGMVerifyAccess: access violation for %RGv rc=%d\n", Addr, rc));
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
@@ -556,7 +556,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
         || (fWrite  && !(fPageGst & X86_PTE_RW))
         || (fUser   && !(fPageGst & X86_PTE_US)) )
     {
-        Log(("PGMVerifyAccess: access violation for %VGv attr %#llx vs %d:%d\n", Addr, fPageGst, fWrite, fUser));
+        Log(("PGMVerifyAccess: access violation for %RGv attr %#llx vs %d:%d\n", Addr, fPageGst, fWrite, fUser));
         return VINF_EM_RAW_GUEST_TRAP;
     }
 
@@ -580,7 +580,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
                 return rc;
         }
         else
-            AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %VGv failed with %Rrc\n", Addr, rc));
+            AssertMsg(rc == VINF_SUCCESS, ("PGMShwGetPage %RGv failed with %Rrc\n", Addr, rc));
     }
 
 #if 0 /* def VBOX_STRICT; triggers too often now */
@@ -594,7 +594,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
         || (fWrite && !(fPageShw & X86_PTE_RW))
         || (fUser  && !(fPageShw & X86_PTE_US)) )
     {
-        AssertMsgFailed(("Unexpected access violation for %VGv! rc=%Rrc write=%d user=%d\n",
+        AssertMsgFailed(("Unexpected access violation for %RGv! rc=%Rrc write=%d user=%d\n",
                          Addr, rc, fWrite && !(fPageShw & X86_PTE_RW), fUser && !(fPageShw & X86_PTE_US)));
         return VINF_EM_RAW_GUEST_TRAP;
     }
@@ -642,7 +642,7 @@ VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_
 VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     int rc;
-    Log3(("PGMInvalidatePage: GCPtrPage=%VGv\n", GCPtrPage));
+    Log3(("PGMInvalidatePage: GCPtrPage=%RGv\n", GCPtrPage));
 
 #ifndef IN_RING3
     /*
@@ -726,7 +726,7 @@ VMMDECL(int) PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pv
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     if (rc != VINF_SUCCESS)
-        Log(("PGMInterpretInstruction: returns %Rrc (pvFault=%VGv)\n", rc, pvFault));
+        Log(("PGMInterpretInstruction: returns %Rrc (pvFault=%RGv)\n", rc, pvFault));
     return rc;
 }
 
@@ -1200,7 +1200,7 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
     Assert(cb);
 
-    LogFlow(("PGMGstModifyPage %VGv %d bytes fFlags=%08llx fMask=%08llx\n", GCPtr, cb, fFlags, fMask));
+    LogFlow(("PGMGstModifyPage %RGv %d bytes fFlags=%08llx fMask=%08llx\n", GCPtr, cb, fFlags, fMask));
 
     /*
      * Adjust input.
@@ -2009,7 +2009,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
             int rc = PGMGstGetPage(pVM, (RTGCPTR)GCPtr, NULL, NULL);
             if (rc != VERR_PAGE_TABLE_NOT_PRESENT)
             {
-                AssertMsgFailed(("Conflict at %VGv with %s\n", GCPtr, R3STRING(pMapping->pszDesc)));
+                AssertMsgFailed(("Conflict at %RGv with %s\n", GCPtr, R3STRING(pMapping->pszDesc)));
                 cErrors++;
                 break;
             }

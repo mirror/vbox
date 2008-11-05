@@ -101,7 +101,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     else
         cpl = (pRegFrame->ss & X86_SEL_RPL);
 
-    Log(("CSAMGCCodePageWriteHandler: code page write at %VGv original address %VGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
+    Log(("CSAMGCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
 
     /* If user code is modifying one of our monitored pages, then we can safely make it r/w as it's no longer being used for supervisor code. */
     if (cpl != 3)
@@ -128,7 +128,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     /*
      * Make this particular page R/W. The VM_FF_CSAM_FLUSH_DIRTY_PAGE handler will reset it to readonly again.
      */
-    Log(("CSAMGCCodePageWriteHandler: enabled r/w for page %VGv\n", pvFault));
+    Log(("CSAMGCCodePageWriteHandler: enabled r/w for page %RGv\n", pvFault));
     rc = PGMShwModifyPage(pVM, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
     AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
     ASMInvalidatePage((void *)pvFault);

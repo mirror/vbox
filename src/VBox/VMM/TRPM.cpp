@@ -669,7 +669,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             PVBOXIDTE   pIdte = &pVM->trpm.s.aIdt[iTrap];
             RTGCPTR     pHandler = VBOXIDTE_OFFSET(*pIdte);
 
-            Log(("TRPMR3Relocate: *iGate=%2X Handler %VGv -> %VGv\n", iTrap, pHandler, pHandler + offDelta));
+            Log(("TRPMR3Relocate: *iGate=%2X Handler %RGv -> %RGv\n", iTrap, pHandler, pHandler + offDelta));
             pHandler += offDelta;
 
             pIdte->Gen.u16OffsetHigh = pHandler >> 16;
@@ -1060,7 +1060,7 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
 static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("trpmR3GuestIDTWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
+    Log(("trpmR3GuestIDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
     VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }

@@ -176,7 +176,7 @@ void pdmR3LdrTermU(PUVM pUVM)
  */
 VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
-    LogFlow(("PDMR3LdrRelocate: offDelta=%VGv\n", offDelta));
+    LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
 
     /*
      * GC Modules.

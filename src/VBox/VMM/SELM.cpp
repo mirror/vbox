@@ -1179,7 +1179,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             if (    GCPtrLdt != pVM->selm.s.GCPtrGuestLdt
                 ||  cbLdt != pVM->selm.s.cbLdtLimit)
             {
-                Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %VGv:%04x to %VGv:%04x. (GDTR=%016RX64:%04x)\n",
+                Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %RGv:%04x to %RGv:%04x. (GDTR=%016RX64:%04x)\n",
                      pVM->selm.s.GCPtrGuestLdt, pVM->selm.s.cbLdtLimit, GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
 
                 /*
@@ -1201,7 +1201,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 {
                     /** @todo investigate the various cases where conflicts happen and try avoid them by enh. the instruction emulation. */
                     pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-                    Log(("WARNING: Guest LDT (%VGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%016RX64:%04x)\n",
+                    Log(("WARNING: Guest LDT (%RGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%016RX64:%04x)\n",
                          GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
                 }
                 else if (RT_SUCCESS(rc))
@@ -1369,7 +1369,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
 static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestGDTWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
+    Log(("selmR3GuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
 
     return VINF_PGM_HANDLER_DO_DEFAULT;
@@ -1395,7 +1395,7 @@ static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestLDTWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
+    Log(("selmR3GuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_LDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
@@ -1420,7 +1420,7 @@ static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestTSSWriteHandler: write to %VGv size %d\n", GCPtr, cbBuf));
+    Log(("selmR3GuestTSSWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
     VM_FF_SET(pVM, VM_FF_SELM_SYNC_TSS);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
@@ -1487,7 +1487,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM)
 #endif
         /* The guest's TSS can span multiple pages now. We will monitor the whole thing. */
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
-                  ("GCPtrTss=%VGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
+                  ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
@@ -1762,7 +1762,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
             cbTss = sizeof(VBOXTSS);
 # endif
         AssertMsg((GCPtrTss >> PAGE_SHIFT) == ((GCPtrTss + sizeof(VBOXTSS) - 1) >> PAGE_SHIFT),
-                  ("GCPtrTss=%VGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
+                  ("GCPtrTss=%RGv cbTss=%#x - We assume everything is inside one page!\n", GCPtrTss, cbTss));
 
         // All system GDTs are marked not present above. That explains why this check fails.
         //if (pDesc->Gen.u1Present)
@@ -1800,7 +1800,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 
                     rc = PGMGstGetPage(pVM, GCPtrGuestTSS, &fFlags, &GCPhys);
                     AssertRC(rc);
-                    AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
+                    AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%VGp\n",
                                      (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, GCPtrGuestTSS, GCPhys));
                 }
                 else
@@ -2307,7 +2307,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
     RTGCPTR     GCPtrGDT = GDTR.pGdt;
     unsigned    cGDTs = ((unsigned)GDTR.cbGdt + 1) / sizeof(X86DESC);
 
-    pHlp->pfnPrintf(pHlp, "Guest GDT (GCAddr=%VGv limit=%x):\n", GCPtrGDT, GDTR.cbGdt);
+    pHlp->pfnPrintf(pHlp, "Guest GDT (GCAddr=%RGv limit=%x):\n", GCPtrGDT, GDTR.cbGdt);
     for (unsigned iGDT = 0; iGDT < cGDTs; iGDT++, GCPtrGDT += sizeof(X86DESC))
     {
         X86DESC GDTE;
@@ -2324,10 +2324,10 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
             if ((GCPtrGDT & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
-                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", iGDT << X86_SEL_SHIFT, GCPtrGDT);
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%RGv)\n", iGDT << X86_SEL_SHIFT, GCPtrGDT);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", iGDT << X86_SEL_SHIFT, rc, GCPtrGDT);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%RGv\n", iGDT << X86_SEL_SHIFT, rc, GCPtrGDT);
     }
 }
 
@@ -2381,7 +2381,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         return;
     }
 
-    pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x GCAddr=%VGv limit=%x):\n", SelLdt, GCPtrLdt, cbLdt);
+    pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x GCAddr=%RGv limit=%x):\n", SelLdt, GCPtrLdt, cbLdt);
     unsigned    cLdts  = (cbLdt + 1) >> X86_SEL_SHIFT;
     for (unsigned iLdt = 0; iLdt < cLdts; iLdt++, GCPtrLdt += sizeof(X86DESC))
     {
@@ -2399,10 +2399,10 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
             if ((GCPtrLdt & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
-                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, GCPtrLdt);
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%RGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, GCPtrLdt);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, GCPtrLdt);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%RGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, GCPtrLdt);
     }
 }
 
