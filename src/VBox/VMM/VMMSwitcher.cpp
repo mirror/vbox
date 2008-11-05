@@ -182,7 +182,7 @@ int vmmR3SwitcherInit(PVM pVM)
         {
             pVM->vmm.s.pvCoreCodeRC = GCPtr;
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-            LogRel(("CoreCode: R3=%RHv R0=%RHv RC=%VRv Phys=%RHp cb=%#x\n",
+            LogRel(("CoreCode: R3=%RHv R0=%RHv RC=%RRv Phys=%RHp cb=%#x\n",
                     pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.pvCoreCodeR0, pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
 
             /*

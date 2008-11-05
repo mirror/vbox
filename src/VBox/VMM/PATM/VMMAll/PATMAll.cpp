@@ -59,9 +59,9 @@ VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
      */
     register uint32_t efl = pCtxCore->eflags.u32;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
-    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTRCPTR)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%VRv eflags=%08x fPATM=%d pPATMGC=%RRv-%RRv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
+    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTRCPTR)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%RRv eflags=%08x fPATM=%d pPATMGC=%RRv-%RRv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
 
-    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%VRv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
+    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%RRv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
 
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= X86_EFL_IF;
@@ -82,7 +82,7 @@ VMMDECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
             pVM->patm.s.pfnSysEnterPatchGC = 0;
             pVM->patm.s.pfnSysEnterGC = 0;
 
-            Log2(("PATMRawEnter: installing sysenter patch for %VRv\n", pCtx->SysEnter.eip));
+            Log2(("PATMRawEnter: installing sysenter patch for %RRv\n", pCtx->SysEnter.eip));
             pVM->patm.s.pfnSysEnterPatchGC = PATMR3QueryPatchGCPtr(pVM, pCtx->SysEnter.eip);
             if (pVM->patm.s.pfnSysEnterPatchGC == 0)
             {
@@ -131,8 +131,8 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
     pCtxCore->eflags.u32 = efl;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = X86_EFL_IF;
 
-    AssertReleaseMsg((efl & X86_EFL_IF) || fPatchCode || rawRC == VINF_PATM_PENDING_IRQ_AFTER_IRET || RT_FAILURE(rawRC), ("Inconsistent state at %VRv rc=%Rrc\n", pCtxCore->eip, rawRC));
-    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode || RT_FAILURE(rawRC), ("fPIF=%d eip=%VRv rc=%Rrc\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip, rawRC));
+    AssertReleaseMsg((efl & X86_EFL_IF) || fPatchCode || rawRC == VINF_PATM_PENDING_IRQ_AFTER_IRET || RT_FAILURE(rawRC), ("Inconsistent state at %RRv rc=%Rrc\n", pCtxCore->eip, rawRC));
+    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode || RT_FAILURE(rawRC), ("fPIF=%d eip=%RRv rc=%Rrc\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip, rawRC));
 
 #ifdef IN_RING3
     if (    (efl & X86_EFL_IF)
@@ -161,7 +161,7 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
                 if (enmState == PATMTRANS_SAFE)
                 {
                     Assert(!PATMFindActivePatchByEntrypoint(pVM, pOrgInstrGC));
-                    Log(("Switchback from %VRv to %VRv (Psp=%x)\n", pCtxCore->eip, pOrgInstrGC, CTXSUFF(pVM->patm.s.pGCState)->Psp));
+                    Log(("Switchback from %RRv to %RRv (Psp=%x)\n", pCtxCore->eip, pOrgInstrGC, CTXSUFF(pVM->patm.s.pGCState)->Psp));
                     STAM_COUNTER_INC(&pVM->patm.s.StatSwitchBack);
                     pCtxCore->eip = pOrgInstrGC;
                     fPatchCode = false; /* to reset the stack ptr */
@@ -170,13 +170,13 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
                 }
                 else
                 {
-                    LogFlow(("Patch address %VRv can't be interrupted (state=%d)!\n",  pCtxCore->eip, enmState));
+                    LogFlow(("Patch address %RRv can't be interrupted (state=%d)!\n",  pCtxCore->eip, enmState));
                     STAM_COUNTER_INC(&pVM->patm.s.StatSwitchBackFail);
                 }
             }
             else
             {
-                LogFlow(("Patch address %VRv can't be interrupted (fPIF=%d)!\n",  pCtxCore->eip, CTXSUFF(pVM->patm.s.pGCState)->fPIF));
+                LogFlow(("Patch address %RRv can't be interrupted (fPIF=%d)!\n",  pCtxCore->eip, CTXSUFF(pVM->patm.s.pGCState)->fPIF));
                 STAM_COUNTER_INC(&pVM->patm.s.StatSwitchBackFail);
             }
         }
@@ -393,7 +393,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 
-        Log2(("PATMSysCall: sysenter from %VRv to %VRv\n", pRegFrame->eip, pVM->patm.s.pfnSysEnterPatchGC));
+        Log2(("PATMSysCall: sysenter from %RRv to %RRv\n", pRegFrame->eip, pVM->patm.s.pfnSysEnterPatchGC));
         /** @todo the base and limit are forced to 0 & 4G-1 resp. We assume the selector is wide open here. */
         /** @note The Intel manual suggests that the OS is responsible for this. */
         pRegFrame->cs          = (pCtx->SysEnter.cs & ~X86_SEL_RPL) | 1;
@@ -419,7 +419,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 
-        Log2(("PATMSysCall: sysexit from %VRv to %VRv\n", pRegFrame->eip, pRegFrame->edx));
+        Log2(("PATMSysCall: sysexit from %RRv to %RRv\n", pRegFrame->eip, pRegFrame->edx));
 
         pRegFrame->cs          = ((pCtx->SysEnter.cs + 16) & ~X86_SEL_RPL) | 3;
         pRegFrame->eip         = pRegFrame->edx;
@@ -458,7 +458,7 @@ VMMDECL(int) PATMAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPTR p
 {
     PPATCHJUMPTABLE pJumpTable;
 
-    Log(("PATMAddBranchToLookupCache: Adding (%VRv->%VRv (%VRv)) to table %VRv\n", pBranchTarget, pRelBranchPatch + pVM->patm.s.pPatchMemGC, pRelBranchPatch, pJumpTableGC));
+    Log(("PATMAddBranchToLookupCache: Adding (%RRv->%RRv (%RRv)) to table %RRv\n", pBranchTarget, pRelBranchPatch + pVM->patm.s.pPatchMemGC, pRelBranchPatch, pJumpTableGC));
 
     AssertReturn(PATMIsPatchGCAddr(pVM, pJumpTableGC), VERR_INVALID_PARAMETER);
 

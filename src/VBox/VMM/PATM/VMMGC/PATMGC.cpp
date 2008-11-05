@@ -106,7 +106,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
 
 #ifdef LOG_ENABLED
     if (pPatchPage)
-        Log(("PATMIsWriteToPatchPage: Found page %VRv for write to %VRv %d bytes (page low:high %VRv:%VRv\n", pPatchPage->Core.Key, GCPtr, cbWrite, pPatchPage->pLowestAddrGC, pPatchPage->pHighestAddrGC));
+        Log(("PATMIsWriteToPatchPage: Found page %RRv for write to %RRv %d bytes (page low:high %RRv:%RRv\n", pPatchPage->Core.Key, GCPtr, cbWrite, pPatchPage->pLowestAddrGC, pPatchPage->pHighestAddrGC));
 #endif
 
     if (pPatchPage)
@@ -117,7 +117,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
             /* This part of the page was not patched; try to emulate the instruction. */
             uint32_t cb;
 
-            LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %VRv\n", pRegFrame->eip, GCPtr));
+            LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %RRv\n", pRegFrame->eip, GCPtr));
             int rc = EMInterpretInstruction(pVM, pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr, &cb);
             if (rc == VINF_SUCCESS)
             {
@@ -200,7 +200,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                         rc = PATMAddBranchToLookupCache(pVM, (RTRCPTR)pRegFrame->edi, (RTRCPTR)pRegFrame->edx, pRelAddr);
                         if (rc == VINF_SUCCESS)
                         {
-                            Log(("Patch block %VRv called as function\n", pRec->patch.pPrivInstrGC));
+                            Log(("Patch block %RRv called as function\n", pRec->patch.pPrivInstrGC));
                             pRec->patch.flags |= PATMFL_CODE_REFERENCED;
 
                             pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
@@ -417,7 +417,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_CALL:
-                Log(("PATMGC: CALL to %VRv return addr %VRv ESP=%x iopl=%d\n", pVM->patm.s.CTXSUFF(pGCState)->GCCallPatchTargetAddr, pVM->patm.s.CTXSUFF(pGCState)->GCCallReturnAddr, pRegFrame->edx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMGC: CALL to %RRv return addr %RRv ESP=%x iopl=%d\n", pVM->patm.s.CTXSUFF(pGCState)->GCCallPatchTargetAddr, pVM->patm.s.CTXSUFF(pGCState)->GCCallReturnAddr, pRegFrame->edx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 #endif

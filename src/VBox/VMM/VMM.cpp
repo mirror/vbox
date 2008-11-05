@@ -1175,7 +1175,7 @@ VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
  */
 VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
 {
-    Log2(("VMMR3CallGCV: RCPtrEntry=%VRv cArgs=%d\n", RCPtrEntry, cArgs));
+    Log2(("VMMR3CallGCV: RCPtrEntry=%RRv cArgs=%d\n", RCPtrEntry, cArgs));
 
     /*
      * Setup the call frame using the trampoline.
@@ -1246,7 +1246,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
  */
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM)
 {
-    Log(("VMMR3ResumeHyper: eip=%VRv esp=%VRv\n", CPUMGetHyperEIP(pVM), CPUMGetHyperESP(pVM)));
+    Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVM), CPUMGetHyperESP(pVM)));
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).

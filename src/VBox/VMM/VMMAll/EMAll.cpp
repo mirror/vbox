@@ -1576,7 +1576,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VRv eax=%08x %08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar));
+            LogFlow(("%s %RRv eax=%08x %08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
@@ -1591,7 +1591,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VRv eax=%08x %08x ZF=%d\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("%s %RRv eax=%08x %08x ZF=%d\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1638,7 +1638,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("%s %VRv=%08x eax=%08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax));
+            LogFlow(("%s %RRv=%08x eax=%08x\n", emGetMnemonic(pCpu), pParam1, pRegFrame->eax));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
@@ -1709,7 +1709,7 @@ static int emInterpretXAdd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("XAdd %VRv=%08x reg=%08x\n", pParam1, *pParamReg2));
+            LogFlow(("XAdd %RRv=%08x reg=%08x\n", pParam1, *pParamReg2));
 
             MMGCRamRegisterTrapHandler(pVM);
             if (pCpu->prefix & PREFIX_LOCK)
