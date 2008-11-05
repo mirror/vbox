@@ -201,7 +201,7 @@ template<> RTTIMESPEC FromString <RTTIMESPEC> (const char *aValue)
     uint32_t yyyy = 0;
     uint16_t mm = 0, dd = 0, hh = 0, mi = 0, ss = 0;
     char buf [256];
-    if (strlen (aValue) > ELEMENTS (buf) - 1 ||
+    if (strlen (aValue) > RT_ELEMENTS (buf) - 1 ||
         sscanf (aValue, "%d-%hu-%huT%hu:%hu:%hu%s",
                 &yyyy, &mm, &dd, &hh, &mi, &ss, buf) == 7)
     {

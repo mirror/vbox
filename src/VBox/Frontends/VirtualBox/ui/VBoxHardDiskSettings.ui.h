@@ -381,7 +381,7 @@ public:
 
     QString text (int aColumn) const
     {
-        AssertReturn (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos),
+        AssertReturn (aColumn >= 0 && (size_t) aColumn < RT_ELEMENTS (mCombos),
                       QString::null);
 
         return mCombos [aColumn]->currentText();
@@ -389,7 +389,7 @@ public:
 
     const QPixmap *pixmap (int aColumn) const
     {
-        AssertReturn (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos),
+        AssertReturn (aColumn >= 0 && (size_t) aColumn < RT_ELEMENTS (mCombos),
                       NULL);
 
         return mCombos [aColumn]->pixmap (mCombos [aColumn]->currentItem());
@@ -411,7 +411,7 @@ public:
     {
         if (mFocusColumn >= 0)
         {
-            AssertReturnVoid ((size_t) mFocusColumn < ELEMENTS (mCombos));
+            AssertReturnVoid ((size_t) mFocusColumn < RT_ELEMENTS (mCombos));
 
             if (mCombos [mFocusColumn]->count())
                 mCombos [mFocusColumn]->popup();
@@ -468,7 +468,7 @@ private:
     void init (VBoxHardDiskSettings *aSettings, HDSlotUniquizer *aUniq,
                const QUuid &aMachineId)
     {
-        AssertReturnVoid (listView()->columns() == ELEMENTS (mCombos));
+        AssertReturnVoid (listView()->columns() == RT_ELEMENTS (mCombos));
 
         setSelectable (false);
 
@@ -501,7 +501,7 @@ private:
     void paintCell (QPainter *aPainter, const QColorGroup &aColorGroup,
                     int aColumn, int aWidth, int aAlign)
     {
-        AssertReturnVoid (aColumn >= 0 && (size_t) aColumn < ELEMENTS (mCombos));
+        AssertReturnVoid (aColumn >= 0 && (size_t) aColumn < RT_ELEMENTS (mCombos));
 
         QComboBox *cb = mCombos [aColumn];
 

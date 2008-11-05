@@ -735,7 +735,7 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
           "RTLdrELF: e_shentsize: " FMT_ELF_HALF "\n"
           "RTLdrELF:     e_shnum: " FMT_ELF_HALF "\n"
           "RTLdrELF:  e_shstrndx: " FMT_ELF_HALF "\n",
-          ELEMENTS(pEhdr->e_ident), &pEhdr->e_ident[0], pEhdr->e_type, pEhdr->e_version,
+          RT_ELEMENTS(pEhdr->e_ident), &pEhdr->e_ident[0], pEhdr->e_type, pEhdr->e_version,
           pEhdr->e_entry, pEhdr->e_phoff, pEhdr->e_shoff,pEhdr->e_flags, pEhdr->e_ehsize, pEhdr->e_phentsize,
           pEhdr->e_phnum, pEhdr->e_shentsize, pEhdr->e_shnum, pEhdr->e_shstrndx));
 

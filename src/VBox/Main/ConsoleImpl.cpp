@@ -273,9 +273,9 @@ HRESULT Console::FinalConstruct()
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
 
 #ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    Assert(ELEMENTS(maTapFD) == ELEMENTS(maTAPDeviceName));
-    Assert(ELEMENTS(maTapFD) >= SchemaDefs::NetworkAdapterCount);
-    for (unsigned i = 0; i < ELEMENTS(maTapFD); i++)
+    Assert(RT_ELEMENTS(maTapFD) == RT_ELEMENTS(maTAPDeviceName));
+    Assert(RT_ELEMENTS(maTapFD) >= SchemaDefs::NetworkAdapterCount);
+    for (unsigned i = 0; i < RT_ELEMENTS(maTapFD); i++)
     {
         maTapFD[i] = NIL_RTFILE;
         maTAPDeviceName[i] = "";
@@ -4181,7 +4181,7 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
             Utf8Str *files[] = { &logFile, &pngFile };
             Utf8Str oldName, newName;
 
-            for (unsigned int j = 0; j < ELEMENTS (files); ++ j)
+            for (unsigned int j = 0; j < RT_ELEMENTS (files); ++ j)
             {
                 if (i > 0)
                     oldName = Utf8StrFmt ("%s.%d", files [j]->raw(), i);

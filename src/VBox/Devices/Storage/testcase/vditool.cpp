@@ -372,7 +372,7 @@ int main(int argc, char **argv)
     PRTLOGGER pLogger;
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     int rc = RTLogCreate(&pLogger, 0, "all",
-                         NULL, ELEMENTS(s_apszGroups), s_apszGroups,
+                         NULL, RT_ELEMENTS(s_apszGroups), s_apszGroups,
                           RTLOGDEST_STDOUT, NULL);
     RTLogRelSetDefaultInstance(pLogger);
 

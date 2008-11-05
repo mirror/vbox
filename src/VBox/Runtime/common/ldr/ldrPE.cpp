@@ -1075,12 +1075,12 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
     }
 
     /* DataDirectory */
-    if (pOptHdr->NumberOfRvaAndSizes != ELEMENTS(pOptHdr->DataDirectory))
+    if (pOptHdr->NumberOfRvaAndSizes != RT_ELEMENTS(pOptHdr->DataDirectory))
     {
         Log(("rtldrPEOpen: %s: NumberOfRvaAndSizes=%d!!!\n", pszLogName, pOptHdr->NumberOfRvaAndSizes));
         return VERR_BAD_EXE_FORMAT;
     }
-    for (unsigned i = 0; i < ELEMENTS(pOptHdr->DataDirectory); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pOptHdr->DataDirectory); i++)
     {
         IMAGE_DATA_DIRECTORY const *pDir = &pOptHdr->DataDirectory[i];
         if (!pDir->Size)

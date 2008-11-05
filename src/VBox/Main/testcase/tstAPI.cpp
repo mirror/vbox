@@ -608,7 +608,7 @@ int main(int argc, char *argv[])
             L"/mnt/host/common/Develop/innotek/images/maggot/fReeDoS.vDI",
 #endif
         };
-        for (size_t i = 0; i < ELEMENTS (Names); ++ i)
+        for (size_t i = 0; i < RT_ELEMENTS (Names); ++ i)
         {
             Bstr src = Names [i];
             printf ("Searching for hard disk '%ls'...\n", src.raw());

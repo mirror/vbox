@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     static char szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     /* allocate */
-    for (i = 0; i < ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         aOps[i].pvAlloc = RTHeapSimpleAlloc(Heap, aOps[i].cb, aOps[i].uAlignment);
         if (!aOps[i].pvAlloc)
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     }
 
     /* free and allocate the same node again. */
-    for (i = 0; i < ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         if (!aOps[i].pvAlloc)
             continue;
@@ -155,10 +155,10 @@ int main(int argc, char *argv[])
 
     /* free it in a specific order. */
     int cFreed = 0;
-    for (i = 0; i < ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         unsigned j;
-        for (j = 0; j < ELEMENTS(aOps); j++)
+        for (j = 0; j < RT_ELEMENTS(aOps); j++)
         {
             if (    aOps[j].iFreeOrder != i
                 ||  !aOps[j].pvAlloc)

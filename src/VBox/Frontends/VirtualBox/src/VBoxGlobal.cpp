@@ -1703,7 +1703,7 @@ static const PortConfig lptKnownPorts[] =
 QStringList VBoxGlobal::COMPortNames() const
 {
     QStringList list;
-    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
         list << comKnownPorts [i].name;
 
     return list;
@@ -1715,7 +1715,7 @@ QStringList VBoxGlobal::COMPortNames() const
 QStringList VBoxGlobal::LPTPortNames() const
 {
     QStringList list;
-    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
         list << lptKnownPorts [i].name;
 
     return list;
@@ -1728,7 +1728,7 @@ QStringList VBoxGlobal::LPTPortNames() const
  */
 QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
         if (comKnownPorts [i].IRQ == aIRQ &&
             comKnownPorts [i].IOBase == aIOBase)
             return comKnownPorts [i].name;
@@ -1743,7 +1743,7 @@ QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
  */
 QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
         if (lptKnownPorts [i].IRQ == aIRQ &&
             lptKnownPorts [i].IOBase == aIOBase)
             return lptKnownPorts [i].name;
@@ -1759,7 +1759,7 @@ QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
 bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (comKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
         if (strcmp (comKnownPorts [i].name, aName.utf8().data()) == 0)
         {
             aIRQ = comKnownPorts [i].IRQ;
@@ -1778,7 +1778,7 @@ bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
 bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
-    for (size_t i = 0; i < ELEMENTS (lptKnownPorts); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
         if (strcmp (lptKnownPorts [i].name, aName.utf8().data()) == 0)
         {
             aIRQ = lptKnownPorts [i].IRQ;
@@ -4454,7 +4454,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     static const char * const commands[] =
         { "kfmclient:exec", "gnome-open", "x-www-browser", "firefox", "konqueror" };
 
-    for (size_t i = 0; i < ELEMENTS (commands); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (commands); ++ i)
     {
         QStringList args = QStringList::split (':', commands [i]);
         args += aURL;

@@ -86,8 +86,8 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     if (pso)
     {
         PPDEV ppdev = (PPDEV)pso->dhpdev;
-        
-        /* The screen surface has the 'pso->dhpdev' field, 
+
+        /* The screen surface has the 'pso->dhpdev' field,
          * and is either the screen device surface with handle = hsurfScreen,
          * or a surface derived from DDRAW with address equal to the framebuffer.
          */
@@ -301,9 +301,9 @@ BOOL APIENTRY DrvCopyBits(
     dumpsurf(psoDest, "psoDest");
 
     STATPRINT;
-    
+
 #ifdef VBOX_VBVA_ADJUST_RECT
-    /* Experimental fix for too large bitmap updates. 
+    /* Experimental fix for too large bitmap updates.
      *
      * Some application do a large bitmap update event if only
      * a small part of the bitmap is actually changed.
@@ -311,7 +311,7 @@ BOOL APIENTRY DrvCopyBits(
      * The driver will find the changed rectangle by comparing
      * the current framebuffer content with the source bitmap.
      *
-     * The optimization is only active when: 
+     * The optimization is only active when:
      *  - the VBVA extension is enabled;
      *  - the source bitmap is not cacheable;
      *  - the bitmap formats of both the source and the screen surfaces are equal.
@@ -596,7 +596,7 @@ ULONG_PTR APIENTRY DrvSaveScreenBits(
         {
             DISPDBG((1, "DrvSaveScreenBits: SS_SAVE %d\n", ppdev->cSSB));
 
-            if (ppdev->cSSB >= ELEMENTS(ppdev->aSSB))
+            if (ppdev->cSSB >= RT_ELEMENTS(ppdev->aSSB))
             {
                 /* All slots are already in use. Fail. */
                 DISPDBG((1, "DrvSaveScreenBits: no more slots %d!!!\n", ppdev->cSSB));

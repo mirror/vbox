@@ -321,7 +321,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
 
                         /* instruction. */
                         unsigned i;
-                        for (i = 0; i < ELEMENTS(aDest); i++)
+                        for (i = 0; i < RT_ELEMENTS(aDest); i++)
                         {
                             size_t cchInstr = strlen(aDest[i].pszInstr);
                             if (!strncmp(pszVar, aDest[i].pszInstr, cchInstr))
@@ -375,7 +375,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGr
                             }
                         }
                         /* unknown instruction? */
-                        if (i >= ELEMENTS(aDest))
+                        if (i >= RT_ELEMENTS(aDest))
                         {
                             AssertMsgFailed(("Invalid %s_DEST! unknown instruction %.20s\n", pszEnvVarBase, pszVar));
                             pszVar++;
@@ -1173,7 +1173,7 @@ static unsigned rtlogGroupFlags(const char *psz)
         unsigned    i;
         bool        fFound = false;
         psz++;
-        for (i = 0; i < ELEMENTS(aFlags) && !fFound; i++)
+        for (i = 0; i < RT_ELEMENTS(aFlags) && !fFound; i++)
         {
             const char *psz1 = aFlags[i].pszFlag;
             const char *psz2 = psz;
@@ -1312,7 +1312,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
         }
 
         /* instruction. */
-        for (i = 0; i < ELEMENTS(aDest); i++)
+        for (i = 0; i < RT_ELEMENTS(aDest); i++)
         {
             if (!strncmp(pszVar, aDest[i].pszInstr, aDest[i].cchInstr))
             {
@@ -1326,7 +1326,7 @@ RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar)
         }
 
         /* unknown instruction? */
-        if (i >= ELEMENTS(aDest))
+        if (i >= RT_ELEMENTS(aDest))
         {
             AssertMsgFailed(("Invalid flags! unknown instruction %.20s\n", pszVar));
             pszVar++;
@@ -1411,7 +1411,7 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
     if (g_cPerThreadLoggers)
     {
         const RTNATIVETHREAD Self = RTThreadNativeSelf();
-        int32_t i = ELEMENTS(g_aPerThreadLoggers);
+        int32_t i = RT_ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
                 return g_aPerThreadLoggers[i].pLogger;
@@ -1467,7 +1467,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
         /*
          * Iterate the table to see if there is already an entry for this thread.
          */
-        i = ELEMENTS(g_aPerThreadLoggers);
+        i = RT_ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
             {
@@ -1480,7 +1480,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
          * Allocate a new table entry.
          */
         i = ASMAtomicIncS32(&g_cPerThreadLoggers);
-        if (i > (int32_t)ELEMENTS(g_aPerThreadLoggers))
+        if (i > (int32_t)RT_ELEMENTS(g_aPerThreadLoggers))
         {
             ASMAtomicDecS32(&g_cPerThreadLoggers);
             return VERR_BUFFER_OVERFLOW; /* horrible error code! */
@@ -1488,7 +1488,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
 
         for (j = 0; j < 10; j++)
         {
-            i = ELEMENTS(g_aPerThreadLoggers);
+            i = RT_ELEMENTS(g_aPerThreadLoggers);
             while (i-- > 0)
             {
                 AssertCompile(sizeof(RTNATIVETHREAD) == sizeof(void*));
@@ -1510,7 +1510,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
         /*
          * Search the array for the current thread.
          */
-        int32_t i = ELEMENTS(g_aPerThreadLoggers);
+        int32_t i = RT_ELEMENTS(g_aPerThreadLoggers);
         while (i-- > 0)
             if (    g_aPerThreadLoggers[i].NativeThread == Self
                 ||  g_aPerThreadLoggers[i].uKey == uKey)

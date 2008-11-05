@@ -58,11 +58,11 @@ int main(int argc, char **argv)
         SUPPAGE aPages0[128];
         void *pvPages0 = (void *)0x77777777;
         memset(&aPages0[0], 0x8f, sizeof(aPages0));
-        rc = SUPLowAlloc(ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
+        rc = SUPLowAlloc(RT_ELEMENTS(aPages0), &pvPages0, NULL, aPages0);
         if (RT_SUCCESS(rc))
         {
             /* check that the pages are below 4GB and valid. */
-            for (unsigned iPage = 0; iPage < ELEMENTS(aPages0); iPage++)
+            for (unsigned iPage = 0; iPage < RT_ELEMENTS(aPages0); iPage++)
             {
                 RTPrintf("%-4d: Phys=%VHp Reserved=%p\n", iPage, aPages0[iPage].Phys, aPages0[iPage].uReserved);
                 if (aPages0[iPage].uReserved != 0)
@@ -79,9 +79,9 @@ int main(int argc, char **argv)
             }
             if (!rcRet)
             {
-                for (unsigned iPage = 0; iPage < ELEMENTS(aPages0); iPage++)
+                for (unsigned iPage = 0; iPage < RT_ELEMENTS(aPages0); iPage++)
                     memset((char *)pvPages0 + iPage * PAGE_SIZE, iPage, PAGE_SIZE);
-                for (unsigned iPage = 0; iPage < ELEMENTS(aPages0); iPage++)
+                for (unsigned iPage = 0; iPage < RT_ELEMENTS(aPages0); iPage++)
                     for (uint8_t *pu8 = (uint8_t *)pvPages0 + iPage * PAGE_SIZE, *pu8End = pu8 + PAGE_SIZE; pu8 < pu8End; pu8++)
                         if (*pu8 != (uint8_t)iPage)
                         {
@@ -90,11 +90,11 @@ int main(int argc, char **argv)
                             rcRet++;
                         }
             }
-            SUPLowFree(pvPages0, ELEMENTS(aPages0));
+            SUPLowFree(pvPages0, RT_ELEMENTS(aPages0));
         }
         else
         {
-            RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Vrc\n", ELEMENTS(aPages0), rc);
+            RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Vrc\n", RT_ELEMENTS(aPages0), rc);
             rcRet++;
         }
 

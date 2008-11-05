@@ -270,8 +270,8 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 };
                 const char *pszType = *ppszFormat - 1;
                 int         iStart  = 0;
-                int         iEnd    = ELEMENTS(s_aTypes) - 1;
-                int         i       = ELEMENTS(s_aTypes) / 2;
+                int         iEnd    = RT_ELEMENTS(s_aTypes) - 1;
+                int         i       = RT_ELEMENTS(s_aTypes) / 2;
 
                 union
                 {
@@ -764,8 +764,8 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 };
                 const char *pszType = *ppszFormat - 1;
                 int         iStart  = 0;
-                int         iEnd    = ELEMENTS(s_aTypes) - 1;
-                int         i       = ELEMENTS(s_aTypes) / 2;
+                int         iEnd    = RT_ELEMENTS(s_aTypes) - 1;
+                int         i       = RT_ELEMENTS(s_aTypes) / 2;
 
                 union
                 {

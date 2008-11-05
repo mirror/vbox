@@ -405,15 +405,15 @@ static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
         if (cReqs++ > 25)
         {
             const uint32_t i = pQueue->iReqFree;
-            vmr3ReqJoinFreeSub(&pQueue->apReqFree[(i + 2) % ELEMENTS(pQueue->apReqFree)], pTail->pNext);
+            vmr3ReqJoinFreeSub(&pQueue->apReqFree[(i + 2) % RT_ELEMENTS(pQueue->apReqFree)], pTail->pNext);
 
             pTail->pNext = NULL;
-            vmr3ReqJoinFreeSub(&pQueue->apReqFree[(i + 2 + (i == pQueue->iReqFree)) % ELEMENTS(pQueue->apReqFree)], pTail->pNext);
+            vmr3ReqJoinFreeSub(&pQueue->apReqFree[(i + 2 + (i == pQueue->iReqFree)) % RT_ELEMENTS(pQueue->apReqFree)], pTail->pNext);
             return;
         }
         pTail = pTail->pNext;
     }
-    vmr3ReqJoinFreeSub(&pQueue->apReqFree[(pQueue->iReqFree + 2) % ELEMENTS(pQueue->apReqFree)], pList);
+    vmr3ReqJoinFreeSub(&pQueue->apReqFree[(pQueue->iReqFree + 2) % RT_ELEMENTS(pQueue->apReqFree)], pList);
 }
 
 
@@ -447,10 +447,10 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
      * While this could all be solved with a single list with a lock, it's a sport
      * of mine to avoid locks.
      */
-    int cTries = ELEMENTS(pQueue->apReqFree) * 2;
+    int cTries = RT_ELEMENTS(pQueue->apReqFree) * 2;
     while (--cTries >= 0)
     {
-        PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % ELEMENTS(pQueue->apReqFree)];
+        PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % RT_ELEMENTS(pQueue->apReqFree)];
 #if 0 /* sad, but this won't work safely because the reading of pReq->pNext. */
         PRTREQ pNext = NULL;
         PRTREQ pReq = *ppHead;
@@ -593,7 +593,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
     if (pQueue->cReqFree < 128)
     {
         ASMAtomicIncU32(&pQueue->cReqFree);
-        PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % ELEMENTS(pQueue->apReqFree)];
+        PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % RT_ELEMENTS(pQueue->apReqFree)];
         PRTREQ pNext;
         do
         {
