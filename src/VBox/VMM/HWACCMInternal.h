@@ -518,16 +518,16 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *
 #endif
 
 /* Dummy callback handlers. */
-VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PHWACCM_CPUINFO pCpu);
-VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu);
+VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
 VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
 VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, CPUMCTX *pCtx);
-VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, CPUMCTX *pCtx);
+VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, RTCPUID idVCpu);
+VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
 
 #endif /* IN_RING0 */
 

@@ -43,9 +43,10 @@ BEGINCODE
 ; argument. This has to do with resuming code and the stack frame of the caller.
 ;
 ; @returns  VINF_SUCCESS on success or whatever is passed to vmmR0CallHostLongJmp.
-; @param    pJmpBuf msc:rcx gcc:rdi x86:[esp+4]     Our jmp_buf.
-; @param    pfn     msc:rdx gcc:rsi x86:[esp+8]     The function to be called when not resuming.
-; @param    pvUser  msc:r8  gcc:rdx x86:[esp+c]     The argument of that function.
+; @param    pJmpBuf msc:rcx gcc:rdi x86:[esp+0x04]     Our jmp_buf.
+; @param    pfn     msc:rdx gcc:rsi x86:[esp+0x08]     The function to be called when not resuming.
+; @param    pvUser1 msc:r8  gcc:rdx x86:[esp+0x0c]     The argument of that function.
+; @param    pvUser2 msc:r9  gcc:rcx x86:[esp+0x10]     The argument of that function.
 ;
 BEGINPROC vmmR0CallHostSetJmp
 GLOBALNAME vmmR0CallHostSetJmpEx
@@ -69,12 +70,14 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     test    byte [edx + VMMR0JMPBUF.fInRing3Call], 1
     jnz     .resume
 
-    mov     ecx, [esp + 0ch]            ; pvArg
+    mov     ecx, [esp + 0ch]            ; pvArg1
+    mov     edx, [esp + 10h]            ; pvArg2
     mov     eax, [esp + 08h]            ; pfn
-    sub     esp, 12                     ; align the stack on a 16-byte boundrary.
+    sub     esp, 16                     ; align the stack on a 16-byte boundrary.
     mov     [esp], ecx
+    mov     [esp+4], edx
     call    eax
-    add     esp, 12
+    add     esp, 16
     mov     edx, [esp + 4h]             ; pJmpBuf
 
     ; restore the registers that we're not allowed to modify
@@ -148,7 +151,8 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     rdx, rcx                    ; pJmpBuf;
  %else
     sub     rsp, 10h
-    mov     r8, rdx                     ; pvUser (save it like MSC)
+    mov     r8, rdx                     ; pvUser1 (save it like MSC)
+    mov     r9, rcx                     ; pvUser2 (save it like MSC)
     mov     r11, rsi                    ; pfn
     mov     rdx, rdi                    ; pJmpBuf
  %endif
@@ -177,8 +181,10 @@ GLOBALNAME vmmR0CallHostSetJmpEx
     mov     [rbp - 8], rdx              ; Save it and fix stack alignment (16).
  %ifdef ASM_CALL64_MSC
     mov     rcx, r8                     ; pvUser -> arg0
+    mov     rdx, r9
  %else
     mov     rdi, r8                     ; pvUser -> arg0
+    mov     rsi, r9
  %endif
     call    r11
     mov     rdx, [rbp - 8]              ; pJmpBuf
