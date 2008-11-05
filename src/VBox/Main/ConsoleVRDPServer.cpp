@@ -1519,7 +1519,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
     {
         case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
         {
-            pServer->mpfnClipboardCallback = (PFNVRDPCLIPBOARDEXTCALLBACK)pParms->u.pfnCallback;
+            pServer->mpfnClipboardCallback = pParms->u.pfnCallback;
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
