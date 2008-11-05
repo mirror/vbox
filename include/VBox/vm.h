@@ -358,7 +358,7 @@ typedef struct VMCPU *PVMCPU;
  * @remark  The ring-0 variation will need attention if we expand the ring-0
  *          code to let threads other than EMT mess around with the VM.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_IS_EMT(pVM)                     true
 #elif defined(IN_RING0)
 # define VM_IS_EMT(pVM)                     true
@@ -370,7 +370,7 @@ typedef struct VMCPU *PVMCPU;
 /** @def VM_ASSERT_EMT
  * Asserts that the current thread IS the emulation thread (EMT).
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_ASSERT_EMT(pVM)                 Assert(VM_IS_EMT(pVM))
 #elif defined(IN_RING0)
 # define VM_ASSERT_EMT(pVM)                 Assert(VM_IS_EMT(pVM))
@@ -383,7 +383,7 @@ typedef struct VMCPU *PVMCPU;
 /** @def VM_ASSERT_EMT_RETURN
  * Asserts that the current thread IS the emulation thread (EMT) and returns if it isn't.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_ASSERT_EMT_RETURN(pVM, rc)      AssertReturn(VM_IS_EMT(pVM), (rc))
 #elif defined(IN_RING0)
 # define VM_ASSERT_EMT_RETURN(pVM, rc)      AssertReturn(VM_IS_EMT(pVM), (rc))
@@ -399,7 +399,7 @@ typedef struct VMCPU *PVMCPU;
  * Returns the VMCPU id of the current EMT.
  * @todo r=bird: See VMMGetCpuId().
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_GET_VMCPUID(pVM)                0
 #elif defined(IN_RING0)
 # define VM_GET_VMCPUID(pVM)                HWACCMGetVMCPUId(pVM)
@@ -787,7 +787,7 @@ typedef struct VM *PVM;
 #endif
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 __BEGIN_DECLS
 
 /** The VM structure.

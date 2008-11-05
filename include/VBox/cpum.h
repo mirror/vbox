@@ -974,7 +974,7 @@ VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTRE
 /** @} */
 #endif /* IN_RING3 */
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_cpum_gc    The CPU Monitor(/Manager) API
  * @ingroup grp_cpum
  * @{
@@ -997,7 +997,7 @@ DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint3
 VMMRCDECL(void)         CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
 /** @} */
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 #ifdef IN_RING0
 /** @defgroup grp_cpum_r0    The CPU Monitor(/Manager) API

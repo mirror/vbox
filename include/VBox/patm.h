@@ -291,7 +291,7 @@ VMMDECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 #endif
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_patm_gc    The Patch Manager API
  * @ingroup grp_patm
  * @{

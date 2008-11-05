@@ -37,7 +37,7 @@
 #ifdef IN_RING0
 # error "There are no VRDP APIs available in Ring-0 Host Context!"
 #endif
-#ifdef IN_GC
+#ifdef IN_RC
 # error "There are no VRDP APIs available Guest Context!"
 #endif
 

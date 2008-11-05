@@ -26,7 +26,7 @@
 /*
  * Sanity checks.
  */
-#ifndef IN_GC
+#ifndef IN_RC
 # error Incorrect template!
 #endif
 #if defined(IN_RING3) || defined(IN_RING0)

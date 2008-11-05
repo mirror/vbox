@@ -183,7 +183,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
     uint32_t    u1Present, u1DescType, u1Granularity, u4Type;
 
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
-#ifndef IN_GC
+#ifndef IN_RC
     if (    pHiddenSel
         &&  CPUMAreHiddenSelRegsValid(pVM))
     {
@@ -297,7 +297,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
 # ifndef IN_RING0
     else
 # endif
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 #ifndef IN_RING0
     {
         X86DESC Desc;
@@ -808,7 +808,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVM pVM, RTSEL SelCPL, RTSEL 
 }
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /**
  * Validates and converts a GC selector based code address to a flat address.
  *
@@ -836,7 +836,7 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL
     }
     return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, pcBits);
 }
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 
 /**
@@ -992,7 +992,7 @@ VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 
         Assert(pVM->selm.s.GCPtrGuestTss && pVM->selm.s.cbMonitoredGuestTss);
 
-# ifdef IN_GC
+# ifdef IN_RC
         bool    fTriedAlready = false;
 
 l_tryagain:
@@ -1018,7 +1018,7 @@ l_tryagain:
             return rc;
         }
 
-# else /* !IN_GC */
+# else /* !IN_RC */
         /* Reading too much. Could be cheaper than two seperate calls though. */
         rc = PGMPhysSimpleReadGCPtr(pVM, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (RT_FAILURE(rc))
@@ -1026,7 +1026,7 @@ l_tryagain:
             AssertReleaseMsgFailed(("Unable to read TSS structure at %08X\n", GCPtrTss));
             return rc;
         }
-# endif /* !IN_GC */
+# endif /* !IN_RC */
 
 # ifdef LOG_ENABLED
         uint32_t ssr0  = pVM->selm.s.Tss.ss1;

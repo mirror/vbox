@@ -34,7 +34,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-#ifdef IN_GC
+#ifdef IN_RC
 # error "There are no threading APIs available Guest Context!"
 #endif
 

@@ -113,7 +113,7 @@ VMMR3DECL(int)      TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent);
 #endif
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_trpm_gc    The TRPM Guest Context API
  * @ingroup grp_trpm
  * @{

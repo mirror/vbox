@@ -883,7 +883,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
-#ifndef IN_GC
+#ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
 #endif
             return VINF_SUCCESS;
@@ -954,7 +954,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
 
             LogFlow(("PGMHandlerPhysicalPageAlias %RGp -> %RGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
-#ifndef IN_GC
+#ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
 #endif
             return VINF_SUCCESS;
@@ -1009,7 +1009,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysPage, &pPage);
             AssertRCReturn(rc, rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, pgmHandlerPhysicalCalcState(pCur));
-#ifndef IN_GC
+#ifndef IN_RC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
 #endif
             return VINF_SUCCESS;

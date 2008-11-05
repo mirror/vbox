@@ -512,7 +512,7 @@ VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...);
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
 
 #endif /* IN_RING0 */
-#ifdef IN_GC
+#ifdef IN_RC
 
 /**
  * Internal GC logger worker: Logger wrapper.
@@ -545,7 +545,7 @@ DECLASM(int)    vmmGCTestTrap0e_FaultEIP(void); /**< a label */
 DECLASM(int)    vmmGCTestTrap0e_ResumeEIP(void); /**< a label */
 /** @} */
 
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 __END_DECLS
 

@@ -283,7 +283,7 @@ VMMR0DECL(int)      VMMR0CallHost(PVM pVM, VMMCALLHOST enmOperation, uint64_t uA
 /** @} */
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_vmm_rc    The VMM Raw-Mode Context API
  * @ingroup grp_vmm
  * @{

@@ -119,7 +119,7 @@ VMMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
 #endif
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_pdm_gc    The PDM Guest Context API
  * @ingroup grp_pdm
  * @{

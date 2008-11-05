@@ -33,7 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
-#ifndef IN_GC
+#ifndef IN_RC
 # include <iprt/alloc.h>
 # include <iprt/process.h>
 # include <iprt/semaphore.h>
@@ -79,7 +79,7 @@ typedef struct RTLOGOUTPUTPREFIXEDARGS
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifndef IN_GC
+#ifndef IN_RC
 static unsigned rtlogGroupFlags(const char *psz);
 #endif
 #ifdef IN_RING0
@@ -93,13 +93,13 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef IN_GC
+#ifdef IN_RC
 /** Default logger instance. */
 extern "C" DECLIMPORT(RTLOGGERRC)   g_Logger;
-#else /* !IN_GC */
+#else /* !IN_RC */
 /** Default logger instance. */
 static PRTLOGGER                    g_pLogger;
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 #ifdef IN_RING3
 /** The RTThreadGetWriteLockCount() change caused by the logger mutex semaphore. */
 static uint32_t volatile            g_cLoggerLockCount;
@@ -139,7 +139,7 @@ static struct RTLOGGERPERTHREAD
  */
 DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
     {
 # if defined(IN_RING0) \
@@ -162,7 +162,7 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
  */
 DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
         RTSemFastMutexRelease(pLogger->MutexSem);
 #endif
@@ -170,7 +170,7 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 }
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Create a logger instance, comprehensive version.
  *
@@ -1211,7 +1211,7 @@ static unsigned rtlogGroupFlags(const char *psz)
     return fFlags;
 }
 
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 
 /**
@@ -1355,7 +1355,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
      */
     if (!pLogger)
     {
-#ifdef IN_GC
+#ifdef IN_RC
         pLogger = &g_Logger;
 #else
         pLogger = g_pLogger;
@@ -1369,7 +1369,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
      */
     if (pLogger->offScratch)
     {
-#ifndef IN_GC
+#ifndef IN_RC
         /*
          * Acquire logger instance sem.
          */
@@ -1382,7 +1382,7 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
          */
         rtlogFlush(pLogger);
 
-#ifndef IN_GC
+#ifndef IN_RC
         /*
          * Release the semaphore.
          */
@@ -1400,10 +1400,10 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
  */
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     return &g_Logger;
 
-#else /* !IN_GC */
+#else /* !IN_RC */
 # ifdef IN_RING0
     /*
      * Check per thread loggers first.
@@ -1424,11 +1424,11 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
     if (!g_pLogger)
         g_pLogger = RTLogDefaultInit();
     return g_pLogger;
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 }
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Sets the default logger instance.
  *
@@ -1439,7 +1439,7 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 {
     return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pLogger, pLogger);
 }
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 
 #ifdef IN_RING0
@@ -1579,7 +1579,7 @@ RTDECL(void) RTLogLoggerExV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
      * If no output, then just skip it.
      */
     if (    (pLogger->fFlags & RTLOGFLAGS_DISABLED)
-#ifndef IN_GC
+#ifndef IN_RC
         || !pLogger->fDestFlags
 #endif
         || !pszFormat || !*pszFormat)
@@ -1770,7 +1770,7 @@ RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
  */
 static void rtlogFlush(PRTLOGGER pLogger)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     if (pLogger->fDestFlags & RTLOGDEST_USER)
         RTLogWriteUser(pLogger->achScratch, pLogger->offScratch);
 
@@ -1788,11 +1788,11 @@ static void rtlogFlush(PRTLOGGER pLogger)
     if (pLogger->fDestFlags & RTLOGDEST_STDERR)
         RTLogWriteStdErr(pLogger->achScratch, pLogger->offScratch);
 
-# if (defined(IN_RING0) || defined(IN_GC)) && !defined(LOG_NO_COM)
+# if (defined(IN_RING0) || defined(IN_RC)) && !defined(LOG_NO_COM)
     if (pLogger->fDestFlags & RTLOGDEST_COM)
         RTLogWriteCom(pLogger->achScratch, pLogger->offScratch);
 # endif
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
     if (pLogger->pfnFlush)
         pLogger->pfnFlush(pLogger);
@@ -1915,7 +1915,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 psz = &pLogger->achScratch[pLogger->offScratch];
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TS)
                 {
-#if defined(IN_RING3) || defined(IN_GC)
+#if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeNanoTS();
 #else
                     uint64_t u64 = ~0;
@@ -1967,7 +1967,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_MS_PROG)
                 {
-#if defined(IN_RING3) || defined(IN_GC)
+#if defined(IN_RING3) || defined(IN_RC)
                     uint64_t u64 = RTTimeProgramMilliTS();
 #else
                     uint64_t u64 = 0;
@@ -2028,7 +2028,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 # endif
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_PID)
                 {
-#ifndef IN_GC
+#ifndef IN_RC
                     RTPROCESS Process = RTProcSelf();
 #else
                     RTPROCESS Process = NIL_RTPROCESS;
@@ -2038,7 +2038,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 }
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TID)
                 {
-#ifndef IN_GC
+#ifndef IN_RC
                     RTNATIVETHREAD Thread = RTThreadNativeSelf();
 #else
                     RTNATIVETHREAD Thread = NIL_RTNATIVETHREAD;
@@ -2050,7 +2050,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 {
 #ifdef IN_RING3
                     const char *pszName = RTThreadSelfName();
-#elif defined IN_GC
+#elif defined IN_RC
                     const char *pszName = "EMT-GC";
 #else
                     const char *pszName = "EMT-R0";

@@ -201,7 +201,7 @@ VMMR3DECL(int)      EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode);
 #endif /* IN_RING3 */
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_em_gc     The EM Guest Context API
  * @ingroup grp_em
  * @{
@@ -214,7 +214,7 @@ VMMRCDECL(uint32_t) EMGCEmulateCmpXchg8b(RTRCPTR pu32Param1, uint32_t *pEAX, uin
 VMMRCDECL(uint32_t) EMGCEmulateLockXAdd(RTRCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
 VMMRCDECL(uint32_t) EMGCEmulateXAdd(RTRCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
 /** @} */
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 /** @} */
 

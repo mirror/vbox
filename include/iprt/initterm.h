@@ -116,7 +116,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved);
 RTR0DECL(void) RTR0Term(void);
 #endif
 
-#ifdef IN_GC
+#ifdef IN_RC
 /**
  * Initializes the raw-mode context runtime library.
  *

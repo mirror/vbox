@@ -70,7 +70,7 @@ typedef struct RTSTRDYNFMT
     /** The handler function.
      * In GC the offset is relative to g_aTypes[0], so that &g_aTypes[0] + offHandler
      * gives the actual address. */
-#ifdef IN_GC
+#ifdef IN_RC
     int32_t             offHandler;
 #else
     PFNRTSTRFORMATTYPE  pfnHandler;
@@ -297,7 +297,7 @@ RTDECL(int) RTStrFormatTypeRegister(const char *pszType, PFNRTSTRFORMATTYPE pfnH
             memcpy(&g_aTypes[i].szType[0], pszType, cchType + 1);
             g_aTypes[i].cchType = (uint8_t)cchType;
             g_aTypes[i].pvUser = pvUser;
-#ifdef IN_GC
+#ifdef IN_RC
             g_aTypes[i].offHandler = (intptr_t)pfnHandler - (intptr_t)&g_aTypes[0];
 #else
             g_aTypes[i].pfnHandler = pfnHandler;
@@ -447,7 +447,7 @@ size_t rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
     i = rtstrFormatTypeLookup(pszType, pszTypeEnd - pszType);
     if (RT_LIKELY(i >= 0))
     {
-#ifdef IN_GC
+#ifdef IN_RC
         PFNRTSTRFORMATTYPE pfnHandler = (PFNRTSTRFORMATTYPE)((intptr_t)&g_aTypes[0] + g_aTypes[i].offHandler);
 #else
         PFNRTSTRFORMATTYPE pfnHandler = g_aTypes[i].pfnHandler;

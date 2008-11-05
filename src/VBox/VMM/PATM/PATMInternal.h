@@ -680,7 +680,7 @@ VMMDECL(const char *) patmGetInstructionString(uint32_t opcode, uint32_t fPatchF
 int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 
 #define PATMREAD_RAWCODE        1  /* read code as-is */
 #define PATMREAD_ORGCODE        2  /* read original guest opcode bytes; not the patched bytes */
@@ -712,7 +712,7 @@ inline bool PATMR3DISInstr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPT
     (pCpu)->apvUserData[0] = &disinfo;
     return RT_SUCCESS(DISInstr(pCpu, InstrGC, 0, pOpsize, pszOutput));
 }
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 __BEGIN_DECLS
 /**
@@ -814,7 +814,7 @@ inline RTRCPTR PATMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
         Log(("We don't support far jumps here!! (%08X)\n", pCpu->param1.flags));
         return 0;
     }
-#ifdef IN_GC
+#ifdef IN_RC
     return (RTRCPTR)((uint8_t *)pBranchInstrGC + pCpu->opsize + disp);
 #else
     return pBranchInstrGC + pCpu->opsize + disp;

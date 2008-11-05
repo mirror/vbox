@@ -267,7 +267,7 @@ GLOBALNAME %1_EndProc
 ;; @def HC_ARCH_BITS
 ; Defines the host architechture bit count.
 %ifndef HC_ARCH_BITS
- %ifndef IN_GC
+ %ifndef IN_RC
   %define HC_ARCH_BITS ARCH_BITS
  %else
   %define HC_ARCH_BITS 32
@@ -297,7 +297,7 @@ GLOBALNAME %1_EndProc
 ;; @def GC_ARCH_BITS
 ; Defines the guest architechture bit count.
 %ifndef GC_ARCH_BITS
- %ifdef IN_GC
+ %ifdef IN_RC
   %define GC_ARCH_BITS ARCH_BITS
  %else
   %define GC_ARCH_BITS 32
@@ -479,7 +479,7 @@ GLOBALNAME %1_EndProc
 ;; @def RT_CCPTR_CB
 ; The size in bytes of a pointer in the current context.
 
-%ifdef IN_GC
+%ifdef IN_RC
  %define RTCCPTR_DEF        RTRCPTR_DEF
  %define RTCCPTR_RES        RTRCPTR_RES
  %define RTCCPTR_PRE        RTRCPTR_PRE

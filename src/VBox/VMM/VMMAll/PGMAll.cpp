@@ -180,7 +180,7 @@ typedef struct PGMHVUSTATE
 #undef PGM_SHW_NAME
 
 
-#ifndef IN_GC /* AMD64 implies VT-x/AMD-V */
+#ifndef IN_RC /* AMD64 implies VT-x/AMD-V */
 /*
  * Shadow - AMD64 mode
  */
@@ -344,7 +344,7 @@ typedef struct PGMHVUSTATE
 # undef PGM_SHW_TYPE
 # undef PGM_SHW_NAME
 
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 
 #ifndef IN_RING3
@@ -655,7 +655,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 #endif /* !IN_RING3 */
 
 
-#ifdef IN_GC
+#ifdef IN_RC
     /*
      * Check for conflicts and pending CR3 monitoring updates.
      */
@@ -677,7 +677,7 @@ VMMDECL(int) PGMInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
             return VINF_EM_RAW_EMULATE_INSTR;
         }
     }
-#endif /* IN_GC */
+#endif /* IN_RC */
 
     /*
      * Call paging mode specific worker.
@@ -884,7 +884,7 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX8
     return VINF_SUCCESS;
 }
 
-#ifndef IN_GC
+#ifndef IN_RC
 
 /**
  * Syncs the SHADOW page directory pointer for the specified address. Allocates
@@ -1124,7 +1124,7 @@ VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, P
     return VINF_SUCCESS;
 }
 
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 /**
  * Gets effective Guest OS page information.
@@ -1779,7 +1779,7 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
 int pgmLock(PVM pVM)
 {
     int rc = PDMCritSectEnter(&pVM->pgm.s.CritSect, VERR_SEM_BUSY);
-#ifdef IN_GC
+#ifdef IN_RC
     if (rc == VERR_SEM_BUSY)
         rc = VMMGCCallHost(pVM, VMMCALLHOST_PGM_LOCK, 0);
 #elif defined(IN_RING0)
@@ -1802,7 +1802,7 @@ void pgmUnlock(PVM pVM)
     PDMCritSectLeave(&pVM->pgm.s.CritSect);
 }
 
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
 /**
  * Temporarily maps one guest page specified by GC physical address.
@@ -1898,7 +1898,7 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
-# ifdef IN_GC
+# ifdef IN_RC
 
     /*
      * Check the cache.
@@ -1981,7 +1981,7 @@ VMMDECL(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     return rc;
 }
 
-#endif /* IN_GC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+#endif /* IN_RC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 #ifdef VBOX_STRICT
 
 /**

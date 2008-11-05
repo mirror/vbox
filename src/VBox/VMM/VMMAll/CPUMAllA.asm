@@ -150,7 +150,7 @@ hlfpu_afFlags:
     ;
 align 16
 hlfpua_switch_fpu_ctx:
-%ifndef IN_RING3 ; IN_GC or IN_RING0
+%ifndef IN_RING3 ; IN_RC or IN_RING0
     mov     xCX, cr0
  %ifdef RT_ARCH_AMD64
     lea     r8, [hlfpu_afFlags wrt rip]
@@ -171,7 +171,7 @@ hlfpua_switch_fpu_ctx:
     or      dword [xDX + CPUM.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
     fxrstor [xDX + CPUM.Guest.fpu]
 hlfpua_finished_switch:
-%ifdef IN_GC
+%ifdef IN_RC
     mov     cr0, xCX                            ; load the new cr0 flags.
 %endif
     ; return continue execution.

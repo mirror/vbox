@@ -136,7 +136,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
             Log(("MMR3HyperAlloc failed with %d\n", rc));
             return rc;
         }
-#ifdef IN_GC
+#ifdef IN_RC
         pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperRCToR3(pVM, (RCPTRTYPE(void*))pVM->csam.s.pPDBitmapGC[pgdir]);
         if (!pVM->csam.s.pPDHCBitmapGC[pgdir])
         {

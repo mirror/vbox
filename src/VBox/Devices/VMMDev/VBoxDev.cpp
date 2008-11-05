@@ -39,7 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#ifndef IN_GC
+#ifndef IN_RC
 # include <iprt/mem.h>
 #endif
 

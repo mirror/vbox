@@ -46,12 +46,12 @@ __BEGIN_DECLS
 #define REM_NO_PENDING_IRQ          (~(uint32_t)0)
 
 
-#if defined(IN_RING0) || defined(IN_GC)
+#if defined(IN_RING0) || defined(IN_RC)
 VMMDECL(int)  REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage);
 VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler);
 VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
 VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
-#endif /* IN_RING0 || IN_GC */
+#endif /* IN_RING0 || IN_RC */
 VMMDECL(void) REMFlushTBs(PVM pVM);
 
 

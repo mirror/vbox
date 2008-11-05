@@ -33,7 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/log.h>
-#ifndef IN_GC
+#ifndef IN_RC
 # include <iprt/alloc.h>
 # include <iprt/process.h>
 # include <iprt/semaphore.h>
@@ -62,13 +62,13 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#ifdef IN_GC
+#ifdef IN_RC
 /** Default relese logger instance. */
 extern "C" DECLIMPORT(RTLOGGERRC)   g_RelLogger;
-#else /* !IN_GC */
+#else /* !IN_RC */
 /** Default release logger instance. */
 static PRTLOGGER                    g_pRelLogger;
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 
 /**
@@ -79,15 +79,15 @@ static PRTLOGGER                    g_pRelLogger;
  */
 RTDECL(PRTLOGGER)   RTLogRelDefaultInstance(void)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     return &g_RelLogger;
-#else /* !IN_GC */
+#else /* !IN_RC */
     return g_pRelLogger;
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 }
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Sets the default logger instance.
  *
@@ -98,7 +98,7 @@ RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
 {
     return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pRelLogger, pLogger);
 }
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 
 /**

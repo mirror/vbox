@@ -162,7 +162,7 @@ void disasmPrintDisp8(POP_PARAMETER pParam);
 void disasmPrintDisp16(POP_PARAMETER pParam);
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 #define  DISReadByte(pCpu,  pAddress) (*(uint8_t *)(pAddress))
 #define  DISReadWord(pCpu,  pAddress) (*(uint16_t *)(pAddress))
 #define  DISReadDWord(pCpu, pAddress) (*(uint32_t *)(pAddress))

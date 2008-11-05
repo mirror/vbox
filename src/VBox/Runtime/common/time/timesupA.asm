@@ -92,7 +92,7 @@ BEGINCODE
 %include "timesupA.mac"
 
 %define ASYNC_GIP
-%ifdef IN_GC
+%ifdef IN_RC
  %undef NEED_TRANSACTION_ID
 %endif
 %define rtTimeNanoTSInternalAsm    RTTimeNanoTSLegacyAsync
@@ -109,7 +109,7 @@ BEGINCODE
 %include "timesupA.mac"
 
 %define ASYNC_GIP
-%ifdef IN_GC
+%ifdef IN_RC
  %undef NEED_TRANSACTION_ID
 %endif
 %define rtTimeNanoTSInternalAsm    RTTimeNanoTSLFenceAsync

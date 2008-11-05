@@ -147,7 +147,7 @@ typedef enum RTLOGGROUP
 #endif
 
 /** Logger structure. */
-#ifdef IN_GC
+#ifdef IN_RC
 typedef struct RTLOGGERRC RTLOGGER;
 #else
 typedef struct RTLOGGER RTLOGGER;
@@ -231,7 +231,7 @@ struct RTLOGGERRC
 
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Logger instance structure.
  */
@@ -1004,7 +1004,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #define LogRelIsFlowEnabled()  LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Sets the default release logger instance.
  *
@@ -1012,7 +1012,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * @param   pLogger     The new default release logger instance.
  */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger);
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 /**
  * Gets the default release logger instance.
@@ -1209,7 +1209,7 @@ RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args);
  */
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Sets the default logger instance.
  *
@@ -1217,7 +1217,7 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
  * @param   pLogger     The new default logger instance.
  */
 RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger);
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 #ifdef IN_RING0
 /**
@@ -1252,7 +1252,7 @@ DECLINLINE(bool) LogIsItEnabledInternal(void *pvInst, unsigned iGroup, unsigned 
 #endif
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Creates the default logger instance for a iprt users.
  *
@@ -1410,7 +1410,7 @@ RTDECL(int) RTLogCopyGroupsAndFlags(PRTLOGGER pDstLogger, PCRTLOGGER pSrcLogger,
  * @param   pszVar      Value to parse.
  */
 RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar);
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 /**
  * Updates the flags for the logger instance using the specified

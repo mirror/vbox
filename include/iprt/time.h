@@ -835,7 +835,7 @@ typedef struct RTTIMENANOTSDATAR0
 typedef RTTIMENANOTSDATA RTTIMENANOTSDATAR0;
 #endif
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * The RC layout of the RTTIMENANOTSDATA structure.
  */

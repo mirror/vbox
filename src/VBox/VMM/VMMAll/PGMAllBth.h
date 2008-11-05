@@ -295,7 +295,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                     &&  (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                     &&  uErr & X86_TRAP_PF_RW)
                 {
-#   ifdef IN_GC
+#   ifdef IN_RC
                     STAM_PROFILE_START(&pCur->Stat, h);
                     rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
@@ -412,7 +412,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                       || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
                                       ("Unexpected trap for physical handler: %08X (phys=%08x) HCPhys=%X uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
-# if defined(IN_GC) || defined(IN_RING0)
+# if defined(IN_RC) || defined(IN_RING0)
                             if (pCur->CTX_SUFF(pfnHandler))
                             {
                                 STAM_PROFILE_START(&pCur->Stat, h);
@@ -476,7 +476,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                 &&  (    uErr & X86_TRAP_PF_RW
                                      ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
                             {
-#   ifdef IN_GC
+#   ifdef IN_RC
                                 STAM_PROFILE_START(&pCur->Stat, h);
                                 rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                                 STAM_PROFILE_STOP(&pCur->Stat, h);
@@ -503,7 +503,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                      || pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
                             {
                                 Assert((pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) == GCPhys);
-#   ifdef IN_GC
+#   ifdef IN_RC
                                 RTGCUINTPTR off = (iPage << PAGE_SHIFT) + ((RTGCUINTPTR)pvFault & PAGE_OFFSET_MASK) - ((RTGCUINTPTR)pCur->Core.Key & PAGE_OFFSET_MASK);
                                 Assert(off < pCur->cb);
                                 STAM_PROFILE_START(&pCur->Stat, h);
@@ -583,7 +583,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                             &&  (    uErr & X86_TRAP_PF_RW
                                  ||  pCur->enmType != PGMVIRTHANDLERTYPE_WRITE ) )
                         {
-#   ifdef IN_GC
+#   ifdef IN_RC
                             STAM_PROFILE_START(&pCur->Stat, h);
                             rc = pCur->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key);
                             STAM_PROFILE_STOP(&pCur->Stat, h);
@@ -3159,7 +3159,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
     Assert(pPDSrc);
-#   ifndef IN_GC
+#   ifndef IN_RC
     Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #   endif
 #  endif
@@ -3581,7 +3581,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
 
 #ifdef VBOX_STRICT
-#ifdef IN_GC
+#ifdef IN_RC
 # undef AssertMsgFailed
 # define AssertMsgFailed Log
 #endif

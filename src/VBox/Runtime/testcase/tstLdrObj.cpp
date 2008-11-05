@@ -38,8 +38,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifndef IN_GC
-# error "not IN_GC!"
+#ifndef IN_RC
+# error "not IN_RC!"
 #endif
 #include <VBox/dis.h>
 #include <VBox/vm.h>

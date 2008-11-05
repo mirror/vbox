@@ -379,7 +379,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         {
             int rc;
             RTGCPTR pCallerGC;
-#  ifdef IN_GC
+#  ifdef IN_RC
             rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
 #  else
             rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
@@ -446,7 +446,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
          *
          */
         pIDTEntry = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate);
-#ifdef IN_GC
+#ifdef IN_RC
         rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
         rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
@@ -461,7 +461,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                 Log(("TRPMForwardTrap: PGMPrefetchPage failed with rc=%Rrc\n", rc));
                 goto failure;
             }
-#ifdef IN_GC
+#ifdef IN_RC
             rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
 #else
             rc = PGMPhysSimpleReadGCPtr(pVM, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
@@ -506,7 +506,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     goto failure;
 
                 pGdtEntry = (RTGCPTR)(uintptr_t)&((X86DESC *)gdtr.pGdt)[GuestIdte.Gen.u16SegSel >> X86_SEL_SHIFT]; /// @todo fix this
-#ifdef IN_GC
+#ifdef IN_RC
                 rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
                 rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
@@ -521,7 +521,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                         Log(("PGMPrefetchPage failed with rc=%Rrc\n", rc));
                         goto failure;
                     }
-#ifdef IN_GC
+#ifdef IN_RC
                     rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
                     rc = PGMPhysSimpleReadGCPtr(pVM, &Desc, pGdtEntry, sizeof(Desc));
@@ -582,7 +582,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                  * Build trap stack frame on guest handler's stack
                  */
                 uint32_t *pTrapStack;
-#ifdef IN_GC
+#ifdef IN_RC
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 rc = PGMVerifyAccess(pVM, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
@@ -673,7 +673,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     /* Make sure the internal guest context structure is up-to-date. */
                     CPUMSetGuestCR2(pVM, pVM->trpm.s.uActiveCR2);
 
-#ifdef IN_GC
+#ifdef IN_RC
                     /* Note: shouldn't be necessary */
                     ASMSetCR2(pVM->trpm.s.uActiveCR2);
 

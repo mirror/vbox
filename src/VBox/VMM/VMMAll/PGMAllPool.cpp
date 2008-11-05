@@ -28,7 +28,7 @@
 #include <VBox/mm.h>
 #include <VBox/em.h>
 #include <VBox/cpum.h>
-#ifdef IN_GC
+#ifdef IN_RC
 # include <VBox/patm.h>
 #endif
 #include "PGMInternal.h"
@@ -86,7 +86,7 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
 }
 
 
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /**
  * Maps a pool page into the current context.
  *
@@ -107,7 +107,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
     }
 
     /* special pages. */
-# ifdef IN_GC
+# ifdef IN_RC
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
@@ -161,7 +161,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
     return pv;
 # endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }
-#endif /* IN_GC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+#endif /* IN_RC || VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 
 #ifdef PGMPOOL_WITH_MONITORING
@@ -244,7 +244,7 @@ DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTHCPTR pvFau
 DECLINLINE(const void *) pgmPoolMonitorGCPtr2CCPtr(PPGMPOOL pPool, RTGCPTR pvFault, RTGCPHYS GCPhysFault, const unsigned cbEntry)
 #endif
 {
-#ifdef IN_GC
+#ifdef IN_RC
     return (const void *)((RTGCUINTPTR)pvFault & ~(RTGCUINTPTR)(cbEntry - 1));
 
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
@@ -413,7 +413,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                     &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
-# ifdef IN_GC       /* TLB load - we're pushing things a bit... */
+# ifdef IN_RC       /* TLB load - we're pushing things a bit... */
                     ASMProbeReadByte(pvAddress);
 # endif
                     pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPD->a[iShw].u & X86_PDE_PG_MASK, pPage->idx, iShw);
@@ -453,7 +453,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                         &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                     {
                         LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
-# ifdef IN_GC           /* TLB load - we're pushing things a bit... */
+# ifdef IN_RC           /* TLB load - we're pushing things a bit... */
                         ASMProbeReadByte(pvAddress);
 # endif
                         pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
@@ -559,7 +559,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                 break;
             }
 
-#ifndef IN_GC
+#ifndef IN_RC
             case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
             {
                 Assert(pPage->enmKind == PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD);
@@ -745,7 +745,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pCpu, unsi
  */
 DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PPGMPOOLPAGE pPage, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, RTGCPTR pvFault)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     /** @todo could make this general, faulting close to rsp should be safe reuse heuristic. */
     if (   HWACCMHasPendingIrq(pVM)
         && (pRegFrame->rsp - pvFault) < 32)
@@ -837,7 +837,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage
         pRegFrame->rip += pCpu->opsize;
     else if (rc2 == VERR_EM_INTERPRETER)
     {
-#ifdef IN_GC
+#ifdef IN_RC
         if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
         {
             LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv, ignoring.\n",
@@ -898,7 +898,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
     while (pRegFrame->ecx)
     {
         pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
-#ifdef IN_GC
+#ifdef IN_RC
         *(uint32_t *)pu32 = pRegFrame->eax;
 #else
         PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->eax, 4);
@@ -1140,7 +1140,7 @@ DECLINLINE(void) pgmPoolHashRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     const PVM pVM = pPool->CTX_SUFF(pVM);
 #endif
     Assert(pPool->iAgeHead != pPool->iAgeTail); /* We shouldn't be here if there < 2 cached entries! */
@@ -1299,7 +1299,7 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  */
 static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
-#ifndef IN_GC
+#ifndef IN_RC
     const PVM pVM = pPool->CTX_SUFF(pVM);
 #endif
     /*
@@ -2057,7 +2057,7 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifndef IN_GC
+# ifndef IN_RC
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else

@@ -384,7 +384,7 @@ VMMDECL(void)       PGMPhysInvalidatePageR3MapTLB(PVM pVM);
 typedef struct PGMPAGEMAPLOCK
 {
     /** @todo see PGMPhysIsPageMappingLockValid for possibly incorrect assumptions */
-#ifdef IN_GC
+#ifdef IN_RC
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
 #else
@@ -412,7 +412,7 @@ VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock
 DECLINLINE(bool)    PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
     /** @todo -> complete/change this  */
-#ifdef IN_GC
+#ifdef IN_RC
     return !!(pLock->u32Dummy);
 #else
     return !!(pLock->pvPage);
@@ -425,7 +425,7 @@ VMMDECL(int)        PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr);
 VMMDECL(int)        PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr);
 VMMDECL(void)       PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 VMMDECL(void)       PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-#ifndef IN_GC /* Only ring 0 & 3. */
+#ifndef IN_RC /* Only ring 0 & 3. */
 VMMDECL(int)        PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
@@ -433,7 +433,7 @@ VMMDECL(int)        PGMPhysSimpleWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const voi
 VMMDECL(int)        PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 VMMDECL(int)        PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 VMMDECL(int)        PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb);
 #ifdef VBOX_STRICT
 VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVM pVM);
@@ -441,7 +441,7 @@ VMMDECL(unsigned)   PGMAssertNoMappingConflicts(PVM pVM);
 VMMDECL(unsigned)   PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4);
 #endif /* VBOX_STRICT */
 
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
 VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
@@ -449,13 +449,13 @@ VMMDECL(int)        PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 #endif
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_pgm_gc  The PGM Guest Context API
  * @ingroup grp_pgm
  * @{
  */
 /** @} */
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 
 #ifdef IN_RING0
