@@ -783,7 +783,7 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         LogRel(("VBVA: Disabled.\n"));
     }
 
-    LogFlowFunc (("VideoAccelEnable: rc = %Vrc.\n", rc));
+    LogFlowFunc (("VideoAccelEnable: rc = %Rrc.\n", rc));
 
     return rc;
 }
@@ -1651,7 +1651,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     }
     else if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
-            tr ("Could not take a screenshot (%Vrc)"), rcVBox);
+            tr ("Could not take a screenshot (%Rrc)"), rcVBox);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -1712,7 +1712,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     }
     else if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
-            tr ("Could not draw to the screen (%Vrc)"), rcVBox);
+            tr ("Could not draw to the screen (%Rrc)"), rcVBox);
 //@todo
 //    else
 //    {
@@ -1758,7 +1758,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
-            tr ("Could not invalidate and update the screen (%Vrc)"), rcVBox);
+            tr ("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -2498,7 +2498,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
     pData->pDisplay = (Display *)pv;        /** @todo Check this cast! */

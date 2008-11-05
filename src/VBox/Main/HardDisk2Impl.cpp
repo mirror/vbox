@@ -141,7 +141,7 @@ HRESULT HardDisk2::Task::startThread()
                               0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                               "HardDisk::Task");
     ComAssertMsgRCRet (vrc,
-        ("Could not create HardDisk::Task thread (%Vrc)\n", vrc), E_FAIL);
+        ("Could not create HardDisk::Task thread (%Rrc)\n", vrc), E_FAIL);
 
     return S_OK;
 }
@@ -1316,7 +1316,7 @@ HRESULT HardDisk2::compareLocationTo (const char *aLocation, int &aResult)
         int vrc = mVirtualBox->calculateFullPath (location, location);
         if (RT_FAILURE (vrc))
             return setError (E_FAIL,
-                tr ("Invalid hard disk storage file location '%s' (%Vrc)"),
+                tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
                 location.raw(), vrc);
 
         aResult = RTPathCompare (locationFull, location);
@@ -2223,7 +2223,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
     int vrc = mVirtualBox->calculateFullPath (location, locationFull);
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Invalid hard disk storage file location '%s' (%Vrc)"),
+            tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
             location.raw(), vrc);
 
     m.location = location;
@@ -2502,7 +2502,7 @@ HRESULT HardDisk2::queryInfo()
         m.lastAccessError = lastAccessError;
 
         LogWarningFunc (("'%ls' is not accessible (error='%ls', "
-                         "rc=%Rhrc, vrc=%Vrc)\n",
+                         "rc=%Rhrc, vrc=%Rrc)\n",
                          m.locationFull.raw(), m.lastAccessError.raw(),
                          rc, vrc));
     }
@@ -2588,15 +2588,15 @@ HRESULT HardDisk2::unregisterWithVirtualBox()
  *
  * The error message is returned prepended with a dot and a space, like this:
  * <code>
- *   ". <error_text> (%Vrc)"
+ *   ". <error_text> (%Rrc)"
  * </code>
- * to make it easily appendable to a more general error message. The @c %Vrc
+ * to make it easily appendable to a more general error message. The @c %Rrc
  * format string is given @a aVRC as an argument.
  *
  * If there is no last error message collected by vdErrorCall or if it is a
  * null or empty string, then this function returns the following text:
  * <code>
- *   " (%Vrc)"
+ *   " (%Rrc)"
  * </code>
  *
  * @note Doesn't do any object locking; it is assumed that the caller makes sure
@@ -2609,9 +2609,9 @@ Utf8Str HardDisk2::vdError (int aVRC)
     Utf8Str error;
 
     if (mm.vdError.isEmpty())
-        error = Utf8StrFmt (" (%Vrc)", aVRC);
+        error = Utf8StrFmt (" (%Rrc)", aVRC);
     else
-        error = Utf8StrFmt (". %s (%Vrc)", mm.vdError.raw(), aVRC);
+        error = Utf8StrFmt (". %s (%Rrc)", mm.vdError.raw(), aVRC);
 
     mm.vdError.setNull();
 

@@ -263,7 +263,7 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR NewBaseAddre
      * Do it.
      */
     int rc = pMod->pOps->pfnRelocate(pMod, pvBits, NewBaseAddress, OldBaseAddress, pfnGetImport, pvUser);
-    LogFlow(("RTLdrRelocate: returns %Vrc\n", rc));
+    LogFlow(("RTLdrRelocate: returns %Rrc\n", rc));
     return rc;
 }
 

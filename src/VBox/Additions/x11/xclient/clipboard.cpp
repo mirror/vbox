@@ -166,7 +166,7 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
     int rc;
     LogFlowFunc(("u32Format=%d, pv=%p, cb=%d\n", u32Format, pv, cb));
     rc = VbglR3ClipboardWriteData(g_ctx.client, u32Format, pv, cb);
-    LogFlowFunc(("rc=%Vrc\n", rc));
+    LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -572,7 +572,7 @@ static int vboxClipboardReportFormats(uint32_t u32Formats)
     int rc;
     LogFlowFunc(("u32Formats=%d\n", u32Formats));
     rc = VbglR3ClipboardReportFormats(g_ctx.client, u32Formats);
-    LogFlowFunc(("rc=%Vrc\n", rc));
+    LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -881,7 +881,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Rrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -898,7 +898,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16WinToLin(pu16HostText, cwHostText, pu16GuestText, cwGuestText);
     if (rc != VINF_SUCCESS)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Rrc\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16HostText));
         XtFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
@@ -942,7 +942,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardReadHostData returned %Rrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -961,7 +961,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     RTMemFree(reinterpret_cast<char *>(pu16HostText));
     if (rc != VINF_SUCCESS)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Rrc\n", rc));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1021,7 +1021,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
                                    reinterpret_cast<void **>(&pu16HostText), &cbHostText);
     if ((rc != VINF_SUCCESS) || cbHostText == 0)
     {
-        LogFlow(("vboxClipboardConvertCText: vboxClipboardReadHostData returned %Vrc, %d bytes of data\n", rc, cbHostText));
+        LogFlow(("vboxClipboardConvertCText: vboxClipboardReadHostData returned %Rrc, %d bytes of data\n", rc, cbHostText));
         g_ctx.hostFormats = 0;
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1041,7 +1041,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     RTMemFree(reinterpret_cast<char *>(pu16HostText));
     if (rc != VINF_SUCCESS)
     {
-        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Vrc\n", rc));
+        LogFlow(("vboxClipboardConvertUtf16: vboxClipboardUtf16WinToLin returned %Rrc\n", rc));
         RTMemFree(reinterpret_cast<char *>(pu16GuestText));
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1061,7 +1061,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     RTMemFree(reinterpret_cast<char *>(pu16GuestText));
     if (rc != VINF_SUCCESS)
     {
-        Log(("vboxClipboardConvertCText: RTUtf16ToUtf8Ex failed: rc=%Vrc\n", rc));
+        Log(("vboxClipboardConvertCText: RTUtf16ToUtf8Ex failed: rc=%Rrc\n", rc));
         XtFree(pcUtf8Text);
         LogFlowFunc(("rc = false\n"));
         return false;
@@ -1382,7 +1382,7 @@ int vboxClipboardConnect(void)
     rc = VbglR3ClipboardConnect(&g_ctx.client);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Error connecting to host. rc=%Vrc\n", rc));
+        LogRel(("Error connecting to host. rc=%Rrc\n", rc));
         return rc;
     }
     if (!g_ctx.client)
@@ -1391,7 +1391,7 @@ int vboxClipboardConnect(void)
         return VERR_NOT_SUPPORTED;
     }
     g_ctx.eOwner = HOST;
-    LogFlowFunc(("g_ctx.client=%u rc=%Vrc\n", g_ctx.client, rc));
+    LogFlowFunc(("g_ctx.client=%u rc=%Rrc\n", g_ctx.client, rc));
     return rc;
 }
 

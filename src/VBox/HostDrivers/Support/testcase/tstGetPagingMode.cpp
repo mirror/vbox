@@ -89,10 +89,10 @@ int main(int argc, char **argv)
         }
 
         int rc2 = SUPTerm();
-        RTPrintf("SUPTerm -> rc=%Vrc\n", rc2);
+        RTPrintf("SUPTerm -> rc=%Rrc\n", rc2);
     }
     else
-        RTPrintf("SUPR3Init -> rc=%Vrc\n", rc);
+        RTPrintf("SUPR3Init -> rc=%Rrc\n", rc);
 
     return !RT_SUCCESS(rc);
 }

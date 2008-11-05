@@ -148,7 +148,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
     /* Anyone who needs this can re-enable it locally */
-    /* dprintf (("VbglHGCMCall Allocated gr %p, rc = %Vrc, cbParms = %d\n", pHGCMCall, rc, cbParms)); */
+    /* dprintf (("VbglHGCMCall Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms)); */
 
     if (RT_SUCCESS(rc))
     {
@@ -215,7 +215,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
             rc = VbglGRPerform (&pHGCMCall->header.header);
 
             /* Anyone who needs this can re-enable it locally */
-            /* dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result)); */
+            /* dprintf (("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result)); */
 
             /** If the call failed, but as a result of the request itself, then pretend success
              *  Upper layers will interpret the result code in the packet.

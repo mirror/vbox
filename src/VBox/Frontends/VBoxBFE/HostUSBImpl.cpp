@@ -254,7 +254,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
         hostDevice->setCaptured();
     else
     {
-        Log (("Console::AttachUSBDevice: Failed to create proxy device for '%s' %Vuuid, vrc=%Vrc\n", Address.c_str(),
+        Log (("Console::AttachUSBDevice: Failed to create proxy device for '%s' %Vuuid, vrc=%Rrc\n", Address.c_str(),
         &Uuid, vrc));
         AssertRC (vrc);
     /* michael: I presume this is not needed. */
@@ -269,7 +269,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
                 hrc = setError (E_FAIL, tr ("Not permitted to open the USB device, check usbfs options"));
                 break;
             default:
-                hrc = setError (E_FAIL, tr ("Failed to create USB proxy device: %Vrc"), vrc);
+                hrc = setError (E_FAIL, tr ("Failed to create USB proxy device: %Rrc"), vrc);
                 break;
         }
         return hrc;
@@ -317,6 +317,6 @@ STDMETHODIMP HostUSB::DetachUSBDevice (HostUSBDevice *aDevice)
     }
     if (RT_SUCCESS (vrc))
         return S_OK;
-    Log (("Console::AttachUSBDevice: Failed to detach the device from the USB controller, vrc=%Vrc.\n", vrc));
-    return(setError (E_UNEXPECTED, tr ("Failed to destroy the USB proxy device: %Vrc"), vrc));
+    Log (("Console::AttachUSBDevice: Failed to detach the device from the USB controller, vrc=%Rrc.\n", vrc));
+    return(setError (E_UNEXPECTED, tr ("Failed to destroy the USB proxy device: %Rrc"), vrc));
 }

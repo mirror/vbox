@@ -229,7 +229,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         }
         else
         {
-            Log (("vbsfBuildFullPath: RTUtf16ToUtf8 failed with %Vrc\n", rc));
+            Log (("vbsfBuildFullPath: RTUtf16ToUtf8 failed with %Rrc\n", rc));
         }
     }
     else
@@ -500,7 +500,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         }
         *ppszFullPath = pszFullPath;
 
-        LogFlow(("vbsfBuildFullPath: %s rc=%Vrc\n", pszFullPath, rc));
+        LogFlow(("vbsfBuildFullPath: %s rc=%Rrc\n", pszFullPath, rc));
     }
 
     return rc;
@@ -809,7 +809,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
     if (fNoError)
         rc = VINF_SUCCESS;
 
-    LogFlow(("vbsfOpenFile: rc = %Vrc\n", rc));
+    LogFlow(("vbsfOpenFile: rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -918,7 +918,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
     {
         pParms->Handle = handle;
     }
-    LogFlow(("vbsfOpenDir: rc = %Vrc\n", rc));
+    LogFlow(("vbsfOpenDir: rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1060,7 +1060,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
             RTFSOBJINFO info;
 
             rc = RTPathQueryInfo (pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
-            LogFlow(("RTPathQueryInfo returned %Vrc\n", rc));
+            LogFlow(("RTPathQueryInfo returned %Rrc\n", rc));
 
             if (RT_SUCCESS(rc))
             {
@@ -1122,7 +1122,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
         vbsfFreeFullPath(pszFullPath);
     }
 
-    Log(("vbsfCreate: handle = %RX64 rc = %Vrc result=%x\n", (uint64_t)pParms->Handle, rc, pParms->Result));
+    Log(("vbsfCreate: handle = %RX64 rc = %Rrc result=%x\n", (uint64_t)pParms->Handle, rc, pParms->Result));
 
     return rc;
 }
@@ -1189,7 +1189,7 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 
     rc = RTFileRead(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
     *pcbBuffer = (uint32_t)count;
-    Log(("RTFileRead returned %Vrc bytes read %x\n", rc, count));
+    Log(("RTFileRead returned %Rrc bytes read %x\n", rc, count));
     return rc;
 }
 
@@ -1226,7 +1226,7 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 
     rc = RTFileWrite(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
     *pcbBuffer = (uint32_t)count;
-    Log(("RTFileWrite returned %Vrc bytes written %x\n", rc, count));
+    Log(("RTFileWrite returned %Rrc bytes written %x\n", rc, count));
     return rc;
 }
 
@@ -1522,7 +1522,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     }
     if (rc != VINF_SUCCESS)
     {
-        Log(("RTFileSetTimes failed with %Vrc\n", rc));
+        Log(("RTFileSetTimes failed with %Rrc\n", rc));
         Log(("AccessTime       %VX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
         Log(("ModificationTime %VX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
         Log(("ChangeTime       %VX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
@@ -1539,7 +1539,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
             rc = RTFileSetMode((RTFILE)pHandle->file.Handle, pSFDEntry->Attr.fMode);
             if (rc != VINF_SUCCESS)
             {
-                Log(("RTFileSetMode %x failed with %Vrc\n", pSFDEntry->Attr.fMode, rc));
+                Log(("RTFileSetMode %x failed with %Rrc\n", pSFDEntry->Attr.fMode, rc));
                 /* silent failure, because this tends to fail with e.g. windows guest & linux host */
                 rc = VINF_SUCCESS;
             }
@@ -1646,7 +1646,7 @@ int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, 
     else AssertFailed();
 
 exit:
-    AssertMsg(rc == VINF_SUCCESS, ("failure: rc = %Vrc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS, ("failure: rc = %Rrc\n", rc));
     /* free the path string */
     vbsfFreeFullPath(pszFullPath);
     return rc;

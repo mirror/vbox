@@ -661,7 +661,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
             }
 
             /*
-             * iprt status code: %Vrc, %Vrs, %Vrf, %Vra.
+             * iprt status code: %Rrc, %Rrs, %Rrf, %Rra.
              */
             case 'r':
             {

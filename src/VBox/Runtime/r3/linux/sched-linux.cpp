@@ -585,7 +585,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
     }
 
 #ifdef THREAD_LOGGING
-    LogFlow(("rtProcNativeSetPriority: returns %Vrc enmPriority=%d\n", rc, enmPriority));
+    LogFlow(("rtProcNativeSetPriority: returns %Rrc enmPriority=%d\n", rc, enmPriority));
     rtSchedDumpPriority();
 #endif
     return rc;
@@ -625,7 +625,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
     else
     {
         rc = RTErrConvertFromErrno(errno);
-        AssertMsgFailed(("setpriority(,, %d) -> errno=%d rc=%Vrc\n", iPriority, errno, rc));
+        AssertMsgFailed(("setpriority(,, %d) -> errno=%d rc=%Rrc\n", iPriority, errno, rc));
         rc = VINF_SUCCESS; //non-fatal for now.
     }
 

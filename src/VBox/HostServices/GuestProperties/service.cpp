@@ -712,7 +712,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(VBoxHGCMParmPtrConstGet(&paParms[0],
                (const void **) &pcchPatterns, &cchPatterns))  /* patterns */
-        || RT_FAILURE(VBoxHGCMParmPtrGet(&paParms[1], 
+        || RT_FAILURE(VBoxHGCMParmPtrGet(&paParms[1],
                (void **) &pchBuf, &cchBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
@@ -1011,7 +1011,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
         rc = VERR_NO_MEMORY;
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 

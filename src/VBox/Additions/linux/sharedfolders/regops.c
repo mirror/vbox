@@ -37,7 +37,7 @@ sf_reg_read_aux (const char *caller, struct sf_glob_info *sf_g,
         int rc = vboxCallRead (&client_handle, &sf_g->map, sf_r->handle,
                                pos, nread, buf, false /* already locked? */);
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallRead failed.  caller=%s, rc=%Vrc\n",
+                LogFunc(("vboxCallRead failed.  caller=%s, rc=%Rrc\n",
                          caller, rc));
                 return -EPROTO;
         }
@@ -165,7 +165,7 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
                                     pos, &nwritten, tmp, false /* already locked? */);
                 if (RT_FAILURE (rc)) {
                         err = -EPROTO;
-                        LogFunc(("vboxCallWrite(%s) failed rc=%Vrc\n",
+                        LogFunc(("vboxCallWrite(%s) failed rc=%Rrc\n",
                                  sf_i->path->String.utf8, rc));
                         goto fail;
                 }
@@ -268,7 +268,7 @@ sf_reg_open (struct inode *inode, struct file *file)
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
 
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallCreate failed flags=%d,%#x rc=%Vrc\n",
+                LogFunc(("vboxCallCreate failed flags=%d,%#x rc=%Rrc\n",
                          file->f_flags, params.CreateFlags, rc));
                 kfree (sf_r);
                 return -RTErrConvertToErrno(rc);
@@ -310,7 +310,7 @@ sf_reg_release (struct inode *inode, struct file *file)
 
         rc = vboxCallClose (&client_handle, &sf_g->map, sf_r->handle);
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallClose failed rc=%Vrc\n", rc));
+                LogFunc(("vboxCallClose failed rc=%Rrc\n", rc));
         }
 
         kfree (sf_r);

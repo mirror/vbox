@@ -170,7 +170,7 @@ HRESULT VirtualBox::init()
         if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Could not create the VirtualBox home directory '%s'"
-                    "(%Vrc)"),
+                    "(%Rrc)"),
                 homeDir, vrc);
 
         unconst (mData.mHomeDir) = homeDir;
@@ -204,7 +204,7 @@ HRESULT VirtualBox::init()
             if (RT_FAILURE (vrc))
             {
                 rc = setError (E_FAIL, tr ("Could not create the default settings file "
-                                           "'%s' (%Vrc)"),
+                                           "'%s' (%Rrc)"),
                                        vboxConfigFile.raw(), vrc);
             }
             else
@@ -433,7 +433,7 @@ void VirtualBox::uninit()
              */
             int vrc = RTThreadWait (mAsyncEventThread, 60000, NULL);
             if (RT_FAILURE (vrc))
-                LogWarningFunc (("RTThreadWait(%RTthrd) -> %Vrc\n",
+                LogWarningFunc (("RTThreadWait(%RTthrd) -> %Rrc\n",
                                  mAsyncEventThread, vrc));
         }
         else
@@ -2026,7 +2026,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
                               0, RTTHREADTYPE_MAIN_WORKER,
                               RTTHREADFLAGS_WAITABLE, "SVCHelper");
 
-    ComAssertMsgRCRet (vrc, ("Could not create SVCHelper thread (%Vrc)\n", vrc),
+    ComAssertMsgRCRet (vrc, ("Could not create SVCHelper thread (%Rrc)\n", vrc),
                        E_FAIL);
 
     /* d is now owned by SVCHelperClientThread(), so release it */
@@ -2074,7 +2074,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         if (RT_FAILURE (vrc))
         {
             rc = setError (E_FAIL,
-                tr ("Could not create the communication channel (%Vrc)"), vrc);
+                tr ("Could not create the communication channel (%Rrc)"), vrc);
             break;
         }
 
@@ -2119,7 +2119,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
                         tr ("Operatiion cancelled by the user"));
                 else
                     rc = setError (E_FAIL,
-                        tr ("Could not launch a privileged process '%s' (%Vrc)"),
+                        tr ("Could not launch a privileged process '%s' (%Rrc)"),
                         exePath, vrc2);
                 break;
             }
@@ -2131,7 +2131,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
             if (RT_FAILURE (vrc))
             {
                 rc = setError (E_FAIL,
-                    tr ("Could not launch a process '%s' (%Vrc)"), exePath, vrc);
+                    tr ("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
                 break;
             }
         }
@@ -2155,7 +2155,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         if (SUCCEEDED (rc) && RT_FAILURE (vrc))
         {
             rc = setError (E_FAIL,
-                tr ("Could not operate the communication channel (%Vrc)"), vrc);
+                tr ("Could not operate the communication channel (%Rrc)"), vrc);
             break;
         }
     }
@@ -2698,7 +2698,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
         if (RT_FAILURE (vrc))
             return setError (E_FAIL,
-                tr ("Invalid image file location '%ls' (%Vrc)"),
+                tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
 
@@ -2770,7 +2770,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
         if (RT_FAILURE (vrc))
             return setError (E_FAIL,
-                tr ("Invalid image file location '%ls' (%Vrc)"),
+                tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
 
@@ -3690,7 +3690,7 @@ HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
         if (RT_FAILURE (vrc))
         {
             return setError (E_FAIL,
-                tr ("Could not create the directory '%s' (%Vrc)"),
+                tr ("Could not create the directory '%s' (%Rrc)"),
                 dir.raw(), vrc);
         }
     }
@@ -3759,7 +3759,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
             throw;
 
         return setError (E_FAIL,
-                         tr ("Could not load the settings file '%s' (%Vrc)"),
+                         tr ("Could not load the settings file '%s' (%Rrc)"),
                          aFile.uri(), err.rc());
     }
     catch (const XmlTreeBackend::Error &err)
@@ -3810,7 +3810,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
     {
         /* this is the only expected exception for now */
         return setError (E_FAIL,
-                         tr ("Could not save the settings file '%s' (%Vrc)"),
+                         tr ("Could not save the settings file '%s' (%Rrc)"),
                          aFile.uri(), err.rc());
     }
 
@@ -3851,7 +3851,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
 
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Could not copy the settings file '%s' to '%s' (%Vrc)"),
+            tr ("Could not copy the settings file '%s' to '%s' (%Rrc)"),
             of.raw(), nf.raw(), vrc);
 
     aBakFileName = nf;
@@ -3945,7 +3945,7 @@ HRESULT VirtualBox::lockConfig()
              */
             if (vrc != VERR_FILE_NOT_FOUND)
                 rc = setError (E_FAIL,
-                    tr ("Could not lock the settings file '%ls' (%Vrc)"),
+                    tr ("Could not lock the settings file '%ls' (%Rrc)"),
                     mData.mCfgFile.mName.raw(), vrc);
         }
 
@@ -4175,7 +4175,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             else
             {
                 AssertMsg (vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED,
-                           ("RTSemEventWait returned %Vrc\n", vrc));
+                           ("RTSemEventWait returned %Rrc\n", vrc));
 
                 /* are there any mutexes? */
                 if (cnt > 0)
@@ -4424,7 +4424,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                         }
                         else
                         {
-                            LogFlowFunc (("pid %d (%x) was NOT reaped, vrc=%Vrc\n",
+                            LogFlowFunc (("pid %d (%x) was NOT reaped, vrc=%Rrc\n",
                                           pid, pid, vrc));
                             if (vrc != VERR_PROCESS_RUNNING)
                             {

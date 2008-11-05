@@ -414,7 +414,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     int vrc = mParent->calculateFullPath (Utf8Str (aConfigFile), configFileFull);
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Invalid machine settings file name '%ls' (%Vrc)"),
+            tr ("Invalid machine settings file name '%ls' (%Rrc)"),
             aConfigFile, vrc);
 
     mData->mConfigFileFull = configFileFull;
@@ -452,7 +452,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             {
                 if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
                     rc = setError (E_FAIL,
-                        tr ("Invalid machine settings file name '%ls' (%Vrc)"),
+                        tr ("Invalid machine settings file name '%ls' (%Rrc)"),
                         mData->mConfigFileFull.raw(), vrc);
             }
         }
@@ -1327,7 +1327,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
     int vrc = calculateFullPath (snapshotFolder, snapshotFolder);
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Invalid snapshot folder '%ls' (%Vrc)"),
+            tr ("Invalid snapshot folder '%ls' (%Rrc)"),
                 aSnapshotFolder, vrc);
 
     mUserData.backup();
@@ -2695,7 +2695,7 @@ STDMETHODIMP Machine::DeleteSettings()
         int vrc = RTFileDelete (Utf8Str (mData->mConfigFileFull));
         if (RT_FAILURE (vrc))
             return setError (E_FAIL,
-                tr ("Could not delete the settings file '%ls' (%Vrc)"),
+                tr ("Could not delete the settings file '%ls' (%Rrc)"),
                 mData->mConfigFileFull.raw(), vrc);
 
         /* delete the Logs folder, nothing important should be left
@@ -3735,7 +3735,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Could not launch a process for the machine '%ls' (%Vrc)"),
+            tr ("Could not launch a process for the machine '%ls' (%Rrc)"),
             mUserData->mName.raw(), vrc);
 
     LogFlowThisFunc (("launched.pid=%d(0x%x)\n", pid, pid));
@@ -4720,7 +4720,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
                 if (RT_FAILURE (vrc))
                 {
                     throw setError (E_FAIL,
-                        tr ("Invalid saved state file path '%ls' (%Vrc)"),
+                        tr ("Invalid saved state file path '%ls' (%Rrc)"),
                         stateFilePath.raw(), vrc);
                 }
                 mSSData->mStateFilePath = stateFilePathFull;
@@ -4856,7 +4856,7 @@ HRESULT Machine::loadSnapshot (const settings::Key &aNode,
             int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
             if (RT_FAILURE (vrc))
                 return setError (E_FAIL,
-                                 tr ("Invalid saved state file path '%ls' (%Vrc)"),
+                                 tr ("Invalid saved state file path '%ls' (%Rrc)"),
                                  stateFilePath.raw(), vrc);
 
             stateFilePath = stateFilePathFull;
@@ -5595,7 +5595,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                     {
                         rc = setError (E_FAIL,
                             tr ("Could not rename the directory '%s' to '%s' "
-                                "to save the settings file (%Vrc)"),
+                                "to save the settings file (%Rrc)"),
                             configDir.raw(), newConfigDir.raw(), vrc);
                         break;
                     }
@@ -5621,7 +5621,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                     {
                         rc = setError (E_FAIL,
                             tr ("Could not rename the settings file '%s' to '%s' "
-                                "(%Vrc)"),
+                                "(%Rrc)"),
                             configFile.raw(), newConfigFile.raw(), vrc);
                         break;
                     }
@@ -5715,7 +5715,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
             {
                 return setError (E_FAIL,
                     tr ("Could not create a directory '%s' "
-                        "to save the settings file (%Vrc)"),
+                        "to save the settings file (%Rrc)"),
                     path.raw(), vrc);
             }
         }
@@ -5735,7 +5735,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         {
             mData->mHandleCfgFile = NIL_RTFILE;
             return setError (E_FAIL,
-                tr ("Could not create the settings file '%s' (%Vrc)"),
+                tr ("Could not create the settings file '%s' (%Rrc)"),
                 path.raw(), vrc);
         }
         /* we do not close the file to simulate lockConfig() */
@@ -7118,7 +7118,7 @@ HRESULT Machine::lockConfig()
             mData->mHandleCfgFile = NIL_RTFILE;
 
             rc = setError (E_FAIL,
-                tr ("Could not lock the settings file '%ls' (%Vrc)"),
+                tr ("Could not lock the settings file '%ls' (%Rrc)"),
                 mData->mConfigFileFull.raw(), vrc);
         }
     }
@@ -8356,7 +8356,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
     int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Invalid saved state file path '%ls' (%Vrc)"),
+            tr ("Invalid saved state file path '%ls' (%Rrc)"),
                 aSavedStateFile, vrc);
 
     mSSData->mStateFilePath = stateFilePathFull;
@@ -9535,7 +9535,7 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
 
         if (RT_FAILURE (vrc))
             rc = setError (E_FAIL,
-                tr ("Could not copy the state file '%ls' to '%ls' (%Vrc)"),
+                tr ("Could not copy the state file '%ls' to '%ls' (%Rrc)"),
                 stateFrom.raw(), stateTo.raw());
     }
 
@@ -10051,7 +10051,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                 else
                 {
                     throw setError (E_FAIL,
-                        tr ("Could not copy the state file '%s' to '%s' (%Vrc)"),
+                        tr ("Could not copy the state file '%s' to '%s' (%Rrc)"),
                         snapStateFilePath.raw(), stateFilePath.raw(), vrc);
                 }
             }

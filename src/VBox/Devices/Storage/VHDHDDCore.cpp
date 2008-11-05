@@ -981,7 +981,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
             }
         }
         else
-            AssertMsgFailed(("Reading block bitmap failed rc=%Vrc\n", rc));
+            AssertMsgFailed(("Reading block bitmap failed rc=%Rrc\n", rc));
     }
     else
     {

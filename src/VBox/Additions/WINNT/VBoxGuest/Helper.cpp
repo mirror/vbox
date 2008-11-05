@@ -234,7 +234,7 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
         if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev."
-                      "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                      "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
 
         rc = RT_SUCCESS(rc) ? req->header.rc : rc;

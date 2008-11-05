@@ -261,7 +261,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
         {
             DWORD Err = GetLastError();
             rc = RTErrConvertFromWin32(Err);
-            Log(("RTFsQuerySizes(%s,): GetDiskFreeSpaceEx failed with lasterr %d (%Vrc)\n",
+            Log(("RTFsQuerySizes(%s,): GetDiskFreeSpaceEx failed with lasterr %d (%Rrc)\n",
                  pszFsPath, Err, rc));
         }
     }
@@ -290,7 +290,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
         {
             DWORD Err = GetLastError();
             rc = RTErrConvertFromWin32(Err);
-            Log(("RTFsQuerySizes(%s,): GetDiskFreeSpace failed with lasterr %d (%Vrc)\n",
+            Log(("RTFsQuerySizes(%s,): GetDiskFreeSpace failed with lasterr %d (%Rrc)\n",
                  pszFsPath, Err, rc));
         }
     }
@@ -344,7 +344,7 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
     {
         DWORD Err = GetLastError();
         rc = RTErrConvertFromWin32(Err);
-        Log(("RTFsQuerySizes(%s,): GetDiskFreeSpaceEx failed with lasterr %d (%Vrc)\n",
+        Log(("RTFsQuerySizes(%s,): GetDiskFreeSpaceEx failed with lasterr %d (%Rrc)\n",
              pszFsPath, Err, rc));
     }
 
@@ -406,7 +406,7 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     {
         DWORD Err = GetLastError();
         rc = RTErrConvertFromWin32(Err);
-        Log(("RTFsQuerySizes(%s,): GetVolumeInformation failed with lasterr %d (%Vrc)\n",
+        Log(("RTFsQuerySizes(%s,): GetVolumeInformation failed with lasterr %d (%Rrc)\n",
              pszFsPath, Err, rc));
     }
 

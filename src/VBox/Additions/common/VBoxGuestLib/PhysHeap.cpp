@@ -175,7 +175,7 @@ DECLINLINE(int) vbglPhysHeapEnter (void)
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHeap);
 
     VBGL_PH_ASSERTMsg(RT_SUCCESS(rc),
-                     ("Failed to request heap mutex, rc = %Vrc\n", rc));
+                     ("Failed to request heap mutex, rc = %Rrc\n", rc));
 
     return rc;
 }

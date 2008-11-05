@@ -157,7 +157,7 @@ sf_stat (const char *caller, struct sf_glob_info *sf_g,
                  path->String.utf8, params.CreateFlags));
         rc = vboxCallCreate (&client_handle, &sf_g->map, path, &params);
         if (RT_FAILURE (rc)) {
-                LogFunc(("vboxCallCreate(%s) failed.  caller=%s, rc=%Vrc\n",
+                LogFunc(("vboxCallCreate(%s) failed.  caller=%s, rc=%Rrc\n",
                          path->String.utf8, rc, caller));
                 return -EPROTO;
         }
@@ -610,7 +610,7 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 
                         default:
                                 err = -RTErrConvertToErrno (rc);
-                                LogFunc(("vboxCallDirInfo failed rc=%Vrc\n", rc));
+                                LogFunc(("vboxCallDirInfo failed rc=%Rrc\n", rc));
                                 goto fail1;
                 }
 

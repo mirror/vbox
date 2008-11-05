@@ -757,7 +757,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -792,11 +792,11 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
             rc = HGCMHostCall("VBoxSharedFolders", SHFL_FN_SET_STATUS_LED, 1, &parm);
         }
         else
-            AssertMsgFailed(("pfnQueryStatusLed failed with %Vrc (pLed=%x)\n", rc, pLed));
+            AssertMsgFailed(("pfnQueryStatusLed failed with %Rrc (pLed=%x)\n", rc, pLed));
     }
     else
     {
-        LogRel(("Failed to load Shared Folders service %Vrc\n", rc));
+        LogRel(("Failed to load Shared Folders service %Rrc\n", rc));
     }
 
     bool fEnabled;
@@ -813,7 +813,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         }
         else
         {
-            LogRel(("Failed to load Shared OpenGL service %Vrc\n", rc));
+            LogRel(("Failed to load Shared OpenGL service %Rrc\n", rc));
         }
     }
 
@@ -835,11 +835,11 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
 
             rc = HGCMHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
             if (!RT_SUCCESS(rc))
-                AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Vrc\n", rc));
+                AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Rrc\n", rc));
         }
         else
         {
-            LogRel(("Failed to load Shared Chromium OpenGL service %Vrc\n", rc));
+            LogRel(("Failed to load Shared Chromium OpenGL service %Rrc\n", rc));
         }
     }
 

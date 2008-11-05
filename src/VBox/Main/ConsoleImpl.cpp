@@ -602,14 +602,14 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
                     }
                     else
                     {
-                        LogFlowFunc (("Wait for credentials judgement rc = %Vrc!!!\n", rc));
+                        LogFlowFunc (("Wait for credentials judgement rc = %Rrc!!!\n", rc));
                     }
 
                     LogFlowFunc (("Guest judgement %d\n", guestJudgement));
                 }
                 else
                 {
-                    LogFlowFunc (("Could not set credentials rc = %Vrc!!!\n", rc));
+                    LogFlowFunc (("Could not set credentials rc = %Rrc!!!\n", rc));
                 }
             }
 
@@ -894,7 +894,7 @@ HRESULT Console::loadDataFromSavedState()
 
     if (VBOX_FAILURE (vrc))
         rc = setError (E_FAIL,
-            tr ("The saved state file '%ls' is invalid (%Vrc). "
+            tr ("The saved state file '%ls' is invalid (%Rrc). "
                 "Discard the saved state and try again"),
                 savedStateFile.raw(), vrc);
 
@@ -1442,7 +1442,7 @@ STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
                               RTTHREADTYPE_MAIN_WORKER, 0,
                               "VMPowerDown");
     ComAssertMsgRCRet (vrc,
-         ("Could not create VMPowerDown thread (%Vrc)\n", vrc), E_FAIL);
+         ("Could not create VMPowerDown thread (%Rrc)\n", vrc), E_FAIL);
 
     /* task is now owned by powerDownThread(), so release it */
     task.release();
@@ -1483,7 +1483,7 @@ STDMETHODIMP Console::Reset()
     int vrc = VMR3Reset (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL, tr ("Could not reset the machine (%Vrc)"), vrc);
+        setError (E_FAIL, tr ("Could not reset the machine (%Rrc)"), vrc);
 
     LogFlowThisFunc (("mMachineState=%d, rc=%08X\n", mMachineState, rc));
     LogFlowThisFuncLeave();
@@ -1517,7 +1517,7 @@ STDMETHODIMP Console::Pause()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Could not suspend the machine execution (%Vrc)"), vrc);
+            tr ("Could not suspend the machine execution (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1555,7 +1555,7 @@ STDMETHODIMP Console::Resume()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Could not resume the machine execution (%Vrc)"), vrc);
+            tr ("Could not resume the machine execution (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1592,7 +1592,7 @@ STDMETHODIMP Console::PowerButton()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Controlled power off failed (%Vrc)"), vrc);
+            tr ("Controlled power off failed (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1633,7 +1633,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
             tr ("Checking if the ACPI Power Button event was handled by the "
-                "guest OS failed (%Vrc)"), vrc);
+                "guest OS failed (%Rrc)"), vrc);
 
     *aHandled = handled;
 
@@ -1709,7 +1709,7 @@ STDMETHODIMP Console::SleepButton()
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
         setError (E_FAIL,
-            tr ("Sending sleep button event failed (%Vrc)"), vrc);
+            tr ("Sending sleep button event failed (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
@@ -1800,7 +1800,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = setError (E_FAIL,
-                        tr ("Could not create a directory '%s' to save the state to (%Vrc)"),
+                        tr ("Could not create a directory '%s' to save the state to (%Rrc)"),
                         dir.raw(), vrc);
                     break;
                 }
@@ -1817,7 +1817,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         int vrc = RTThreadCreate (NULL, Console::saveStateThread, (void *) task.get(),
                                   0, RTTHREADTYPE_MAIN_WORKER, 0, "VMSave");
 
-        ComAssertMsgRCBreak (vrc, ("Could not create VMSave thread (%Vrc)\n", vrc),
+        ComAssertMsgRCBreak (vrc, ("Could not create VMSave thread (%Rrc)\n", vrc),
                              rc = E_FAIL);
 
         /* task is now owned by saveStateThread(), so release it */
@@ -2372,7 +2372,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
             int vrc = RTThreadCreate (NULL, Console::saveStateThread, (void *) task.get(),
                                       0, RTTHREADTYPE_MAIN_WORKER, 0, "VMTakeSnap");
 
-            ComAssertMsgRCBreak (vrc, ("Could not create VMTakeSnap thread (%Vrc)\n", vrc),
+            ComAssertMsgRCBreak (vrc, ("Could not create VMTakeSnap thread (%Rrc)\n", vrc),
                                  rc = E_FAIL);
 
             /* task is now owned by saveStateThread(), so release it */
@@ -2829,10 +2829,10 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
 
     if (pszPath)
         return setError (E_FAIL,
-            tr ("Could not mount the media/drive '%s' (%Vrc)"), pszPath, vrc);
+            tr ("Could not mount the media/drive '%s' (%Rrc)"), pszPath, vrc);
 
     return setError (E_FAIL,
-        tr ("Could not unmount the currently mounted media/drive (%Vrc)"), vrc);
+        tr ("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
 }
 
 
@@ -3152,7 +3152,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
             rcRet = rc;
     }
 
-    LogFlowFunc (("Returning %Vrc\n", rcRet));
+    LogFlowFunc (("Returning %Rrc\n", rcRet));
     return rcRet;
 }
 
@@ -4365,7 +4365,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
         int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile));
         if (VBOX_FAILURE (vrc))
             return setError (E_FAIL,
-                tr ("VM cannot start because the saved state file '%ls' is invalid (%Vrc). "
+                tr ("VM cannot start because the saved state file '%ls' is invalid (%Rrc). "
                     "Discard the saved state prior to starting the VM"),
                     savedStateFile.raw(), vrc);
     }
@@ -4514,7 +4514,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
 
-    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Vrc)\n", vrc),
+    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Rrc)\n", vrc),
                        E_FAIL);
 
     /* clear the locked media list to prevent unlocking on task destruction as
@@ -4851,7 +4851,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
             /* bad bad bad, but what to do? */
             mpVM = pVM;
             rc = setError (E_FAIL,
-                tr ("Could not destroy the machine.  (Error: %Vrc)"), vrc);
+                tr ("Could not destroy the machine.  (Error: %Rrc)"), vrc);
         }
 
         /* Complete the detaching of the USB devices. */
@@ -4865,7 +4865,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
     else
     {
         rc = setError (E_FAIL,
-            tr ("Could not power off the machine.  (Error: %Vrc)"), vrc);
+            tr ("Could not power off the machine.  (Error: %Rrc)"), vrc);
     }
 
     /* Finished with destruction. Note that if something impossible happened and
@@ -5197,7 +5197,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL,
                          tr ("Could not create a shared folder '%ls' "
-                             "mapped to '%ls' (%Vrc)"),
+                             "mapped to '%ls' (%Rrc)"),
                          aName, aData.mHostPath.raw(), vrc);
 
     return S_OK;
@@ -5245,7 +5245,7 @@ HRESULT Console::removeSharedFolder (INPTR BSTR aName)
     RTMemFree(pMapName);
     if (VBOX_FAILURE (vrc))
         return setError (E_FAIL,
-                         tr ("Could not remove the shared folder '%ls' (%Vrc)"),
+                         tr ("Could not remove the shared folder '%ls' (%Rrc)"),
                          aName, vrc);
 
     return S_OK;
@@ -5342,7 +5342,7 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                                           "VMPowerDown");
 
                 AssertMsgRCBreak (vrc,
-                    ("Could not create VMPowerDown thread (%Vrc)\n", vrc));
+                    ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
 
                 /* task is now owned by powerDownThread(), so release it */
                 task.release();
@@ -5533,7 +5533,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
     if (VBOX_FAILURE (vrc))
     {
-        LogWarningThisFunc (("Failed to create proxy device for '%s' {%Vuuid} (%Vrc)\n",
+        LogWarningThisFunc (("Failed to create proxy device for '%s' {%Vuuid} (%Rrc)\n",
                              Address.raw(), Uuid.ptr(), vrc));
 
         switch (vrc)
@@ -5548,7 +5548,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
                 break;
             default:
                 hrc = setError (E_FAIL,
-                    tr ("Failed to create a proxy device for the USB device.  (Error: %Vrc)"), vrc);
+                    tr ("Failed to create a proxy device for the USB device.  (Error: %Rrc)"), vrc);
                 break;
         }
     }
@@ -5608,7 +5608,7 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
         that->onUSBDeviceStateChange (device, true /* aAttached */, NULL);
     }
 
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFunc (("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
 }
@@ -5705,7 +5705,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
         that->onUSBDeviceStateChange (device, false /* aAttached */, NULL);
     }
 
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFunc (("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
 }
@@ -5965,7 +5965,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
         }
         else
         {
-            LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Vrc\n", rcVBox));
+            LogRel(("Configuration error: Failed to open /dev/net/tun rc=%Rrc\n", rcVBox));
             switch (rcVBox)
             {
                 case VERR_ACCESS_DENIED:
@@ -5973,7 +5973,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
                     rc = rcVBox;
                     break;
                 default:
-                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %Vrc"), rcVBox);
+                    rc = setError(E_FAIL, tr ("Could not set up the host networking device: %Rrc"), rcVBox);
                     break;
             }
         }
@@ -6190,10 +6190,10 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
 
     /* append to the existing error message if any */
     if (!task->mErrorMsg.isEmpty())
-        task->mErrorMsg = Utf8StrFmt ("%s.\n%N (%Vrc)", task->mErrorMsg.raw(),
+        task->mErrorMsg = Utf8StrFmt ("%s.\n%N (%Rrc)", task->mErrorMsg.raw(),
                                       pszFormat, &va2, rc, rc);
     else
-        task->mErrorMsg = Utf8StrFmt ("%N (%Vrc)",
+        task->mErrorMsg = Utf8StrFmt ("%N (%Rrc)",
                                       pszFormat, &va2, rc, rc);
 
     va_end (va2);
@@ -6593,10 +6593,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                     break;
                 }
                 default:
-                    errMsg = Utf8StrFmt (tr ("Failed to launch VRDP server (%Vrc)"),
+                    errMsg = Utf8StrFmt (tr ("Failed to launch VRDP server (%Rrc)"),
                                          vrc);
             }
-            LogRel (("Failed to launch VRDP server (%Vrc), error message: '%s'\n",
+            LogRel (("Failed to launch VRDP server (%Rrc), error message: '%s'\n",
                      vrc, errMsg.raw()));
             throw setError (E_FAIL, errMsg);
         }
@@ -6768,9 +6768,9 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                  * appropriate error message themselves.
                  */
                 AssertMsgFailed (("Missing error message during powerup for "
-                                  "status code %Vrc\n", vrc));
+                                  "status code %Rrc\n", vrc));
                 task->mErrorMsg = Utf8StrFmt (
-                    tr ("Failed to start VM execution (%Vrc)"), vrc);
+                    tr ("Failed to start VM execution (%Rrc)"), vrc);
             }
 
             /* Set the error message as the COM error.
@@ -6819,7 +6819,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         /* The progress object will fetch the current error info */
         task->mProgress->notifyComplete (rc);
 
-        LogRel (("Power up failed (vrc=%Vrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
+        LogRel (("Power up failed (vrc=%Rrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
 
 #if defined(RT_OS_WINDOWS)
@@ -6850,7 +6850,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
     HRESULT         hrc;
     Bstr            bstr;
     *phrc = S_OK;
-#define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); return rc; } } while (0)
+#define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); return rc; } } while (0)
 #define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%Rhrc (%#x)\n", hrc, hrc)); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
@@ -7101,7 +7101,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         if (VBOX_FAILURE (vrc))
         {
             errMsg = Utf8StrFmt (
-                Console::tr ("Failed to save the machine state to '%s' (%Vrc)"),
+                Console::tr ("Failed to save the machine state to '%s' (%Rrc)"),
                 task->mSavedStateFile.raw(), vrc);
             rc = E_FAIL;
         }
@@ -7139,7 +7139,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                     break;
                 if (VBOX_FAILURE (vrc))
                 {
-                    errMsg = Utf8StrFmt (Console::tr ("%Vrc"), vrc);
+                    errMsg = Utf8StrFmt (Console::tr ("%Rrc"), vrc);
                     rc = E_FAIL;
                     break;
                 }
@@ -7373,7 +7373,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
     if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -7382,7 +7382,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         pData->iFirstLUN = 0;
     else if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -7391,7 +7391,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         pData->iLastLUN = 0;
     else if (VBOX_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Rrc\n", rc));
         return rc;
     }
     if (pData->iFirstLUN > pData->iLastLUN)

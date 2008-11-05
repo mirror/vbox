@@ -552,7 +552,7 @@ Return Value:
                     else
                     {
                         dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev."
-                                 "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                                 "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
                     }
                 }
                 } // close scope
@@ -618,7 +618,7 @@ Return Value:
                     else
                     {
                         dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev."
-                                 "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                                 "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
                     }
                 }
                 } // close scope

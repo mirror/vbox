@@ -738,13 +738,13 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
                  */
                 rc = vboxNetFltSolarisSetRawMode(pPromiscStream);
                 if (RT_FAILURE(rc))
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Vrc.\n", rc));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Rrc.\n", rc));
             }
             else
-                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Vrc.\n", rc));
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetRawMode failed rc=%Rrc.\n", rc));
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisBindReq failed rc=%Vrc.\n", rc));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisBindReq failed rc=%Rrc.\n", rc));
     }
 
     NOREF(fOpenMode);
@@ -2162,7 +2162,7 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
             vboxNetFltSolarisCloseStream(pThis);
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Vrc\n", rc));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -3086,7 +3086,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis)
         if (RT_SUCCESS(rc))
             return rc;
 
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Vrc\n", rc));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Rrc\n", rc));
         RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
         pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
     }

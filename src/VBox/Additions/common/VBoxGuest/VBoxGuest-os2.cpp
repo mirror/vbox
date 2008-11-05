@@ -199,27 +199,27 @@ DECLASM(int) VBoxGuestOS2Init(const char *pszArgs)
                         return VINF_SUCCESS;
                     }
 
-                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: SetIrq failed for IRQ %#d, rc=%Vrc\n",
+                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: SetIrq failed for IRQ %#d, rc=%Rrc\n",
                                                 g_bInterruptLine, rc);
                 }
                 else
-                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTSpinlockCreate failed, rc=%Vrc\n", rc);
+                    g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTSpinlockCreate failed, rc=%Rrc\n", rc);
                 VBoxGuestDeleteDevExt(&g_DevExt);
             }
             else
-                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Vrc\n", rc);
+                g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2InitDevExt failed, rc=%Rrc\n", rc);
 
             int rc2 = RTR0MemObjFree(g_MemObjMMIO, true /* fFreeMappings */); AssertRC(rc2);
             g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
         }
         else
-            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2MapMMIO failed, rc=%Vrc\n", rc);
+            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: VBoxGuestOS2MapMMIO failed, rc=%Rrc\n", rc);
         RTR0Term();
     }
     else
-        g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTR0Init failed, rc=%Vrc\n", rc);
+        g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxGuest.sys: RTR0Init failed, rc=%Rrc\n", rc);
 
-    RTLogBackdoorPrintf("VBoxGuestOS2Init: failed rc=%Vrc - %s", rc, &g_szInitText[0]);
+    RTLogBackdoorPrintf("VBoxGuestOS2Init: failed rc=%Rrc - %s", rc, &g_szInitText[0]);
     return rc;
 }
 

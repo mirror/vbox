@@ -255,7 +255,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         if (RT_FAILURE(rc))
         {
             g_cErrors++;
-            RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Vrc (%d)\n", cb, rc, INTNETRingGetWritable(&pArgs->pBuf->Send));
+            RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Rrc (%d)\n", cb, rc, INTNETRingGetWritable(&pArgs->pBuf->Send));
         }
         cbSent += cb;
     }
@@ -273,7 +273,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         if (RT_FAILURE(rc))
         {
             g_cErrors++;
-            RTPrintf("tstIntNetR0: send failed, rc=%Vrc\n", rc);
+            RTPrintf("tstIntNetR0: send failed, rc=%Rrc\n", rc);
         }
         RTThreadSleep(1);
     }
@@ -313,7 +313,7 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
                 return VINF_SUCCESS;
 
             default:
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs got odd return value %Vrc! cbReceived=%u cLostFrames=%u iFrame=%u\n",
+                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs got odd return value %Rrc! cbReceived=%u cLostFrames=%u iFrame=%u\n",
                          &pArgs->Mac, rc, cbReceived, cLostFrames, iFrame);
                 g_cErrors++;
                 return rc;
@@ -434,7 +434,7 @@ int main(int argc, char **argv)
     int rc = INTNETR0Create(&pIntNet);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstIntNetR0: INTNETR0Create failed, rc=%Vrc\n");
+        RTPrintf("tstIntNetR0: INTNETR0Create failed, rc=%Rrc\n");
         return 1;
     }
 
@@ -457,14 +457,14 @@ int main(int argc, char **argv)
                     rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf0, g_pSession, &pBuf0);
                     if (RT_FAILURE(rc) || !pBuf0)
                     {
-                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf0=%p rc=%Vrc\n", pBuf0, rc);
+                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf0=%p rc=%Rrc\n", pBuf0, rc);
                         g_cErrors++;
                     }
                     PINTNETBUF pBuf1;
                     rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf1, g_pSession, &pBuf1);
                     if (RT_FAILURE(rc))
                     {
-                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf1=%p rc=%Vrc\n", pBuf1, rc);
+                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf1=%p rc=%Rrc\n", pBuf1, rc);
                         g_cErrors++;
                     }
 
@@ -488,13 +488,13 @@ int main(int argc, char **argv)
                     rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
                     if (rc != VERR_TIMEOUT)
                     {
-                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf0)\n", rc);
+                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf0)\n", rc);
                         g_cErrors++;
                     }
                     rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
                     if (rc != VERR_TIMEOUT)
                     {
-                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf1)\n", rc);
+                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf1)\n", rc);
                         g_cErrors++;
                     }
 
@@ -507,7 +507,7 @@ int main(int argc, char **argv)
                         rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
                         if (rc != VERR_TIMEOUT)
                         {
-                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VERR_TIMEOUT (hIf0, 2nd)\n", rc);
+                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf0, 2nd)\n", rc);
                             g_cErrors++;
                         }
                         rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
@@ -542,7 +542,7 @@ int main(int argc, char **argv)
                             rc = INTNETR0IfSend(pIntNet, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
                             if (RT_FAILURE(rc))
                             {
-                                RTPrintf("tstIntNetR0: INTNETIfSend returned %Vrc! (hIf1)\n", rc);
+                                RTPrintf("tstIntNetR0: INTNETIfSend returned %Rrc! (hIf1)\n", rc);
                                 g_cErrors++;
                             }
 
@@ -632,7 +632,7 @@ int main(int argc, char **argv)
                                             ThreadRecv0 = NIL_RTTHREAD;
                                         if (RT_FAILURE(rc) || RT_FAILURE(rc2))
                                         {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
+                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
                                             g_cErrors++;
                                         }
 
@@ -641,7 +641,7 @@ int main(int argc, char **argv)
                                             ThreadRecv1 = NIL_RTTHREAD;
                                         if (RT_FAILURE(rc) || RT_FAILURE(rc2))
                                         {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
+                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
                                             g_cErrors++;
                                         }
 
@@ -653,7 +653,7 @@ int main(int argc, char **argv)
                                         }
                                         else
                                         {
-                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Vrc! (hIf0)\n", rc);
+                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Rrc! (hIf0)\n", rc);
                                             g_cErrors++;
                                         }
 
@@ -665,7 +665,7 @@ int main(int argc, char **argv)
                                         }
                                         else
                                         {
-                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Vrc! (hIf1)\n", rc);
+                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Rrc! (hIf1)\n", rc);
                                             g_cErrors++;
                                         }
 
@@ -679,7 +679,7 @@ int main(int argc, char **argv)
                                     }
                                     else
                                     {
-                                        RTPrintf("tstIntNetR0: Waiting on senders failed, rc=%Vrc, rc2=%Vrc\n", rc, rc2);
+                                        RTPrintf("tstIntNetR0: Waiting on senders failed, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
                                         g_cErrors++;
                                     }
 
@@ -694,20 +694,20 @@ int main(int argc, char **argv)
                                 }
                                 else
                                 {
-                                    RTPrintf("tstIntNetR0: Failed to create threads, rc=%Vrc\n", rc);
+                                    RTPrintf("tstIntNetR0: Failed to create threads, rc=%Rrc\n", rc);
                                     g_cErrors++;
                                 }
                             }
                         }
                         else
                         {
-                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Vrc expected VINF_SUCCESS (hIf1)\n", rc);
+                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VINF_SUCCESS (hIf1)\n", rc);
                             g_cErrors++;
                         }
                     }
                     else
                     {
-                        RTPrintf("tstIntNetR0: INTNETIfSend returned %Vrc! (hIf0)\n", rc);
+                        RTPrintf("tstIntNetR0: INTNETIfSend returned %Rrc! (hIf0)\n", rc);
                         g_cErrors++;
                     }
                 }
@@ -722,7 +722,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                RTPrintf("tstIntNetR0: INTNETOpen failed for the 2nd interface! rc=%Vrc\n", rc);
+                RTPrintf("tstIntNetR0: INTNETOpen failed for the 2nd interface! rc=%Rrc\n", rc);
                 g_cErrors++;
             }
 
@@ -737,7 +737,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTPrintf("tstIntNetR0: INTNETOpen failed for the 1st interface! rc=%Vrc\n", rc);
+        RTPrintf("tstIntNetR0: INTNETOpen failed for the 1st interface! rc=%Rrc\n", rc);
         g_cErrors++;
     }
 

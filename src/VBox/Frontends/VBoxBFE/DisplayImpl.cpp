@@ -808,7 +808,7 @@ int VMDisplay::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         LogRel(("VBVA: Disabled.\n"));
     }
 
-    LogFlow(("Display::VideoAccelEnable: rc = %Vrc.\n", rc));
+    LogFlow(("Display::VideoAccelEnable: rc = %Rrc.\n", rc));
 
     return rc;
 }
@@ -1259,7 +1259,7 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
     pData->pDisplay = (VMDisplay *)pv;        /** @todo Check this cast! */

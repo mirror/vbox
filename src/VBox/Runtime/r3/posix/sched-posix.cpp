@@ -711,7 +711,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
                     if (setpriority(PRIO_PROCESS, 0, pa[i].iNice))
                     {
                         rc = RTErrConvertFromErrno(errno);
-                        AssertMsgFailed(("setpriority(,,%d) -> errno=%d rc=%Vrc\n", pa[i].iNice, errno, rc));
+                        AssertMsgFailed(("setpriority(,,%d) -> errno=%d rc=%Rrc\n", pa[i].iNice, errno, rc));
                     }
                     break;
 
@@ -725,7 +725,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
     }
 
 #ifdef THREAD_LOGGING
-    LogFlow(("rtProcNativeSetPriority: returns %Vrc enmPriority=%d\n", rc, enmPriority));
+    LogFlow(("rtProcNativeSetPriority: returns %Rrc enmPriority=%d\n", rc, enmPriority));
     rtSchedDumpPriority();
 #endif
     return rc;
@@ -776,7 +776,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 
             int rcNative = rc;
             rc = RTErrConvertFromErrno(rc);
-            AssertMsgFailed(("pthread_[gs]etschedparam(%p, %d, {%d}) -> rcNative=%d rc=%Vrc\n",
+            AssertMsgFailed(("pthread_[gs]etschedparam(%p, %d, {%d}) -> rcNative=%d rc=%Rrc\n",
                              (void *)Self, iPolicy, SchedParam.sched_priority, rcNative, rc)); NOREF(rcNative);
             break;
         }
@@ -795,7 +795,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
             {
 #if 0
                 rc = RTErrConvertFromErrno(errno);
-                AssertMsgFailed(("setpriority(,, %d) -> errno=%d rc=%Vrc\n", iPriority, errno, rc));
+                AssertMsgFailed(("setpriority(,, %d) -> errno=%d rc=%Rrc\n", iPriority, errno, rc));
 #else
                 /** @todo
                  * Just keep quiet about failures now - we'll fail here because we're not

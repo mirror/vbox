@@ -34,7 +34,7 @@ int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
 #define CHECK(str) \
     do \
     { \
-        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        RTPrintf("%s rc=%Rrc\n", str, rc); \
         if (RT_FAILURE(rc)) \
         { \
             VDIDiskCloseAllImages(pVdi); \
@@ -44,7 +44,7 @@ int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
 
 
     int rc = VDIDiskOpenImage(pVdi, pszBaseFilename, VDI_OPEN_FLAGS_NORMAL);
-    RTPrintf("openImage() rc=%Vrc\n", rc);
+    RTPrintf("openImage() rc=%Rrc\n", rc);
     if (RT_FAILURE(rc))
     {
         rc = VDICreateBaseImage(pszBaseFilename, VDI_IMAGE_TYPE_NORMAL,
@@ -77,7 +77,7 @@ int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
     rc = VDIDiskCreateOpenDifferenceImage(pVdi, pszDiffFilename, "Test diff image", NULL, NULL);
     CHECK("create undo");
 //    rc = VHDDOpenSecondImage(pVdi, "undoimg.vdi");
-//    RTPrintf("open undo rc=%Vrc\n", rc);
+//    RTPrintf("open undo rc=%Rrc\n", rc);
 
     memset(pvBuf, '_', 1*1124*1024);
     rc = VDIDiskWrite(pVdi, 20*1024*1024 + 594040, pvBuf, 512);

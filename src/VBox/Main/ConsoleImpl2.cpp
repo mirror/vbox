@@ -121,7 +121,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 #define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
+#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); STR_FREE(); return rc; } } while (0)
 #define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
@@ -1675,7 +1675,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             if (RT_FAILURE (rc))
             {
-                LogRel(("VBoxSharedClipboard is not available. rc = %Vrc\n", rc));
+                LogRel(("VBoxSharedClipboard is not available. rc = %Rrc\n", rc));
                 /* That is not a fatal failure. */
                 rc = VINF_SUCCESS;
             }
@@ -1731,7 +1731,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if (RT_FAILURE (rc))
         {
-            LogRel(("VBoxGuestPropSvc is not available. rc = %Vrc\n", rc));
+            LogRel(("VBoxGuestPropSvc is not available. rc = %Rrc\n", rc));
             /* That is not a fatal failure. */
             rc = VINF_SUCCESS;
         }
@@ -1959,7 +1959,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Save the VM pointer in the machine object */
     pConsole->mpVM = pVM;
 
-    LogFlowFunc (("vrc = %Vrc\n", rc));
+    LogFlowFunc (("vrc = %Rrc\n", rc));
     LogFlowFuncLeave();
 
     return rc;

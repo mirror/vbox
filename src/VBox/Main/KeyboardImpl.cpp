@@ -143,7 +143,7 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
     int vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)scancode);
 
     if (RT_FAILURE (vrc))
-        rc = setError (E_FAIL, tr ("Could not send scan code 0x%08X to the virtual keyboard (%Vrc)"),
+        rc = setError (E_FAIL, tr ("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
                        scancode, vrc);
 
     return rc;
@@ -181,7 +181,7 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
         vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)keys [i]);
 
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL, tr ("Could not send all scan codes to the virtual keyboard (%Vrc)"),
+        return setError (E_FAIL, tr ("Could not send all scan codes to the virtual keyboard (%Rrc)"),
                          vrc);
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
@@ -318,7 +318,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     rc = CFGMR3QueryPtr (pCfgHandle, "Object", &pv);
     if (RT_FAILURE (rc))
     {
-        AssertMsgFailed (("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed (("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
     pData->pKeyboard = (Keyboard *)pv;        /** @todo Check this cast! */

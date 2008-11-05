@@ -70,7 +70,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
 
     if (RT_FAILURE(rc))
     {
-        dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR allocating request, rc = %Vrc\n", rc));
+        dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR allocating request, rc = %Rrc\n", rc));
     }
     else
     {
@@ -93,7 +93,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
         else
         {
             dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR querying display request from VMMDev."
-                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
 
         VbglGRFree (&req->header);
@@ -113,7 +113,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevVideoModeSupportedRequest), VMMDevReq_VideoModeSupported);
     if (RT_FAILURE(rc))
     {
-        dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Vrc\n", rc));
+        dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Rrc\n", rc));
         /* Most likely the VBoxGuest driver is not loaded.
          * To get at least the video working, report the mode as supported.
          */
@@ -132,7 +132,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
         else
         {
             dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR querying video mode supported status from VMMDev."
-                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
         VbglGRFree(&req->header);
     }
@@ -152,7 +152,7 @@ ULONG vboxGetHeightReduction()
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHeightReductionRequest), VMMDevReq_GetHeightReduction);
     if (RT_FAILURE(rc))
     {
-        dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR allocating request, rc = %Vrc\n", rc));
+        dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR allocating request, rc = %Rrc\n", rc));
     }
     else
     {
@@ -164,7 +164,7 @@ ULONG vboxGetHeightReduction()
         else
         {
             dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR querying height reduction value from VMMDev."
-                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
         VbglGRFree(&req->header);
     }
@@ -186,7 +186,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
 
     if (RT_FAILURE(rc))
     {
-        dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR allocating request, rc = %Vrc\n", rc));
+        dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR allocating request, rc = %Rrc\n", rc));
     }
     else
     {
@@ -212,7 +212,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
         else
         {
             dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR querying mouse capabilities from VMMDev."
-                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
 
         VbglGRFree (&req->header);
@@ -315,7 +315,7 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
 
     if (RT_FAILURE(rc))
     {
-        dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR allocating request, rc = %Vrc\n", rc));
+        dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR allocating request, rc = %Rrc\n", rc));
     }
     else
     {
@@ -348,7 +348,7 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
         else
         {
             dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR querying mouse capabilities from VMMDev."
-                     "rc = %Vrc, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
         }
 
         dprintf(("VBoxVideo::vboxUpdatePointerShape: req->u32Version = %08X\n", req->header.version));

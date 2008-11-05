@@ -97,13 +97,13 @@ int main(int argc, char **argv)
                 }
             }
             else
-                RTPrintf("tstRTWait: RTProcWait failed with rc=%Vrc!\n", rc);
+                RTPrintf("tstRTWait: RTProcWait failed with rc=%Rrc!\n", rc);
         }
         else
-            RTPrintf("tstRTWait: RTThreadWait or SpawnerThread failed with rc=%Vrc!\n", rc);
+            RTPrintf("tstRTWait: RTThreadWait or SpawnerThread failed with rc=%Rrc!\n", rc);
     }
     else
-        RTPrintf("tstRTWait: RTThreadCreate failed with rc=%Vrc!\n", rc);
+        RTPrintf("tstRTWait: RTThreadCreate failed with rc=%Rrc!\n", rc);
 
     return RT_SUCCESS(rc) ? 0 : 1;
 }

@@ -1727,7 +1727,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_VBVA_ENABLE ulEnable = %08X\n", ulEnable));
 
             rc = vboxVbvaEnable (pDevExt, ulEnable, (VBVAENABLERESULT *)RequestPacket->OutputBuffer);
-            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_VBVA_ENABLE completed rc = %Vrc\n", rc));
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_VBVA_ENABLE completed rc = %Rrc\n", rc));
 
             if (RT_FAILURE (rc))
             {
@@ -2171,7 +2171,7 @@ static DECLCALLBACK(void) vboxVbvaFlush (void *pvFlush)
 
             if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
             {
-                dprintf(("VBoxVideo::vbvaFlush: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
+                dprintf(("VBoxVideo::vbvaFlush: rc = %Rrc, VMMDev rc = %Rrc!!!\n", rc, req->header.rc));
             }
         }
     }
@@ -2233,13 +2233,13 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
             }
             else
             {
-                dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc (VMMDevReq_VideoAccelFlush) rc = %Vrc!!!\n", rc));
+                dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc (VMMDevReq_VideoAccelFlush) rc = %Rrc!!!\n", rc));
             }
         }
     }
     else
     {
-        dprintf(("VBoxVideo::vboxVbvaEnable: VbglQueryVMMDevMemory rc = %Vrc!!!\n", rc));
+        dprintf(("VBoxVideo::vboxVbvaEnable: VbglQueryVMMDevMemory rc = %Rrc!!!\n", rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -2300,7 +2300,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
             }
             else
             {
-                dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
+                dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Rrc, VMMDev rc = %Rrc!!!\n", rc, req->header.rc));
 
                 if (RT_SUCCESS(rc))
                 {
@@ -2312,7 +2312,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
         }
         else
         {
-            dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc rc = %Vrc!!!\n", rc));
+            dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc rc = %Rrc!!!\n", rc));
         }
 
         pDevExt->pPrimary->u.primary.ulVbvaEnabled = ulEnabled;

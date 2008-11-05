@@ -132,7 +132,7 @@ static int vboxStartServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
         if (RT_FAILURE (rc))
         {
-            Log(("Failed to initialize rc = %Vrc.\n", rc));
+            Log(("Failed to initialize rc = %Rrc.\n", rc));
         }
         else
         {

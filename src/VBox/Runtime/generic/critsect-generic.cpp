@@ -328,7 +328,7 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
                 return VERR_SEM_DESTROYED;
             if (rc == VINF_SUCCESS)
                 break;
-            AssertMsg(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED, ("rc=%Vrc\n", rc));
+            AssertMsg(rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED, ("rc=%Rrc\n", rc));
         }
         AssertMsg(pCritSect->NativeThreadOwner == NIL_RTNATIVETHREAD, ("pCritSect->NativeThreadOwner=%p\n", pCritSect->NativeThreadOwner));
     }
@@ -388,7 +388,7 @@ RTDECL(int) RTCritSectLeave(PRTCRITSECT pCritSect)
         if (ASMAtomicDecS32(&pCritSect->cLockers) >= 0)
         {
             int rc = RTSemEventSignal(pCritSect->EventSem);
-            AssertReleaseMsg(RT_SUCCESS(rc), ("RTSemEventSignal -> %Vrc\n", rc));
+            AssertReleaseMsg(RT_SUCCESS(rc), ("RTSemEventSignal -> %Rrc\n", rc));
         }
     }
     return VINF_SUCCESS;

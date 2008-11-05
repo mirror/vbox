@@ -1092,7 +1092,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         }
     }
 
-    LogFlow(("svcCall: rc = %Vrc\n", rc));
+    LogFlow(("svcCall: rc = %Rrc\n", rc));
 
     if (   !fAsynchronousProcessing
         || RT_FAILURE (rc))
@@ -1268,7 +1268,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         break;
     }
 
-    LogFlow(("svcHostCall: rc = %Vrc\n", rc));
+    LogFlow(("svcHostCall: rc = %Rrc\n", rc));
     return rc;
 }
 

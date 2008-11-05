@@ -166,7 +166,7 @@
         {
             // this is an expected exception that may happen in case of stream
             // read or write errors
-            printf ("Could not save the settings file '%s' (%Vrc)");
+            printf ("Could not save the settings file '%s' (%Rrc)");
                     file.uri(), err.rc());
 
             return FAILURE;
@@ -178,7 +178,7 @@
     {
         // this is an expected exception that may happen in case of stream
         // read or write errors
-        printf ("Could not load the settings file '%s' (%Vrc)");
+        printf ("Could not load the settings file '%s' (%Rrc)");
                 file.uri(), err.rc());
     }
     catch (const XmlTreeBackend::Error &err)

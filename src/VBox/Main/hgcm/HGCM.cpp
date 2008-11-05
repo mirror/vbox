@@ -283,7 +283,7 @@ int HGCMService::loadServiceDLL (void)
 
             rc = m_pfnLoad (&m_fntable);
 
-            LogFlowFunc(("m_pfnLoad rc = %Vrc\n", rc));
+            LogFlowFunc(("m_pfnLoad rc = %Rrc\n", rc));
 
             if (RT_SUCCESS (rc))
             {
@@ -307,7 +307,7 @@ int HGCMService::loadServiceDLL (void)
     }
     else
     {
-        LogRel(("HGCM: Failed to load the service library: [%s], rc = %Vrc. The service will be not available.\n", m_pszSvcLibrary, rc));
+        LogRel(("HGCM: Failed to load the service library: [%s], rc = %Rrc. The service will be not available.\n", m_pszSvcLibrary, rc));
         m_hLdrMod = NIL_RTLDRMOD;
     }
 
@@ -477,7 +477,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
         if (RT_FAILURE (rc))
         {
             /* The error means some serious unrecoverable problem in the hgcmMsg/hgcmThread layer. */
-            AssertMsgFailed (("%Vrc\n", rc));
+            AssertMsgFailed (("%Rrc\n", rc));
             break;
         }
 
@@ -789,7 +789,7 @@ int HGCMService::instanceCreate (const char *pszServiceLibrary, const char *pszS
         instanceDestroy ();
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -837,7 +837,7 @@ int HGCMService::saveClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -862,7 +862,7 @@ int HGCMService::loadClientState (uint32_t u32ClientId, PSSMHANDLE pSSM)
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -931,7 +931,7 @@ int HGCMService::loadClientState (uint32_t u32ClientId, PSSMHANDLE pSSM)
         }
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1325,7 +1325,7 @@ int HGCMService::CreateAndConnectClient (uint32_t *pu32ClientIdOut, uint32_t u32
         ReferenceService ();
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1387,7 +1387,7 @@ int HGCMService::DisconnectClient (uint32_t u32ClientId, bool fFromService)
         ReleaseService ();
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1415,7 +1415,7 @@ int HGCMService::RegisterExtension (HGCMSVCEXTHANDLE handle,
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1437,7 +1437,7 @@ void HGCMService::UnregisterExtension (HGCMSVCEXTHANDLE handle)
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
 }
 
 /* Perform a guest call to the service.
@@ -1478,10 +1478,10 @@ int HGCMService::GuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t
     }
     else
     {
-        Log(("MAIN::HGCMService::Call: Message allocation failed: %Vrc\n", rc));
+        Log(("MAIN::HGCMService::Call: Message allocation failed: %Rrc\n", rc));
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1514,7 +1514,7 @@ int HGCMService::HostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPAR
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1648,7 +1648,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
         if (RT_FAILURE (rc))
         {
             /* The error means some serious unrecoverable problem in the hgcmMsg/hgcmThread layer. */
-            AssertMsgFailed (("%Vrc\n", rc));
+            AssertMsgFailed (("%Rrc\n", rc));
             break;
         }
 
@@ -1835,7 +1835,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
         /* Complete the message processing. */
         hgcmMsgComplete (pMsgCore, rc);
 
-        LogFlowFunc(("message processed %Vrc\n", rc));
+        LogFlowFunc(("message processed %Rrc\n", rc));
     }
 }
 
@@ -1890,7 +1890,7 @@ int HGCMHostLoad (const char *pszServiceLibrary,
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -1934,7 +1934,7 @@ int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle,
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("*pHandle = %p, rc = %Vrc\n", *pHandle, rc));
+    LogFlowFunc(("*pHandle = %p, rc = %Rrc\n", *pHandle, rc));
     return rc;
 }
 
@@ -1960,7 +1960,7 @@ void HGCMHostUnregisterServiceExtension (HGCMSVCEXTHANDLE handle)
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return;
 }
 
@@ -2009,7 +2009,7 @@ int HGCMGuestConnect (PPDMIHGCMPORT pHGCMPort,
         rc = hgcmMsgPost (hMsg, hgcmMsgCompletionCallback);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2052,7 +2052,7 @@ int HGCMGuestDisconnect (PPDMIHGCMPORT pHGCMPort,
         rc = hgcmMsgPost (hMsg, hgcmMsgCompletionCallback);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2083,7 +2083,7 @@ static int hgcmHostLoadSaveState (PSSMHANDLE pSSM,
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2147,7 +2147,7 @@ int HGCMGuestCall (PPDMIHGCMPORT pHGCMPort,
         hgcmObjDereference (pClient);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2197,7 +2197,7 @@ int HGCMHostCall (const char *pszServiceName,
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2217,7 +2217,7 @@ int HGCMHostReset (void)
         rc = hgcmMsgSend (hMsg);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2237,11 +2237,11 @@ int HGCMHostInit (void)
 
         if (RT_FAILURE (rc))
         {
-            LogRel(("Failed to start HGCM thread. HGCM services will be unavailable!!! rc = %Vrc\n", rc));
+            LogRel(("Failed to start HGCM thread. HGCM services will be unavailable!!! rc = %Rrc\n", rc));
         }
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -2277,6 +2277,6 @@ int HGCMHostShutdown (void)
         }
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }

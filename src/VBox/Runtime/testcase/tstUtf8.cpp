@@ -85,14 +85,14 @@ static void test1(void)
     rc = RTStrToUtf16(s_szBadString1, &pwsz);
     if (rc != VERR_NO_TRANSLATION && rc != VERR_INVALID_UTF8_ENCODING)
     {
-        RTPrintf("tstUtf8: FAILURE - %d: Conversion of first bad UTF-8 string to UTF-16 apparantly succeeded. It shouldn't. rc=%Vrc\n",
+        RTPrintf("tstUtf8: FAILURE - %d: Conversion of first bad UTF-8 string to UTF-16 apparantly succeeded. It shouldn't. rc=%Rrc\n",
                  __LINE__, rc);
         g_cErrors++;
     }
     rc = RTStrToUtf16(s_szBadString2, &pwsz);
     if (rc != VERR_NO_TRANSLATION && rc != VERR_INVALID_UTF8_ENCODING)
     {
-        RTPrintf("tstUtf8: FAILURE - %d: Conversion of second bad UTF-8 strings to UTF-16 apparantly succeeded. It shouldn't. rc=%Vrc\n",
+        RTPrintf("tstUtf8: FAILURE - %d: Conversion of second bad UTF-8 strings to UTF-16 apparantly succeeded. It shouldn't. rc=%Rrc\n",
                  __LINE__, rc);
         g_cErrors++;
     }
@@ -117,7 +117,7 @@ static void test1(void)
                 RTPrintf("tstUtf8: Random UTF-16 -> UTF-8 -> Current -> UTF-8 successful.\n");
             else
             {
-                RTPrintf("tstUtf8: FAILURE - %d: The third part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Vrc.\n",
+                RTPrintf("tstUtf8: FAILURE - %d: The third part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.\n",
                          __LINE__, rc);
                 g_cErrors++;
             }
@@ -126,14 +126,14 @@ static void test1(void)
             RTPrintf("tstUtf8: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VERR_NO_TRANSLATION.  This is probably as it should be.\n");
         else
         {
-            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Vrc.\n",
+            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.\n",
                      __LINE__, rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Vrc.\n",
+        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.\n",
                  __LINE__, rc);
         g_cErrors++;
     }
@@ -166,14 +166,14 @@ static void test1(void)
         }
         else
         {
-            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Vrc.\n",
+            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Vrc.\n",
+        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> UTF-16 failed with return value %Rrc.\n",
                  __LINE__, rc);
         g_cErrors++;
     }
@@ -209,14 +209,14 @@ static void test1(void)
         }
         else
         {
-            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Vrc.\n",
+            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Vrc.\n",
+        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> fixed length UTF-8 -> UTF-16 failed with return value %Rrc.\n",
                  __LINE__, rc);
         g_cErrors++;
     }
@@ -252,14 +252,14 @@ static void test1(void)
         }
         else
         {
-            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Vrc.\n",
+            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Vrc.\n",
+        RTPrintf("tstUtf8: FAILURE - %d: The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                  __LINE__, rc);
         g_cErrors++;
     }
@@ -296,14 +296,14 @@ static void test1(void)
             RTPrintf("tstUtf8: Random UTF-16 -> UTF-8 -> fixed length UTF-16 with too short buffer successfully rejected.\n");
         else
         {
-            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 with too short buffer returned value %Vrc instead of VERR_BUFFER_OVERFLOW.\n",
+            RTPrintf("tstUtf8: FAILURE - %d: The second part of random UTF-16 -> UTF-8 -> fixed length UTF-16 with too short buffer returned value %Rrc instead of VERR_BUFFER_OVERFLOW.\n",
                      __LINE__, rc);
             g_cErrors++;
         }
     }
     else
     {
-        RTPrintf("tstUtf8: FAILURE - %d:The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Vrc.\n",
+        RTPrintf("tstUtf8: FAILURE - %d:The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                  __LINE__, rc);
         g_cErrors++;
     }

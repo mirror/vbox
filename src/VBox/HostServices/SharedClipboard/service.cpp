@@ -302,7 +302,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
         g_pClient = pClient;
     }
 
-    Log(("vboxClipboardConnect: rc = %Vrc\n", rc));
+    Log(("vboxClipboardConnect: rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -567,7 +567,7 @@ static DECLCALLBACK(void) svcCall (void *,
         }
     }
 
-    LogFlow(("svcCall: rc = %Vrc\n", rc));
+    LogFlow(("svcCall: rc = %Rrc\n", rc));
 
     if (!fAsynchronousProcessing)
     {
@@ -618,7 +618,7 @@ static DECLCALLBACK(int) svcHostCall (void *,
             break;
     }
 
-    LogFlow(("svcHostCall: rc = %Vrc\n", rc));
+    LogFlow(("svcHostCall: rc = %Rrc\n", rc));
     return rc;
 }
 

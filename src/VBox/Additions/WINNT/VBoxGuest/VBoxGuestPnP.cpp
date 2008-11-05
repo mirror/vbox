@@ -555,7 +555,7 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                 if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                                 {
                                     dprintf(("VBoxGuest::PowerStateRequest: error communicating new power status to VMMDev."
-                                             "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                                             "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
                                 }
 
                                 VbglGRFree (&req->header);
@@ -583,7 +583,7 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                     if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                                     {
                                         dprintf(("VBoxGuest::PowerStateRequest: error communicating new power status to VMMDev."
-                                                 "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
+                                                 "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
                                     }
                                 }
                             }

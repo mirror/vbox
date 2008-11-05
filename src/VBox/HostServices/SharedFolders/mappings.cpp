@@ -201,7 +201,7 @@ int vbsfMappingsQuery (SHFLCLIENTDATA *pClient, SHFLMAPPING *pMappings, uint32_t
         }
     }
 
-    LogFlow(("vbsfMappingsQuery: return rc = %Vrc\n", rc));
+    LogFlow(("vbsfMappingsQuery: return rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -231,7 +231,7 @@ int vbsfMappingsQueryName (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *p
     else
         rc = VERR_FILE_NOT_FOUND;
 
-    LogFlow(("vbsfMappingsQuery:Name return rc = %Vrc\n", rc));
+    LogFlow(("vbsfMappingsQuery:Name return rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -251,7 +251,7 @@ int vbsfMappingsQueryWritable (SHFLCLIENTDATA *pClient, SHFLROOT root, bool *fWr
     else
         rc = VERR_FILE_NOT_FOUND;
 
-    LogFlow(("vbsfMappingsQuery:Writable return rc = %Vrc\n", rc));
+    LogFlow(("vbsfMappingsQuery:Writable return rc = %Rrc\n", rc));
 
     return rc;
 }

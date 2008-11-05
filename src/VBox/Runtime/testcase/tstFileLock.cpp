@@ -56,7 +56,7 @@ int main()
 
     RTFILE File;
     int rc = RTFileOpen(&File, "tstLock.tst", RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    RTPrintf("File open: rc=%Vrc\n", rc);
+    RTPrintf("File open: rc=%Rrc\n", rc);
     if (RT_FAILURE(rc))
     {
         if (rc != VERR_FILE_NOT_FOUND && rc != VERR_OPEN_FAILED)
@@ -66,7 +66,7 @@ int main()
         }
 
         rc = RTFileOpen(&File, "tstLock.tst", RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE);
-        RTPrintf("File create: rc=%Vrc\n", rc);
+        RTPrintf("File create: rc=%Rrc\n", rc);
         if (RT_FAILURE(rc))
         {
             RTPrintf("FATAL\n");
@@ -77,29 +77,29 @@ int main()
 
     /* grow file a little */
     rc = RTFileSetSize(File, fRun ? 2048 : 20480);
-    RTPrintf("File size: rc=%Vrc\n", rc);
+    RTPrintf("File size: rc=%Rrc\n", rc);
 
     int buf;
     /* read test. */
     rc = RTFileRead(File, &buf, sizeof(buf), NULL);
-    RTPrintf("Read: rc=%Vrc\n", rc);
+    RTPrintf("Read: rc=%Rrc\n", rc);
 
     /* write test. */
     rc = RTFileWrite(File, achTest1, strlen(achTest1), NULL);
-    RTPrintf("Write: rc=%Vrc\n", rc);
+    RTPrintf("Write: rc=%Rrc\n", rc);
 
     /* lock: read, non-blocking. */
     rc = RTFileLock(File, RTFILE_LOCK_READ | RTFILE_LOCK_IMMEDIATELY, 0, _4G);
-    RTPrintf("Lock: read, non-blocking, rc=%Vrc\n", rc);
+    RTPrintf("Lock: read, non-blocking, rc=%Rrc\n", rc);
     bool fl = RT_SUCCESS(rc);
 
     /* read test. */
     rc = RTFileRead(File, &buf, sizeof(buf), NULL);
-    RTPrintf("Read: rc=%Vrc\n", rc);
+    RTPrintf("Read: rc=%Rrc\n", rc);
 
     /* write test. */
     rc = RTFileWrite(File, achTest2, strlen(achTest2), NULL);
-    RTPrintf("Write: rc=%Vrc\n", rc);
+    RTPrintf("Write: rc=%Rrc\n", rc);
     RTPrintf("Lock test will change in three seconds\n");
     for (int i = 0; i < 3; i++)
     {
@@ -110,7 +110,7 @@ int main()
 
     /* change lock: write, non-blocking. */
     rc = RTFileLock(File, RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY, 0, _4G);
-    RTPrintf("Change lock: write, non-blocking, rc=%Vrc\n", rc);
+    RTPrintf("Change lock: write, non-blocking, rc=%Rrc\n", rc);
     RTPrintf("Test will unlock in three seconds\n");
     for (int i = 0; i < 3; i++)
     {
@@ -124,7 +124,7 @@ int main()
     {
         fl = false;
         rc = RTFileUnlock(File, 0, _4G);
-        RTPrintf("Unlock: rc=%Vrc\n", rc);
+        RTPrintf("Unlock: rc=%Rrc\n", rc);
         RTPrintf("Write test will lock in three seconds\n");
         for (int i = 0; i < 3; i++)
         {
@@ -136,20 +136,20 @@ int main()
 
     /* lock: write, non-blocking. */
     rc = RTFileLock(File, RTFILE_LOCK_WRITE | RTFILE_LOCK_IMMEDIATELY, 0, _4G);
-    RTPrintf("Lock: write, non-blocking, rc=%Vrc\n", rc);
+    RTPrintf("Lock: write, non-blocking, rc=%Rrc\n", rc);
     fl = RT_SUCCESS(rc);
 
     /* grow file test */
     rc = RTFileSetSize(File, fRun ? 2048 : 20480);
-    RTPrintf("File size: rc=%Vrc\n", rc);
+    RTPrintf("File size: rc=%Rrc\n", rc);
 
     /* read test. */
     rc = RTFileRead(File, &buf, sizeof(buf), NULL);
-    RTPrintf("Read: rc=%Vrc\n", rc);
+    RTPrintf("Read: rc=%Rrc\n", rc);
 
     /* write test. */
     rc = RTFileWrite(File, achTest3, strlen(achTest3), NULL);
-    RTPrintf("Write: rc=%Vrc\n", rc);
+    RTPrintf("Write: rc=%Rrc\n", rc);
     RTPrintf("Continuing to next test in three seconds\n");
     for (int i = 0; i < 3; i++)
     {

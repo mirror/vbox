@@ -3350,7 +3350,7 @@ static int handleModifyHardDisk(int argc, char *argv[],
         int vrc = VDIShrinkImage(Utf8Str(fileName).raw(), hardDiskProgressCallback, &uProcent);
         if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error while shrinking hard disk image: %Vrc\n", vrc);
+            RTPrintf("Error while shrinking hard disk image: %Rrc\n", vrc);
             rc = E_FAIL;
         }
     }
@@ -3496,12 +3496,12 @@ static int handleConvertDDImage(int argc, char *argv[])
             if (RT_FAILURE(rc))
             {
                 /* delete image on error */
-                RTPrintf("Failed (%Vrc)!\n", rc);
+                RTPrintf("Failed (%Rrc)!\n", rc);
                 VDIDeleteImage(argv[arg + 1]);
             }
         }
         else
-            RTPrintf("Failed to create output file (%Vrc)!\n", rc);
+            RTPrintf("Failed to create output file (%Rrc)!\n", rc);
     }
     RTFileClose(File);
 
@@ -5726,7 +5726,7 @@ static int handleControlVM(int argc, char *argv[],
                     int rc = RTStrToUInt8Ex(argv[i], NULL, 16, &u8Scancode);
                     if (RT_FAILURE (rc))
                     {
-                        RTPrintf("Error: converting '%s' returned %Vrc!\n", argv[i], rc);
+                        RTPrintf("Error: converting '%s' returned %Rrc!\n", argv[i], rc);
                         rc = E_FAIL;
                         break;
                     }

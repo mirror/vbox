@@ -1001,7 +1001,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
         vboxClipboardEmptyGuestBuffer();
         AssertRCReturn(rc, false);
     }
@@ -1022,7 +1022,7 @@ static Boolean vboxClipboardConvertUtf16(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16WinToLin(pu16SrcText, cwSrcLen, pu16DestText, cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16WinToLin returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertUtf16: clipboard conversion failed.  vboxClipboardUtf16WinToLin returned %Rrc.  Abandoning.\n", rc));
         XtFree(reinterpret_cast<char *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
         return false;
@@ -1072,7 +1072,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
         vboxClipboardEmptyGuestBuffer();
         AssertRCReturn(rc, false);
     }
@@ -1093,7 +1093,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     rc = vboxClipboardUtf16WinToLin(pu16SrcText, cwSrcLen, pu16DestText, cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
         return false;
@@ -1114,7 +1114,7 @@ static Boolean vboxClipboardConvertUtf8(Atom *atomTypeReturn, XtPointer *pValRet
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertUtf8: clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Rrc.  Abandoning.\n", rc));
         XtFree(pu8DestText);
         vboxClipboardEmptyGuestBuffer();
         return false;
@@ -1165,7 +1165,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16GetLinSize(pu16SrcText, cwSrcLen, &cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
         vboxClipboardEmptyGuestBuffer();
         AssertRCReturn(rc, false);
     }
@@ -1186,7 +1186,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     rc = vboxClipboardUtf16WinToLin(pu16SrcText, cwSrcLen, pu16DestText, cwDestLen);
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
         RTMemFree(reinterpret_cast<void *>(pu16DestText));
         vboxClipboardEmptyGuestBuffer();
         return false;
@@ -1196,7 +1196,7 @@ static Boolean vboxClipboardConvertCText(Atom *atomTypeReturn, XtPointer *pValRe
     RTMemFree(reinterpret_cast<void *>(pu16DestText));
     if (RT_FAILURE(rc))
     {
-        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Vrc.  Abandoning.\n", rc));
+        LogRel(("vboxClipboardConvertCText: clipboard conversion failed.  RTUtf16ToUtf8Ex() returned %Rrc.  Abandoning.\n", rc));
         vboxClipboardEmptyGuestBuffer();
         return false;
     }

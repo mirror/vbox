@@ -149,7 +149,7 @@ RTR3DECL(int)   RTThreadSleep(unsigned cMillies)
 {
     LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
     Sleep(cMillies);
-    LogFlow(("RTThreadSleep: returning %Vrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
+    LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
     return VINF_SUCCESS;
 }
 

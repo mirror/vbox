@@ -666,7 +666,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
 
         if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
             return setError (E_FAIL,
-                tr ("Failed to wait for the task completion (%Vrc)"), vrc);
+                tr ("Failed to wait for the task completion (%Rrc)"), vrc);
     }
 
     LogFlowThisFuncLeave();
@@ -734,7 +734,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
 
         if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
             return setError (E_FAIL,
-                tr ("Failed to wait for the operation completion (%Vrc)"), vrc);
+                tr ("Failed to wait for the operation completion (%Rrc)"), vrc);
     }
 
     LogFlowThisFuncLeave();

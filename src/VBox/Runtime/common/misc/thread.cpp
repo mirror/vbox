@@ -621,10 +621,10 @@ int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *
      */
     int rc = rtThreadNativeSetPriority(pThread, pThread->enmType);
 #ifdef IN_RING3
-    AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d enmPriority=%d rc=%Vrc\n",
+    AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d enmPriority=%d rc=%Rrc\n",
                      pThread, NativeThread, pThread->szName, pThread->enmType, g_enmProcessPriority, rc));
 #else
-    AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d rc=%Vrc\n",
+    AssertMsgRC(rc, ("Failed to set priority of thread %p (%RTnthrd / %s) to enmType=%d rc=%Rrc\n",
                      pThread, NativeThread, pThread->szName, pThread->enmType, rc));
 #endif
 
@@ -713,7 +713,7 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
     }
     else
         rc = VERR_NO_TMP_MEMORY;
-    LogFlow(("RTThreadCreate: Failed to create thread, rc=%Vrc\n", rc));
+    LogFlow(("RTThreadCreate: Failed to create thread, rc=%Rrc\n", rc));
     AssertReleaseRC(rc);
     return rc;
 }
@@ -1082,7 +1082,7 @@ RTDECL(int) RTThreadSetType(RTTHREAD Thread, RTTHREADTYPE enmType)
                     ASMAtomicXchgSize(&pThread->enmType, enmType);
                 RT_THREAD_UNLOCK_RW(Tmp);
                 if (RT_FAILURE(rc))
-                    Log(("RTThreadSetType: failed on thread %p (%s), rc=%Vrc!!!\n", Thread, pThread->szName, rc));
+                    Log(("RTThreadSetType: failed on thread %p (%s), rc=%Rrc!!!\n", Thread, pThread->szName, rc));
             }
             else
                 rc = VERR_THREAD_IS_DEAD;
@@ -1313,7 +1313,7 @@ int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority)
         }
     }
     RT_THREAD_UNLOCK_RW(Tmp);
-    LogFlow(("rtThreadDoSetProcPriority: returns %Vrc\n", rc));
+    LogFlow(("rtThreadDoSetProcPriority: returns %Rrc\n", rc));
     return rc;
 }
 

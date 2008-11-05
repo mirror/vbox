@@ -172,7 +172,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, unsigned cMillies)
         }
     }
 
-    LogFlow(("RTReqProcess: returns %Vrc\n", rc));
+    LogFlow(("RTReqProcess: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -355,10 +355,10 @@ RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, unsigned cMillies, uns
     if (!(fFlags & RTREQFLAGS_NO_WAIT))
     {
         *ppReq = pReq;
-        LogFlow(("RTReqCallV: returns %Vrc *ppReq=%p\n", rc, pReq));
+        LogFlow(("RTReqCallV: returns %Rrc *ppReq=%p\n", rc, pReq));
     }
     else
-        LogFlow(("RTReqCallV: returns %Vrc\n", rc));
+        LogFlow(("RTReqCallV: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -487,7 +487,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
                      * This shall not happen, but if it does we'll just destroy
                      * the semaphore and create a new one.
                      */
-                    AssertMsgFailed(("rc=%Vrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
+                    AssertMsgFailed(("rc=%Rrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
                     RTSemEventDestroy(pReq->EventSem);
                     rc = RTSemEventCreate(&pReq->EventSem);
                     AssertRC(rc);
@@ -676,7 +676,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies)
      */
     if (!(pReq->fFlags & RTREQFLAGS_NO_WAIT))
         rc = RTReqWait(pReq, cMillies);
-    LogFlow(("RTReqQueue: returns %Vrc\n", rc));
+    LogFlow(("RTReqQueue: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -738,7 +738,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, unsigned cMillies)
         ASMAtomicXchgSize(&pReq->fEventSemClear, true);
     if (pReq->enmState == RTREQSTATE_COMPLETED)
         rc = VINF_SUCCESS;
-    LogFlow(("RTReqWait: returns %Vrc\n", rc));
+    LogFlow(("RTReqWait: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -867,14 +867,14 @@ static int  rtReqProcessOne(PRTREQ pReq)
     if (pReq->fFlags & RTREQFLAGS_NO_WAIT)
     {
         /* Free the packet, nobody is waiting. */
-        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Vrc rcRet=%Vrc - freeing it\n",
+        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
                  pReq, rcReq, rcRet));
         RTReqFree(pReq);
     }
     else
     {
         /* Notify the waiter and him free up the packet. */
-        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Vrc rcRet=%Vrc - notifying waiting thread\n",
+        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
         int rc2 = RTSemEventSignal(pReq->EventSem);

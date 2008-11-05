@@ -76,7 +76,7 @@ int vboxvfs_Stat(const char *pszCaller, vboxvfs_globinfo_t *pVBoxVFSGlobalInfo, 
     rc = vboxCallCreate(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map, pPath, &Params);
     if (RT_FAILURE(rc))
     {
-        Log((DEVICE_NAME ":vboxCallCreate failed! caller=%s rc=%Vrc\n", pszCaller, rc));
+        Log((DEVICE_NAME ":vboxCallCreate failed! caller=%s rc=%Rrc\n", pszCaller, rc));
         return EPROTO;
     }
 

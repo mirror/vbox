@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 
     RTR3Init();
     rc = SUPR3Init(NULL);
-    RTPrintf("tstContiguous: SUPR3Init -> rc=%Vrc\n", rc);
+    RTPrintf("tstContiguous: SUPR3Init -> rc=%Rrc\n", rc);
     rcRet += rc != 0;
     if (!rc)
     {
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
                 rc = SUPContFree(pv, 5);
                 rcRet += rc != 0;
                 if (rc)
-                    RTPrintf("tstContiguous: SUPContFree failed! rc=%Vrc\n", rc);
+                    RTPrintf("tstContiguous: SUPContFree failed! rc=%Rrc\n", rc);
 
                 void *apv[128];
                 for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
                         rc = SUPContFree(apv[i], 1 + (i % 11));
                         rcRet += rc != 0;
                         if (rc)
-                            RTPrintf("tstContiguous: i=%d SUPContFree failed! rc=%Vrc\n", i, rc);
+                            RTPrintf("tstContiguous: i=%d SUPContFree failed! rc=%Rrc\n", i, rc);
                     }
             }
             else
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
             RTPrintf("tstContiguous: SUPContAlloc failed!\n");
 
         rc = SUPTerm();
-        RTPrintf("tstContiguous: SUPTerm -> rc=%Vrc\n", rc);
+        RTPrintf("tstContiguous: SUPTerm -> rc=%Rrc\n", rc);
         rcRet += rc != 0;
     }
 
