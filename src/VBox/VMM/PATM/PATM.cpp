@@ -345,7 +345,7 @@ static int patmReinit(PVM pVM)
     AssertReleaseMsg(pVM->patm.s.pPatchMemGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pPatchMemHC));
 
     /* Needed for future patching of sldt/sgdt/sidt/str etc. */
-    rc = CPUMR3QueryGuestCtxGCPtr(pVM, &pVM->patm.s.pCPUMCtxGC);
+    rc = CPUMR3QueryGuestCtxRCPtr(pVM, &pVM->patm.s.pCPUMCtxGC);
     AssertRCReturn(rc, rc);
 
     Assert(pVM->patm.s.PatchLookupTreeHC);

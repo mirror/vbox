@@ -105,7 +105,7 @@ int main(int argc, char **argv)
                 rc = VERR_NO_MEMORY;
             if (VBOX_SUCCESS(rc))
             {
-                pVM->pVMGC = 0;
+                pVM->pVMRC = 0;
                 pVM->pVMR3 = pVM;
                 pVM->pVMR0 = pVMR0;
                 pVM->paVMPagesR3 = paPages;

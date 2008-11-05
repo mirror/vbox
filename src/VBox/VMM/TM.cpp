@@ -853,7 +853,7 @@ VMMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertFatalRC(rc);
 
     /*
-     * Iterate the timers updating the pVMGC pointers.
+     * Iterate the timers updating the pVMRC pointers.
      */
     for (PTMTIMER pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {

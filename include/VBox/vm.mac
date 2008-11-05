@@ -53,7 +53,7 @@ struc VM
     .pUVM               RTR3PTR_RES 1
     .pVMR3              RTR3PTR_RES 1
     .pVMR0              RTR0PTR_RES 1
-    .pVMGC              RTRCPTR_RES 1
+    .pVMGCUnused        RTRCPTR_RES 1
     .pVMRC              RTRCPTR_RES 1
     .hSelf              resd 1
     .cCPUs              resd 1

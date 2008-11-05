@@ -43,23 +43,6 @@ __BEGIN_DECLS
  * @ingroup grp_vm
  * @{ */
 
-/** @def VM_GUEST_ADDR
- * Converts a current context address of data within the VM structure to the equivalent
- * guest address.
- *
- * @returns guest virtual address.
- * @param   pVM     Pointer to the VM.
- * @param   pvInVM  CC Pointer within the VM.
- * @deprecated Use VM_RC_ADDR
- */
-#ifdef IN_RING3
-# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)((RTGCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
-#elif defined(IN_RING0)
-# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)((RTGCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
-#else
-# define VM_GUEST_ADDR(pVM, pvInVM)     ( (RTGCPTR)(pvInVM) )
-#endif
-
 /** @def VM_RC_ADDR
  * Converts a current context address of data within the VM structure to the equivalent
  * raw-mode address.
@@ -69,9 +52,9 @@ __BEGIN_DECLS
  * @param   pvInVM  CC Pointer within the VM.
  */
 #ifdef IN_RING3
-# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
+# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMRC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
 #elif defined(IN_RING0)
-# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMGC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
+# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMRC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
 #else
 # define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)(pvInVM) )
 #endif
@@ -85,7 +68,7 @@ __BEGIN_DECLS
  * @param   pvInVM  CC pointer within the VM.
  */
 #ifdef IN_GC
-# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
+# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
 #elif defined(IN_RING0)
 # define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
 #else
@@ -102,7 +85,7 @@ __BEGIN_DECLS
  * @param   pvInVM  CC pointer within the VM.
  */
 #ifdef IN_GC
-# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMGC)) )
+# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
 #elif defined(IN_RING3)
 # define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
 #else

@@ -394,7 +394,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             {
                 uint32_t offCPUM = *u.pu32++;
                 Assert(offCPUM < sizeof(pVM->cpum));
-                *uSrc.pu32 = (uint32_t)(VM_GUEST_ADDR(pVM, &pVM->cpum) + offCPUM);
+                *uSrc.pu32 = (uint32_t)(VM_RC_ADDR(pVM, &pVM->cpum) + offCPUM);
                 break;
             }
 
@@ -405,7 +405,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             {
                 uint32_t offVM = *u.pu32++;
                 Assert(offVM < sizeof(VM));
-                *uSrc.pu32 = (uint32_t)(VM_GUEST_ADDR(pVM, pVM) + offVM);
+                *uSrc.pu32 = (uint32_t)(VM_RC_ADDR(pVM, pVM) + offVM);
                 break;
             }
 

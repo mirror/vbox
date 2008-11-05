@@ -396,14 +396,15 @@ typedef struct VMCPU *PVMCPU;
 
 
 /** @def VM_GET_VMCPUID
- * Returns the VMCPU id of the current EMT thread.
+ * Returns the VMCPU id of the current EMT.
+ * @todo r=bird: See VMMGetCpuId().
  */
 #ifdef IN_GC
-# define VM_GET_VMCPUID(pVM)                       0
+# define VM_GET_VMCPUID(pVM)                0
 #elif defined(IN_RING0)
-# define VM_GET_VMCPUID(pVM)                       HWACCMGetVMCPUId(pVM)
+# define VM_GET_VMCPUID(pVM)                HWACCMGetVMCPUId(pVM)
 #else
-# define VM_GET_VMCPUID(pVM)                       VMR3GetVMCPUId(pVM)
+# define VM_GET_VMCPUID(pVM)                VMR3GetVMCPUId(pVM)
 #endif
 
 /**
@@ -464,7 +465,7 @@ typedef struct VM
     R0PTRTYPE(struct VM *)      pVMR0;
     /** Raw-mode Context VM Pointer.
      * @deprecated Use VM::pVMRC. */
-    RCPTRTYPE(struct VM *)      pVMGC;
+    RCPTRTYPE(struct VM *)      pVMGCUnused;
     /** Raw-mode Context VM Pointer. */
     RCPTRTYPE(struct VM *)      pVMRC;
 
