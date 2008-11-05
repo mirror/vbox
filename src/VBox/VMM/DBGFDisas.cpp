@@ -440,14 +440,14 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         else if (Sel == DBGF_SEL_FLAT)
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%VGv  %s", GCPtr, szBuf);
+                RTStrPrintf(pszOutput, cchOutput, "%RGv  %s", GCPtr, szBuf);
             else
                 RTStrPrintf(pszOutput, cchOutput, "%08RX32  %s", (uint32_t)GCPtr, szBuf);
         }
         else
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%04x:%VGv  %s", Sel, GCPtr, szBuf);
+                RTStrPrintf(pszOutput, cchOutput, "%04x:%RGv  %s", Sel, GCPtr, szBuf);
             else
                 RTStrPrintf(pszOutput, cchOutput, "%04x:%08RX32  %s", Sel, (uint32_t)GCPtr, szBuf);
         }
@@ -470,7 +470,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         else if (Sel == DBGF_SEL_FLAT)
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%VGv %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%RGv %.*Vhxs%*s %s",
                             GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);
@@ -483,7 +483,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
         else
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cchOutput, "%04x:%VGv %.*Vhxs%*s %s",
+                RTStrPrintf(pszOutput, cchOutput, "%04x:%RGv %.*Vhxs%*s %s",
                             Sel, GCPtr,
                             cbBits, pau8Bits, cbBits < 8 ? (8 - cbBits) * 3 : 0, "",
                             szBuf);

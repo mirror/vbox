@@ -156,7 +156,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pf
     /*
      * Init the page tables and insert them into the page directories.
      */
-    Log4(("PGMR3MapPT: GCPtr=%VGv cPTs=%u pbPTs=%p\n", GCPtr, cPTs, pbPTs));
+    Log4(("PGMR3MapPT: GCPtr=%RGv cPTs=%u pbPTs=%p\n", GCPtr, cPTs, pbPTs));
     for (i = 0; i < cPTs; i++)
     {
         /*
@@ -347,7 +347,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
             }
             if (!pCur)
             {
-                LogRel(("PGMR3MappingsFix: Conflicts with intermediate PDE %#x (GCPtrBase=%VGv cb=%#zx). The guest should retry.\n",
+                LogRel(("PGMR3MappingsFix: Conflicts with intermediate PDE %#x (GCPtrBase=%RGv cb=%#zx). The guest should retry.\n",
                         iPDNew + i, GCPtrBase, cb));
                 return VERR_PGM_MAPPINGS_FIX_CONFLICT;
             }
@@ -524,7 +524,7 @@ VMMR3DECL(int) PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, un
         ? uAddress + cbPages > pvHyperGC
         : pvHyperGC + cbHyper > uAddress
        )
-        AssertLogRelMsgFailedReturn(("Addr=%RTptr HyperGC=%VGv cbPages=%zu\n", Addr, pvHyperGC, cbPages),
+        AssertLogRelMsgFailedReturn(("Addr=%RTptr HyperGC=%RGv cbPages=%zu\n", Addr, pvHyperGC, cbPages),
                                     VERR_PGM_INTERMEDIATE_PAGING_CONFLICT);
 
     const unsigned cPages = cbPages >> PAGE_SHIFT;
@@ -799,7 +799,7 @@ void pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RT
     unsigned iPDOld = GCPtrOldMapping >> X86_PD_SHIFT;
     unsigned iPDNew = GCPtrNewMapping >> X86_PD_SHIFT;
 
-    Log(("PGM: Relocating %s from %VGv to %VGv\n", pMapping->pszDesc, GCPtrOldMapping, GCPtrNewMapping));
+    Log(("PGM: Relocating %s from %RGv to %RGv\n", pMapping->pszDesc, GCPtrOldMapping, GCPtrNewMapping));
     Assert(((unsigned)iPDOld << X86_PD_SHIFT) == pMapping->GCPtr);
 
     /*
@@ -1094,7 +1094,7 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
                     && (fRawR0 || Pde.n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
-                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s (PAE)\n"
+                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                          PDE=%016RX64.\n",
                         GCPtr, pCur->pszDesc, Pde.u));
                     return true;
@@ -1162,7 +1162,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
         {
             if (off + cb > pCur->cb)
             {
-                AssertMsgFailed(("Invalid page range %VGv LB%#x. mapping '%s' %VGv to %VGv\n",
+                AssertMsgFailed(("Invalid page range %RGv LB%#x. mapping '%s' %RGv to %RGv\n",
                                  GCPtrSrc, cb, pCur->pszDesc, pCur->GCPtr, pCur->GCPtrLast));
                 return VERR_INVALID_PARAMETER;
             }
@@ -1209,6 +1209,6 @@ DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs
                     : "\nThe mappings are FLOATING.\n");
     PPGMMAPPING pCur;
     for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-        pHlp->pfnPrintf(pHlp, "%VGv - %VGv  %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
+        pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %s\n", pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
 }
 

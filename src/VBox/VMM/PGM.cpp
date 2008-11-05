@@ -2328,7 +2328,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
                 break;
         if (!pMapping)
         {
-            LogRel(("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%VGv)\n",
+            LogRel(("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
                     cPTs, szDesc, GCPtr));
             AssertFailed();
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
@@ -2337,11 +2337,11 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         /* relocate it. */
         if (pMapping->GCPtr != GCPtr)
         {
-            AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%VGv\n", GCPtr));
+            AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%RGv\n", GCPtr));
             pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr, GCPtr);
         }
         else
-            Log(("pgmR3Load: '%s' needed no relocation (%VGv)\n", szDesc, GCPtr));
+            Log(("pgmR3Load: '%s' needed no relocation (%RGv)\n", szDesc, GCPtr));
     }
 
     /*
@@ -3927,7 +3927,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
                 RTHCPHYS pPhysHC = 0;
 
                 PGMShwGetPage(pVM, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
-                Log(("Found %VGp at %VGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
+                Log(("Found %VGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
             }
         }
     }
@@ -4319,17 +4319,17 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityVirtHandlerNode(PAVLROGCPTRNODECORE 
     PPGMCHECKINTARGS pArgs = (PPGMCHECKINTARGS)pvUser;
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
     AssertReleaseReturn(!((uintptr_t)pCur & 7), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %VGv-%VGv %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
+    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %RGv-%RGv %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
     AssertReleaseMsg(   !pArgs->pPrevVirt
                      || (pArgs->fLeftToRight ? pArgs->pPrevVirt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevVirt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevVirt=%p %VGv-%VGv %s\n"
-                      "     pCur=%p %VGv-%VGv %s\n",
+                     ("pPrevVirt=%p %RGv-%RGv %s\n"
+                      "     pCur=%p %RGv-%RGv %s\n",
                       pArgs->pPrevVirt, pArgs->pPrevVirt->Core.Key, pArgs->pPrevVirt->Core.KeyLast, pArgs->pPrevVirt->pszDesc,
                       pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
     for (unsigned iPage = 0; iPage < pCur->cPages; iPage++)
     {
         AssertReleaseMsg(pCur->aPhysToVirt[iPage].offVirtHandler == -RT_OFFSETOF(PGMVIRTHANDLER, aPhysToVirt[iPage]),
-                         ("pCur=%p %VGv-%VGv %s\n"
+                         ("pCur=%p %RGv-%RGv %s\n"
                           "iPage=%d offVirtHandle=%#x expected %#x\n",
                           pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc,
                           iPage, pCur->aPhysToVirt[iPage].offVirtHandler, -RT_OFFSETOF(PGMVIRTHANDLER, aPhysToVirt[iPage])));

@@ -274,7 +274,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
             RTLogPrintf("%s\n", sz);
         else
         {
-            RTLogPrintf("%VGv rc=%Rrc\n", GCPtr, rc);
+            RTLogPrintf("%RGv rc=%Rrc\n", GCPtr, rc);
             cb = 1;
         }
         GCPtr += cb;

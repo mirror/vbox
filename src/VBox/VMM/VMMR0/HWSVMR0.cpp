@@ -822,7 +822,7 @@ ResumeExecution:
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %VGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
+        Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVM))
         {
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
@@ -1370,7 +1370,7 @@ ResumeExecution:
 #endif
             Assert(!pVM->hwaccm.s.fNestedPaging);
 
-            Log2(("Page fault at %RGv cr2=%VGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+            Log2(("Page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
             /* Exit qualification contains the linear address of the page fault. */
             TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
             TRPMSetErrorCode(pVM, errCode);
@@ -1381,7 +1381,7 @@ ResumeExecution:
             Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
             if (rc == VINF_SUCCESS)
             {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-                Log2(("Shadow page fault at %RGv cr2=%VGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+                Log2(("Shadow page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
 
                 TRPMResetTrap(pVM);
@@ -1809,13 +1809,13 @@ ResumeExecution:
 
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
                 rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
             else
             {
-                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+                Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
@@ -1827,7 +1827,7 @@ ResumeExecution:
 
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log2(("IOMIOPortWrite %VGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
+                Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
             }
@@ -1841,7 +1841,7 @@ ResumeExecution:
                 {
                     /* Write back to the EAX register. */
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
-                    Log2(("IOMIOPortRead %VGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
+                    Log2(("IOMIOPortRead %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
                 }
             }
         }
@@ -1892,7 +1892,7 @@ ResumeExecution:
                             pVMCB->guest.u64DR7 = pCtx->dr[7];
 
                             /* Inject the exception. */
-                            Log(("Inject IO debug trap at %VGv\n", (RTGCPTR)pCtx->rip));
+                            Log(("Inject IO debug trap at %RGv\n", (RTGCPTR)pCtx->rip));
 
                             Event.au64[0]    = 0;
                             Event.n.u3Type   = SVM_EVENT_EXCEPTION; /* trap or fault */
@@ -1910,7 +1910,7 @@ ResumeExecution:
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
-            Log2(("EM status from IO at %VGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, rc));
+            Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, rc));
             break;
         }
 
@@ -1922,7 +1922,7 @@ ResumeExecution:
         else
             AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
 #endif
-        Log2(("Failed IO at %VGv %x size %d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+        Log2(("Failed IO at %RGv %x size %d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
         break;
     }
 
@@ -1955,7 +1955,7 @@ ResumeExecution:
         Event.n.u1Valid  = 1;
         Event.n.u8Vector = X86_XCPT_UD;
 
-        Log(("Forced #UD trap at %VGv\n", (RTGCPTR)pCtx->rip));
+        Log(("Forced #UD trap at %RGv\n", (RTGCPTR)pCtx->rip));
         SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2121,7 +2121,7 @@ static int svmR0InterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     if (RT_SUCCESS(rc))
     {
         /* Manually invalidate the page for the VM's TLB. */
-        Log(("SVMInvlpgA %VGv ASID=%d\n", addr, uASID));
+        Log(("SVMInvlpgA %RGv ASID=%d\n", addr, uASID));
         SVMInvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
@@ -2193,7 +2193,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     {
         SVM_VMCB   *pVMCB;
 
-        Log2(("SVMR0InvalidatePage %VGv\n", GCVirt));
+        Log2(("SVMR0InvalidatePage %RGv\n", GCVirt));
         AssertReturn(pVM, VERR_INVALID_PARAMETER);
         Assert(pVM->hwaccm.s.svm.fSupported);
 

@@ -281,8 +281,8 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
             /*
              * Accepted!
              */
-            AssertMsg(GCPtrOld == pVM->mm.s.pvHyperAreaGC, ("GCPtrOld=%VGv pVM->mm.s.pvHyperAreaGC=%VGv\n", GCPtrOld, pVM->mm.s.pvHyperAreaGC));
-            Log(("Relocating the hypervisor from %VGv to %VGv\n", GCPtrOld, GCPtrNew));
+            AssertMsg(GCPtrOld == pVM->mm.s.pvHyperAreaGC, ("GCPtrOld=%RGv pVM->mm.s.pvHyperAreaGC=%RGv\n", GCPtrOld, pVM->mm.s.pvHyperAreaGC));
+            Log(("Relocating the hypervisor from %RGv to %RGv\n", GCPtrOld, GCPtrNew));
 
             /*
              * Relocate the VM structure and ourselves.
@@ -764,7 +764,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
     }
 
     AssertRC(rc);
-    LogFlow(("mmR3HyperMap: returns %Rrc *pGCPtr=%VGv\n", rc, *pGCPtr));
+    LogFlow(("mmR3HyperMap: returns %Rrc *pGCPtr=%RGv\n", rc, *pGCPtr));
     return rc;
 }
 
@@ -1078,7 +1078,7 @@ VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t c
  */
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    pHlp->pfnPrintf(pHlp, "Hypervisor Memory Area (HMA) Layout: Base %VGv, 0x%08x bytes\n",
+    pHlp->pfnPrintf(pHlp, "Hypervisor Memory Area (HMA) Layout: Base %RGv, 0x%08x bytes\n",
                     pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea);
 
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.pHyperHeapR3 + pVM->mm.s.offLookupHyper);
@@ -1087,7 +1087,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv LOCKED  %-*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv LOCKED  %-*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.Locked.pvR3,
@@ -1101,7 +1101,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %RHv HCPHYS  %RHp %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv HCPHYS  %RHp %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.HCPhys.pvR3, pLookup->u.HCPhys.HCPhys,
@@ -1109,7 +1109,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_GCPHYS:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %*s GCPHYS  %VGp%*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s GCPHYS  %VGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",
@@ -1118,7 +1118,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_MMIO2:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %*s MMIO2   %VGp%*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s MMIO2   %VGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",
@@ -1127,7 +1127,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_DYNAMIC:
-                pHlp->pfnPrintf(pHlp, "%VGv-%VGv %*s DYNAMIC %*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s DYNAMIC %*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",

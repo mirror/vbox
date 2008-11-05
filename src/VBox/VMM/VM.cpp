@@ -946,7 +946,7 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  */
 VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
-    LogFlow(("VMR3Relocate: offDelta=%VGv\n", offDelta));
+    LogFlow(("VMR3Relocate: offDelta=%RGv\n", offDelta));
 
     /*
      * The order here is very important!

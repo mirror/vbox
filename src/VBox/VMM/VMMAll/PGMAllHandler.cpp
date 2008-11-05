@@ -1359,7 +1359,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         {
             if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
             {
-                AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysNew=~0 iPage=%#x %VGv %s\n",
+                AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysNew=~0 iPage=%#x %RGv %s\n",
                                  pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
                 pState->cErrors++;
             }
@@ -1369,7 +1369,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         AssertRCReturn(rc, 0);
         if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
         {
-            AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysGst=%VGp iPage=%#x %VGv %s\n",
+            AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysGst=%VGp iPage=%#x %RGv %s\n",
                              pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
@@ -1378,7 +1378,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
         if (!pPage)
         {
-            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%VGp iPage=%#x %VGv %s\n",
+            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%VGp iPage=%#x %RGv %s\n",
                              GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
@@ -1386,7 +1386,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
 
         if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
-            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%VGp iPage=%#x %VGv state=%d expected>=%d %s\n",
+            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%VGp iPage=%#x %RGv state=%d expected>=%d %s\n",
                              pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;

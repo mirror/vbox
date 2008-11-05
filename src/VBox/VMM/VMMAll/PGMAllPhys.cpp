@@ -2113,7 +2113,7 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysReadGCPtr: %VGv %zu\n", GCPtrSrc, cb));
+    LogFlow(("PGMPhysReadGCPtr: %RGv %zu\n", GCPtrSrc, cb));
 
     /*
      * Optimize reads within a single page.
@@ -2185,7 +2185,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPtr: %VGv %zu\n", GCPtrDst, cb));
+    LogFlow(("PGMPhysWriteGCPtr: %RGv %zu\n", GCPtrDst, cb));
 
     /*
      * Optimize writes within a single page.
@@ -2327,7 +2327,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
         if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
-            AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%VGv\n", cb, cb1, cb2, GCPtrSrc));
+            AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%RGv\n", cb, cb1, cb2, GCPtrSrc));
             void *pvSrc1;
             rc = PGM_GCPHYS_2_PTR(pVM, GCPhys1, &pvSrc1);
             switch (rc)
@@ -2389,10 +2389,10 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
             break;
 
         default:
-            AssertMsgFailed(("rc=%Rrc GCPtrSrc=%VGv cb=%#x\n", rc, GCPtrSrc, cb));
+            AssertMsgFailed(("rc=%Rrc GCPtrSrc=%RGv cb=%#x\n", rc, GCPtrSrc, cb));
             return rc;
     }
-    Log(("PGMPhysInterpretedRead: GCPtrSrc=%VGv cb=%#x -> #PF(%#x)\n", GCPtrSrc, cb, uErr));
+    Log(("PGMPhysInterpretedRead: GCPtrSrc=%RGv cb=%#x -> #PF(%#x)\n", GCPtrSrc, cb, uErr));
     return TRPMRaiseXcptErrCR2(pVM, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
 }
 

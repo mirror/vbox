@@ -1223,7 +1223,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
              * mode; just execute the whole block until IF is set again.
              */
             case VINF_SUCCESS:
-                Log(("emR3RawExecuteInstruction: Executing instruction starting at new address %VGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Executing instruction starting at new address %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 Assert(pCtx->eip);
@@ -1247,7 +1247,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
              * One instruction.
              */
             case VINF_PATCH_EMULATE_INSTR:
-                Log(("emR3RawExecuteInstruction: Emulate patched instruction at %VGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 return emR3RawExecuteInstruction(pVM, "PATCHIR");
@@ -1256,7 +1256,7 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
              * The patch was disabled, hand it to the REM.
              */
             case VERR_PATCH_DISABLED:
-                Log(("emR3RawExecuteInstruction: Disabled patch -> new eip %VGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Disabled patch -> new eip %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 if (pCtx->eflags.Bits.u1IF)
@@ -1776,7 +1776,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
             case VINF_SUCCESS:
             {
                 /** @todo execute a whole block */
-                Log(("emR3PatchTrap: Executing faulting instruction at new address %VGv\n", pNewEip));
+                Log(("emR3PatchTrap: Executing faulting instruction at new address %RGv\n", pNewEip));
                 if (!(pVM->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
                     Log(("emR3PatchTrap: Virtual IF flag disabled!!\n"));
 
@@ -1810,7 +1810,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
              * One instruction.
              */
             case VINF_PATCH_EMULATE_INSTR:
-                Log(("emR3PatchTrap: Emulate patched instruction at %VGv IF=%d VMIF=%x\n",
+                Log(("emR3PatchTrap: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVM->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
@@ -2070,11 +2070,11 @@ int emR3RawPrivileged(PVM pVM)
                                     rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);
                                     Assert(rc == VERR_PATCH_DISABLED);
                                     /* Conflict detected, patch disabled */
-                                    Log(("emR3RawPrivileged: detected conflict -> disabled patch at %VGv\n", (RTGCPTR)pCtx->rip));
+                                    Log(("emR3RawPrivileged: detected conflict -> disabled patch at %RGv\n", (RTGCPTR)pCtx->rip));
                                     enmState = PATMTRANS_SAFE;
                                 }
                                 /* The translation had better be successful. Otherwise we can't recover. */
-                                AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %VGv\n", (RTGCPTR)pCtx->rip));
+                                AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %RGv\n", (RTGCPTR)pCtx->rip));
                                 if (enmState != PATMTRANS_OVERWRITTEN)
                                     pCtx->rip = pOrgInstrGC;
                             }
@@ -2768,7 +2768,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
     int      rc = VERR_INTERNAL_ERROR;
     PCPUMCTX pCtx = pVM->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%VGv)\n", pCtx->cs, (RTGCPTR)pCtx->rip));
+    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%RGv)\n", pCtx->cs, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
@@ -2800,13 +2800,13 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
          * Log important stuff before entering GC.
          */
         if (TRPMHasTrap(pVM))
-            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%VGv\n", TRPMGetTrapNo(pVM), pCtx->cs, (RTGCPTR)pCtx->rip));
+            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%RGv\n", TRPMGetTrapNo(pVM), pCtx->cs, (RTGCPTR)pCtx->rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
         else if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
-            Log(("HWR%d: %04X:%VGv ESP=%VGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            Log(("HWR%d: %04X:%RGv ESP=%RGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         else
             Log(("HWR%d: %04X:%08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
 #endif /* LOG_ENABLED */
@@ -3184,7 +3184,7 @@ static int emR3ForcedActions(PVM pVM, int rc)
          */
         if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
         {
-            Log(("VM_FF_EMULATED_STI at %VGv successor %VGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
+            Log(("VM_FF_EMULATED_STI at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVM), EMGetInhibitInterruptsPC(pVM)));
             if (CPUMGetGuestEIP(pVM) != EMGetInhibitInterruptsPC(pVM))
             {
                 /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
