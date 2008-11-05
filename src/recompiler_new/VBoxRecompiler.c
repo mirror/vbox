@@ -682,10 +682,10 @@ REMR3DECL(int) REMR3BreakpointSet(PVM pVM, RTGCUINTPTR Address)
     VM_ASSERT_EMT(pVM);
     if (!cpu_breakpoint_insert(&pVM->rem.s.Env, Address))
     {
-        LogFlow(("REMR3BreakpointSet: Address=%VGv\n", Address));
+        LogFlow(("REMR3BreakpointSet: Address=%RGv\n", Address));
         return VINF_SUCCESS;
     }
-    LogFlow(("REMR3BreakpointSet: Address=%VGv - failed!\n", Address));
+    LogFlow(("REMR3BreakpointSet: Address=%RGv - failed!\n", Address));
     return VERR_REM_NO_MORE_BP_SLOTS;
 }
 
@@ -703,10 +703,10 @@ REMR3DECL(int) REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address)
     VM_ASSERT_EMT(pVM);
     if (!cpu_breakpoint_remove(&pVM->rem.s.Env, Address))
     {
-        LogFlow(("REMR3BreakpointClear: Address=%VGv\n", Address));
+        LogFlow(("REMR3BreakpointClear: Address=%RGv\n", Address));
         return VINF_SUCCESS;
     }
-    LogFlow(("REMR3BreakpointClear: Address=%VGv - not found!\n", Address));
+    LogFlow(("REMR3BreakpointClear: Address=%RGv - not found!\n", Address));
     return VERR_REM_BP_NOT_FOUND;
 }
 
@@ -793,7 +793,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
                         rc = VINF_EM_DBG_BREAKPOINT;
                         break;
                     }
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
+                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC));
                 break;
             }
 
@@ -959,8 +959,8 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         AssertRC(rc2);
     }
 
-    Log2(("REMR3EmulateInstruction: returns %Rrc (cs:eip=%04x:%VGv)\n",
-          rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3EmulateInstruction: returns %Rrc (cs:eip=%04x:%RGv)\n",
+          rc, pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
     return rc;
 }
 
@@ -980,7 +980,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
 REMR3DECL(int) REMR3Run(PVM pVM)
 {
     int rc;
-    Log2(("REMR3Run: (cs:eip=%04x:%VGv)\n", pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
     Assert(pVM->rem.s.fInREM);
 
     TMNotifyStartOfExecution(pVM);
@@ -1048,7 +1048,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
                     rc = VINF_EM_DBG_BREAKPOINT;
                     break;
                 }
-            Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
+            Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%RGv\n", rc, iBP, GCPtrPC));
 #endif
             break;
         }
@@ -1088,7 +1088,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
             break;
     }
 
-    Log2(("REMR3Run: returns %Rrc (cs:eip=%04x:%VGv)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3Run: returns %Rrc (cs:eip=%04x:%RGv)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
     return rc;
 }
 
@@ -1360,7 +1360,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
      */
     if (pVM->rem.s.fIgnoreInvlPg || pVM->rem.s.fIgnoreAll)
         return;
-    Log(("remR3FlushPage: GCPtr=%VGv\n", GCPtr));
+    Log(("remR3FlushPage: GCPtr=%RGv\n", GCPtr));
     Assert(pVM->rem.s.fInREM || pVM->rem.s.fInStateSync);
 
     //RAWEx_ProfileStop(env, STATS_QEMU_TOTAL);
@@ -1379,7 +1379,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
     rc = PGMInvalidatePage(pVM, GCPtr);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("remR3FlushPage %VGv failed with %d!!\n", GCPtr, rc));
+        AssertMsgFailed(("remR3FlushPage %RGv failed with %d!!\n", GCPtr, rc));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
     }
     //RAWEx_ProfileStart(env, STATS_QEMU_TOTAL);
@@ -1565,7 +1565,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
         STAM_COUNTER_INC(&s_aStatTrap[uTrap]);
     }
 #endif
-    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%VGv\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
+    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, (RTGCPTR)pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
     if(   uTrap < 0x20
        && (env->cr[0] & X86_CR0_PE)
        && !(env->eflags & X86_EFL_VM))
@@ -1575,7 +1575,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
 #endif
         if(pVM->rem.s.uPendingException == uTrap && ++pVM->rem.s.cPendingExceptions > 512)
         {
-            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%VGv eip=%VGv cr2=%VGv\n", uTrap, uErrorCode, pvNextEIP, env->eip, env->cr[2]));
+            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, (RTGCPTR)pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
             remR3RaiseRC(env->pVM, VERR_REM_TOO_MANY_TRAPS);
             return VERR_REM_TOO_MANY_TRAPS;
         }
@@ -1743,7 +1743,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
         pVM->rem.s.fIgnoreInvlPg = true;
         for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
         {
-            Log2(("REMR3State: invlpg %VGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
+            Log2(("REMR3State: invlpg %RGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
             tlb_flush_page(&pVM->rem.s.Env, pVM->rem.s.aGCPtrInvalidatedPages[i]);
         }
         pVM->rem.s.fIgnoreInvlPg = false;
@@ -2060,8 +2060,8 @@ REMR3DECL(int)  REMR3State(PVM pVM)
          */
         rc = TRPMResetTrap(pVM);
         AssertRC(rc);
-        Log2(("REMR3State: trap=%02x errcd=%VGv cr2=%VGv nexteip=%VGv%s\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.error_code,
-              pVM->rem.s.Env.cr[2], pVM->rem.s.Env.exception_next_eip, pVM->rem.s.Env.exception_is_int ? " software" : ""));
+        Log2(("REMR3State: trap=%02x errcd=%RGv cr2=%RGv nexteip=%RGv%s\n", pVM->rem.s.Env.exception_index, (RTGCPTR)pVM->rem.s.Env.error_code,
+              (RTGCPTR)pVM->rem.s.Env.cr[2], (RTGCPTR)pVM->rem.s.Env.exception_next_eip, pVM->rem.s.Env.exception_is_int ? " software" : ""));
     }
 
     /*
@@ -2557,7 +2557,7 @@ REMR3DECL(void) REMR3ReplayInvalidatedPages(PVM pVM)
     pVM->rem.s.fIgnoreInvlPg = true;
     for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
     {
-        Log2(("REMR3ReplayInvalidatedPages: invlpg %VGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
+        Log2(("REMR3ReplayInvalidatedPages: invlpg %RGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
         tlb_flush_page(&pVM->rem.s.Env, pVM->rem.s.aGCPtrInvalidatedPages[i]);
     }
     pVM->rem.s.fIgnoreInvlPg = false;
@@ -2675,7 +2675,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
 {
     uint32_t cbBitmap;
     int rc;
-    Log(("REMR3NotifyPhysRamRegister: GCPhys=%VGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
+    Log(("REMR3NotifyPhysRamRegister: GCPhys=%RGp cb=%d fFlags=%d\n", GCPhys, cb, fFlags));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2745,7 +2745,7 @@ REMR3DECL(void) REMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
  */
 REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, RTHCUINTPTR pvRam, unsigned fFlags)
 {
-    Log(("REMR3NotifyPhysRamChunkRegister: GCPhys=%VGp cb=%d pvRam=%p fFlags=%d\n", GCPhys, cb, pvRam, fFlags));
+    Log(("REMR3NotifyPhysRamChunkRegister: GCPhys=%RGp cb=%d pvRam=%p fFlags=%d\n", GCPhys, cb, pvRam, fFlags));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2772,19 +2772,19 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
  *
  * @param   physaddr    The physical address.
  */
-void remR3GrowDynRange(unsigned long physaddr)
+void remR3GrowDynRange(unsigned long physaddr) /** @todo Needs fixing for MSC... */
 {
     int rc;
     PVM pVM = cpu_single_env->pVM;
     const RTGCPHYS GCPhys = physaddr;
 
-    LogFlow(("remR3GrowDynRange %VGp\n", physaddr));
+    LogFlow(("remR3GrowDynRange %RGp\n", (RTGCPTR)physaddr));
     rc = PGM3PhysGrowRange(pVM, &GCPhys);
     if (RT_SUCCESS(rc))
         return;
 
-    LogRel(("\nUnable to allocate guest RAM chunk at %VGp\n", physaddr));
-    cpu_abort(cpu_single_env, "Unable to allocate guest RAM chunk at %VGp\n", physaddr);
+    LogRel(("\nUnable to allocate guest RAM chunk at %RGp\n", (RTGCPTR)physaddr));
+    cpu_abort(cpu_single_env, "Unable to allocate guest RAM chunk at %RGp\n", (RTGCPTR)physaddr);
     AssertFatalFailed();
 }
 
@@ -2803,7 +2803,7 @@ void remR3GrowDynRange(unsigned long physaddr)
  */
 REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, void *pvCopy, bool fShadow)
 {
-    Log(("REMR3NotifyPhysRomRegister: GCPhys=%VGp cb=%d pvCopy=%p fShadow=%RTbool\n", GCPhys, cb, pvCopy, fShadow));
+    Log(("REMR3NotifyPhysRomRegister: GCPhys=%RGp cb=%d pvCopy=%p fShadow=%RTbool\n", GCPhys, cb, pvCopy, fShadow));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2841,7 +2841,7 @@ REMR3DECL(void) REMR3NotifyPhysRomRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb, 
  */
 REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
 {
-    Log(("REMR3NotifyPhysReserve: GCPhys=%VGp cb=%d\n", GCPhys, cb));
+    Log(("REMR3NotifyPhysReserve: GCPhys=%RGp cb=%d\n", GCPhys, cb));
     VM_ASSERT_EMT(pVM);
 
     /*
@@ -2878,7 +2878,7 @@ REMR3DECL(void) REMR3NotifyPhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cb)
  */
 REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
-    Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%VGp cb=%VGp fHasHCHandler=%d\n",
+    Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%d\n",
           enmType, GCPhys, cb, fHasHCHandler));
     VM_ASSERT_EMT(pVM);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
@@ -2912,7 +2912,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE e
  */
 REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%VGp cb=%VGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
+    Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
           enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
@@ -2958,7 +2958,7 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
  */
 REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%VGp GCPhysNew=%VGp cb=%VGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
+    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%RGp GCPhysNew=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
           enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
     VM_ASSERT_EMT(pVM);
     AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
@@ -3041,11 +3041,11 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
     if ((pTLBEntry->addr_code & ~TARGET_PAGE_MASK) == pVM->rem.s.iHandlerMemType)
     {
         target_ulong ret = pTLBEntry->addend + addr;
-        AssertMsg2("remR3PhysGetPhysicalAddressCode: addr=%VGv addr_code=%VGv addend=%VGp ret=%VGp\n",
+        AssertMsg2("remR3PhysGetPhysicalAddressCode: addr=%RGv addr_code=%RGv addend=%RGp ret=%RGp\n",
                    (RTGCPTR)addr, (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, ret);
         return ret;
     }
-    LogRel(("\nTrying to execute code with memory type addr_code=%VGv addend=%VGp at %VGv! (iHandlerMemType=%#x iMMIOMemType=%#x)\n"
+    LogRel(("\nTrying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv! (iHandlerMemType=%#x iMMIOMemType=%#x)\n"
             "*** handlers\n",
             (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType));
     DBGFR3Info(pVM, "handlers", NULL, DBGFR3InfoLogRelHlp());
@@ -3053,7 +3053,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
     DBGFR3Info(pVM, "mmio", NULL, DBGFR3InfoLogRelHlp());
     LogRel(("*** phys\n"));
     DBGFR3Info(pVM, "phys", NULL, DBGFR3InfoLogRelHlp());
-    cpu_abort(env, "Trying to execute code with memory type addr_code=%VGv addend=%VGp at %VGv. (iHandlerMemType=%#x iMMIOMemType=%#x)\n",
+    cpu_abort(env, "Trying to execute code with memory type addr_code=%RGv addend=%RGp at %RGv. (iHandlerMemType=%#x iMMIOMemType=%#x)\n",
               (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType);
     AssertFatalFailed();
 }
@@ -3062,7 +3062,7 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
 /** Validate the physical address passed to the read functions.
  * Useful for finding non-guest-ram reads/writes.  */
 #if 0 //1 /* disable if it becomes bothersome... */
-# define VBOX_CHECK_ADDR(GCPhys) AssertMsg(PGMPhysIsGCPhysValid(cpu_single_env->pVM, (GCPhys)), ("%VGp\n", (GCPhys)))
+# define VBOX_CHECK_ADDR(GCPhys) AssertMsg(PGMPhysIsGCPhysValid(cpu_single_env->pVM, (GCPhys)), ("%RGp\n", (GCPhys)))
 #else
 # define VBOX_CHECK_ADDR(GCPhys) do { } while (0)
 #endif
@@ -3327,7 +3327,7 @@ static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU8: GCPhys=%VGp -> %02x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU8: GCPhys=%RGp -> %02x\n", GCPhys, u32));
     return u32;
 }
 
@@ -3337,7 +3337,7 @@ static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU16: GCPhys=%VGp -> %04x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU16: GCPhys=%RGp -> %04x\n", GCPhys, u32));
     return u32;
 }
 
@@ -3347,7 +3347,7 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
-    Log2(("remR3MMIOReadU32: GCPhys=%VGp -> %08x\n", GCPhys, u32));
+    Log2(("remR3MMIOReadU32: GCPhys=%RGp -> %08x\n", GCPhys, u32));
     return u32;
 }
 
@@ -3355,7 +3355,7 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
 static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU8: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU8: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3364,7 +3364,7 @@ static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t
 static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU16: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU16: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3373,7 +3373,7 @@ static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_
 static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     int rc;
-    Log2(("remR3MMIOWriteU32: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3MMIOWriteU32: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
@@ -3387,7 +3387,7 @@ static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_
 static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint8_t u8;
-    Log2(("remR3HandlerReadU8: GCPhys=%VGp\n", GCPhys));
+    Log2(("remR3HandlerReadU8: GCPhys=%RGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8));
     return u8;
 }
@@ -3395,7 +3395,7 @@ static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint16_t u16;
-    Log2(("remR3HandlerReadU16: GCPhys=%VGp\n", GCPhys));
+    Log2(("remR3HandlerReadU16: GCPhys=%RGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16));
     return u16;
 }
@@ -3403,26 +3403,26 @@ static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 static uint32_t remR3HandlerReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32;
-    Log2(("remR3HandlerReadU32: GCPhys=%VGp\n", GCPhys));
+    Log2(("remR3HandlerReadU32: GCPhys=%RGp\n", GCPhys));
     PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32));
     return u32;
 }
 
 static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU8: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU8: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t));
 }
 
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU16: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU16: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t));
 }
 
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    Log2(("remR3HandlerWriteU32: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
+    Log2(("remR3HandlerWriteU32: GCPhys=%RGp u32=%#x\n", GCPhys, u32));
     PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t));
 }
 
@@ -3791,7 +3791,7 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
         /*
          * Do the disassembling.
          */
-        RTLogPrintf("Guest Code: PC=%VGp #VGp (%VGp) bytes fFlags=%d\n", uCode, cb, cb, fFlags);
+        RTLogPrintf("Guest Code: PC=%RGp %#VGp (%RGp) bytes fFlags=%d\n", uCode, cb, cb, fFlags);
         cs = cpu_single_env->segs[R_CS].selector;
         eip = uCode - cpu_single_env->segs[R_CS].base;
         for (;;)
@@ -3805,10 +3805,10 @@ void target_disas(FILE *phFileIgnored, target_ulong uCode, target_ulong cb, int 
                                         szBuf, sizeof(szBuf),
                                         &cbInstr);
             if (RT_SUCCESS(rc))
-                RTLogPrintf("%VGp %s\n", uCode, szBuf);
+                RTLogPrintf("%RGp %s\n", uCode, szBuf);
             else
             {
-                RTLogPrintf("%VGp %04x:%VGp: %s\n", uCode, cs, eip, szBuf);
+                RTLogPrintf("%RGp %04x:%RGp: %s\n", uCode, cs, eip, szBuf);
                 cbInstr = 1;
             }
 

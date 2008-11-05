@@ -576,7 +576,7 @@ HRESULT Machine::registeredInit()
 
         /* fetch the current error info */
         mData->mAccessError = com::ErrorInfo();
-        LogWarning (("Machine {%Vuuid} is inaccessible! [%ls]\n",
+        LogWarning (("Machine {%Ruuid} is inaccessible! [%ls]\n",
                      mData->mUuid.raw(),
                      mData->mAccessError.getText().raw()));
 
@@ -1320,7 +1320,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
         {
             /* the default snapshots folder is {UUID}, for backwards
              * compatibility and to resolve conflicts */
-            snapshotFolder = Utf8StrFmt ("{%Vuuid}", mData->mUuid.raw());
+            snapshotFolder = Utf8StrFmt ("{%Ruuid}", mData->mUuid.raw());
         }
     }
 
@@ -4674,7 +4674,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
             if (mData->mUuid != id)
             {
                 throw setError (E_FAIL,
-                    tr ("Machine UUID {%Vuuid} in '%ls' doesn't match its "
+                    tr ("Machine UUID {%Ruuid} in '%ls' doesn't match its "
                         "UUID {%s} in the registry file '%ls'"),
                     id.raw(), mData->mConfigFileFull.raw(),
                     mData->mUuid.toString().raw(),
@@ -5295,15 +5295,15 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
         {
             if (mType == IsSnapshotMachine)
                 return setError (E_FAIL,
-                    tr ("Immutable hard disk '%ls' with UUID {%Vuuid} cannot be "
-                        "directly attached to snapshot with UUID {%Vuuid} "
+                    tr ("Immutable hard disk '%ls' with UUID {%Ruuid} cannot be "
+                        "directly attached to snapshot with UUID {%Ruuid} "
                         "of the virtual machine '%ls' ('%ls')"),
                     hd->locationFull().raw(), uuid.raw(),
                     aSnapshotId->raw(),
                     mUserData->mName.raw(), mData->mConfigFileFull.raw());
 
             return setError (E_FAIL,
-                tr ("Immutable hard disk '%ls' with UUID {%Vuuid} cannot be "
+                tr ("Immutable hard disk '%ls' with UUID {%Ruuid} cannot be "
                     "directly attached to the virtual machine '%ls' ('%ls')"),
                 hd->locationFull().raw(), uuid.raw(),
                 mUserData->mName.raw(), mData->mConfigFileFull.raw());
@@ -5311,7 +5311,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
 
         if (mType != IsSnapshotMachine && hd->children().size() != 0)
             return setError (E_FAIL,
-                tr ("Hard disk '%ls' with UUID {%Vuuid} cannot be directly "
+                tr ("Hard disk '%ls' with UUID {%Ruuid} cannot be directly "
                     "attached to the virtual machine '%ls' ('%ls') "
                     "because it has %d differencing child hard disks"),
                 hd->locationFull().raw(), uuid.raw(),
@@ -5324,7 +5324,7 @@ HRESULT Machine::loadHardDisks (const settings::Key &aNode, bool aRegistered,
                 mHDData->mAttachments.end())
         {
             return setError (E_FAIL,
-                tr ("Hard disk '%ls' with UUID {%Vuuid} is already attached "
+                tr ("Hard disk '%ls' with UUID {%Ruuid} is already attached "
                     "to the virtual machine '%ls' ('%ls')"),
                 hd->locationFull().raw(), uuid.raw(),
                 mUserData->mName.raw(), mData->mConfigFileFull.raw());
@@ -7672,7 +7672,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
                       mIPCSemName.raw(), ::GetLastError()),
                      E_FAIL);
 #elif defined(RT_OS_OS2)
-    Utf8Str ipcSem = Utf8StrFmt ("\\SEM32\\VBOX\\VM\\{%Vuuid}",
+    Utf8Str ipcSem = Utf8StrFmt ("\\SEM32\\VBOX\\VM\\{%Ruuid}",
                                  aMachine->mData->mUuid.raw());
     mIPCSemName = ipcSem;
     APIRET arc = ::DosCreateMutexSem ((PSZ) ipcSem.raw(), &mIPCSem, 0, FALSE);
@@ -8283,7 +8283,7 @@ STDMETHODIMP SessionMachine::BeginSavingState (IProgress *aProgress, BSTR *aStat
     /* stateFilePath is null when the machine is not running */
     if (mData->mMachineState == MachineState_Paused)
     {
-        stateFilePath = Utf8StrFmt ("%ls%c{%Vuuid}.sav",
+        stateFilePath = Utf8StrFmt ("%ls%c{%Ruuid}.sav",
                                     mUserData->mSnapshotFolderFull.raw(),
                                     RTPATH_DELIMITER, mData->mUuid.raw());
     }
@@ -8434,7 +8434,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     Bstr stateFilePath;
     /* stateFilePath is null when the machine is not online nor saved */
     if (takingSnapshotOnline || mData->mMachineState == MachineState_Saved)
-        stateFilePath = Utf8StrFmt ("%ls%c{%Vuuid}.sav",
+        stateFilePath = Utf8StrFmt ("%ls%c{%Ruuid}.sav",
                                     mUserData->mSnapshotFolderFull.raw(),
                                     RTPATH_DELIMITER,
                                     snapshotId.ptr());
@@ -10023,7 +10023,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             {
                 Utf8Str snapStateFilePath = curSnapshot->stateFilePath();
 
-                Utf8Str stateFilePath = Utf8StrFmt ("%ls%c{%Vuuid}.sav",
+                Utf8Str stateFilePath = Utf8StrFmt ("%ls%c{%Ruuid}.sav",
                     mUserData->mSnapshotFolderFull.raw(),
                     RTPATH_DELIMITER, mData->mUuid.raw());
 

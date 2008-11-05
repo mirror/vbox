@@ -2812,7 +2812,7 @@ static int handleList(int argc, char *argv[],
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
                 machine->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("%s%lS (UUID: %Vuuid)\n",
+                RTPrintf("%s%lS (UUID: %Ruuid)\n",
                          j == 0 ? "Usage:        " : "              ",
                          name.raw(), &machineIds[j]);
             }
@@ -6502,7 +6502,7 @@ static int handleShowHardDiskInfo(int argc, char *argv[],
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
                 machine->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("%s%lS (UUID: %Vuuid)\n",
+                RTPrintf("%s%lS (UUID: %Ruuid)\n",
                          j == 0 ? "In use by VMs:        " : "                      ",
                          name.raw(), &machineIds[j]);
             }

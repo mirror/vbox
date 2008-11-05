@@ -2079,7 +2079,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
     if (!device)
         return setError (E_INVALIDARG,
-            tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
+            tr ("USB device with UUID {%Ruuid} is not attached to this machine"),
             Guid (aId).raw());
 
     /*
@@ -2110,7 +2110,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
 #else   /* !VBOX_WITH_USB */
     return setError (E_INVALIDARG,
-        tr ("USB device with UUID {%Vuuid} is not attached to this machine"),
+        tr ("USB device with UUID {%Ruuid} is not attached to this machine"),
         Guid (aId).raw());
 #endif  /* !VBOX_WITH_USB */
 }
@@ -3528,7 +3528,7 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 {
 #ifdef VBOX_WITH_USB
     Guid Uuid (aId);
-    LogFlowThisFunc (("aId={%Vuuid} aError=%p\n", Uuid.raw(), aError));
+    LogFlowThisFunc (("aId={%Ruuid} aError=%p\n", Uuid.raw(), aError));
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -3540,7 +3540,7 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (it != mUSBDevices.end())
     {
-        LogFlowThisFunc (("it={%Vuuid}\n", (*it)->id().raw()));
+        LogFlowThisFunc (("it={%Ruuid}\n", (*it)->id().raw()));
         if ((*it)->id() == Uuid)
         {
             device = *it;
@@ -5512,7 +5512,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC (autoVMCaller.rc());
 
-    LogFlowThisFunc (("Proxying USB device '%s' {%Vuuid}...\n",
+    LogFlowThisFunc (("Proxying USB device '%s' {%Ruuid}...\n",
                       Address.raw(), Uuid.ptr()));
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
@@ -5533,7 +5533,7 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
 
     if (VBOX_FAILURE (vrc))
     {
-        LogWarningThisFunc (("Failed to create proxy device for '%s' {%Vuuid} (%Rrc)\n",
+        LogWarningThisFunc (("Failed to create proxy device for '%s' {%Ruuid} (%Rrc)\n",
                              Address.raw(), Uuid.ptr(), vrc));
 
         switch (vrc)
@@ -5602,7 +5602,7 @@ Console::usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUu
 
         AutoWriteLock alock (that);
         that->mUSBDevices.push_back (device);
-        LogFlowFunc (("Attached device {%Vuuid}\n", device->id().raw()));
+        LogFlowFunc (("Attached device {%Ruuid}\n", device->id().raw()));
 
         /* notify callbacks */
         that->onUSBDeviceStateChange (device, true /* aAttached */, NULL);
@@ -5637,7 +5637,7 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
     /* if the device is attached, then there must at least one USB hub. */
     AssertReturn (PDMR3USBHasHub (mpVM), E_FAIL);
 
-    LogFlowThisFunc (("Detaching USB proxy device {%Vuuid}...\n",
+    LogFlowThisFunc (("Detaching USB proxy device {%Ruuid}...\n",
                       (*aIt)->id().raw()));
 
     /* leave the lock before a VMR3* call (EMT will call us back)! */
@@ -5699,7 +5699,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
 
         /* Remove the device from the collection */
         that->mUSBDevices.erase (*aIt);
-        LogFlowFunc (("Detached device {%Vuuid}\n", device->id().raw()));
+        LogFlowFunc (("Detached device {%Ruuid}\n", device->id().raw()));
 
         /* notify callbacks */
         that->onUSBDeviceStateChange (device, false /* aAttached */, NULL);

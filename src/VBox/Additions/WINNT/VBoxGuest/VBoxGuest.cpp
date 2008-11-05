@@ -493,7 +493,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             {
                 rc = VERR_NO_MEMORY;
                 ExFreePool(pvBalloon);
-                AssertMsgFailed(("IoAllocateMdl %VGv %x failed!!\n", pvBalloon, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE));
+                AssertMsgFailed(("IoAllocateMdl %p %x failed!!\n", pvBalloon, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE));
                 goto end;
             }
             else
