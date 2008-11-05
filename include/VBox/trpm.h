@@ -123,7 +123,7 @@ VMMR3DECL(int)      TRPMR3InjectEvent(PVM pVM, TRPMEVENT enmEvent);
  * Guest Context temporary trap handler
  *
  * @returns VBox status code (appropriate for GC return).
- *          In this context VBOX_SUCCESS means to restart the instruction.
+ *          In this context VINF_SUCCESS means to restart the instruction.
  * @param   pVM         VM handle.
  * @param   pRegFrame   Trap register frame.
  */

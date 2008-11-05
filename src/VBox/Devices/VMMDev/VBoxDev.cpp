@@ -1645,7 +1645,7 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
             pThis->GCPhysVMMDevHeap = GCPhysAddress;
             Assert(pThis->GCPhysVMMDevHeap == GCPhysAddress);
             rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = PDMDevHlpRegisterVMMDevHeap(pPciDev->pDevIns, GCPhysAddress, pThis->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
         }
         else

@@ -179,7 +179,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
                                    NULL, cpumR3Save, NULL,
                                    NULL, cpumR3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* Query the CPU manufacturer. */
@@ -212,7 +212,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      * Initialize the Guest CPU state.
      */
     rc = cpumR3CpuIdInit(pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     CPUMR3Reset(pVM);
     return VINF_SUCCESS;
@@ -539,25 +539,25 @@ static int cpumR3CpuIdInit(PVM pVM)
             {
                 uint32_t u32;
                 int rc = CFGMR3QueryU32(pNode, "eax", &u32);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     pCpuId->eax = u32;
                 else
                     AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
                 rc = CFGMR3QueryU32(pNode, "ebx", &u32);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     pCpuId->ebx = u32;
                 else
                     AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
                 rc = CFGMR3QueryU32(pNode, "ecx", &u32);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     pCpuId->ecx = u32;
                 else
                     AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
                 rc = CFGMR3QueryU32(pNode, "edx", &u32);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     pCpuId->edx = u32;
                 else
                     AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
@@ -586,7 +586,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /* Check if PAE was explicitely enabled by the user. */
     bool fEnable = false;
     int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "EnablePAE", &fEnable);
-    if (VBOX_SUCCESS(rc) && fEnable)
+    if (RT_SUCCESS(rc) && fEnable)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
 
     /*
@@ -969,7 +969,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     ASMCpuId(1, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
     uint32_t au32CpuIdSaved[8];
     rc = SSMR3GetMem(pSSM, &au32CpuIdSaved[0], sizeof(au32CpuIdSaved));
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Ignore APIC ID (AMD specs). */
         au32CpuId[5]      &= ~0xff000000;
@@ -1318,7 +1318,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 {
     char szInstruction[256];
     int rc = DBGFR3DisasInstrCurrent(pVM, szInstruction, sizeof(szInstruction));
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
 }
 
@@ -2137,7 +2137,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
                 rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
                 pState->fLocked = RT_SUCCESS_NP(rc);
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 pState->pvPageR3 = NULL;
                 return rc;
@@ -2217,7 +2217,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
             SELMSELINFO SelInfo;
 
             rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs, &SelInfo);
-            if (!VBOX_SUCCESS(rc))
+            if (!RT_SUCCESS(rc))
             {
                 AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%VGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;
@@ -2227,7 +2227,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
              * Validate the selector.
              */
             rc = SELMSelInfoValidateCS(&SelInfo, pCtx->ss);
-            if (!VBOX_SUCCESS(rc))
+            if (!RT_SUCCESS(rc))
             {
                 AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%VGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;
@@ -2256,12 +2256,12 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
     uint32_t cbInstr;
 #ifndef LOG_ENABLED
     rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, NULL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
 #else
     char szOutput[160];
     rc = DISInstr(pCpu, GCPtrPC, 0, &cbInstr, &szOutput[0]);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* log it */
         if (pszPrefix)
