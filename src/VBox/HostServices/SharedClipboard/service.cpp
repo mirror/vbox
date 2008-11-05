@@ -742,7 +742,7 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
         g_pfnExtension = pfnExtension;
         g_pvExtension = pvExtension;
 
-        parms.u.pfnCallback = (void (*)())extCallback;
+        parms.u.pfnCallback = extCallback;
         g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof (parms));
     }
     else
