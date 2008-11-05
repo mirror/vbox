@@ -7204,51 +7204,70 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <enum
-    name="HardDiskFormatCaps"
-    uuid="80aa4ab9-8abe-42f0-a270-225b8f9882fb"
+    name="DataType"
+    uuid="d90ea51e-a3f1-4a01-beb1-c1723c0d3ba7"
+  >
+    <const name="Int32Type" value="0"/>
+    <const name="Int8Type" value="1"/>
+    <const name="StringType" value="2"/>
+  </enum>
+
+  <enum
+    name="DataFlags"
+    uuid="86884dcf-1d6b-4f1b-b4bf-f5aa44959d60"
+  >
+    <const name="NoneFlag" value="0x00"/>
+    <const name="MandatoryFlag" value="0x01"/>
+    <const name="ExpertFlag" value="0x02"/>
+    <const name="FlagMask" value="0x03"/>
+  </enum>
+
+  <enum
+    name="HardDiskFormatCapabilities"
+    uuid="1df1e4aa-d25a-4ba6-b2a2-02f60eb5903b"
   >
     <desc>
        Harddisk format capability flags.
     </desc>
 
-    <const name="CapabilityUuid" value="0x00">
+    <const name="UuidCapability" value="0x01">
       <desc>
         Supports UUIDs as expected by VirtualBox code.
       </desc>
     </const>
 
-    <const name="CapabilityCreateFixed" value="0x01">
+    <const name="CreateFixedCapability" value="0x02">
       <desc>
         Supports creating fixed size images, allocating all space instantly.
       </desc>
     </const>
 
-    <const name="CapabilityCreateDynamic" value="0x02">
+    <const name="CreateDynamicCapability" value="0x04">
       <desc>
         Supports creating dynamically growing images, allocating space on
         demand.
       </desc>
     </const>
 
-    <const name="CapabilityCreateSplit2G" value="0x04">
+    <const name="CreateSplit2GCapability" value="0x08">
       <desc>
         Supports creating images split in chunks of a bit less than 2GBytes.
       </desc>
     </const>
 
-    <const name="CapabilityDiff" value="0x08">
+    <const name="DiffCapability" value="0x10">
       <desc>
         Supports being used as differencing image format backend.
       </desc>
     </const>
 
-    <const name="CapabilityASync" value="0x10">
+    <const name="ASyncCapability" value="0x20">
       <desc>
         Supports asynchronous I/O operations for at least some configurations.
       </desc>
     </const>
 
-    <const name="CapabilityFile" value="0x20">
+    <const name="FileCapability" value="0x40">
       <desc>
         The backend operates on files. The caller needs to know to handle the
         location appropriately. For a list of supported file extentions see
@@ -7256,21 +7275,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="CapabilityConfig" value="0x40">
+    <const name="ConfigCapability" value="0x80">
       <desc>
         The backend uses the config interface. The caller needs to know how to
         provide the mandatory configuration parts this way.
 
-        <see>IHardDiskFormat::configNames</see>
+        <see>IHardDiskFormat::describeProperties</see>
       </desc>
     </const>
 
-    <const name="CapabilityMask" value="0x7F"/>
+    <const name="CapabilityMask" value="0xFF"/>
   </enum>
 
   <interface
      name="IHardDiskFormat" extends="$unknown"
-     uuid="3753099d-9c92-494f-ae2d-bd6faa857d95"
+     uuid="7f3ba790-3a0b-4a8a-bac2-bb50150123c5"
      wsmap="managed"
      >
     <desc>
@@ -7293,7 +7312,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="id" type="wstring" readonly="yes">
       <desc>
-        Identfier of this format.
+        Identifier of this format.
 
         This string is used in methods of other interfaces where it is necessary
         to specify a hard disk format, such as
@@ -7320,23 +7339,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Note that some backends do not work on files, so this array may be
         empty.
 
-        <see>IHardDiskFormat::supportFile</see>
+        <see>IHardDiskFormat::capabilities</see>
       </desc>
     </attribute>
 
     <attribute name="capabilities" type="unsigned long" readonly="yes">
       <desc>
-        The backend uses the config interface. The caller needs to know how to
-        provide the mandatory configuration parts this way. For the meaning of
-        the different capabilities see <link to="HardDiskFormatCaps"/>.
+        The capabilities of the backend as a bitmask. 
+        
+        For the meaning of the different capabilities see 
+        <link to="HardDiskFormatCapabilities"/>.
       </desc>
     </attribute>
 
-    <attribute name="propertyNames" type="wstring" safearray="yes" readonly="yes">
+    <method name="describeProperties">
       <desc>
-        Array of strings containing the supported configuration keys.
+        Return several lists for the configuration description of this backend.
+
+        This is non empty only if HardDiskFormatCapabilities::ConfigCapability
+        is set.
+        <see>DataType</see>
+        <see>DataFlags</see>
       </desc>
-    </attribute>
+
+      <param name="names" type="wstring" safearray="yes" dir="out"/>
+      <param name="description" type="wstring" safearray="yes" dir="out"/>
+      <param name="types" type="unsigned long" safearray="yes" dir="out"/>
+      <param name="flags" type="unsigned long" safearray="yes" dir="out"/>
+      <param name="defaults" type="wstring" safearray="yes" dir="out"/>
+    </method>
 
   </interface>
 

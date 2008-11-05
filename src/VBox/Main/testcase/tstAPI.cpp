@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
     // check for available hd backends
     ///////////////////////////////////////////////////////////////////////////
     {
-        printf("Supported harddisk backends: --------------------------\n");
+        RTPrintf("Supported hard disk backends: --------------------------\n");
         ComPtr<ISystemProperties> systemProperties;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(SystemProperties) (systemProperties.asOutParam()));
@@ -767,20 +767,68 @@ int main(int argc, char *argv[])
 
         for (size_t i = 0; i < hardDiskFormats.size(); ++ i)
         {
+            /* General information */
             Bstr id;
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                COMGETTER(Id) (id.asOutParam()));
 
+            Bstr description;
+            CHECK_ERROR_BREAK (hardDiskFormats [i],
+                               COMGETTER(Id) (description.asOutParam()));
+
+            unsigned int caps;
+            CHECK_ERROR_BREAK (hardDiskFormats [i],
+                               COMGETTER(Capabilities) (&caps));
+
+            RTPrintf("Backend %u: id='%ls' description='%ls' capabilities=%#06x extensions='",
+                     i, id.raw(), description.raw(), caps);
+
+            /* File extensions */
             com::SafeArray <BSTR> fileExtensions;
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
-
-            printf ("%ls:", id.raw());
             for (size_t a = 0; a < fileExtensions.size(); ++ a)
-                printf (" %ls", Bstr(fileExtensions [a]).raw());
-            printf ("\n");
+            {
+                RTPrintf ("%ls", Bstr (fileExtensions [a]).raw());
+                if (a != fileExtensions.size()-1)
+                    RTPrintf (",");
+            }
+            RTPrintf ("'");
+
+            /* Configuration keys */
+            com::SafeArray <BSTR> propertyNames;
+            com::SafeArray <BSTR> propertyDescriptions;
+            com::SafeArray <DataType_T> propertyTypes;
+            com::SafeArray <ULONG> propertyFlags;
+            com::SafeArray <BSTR> propertyDefaults;
+            CHECK_ERROR_BREAK (hardDiskFormats [i],
+                               DescribeProperties (ComSafeArrayAsOutParam (propertyNames),
+                                                   ComSafeArrayAsOutParam (propertyDescriptions),
+                                                   ComSafeArrayAsOutParam (propertyTypes),
+                                                   ComSafeArrayAsOutParam (propertyFlags),
+                                                   ComSafeArrayAsOutParam (propertyDefaults)));
+
+            RTPrintf (" config=(");
+            if (propertyNames.size() > 0)
+            {
+                for (size_t a = 0; a < propertyNames.size(); ++ a)
+                {
+                    RTPrintf ("key='%ls' desc='%ls' type=", Bstr (propertyNames [a]).raw(), Bstr (propertyDescriptions [a]).raw());
+                    switch (propertyTypes [a])
+                    {
+                        case DataType::Int32Type: RTPrintf ("int"); break;
+                        case DataType::Int8Type: RTPrintf ("byte"); break;
+                        case DataType::StringType: RTPrintf ("string"); break;
+                    }
+                    RTPrintf (" flags=%#04x", propertyFlags [a]);
+                    RTPrintf (" default='%ls'", Bstr (propertyDefaults [a]).raw());
+                    if (a != propertyNames.size()-1)
+                        RTPrintf (",");
+                }
+            }
+            RTPrintf (")\n");
         }
-        printf("-------------------------------------------------------\n");
+        RTPrintf("-------------------------------------------------------\n");
     }
 #endif
 
