@@ -1137,7 +1137,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         static char szError[RTPATH_MAX + 128] = "";
         PRTLOGGER pLogger;
         rc2 = RTLogCreateEx(&pLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
-                            "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
+                            "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
                             RTLOGDEST_FILE, szError, sizeof(szError), "./VBoxBFE.log");
         if (RT_SUCCESS(rc2))
         {

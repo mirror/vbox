@@ -86,7 +86,7 @@ struct TstU32
 #define RUN_TESTS(aTests, Type, Fmt, Fun) \
     do \
     { \
-        for (unsigned iTest = 0; iTest < ELEMENTS(aTests); iTest++) \
+        for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++) \
         { \
             TEST(aTests[iTest], Type, Fmt, Fun, iTest); \
         } \

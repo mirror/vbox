@@ -365,7 +365,7 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
     /*
      * Check watch points.
      */
-    for (unsigned i = 0; i < ELEMENTS(gapvRTMemFreeWatch); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(gapvRTMemFreeWatch); i++)
         if (gapvRTMemFreeWatch[i] == pv)
             RTAssertDoPanic();
 

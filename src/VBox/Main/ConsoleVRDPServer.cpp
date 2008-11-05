@@ -1070,7 +1070,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
     }
 
     unsigned i;
-    for (i = 0; i < ELEMENTS(maFramebuffers); i++)
+    for (i = 0; i < RT_ELEMENTS(maFramebuffers); i++)
     {
         if (maFramebuffers[i])
         {
@@ -1971,7 +1971,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
             #undef DEFSYMENTRY
 
-            for (unsigned i = 0; i < ELEMENTS(symbols); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(symbols); i++)
             {
                 rc = RTLdrGetSymbol(mVRDPLibrary, symbols[i].name, symbols[i].ppfn);
 

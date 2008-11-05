@@ -360,7 +360,7 @@ static int ReadUnicodeData(const char *pszFilename)
         char *pszSimpleTitleCaseMapping = NextField(&pszCurField);        /* 14 */
 
         RTUNICP CodePoint = ToNum(pszCodePoint);
-        if (CodePoint >= ELEMENTS(g_aCPInfo))
+        if (CodePoint >= RT_ELEMENTS(g_aCPInfo))
             continue;
 
         /* catchup? */
@@ -393,7 +393,7 @@ static int ReadUnicodeData(const char *pszFilename)
         i++;
     }
     /* catchup? */
-    while (i < ELEMENTS(g_aCPInfo))
+    while (i < RT_ELEMENTS(g_aCPInfo))
         NullEntry(i++);
     fclose(pFile);
 
@@ -409,7 +409,7 @@ static int ReadUnicodeData(const char *pszFilename)
  */
 static void ApplyProperty(RTUNICP StartCP, const char *pszProperty)
 {
-    if (StartCP >= ELEMENTS(g_aCPInfo))
+    if (StartCP >= RT_ELEMENTS(g_aCPInfo))
         return;
     struct CPINFO *pCPInfo = &g_aCPInfo[StartCP];
     /* string switch */
@@ -648,16 +648,16 @@ int PrintFlags(void)
                   "{\n");
     RTUNICP i = 0;
     int iStart = -1;
-    while (i < ELEMENTS(g_aCPInfo))
+    while (i < RT_ELEMENTS(g_aCPInfo))
     {
         /* figure how far off the next chunk is */
         char szFlags[256];
         unsigned iNonNull = i;
         while (     (g_aCPInfo[iNonNull].fNullEntry || !CalcFlags(&g_aCPInfo[iNonNull], szFlags))
-               &&   iNonNull < ELEMENTS(g_aCPInfo)
+               &&   iNonNull < RT_ELEMENTS(g_aCPInfo)
                &&   iNonNull >= 256)
             iNonNull++;
-        if (iNonNull - i > 4096 || iNonNull == ELEMENTS(g_aCPInfo))
+        if (iNonNull - i > 4096 || iNonNull == RT_ELEMENTS(g_aCPInfo))
         {
             if (iStart >= 0)
             {
@@ -697,15 +697,15 @@ static int PrintUpper(void)
                   "{\n");
     RTUNICP i = 0;
     int iStart = -1;
-    while (i < ELEMENTS(g_aCPInfo))
+    while (i < RT_ELEMENTS(g_aCPInfo))
     {
         /* figure how far off the next chunk is */
         unsigned iSameCase = i;
         while (     g_aCPInfo[iSameCase].SimpleUpperCaseMapping == g_aCPInfo[iSameCase].CodePoint
-               &&   iSameCase < ELEMENTS(g_aCPInfo)
+               &&   iSameCase < RT_ELEMENTS(g_aCPInfo)
                &&   iSameCase >= 256)
             iSameCase++;
-        if (iSameCase - i > 4096/sizeof(RTUNICP) || iSameCase == ELEMENTS(g_aCPInfo))
+        if (iSameCase - i > 4096/sizeof(RTUNICP) || iSameCase == RT_ELEMENTS(g_aCPInfo))
         {
             if (iStart >= 0)
             {
@@ -744,15 +744,15 @@ static int PrintLower(void)
                   "{\n");
     RTUNICP i = 0;
     int iStart = -1;
-    while (i < ELEMENTS(g_aCPInfo))
+    while (i < RT_ELEMENTS(g_aCPInfo))
     {
         /* figure how far off the next chunk is */
         unsigned iSameCase = i;
         while (     g_aCPInfo[iSameCase].SimpleLowerCaseMapping == g_aCPInfo[iSameCase].CodePoint
-               &&   iSameCase < ELEMENTS(g_aCPInfo)
+               &&   iSameCase < RT_ELEMENTS(g_aCPInfo)
                &&   iSameCase >= 256)
             iSameCase++;
-        if (iSameCase - i > 4096/sizeof(RTUNICP) || iSameCase == ELEMENTS(g_aCPInfo))
+        if (iSameCase - i > 4096/sizeof(RTUNICP) || iSameCase == RT_ELEMENTS(g_aCPInfo))
         {
             if (iStart >= 0)
             {

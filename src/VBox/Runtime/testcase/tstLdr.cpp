@@ -101,7 +101,7 @@ static int testLdrOne(const char *pszFilename)
     /*
      * Load them.
      */
-    for (i = 0; i < ELEMENTS(aLoads); i++)
+    for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
         int rc;
         if (!strncmp(aLoads[i].pszName, "kLdr-", sizeof("kLdr-") - 1))
@@ -184,9 +184,9 @@ static int testLdrOne(const char *pszFilename)
         for (;;)
         {
             /* Compare all which are at the same address. */
-            for (i = 0; i < ELEMENTS(aLoads) - 1; i++)
+            for (i = 0; i < RT_ELEMENTS(aLoads) - 1; i++)
             {
-                for (unsigned j = i + 1; j < ELEMENTS(aLoads); j++)
+                for (unsigned j = i + 1; j < RT_ELEMENTS(aLoads); j++)
                 {
                     if (aLoads[j].Addr == aLoads[i].Addr)
                     {
@@ -205,9 +205,9 @@ static int testLdrOne(const char *pszFilename)
             }
 
             /* compare symbols. */
-            for (i = 0; i < ELEMENTS(aLoads); i++)
+            for (i = 0; i < RT_ELEMENTS(aLoads); i++)
             {
-                for (unsigned iSym = 0; iSym < ELEMENTS(aSyms); iSym++)
+                for (unsigned iSym = 0; iSym < RT_ELEMENTS(aSyms); iSym++)
                 {
                     RTUINTPTR Value;
                     int rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, aLoads[i].Addr, aSyms[iSym].pszName, &Value);
@@ -240,7 +240,7 @@ static int testLdrOne(const char *pszFilename)
                 }
             }
 
-            if (iRel >= ELEMENTS(aRels))
+            if (iRel >= RT_ELEMENTS(aRels))
                 break;
 
             /* relocate it stuff. */
@@ -262,7 +262,7 @@ static int testLdrOne(const char *pszFilename)
     /*
      * Clean up.
      */
-    for (i = 0; i < ELEMENTS(aLoads); i++)
+    for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
         if (aLoads[i].pvBits)
             RTMemFree(aLoads[i].pvBits);

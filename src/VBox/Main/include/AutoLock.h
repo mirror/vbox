@@ -1114,7 +1114,7 @@ public:
         AssertReturnVoid (!mIsLocked);
 
         size_t i = 0;
-        while (i < ELEMENTS (mOps))
+        while (i < RT_ELEMENTS (mOps))
             if (mOps [i])
                 mOps [i ++]->lock();
         mIsLocked = true;
@@ -1131,8 +1131,8 @@ public:
     {
         AssertReturnVoid (mIsLocked);
 
-        AssertReturnVoid (ELEMENTS (mOps) > 0);
-        size_t i = ELEMENTS (mOps);
+        AssertReturnVoid (RT_ELEMENTS (mOps) > 0);
+        size_t i = RT_ELEMENTS (mOps);
         do
             if (mOps [-- i])
                 mOps [i]->unlock();
@@ -1246,7 +1246,7 @@ public:
     void lock()
     {
         size_t i = 0;
-        while (i < ELEMENTS (mLocks))
+        while (i < RT_ELEMENTS (mLocks))
             mLocks [i ++].lock();
     }
 
@@ -1256,8 +1256,8 @@ public:
      */
     void unlock()
     {
-        AssertReturnVoid (ELEMENTS (mLocks) > 0);
-        size_t i = ELEMENTS (mLocks);
+        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
+        size_t i = RT_ELEMENTS (mLocks);
         do
             mLocks [-- i].unlock();
         while (i != 0);
@@ -1269,8 +1269,8 @@ public:
      */
     void leave()
     {
-        AssertReturnVoid (ELEMENTS (mLocks) > 0);
-        size_t i = ELEMENTS (mLocks);
+        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
+        size_t i = RT_ELEMENTS (mLocks);
         do
             mLocks [-- i].leave();
         while (i != 0);
@@ -1282,8 +1282,8 @@ public:
      */
     void maybeLeave()
     {
-        AssertReturnVoid (ELEMENTS (mLocks) > 0);
-        size_t i = ELEMENTS (mLocks);
+        AssertReturnVoid (RT_ELEMENTS (mLocks) > 0);
+        size_t i = RT_ELEMENTS (mLocks);
         do
             mLocks [-- i].maybeLeave();
         while (i != 0);
@@ -1296,7 +1296,7 @@ public:
     void maybeEnter()
     {
         size_t i = 0;
-        while (i < ELEMENTS (mLocks))
+        while (i < RT_ELEMENTS (mLocks))
             mLocks [i ++].maybeEnter();
     }
 
@@ -1307,7 +1307,7 @@ public:
     void enter()
     {
         size_t i = 0;
-        while (i < ELEMENTS (mLocks))
+        while (i < RT_ELEMENTS (mLocks))
             mLocks [i ++].enter();
     }
 

@@ -301,7 +301,7 @@ RTDECL(int)   RTSemRWRequestRead(RTSEMRW RWSem, unsigned cMillies)
         {
             if (pIntRWSem->cWriters == 0)
             {
-                if (pIntRWSem->cReaders < ELEMENTS(pIntRWSem->aReaders))
+                if (pIntRWSem->cReaders < RT_ELEMENTS(pIntRWSem->aReaders))
                 {
                     /*
                      * Add ourselves to the list of readers and return.

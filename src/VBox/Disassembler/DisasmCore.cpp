@@ -2368,17 +2368,17 @@ void disasmModRMReg16(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMET
 void disasmModRMSReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER pParam)
 {
 #if 0 //def DEBUG_Sander
-    AssertMsg(idx < ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
+    AssertMsg(idx < RT_ELEMENTS(szModRMSegReg), ("idx=%d\n", idx));
 #endif
 #ifdef IN_RING3
-    if (idx >= ELEMENTS(szModRMSegReg))
+    if (idx >= RT_ELEMENTS(szModRMSegReg))
     {
         Log(("disasmModRMSReg %d failed!!\n", idx));
         DIS_THROW(ExceptionInvalidParameter);
     }
 #endif
 
-    idx = RT_MIN(idx, ELEMENTS(szModRMSegReg)-1);
+    idx = RT_MIN(idx, RT_ELEMENTS(szModRMSegReg)-1);
     disasmAddString(pParam->szParam, szModRMSegReg[idx]);
     pParam->flags |= USE_REG_SEG;
     pParam->base.reg_seg = (DIS_SELREG)idx;

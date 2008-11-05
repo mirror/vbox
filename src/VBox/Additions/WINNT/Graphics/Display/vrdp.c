@@ -230,7 +230,7 @@ void vrdpAdjustRect (SURFOBJ *pso, RECTL *prcl)
     prcl->top    = y;
     prcl->right  = x + w;
     prcl->bottom = y + h;
-    
+
     DISPDBG((1, "vrdpAdjustRect: result %d-%d %d-%d\n", prcl->left, prcl->right, prcl->top, prcl->bottom));
 }
 
@@ -1193,10 +1193,10 @@ void vrdpTextOut(
         /* Try to report the text order. */
         ULONG ulForeRGB = pboFore? vrdpColor2RGB (pso, pboFore->iSolidColor): 0;
         ULONG ulBackRGB = pboOpaque? vrdpColor2RGB (pso, pboOpaque->iSolidColor): 0;
-        
+
         DISPDBG((1, "VRDP::vrdpTextOut: calling vboxReportText fg %x bg %x\n",
                     ulForeRGB, ulBackRGB));
-                    
+
         if (!vboxReportText (ppdev, &clipRects, pstro, pfo, prclOpaque, ulForeRGB, ulBackRGB))
         {
             vrdpReportDirtyRects (ppdev, &clipRects);
@@ -1344,7 +1344,7 @@ static void vrdpPointFX2Point (const POINTFIX *pptfx, VRDPORDERPOINT *ppt)
 
 static void vrdpPolyPointsAdd (VRDPORDERPOLYPOINTS *pPoints, const VRDPORDERPOINT *ppt)
 {
-    VBVA_ASSERT(pPoints->c < ELEMENTS(pPoints->a));
+    VBVA_ASSERT(pPoints->c < RT_ELEMENTS(pPoints->a));
 
     pPoints->a[pPoints->c] = *ppt;
 
@@ -1516,7 +1516,7 @@ void vrdpStrokePath(
                 vrdpPolyPointsAdd     (&order.points, &pt);
                 vrdpExtendOrderBounds (&bounds, &pt);
 
-                if (order.points.c == ELEMENTS(order.points.a))
+                if (order.points.c == RT_ELEMENTS(order.points.a))
                 {
                     /* Flush the order and start a new order. */
                     DISPDBG((1, "vrdpStrokePath: Report order, points overflow.\n"));
@@ -1537,7 +1537,7 @@ void vrdpStrokePath(
                 if (   ptStart.x != pt.x
                     || ptStart.y != pt.y)
                 {
-                    VBVA_ASSERT(order.points.c < ELEMENTS(order.points.a));
+                    VBVA_ASSERT(order.points.c < RT_ELEMENTS(order.points.a));
 
                     vrdpPolyPointsAdd     (&order.points, &ptStart);
                     vrdpExtendOrderBounds (&bounds, &ptStart);

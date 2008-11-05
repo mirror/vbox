@@ -399,7 +399,7 @@ void InitStrings(void)
     while (uc < 0x110000)
         g_uszAll[i++] = uc++;
     g_uszAll[i++] = 0;
-    Assert(ELEMENTS(g_uszAll) == i);
+    Assert(RT_ELEMENTS(g_uszAll) == i);
 
     /* the utf-16 one */
     i = 0;
@@ -421,7 +421,7 @@ void InitStrings(void)
     }
     //RTPrintf(" %#x=%#x\n", i, uc);
     g_wszAll[i++] = '\0';
-    Assert(ELEMENTS(g_wszAll) == i);
+    Assert(RT_ELEMENTS(g_wszAll) == i);
 
     /*
      * The utf-8 one
@@ -471,7 +471,7 @@ void InitStrings(void)
     }
     //RTPrintf(" %#x=%#x\n", i, uc);
     g_szAll[i++] = '\0';
-    Assert(ELEMENTS(g_szAll) == i);
+    Assert(RT_ELEMENTS(g_szAll) == i);
 }
 
 
@@ -570,12 +570,12 @@ void test2(void)
         }
 
         size_t cCps;
-        rc = RTStrToUniEx(g_szAll, RTSTR_MAX, &paCps, ELEMENTS(g_uszAll), &cCps);
+        rc = RTStrToUniEx(g_szAll, RTSTR_MAX, &paCps, RT_ELEMENTS(g_uszAll), &cCps);
         if (rc == VINF_SUCCESS)
         {
-            if (cCps != ELEMENTS(g_uszAll) - 1)
+            if (cCps != RT_ELEMENTS(g_uszAll) - 1)
             {
-                RTPrintf("tstUtf8: FAILURE - the full #3+: wrong Code Point count %zu, expected %zu\n", cCps, ELEMENTS(g_uszAll) - 1);
+                RTPrintf("tstUtf8: FAILURE - the full #3+: wrong Code Point count %zu, expected %zu\n", cCps, RT_ELEMENTS(g_uszAll) - 1);
                 g_cErrors++;
             }
         }
@@ -865,14 +865,14 @@ void Benchmarks(void)
     } s_Buf;
 
     PRTUTF16 pwsz = &s_Buf.wszBuf[0];
-    int rc = RTStrToUtf16Ex(&g_szAll[0], RTSTR_MAX, &pwsz, ELEMENTS(s_Buf.wszBuf), NULL);
+    int rc = RTStrToUtf16Ex(&g_szAll[0], RTSTR_MAX, &pwsz, RT_ELEMENTS(s_Buf.wszBuf), NULL);
     if (RT_SUCCESS(rc))
     {
         int i;
         uint64_t u64Start = RTTimeNanoTS();
         for (i = 0; i < 100; i++)
         {
-            rc = RTStrToUtf16Ex(&g_szAll[0], RTSTR_MAX, &pwsz, ELEMENTS(s_Buf.wszBuf), NULL);
+            rc = RTStrToUtf16Ex(&g_szAll[0], RTSTR_MAX, &pwsz, RT_ELEMENTS(s_Buf.wszBuf), NULL);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstUtf8: UTF-8 -> UTF-16 benchmark failed at i=%d, rc=%Rrc\n", i, rc);
@@ -884,14 +884,14 @@ void Benchmarks(void)
     }
 
     char *psz = &s_Buf.szBuf[0];
-    rc = RTUtf16ToUtf8Ex(&g_wszAll[0], RTSTR_MAX, &psz, ELEMENTS(s_Buf.szBuf), NULL);
+    rc = RTUtf16ToUtf8Ex(&g_wszAll[0], RTSTR_MAX, &psz, RT_ELEMENTS(s_Buf.szBuf), NULL);
     if (RT_SUCCESS(rc))
     {
         int i;
         uint64_t u64Start = RTTimeNanoTS();
         for (i = 0; i < 100; i++)
         {
-            rc = RTUtf16ToUtf8Ex(&g_wszAll[0], RTSTR_MAX, &psz, ELEMENTS(s_Buf.szBuf), NULL);
+            rc = RTUtf16ToUtf8Ex(&g_wszAll[0], RTSTR_MAX, &psz, RT_ELEMENTS(s_Buf.szBuf), NULL);
             if (RT_FAILURE(rc))
             {
                 RTPrintf("tstUtf8: UTF-16 -> UTF-8 benchmark failed at i=%d, rc=%Rrc\n", i, rc);

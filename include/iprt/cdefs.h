@@ -1379,16 +1379,6 @@
 #define RT_N2H_U16_C(u16)   RT_BE2H_U16_C(u16)
 
 
-/** @def RT_NO_DEPRECATED_MACROS
- * Define RT_NO_DEPRECATED_MACROS to not define deprecated macros.
- */
-#ifndef RT_NO_DEPRECATED_MACROS
-/** @copydoc RT_ELEMENTS
- * @deprecated use RT_ELEMENTS. */
-# define ELEMENTS(aArray)               RT_ELEMENTS(aArray)
-#endif
-
-
 /*
  * The BSD sys/param.h + machine/param.h file is a major source of
  * namespace pollution. Kill off some of the worse ones unless we're

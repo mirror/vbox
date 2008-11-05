@@ -3009,7 +3009,7 @@ HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
 
     const char *kMediaNodes[] = { "HardDisks", "DVDImages", "FloppyImages" };
 
-    for (size_t n = 0; n < ELEMENTS (kMediaNodes); ++ n)
+    for (size_t n = 0; n < RT_ELEMENTS (kMediaNodes); ++ n)
     {
         /* All three media nodes are optional */
         Key node = registry.findKey (kMediaNodes [n]);

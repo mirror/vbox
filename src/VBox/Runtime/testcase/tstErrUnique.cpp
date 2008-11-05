@@ -69,12 +69,12 @@ int main()
     RTR3Init();
     RTPrintf("tstErrUnique: TESTING\n");
 
-    for (uint32_t i = 0; i < ELEMENTS(g_aErrorMessages) - 1; i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aErrorMessages) - 1; i++)
     {
         if (strIsPermissibleDuplicate(&g_aErrorMessages[i]))
             continue;
 
-        for (uint32_t j = i + 1; j < ELEMENTS(g_aErrorMessages); j++)
+        for (uint32_t j = i + 1; j < RT_ELEMENTS(g_aErrorMessages); j++)
         {
             if (strIsPermissibleDuplicate(&g_aErrorMessages[j]))
                 continue;

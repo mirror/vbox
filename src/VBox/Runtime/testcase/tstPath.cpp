@@ -77,7 +77,7 @@ int main()
         RTPrintf("tstPath: FAILED - RTProcGetExecutableName\n");
         cErrors++;
     }
-    
+
 
     /*
      * RTPathAbsEx
@@ -121,7 +121,7 @@ int main()
 #endif
         };
 
-    for (unsigned i = 0; i < ELEMENTS(aInput); i += 2)
+    for (unsigned i = 0; i < RT_ELEMENTS(aInput); i += 2)
     {
         RTPrintf("tstPath: base={%s}, path={%s}, ", aInput[i], aInput[i + 1]);
         CHECK_RC(RTPathAbsEx(aInput[i], aInput[i + 1], szPath, sizeof(szPath)));

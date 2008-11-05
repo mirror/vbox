@@ -201,7 +201,7 @@ static const DBGCCMD    g_aCmds[] =
         .cArgsMin = 0,
         .cArgsMax = 1,
         .paArgDescs = &g_aArgRemStep[0],
-        .cArgDescs = ELEMENTS(g_aArgRemStep),
+        .cArgDescs = RT_ELEMENTS(g_aArgRemStep),
         .pResultDesc = NULL,
         .fFlags = 0,
         .pfnHandler = remR3CmdDisasEnableStepping,
@@ -324,7 +324,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     static bool fRegisteredCmds = false;
     if (!fRegisteredCmds)
     {
-        int rc = DBGCRegisterCommands(&g_aCmds[0], ELEMENTS(g_aCmds));
+        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
         if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
@@ -535,7 +535,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         rc = SSMR3GetUInt(pSSM, &pRem->cInvalidatedPages);
         if (RT_FAILURE(rc))
             return rc;
-        if (pRem->cInvalidatedPages > ELEMENTS(pRem->aGCPtrInvalidatedPages))
+        if (pRem->cInvalidatedPages > RT_ELEMENTS(pRem->aGCPtrInvalidatedPages))
         {
             AssertMsgFailed(("cInvalidatedPages=%#x\n", pRem->cInvalidatedPages));
             return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -4724,7 +4724,7 @@ void remR3DumpLnxSyscall(PVM pVM)
     switch (uEAX)
     {
         default:
-            if (uEAX < ELEMENTS(apsz))
+            if (uEAX < RT_ELEMENTS(apsz))
                 Log(("REM: linux syscall %3d: %s (eip=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x ebp=%08x)\n",
                      uEAX, apsz[uEAX], CPUMGetGuestEIP(pVM), CPUMGetGuestEBX(pVM), CPUMGetGuestECX(pVM),
                      CPUMGetGuestEDX(pVM), CPUMGetGuestESI(pVM), CPUMGetGuestEDI(pVM), CPUMGetGuestEBP(pVM)));
@@ -5053,7 +5053,7 @@ void remR3DumpOBsdSyscall(PVM pVM)
     switch (uEAX)
     {
         default:
-            if (uEAX < ELEMENTS(apsz))
+            if (uEAX < RT_ELEMENTS(apsz))
             {
                 uint32_t au32Args[8] = {0};
                 PGMPhysSimpleReadGCPtr(pVM, au32Args, CPUMGetGuestESP(pVM), sizeof(au32Args));

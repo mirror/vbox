@@ -112,7 +112,7 @@ static bool IsTestcaseIncluded(const char *pszTestcase)
     if (pszDup)
     {
         RTPathStripExt(pszDup);
-        for (unsigned i = 0; i < ELEMENTS(g_apszExclude); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(g_apszExclude); i++)
         {
             if (!strcmp(g_apszExclude[i], pszDup))
             {

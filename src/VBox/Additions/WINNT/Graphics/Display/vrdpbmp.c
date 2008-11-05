@@ -143,7 +143,7 @@ static BOOL bcInsertHash (VRDPBC *pCache, const VRDPBCHASH *phash, VRDPBCHASH *p
 
     /* Get the free entry to be used. Try tail, that should be */
     pEntry = pCache->tail;
-    
+
     if (pEntry == NULL)
     {
         return bRc;
@@ -220,9 +220,9 @@ void vrdpbmpReset (VRDPBC *pCache)
     memset (pCache, 0, sizeof (VRDPBC));
 
     pCache->head = &pCache->aEntries[0];
-    pCache->tail = &pCache->aEntries[ELEMENTS(pCache->aEntries) - 1];
+    pCache->tail = &pCache->aEntries[RT_ELEMENTS(pCache->aEntries) - 1];
 
-    for (i = 0; i < ELEMENTS(pCache->aEntries); i++)
+    for (i = 0; i < RT_ELEMENTS(pCache->aEntries); i++)
     {
         VRDPBCENTRY *pEntry = &pCache->aEntries[i];
 

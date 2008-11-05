@@ -850,7 +850,7 @@ int avlrogcphys(void)
     s1.aNode[2].KeyLast    = 0xe03fffff;
     s1.aNode[3].Key        = 0xfffe0000;
     s1.aNode[3].KeyLast    = 0xfffe0ffe;
-    for (i = 0; i < ELEMENTS(s1.aNode); i++)
+    for (i = 0; i < RT_ELEMENTS(s1.aNode); i++)
     {
         PAVLROGCPHYSNODECORE pNode = &s1.aNode[i];
         if (!RTAvlroGCPhysInsert(&s1.Tree, pNode))
@@ -892,7 +892,7 @@ int avlrogcphys(void)
 
     s3 = s1;
     s1 = s2;
-    for (i = 0; i < ELEMENTS(s3.aNode); i++)
+    for (i = 0; i < RT_ELEMENTS(s3.aNode); i++)
     {
         PAVLROGCPHYSNODECORE pNode = &s3.aNode[i];
         if (RTAvlroGCPhysGet(&s3.Tree, pNode->Key) != pNode)

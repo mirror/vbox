@@ -80,7 +80,7 @@ struct VBGLHGCMHANDLEDATA *vbglHGCMHandleAlloc (void)
      * @todo bitmap for faster search and other obvious optimizations.
      */
 
-    for (i = 0; i < ELEMENTS(g_vbgldata.aHGCMHandleData); i++)
+    for (i = 0; i < RT_ELEMENTS(g_vbgldata.aHGCMHandleData); i++)
     {
         if (!g_vbgldata.aHGCMHandleData[i].fAllocated)
         {

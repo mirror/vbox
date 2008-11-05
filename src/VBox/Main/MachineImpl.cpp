@@ -201,7 +201,7 @@ Machine::HWData::HWData()
     mBootOrder [0] = DeviceType_Floppy;
     mBootOrder [1] = DeviceType_DVD;
     mBootOrder [2] = DeviceType_HardDisk;
-    for (size_t i = 3; i < ELEMENTS (mBootOrder); i++)
+    for (size_t i = 3; i < RT_ELEMENTS (mBootOrder); i++)
         mBootOrder [i] = DeviceType_Null;
 
     mClipboardMode = ClipboardMode_Bidirectional;
@@ -230,7 +230,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mClipboardMode != that.mClipboardMode)
         return false;
 
-    for (size_t i = 0; i < ELEMENTS (mBootOrder); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (mBootOrder); ++ i)
         if (mBootOrder [i] != that.mBootOrder [i])
             return false;
 
@@ -2257,7 +2257,7 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
 {
     if (!port)
         return E_POINTER;
-    if (slot >= ELEMENTS (mSerialPorts))
+    if (slot >= RT_ELEMENTS (mSerialPorts))
         return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
 
     AutoCaller autoCaller (this);
@@ -2274,7 +2274,7 @@ STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
 {
     if (!port)
         return E_POINTER;
-    if (slot >= ELEMENTS (mParallelPorts))
+    if (slot >= RT_ELEMENTS (mParallelPorts))
         return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
 
     AutoCaller autoCaller (this);
@@ -2291,7 +2291,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
 {
     if (!adapter)
         return E_POINTER;
-    if (slot >= ELEMENTS (mNetworkAdapters))
+    if (slot >= RT_ELEMENTS (mNetworkAdapters))
         return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
 
     AutoCaller autoCaller (this);
@@ -4348,14 +4348,14 @@ HRESULT Machine::initDataAndChildObjects()
     mFloppyDrive->init (this);
 
     /* create associated serial port objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->init (this, slot);
     }
 
     /* create associated parallel port objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
         unconst (mParallelPorts [slot]).createObject();
         mParallelPorts [slot]->init (this, slot);
@@ -4374,7 +4374,7 @@ HRESULT Machine::initDataAndChildObjects()
     mSATAController->init (this);
 
     /* create associated network adapter objects */
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->init (this, slot);
@@ -4405,7 +4405,7 @@ void Machine::uninitDataAndChildObjects()
 
     /* tell all our other child objects we've been uninitialized */
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
         if (mNetworkAdapters [slot])
         {
@@ -4432,7 +4432,7 @@ void Machine::uninitDataAndChildObjects()
         unconst (mAudioAdapter).setNull();
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
         if (mParallelPorts [slot])
         {
@@ -4441,7 +4441,7 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
         if (mSerialPorts [slot])
         {
@@ -4999,7 +4999,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /* Boot node (required) */
     {
         /* reset all boot order positions to NoDevice */
-        for (size_t i = 0; i < ELEMENTS (mHWData->mBootOrder); i++)
+        for (size_t i = 0; i < RT_ELEMENTS (mHWData->mBootOrder); i++)
             mHWData->mBootOrder [i] = DeviceType_Null;
 
         Key bootNode = aNode.key ("Boot");
@@ -5012,7 +5012,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* position unicity is guaranteed by XML Schema */
             uint32_t position = (*it).value <uint32_t> ("position");
             -- position;
-            Assert (position < ELEMENTS (mHWData->mBootOrder));
+            Assert (position < RT_ELEMENTS (mHWData->mBootOrder));
 
             /* device (required) */
             const char *device = (*it).stringValue ("device");
@@ -5081,7 +5081,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreak (slot < ELEMENTS (mNetworkAdapters));
+            AssertBreak (slot < RT_ELEMENTS (mNetworkAdapters));
 
             rc = mNetworkAdapters [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);
@@ -5101,7 +5101,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreak (slot < ELEMENTS (mSerialPorts));
+            AssertBreak (slot < RT_ELEMENTS (mSerialPorts));
 
             rc = mSerialPorts [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);
@@ -5121,7 +5121,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             /* slot number (required) */
             /* slot unicity is guaranteed by XML Schema */
             uint32_t slot = (*it).value <uint32_t> ("slot");
-            AssertBreak (slot < ELEMENTS (mSerialPorts));
+            AssertBreak (slot < RT_ELEMENTS (mSerialPorts));
 
             rc = mParallelPorts [slot]->loadSettings (*it);
             CheckComRCReturnRC (rc);
@@ -6372,7 +6372,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     {
         Key bootNode = aNode.createKey ("Boot");
 
-        for (ULONG pos = 0; pos < ELEMENTS (mHWData->mBootOrder); ++ pos)
+        for (ULONG pos = 0; pos < RT_ELEMENTS (mHWData->mBootOrder); ++ pos)
         {
             const char *device = NULL;
             switch (mHWData->mBootOrder [pos])
@@ -6436,7 +6436,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     {
         Key nwNode = aNode.createKey ("Network");
 
-        for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); ++ slot)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++ slot)
         {
             Key adapterNode = nwNode.appendKey ("Adapter");
 
@@ -6451,7 +6451,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     {
         Key serialNode = aNode.createKey ("UART");
 
-        for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); ++ slot)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++ slot)
         {
             Key portNode = serialNode.appendKey ("Port");
 
@@ -6466,7 +6466,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     {
         Key parallelNode = aNode.createKey ("LPT");
 
-        for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); ++ slot)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); ++ slot)
         {
             Key portNode = parallelNode.appendKey ("Port");
 
@@ -7192,15 +7192,15 @@ bool Machine::isModified()
 
     AutoReadLock alock (this);
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isModified())
             return true;
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
         if (mSerialPorts [slot] && mSerialPorts [slot]->isModified())
             return true;
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
         if (mParallelPorts [slot] && mParallelPorts [slot]->isModified())
             return true;
 
@@ -7234,15 +7234,15 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
 
     AutoReadLock alock (this);
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isReallyModified())
             return true;
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
         if (mSerialPorts [slot] && mSerialPorts [slot]->isReallyModified())
             return true;
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
         if (mParallelPorts [slot] && mParallelPorts [slot]->isReallyModified())
             return true;
 
@@ -7319,9 +7319,9 @@ void Machine::rollback (bool aNotify)
     bool vrdpChanged = false, dvdChanged = false, floppyChanged = false,
          usbChanged = false, sataChanged = false;
 
-    ComPtr <INetworkAdapter> networkAdapters [ELEMENTS (mNetworkAdapters)];
-    ComPtr <ISerialPort> serialPorts [ELEMENTS (mSerialPorts)];
-    ComPtr <IParallelPort> parallelPorts [ELEMENTS (mParallelPorts)];
+    ComPtr <INetworkAdapter> networkAdapters [RT_ELEMENTS (mNetworkAdapters)];
+    ComPtr <ISerialPort> serialPorts [RT_ELEMENTS (mSerialPorts)];
+    ComPtr <IParallelPort> parallelPorts [RT_ELEMENTS (mParallelPorts)];
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
@@ -7346,17 +7346,17 @@ void Machine::rollback (bool aNotify)
     if (mSATAController)
         sataChanged = mSATAController->rollback();
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
         if (mNetworkAdapters [slot])
             if (mNetworkAdapters [slot]->rollback())
                 networkAdapters [slot] = mNetworkAdapters [slot];
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
         if (mSerialPorts [slot])
             if (mSerialPorts [slot]->rollback())
                 serialPorts [slot] = mSerialPorts [slot];
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
         if (mParallelPorts [slot])
             if (mParallelPorts [slot]->rollback())
                 parallelPorts [slot] = mParallelPorts [slot];
@@ -7382,13 +7382,13 @@ void Machine::rollback (bool aNotify)
         if (sataChanged)
             that->onSATAControllerChange();
 
-        for (ULONG slot = 0; slot < ELEMENTS (networkAdapters); slot ++)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (networkAdapters); slot ++)
             if (networkAdapters [slot])
                 that->onNetworkAdapterChange (networkAdapters [slot]);
-        for (ULONG slot = 0; slot < ELEMENTS (serialPorts); slot ++)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (serialPorts); slot ++)
             if (serialPorts [slot])
                 that->onSerialPortChange (serialPorts [slot]);
-        for (ULONG slot = 0; slot < ELEMENTS (parallelPorts); slot ++)
+        for (ULONG slot = 0; slot < RT_ELEMENTS (parallelPorts); slot ++)
             if (parallelPorts [slot])
                 that->onParallelPortChange (parallelPorts [slot]);
     }
@@ -7429,11 +7429,11 @@ void Machine::commit()
     mUSBController->commit();
     mSATAController->commit();
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->commit();
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
         mSerialPorts [slot]->commit();
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
         mParallelPorts [slot]->commit();
 
     if (mType == IsSessionMachine)
@@ -7486,11 +7486,11 @@ void Machine::copyFrom (Machine *aThat)
     mUSBController->copyFrom (aThat->mUSBController);
     mSATAController->copyFrom (aThat->mSATAController);
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
         mNetworkAdapters [slot]->copyFrom (aThat->mNetworkAdapters [slot]);
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
         mSerialPorts [slot]->copyFrom (aThat->mSerialPorts [slot]);
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
         mParallelPorts [slot]->copyFrom (aThat->mParallelPorts [slot]);
 }
 
@@ -7737,13 +7737,13 @@ HRESULT SessionMachine::init (Machine *aMachine)
     unconst (mAudioAdapter).createObject();
     mAudioAdapter->init (this, aMachine->mAudioAdapter);
     /* create a list of serial ports that will be mutable */
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->init (this, aMachine->mSerialPorts [slot]);
     }
     /* create a list of parallel ports that will be mutable */
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
         unconst (mParallelPorts [slot]).createObject();
         mParallelPorts [slot]->init (this, aMachine->mParallelPorts [slot]);
@@ -7755,7 +7755,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     unconst (mSATAController).createObject();
     mSATAController->init (this, aMachine->mSATAController);
     /* create a list of network adapters that will be mutable */
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->init (this, aMachine->mNetworkAdapters [slot]);
@@ -10577,19 +10577,19 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
     unconst (mSATAController).createObject();
     mSATAController->initCopy (this, mPeer->mSATAController);
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->initCopy (this, mPeer->mNetworkAdapters [slot]);
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->initCopy (this, mPeer->mSerialPorts [slot]);
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
         unconst (mParallelPorts [slot]).createObject();
         mParallelPorts [slot]->initCopy (this, mPeer->mParallelPorts [slot]);
@@ -10679,19 +10679,19 @@ HRESULT SnapshotMachine::init (Machine *aMachine,
     unconst (mSATAController).createObject();
     mSATAController->init (this);
 
-    for (ULONG slot = 0; slot < ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
     {
         unconst (mNetworkAdapters [slot]).createObject();
         mNetworkAdapters [slot]->init (this, slot);
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
     {
         unconst (mSerialPorts [slot]).createObject();
         mSerialPorts [slot]->init (this, slot);
     }
 
-    for (ULONG slot = 0; slot < ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
     {
         unconst (mParallelPorts [slot]).createObject();
         mParallelPorts [slot]->init (this, slot);

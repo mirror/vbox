@@ -77,7 +77,7 @@ RTDECL(PCRTSTATUSMSG) RTErrGet(int rc)
 {
     unsigned iFound = ~0;
     unsigned i;
-    for (i = 0; i < ELEMENTS(g_aStatusMsgs); i++)
+    for (i = 0; i < RT_ELEMENTS(g_aStatusMsgs); i++)
     {
         if (g_aStatusMsgs[i].iCode == rc)
         {
@@ -98,7 +98,7 @@ RTDECL(PCRTSTATUSMSG) RTErrGet(int rc)
     /*
      * Need to use the temporary stuff.
      */
-    int iMsg = ASMAtomicXchgU32(&g_iUnknownMsgs, (g_iUnknownMsgs + 1) % ELEMENTS(g_aUnknownMsgs));
+    int iMsg = ASMAtomicXchgU32(&g_iUnknownMsgs, (g_iUnknownMsgs + 1) % RT_ELEMENTS(g_aUnknownMsgs));
     RTStrPrintf(&g_aszUnknownStr[iMsg][0], sizeof(g_aszUnknownStr[iMsg]), "Unknown Status 0x%X", rc);
     return &g_aUnknownMsgs[iMsg];
 }

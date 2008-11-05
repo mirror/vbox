@@ -131,7 +131,7 @@ int main()
     };
 
     unsigned i = 0;
-    for (i = 0; i < ELEMENTS(aTests); i++)
+    for (i = 0; i < RT_ELEMENTS(aTests); i++)
     {
         //aTests[i].cLower = (aTests[i].uMilliesWait - aTests[i].uMilliesWait / 10) / aTests[i].uMilliesInterval;
         //aTests[i].cUpper = (aTests[i].uMilliesWait + aTests[i].uMilliesWait / 10) / aTests[i].uMilliesInterval;

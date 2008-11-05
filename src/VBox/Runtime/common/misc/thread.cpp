@@ -720,8 +720,8 @@ RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUse
 
 
 /**
- * Create a new thread. 
- *  
+ * Create a new thread.
+ *
  * Same as RTThreadCreate except the name is given in the RTStrPrintfV form.
  *
  * @returns iprt status code.
@@ -744,8 +744,8 @@ RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
 
 
 /**
- * Create a new thread. 
- *  
+ * Create a new thread.
+ *
  * Same as RTThreadCreate except the name is given in the RTStrPrintf form.
  *
  * @returns iprt status code.
@@ -1381,7 +1381,7 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
          */
         if (iEntry && pCur == pThread)
             break;
-        for (unsigned i = 0; i < ELEMENTS(apSeenThreads); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(apSeenThreads); i++)
             if (apSeenThreads[i] == pCur)
             {
                 AssertMsg2(" Cycle!\n");
@@ -1392,7 +1392,7 @@ static void rtThreadDeadlock(PRTTHREADINT pThread, PRTTHREADINT pCur, RTTHREADST
         /*
          * Advance to the next thread.
          */
-        iSeenThread = (iSeenThread + 1) % ELEMENTS(apSeenThreads);
+        iSeenThread = (iSeenThread + 1) % RT_ELEMENTS(apSeenThreads);
         apSeenThreads[iSeenThread] = pCur;
         pCur = pNext;
     }
