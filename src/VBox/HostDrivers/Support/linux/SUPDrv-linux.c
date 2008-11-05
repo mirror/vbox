@@ -711,7 +711,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
     if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_NOP))
-        return supdrvIOCtlFast(uCmd, 0 /* @todo VMCPU id. */, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
+        return supdrvIOCtlFast(uCmd, ulArg, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
     return VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg);
 
 #else   /* !HAVE_UNLOCKED_IOCTL */
@@ -721,7 +721,7 @@ static int VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned 
     if (RT_LIKELY(   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_HWACC_RUN
                   || uCmd == SUP_IOCTL_FAST_DO_NOP))
-        rc = supdrvIOCtlFast(uCmd, 0 /* @todo VMCPU id. */, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
+        rc = supdrvIOCtlFast(uCmd, ulArg, &g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
     else
         rc = VBoxDrvLinuxIOCtlSlow(pFilp, uCmd, ulArg);
     lock_kernel();
