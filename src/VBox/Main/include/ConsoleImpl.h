@@ -60,7 +60,7 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
  *  not available (NULL), sets error info and returns returns E_ACCESSDENIED.
  *  The translatable error message is defined in null context.
  *
- *  Intended to used only within Console children (i,e. Keyboard, Mouse,
+ *  Intended to used only within Console children (i.e. Keyboard, Mouse,
  *  Display, etc.).
  *
  *  @param drv  driver pointer to check (compare it with NULL)
@@ -364,7 +364,7 @@ public:
 
     /**
      *  A deviation of SaveVMPtr that doesn't set the error info on failure.
-     *  Intenede for pieces of code that don't need to return the VM access
+     *  Intended for pieces of code that don't need to return the VM access
      *  failure to the caller. The usage pattern is:
      *  <code>
      *      Console::SaveVMPtrQuiet pVM (mParent);

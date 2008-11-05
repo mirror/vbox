@@ -112,7 +112,7 @@
       Console::addCaller() for more details).
  * 2. On successful initialization, the structure keeps the Console caller
  *    until destruction (to ensure Console remains in the Ready state and won't
- *    be accidentially uninitialized). Forgetting to delete the created task
+ *    be accidentally uninitialized). Forgetting to delete the created task
  *    will lead to Console::uninit() stuck waiting for releasing all added
  *    callers.
  *
@@ -239,7 +239,7 @@ struct VMSaveTask : public VMProgressTask
     ComPtr <IProgress> mServerProgress;
 };
 
-// constructor / desctructor
+// constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
 Console::Console()
@@ -400,7 +400,7 @@ void Console::uninit()
     LogFlowThisFunc (("initFailed()=%d\n", autoUninitSpan.initFailed()));
 
     /*
-     * Uninit all children that ise addDependentChild()/removeDependentChild()
+     * Uninit all children that use addDependentChild()/removeDependentChild()
      * in their init()/uninit() methods.
      */
     uninitDependentChildren();
@@ -1766,7 +1766,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         /*
          *  If we fail here it means a PowerDown() call happened on another
          *  thread while we were doing Pause() (which leaves the Console lock).
-         *  We assign PowerDown() a higher precendence than SaveState(),
+         *  We assign PowerDown() a higher precedence than SaveState(),
          *  therefore just return the error to the caller.
          */
         if (FAILED (rc))
@@ -2011,7 +2011,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     //  consider the below later.
     //
     /* bird: It is not permitted to attach or detach while the VM is saving,
-     * is restoring or has stopped - definintly not.
+     * is restoring or has stopped - definitely not.
      *
      * Attaching while starting, well, if you don't create any deadlock it
      * should work...  Paused should work I guess, but we shouldn't push our
@@ -2310,7 +2310,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
             /*
              *  If we fail here it means a PowerDown() call happened on another
              *  thread while we were doing Pause() (which leaves the Console lock).
-             *  We assign PowerDown() a higher precendence than TakeSnapshot(),
+             *  We assign PowerDown() a higher precedence than TakeSnapshot(),
              *  therefore just return the error to the caller.
              */
             if (FAILED (rc))
@@ -2336,7 +2336,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
 
         /*
          *  state file is non-null only when the VM is paused
-         *  (i.e. createing a snapshot online)
+         *  (i.e. creating a snapshot online)
          */
         ComAssertBreak (
             (!stateFilePath.isNull() && takingSnapshotOnline) ||
@@ -2769,7 +2769,7 @@ HRESULT Console::onFloppyDriveChange()
  * @param   peState         Pointer to the variable keeping the actual state of the drive.
  *                          This will be both read and updated to eState or other appropriate state.
  * @param   pszPath         The path to the media / drive which is now being mounted / captured.
- *                          If NULL no media or drive is attached and the lun will be configured with
+ *                          If NULL no media or drive is attached and the LUN will be configured with
  *                          the default block driver with no media. This will also be the state if
  *                          mounting / capturing the specified media / drive fails.
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
@@ -2849,7 +2849,7 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
  * @param   peState         Pointer to the variable keeping the actual state of the drive.
  *                          This will be both read and updated to eState or other appropriate state.
  * @param   pszPath         The path to the media / drive which is now being mounted / captured.
- *                          If NULL no media or drive is attached and the lun will be configured with
+ *                          If NULL no media or drive is attached and the LUN will be configured with
  *                          the default block driver with no media. This will also be the state if
  *                          mounting / capturing the specified media / drive fails.
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
@@ -3198,7 +3198,7 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
             const char *cszAdapterName = "pcnet";
 #ifdef VBOX_WITH_E1000
             /*
-             * Perharps it would be much wiser to wrap both 'pcnet' and 'e1000'
+             * Perhaps it would be much wiser to wrap both 'pcnet' and 'e1000'
              * into generic 'net' device.
              */
             NetworkAdapterType_T adapterType;
@@ -4071,7 +4071,7 @@ HRESULT Console::onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
  *
  *  Setting \a aQuiet to true is useful for methods that don't want to return
  *  the failed result code to the caller when this method fails (e.g. need to
- *  silently check for the mpVM avaliability).
+ *  silently check for the mpVM availability).
  *
  *  When mpVM is NULL but \a aAllowNullVM is true, a corresponding error will be
  *  returned instead of asserting. Having it false is intended as a sanity check
@@ -4539,7 +4539,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 /**
  * Internal power off worker routine.
  *
- * This method may be called only at certain places with the folliwing meaning
+ * This method may be called only at certain places with the following meaning
  * as shown below:
  *
  * - if the machine state is either Running or Paused, a normal
@@ -4842,7 +4842,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
              * VMSTATE_TERMINATE state change in vmstateChangeCallback(). If
              * powerDown() is called from EMT (i.e. from vmstateChangeCallback()
              * on receiving VM-initiated VMSTATE_OFF), VMSTATE_TERMINATE hasn't
-             * occured yet. This is okay, because mMachineState is already
+             * occurred yet. This is okay, because mMachineState is already
              * Stopping in this case, so any other attempt to call PowerDown()
              * will be rejected. */
         }
@@ -5053,7 +5053,7 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
                         ; /* the console folder exists, nothing to do */
                     else
                     {
-                        /* remove the old machhine folder (when changed)
+                        /* remove the old machine folder (when changed)
                          * or the global folder if any (when new) */
                         if (it != oldFolders.end() ||
                             mGlobalSharedFolders.find (name) !=
@@ -5718,7 +5718,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
   * The initialisation script should create a TAP interface, set it up and write its name to
   * standard output followed by a carriage return.  Anything further written to standard
   * output will be ignored.  If it returns a non-zero exit code, or does not write an
-  * intelligable interface name to standard output, it will be treated as having failed.
+  * intelligible interface name to standard output, it will be treated as having failed.
   * For now, this method only works on Linux.
   *
   * @returns COM status code
@@ -6166,7 +6166,7 @@ Console::stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser)
  * @param   pvUser      Pointer to the VMProgressTask structure.
  * @param   rc          VBox status code.
  * @param   pszFormat   Printf-like error message.
- * @param   args        Various number of argumens for the error message.
+ * @param   args        Various number of arguments for the error message.
  *
  * @thread EMT, VMPowerUp...
  *
@@ -7103,7 +7103,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         }
     }
 
-    /* lock the console sonce we're going to access it */
+    /* lock the console once we're going to access it */
     AutoWriteLock thatLock (that);
 
     if (SUCCEEDED (rc))
