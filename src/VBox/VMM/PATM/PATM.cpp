@@ -119,7 +119,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
     /* Add another page in case the generated code is much larger than expected. */
     /** @todo bad safety precaution */
     rc = MMR3HyperAllocOnceNoRel(pVM, PATCH_MEMORY_SIZE + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE + PATM_STAT_MEMSIZE, PAGE_SIZE, MM_TAG_PATM, (void **)&pVM->patm.s.pPatchMemHC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("MMR3HyperAlloc failed with %Vrc\n", rc));
         return rc;
@@ -153,7 +153,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
 #ifdef RT_ARCH_AMD64 /* see patmReinit(). */
     /* Check CFGM option. */
     rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "PATMEnabled", &pVM->fPATMEnabled);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
 # ifdef PATM_DISABLE_ALL
         pVM->fPATMEnabled = false;
 # else
@@ -163,7 +163,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
 
     rc = patmReinit(pVM);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -172,7 +172,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
     rc = SSMR3RegisterInternal(pVM, "PATM", 0, PATM_SSM_VERSION, sizeof(pVM->patm.s) + PATCH_MEMORY_SIZE  + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE,
                                NULL, patmr3Save, NULL,
                                NULL, patmr3Load, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertRC(rc);
         return rc;
@@ -186,7 +186,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
     if (!fRegisteredCmds)
     {
         int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             fRegisteredCmds = true;
     }
 #endif
@@ -282,15 +282,15 @@ VMMR3DECL(int) PATMR3InitFinalize(PVM pVM)
 {
     /* The GC state, stack and statistics must be read/write for the guest (supervisor only of course). */
     int rc = PGMMapSetPage(pVM, pVM->patm.s.pGCStateGC, PAGE_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
 
     rc = PGMMapSetPage(pVM, pVM->patm.s.pGCStackGC, PATM_STACK_TOTAL_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
 
     rc = PGMMapSetPage(pVM, pVM->patm.s.pStatsGC, PATM_STAT_MEMSIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
 
     return rc;
@@ -380,7 +380,7 @@ static int patmReinit(PVM pVM)
     /* Generate all global functions to be used by future patches. */
     /* We generate a fake patch in order to use the existing code for relocation. */
     rc = MMHyperAlloc(pVM, sizeof(PATMPATCHREC), 0, MM_TAG_PATM_PATCH, (void **)&pVM->patm.s.pGlobalPatchRec);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("Out of memory!!!!\n"));
         return VERR_NO_MEMORY;
@@ -498,7 +498,7 @@ VMMR3DECL(int) PATMR3Reset(PVM pVM)
     pVM->patm.s.PatchLookupTreeHC->PatchTreeByPage      = 0;
 
     int rc = patmReinit(pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         rc = PATMR3InitFinalize(pVM); /* paranoia */
 
     return rc;
@@ -534,7 +534,7 @@ int patmReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdat
         for (int i=0;i<orgsize;i++)
         {
             int rc = PATMR3QueryOpcode(pDisInfo->pVM, (RTRCPTR)pSrc, pDest);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pSrc++;
                 pDest++;
@@ -652,7 +652,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                 *(RTRCPTR *)&oldInstr[pPatch->patch.cbPrivInstr - sizeof(RTRCPTR)] = pRec->pDest;
 
                 rc = PGMPhysSimpleReadGCPtr(pVM, curInstr, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPrivInstr);
-                Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+                Assert(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
                 pRec->pDest = (RTRCPTR)((RTRCUINTPTR)pRec->pDest + delta);
 
@@ -662,7 +662,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
 
                     Log(("PATM: Patch page not present -> check later!\n"));
                     rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
-                    Assert(VBOX_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
                 }
                 else
                 if (memcmp(curInstr, oldInstr, pPatch->patch.cbPrivInstr))
@@ -675,7 +675,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                     pPatch->patch.uState = PATCH_DISABLED;
                 }
                 else
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     *(RTRCPTR *)&curInstr[pPatch->patch.cbPrivInstr - sizeof(RTRCPTR)] = pRec->pDest;
                     rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pRec->pSource, curInstr, pPatch->patch.cbPrivInstr);
@@ -729,14 +729,14 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                  * Read old patch jump and compare it to the one we previously installed
                  */
                 rc = PGMPhysSimpleReadGCPtr(pVM, temp, pPatch->patch.pPrivInstrGC, pPatch->patch.cbPatchJump);
-                Assert(VBOX_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+                Assert(RT_SUCCESS(rc) || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
                 if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
                 {
                     RTRCPTR pPage = pPatch->patch.pPrivInstrGC & PAGE_BASE_GC_MASK;
 
                     rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
-                    Assert(VBOX_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
+                    Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
                 }
                 else
                 if (memcmp(temp, oldJump, pPatch->patch.cbPatchJump))
@@ -749,7 +749,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
                     pPatch->patch.uState = PATCH_DISABLED;
                 }
                 else
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pJumpOffGC, &displ, sizeof(displ));
                     AssertRC(rc);
@@ -1055,7 +1055,7 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
                 else
                     rc = VERR_PATCHING_REFUSED;    /* exists as a normal patch; can't use it */
 
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     uint8_t *pPatchHC;
                     RTRCPTR  pPatchGC;
@@ -1579,7 +1579,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     else
         rc = patmAnalyseBlockCallback(pVM, pCpu, pInstrGC, pCurInstrGC, pUserData);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /** @note Never do a direct return unless a failure is encountered! */
@@ -1624,13 +1624,13 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             Assert(!PATMIsPatchGCAddr(pVM, pTargetGC));
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, pTargetGC, false);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto end;
         }
         else
             rc = patmPatchGenRelJump(pVM, pPatch, pTargetGC, pCpu->pCurInstr->opcode, !!(pCpu->prefix & PREFIX_OPSIZE));
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
 
         goto end;
@@ -1654,7 +1654,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         pPatch->flags &= ~PATMFL_GENERATE_JUMPTOGUEST;
 
         rc = patmPatchGenCli(pVM, pPatch);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
     }
@@ -1678,7 +1678,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             {
                 /* mov GPR, ss */
                 rc = patmPatchGenMovFromSS(pVM, pPatch, pCpu, pCurInstrGC);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     rc = VWRN_CONTINUE_RECOMPILE;
                 break;
             }
@@ -1710,7 +1710,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         }
         rc = patmPatchGenSti(pVM, pPatch, pCurInstrGC, pNextInstrGC);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             DISCPUSTATE cpu = *pCpu;
             unsigned    opsize;
@@ -1744,7 +1744,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             {
                 /* Not an exit point for function duplication patches */
                 if (    (pPatch->flags & PATMFL_DUPLICATE_FUNCTION)
-                    &&  VBOX_SUCCESS(rc))
+                    &&  RT_SUCCESS(rc))
                 {
                     pPatch->flags &= ~PATMFL_GENERATE_JUMPTOGUEST;  /* Don't generate a jump back */
                     rc = VWRN_CONTINUE_RECOMPILE;
@@ -1770,7 +1770,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             fGenerateJmpBack = false;
 
         rc = patmPatchGenPopf(pVM, pPatch, pCurInstrGC + pCpu->opsize, !!(pCpu->prefix & PREFIX_OPSIZE), fGenerateJmpBack);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             if (fGenerateJmpBack == false)
             {
@@ -1788,7 +1788,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     case OP_PUSHF:
         rc = patmPatchGenPushf(pVM, pPatch, !!(pCpu->prefix & PREFIX_OPSIZE));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
 
@@ -1796,7 +1796,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pCpu->pCurInstr->param1 == OP_PARM_REG_CS)
         {
             rc = patmPatchGenPushCS(pVM, pPatch);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VWRN_CONTINUE_RECOMPILE;
             break;
         }
@@ -1805,7 +1805,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_IRET:
         Log(("IRET at %VRv\n", pCurInstrGC));
         rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->prefix & PREFIX_OPSIZE));
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pPatch->flags |= PATMFL_FOUND_PATCHEND;
             rc = VINF_SUCCESS;  /* exit point by definition */
@@ -1815,42 +1815,42 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_ILLUD2:
         /* This appears to be some kind of kernel panic in Linux 2.4; no point to continue */
         rc = patmPatchGenIllegalInstr(pVM, pPatch);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;  /* exit point by definition */
         Log(("Illegal opcode (0xf 0xb)\n"));
         break;
 
     case OP_CPUID:
         rc = patmPatchGenCpuid(pVM, pPatch, pCurInstrGC);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
 
     case OP_STR:
     case OP_SLDT:
         rc = patmPatchGenSldtStr(pVM, pPatch, pCpu, pCurInstrGC);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
 
     case OP_SGDT:
     case OP_SIDT:
         rc = patmPatchGenSxDT(pVM, pPatch, pCpu, pCurInstrGC);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VWRN_CONTINUE_RECOMPILE;
         break;
 
     case OP_RETN:
         /* retn is an exit point for function patches */
         rc = patmPatchGenRet(pVM, pPatch, pCpu, pCurInstrGC);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;  /* exit point by definition */
         break;
 
     case OP_SYSEXIT:
         /* Duplicate it, so it can be emulated in GC (or fault). */
         rc = patmPatchGenDuplicate(pVM, pPatch, pCpu, pCurInstrGC);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;  /* exit point by definition */
         break;
 
@@ -1863,7 +1863,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.size == 4 /* no far calls! */)
         {
             rc = patmPatchGenCall(pVM, pPatch, pCpu, pCurInstrGC, (RTRCPTR)0xDEADBEEF, true);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = VWRN_CONTINUE_RECOMPILE;
             }
@@ -1880,7 +1880,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pPatch->flags & PATMFL_SUPPORT_INDIRECT_CALLS && pCpu->param1.size == 4 /* no far jumps! */)
         {
             rc = patmPatchGenJump(pVM, pPatch, pCpu, pCurInstrGC);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VINF_SUCCESS;  /* end of branch */
             break;
         }
@@ -1896,7 +1896,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pCpu->pCurInstr->param2 == OP_PARM_Dd)
         {
             rc = patmPatchGenMovDebug(pVM, pPatch, pCpu);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VWRN_CONTINUE_RECOMPILE;
             break;
         }
@@ -1907,7 +1907,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         if (pCpu->pCurInstr->param2 == OP_PARM_Cd)
         {
             rc = patmPatchGenMovControl(pVM, pPatch, pCpu);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VWRN_CONTINUE_RECOMPILE;
             break;
         }
@@ -1918,7 +1918,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
 gen_illegal_instr:
             rc = patmPatchGenIllegalInstr(pVM, pPatch);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VINF_SUCCESS;  /* exit point by definition */
         }
         else
@@ -1926,7 +1926,7 @@ gen_illegal_instr:
 duplicate_instr:
             Log(("patmPatchGenDuplicate\n"));
             rc = patmPatchGenDuplicate(pVM, pPatch, pCpu, pCurInstrGC);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = VWRN_CONTINUE_RECOMPILE;
         }
         break;
@@ -1954,11 +1954,11 @@ end:
         {
             rc2 = patmPatchGenClearInhibitIRQ(pVM, pPatch, pNextInstrGC);
         }
-        if (VBOX_FAILURE(rc2))
+        if (RT_FAILURE(rc2))
             rc = rc2;
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         // If single instruction patch, we've copied enough instructions *and* the current instruction is not a relative jump
         if (    (pPatch->flags & PATMFL_CHECK_SIZE)
@@ -2354,7 +2354,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 if (cpunext.pCurInstr->opcode != OP_CLI)
                 {
                     rc = pfnPATMR3Recompile(pVM, &cpunext, pInstrGC, pNextInstrGC, pUserData);
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         rc = VINF_SUCCESS;
                         goto end;
@@ -2393,7 +2393,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 Log(("patmRecompileCodeStream continue passed conditional jump\n"));
                 /* First we need to finish this linear code stream until the next exit point. */
                 rc = patmRecompileCodeStream(pVM, pInstrGC, pCurInstrGC+opsize, pfnPATMR3Recompile, pUserData);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     Log(("patmRecompileCodeStream fatal error %d\n", rc));
                     break; //fatal error
@@ -2427,7 +2427,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                     PATMR3EnablePatch(pVM, pTargetPatch->pPrivInstrGC);
                 }
 
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     Log(("patmRecompileCodeStream fatal error %d\n", rc));
                     break; //done!
@@ -2720,7 +2720,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
 
         /* Install fake cli patch (to clear the virtual IF and check int xx parameters) */
         rc = patmPatchGenIntEntry(pVM, pPatch, pInstrGC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             goto failure;
     }
 
@@ -2731,7 +2731,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     if (!(pPatch->flags & PATMFL_SYSENTER))
     {
         rc = patmPatchGenStats(pVM, pPatch, pInstrGC);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             goto failure;
     }
 #endif
@@ -2802,7 +2802,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
         Log(("PATMR3PatchBlock %VRv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
         /* Replace first opcode byte with 'int 3'. */
         rc = patmActivateInt3Patch(pVM, pPatch);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             goto failure;
 
         /* normal patch can be turned into an int3 patch -> clear patch jump installation flag. */
@@ -2818,7 +2818,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
         /* now insert a jump in the guest code */
         rc = patmGenJumpToPatch(pVM, pPatch, true);
         AssertRC(rc);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             goto failure;
 
     }
@@ -2930,13 +2930,13 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstr
 
 #ifdef VBOX_WITH_STATISTICS
             rc = patmPatchGenStats(pVM, pPatch, pInstrGC);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto failure;
 #endif
 
             /* Install fake cli patch (to clear the virtual IF) */
             rc = patmPatchGenIntEntry(pVM, pPatch, pInstrGC);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto failure;
 
             /* Add lookup record for patch to guest address translation (for the push) */
@@ -2944,12 +2944,12 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstr
 
             /* Duplicate push. */
             rc = patmPatchGenDuplicate(pVM, pPatch, &cpuPush, pInstrGC);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto failure;
 
             /* Generate jump to common entrypoint. */
             rc = patmPatchGenPatchJump(pVM, pPatch, pCurInstrGC, PATCHCODE_PTR_GC(&pJmpPatch->patch));
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 goto failure;
 
             /* size of patch block */
@@ -3022,12 +3022,12 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
 
 #ifdef VBOX_WITH_STATISTICS
     rc = patmPatchGenStats(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 #endif
 
     rc = patmPatchGenTrapEntry(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     /* size of patch block */
@@ -3144,12 +3144,12 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
 
     /** @note Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
 #ifdef VBOX_WITH_STATISTICS
     rc = patmPatchGenStats(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 #endif
     rc = patmRecompileCodeStream(pVM, pInstrGC, pInstrGC, patmRecompileCallback, pPatch);
@@ -3294,17 +3294,17 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
 
     /** @note Set the PATM interrupt flag here; it was cleared before the patched call. (!!!) */
     rc = patmPatchGenSetPIF(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
 #ifdef VBOX_WITH_STATISTICS
     rc = patmPatchGenStats(pVM, pPatch, pInstrGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 #endif
 
     rc = patmPatchGenPatchJump(pVM, pPatch, pInstrGC, pPatchTargetGC);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     /*
@@ -3530,7 +3530,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     /* Now replace the original call in the guest code */
     rc = patmGenCallToPatch(pVM, pPatch, PATCHCODE_PTR_GC(&pPatchFunction->patch), true);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     /* Lowest and highest address for write monitoring. */
@@ -3608,7 +3608,7 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     /* Replace address with that of the cached item. */
     rc = PGMPhysSimpleDirtyWriteGCPtr(pVM, pInstrGC + pCpu->opsize - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         goto failure;
     }
@@ -3781,7 +3781,7 @@ VMMR3DECL(int) PATMR3PatchInstrInt3(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t
 
     /* Replace first opcode byte with 'int 3'. */
     rc = patmActivateInt3Patch(pVM, pPatch);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     /* Lowest and highest address for write monitoring. */
@@ -3892,7 +3892,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
 
     rc = patmGenJumpToPatch(pVM, pPatch, true);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     pPatch->flags |= PATMFL_MUST_INSTALL_PATCHJMP;
@@ -4059,7 +4059,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
             /** @todo we shouldn't disable and enable patches too often (it's relatively cheap, but pointless if it always happens) */
             rc = PATMR3EnablePatch(pVM, pInstrGC);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 return VWRN_PATCH_ENABLED;
 
             return rc;
@@ -4084,7 +4084,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
                 }
             }
             rc = PATMR3RemovePatch(pVM, pInstrGC);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return VERR_PATCHING_REFUSED;
         }
         else
@@ -4096,7 +4096,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     }
 
     rc = MMHyperAlloc(pVM, sizeof(PATMPATCHREC), 0, MM_TAG_PATM_PATCH, (void **)&pPatchRec);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         Log(("Out of memory!!!!\n"));
         return VERR_NO_MEMORY;
@@ -4443,7 +4443,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
 
             pPatchPage->cMaxPatches += PATMPATCHPAGE_PREALLOC_INCREMENT;
             rc = MMHyperAlloc(pVM, sizeof(PPATCHINFO)*pPatchPage->cMaxPatches, 0, MM_TAG_PATM_PATCH, (void **)&pPatchPage->aPatch);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("Out of memory!!!!\n"));
                 return VERR_NO_MEMORY;
@@ -4457,7 +4457,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     else
     {
         rc = MMHyperAlloc(pVM, sizeof(PATMPATCHPAGE), 0, MM_TAG_PATM_PATCH, (void **)&pPatchPage);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("Out of memory!!!!\n"));
             return VERR_NO_MEMORY;
@@ -4467,7 +4467,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
         pPatchPage->cMaxPatches = PATMPATCHPAGE_PREALLOC_INCREMENT;
 
         rc = MMHyperAlloc(pVM, sizeof(PPATCHINFO)*PATMPATCHPAGE_PREALLOC_INCREMENT, 0, MM_TAG_PATM_PATCH, (void **)&pPatchPage->aPatch);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             Log(("Out of memory!!!!\n"));
             MMHyperFree(pVM, pPatchPage);
@@ -5137,7 +5137,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
         }
 
         rc = PATMR3InstallPatch(pVM, pInstrGC, PATMFL_CODE32 | PATMFL_JUMP_CONFLICT);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             Log(("PATM -> CONFLICT: Installed JMP patch for patch conflict at %VRv\n", pInstrGC));
             STAM_COUNTER_INC(&pVM->patm.s.StatFixedConflicts);
@@ -5153,7 +5153,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
         int rc =  PATMR3DisablePatch(pVM, pConflictPatch->pPrivInstrGC);
         if (rc == VWRN_PATCH_REMOVED)
             return VINF_SUCCESS;
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             pConflictPatch->flags &= ~(PATMFL_MUST_INSTALL_PATCHJMP|PATMFL_INSTR_HINT);
             pConflictPatch->flags |= PATMFL_INT3_REPLACEMENT_BLOCK;
@@ -5162,7 +5162,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
                 return VINF_SUCCESS;    /* removed already */
 
             AssertRC(rc);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 STAM_COUNTER_INC(&pVM->patm.s.StatInt3Callable);
                 return VINF_SUCCESS;
@@ -5246,7 +5246,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
 
                     rc = patmGenJumpToPatch(pVM, pPatch, false);
                     AssertRC(rc);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         return rc;
 
 #ifdef DEBUG
@@ -5283,7 +5283,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
                 }
 
                 rc = patmActivateInt3Patch(pVM, pPatch);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     return rc;
             }
 
@@ -5444,7 +5444,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
     /* Attempt to install a new patch. */
     rc = PATMR3InstallPatch(pVM, pInstrGC, pPatch->flags & (PATMFL_CODE32|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_TRAPHANDLER|PATMFL_DUPLICATE_FUNCTION|PATMFL_TRAPHANDLER_WITH_ERRORCODE|PATMFL_IDTHANDLER_WITHOUT_ENTRYPOINT));
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTRCPTR         pPatchTargetGC;
         PPATMPATCHREC   pNewPatchRec;
@@ -5463,7 +5463,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
         /* insert jump to new patch in old patch block */
         rc = patmPatchGenPatchJump(pVM, pPatch, pInstrGC, pPatchTargetGC, false /* no lookup record */);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             goto failure;
 
         pNewPatchRec = (PPATMPATCHREC)RTAvloU32Get(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC);
@@ -5484,7 +5484,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
     }
 
 failure:
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("PATM: patmR3RefreshPatch: failed to refresh patch at %VRv. Reactiving old one. \n", pInstrGC));
 
@@ -5842,7 +5842,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
         /* Only harmless instructions are acceptable. */
         rc = CPUMR3DisasmInstrCPU(pVM, pCtx, pCurPatchInstrGC, &CpuOld, 0);
-        if (    VBOX_FAILURE(rc)
+        if (    RT_FAILURE(rc)
             ||  !(CpuOld.pCurInstr->optype & OPTYPE_HARMLESS))
             break;
 
@@ -5870,7 +5870,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         pCurPatchInstrGC = pRec->Core.Key + pVM->patm.s.pPatchMemGC;
     }
 
-    if (    VBOX_SUCCESS(rc)
+    if (    RT_SUCCESS(rc)
         &&  (CpuOld.pCurInstr->optype & OPTYPE_HARMLESS)
        )
     {
@@ -5880,7 +5880,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
         pCurPatchInstrGC = pEip;
         cbLeft           = cbDirty;
 
-        while (cbLeft && VBOX_SUCCESS(rc))
+        while (cbLeft && RT_SUCCESS(rc))
         {
             bool fValidInstr;
 
@@ -5946,7 +5946,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     else
         rc = VERR_PATCHING_REFUSED;
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         STAM_COUNTER_INC(&pVM->patm.s.StatInstrDirtyGood);
     }
@@ -5960,7 +5960,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             &&  (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER)))
         {
             rc = patmR3RefreshPatch(pVM, pPatch);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("PATM: Failed to refresh dirty patch at %VRv. Disabling it.\n", pPatch->patch.pPrivInstrGC));
             }
@@ -6148,7 +6148,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         Assert(pVM->patm.s.pGCStateHC->fPIF == 1);
 
         rc = patmR3HandleDirtyInstr(pVM, pCtx, pPatch, pPatchToGuestRec, pEip);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Retry the current instruction. */
             pNewEip = pEip;

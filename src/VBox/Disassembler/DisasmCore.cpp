@@ -197,7 +197,7 @@ DISDECL(int) DISCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *
     pCpu->uFilter       = OPTYPE_ALL;
     pCpu->pfnDisasmFnTable = pfnFullDisasm;
 
-    return VBOX_SUCCESS(disCoreOne(pCpu, InstructionAddr, pcbInstruction));
+    return RT_SUCCESS(disCoreOne(pCpu, InstructionAddr, pcbInstruction));
 }
 
 /**
@@ -2487,7 +2487,7 @@ uint8_t DISReadByte(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, &temp, sizeof(temp), pCpu);
-         if (VBOX_FAILURE(rc))
+         if (RT_FAILURE(rc))
          {
              Log(("DISReadByte failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2511,7 +2511,7 @@ uint16_t DISReadWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (VBOX_FAILURE(rc))
+         if (RT_FAILURE(rc))
          {
              Log(("DISReadWord failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2535,7 +2535,7 @@ uint32_t DISReadDWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (VBOX_FAILURE(rc))
+         if (RT_FAILURE(rc))
          {
              Log(("DISReadDWord failed!!\n"));
              DIS_THROW(ExceptionMemRead);
@@ -2559,7 +2559,7 @@ uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
          int     rc;
 
          rc = pCpu->pfnReadBytes(pAddress, (uint8_t*)&temp, sizeof(temp), pCpu);
-         if (VBOX_FAILURE(rc))
+         if (RT_FAILURE(rc))
          {
              Log(("DISReadQWord %x failed!!\n", pAddress));
              DIS_THROW(ExceptionMemRead);
