@@ -1343,7 +1343,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 
                                 Log(("VMMDevReq_HGCMCall: sizeof (VMMDevHGCMRequest) = %04X\n", sizeof (VMMDevHGCMCall)));
 
-                                Log(("%.*Vhxd\n", requestHeader->size, requestHeader));
+                                Log(("%.*Rhxd\n", requestHeader->size, requestHeader));
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
                                 bool f64Bits = (requestHeader->requestType == VMMDevReq_HGCMCall64);

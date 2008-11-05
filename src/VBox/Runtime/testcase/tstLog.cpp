@@ -52,16 +52,16 @@ int main()
     for (unsigned iHex = 0; iHex < sizeof(au8Hex); iHex++)
         au8Hex[iHex] = (uint8_t)iHex;
     RTLogPrintf("%%Rhxs   : %Rhxs\n", &au8Hex[0]);
-    RTLogPrintf("%%.32Vhxs: %.32Vhxs\n", &au8Hex[0]);
+    RTLogPrintf("%%.32Rhxs: %.32Rhxs\n", &au8Hex[0]);
 
     RTLogPrintf("%%Rhxd   :\n%Rhxd\n", &au8Hex[0]);
-    RTLogPrintf("%%.64Vhxd:\n%.64Vhxd\n", &au8Hex[0]);
-    RTLogPrintf("%%.*Vhxd:\n%.*Vhxd\n", 64, &au8Hex[0]);
-    RTLogPrintf("%%32.256Vhxd : \n%32.256Vhxd\n", &au8Hex[0]);
-    RTLogPrintf("%%32.*Vhxd : \n%32.*Vhxd\n", 256, &au8Hex[0]);
-    RTLogPrintf("%%7.32Vhxd : \n%7.32Vhxd\n", &au8Hex[0]);
-    RTLogPrintf("%%7.*Vhxd : \n%7.*Vhxd\n", 32, &au8Hex[0]);
-    RTLogPrintf("%%*.*Vhxd : \n%*.*Vhxd\n", 7, 32, &au8Hex[0]);
+    RTLogPrintf("%%.64Rhxd:\n%.64Rhxd\n", &au8Hex[0]);
+    RTLogPrintf("%%.*Rhxd:\n%.*Rhxd\n", 64, &au8Hex[0]);
+    RTLogPrintf("%%32.256Rhxd : \n%32.256Rhxd\n", &au8Hex[0]);
+    RTLogPrintf("%%32.*Rhxd : \n%32.*Rhxd\n", 256, &au8Hex[0]);
+    RTLogPrintf("%%7.32Rhxd : \n%7.32Rhxd\n", &au8Hex[0]);
+    RTLogPrintf("%%7.*Rhxd : \n%7.*Rhxd\n", 32, &au8Hex[0]);
+    RTLogPrintf("%%*.*Rhxd : \n%*.*Rhxd\n", 7, 32, &au8Hex[0]);
 
     RTLogPrintf("%%RGp: %RGp\n", (RTGCPHYS)0x87654321);
     RTLogPrintf("%%RGv: %RGv\n", (RTGCPTR)0x87654321);

@@ -775,7 +775,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
      */
     rtcCalcCRC(pThis);
 
-    Log(("CMOS: \n%16.128Vhxd\n", pThis->cmos_data));
+    Log(("CMOS: \n%16.128Rhxd\n", pThis->cmos_data));
     return VINF_SUCCESS;
 }
 

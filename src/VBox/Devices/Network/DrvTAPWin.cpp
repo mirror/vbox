@@ -114,7 +114,7 @@ static DECLCALLBACK(int) drvTAPW32Send(PPDMINETWORKCONNECTOR pInterface, const v
     PDRVTAP    pThis = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
 
     Log2(("drvTAPW32Send%d: pvBuf=%p cb=%#x\n"
-          "%.*Vhxd\n", pThis->pDrvIns->iInstance, pvBuf, cb, cb, pvBuf));
+          "%.*Rhxd\n", pThis->pDrvIns->iInstance, pvBuf, cb, cb, pvBuf));
 
 #ifdef DEBUG
     pThis->dwLastReadTime = timeGetTime();

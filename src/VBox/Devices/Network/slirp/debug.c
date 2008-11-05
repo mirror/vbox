@@ -22,7 +22,7 @@ extern int slirp_tty_restore;
 void
 dump_packet(void *dat, int n)
 {
-        Log(("nat: PACKET DUMPED:\n%.*Vhxd\n", n, dat));
+        Log(("nat: PACKET DUMPED:\n%.*Rhxd\n", n, dat));
 }
 #endif
 

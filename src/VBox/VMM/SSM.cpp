@@ -2077,7 +2077,7 @@ static int ssmR3WriteFinish(PSSMHANDLE pSSM)
  */
 static int ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 {
-    Log2(("ssmR3Write: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
+    Log2(("ssmR3Write: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
 
     /*
      * Check that everything is fine.
@@ -2628,7 +2628,7 @@ static int ssmR3Read(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          */
         pSSM->rc = RTZipDecompress(pSSM->pZipDecomp, pvBuf, cbBuf, NULL);
         if (RT_SUCCESS(pSSM->rc))
-            Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Vhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
+            Log2(("ssmR3Read: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n", pvBuf, cbBuf, RT_MIN(cbBuf, 128), pvBuf, cbBuf > 128 ? "..." : ""));
         else
             AssertMsgFailed(("rc=%Rrc cbBuf=%#x\n", pSSM->rc, cbBuf));
     }

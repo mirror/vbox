@@ -992,7 +992,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         *pcbActuallyRead = cbRead;
 
     Log2(("vhdRead: off=%#llx pvBuf=%p cbRead=%d\n"
-            "%.*Vhxd\n",
+            "%.*Rhxd\n",
             uOffset, pvBuf, cbRead, cbRead, pvBuf));
 
     return rc;

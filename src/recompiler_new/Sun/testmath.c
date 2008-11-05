@@ -515,7 +515,7 @@ static void helper_fprem1(void)
 static void helper_fprem(void)
 {
 #if 0
-LogFlow(("helper_fprem: ST0=%.*Vhxs ST1=%.*Vhxs fpus=%#x\n", sizeof(ST0), &ST0, sizeof(ST1), &ST1, env->fpus));
+LogFlow(("helper_fprem: ST0=%.*Rhxs ST1=%.*Rhxs fpus=%#x\n", sizeof(ST0), &ST0, sizeof(ST1), &ST1, env->fpus));
 
     __asm__ __volatile__("fldt (%2)\n"
                          "fldt (%1)\n"
@@ -525,7 +525,7 @@ LogFlow(("helper_fprem: ST0=%.*Vhxs ST1=%.*Vhxs fpus=%#x\n", sizeof(ST0), &ST0, 
                          "fstpt (%2)\n"
                          : : "r" (&env->fpus), "r" (&ST0), "r" (&ST1) : "memory");
 
-LogFlow(("helper_fprem: -> ST0=%.*Vhxs fpus=%#x c\n", sizeof(ST0), &ST0, env->fpus));
+LogFlow(("helper_fprem: -> ST0=%.*Rhxs fpus=%#x c\n", sizeof(ST0), &ST0, env->fpus));
 #else
     CPU86_LDouble dblq, fpsrcop, fptemp;
     CPU86_LDoubleU fpsrcop1, fptemp1;
