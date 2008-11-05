@@ -574,6 +574,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     hrc = pMachine->COMGETTER(VRAMSize)(&cRamMBs);                                  H();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cRamMBs * _1M);         RC_CHECK();
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */
+    rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",            false);                 RC_CHECK();
+#endif
 
     /*
      * BIOS logo
@@ -905,8 +908,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             continue;
 
         /*
-        * The virtual hardware type. Create appropriate device first.
-        */
+         * The virtual hardware type. Create appropriate device first.
+         */
         NetworkAdapterType_T adapterType;
         hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
         switch (adapterType)
@@ -940,10 +943,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         afPciDeviceNo[iPciDeviceNo] = true;
         rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */
+        if (pDev == pDevPCNet)
+        {
+            rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",    false);                 RC_CHECK();
+        }
+#endif
 
         /*
-        * The virtual hardware type. PCNet supports two types.
-        */
+         * The virtual hardware type. PCNet supports two types.
+         */
         switch (adapterType)
         {
             case NetworkAdapterType_Am79C970A:
