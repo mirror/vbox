@@ -2802,7 +2802,7 @@ static int handleList(int argc, char *argv[],
             CHECK_ERROR(hardDiskFormats [i],
                         COMGETTER(Id) (description.asOutParam()));
 
-            unsigned int caps;
+            ULONG caps;
             CHECK_ERROR(hardDiskFormats [i],
                         COMGETTER(Capabilities) (&caps));
 
