@@ -54,7 +54,7 @@ HRESULT Shutdown();
 /**
  *  Resolves a given interface ID to a string containing the interface name.
  *  If, for some reason, the given IID cannot be resolved to a name, a NULL
- *  string is returned. A non-NULL string returned by this funciton must be
+ *  string is returned. A non-NULL string returned by this function must be
  *  freed using SysFreeString().
  *
  *  @param aIID     ID of the interface to get a name for
@@ -62,11 +62,11 @@ HRESULT Shutdown();
  */
 void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName);
 
-/** 
+/**
  *  Returns the VirtualBox user home directory.
  *
  *  On failure, this function will return a path that caused a failure (or
- *  NULL if the faiulre is not path-related).
+ *  NULL if the failure is not path-related).
  *
  *  On success, this function will try to create the returned directory if it
  *  doesn't exist yet. This may also fail with the corresponding status code.

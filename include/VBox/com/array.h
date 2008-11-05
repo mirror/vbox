@@ -155,7 +155,7 @@
  * Note that for GUID arrays you should use SafeGUIDArray and
  * SafeConstGUIDArray, customized SafeArray<> specializations.
  *
- * Also note that in order to pass input BSTR array parameters delcared
+ * Also note that in order to pass input BSTR array parameters declared
  * using the ComSafeArrayIn (INPTR BSTR, aParam) macro to the SafeArray<>
  * constructor using the ComSafeArrayInArg() macro, you should use INPTR BSTR
  * as the SafeArray<> template argument, not just BSTR.
@@ -180,7 +180,7 @@
 /**
  * Wraps the given com::SafeArray instance to generate an expression that is
  * suitable for passing it to functions that take input safearray parameters
- * declared using the ComSafeArrayIn marco.
+ * declared using the ComSafeArrayIn macro.
  *
  * @param aArray    com::SafeArray instance to pass as an input parameter.
  */
@@ -190,7 +190,7 @@
 /**
  * Wraps the given com::SafeArray instance to generate an expression that is
  * suitable for passing it to functions that take output safearray parameters
- * declared using the ComSafeArrayOut marco.
+ * declared using the ComSafeArrayOut macro.
  *
  * @param aArray    com::SafeArray instance to pass as an output parameter.
  */
@@ -485,7 +485,7 @@ protected:
  * When an instance of this class is destroyed, it automatically frees all
  * resources occupied by individual elements of the array as well as by the
  * array itself. However, when the value of an element is manually changed
- * using #operator[] or by acessing array data through the #raw() pointer, it is
+ * using #operator[] or by accessing array data through the #raw() pointer, it is
  * the caller's responsibility to free resources occupied by the previous
  * element's value.
  *
@@ -495,7 +495,7 @@ protected:
  * intended to be used to store arrays as data members and such -- you should
  * use normal list/vector classes for that.
  *
- * @note The current implementation supports only one-dimentional arrays.
+ * @note The current implementation supports only one-dimensional arrays.
  *
  * @note This class is not thread-safe.
  */
@@ -609,7 +609,7 @@ public:
 
     /**
      * Resets this instance to null and, if this instance is not a weak one,
-     * releases any resources ocuppied by the array data.
+     * releases any resources occupied by the array data.
      *
      * @note This method destroys (cleans up) all elements of the array using
      *       the corresponding cleanup routine for the element type before the
@@ -726,7 +726,7 @@ public:
      * safer than #raw(): asserts and returns an invalid reference if this
      * instance is null or if the index is out of bounds.
      *
-     * @note For weak instances, this call will succeed but the beiavior of
+     * @note For weak instances, this call will succeed but the behavior of
      *       changing the contents of an element of the weak array instance is
      *       undefined and may lead to a program crash on some platforms.
      */
@@ -842,18 +842,18 @@ public:
 
 #if defined (VBOX_WITH_XPCOM)
 
-    /** Internal funciton. Never call it directly. */
+    /** Internal function. Never call it directly. */
     PRUint32 *__asOutParam_Size() { setNull(); return &m.size; }
 
-    /** Internal funciton. Never call it directly. */
+    /** Internal function Never call it directly. */
     T **__asOutParam_Arr() { Assert (isNull()); return &m.arr; }
 
 #else /* defined (VBOX_WITH_XPCOM) */
 
-    /** Internal funciton. Never call it directly. */
+    /** Internal function Never call it directly. */
     SAFEARRAY ** __asInParam() { return &m.arr; }
 
-    /** Internal funciton. Never call it directly. */
+    /** Internal function Never call it directly. */
     SAFEARRAY ** __asOutParam() { setNull(); return &m.arr; }
 
 #endif /* defined (VBOX_WITH_XPCOM) */
@@ -960,7 +960,7 @@ protected:
  * GUID arrays store pointers to nsID so that input arrays are |const nsID **|
  * and out arrays are |nsID ***|. Due to this difference, it is impossible to
  * work with arrays of GUID on both platforms by simply using com::SafeArray
- * <GUID>. This class is intended to provide some leve of cross-platform
+ * <GUID>. This class is intended to provide some level of cross-platform
  * behavior.
  *
  * The basic usage pattern is basically similar to com::SafeArray<> except that
@@ -1051,7 +1051,7 @@ public:
  * Version of com::SafeArray for const arrays of GUID.
  *
  * This class is used to work with input GUID array parameters in method
- * implementaitons. See SafeGUIDArray for more details.
+ * implementations. See SafeGUIDArray for more details.
  */
 class SafeConstGUIDArray : public SafeArray <const nsID *,
                                             SafeArrayTraits <nsID *> >

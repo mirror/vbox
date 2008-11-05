@@ -287,7 +287,7 @@
 
 /**
  *  Asserts the given expression is true. When the expression is false, prints
- *  a line containing the failied function/line/file; otherwise does nothing.
+ *  a line containing the failed function/line/file; otherwise does nothing.
  */
 #define ASSERT(expr) \
     do { \

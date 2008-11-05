@@ -82,7 +82,7 @@ namespace com
  * doesn't return control return to the caller immediately after the first
  * error or warning but continues its execution, the functionality provided
  * by the base com::FWResult class becomes very useful because it allows to
- * preseve the error or the warning result code even if it is later assigned
+ * preserve the error or the warning result code even if it is later assigned
  * a S_OK value multiple times. See com::FWResult for details.
  *
  * Here is the typical usage pattern:
@@ -136,7 +136,7 @@ public:
         /* We need this copy constructor only for GCC that wants to have
          * it in case of expressions like |MultiResult rc = E_FAIL;|. But
          * we assert since the optimizer should actually avoid the
-         * temporary and call the other constructor directly istead. */
+         * temporary and call the other constructor directly instead. */
         AssertFailed();
     }
 
@@ -153,7 +153,7 @@ public:
         /* We need this copy constructor only for GCC that wants to have
          * it in case of expressions like |MultiResult rc = E_FAIL;|. But
          * we assert since the optimizer should actually avoid the
-         * temporary and call the other constructor directly istead. */
+         * temporary and call the other constructor directly instead */
         AssertFailed();
         return *this;
     }
@@ -209,7 +209,7 @@ private:
  * The SupportErrorInfoBase template class provides basic error info support.
  *
  * Basic error info support includes a group of setError() methods to set
- * extended error information on the current thread. This support doesn not
+ * extended error information on the current thread. This support does not
  * include all necessary implementation details (for example, implementation of
  * the ISupportErrorInfo interface on MS COM) to make the error info support
  * fully functional in a target component. These details are provided by the
@@ -272,7 +272,7 @@ protected:
      * text        GetDescription  message         text
      * </pre>
      *
-     * Note that this is a generic mehtod. There are more convenient overloaded
+     * Note that this is a generic method. There are more convenient overloaded
      * versions that automatically substitute some arguments taking their
      * values from the template parameters. See #setError (HRESULT, const char
      * *, ...) for an example.
@@ -303,9 +303,9 @@ protected:
      * have the error severty bit (31) set when passed down to the created
      * IVirtualBoxErrorInfo object.
      *
-     * The error severity bit is always cleared by this call, thereofe you can
-     * use ordinary E_XXX result code constancs, for convenience. However, this
-     * behavior may be non-stanrard on some COM platforms.
+     * The error severity bit is always cleared by this call, thereof you can
+     * use ordinary E_XXX result code constants, for convenience. However, this
+     * behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
                                const char *aComponent, const char *aText)

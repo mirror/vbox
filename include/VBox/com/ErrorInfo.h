@@ -52,7 +52,7 @@ namespace com
  *  Once the instance of this class is created, the error information for
  *  the current thread is cleared.
  *
- *  There is no sence to use instances of this class after the last
+ *  There is no sense to use instances of this class after the last
  *  invoked interface method returns a success.
  *
  *  The class usage pattern is as follows:
@@ -306,7 +306,7 @@ class ProgressErrorInfo : public ErrorInfo
 public:
 
     /**
-     *  Constructs a new instance by fetchig error information from the
+     *  Constructs a new instance by fetching error information from the
      *  IProgress interface pointer. If the progress object is not NULL,
      *  its completed attribute is true, resultCode represents a failure,
      *  and the errorInfo attribute returns a valid IVirtualBoxErrorInfo pointer,
@@ -329,7 +329,7 @@ public:
  *  error information while it still needs to make another call before return.
  *
  *  Instead of calling #restore() explicitly you may let the object destructor
- *  do it for you, if you correctly limit the object's lifeime.
+ *  do it for you, if you correctly limit the object's lifetime.
  *
  *  The usage pattern is:
  *  <code>
