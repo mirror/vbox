@@ -945,7 +945,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     INetCfgBindingInterface *pBi;
 
     /* we are using the INetCfg API for getting the list of miniports */
-    hr = vboxNetCfgWinQueryINetCfg( FALSE,
+    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
                        VBOX_APP_NAME,
                        &pNc,
                        &lpszApp );
@@ -963,19 +963,19 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         Assert(hr == S_OK);
         if(hr == S_OK)
         {
-            hr = vboxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
+            hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
             Assert(hr == S_OK);
             if ( hr == S_OK )
             {
-                hr = vboxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
+                hr = VBoxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
                 Assert(hr == S_OK || hr == S_FALSE);
                 while( hr == S_OK )
                 {
-                    hr = vboxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
+                    hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
                     Assert(hr == S_OK);
                     if ( hr == S_OK )
                     {
-                        hr = vboxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
+                        hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
                         Assert(hr == S_OK);
                         while(hr == S_OK)
                         {
@@ -984,23 +984,23 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                             if(hr == S_OK)
                             {
                                 vboxNetWinAddComponent(&list, pMpNcc);
-                                vboxNetCfgWinReleaseRef( pMpNcc );
+                                VBoxNetCfgWinReleaseRef( pMpNcc );
                             }
-                            vboxNetCfgWinReleaseRef(pBi);
+                            VBoxNetCfgWinReleaseRef(pBi);
 
-                            hr = vboxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
+                            hr = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
                         }
-                        vboxNetCfgWinReleaseRef(pEnumBi);
+                        VBoxNetCfgWinReleaseRef(pEnumBi);
                     }
-                    vboxNetCfgWinReleaseRef(pBp);
+                    VBoxNetCfgWinReleaseRef(pBp);
 
-                    hr = vboxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
+                    hr = VBoxNetCfgWinGetNextBindingPath(pEnumBp, &pBp);
                 }
-                vboxNetCfgWinReleaseRef(pEnumBp);
+                VBoxNetCfgWinReleaseRef(pEnumBp);
             }
-            vboxNetCfgWinReleaseRef(pTcpIpNcc);
+            VBoxNetCfgWinReleaseRef(pTcpIpNcc);
         }
-        vboxNetCfgWinReleaseINetCfg(pNc, FALSE);
+        VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
 #  endif /* #  if defined VBOX_WITH_NETFLT */
 

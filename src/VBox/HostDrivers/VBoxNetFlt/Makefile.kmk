@@ -31,7 +31,6 @@ VBoxNetFlt_SOURCES.darwin = darwin/VBoxNetFlt-darwin.cpp
 VBoxNetFlt_SOURCES.win = \
 	win/VBoxNetFlt-win.c \
 	win/VBoxNetFltPt-win.c \
-	win/VBoxNetFltNf-win.c \
 	win/VBoxNetFlt-win.rc
 ifdef VBOX_NETFLT_ONDEMAND_BIND
  VBoxNetFlt_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
