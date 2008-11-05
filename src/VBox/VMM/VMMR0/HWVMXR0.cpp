@@ -754,8 +754,9 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  */
-VMMR0DECL(int) VMXR0SaveHostState(PVM pVM)
+VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, RTCPUID idVCpu)
 {
     int rc = VINF_SUCCESS;
 
@@ -934,9 +935,10 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
@@ -1674,9 +1676,10 @@ static void vmxR0SetupTLBVPID(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTCCUINTREG val;
@@ -1882,14 +1885,14 @@ ResumeExecution:
     idCpuCheck = RTMpCpuId();
 #endif
     /* Save the host state first. */
-    rc  = VMXR0SaveHostState(pVM);
+    rc  = VMXR0SaveHostState(pVM, idVCpu);
     if (rc != VINF_SUCCESS)
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
         goto end;
     }
     /* Load the guest state */
-    rc = VMXR0LoadGuestState(pVM, pCtx);
+    rc = VMXR0LoadGuestState(pVM, idVCpu, pCtx);
     if (rc != VINF_SUCCESS)
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
@@ -2959,9 +2962,10 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCpu        CPU info struct
  */
-VMMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) VMXR0Enter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
@@ -2987,9 +2991,10 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        CPU context
  */
-VMMR0DECL(int) VMXR0Leave(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) VMXR0Leave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 

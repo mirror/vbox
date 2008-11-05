@@ -513,9 +513,12 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  */
-VMMR0DECL(int) SVMR0SaveHostState(PVM pVM)
+VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, RTCPUID idVCpu)
 {
+    NOREF(pVM);
+    NOREF(idVCpu);
     /* Nothing to do here. */
     return VINF_SUCCESS;
 }
@@ -523,13 +526,12 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM)
 /**
  * Loads the guest state
  *
- * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
- *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     RTGCUINTPTR val;
     SVM_VMCB *pVMCB;
@@ -780,15 +782,14 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, CPUMCTX *pCtx)
 
 
 /**
- * Runs guest code in an SVM VM.
- *
- * @todo This can be much more efficient, when we only sync that which has actually changed. (this is the first attempt only)
+ * Runs guest code in an AMD-V VM.
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, CPUMCTX *pCtx)
+VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
@@ -930,7 +931,7 @@ ResumeExecution:
 #endif
 
     /* Load the guest state; *must* be here as it sets up the shadow cr0 for lazy fpu syncing! */
-    rc = SVMR0LoadGuestState(pVM, pCtx);
+    rc = SVMR0LoadGuestState(pVM, idVCpu, pCtx);
     if (rc != VINF_SUCCESS)
     {
         STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
@@ -2044,9 +2045,10 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCpu        CPU info struct
  */
-VMMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) SVMR0Enter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.svm.fSupported);
 
@@ -2065,9 +2067,10 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PHWACCM_CPUINFO pCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idVCpu      VPCPU id.
  * @param   pCtx        CPU context
  */
-VMMR0DECL(int) SVMR0Leave(PVM pVM, PCPUMCTX pCtx)
+VMMR0DECL(int) SVMR0Leave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
 {
     SVM_VMCB *pVMCB = (SVM_VMCB *)pVM->hwaccm.s.svm.pVMCB;
 
