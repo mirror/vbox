@@ -593,7 +593,7 @@ static void emR3RecordCli(PVM pVM, RTGCPTR GCPtrInstr)
         pRec->Core.Key = (AVLPVKEY)GCPtrInstr;
 
         char szCliStatName[32];
-        RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%VGv", GCPtrInstr);
+        RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%RGv", GCPtrInstr);
         STAM_REG(pVM, &pRec->Counter, STAMTYPE_COUNTER, szCliStatName, STAMUNIT_OCCURENCES, "Number of times cli was executed.");
 
         bool fRc = RTAvlPVInsert(&pVM->em.s.pCliStatTree, &pRec->Core);
