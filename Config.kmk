@@ -234,7 +234,7 @@ VBOX_WITH_VRDP = 1
 VBOX_WITH_VRDP_AUTHMOD = 1
 # build enhanced version of rdesktop
 VBOX_WITH_VRDP_RDESKTOP = 1
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 l4.x86 l4.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), l4.x86 l4.amd64)
 # build the support driver & library with IDT patching.
 VBOX_WITH_IDT_PATCHING = 1
 endif
