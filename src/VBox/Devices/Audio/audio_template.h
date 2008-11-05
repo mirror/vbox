@@ -423,7 +423,7 @@ SW *glue (AUD_open_, TYPE) (
         dolog ("card=%p card->audio=%p name=%p callback_fn=%p as=%p\n",
                (void *) card, card ? (void *) card->audio : NULL,
                name,
-               (void *) callback_fn,
+               (void *)(uintptr_t) callback_fn,
                (void *) as);
         goto fail;
     }
