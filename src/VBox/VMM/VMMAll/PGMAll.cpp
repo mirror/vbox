@@ -1596,7 +1596,7 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     int rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, cr0, cr3, cr4, fGlobal);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%VRc\n", rc));
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
     {
         if (!(pVM->pgm.s.fSyncFlags & PGM_SYNC_ALWAYS))

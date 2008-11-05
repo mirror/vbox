@@ -371,7 +371,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
     if (pRegFrame->eflags.Bits.u1VM)
         Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
     else
-        Log(("TRPMForwardTrap: eip=%04X:%VRv iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
+        Log(("TRPMForwardTrap: eip=%04X:%08X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
 
     switch (iGate) {
     case 14:
@@ -556,7 +556,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                         || SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
                        )
                     {
-                        Log(("Invalid ring 0 stack %04X:%VRv\n", ss_r0, esp_r0));
+                        Log(("Invalid ring 0 stack %04X:%08RX32\n", ss_r0, esp_r0));
                         goto failure;
                     }
                 }
@@ -569,7 +569,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     if (    eflags.Bits.u1VM    /* illegal */
                         ||  SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
-                        AssertMsgFailed(("Invalid stack %04X:%VRv??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
+                        AssertMsgFailed(("Invalid stack %04X:%08RX32??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
                         goto failure;
                     }
                 }
@@ -656,7 +656,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     /* Mask away dangerous flags for the trap/interrupt handler. */
                     eflags.u32 &= ~(X86_EFL_TF | X86_EFL_VM | X86_EFL_RF | X86_EFL_NT);
 #ifdef DEBUG
-                    for (int j=idx;j<0;j++)
+                    for (int j = idx; j < 0; j++)
                         Log4(("Stack %VRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
 
                     Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
