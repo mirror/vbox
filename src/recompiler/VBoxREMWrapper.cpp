@@ -194,6 +194,9 @@
 #include <VBox/ssm.h>
 #include <VBox/hwaccm.h>
 #include <VBox/patm.h>
+#ifdef VBOX_WITH_VMI
+# include <VBox/parav.h>
+#endif
 #include <VBox/pdm.h>
 #include <VBox/pgm.h>
 #include <VBox/iom.h>

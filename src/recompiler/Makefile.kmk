@@ -297,7 +297,7 @@ ifeq ($(REM_MOD),VBoxREM2)
 # The VBoxREM2 wrapper.
 #
 VBoxREM_TEMPLATE       = VBOXR3
-VBoxREM_DEFS           = IN_REM_R3
+VBoxREM_DEFS           = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 VBoxREM_SOURCES        = \
 	VBoxREMWrapper.cpp \
 	VBoxREMWrapperA.asm
