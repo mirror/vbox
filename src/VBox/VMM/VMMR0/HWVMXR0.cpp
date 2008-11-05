@@ -2344,7 +2344,7 @@ ResumeExecution:
         if (exitQualification & VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT)
             errCode |= X86_TRAP_PF_P;
 
-        Log(("EPT Page fault %x at %VGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
+        Log(("EPT Page fault %x at %RGp error code %x\n", (uint32_t)exitQualification, GCPhys, errCode));
 
         /* GCPhys contains the guest physical address of the page fault. */
         TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
@@ -2356,7 +2356,7 @@ ResumeExecution:
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-            Log2(("Shadow page fault at %RGv cr2=%VGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
+            Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVM);
@@ -2881,7 +2881,7 @@ ResumeExecution:
         Log(("VMX_VMCS_GUEST_CR0        %RX64\n", val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_CR3, &val);
-        Log(("VMX_VMCS_GUEST_CR3        %VGp\n", val));
+        Log(("VMX_VMCS_GUEST_CR3        %RGp\n", val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_CR4, &val);
         Log(("VMX_VMCS_GUEST_CR4        %RX64\n", val));
@@ -3099,7 +3099,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 
-    LogFlow(("VMXR0InvalidatePhysPage %VGp\n", GCPhys));
+    LogFlow(("VMXR0InvalidatePhysPage %RGp\n", GCPhys));
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)

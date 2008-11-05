@@ -1694,7 +1694,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
     RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
     if (GCPhysLast < GCPhys)
     {
-        AssertMsgFailed(("The range wraps! GCPhys=%VGp cb=%#x\n", GCPhys, cb));
+        AssertMsgFailed(("The range wraps! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1874,7 +1874,7 @@ VMMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
     RTGCPHYS GCPhysLast = GCPhys + (cb - 1);
     if (GCPhysLast < GCPhys)
     {
-        AssertMsgFailed(("The range wraps! GCPhys=%VGp cb=%#x\n", GCPhys, cb));
+        AssertMsgFailed(("The range wraps! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1989,7 +1989,7 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DynRamGrow);
     STAM_COUNTER_ADD(&pVM->pgm.s.StatR3DynRamTotal, PGM_DYNAMIC_CHUNK_SIZE/(1024*1024));
 
-    Log(("pgmr3PhysGrowRange: allocate chunk of size 0x%X at %VGp\n", PGM_DYNAMIC_CHUNK_SIZE, GCPhys));
+    Log(("pgmr3PhysGrowRange: allocate chunk of size 0x%X at %RGp\n", PGM_DYNAMIC_CHUNK_SIZE, GCPhys));
 
     unsigned cPages = PGM_DYNAMIC_CHUNK_SIZE >> PAGE_SHIFT;
 
@@ -2009,8 +2009,8 @@ int pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys)
         VMSTATE enmVMState = VMR3GetState(pVM);
         if (enmVMState != VMSTATE_RUNNING)
         {
-            AssertMsgFailed(("Out of memory while trying to allocate a guest RAM chunk at %VGp!\n", GCPhys));
-            LogRel(("PGM: Out of memory while trying to allocate a guest RAM chunk at %VGp (VMstate=%s)!\n", GCPhys, VMR3GetStateName(enmVMState)));
+            AssertMsgFailed(("Out of memory while trying to allocate a guest RAM chunk at %RGp!\n", GCPhys));
+            LogRel(("PGM: Out of memory while trying to allocate a guest RAM chunk at %RGp (VMstate=%s)!\n", GCPhys, VMR3GetStateName(enmVMState)));
             return rc;
         }
 
@@ -2068,7 +2068,7 @@ VMMR3DECL(int) PGMR3PhysSetFlags(PVM pVM, RTGCPHYS GCPhys, size_t cb, unsigned f
         ||  GCPhys > pRam->GCPhysLast
         ||  GCPhysLast < pRam->GCPhys)
     {
-        AssertMsgFailed(("No RAM range for %VGp-%VGp\n", GCPhys, GCPhysLast));
+        AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
         return VERR_INVALID_PARAMETER;
     }
 

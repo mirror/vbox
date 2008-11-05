@@ -283,7 +283,7 @@ static DECLCALLBACK(int) pgmR3Gst32BitWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, 
 {
     AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log2(("pgmR3Gst32BitWriteHandlerCR3: ff=%#x GCPhys=%VGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
+    Log2(("pgmR3Gst32BitWriteHandlerCR3: ff=%#x GCPhys=%RGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
 
     /*
      * Do the write operation.
@@ -306,7 +306,7 @@ static DECLCALLBACK(int) pgmR3Gst32BitWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, 
                  && pgmGetMapping(pVM, iPD2 << X86_PD_SHIFT) )
            )
         {
-            Log(("pgmR3Gst32BitWriteHandlerCR3: detected conflict. iPD1=%#x iPD2=%#x GCPhys=%VGp\n", iPD1, iPD2, GCPhys));
+            Log(("pgmR3Gst32BitWriteHandlerCR3: detected conflict. iPD1=%#x iPD2=%#x GCPhys=%RGp\n", iPD1, iPD2, GCPhys));
             STAM_COUNTER_INC(&pVM->pgm.s.StatR3GuestPDWriteConflict);
             VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
         }
@@ -336,7 +336,7 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
 {
     AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log2(("pgmR3GstPAEWriteHandlerCR3: ff=%#x GCPhys=%VGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
+    Log2(("pgmR3GstPAEWriteHandlerCR3: ff=%#x GCPhys=%RGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
 
     /*
      * Do the write operation.
@@ -354,7 +354,7 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
             if (    pVM->pgm.s.pGstPaePDPTHC->a[i].n.u1Present
                 &&  (pVM->pgm.s.pGstPaePDPTHC->a[i].u & X86_PDPE_PG_MASK) != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
             {
-                Log(("pgmR3GstPAEWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%VGp\n",
+                Log(("pgmR3GstPAEWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%RGp\n",
                      i, pVM->pgm.s.pGstPaePDPTHC->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
                 /*
                  * The PD has changed.
@@ -401,7 +401,7 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, voi
 {
     AssertMsg(!pVM->pgm.s.fMappingsFixed, ("Shouldn't be registered when mappings are fixed!\n"));
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log2(("pgmR3GstPAEWriteHandlerPD: ff=%#x GCPhys=%VGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
+    Log2(("pgmR3GstPAEWriteHandlerPD: ff=%#x GCPhys=%RGp pvPhys=%p cbBuf=%d pvBuf={%.*Vhxs}\n", pVM->fForcedActions, GCPhys, pvPhys, cbBuf, cbBuf, pvBuf));
 
     /*
      * Do the write operation.
@@ -429,7 +429,7 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, voi
                          && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)) )
                    )
                 {
-                    Log(("pgmR3GstPaePD3WriteHandler: detected conflict. i=%d iPD1=%#x iPD2=%#x GCPhys=%VGp\n",
+                    Log(("pgmR3GstPaePD3WriteHandler: detected conflict. i=%d iPD1=%#x iPD2=%#x GCPhys=%RGp\n",
                          i, iPD1, iPD2, GCPhys));
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3GuestPDWriteConflict);
                     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);

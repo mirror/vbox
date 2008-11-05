@@ -122,7 +122,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
 #ifdef IN_RING3
         DBGFR3Info(pVM, "phys", NULL, NULL);
 #endif
-        AssertMsgFailed(("No RAM range for %VGp-%VGp\n", GCPhys, GCPhysLast));
+        AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
         return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
     }
 
@@ -168,7 +168,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
 #endif
         pgmUnlock(pVM);
         if (rc != VINF_SUCCESS)
-            Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%VGp-%VGp)\n", rc, GCPhys, GCPhysLast));
+            Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
         return rc;
     }
 
@@ -177,7 +177,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
 #if defined(IN_RING3) && defined(VBOX_STRICT)
     DBGFR3Info(pVM, "handlers", "phys nostats", NULL);
 #endif
-    AssertMsgFailed(("Conflict! GCPhys=%VGp GCPhysLast=%VGp pszDesc=%s\n", GCPhys, GCPhysLast, pszDesc));
+    AssertMsgFailed(("Conflict! GCPhys=%RGp GCPhysLast=%RGp pszDesc=%s\n", GCPhys, GCPhysLast, pszDesc));
     MMHyperFree(pVM, pNew);
     return VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
 }
@@ -302,7 +302,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
     }
     pgmUnlock(pVM);
 
-    AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhys));
+    AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
@@ -538,23 +538,23 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 #endif
                     HWACCMFlushTLB(pVM);
                     pgmUnlock(pVM);
-                    Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%VGp -> GCPhys=%VGp GCPhysLast=%VGp\n",
+                    Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
                 }
 
-                AssertMsgFailed(("Conflict! GCPhys=%VGp GCPhysLast=%VGp\n", GCPhys, GCPhysLast));
+                AssertMsgFailed(("Conflict! GCPhys=%RGp GCPhysLast=%RGp\n", GCPhys, GCPhysLast));
                 rc = VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
             }
             else
             {
-                AssertMsgFailed(("No RAM range for %VGp-%VGp\n", GCPhys, GCPhysLast));
+                AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
                 rc = VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
             }
         }
         else
         {
-            AssertMsgFailed(("Invalid range %VGp-%VGp\n", GCPhys, GCPhysLast));
+            AssertMsgFailed(("Invalid range %RGp-%RGp\n", GCPhys, GCPhysLast));
             rc = VERR_INVALID_PARAMETER;
         }
 
@@ -567,7 +567,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
     }
     else
     {
-        AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhysCurrent));
+        AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhysCurrent));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
 
@@ -618,7 +618,7 @@ VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
     }
     else
     {
-        AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhys));
+        AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
 
@@ -668,7 +668,7 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
 
             if (RT_LIKELY(RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core)))
             {
-                LogFlow(("PGMHandlerPhysicalSplit: %VGp-%VGp and %VGp-%VGp\n",
+                LogFlow(("PGMHandlerPhysicalSplit: %RGp-%RGp and %RGp-%RGp\n",
                          pCur->Core.Key, pCur->Core.KeyLast, pNew->Core.Key, pNew->Core.KeyLast));
                 pgmUnlock(pVM);
                 return VINF_SUCCESS;
@@ -678,13 +678,13 @@ VMMDECL(int) PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSp
         }
         else
         {
-            AssertMsgFailed(("outside range: %VGp-%VGp split %VGp\n", pCur->Core.Key, pCur->Core.KeyLast, GCPhysSplit));
+            AssertMsgFailed(("outside range: %RGp-%RGp split %RGp\n", pCur->Core.Key, pCur->Core.KeyLast, GCPhysSplit));
             rc = VERR_INVALID_PARAMETER;
         }
     }
     else
     {
-        AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhys));
+        AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
     pgmUnlock(pVM);
@@ -728,7 +728,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                     {
                         pCur1->Core.KeyLast  = pCur2->Core.KeyLast;
                         pCur1->cPages        = (pCur1->Core.KeyLast - (pCur1->Core.Key & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
-                        LogFlow(("PGMHandlerPhysicalJoin: %VGp-%VGp %VGp-%VGp\n",
+                        LogFlow(("PGMHandlerPhysicalJoin: %RGp-%RGp %RGp-%RGp\n",
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
                         pgmUnlock(pVM);
                         MMHyperFree(pVM, pCur2);
@@ -746,20 +746,20 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
             }
             else
             {
-                AssertMsgFailed(("not adjacent: %VGp-%VGp %VGp-%VGp\n",
+                AssertMsgFailed(("not adjacent: %RGp-%RGp %RGp-%RGp\n",
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
                 rc = VERR_INVALID_PARAMETER;
             }
         }
         else
         {
-            AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhys2));
+            AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys2));
             rc = VERR_PGM_HANDLER_NOT_FOUND;
         }
     }
     else
     {
-        AssertMsgFailed(("Didn't find range starting at %VGp\n", GCPhys1));
+        AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys1));
         rc = VERR_PGM_HANDLER_NOT_FOUND;
     }
     pgmUnlock(pVM);
@@ -952,7 +952,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             /* Do the actual remapping here. This page now serves as an alias for the backing memory specified. */
             pPage->HCPhys = pPageRemap->HCPhys;
 
-            LogFlow(("PGMHandlerPhysicalPageAlias %VGp -> %VGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
+            LogFlow(("PGMHandlerPhysicalPageAlias %RGp -> %RGp - %RHp\n", GCPhysPage, GCPhysPageRemap, pPageRemap->HCPhys));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
 #ifndef IN_GC
             HWACCMInvalidatePhysPage(pVM, GCPhysPage);
@@ -1109,13 +1109,13 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
      * and I'm too lazy to implement this now as it will require sorting the list and stuff like that. */
     PPGMPHYS2VIRTHANDLER pHead = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
-    AssertReleaseMsg(pHead != pPhys2Virt, ("%VGp-%VGp offVirtHandler=%#RX32\n",
+    AssertReleaseMsg(pHead != pPhys2Virt, ("%RGp-%RGp offVirtHandler=%#RX32\n",
                                            pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offVirtHandler));
 #endif
     if (RT_UNLIKELY(!pHead || pHead->Core.KeyLast != pPhys2Virt->Core.KeyLast))
     {
         /** @todo do something clever here... */
-        LogRel(("pgmHandlerVirtualInsertAliased: %VGp-%VGp\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast));
+        LogRel(("pgmHandlerVirtualInsertAliased: %RGp-%RGp\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast));
         pPhys2Virt->offNextAlias = 0;
         return;
     }
@@ -1133,7 +1133,7 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
     }
     pHead->offNextAlias = ((intptr_t)pPhys2Virt - (intptr_t)pHead)
                         | (pHead->offNextAlias & ~PGMPHYS2VIRTHANDLER_OFF_MASK);
-    Log(("pgmHandlerVirtualInsertAliased: %VGp-%VGp offNextAlias=%#RX32\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offNextAlias));
+    Log(("pgmHandlerVirtualInsertAliased: %RGp-%RGp offNextAlias=%#RX32\n", pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offNextAlias));
 }
 
 
@@ -1197,10 +1197,10 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                 else
                     AssertReleaseMsg(RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key) == &pPhys2Virt->Core,
-                                     ("%VGp-%VGp offNextAlias=%#RX32\n",
+                                     ("%RGp-%RGp offNextAlias=%#RX32\n",
                                       pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offNextAlias));
 #endif
-                Log2(("PHYS2VIRT: Insert physical range %VGp-%VGp offNextAlias=%#RX32 %s\n",
+                Log2(("PHYS2VIRT: Insert physical range %RGp-%RGp offNextAlias=%#RX32 %s\n",
                       pPhys2Virt->Core.Key, pPhys2Virt->Core.KeyLast, pPhys2Virt->offNextAlias, R3STRING(pCur->pszDesc)));
             }
         }
@@ -1224,7 +1224,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualDumpPhysPagesCallback(PAVLROGCPHYSNODE
 {
     PPGMPHYS2VIRTHANDLER pCur = (PPGMPHYS2VIRTHANDLER)pNode;
     PPGMVIRTHANDLER      pVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
-    Log(("PHYS2VIRT: Range %VGp-%VGp for virtual handler: %s\n", pCur->Core.Key, pCur->Core.KeyLast, pVirt->pszDesc));
+    Log(("PHYS2VIRT: Range %RGp-%RGp for virtual handler: %s\n", pCur->Core.Key, pCur->Core.KeyLast, pVirt->pszDesc));
     return 0;
 }
 
@@ -1359,7 +1359,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         {
             if (pVirt->aPhysToVirt[iPage].Core.Key != NIL_RTGCPHYS)
             {
-                AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysNew=~0 iPage=%#x %RGv %s\n",
+                AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysNew=~0 iPage=%#x %RGv %s\n",
                                  pVirt->aPhysToVirt[iPage].Core.Key, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
                 pState->cErrors++;
             }
@@ -1369,7 +1369,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         AssertRCReturn(rc, 0);
         if ((pVirt->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK) != GCPhysGst)
         {
-            AssertMsgFailed(("virt handler phys out of sync. %VGp GCPhysGst=%VGp iPage=%#x %RGv %s\n",
+            AssertMsgFailed(("virt handler phys out of sync. %RGp GCPhysGst=%RGp iPage=%#x %RGv %s\n",
                              pVirt->aPhysToVirt[iPage].Core.Key, GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
@@ -1378,7 +1378,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysGst);
         if (!pPage)
         {
-            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%VGp iPage=%#x %RGv %s\n",
+            AssertMsgFailed(("virt handler getting ram flags. GCPhysGst=%RGp iPage=%#x %RGv %s\n",
                              GCPhysGst, iPage, GCPtr, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;
@@ -1386,7 +1386,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
 
         if (PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < uState)
         {
-            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%VGp iPage=%#x %RGv state=%d expected>=%d %s\n",
+            AssertMsgFailed(("virt handler state mismatch. HCPhys=%RHp GCPhysGst=%RGp iPage=%#x %RGv state=%d expected>=%d %s\n",
                              pPage->HCPhys, GCPhysGst, iPage, GCPtr, PGM_PAGE_GET_HNDL_VIRT_STATE(pPage), uState, R3STRING(pVirt->pszDesc)));
             pState->cErrors++;
             continue;

@@ -378,7 +378,7 @@ VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t c
  */
 VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapGCPhys: GCPhys=%VGp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", GCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapGCPhys: GCPhys=%RGp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", GCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
@@ -408,7 +408,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             AssertRC(rc);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("rc=%Rrc GCPhys=%VGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                AssertMsgFailed(("rc=%Rrc GCPhys=%RGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
                 break;
             }
             if (pVM->mm.s.fPGMInitialized)
@@ -417,7 +417,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
                 AssertRC(rc);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("rc=%Rrc GCPhys=%VGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                    AssertMsgFailed(("rc=%Rrc GCPhys=%RGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
                     break;
                 }
             }
@@ -450,7 +450,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
 VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                 const char *pszDesc, PRTRCPTR pRCPtr)
 {
-    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%VGp cb=%VGp pszDesc=%p:{%s} pRCPtr=%p\n",
+    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
              pDevIns, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
     int rc;
 
@@ -1109,7 +1109,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_GCPHYS:
-                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s GCPHYS  %VGp%*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s GCPHYS  %RGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",
@@ -1118,7 +1118,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_MMIO2:
-                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s MMIO2   %VGp%*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s MMIO2   %RGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 sizeof(RTHCPTR) * 2, "",

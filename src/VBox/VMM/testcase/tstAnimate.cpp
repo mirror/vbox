@@ -285,7 +285,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
         for (;;)
         {
             if (!(GCPhys % (PAGE_SIZE * 0x1000)))
-                RTPrintf("info: %VGp...\n", GCPhys);
+                RTPrintf("info: %RGp...\n", GCPhys);
 
             /* read a page from the file */
             size_t cbRead = 0;

@@ -432,7 +432,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-    LogFlow(("MapCR3: %VGp\n", GCPhysCR3));
+    LogFlow(("MapCR3: %RGp\n", GCPhysCR3));
 
     /*
      * Map the page CR3 points at.
@@ -520,10 +520,10 @@ l_try_again:
 # endif
         }
         else
-            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
+            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
     else
-        AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%VGp\n", rc, GCPhysCR3));
+        AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
 
 #else /* prot/real stub */
     int rc = VINF_SUCCESS;
@@ -830,7 +830,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                                 pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
-                                             ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%VGp\n",
+                                             ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%RGp\n",
                                               pCur->aPhysToVirt[iPage].Core.Key, pCur->aPhysToVirt[iPage].Core.KeyLast,
                                               pCur->aPhysToVirt[iPage].offVirtHandler, pCur->aPhysToVirt[iPage].offNextAlias, GCPhysNew));
 #endif
@@ -853,7 +853,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                             pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                             AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
-                                             ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                                             ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                                               pCur->aPhysToVirt[iPage].Core.Key, pCur->aPhysToVirt[iPage].Core.KeyLast,
                                               pCur->aPhysToVirt[iPage].offVirtHandler, pCur->aPhysToVirt[iPage].offNextAlias));
 #endif
@@ -880,7 +880,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
                             pgmHandlerVirtualClearPage(&pState->pVM->pgm.s, pCur, iPage);
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
                         AssertReleaseMsg(!pCur->aPhysToVirt[iPage].offNextAlias,
-                                         ("{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%VGp\n",
+                                         ("{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32} GCPhysNew=%RGp\n",
                                           pCur->aPhysToVirt[iPage].Core.Key, pCur->aPhysToVirt[iPage].Core.KeyLast,
                                           pCur->aPhysToVirt[iPage].offVirtHandler, pCur->aPhysToVirt[iPage].offNextAlias, GCPhysNew));
 #endif
@@ -1095,7 +1095,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
                  * executing.
                  */
                 pVM->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
-                Log(("pgmXXGstPaeWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%VGp\n",
+                Log(("pgmXXGstPaeWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%RGp\n",
                      i, CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
             }
         }

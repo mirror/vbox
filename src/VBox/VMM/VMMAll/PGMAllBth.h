@@ -123,9 +123,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     if (!pPDSrc)
     {
 #    if PGM_GST_TYPE == PGM_TYPE_AMD64 && GC_ARCH_BITS == 64
-        LogFlow(("Trap0eHandler: guest PML4 %d not present CR3=%VGp\n", (int)(((RTGCUINTPTR)pvFault >> X86_PML4_SHIFT) & X86_PML4_MASK), CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
+        LogFlow(("Trap0eHandler: guest PML4 %d not present CR3=%RGp\n", (int)(((RTGCUINTPTR)pvFault >> X86_PML4_SHIFT) & X86_PML4_MASK), CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
 #    else
-        LogFlow(("Trap0eHandler: guest iPDSrc=%u not present CR3=%VGp\n", iPDSrc, CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
+        LogFlow(("Trap0eHandler: guest iPDSrc=%u not present CR3=%RGp\n", iPDSrc, CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK));
 #    endif
         STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVM->pgm.s.StatRZTrap0eTime2GuestTrap; });
         TRPMSetErrorCode(pVM, uErr);
@@ -470,7 +470,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                                       || (     pCur->enmType != PGMVIRTHANDLERTYPE_WRITE
                                            || !(uErr & X86_TRAP_PF_P)
                                            || (pCur->enmType == PGMVIRTHANDLERTYPE_WRITE && (uErr & X86_TRAP_PF_RW))),
-                                      ("Unexpected trap for virtual handler: %RGv (phys=%VGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
+                                      ("Unexpected trap for virtual handler: %RGv (phys=%RGp) HCPhys=%HGp uErr=%X, enum=%d\n", pvFault, GCPhys, pPage->HCPhys, uErr, pCur->enmType));
 
                             if (    (RTGCUINTPTR)pvFault - (RTGCUINTPTR)pCur->Core.Key < pCur->cb
                                 &&  (    uErr & X86_TRAP_PF_RW
@@ -604,7 +604,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 /* When the guest accesses invalid physical memory (e.g. probing of RAM or accessing a remapped MMIO range), then we'll fall
                  * back to the recompiler to emulate the instruction.
                  */
-                LogFlow(("pgmPhysGetPageEx %VGp failed with %Rrc\n", GCPhys, rc));
+                LogFlow(("pgmPhysGetPageEx %RGp failed with %Rrc\n", GCPhys, rc));
                 STAM_COUNTER_INC(&pVM->pgm.s.StatRZTrap0eHandlersInvalid);
                 STAM_PROFILE_STOP(&pVM->pgm.s.StatRZTrap0eTimeHandlers, b);
                 return VINF_EM_RAW_EMULATE_INSTR;
@@ -636,7 +636,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                 RTGCPHYS   GCPhys;
                 uint64_t   fPageGst;
                 PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
-                Log(("Page out of sync: %RGv eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%VGp scan=%d\n",
+                Log(("Page out of sync: %RGv eip=%08x PdeSrc.n.u1User=%d fPageGst=%08llx GCPhys=%RGp scan=%d\n",
                      pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst, GCPhys, CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip)));
 #   endif /* LOG_ENABLED */
 
@@ -754,7 +754,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                         uint64_t fPageGst;
                         rc = PGMGstGetPage(pVM, pvFault, &fPageGst, &GCPhys);
                         Assert(RT_SUCCESS(rc) && fPageGst & X86_PTE_RW);
-                        LogFlow(("Obsolete physical monitor page out of sync %RGv - phys %VGp flags=%08llx\n", pvFault, GCPhys, (uint64_t)fPageGst));
+                        LogFlow(("Obsolete physical monitor page out of sync %RGv - phys %RGp flags=%08llx\n", pvFault, GCPhys, (uint64_t)fPageGst));
 
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVM, pvFault, &fPageShw, NULL);
@@ -807,7 +807,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
                          * Note: we have AVL, A, D bits desynched.
                          */
                         AssertMsg((fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)) == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)),
-                                  ("Page flags mismatch! pvFault=%RGv GCPhys=%VGp fPageShw=%08llx fPageGst=%08llx\n", pvFault, GCPhys, fPageShw, fPageGst));
+                                  ("Page flags mismatch! pvFault=%RGv GCPhys=%RGp fPageShw=%08llx fPageGst=%08llx\n", pvFault, GCPhys, fPageShw, fPageGst));
                     }
                     else
                         AssertMsgFailed(("PGMGstGetPage rc=%Rrc\n", rc));
@@ -1018,7 +1018,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     if (    !pPml4eSrc->n.u1Present
         ||  pShwPdpt->GCPhys != GCPhysPdpt)
     {
-        LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %RGv GCPhys=%VGp vs %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
+        LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
         pPml4eDst->u = 0;
@@ -1058,7 +1058,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     if (    !PdpeSrc.n.u1Present
         ||  pShwPde->GCPhys != GCPhysPd)
     {
-        LogFlow(("InvalidatePage: Out-of-sync PDPE (P/GCPhys) at %RGv GCPhys=%VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+        LogFlow(("InvalidatePage: Out-of-sync PDPE (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                     GCPtrPage, pShwPde->GCPhys, GCPhysPd, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
         pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpte);
         pPdpeDst->u = 0;
@@ -1118,7 +1118,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
  	        pPdptDst->a[iPdpte].n.u1Present = 0;
         PGM_INVL_GUEST_TLBS();
     }
-    AssertMsg(pVM->pgm.s.fMappingsFixed || (PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte], ("%VGp vs %VGp (mon)\n", (PdpeSrc.u & X86_PDPE_PG_MASK), pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte]));
+    AssertMsg(pVM->pgm.s.fMappingsFixed || (PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte], ("%RGp vs %RGp (mon)\n", (PdpeSrc.u & X86_PDPE_PG_MASK), pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpte]));
 # endif
 
 
@@ -1143,7 +1143,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can resync the PDE when it's used.
              */
-            LogFlow(("InvalidatePage: Out-of-sync at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
@@ -1159,7 +1159,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
             /*
              * Mark not present so we can set the accessed bit.
              */
-            LogFlow(("InvalidatePage: Out-of-sync (A) at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync (A) at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
@@ -1207,7 +1207,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
                 /*
                  * The page table address changed.
                  */
-                LogFlow(("InvalidatePage: Out-of-sync at %VGp PdeSrc=%RX64 PdeDst=%RX64 ShwGCPhys=%VGp iPDDst=%#x\n",
+                LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64 ShwGCPhys=%RGp iPDDst=%#x\n",
                          GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u, pShwPage->GCPhys, iPDDst));
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
                 pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
@@ -1253,7 +1253,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
              * We could do this for some flushes in GC too, but we need an algorithm for
              * deciding which 4MB pages containing code likely to be executed very soon.
              */
-            LogFlow(("InvalidatePage: Out-of-sync PD at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+            LogFlow(("InvalidatePage: Out-of-sync PD at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
                      GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
             pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
@@ -1734,7 +1734,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
                 }
                 else /* MMIO or invalid page: emulated in #PF handler. */
                 {
-                    LogFlow(("PGM_GCPHYS_2_PTR %VGp failed with %Rrc\n", GCPhys, rc));
+                    LogFlow(("PGM_GCPHYS_2_PTR %RGp failed with %Rrc\n", GCPhys, rc));
                     Assert(!pPTDst->a[(GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK].n.u1Present);
                 }
             }
@@ -1802,12 +1802,12 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
                     pPDDst->a[iPDDst] = PdeDst;
 #  endif
-                    Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%VGp%s\n",
+                    Log2(("SyncPage: BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} GCPhys=%RGp%s\n",
                           GCPtrPage, PdeSrc.n.u1Present, PdeSrc.n.u1Write, PdeSrc.n.u1User, (uint64_t)PdeSrc.u, GCPhys,
                           PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                 }
                 else
-                    LogFlow(("PGM_GCPHYS_2_PTR %VGp (big) failed with %Rrc\n", GCPhys, rc));
+                    LogFlow(("PGM_GCPHYS_2_PTR %RGp (big) failed with %Rrc\n", GCPhys, rc));
             }
             return VINF_SUCCESS;
         }
@@ -1816,7 +1816,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsig
     else
     {
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncPagePDOutOfSync));
-        Log2(("SyncPage: Out-Of-Sync PDE at %VGp PdeSrc=%RX64 PdeDst=%RX64\n",
+        Log2(("SyncPage: Out-Of-Sync PDE at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
               GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
     }
 
@@ -2184,7 +2184,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
                         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
                         if (pPage)
                             AssertMsg(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage),
-                                      ("Unexpected dirty bit tracking on monitored page %RGv (phys %VGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
+                                      ("Unexpected dirty bit tracking on monitored page %RGv (phys %RGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
 #  endif
                         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
 
@@ -2201,7 +2201,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
                     }
                 }
                 else
-                    AssertMsgFailed(("pgmPoolGetPageByHCPhys %VGp failed!\n", pPdeDst->u & SHW_PDE_PG_MASK));
+                    AssertMsgFailed(("pgmPoolGetPageByHCPhys %RGp failed!\n", pPdeDst->u & SHW_PDE_PG_MASK));
             }
         }
 /** @todo Optimize accessed bit emulation? */
@@ -2523,7 +2523,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                            )
 # endif
                             PGM_BTH_NAME(SyncPageWorker)(pVM, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-                        Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%VGp\n",
+                        Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
                               (RTGCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)),
                               PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
@@ -2582,7 +2582,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
 
             /* Loop thru the entries in the shadow PT. */
             const RTGCUINTPTR GCPtr  = (GCPtrPage >> SHW_PD_SHIFT) << SHW_PD_SHIFT; NOREF(GCPtr);
-            Log2(("SyncPT:   BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%RGv GCPhys=%VGp %s\n",
+            Log2(("SyncPT:   BIG %RGv PdeSrc:{P=%d RW=%d U=%d raw=%08llx} Shw=%RGv GCPhys=%RGp %s\n",
                   GCPtrPage, PdeSrc.b.u1Present, PdeSrc.b.u1Write, PdeSrc.b.u1User, (uint64_t)PdeSrc.u, GCPtr,
                   GCPhys, PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
             PPGMRAMRANGE      pRam   = pVM->pgm.s.CTX_SUFF(pRamRanges);
@@ -2657,7 +2657,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                 }
                 else if (pRam)
                 {
-                    Log(("Invalid pages at %VGp\n", GCPhys));
+                    Log(("Invalid pages at %RGp\n", GCPhys));
                     do
                     {
                         pPTDst->a[iPTDst].u = 0; /* MMIO or invalid page, we must handle them manually. */
@@ -2668,7 +2668,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                 }
                 else
                 {
-                    Log(("Invalid pages at %VGp (2)\n", GCPhys));
+                    Log(("Invalid pages at %RGp (2)\n", GCPhys));
                     for ( ; iPTDst < RT_ELEMENTS(pPTDst->a); iPTDst++)
                         pPTDst->a[iPTDst].u = 0; /* MMIO or invalid page, we must handle them manually. */
                 }
@@ -3205,7 +3205,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             ||  GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
             /* Free it. */
-            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%RX64 %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%RX64 %RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                      (uint64_t)iPml4e << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
             pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
             pPml4eDst->u = 0;
@@ -3290,7 +3290,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 ||  GCPhysPdeSrc != pShwPde->GCPhys)
             {
                 /* Free it. */
-                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%RX64 %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%RX64 %RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                         ((uint64_t)iPml4e << X86_PML4_SHIFT) + ((uint64_t)iPdpte << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
 
                 /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
@@ -3648,7 +3648,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
      * Check that the Guest CR3 and all its mappings are correct.
      */
     AssertMsgReturn(pPGM->GCPhysCR3 == (cr3 & GST_CR3_PAGE_MASK),
-                    ("Invalid GCPhysCR3=%VGp cr3=%VGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
+                    ("Invalid GCPhysCR3=%RGp cr3=%RGp\n", pPGM->GCPhysCR3, (RTGCPHYS)cr3),
                     false);
 # if !defined(IN_RING0) && PGM_GST_TYPE != PGM_TYPE_AMD64
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -3664,7 +3664,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     RTGCPHYS GCPhys;
     rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
     AssertRCReturn(rc, 1);
-    AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%VGp cr3=%VGp\n", GCPhys, (RTGCPHYS)cr3), false);
+    AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #  endif
 #endif /* !IN_RING0 */
 
@@ -3934,7 +3934,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                     PPGMPAGE pPhysPage = pgmPhysGetPage(pPGM, GCPhysGst);
                     if (!pPhysPage)
                     {
-                        AssertMsgFailed(("Cannot find guest physical address %VGp in the PDE at %RGv! PdeSrc=%#RX64\n",
+                        AssertMsgFailed(("Cannot find guest physical address %RGp in the PDE at %RGv! PdeSrc=%#RX64\n",
                                         GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
                         cErrors++;
                         continue;
@@ -3942,7 +3942,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 
                     if (GCPhysGst != pPoolPage->GCPhys)
                     {
-                        AssertMsgFailed(("GCPhysGst=%VGp != pPage->GCPhys=%VGp at %RGv\n",
+                        AssertMsgFailed(("GCPhysGst=%RGp != pPage->GCPhys=%RGp at %RGv\n",
                                         GCPhysGst, pPoolPage->GCPhys, GCPtr));
                         cErrors++;
                         continue;
@@ -3958,7 +3958,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                         rc = PGM_GCPHYS_2_PTR(pVM, GCPhysGst & ~(RTGCPHYS)(PAGE_SIZE - 1), &pPTSrc);
                         if (RT_FAILURE(rc))
                         {
-                            AssertMsgFailed(("Cannot map/convert guest physical address %VGp in the PDE at %RGv! PdeSrc=%#RX64\n",
+                            AssertMsgFailed(("Cannot map/convert guest physical address %RGp in the PDE at %RGv! PdeSrc=%#RX64\n",
                                             GCPhysGst, GCPtr, (uint64_t)PdeSrc.u));
                             cErrors++;
                             continue;
@@ -4006,7 +4006,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                                 PGMAssertHandlerAndFlagsInSync(pVM);
                                 PGMR3DumpHierarchyGC(pVM, cr3, cr4, (PdeSrc.u & GST_PDE_PG_MASK));
 # endif
-                                AssertMsgFailed(("Out of sync (!P) PTE at %RGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%RGv iPTSrc=%x PdeSrc=%x physpte=%VGp\n",
+                                AssertMsgFailed(("Out of sync (!P) PTE at %RGv! PteSrc=%#RX64 PteDst=%#RX64 pPTSrc=%RGv iPTSrc=%x PdeSrc=%x physpte=%RGp\n",
                                                 GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u, pPTSrc, iPT + offPTSrc, PdeSrc.au32[0],
                                                 (PdeSrc.u & GST_PDE_PG_MASK) + (iPT + offPTSrc)*sizeof(PteSrc)));
                                 cErrors++;
@@ -4028,7 +4028,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             {
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
-                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %RGv! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Cannot find guest physical address %RGp at %RGv! PteSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                     continue;
@@ -4036,7 +4036,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (HCPhys & SHW_PTE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4049,7 +4049,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
-                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %RGv! PteSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Cannot find guest physical address %RGp at %RGv! PteSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPhysGst, GCPtr + off, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                     continue;
@@ -4057,7 +4057,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # endif
                                 if (PteDst.n.u1Write)
                                 {
-                                    AssertMsgFailed(("Invalid guest page at %RGv is writable! GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Invalid guest page at %RGv is writable! GCPhysGst=%RGp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPtr + off, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                 }
@@ -4065,7 +4065,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (PGM_PAGE_GET_HCPHYS(pPhysPage) & SHW_PTE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PteSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4258,14 +4258,14 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             {
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
-                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %RGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Cannot find guest physical address %RGp at %RGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                 }
                             }
                             else if (HCPhysShw != (HCPhys & X86_PTE_PAE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;
@@ -4277,7 +4277,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # ifdef IN_RING3 /** @todo make MMR3PageDummyHCPhys an 'All' function! */
                                 if (HCPhysShw != MMR3PageDummyHCPhys(pVM))
                                 {
-                                    AssertMsgFailed(("Cannot find guest physical address %VGp at %RGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Cannot find guest physical address %RGp at %RGv! PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPhysGst, GCPtr + off, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                     continue;
@@ -4285,7 +4285,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 # endif
                                 if (PteDst.n.u1Write)
                                 {
-                                    AssertMsgFailed(("Invalid guest page at %RGv is writable! GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                    AssertMsgFailed(("Invalid guest page at %RGv is writable! GCPhysGst=%RGp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                     GCPtr + off, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                     cErrors++;
                                 }
@@ -4293,7 +4293,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                             }
                             else if (HCPhysShw != (pPhysPage->HCPhys & X86_PTE_PAE_PG_MASK))
                             {
-                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%VGp PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                AssertMsgFailed(("Out of sync (phys) at %RGv! HCPhysShw=%RHp HCPhys=%RHp GCPhysGst=%RGp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                 GCPtr + off, HCPhysShw, pPhysPage->HCPhys, GCPhysGst, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                 cErrors++;
                                 continue;

@@ -1507,7 +1507,7 @@ ResumeExecution:
         RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
 
         Assert(pVM->hwaccm.s.fNestedPaging);
-        Log(("Nested page fault at %RGv cr2=%VGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+        Log(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
         /* Exit qualification contains the linear address of the page fault. */
         TRPMAssertTrap(pVM, X86_XCPT_PF, TRPM_TRAP);
         TRPMSetErrorCode(pVM, errCode);
@@ -1518,7 +1518,7 @@ ResumeExecution:
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-            Log2(("Shadow page fault at %RGv cr2=%VGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
+            Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVM);

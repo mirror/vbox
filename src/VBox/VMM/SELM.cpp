@@ -1800,7 +1800,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 
                     rc = PGMGstGetPage(pVM, GCPtrGuestTSS, &fFlags, &GCPhys);
                     AssertRC(rc);
-                    AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%VGp\n",
+                    AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%RGv Phys=%RGp\n",
                                      (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, GCPtrGuestTSS, GCPhys));
                 }
                 else

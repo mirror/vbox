@@ -2605,13 +2605,13 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
         {
             if (PdeSrc.b.u1Size && fPSE)
                 pHlp->pfnPrintf(pHlp,
-                                "%04X - %VGp P=%d U=%d RW=%d G=%d - BIG\n",
+                                "%04X - %RGp P=%d U=%d RW=%d G=%d - BIG\n",
                                 iPD,
                                 pgmGstGet4MBPhysPage(&pVM->pgm.s, PdeSrc),
                                 PdeSrc.b.u1Present, PdeSrc.b.u1User, PdeSrc.b.u1Write, PdeSrc.b.u1Global && fPGE);
             else
                 pHlp->pfnPrintf(pHlp,
-                                "%04X - %VGp P=%d U=%d RW=%d [G=%d]\n",
+                                "%04X - %RGp P=%d U=%d RW=%d [G=%d]\n",
                                 iPD,
                                 (RTGCPHYS)(PdeSrc.u & X86_PDE_PG_MASK),
                                 PdeSrc.n.u1Present, PdeSrc.n.u1User, PdeSrc.n.u1Write, PdeSrc.b.u1Global && fPGE);
@@ -3927,7 +3927,7 @@ int pgmR3DumpHierarchyGC32BitPT(PVM pVM, PX86PT pPT, uint32_t u32Address, RTGCPH
                 RTHCPHYS pPhysHC = 0;
 
                 PGMShwGetPage(pVM, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), &fPageShw, &pPhysHC);
-                Log(("Found %VGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
+                Log(("Found %RGp at %RGv -> flags=%llx\n", PhysSearch, (RTGCPTR)(u32Address + (i << X86_PT_SHIFT)), fPageShw));
             }
         }
     }
@@ -4295,11 +4295,11 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PAVLROGCPHYSNODECORE
     PPGMCHECKINTARGS pArgs = (PPGMCHECKINTARGS)pvUser;
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode;
     AssertReleaseReturn(!((uintptr_t)pCur & 7), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %VGp-%VGp %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
+    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %RGp-%RGp %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
     AssertReleaseMsg(   !pArgs->pPrevPhys
                      || (pArgs->fLeftToRight ? pArgs->pPrevPhys->Core.KeyLast < pCur->Core.Key : pArgs->pPrevPhys->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys=%p %VGp-%VGp %s\n"
-                      "     pCur=%p %VGp-%VGp %s\n",
+                     ("pPrevPhys=%p %RGp-%RGp %s\n"
+                      "     pCur=%p %RGp-%RGp %s\n",
                       pArgs->pPrevPhys, pArgs->pPrevPhys->Core.Key, pArgs->pPrevPhys->Core.KeyLast, pArgs->pPrevPhys->pszDesc,
                       pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
     pArgs->pPrevPhys = pCur;
@@ -4352,21 +4352,21 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNO
     PPGMPHYS2VIRTHANDLER pCur = (PPGMPHYS2VIRTHANDLER)pNode;
     AssertReleaseMsgReturn(!((uintptr_t)pCur & 3),      ("\n"), 1);
     AssertReleaseMsgReturn(!(pCur->offVirtHandler & 3), ("\n"), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %VGp-%VGp\n", pCur, pCur->Core.Key, pCur->Core.KeyLast));
+    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %RGp-%RGp\n", pCur, pCur->Core.Key, pCur->Core.KeyLast));
     AssertReleaseMsg(   !pArgs->pPrevPhys2Virt
                      || (pArgs->fLeftToRight ? pArgs->pPrevPhys2Virt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevPhys2Virt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys2Virt=%p %VGp-%VGp\n"
-                      "          pCur=%p %VGp-%VGp\n",
+                     ("pPrevPhys2Virt=%p %RGp-%RGp\n"
+                      "          pCur=%p %RGp-%RGp\n",
                       pArgs->pPrevPhys2Virt, pArgs->pPrevPhys2Virt->Core.Key, pArgs->pPrevPhys2Virt->Core.KeyLast,
                       pCur, pCur->Core.Key, pCur->Core.KeyLast));
     AssertReleaseMsg(   !pArgs->pPrevPhys2Virt
                      || (pArgs->fLeftToRight ? pArgs->pPrevPhys2Virt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevPhys2Virt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys2Virt=%p %VGp-%VGp\n"
-                      "          pCur=%p %VGp-%VGp\n",
+                     ("pPrevPhys2Virt=%p %RGp-%RGp\n"
+                      "          pCur=%p %RGp-%RGp\n",
                       pArgs->pPrevPhys2Virt, pArgs->pPrevPhys2Virt->Core.Key, pArgs->pPrevPhys2Virt->Core.KeyLast,
                       pCur, pCur->Core.Key, pCur->Core.KeyLast));
     AssertReleaseMsg((pCur->offNextAlias & (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD)) == (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD),
-                     ("pCur=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                     ("pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                       pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias));
     if (pCur->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK)
     {
@@ -4375,21 +4375,21 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNO
         {
             pCur2 = (PPGMPHYS2VIRTHANDLER)((intptr_t)pCur + (pCur->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK));
             AssertReleaseMsg(pCur2 != pCur,
-                             (" pCur=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                               pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias));
             AssertReleaseMsg((pCur2->offNextAlias & (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD)) == PGMPHYS2VIRTHANDLER_IN_TREE,
-                             (" pCur=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
+                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                               pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
                               pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
             AssertReleaseMsg((pCur2->Core.Key ^ pCur->Core.Key) < PAGE_SIZE,
-                             (" pCur=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
+                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                               pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
                               pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
             AssertReleaseMsg((pCur2->Core.KeyLast ^ pCur->Core.KeyLast) < PAGE_SIZE,
-                             (" pCur=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%VGp, .Core.KeyLast=%VGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
+                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
+                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
                               pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
                               pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
             if (!(pCur2->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK))

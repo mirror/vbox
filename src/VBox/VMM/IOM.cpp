@@ -1362,7 +1362,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
     int rc;
 
@@ -1371,7 +1371,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     if (GCPhysStart + (cbRange - 1) < GCPhysStart)
     {
-        AssertMsgFailed(("Wrapped! %VGp %#x bytes\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
 
@@ -1462,7 +1462,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterRC: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MMIORegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
@@ -1470,7 +1470,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1516,7 +1516,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                                     R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                                     R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%VGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
@@ -1524,7 +1524,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %VGp LB%#x %s\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1564,7 +1564,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  */
 VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
-    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=%VGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
+    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
 
     /*
      * Validate input.
@@ -1586,10 +1586,10 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         if (!pRange)
             return VERR_IOM_MMIO_RANGE_NOT_FOUND;
         AssertMsgReturn(pRange->pDevInsR3 == pDevIns,
-                        ("Not owner! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                        ("Not owner! GCPhys=%RGp %RGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                         VERR_IOM_NOT_MMIO_RANGE_OWNER);
         AssertMsgReturn(pRange->Core.KeyLast <= GCPhysLast,
-                        ("Incomplete R3 range! GCPhys=%VGp %VGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                        ("Incomplete R3 range! GCPhys=%RGp %RGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                         VERR_IOM_INCOMPLETE_MMIO_RANGE);
 
         /* next */

@@ -250,7 +250,7 @@ static DECLCALLBACK(void) pdmGCDevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 static DECLCALLBACK(void) pdmGCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PhysRead: caller=%p/%d: GCPhys=%VGp pvBuf=%p cbRead=%#x\n",
+    LogFlow(("pdmGCDevHlp_PhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
     PGMPhysRead(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbRead);
@@ -263,7 +263,7 @@ static DECLCALLBACK(void) pdmGCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPh
 static DECLCALLBACK(void) pdmGCDevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PhysWrite: caller=%p/%d: GCPhys=%VGp pvBuf=%p cbWrite=%#x\n",
+    LogFlow(("pdmGCDevHlp_PhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
     PGMPhysWrite(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbWrite);
