@@ -284,7 +284,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_LIST)
     {
         RTPrintf("VBoxManage list             vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
-                 "                            hostifs|hostinfo|hdds|dvds|floppies|\n"
+                 "                            hostifs|hostinfo|hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
                  "\n");
     }
@@ -2779,6 +2779,81 @@ static int handleList(int argc, char *argv[],
         CHECK_ERROR (Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
         RTPrintf("Operating system version: %lS\n", oSVersion.raw());
     #endif
+    }
+    else
+    if (strcmp(argv[0], "hddbackends") == 0)
+    {
+        ComPtr<ISystemProperties> systemProperties;
+        CHECK_ERROR(virtualBox,
+                    COMGETTER(SystemProperties) (systemProperties.asOutParam()));
+        com::SafeIfaceArray <IHardDiskFormat> hardDiskFormats;
+        CHECK_ERROR(systemProperties,
+                    COMGETTER(HardDiskFormats) (ComSafeArrayAsOutParam (hardDiskFormats)));
+
+        RTPrintf("Supported hard disk backends:\n\n");
+        for (size_t i = 0; i < hardDiskFormats.size(); ++ i)
+        {
+            /* General information */
+            Bstr id;
+            CHECK_ERROR(hardDiskFormats [i],
+                        COMGETTER(Id) (id.asOutParam()));
+
+            Bstr description;
+            CHECK_ERROR(hardDiskFormats [i],
+                        COMGETTER(Id) (description.asOutParam()));
+
+            unsigned int caps;
+            CHECK_ERROR(hardDiskFormats [i],
+                        COMGETTER(Capabilities) (&caps));
+
+            RTPrintf("Backend %u: id='%ls' description='%ls' capabilities=%#06x extensions='",
+                     i, id.raw(), description.raw(), caps);
+
+            /* File extensions */
+            com::SafeArray <BSTR> fileExtensions;
+            CHECK_ERROR(hardDiskFormats [i],
+                        COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
+            for (size_t a = 0; a < fileExtensions.size(); ++ a)
+            {
+                RTPrintf ("%ls", Bstr (fileExtensions [a]).raw());
+                if (a != fileExtensions.size()-1)
+                    RTPrintf (",");
+            }
+            RTPrintf ("'");
+
+            /* Configuration keys */
+            com::SafeArray <BSTR> propertyNames;
+            com::SafeArray <BSTR> propertyDescriptions;
+            com::SafeArray <DataType_T> propertyTypes;
+            com::SafeArray <ULONG> propertyFlags;
+            com::SafeArray <BSTR> propertyDefaults;
+            CHECK_ERROR(hardDiskFormats [i],
+                        DescribeProperties (ComSafeArrayAsOutParam (propertyNames),
+                                            ComSafeArrayAsOutParam (propertyDescriptions),
+                                            ComSafeArrayAsOutParam (propertyTypes),
+                                            ComSafeArrayAsOutParam (propertyFlags),
+                                            ComSafeArrayAsOutParam (propertyDefaults)));
+
+            RTPrintf (" config=(");
+            if (propertyNames.size() > 0)
+            {
+                for (size_t a = 0; a < propertyNames.size(); ++ a)
+                {
+                    RTPrintf ("key='%ls' desc='%ls' type=", Bstr (propertyNames [a]).raw(), Bstr (propertyDescriptions [a]).raw());
+                    switch (propertyTypes [a])
+                    {
+                        case DataType::Int32Type: RTPrintf ("int"); break;
+                        case DataType::Int8Type: RTPrintf ("byte"); break;
+                        case DataType::StringType: RTPrintf ("string"); break;
+                    }
+                    RTPrintf (" flags=%#04x", propertyFlags [a]);
+                    RTPrintf (" default='%ls'", Bstr (propertyDefaults [a]).raw());
+                    if (a != propertyNames.size()-1)
+                        RTPrintf (",");
+                }
+            }
+            RTPrintf (")\n");
+        }
     }
     else
     if (strcmp(argv[0], "hdds") == 0)

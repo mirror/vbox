@@ -77,13 +77,55 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
             ++ papsz;
         }
     }
-    /* Save a list of config names */
+    /* Save a list of configure properties */
     if (aVDInfo->paConfigInfo)
     {
         PCVDCONFIGINFO pa = aVDInfo->paConfigInfo;
+        /* Walk through all available keys */
         while (pa->pszKey != NULL)
         {
-            unconst (mData.propertyNames).push_back (*pa->pszKey);
+            Utf8Str defaults ("");
+            DataType_T dt;
+            /* Check for the configure data type */
+            switch (pa->enmValueType)
+            {
+                case VDCFGVALUETYPE_INTEGER:
+                    {
+                        dt = DataType::Int32Type;
+                        /* If there is a default value get them in the right format */
+                        if (pa->pDefaultValue)
+                            defaults = Utf8StrFmt ("%d", pa->pDefaultValue->Integer.u64);
+                        break;
+                    }
+                case VDCFGVALUETYPE_BYTES:
+                    {
+                        dt = DataType::Int8Type;
+                        /* If there is a default value get them in the right format */
+                        if (pa->pDefaultValue)
+                        {
+                            /* Copy the bytes over */
+                            defaults.alloc (pa->pDefaultValue->Bytes.cb + 1);
+                            memcpy (defaults.mutableRaw(), pa->pDefaultValue->Bytes.pv, pa->pDefaultValue->Bytes.cb);
+                            defaults.mutableRaw() [defaults.length()] = 0;
+                        }
+                        break;
+                    }
+                case VDCFGVALUETYPE_STRING:
+                    {
+                        dt = DataType::StringType;
+                        /* If there is a default value get them in the right format */
+                        if (pa->pDefaultValue)
+                            defaults = pa->pDefaultValue->String.psz;
+                        break;
+                    }
+            }
+            /* Create one property structure */
+            const Property prop = { Utf8Str (pa->pszKey),
+                                    Utf8Str (""),
+                                    dt,
+                                    pa->uKeyFlags,
+                                    defaults };
+            unconst (mData.properties).push_back (prop);
             ++ pa;
         }
     }
@@ -107,7 +149,7 @@ void HardDiskFormat::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (mData.propertyNames).clear();
+    unconst (mData.properties).clear();
     unconst (mData.fileExtensions).clear();
     unconst (mData.capabilities) = 0;
     unconst (mData.name).setNull();
@@ -186,22 +228,44 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     return S_OK;
 }
 
-STDMETHODIMP HardDiskFormat::
-COMGETTER(PropertyNames)(ComSafeArrayOut (BSTR, aPropertyNames))
+STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
+                                                ComSafeArrayOut (BSTR, aDescriptions),
+                                                ComSafeArrayOut (ULONG, aTypes),
+                                                ComSafeArrayOut (ULONG, aFlags),
+                                                ComSafeArrayOut (BSTR, aDefaults))
 {
-    if (ComSafeArrayOutIsNull (aPropertyNames))
+    if (ComSafeArrayOutIsNull (aNames) ||
+        ComSafeArrayOutIsNull (aDescriptions) ||
+        ComSafeArrayOutIsNull (aTypes) ||
+        ComSafeArrayOutIsNull (aFlags) ||
+        ComSafeArrayOutIsNull (aDefaults))
         return E_POINTER;
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> propertyNames (mData.propertyNames.size());
+    com::SafeArray <BSTR> propertyNames (mData.properties.size());
+    com::SafeArray <BSTR> propertyDescriptions (mData.properties.size());
+    com::SafeArray <ULONG> propertyTypes (mData.properties.size());
+    com::SafeArray <ULONG> propertyFlags (mData.properties.size());
+    com::SafeArray <BSTR> propertyDefaults (mData.properties.size());
     int i = 0;
-    for (BstrList::const_iterator it = mData.propertyNames.begin();
-        it != mData.propertyNames.end(); ++ it, ++ i)
-        (*it).cloneTo (&propertyNames [i]);
-    propertyNames.detachTo (ComSafeArrayOutArg (aPropertyNames));
+    for (PropertyList::const_iterator it = mData.properties.begin();
+         it != mData.properties.end(); ++ it, ++ i)
+    {
+        const Property &prop = (*it);
+        prop.name.cloneTo (&propertyNames [i]);
+        prop.description.cloneTo (&propertyDescriptions [i]);
+        propertyTypes [i] = prop.type;
+        propertyFlags [i] = prop.flags;
+        prop.defaults.cloneTo (&propertyDefaults [i]);
+    }
+    propertyNames.detachTo (ComSafeArrayOutArg (aNames));
+    propertyDescriptions.detachTo (ComSafeArrayOutArg (aDescriptions));
+    propertyTypes.detachTo (ComSafeArrayOutArg (aTypes));
+    propertyFlags.detachTo (ComSafeArrayOutArg (aFlags));
+    propertyDefaults.detachTo (ComSafeArrayOutArg (aDefaults));
 
     return S_OK;
 }

@@ -66,9 +66,14 @@ public:
     STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMGETTER(FileExtensions)) (ComSafeArrayOut (BSTR, aFileExtensions));
-
     STDMETHOD(COMGETTER(Capabilities)) (ULONG *aCaps);
-    STDMETHOD(COMGETTER(PropertyNames)) (ComSafeArrayOut (BSTR, aPropertyNames));
+
+    // IHardDiskFormat methods
+    STDMETHOD(DescribeProperties) (ComSafeArrayOut (BSTR, aNames),
+                                   ComSafeArrayOut (BSTR, aDescriptions),
+                                   ComSafeArrayOut (ULONG, aTypes),
+                                   ComSafeArrayOut (ULONG, aFlags),
+                                   ComSafeArrayOut (BSTR, aDefaults));
 
     // public methods only for internal purposes
 
@@ -82,6 +87,16 @@ private:
 
     typedef std::list <Bstr> BstrList;
 
+    struct Property
+    {
+        Bstr name;
+        Bstr description;
+        DataType_T type;
+        ULONG flags;
+        Bstr defaults;
+    };
+    typedef std::list <Property> PropertyList;
+
     struct Data
     {
         Data() : capabilities (0) {}
@@ -90,7 +105,7 @@ private:
         const Bstr name;
         const BstrList fileExtensions;
         const uint64_t capabilities;
-        const BstrList propertyNames;
+        const PropertyList properties;
     };
 
     Data mData;

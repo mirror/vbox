@@ -4700,36 +4700,21 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 /* static */
 QList< QPair<QString, QString> > VBoxGlobal::HDDBackends()
 {
-     int rc;
-     VDBACKENDINFO aVDInfo[100];
-     unsigned cEntries;
-
-     QStringList all;
-     QStringList filterList;
-     QList< QPair<QString, QString> > backendPropList;
-     /* Ask for all supported backends */
-     rc = VDBackendInfo (RT_ELEMENTS(aVDInfo), aVDInfo, &cEntries);
-     if (RT_SUCCESS (rc))
-     {
-         for (unsigned i=0; i < cEntries; i++)
-         {
-             QStringList f;
-             /* One backend could have more than one suffix. Get them all. */
-             if (aVDInfo[i].papszFileExtensions)
-             {
-                 const char *const *papsz = aVDInfo[i].papszFileExtensions;
-                 while (*papsz != NULL)
-                 {
-                     f << QString ("*.%1").arg (*papsz);
-                     papsz++;
-                 }
-             }
-             /* Create a pair out of the backend name and all suffix's. */
-             if (!f.isEmpty())
-                 backendPropList << QPair<QString, QString> (aVDInfo[i].pszBackend, f.join(" "));
-         }
-     }
-     return backendPropList;
+    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    QVector<CHardDiskFormat> hardDiskFormats = systemProperties.GetHardDiskFormats();
+    QList< QPair<QString, QString> > backendPropList;
+    for (int i = 0; i < hardDiskFormats.size(); ++ i)
+    {
+        /* File extensions */
+        QVector <QString> fileExtensions = hardDiskFormats [i].GetFileExtensions();
+        QStringList f;
+        for (int a = 0; a < fileExtensions.size(); ++ a)
+            f << QString ("*.%1").arg (fileExtensions [a]);
+        /* Create a pair out of the backend description and all suffix's. */
+        if (!f.isEmpty())
+            backendPropList << QPair<QString, QString> (hardDiskFormats [i].GetName(), f.join(" "));
+    }
+    return backendPropList;
 }
 
 // Public slots
