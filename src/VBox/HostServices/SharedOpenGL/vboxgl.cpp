@@ -120,7 +120,7 @@ if (   pCmd->enmOp != VBOX_OGL_OP_Vertex3f
         *pLastError = glGetError();
 
 #ifdef DEBUG
-    Log(("Flush: last return value=%VX64\n", *pLastRetVal));
+    Log(("Flush: last return value=%RX64\n", *pLastRetVal));
     switch(*pLastError)
     {
     case GL_NO_ERROR:

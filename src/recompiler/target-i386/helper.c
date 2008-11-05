@@ -1409,7 +1409,7 @@ void raise_interrupt(int intno, int is_int, int error_code,
                      int next_eip_addend)
 {
 #if defined(VBOX) && defined(DEBUG)
-    NOT_DMIK(Log2(("raise_interrupt: %x %x %x %VGv\n", intno, is_int, error_code, env->eip + next_eip_addend)));
+    NOT_DMIK(Log2(("raise_interrupt: %x %x %x %RGv\n", intno, is_int, error_code, env->eip + next_eip_addend)));
 #endif
     env->exception_index = intno;
     env->error_code = error_code;
@@ -1977,7 +1977,7 @@ void helper_lldt_T0(void)
     int index, entry_limit;
     target_ulong ptr;
 #ifdef VBOX
-    Log(("helper_lldt_T0: old ldtr=%RTsel {.base=%VGv, .limit=%VGv} new=%RTsel\n",
+    Log(("helper_lldt_T0: old ldtr=%RTsel {.base=%RGv, .limit=%RGv} new=%RTsel\n",
          (RTSEL)env->ldt.selector, (RTGCPTR)env->ldt.base, (RTGCPTR)env->ldt.limit, (RTSEL)(T0 & 0xffff)));
 #endif
 
@@ -2020,7 +2020,7 @@ void helper_lldt_T0(void)
     }
     env->ldt.selector = selector;
 #ifdef VBOX
-    Log(("helper_lldt_T0: new ldtr=%RTsel {.base=%VGv, .limit=%VGv}\n",
+    Log(("helper_lldt_T0: new ldtr=%RTsel {.base=%RGv, .limit=%RGv}\n",
          (RTSEL)env->ldt.selector, (RTGCPTR)env->ldt.base, (RTGCPTR)env->ldt.limit));
 #endif
 }
@@ -2034,7 +2034,7 @@ void helper_ltr_T0(void)
     target_ulong ptr;
 
 #ifdef VBOX
-    Log(("helper_ltr_T0: old tr=%RTsel {.base=%VGv, .limit=%VGv, .flags=%RX32} new=%RTsel\n",
+    Log(("helper_ltr_T0: old tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
          (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
          env->tr.flags, (RTSEL)(T0 & 0xffff)));
 #endif
@@ -2083,7 +2083,7 @@ void helper_ltr_T0(void)
     }
     env->tr.selector = selector;
 #ifdef VBOX
-    Log(("helper_ltr_T0: new tr=%RTsel {.base=%VGv, .limit=%VGv, .flags=%RX32} new=%RTsel\n",
+    Log(("helper_ltr_T0: new tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
          (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
          env->tr.flags, (RTSEL)(T0 & 0xffff)));
 #endif
@@ -4650,7 +4650,7 @@ int emulate_single_instr(CPUX86State *env1)
      */
     if (env->hflags & HF_INHIBIT_IRQ_MASK)
     {
-        Log(("REM: Emulating next instruction due to instruction fusing (HF_INHIBIT_IRQ_MASK) at %VGv\n", env->eip));
+        Log(("REM: Emulating next instruction due to instruction fusing (HF_INHIBIT_IRQ_MASK) at %RGv\n", env->eip));
         env->hflags &= ~HF_INHIBIT_IRQ_MASK;
         emulate_single_instr(env);
     }

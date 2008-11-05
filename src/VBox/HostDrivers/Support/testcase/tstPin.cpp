@@ -95,7 +95,7 @@ int main(int argc, char **argv)
                 for (unsigned j = 0; j < (0xf000 >> PAGE_SHIFT); j++)
                     if (aPinnings[i].aPages[j].Phys >= _4G)
                     {
-                        RTPrintf("%2d: vrt=%p phys=%VHp\n", j, (char *)aPinnings[i].pvAligned + (j << PAGE_SHIFT), aPinnings[i].aPages[j].Phys);
+                        RTPrintf("%2d: vrt=%p phys=%RHp\n", j, (char *)aPinnings[i].pvAligned + (j << PAGE_SHIFT), aPinnings[i].aPages[j].Phys);
                         c4GPluss++;
                     }
                 RTPrintf("i=%d: c4GPluss=%d\n", i, c4GPluss);

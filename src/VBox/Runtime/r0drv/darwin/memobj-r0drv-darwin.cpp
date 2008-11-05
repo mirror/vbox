@@ -694,7 +694,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         addr64_t Addr = pMemDesc->getPhysicalSegment64(iPage * PAGE_SIZE, NULL);
         AssertMsgReturn(Addr, ("iPage=%u\n", iPage), NIL_RTHCPHYS);
         PhysAddr = Addr;
-        AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%VHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
+        AssertMsgReturn(PhysAddr == Addr, ("PhysAddr=%RHp Addr=%RX64\n", PhysAddr, (uint64_t)Addr), NIL_RTHCPHYS);
     }
 
     return PhysAddr;

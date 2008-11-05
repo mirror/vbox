@@ -361,7 +361,7 @@ int cpu_exec(CPUState *env1)
                        trigger new exceptions, but we do not handle
                        double or triple faults yet. */
                     RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
-                    Log(("do_interrupt %d %d %VGv\n", env->exception_index, env->exception_is_int, env->exception_next_eip));
+                    Log(("do_interrupt %d %d %RGv\n", env->exception_index, env->exception_is_int, env->exception_next_eip));
                     do_interrupt(env->exception_index,
                                  env->exception_is_int,
                                  env->error_code,
@@ -387,7 +387,7 @@ int cpu_exec(CPUState *env1)
                             ASMAtomicOrS32(&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
                             env->exception_index = EXCP_SINGLE_INSTR;
                             if (emulate_single_instr(env) == -1)
-                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
+                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", env->eip));
 
                             /* When we receive an external interrupt during execution of this single
                                instruction, then we should stay here. We will leave when we're ready
@@ -496,7 +496,7 @@ int cpu_exec(CPUState *env1)
                 {
                     if(!(env->state & CPU_EMULATE_SINGLE_STEP))
                     {
-                        Log(("EMR0: %VGv ESP=%VGv IF=%d TF=%d CPL=%d\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
+                        Log(("EMR0: %RGv ESP=%RGv IF=%d TF=%d CPL=%d\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
                     }
                 }
                 else
@@ -506,18 +506,18 @@ int cpu_exec(CPUState *env1)
                     {
                         if(env->eflags & VM_MASK)
                         {
-                            Log(("EMV86: %04X:%VGv IF=%d TF=%d CPL=%d CR0=%RGr\n", env->segs[R_CS].selector, env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0]));
+                            Log(("EMV86: %04X:%RGv IF=%d TF=%d CPL=%d CR0=%RGr\n", env->segs[R_CS].selector, env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0]));
                         }
                         else
                         {
-                            Log(("EMR3: %VGv ESP=%VGv IF=%d TF=%d CPL=%d IOPL=%d CR0=%RGr\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), env->cr[0]));
+                            Log(("EMR3: %RGv ESP=%RGv IF=%d TF=%d CPL=%d IOPL=%d CR0=%RGr\n", env->eip, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), env->cr[0]));
                         }
                     }
                 }
                 else
                 {
                     /* Seriously slows down realmode booting. */
-                    LogFlow(("EMRM: %04X:%VGv SS:ESP=%04X:%VGv IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
+                    LogFlow(("EMRM: %04X:%RGv SS:ESP=%04X:%RGv IF=%d TF=%d CPL=%d PE=%d PG=%d\n", env->segs[R_CS].selector, env->eip, env->segs[R_SS].selector, ESP, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, env->cr[0] & X86_CR0_PE, env->cr[0] & X86_CR0_PG));
                 }
 #endif /* !DEBUG_bird */
                 if(env->state & CPU_EMULATE_SINGLE_STEP)
@@ -541,7 +541,7 @@ int cpu_exec(CPUState *env1)
                     TMCpuTickResume(env->pVM);
                     if(emulate_single_instr(env) == -1)
                     {
-                        Log(("emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
+                        Log(("emulate_single_instr failed for EIP=%RGv!!\n", env->eip));
                     }
                 }
                 else
@@ -801,7 +801,7 @@ int cpu_exec(CPUState *env1)
                             ASMAtomicOrS32(&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
                             env->exception_index = EXCP_SINGLE_INSTR;
                             if (emulate_single_instr(env) == -1)
-                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
+                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", env->eip));
 
                             /* When we receive an external interrupt during execution of this single
                                instruction, then we should stay here. We will leave when we're ready
@@ -1200,7 +1200,7 @@ int cpu_exec(CPUState *env1)
                 {
                     if(!(env->state & CPU_EMULATE_SINGLE_STEP))
                     {
-                        Log(("EMR0: %VGv IF=%d TF=%d CPL=%d\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
+                        Log(("EMR0: %RGv IF=%d TF=%d CPL=%d\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3));
                     }
                 }
                 else
@@ -1210,11 +1210,11 @@ int cpu_exec(CPUState *env1)
                     {
                         if(env->eflags & VM_MASK)
                         {
-                            Log(("EMV86: %VGv IF=%d TF=%d CPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, flags, env->cr[0]));
+                            Log(("EMV86: %RGv IF=%d TF=%d CPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, flags, env->cr[0]));
                         }
                         else
                         {
-                            Log(("EMR3: %VGv IF=%d TF=%d CPL=%d IOPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), flags, env->cr[0]));
+                            Log(("EMR3: %RGv IF=%d TF=%d CPL=%d IOPL=%d flags=%08X CR0=%RGr\n", env->eip, (env->eflags & IF_MASK) ? 1 : 0, (env->eflags & TF_MASK) ? 1 : 0, (env->hflags >> HF_CPL_SHIFT) & 3, ((env->eflags >> IOPL_SHIFT) & 3), flags, env->cr[0]));
                         }
                     }
                 }
@@ -1239,7 +1239,7 @@ int cpu_exec(CPUState *env1)
                     TMCpuTickResume(env->pVM);
                     if(emulate_single_instr(env) == -1)
                     {
-                        printf("emulate_single_instr failed for EIP=%VGv!!\n", env->eip);
+                        printf("emulate_single_instr failed for EIP=%RGv!!\n", env->eip);
                     }
                 }
                 else
@@ -1421,7 +1421,7 @@ static inline int handle_cpu_signal(unsigned long pc, unsigned long address,
     }
     if (ret == 1) {
 #if 0
-        printf("PF exception: EIP=0x%VGv CR2=0x%VGv error=0x%x\n",
+        printf("PF exception: EIP=0x%RGv CR2=0x%RGv error=0x%x\n",
                env->eip, env->cr[2], env->error_code);
 #endif
         /* we restore the process signal mask as the sigreturn should

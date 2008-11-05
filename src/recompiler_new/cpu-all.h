@@ -1191,7 +1191,7 @@ extern uint8_t *phys_ram_dirty;
 /* physical memory access */
 
 /* MMIO pages are identified by a combination of an IO device index and
-   3 flags.  The ROMD code stores the page ram offset in iotlb entry, 
+   3 flags.  The ROMD code stores the page ram offset in iotlb entry,
    so only a limited number of ids are avaiable.  */
 
 #define IO_MEM_SHIFT       3
@@ -1290,8 +1290,8 @@ DECLINLINE(int) cpu_physical_memory_is_dirty(ram_addr_t addr)
 {
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return 0;
     }
     return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
@@ -1310,8 +1310,8 @@ DECLINLINE(int) cpu_physical_memory_get_dirty(ram_addr_t addr,
 {
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return 0xff & dirty_flags; /** @todo I don't think this is the right thing to return, fix! */
     }
     return phys_ram_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
@@ -1328,8 +1328,8 @@ DECLINLINE(void) cpu_physical_memory_set_dirty(ram_addr_t addr)
 {
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return;
     }
     phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;

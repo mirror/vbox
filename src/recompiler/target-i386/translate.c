@@ -3352,7 +3352,7 @@ static bool is_invalid_lock_sequence(DisasContext *s, target_ulong pc_start, int
 
     /* illegal sequence. The s->pc is past the lock prefix and that
        is sufficient for the TB, I think. */
-    Log(("illegal lock sequence %VGv (b=%#x)\n", pc_start, b));
+    Log(("illegal lock sequence %RGv (b=%#x)\n", pc_start, b));
     return true;
 }
 #endif /* VBOX */
