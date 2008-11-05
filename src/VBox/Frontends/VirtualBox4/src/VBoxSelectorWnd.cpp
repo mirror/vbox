@@ -193,10 +193,6 @@ void VBoxVMDetailsView::retranslateUi()
     if (mRefreshAction && mRefreshButton)
     {
         mRefreshButton->setText (mRefreshAction->text());
-        /* If we set the combination of the text label and icon
-         * below, we lose the Alt+R shortcut functionality... */
-        mRefreshButton->setText (mRefreshAction->text());
-        mRefreshButton->setShortcut (mRefreshAction->shortcut());
         mRefreshButton->setIcon (mRefreshAction->icon());
         mRefreshButton->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
     }
@@ -416,7 +412,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     trayShowWindowAction = new QAction (this);
     trayShowWindowAction->setIcon (VBoxGlobal::iconSet (":/VirtualBox_16px.png"));
     trayShowWindowAction->setText (tr ("Sun xVM VirtualBox"));
-    
+
     trayExitAction = new QAction (this);
     trayExitAction->setMenuRole (QAction::QuitRole);
     trayExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
