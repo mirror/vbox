@@ -64,7 +64,7 @@ int main(int argc, char **argv)
             /* check that the pages are below 4GB and valid. */
             for (unsigned iPage = 0; iPage < RT_ELEMENTS(aPages0); iPage++)
             {
-                RTPrintf("%-4d: Phys=%VHp Reserved=%p\n", iPage, aPages0[iPage].Phys, aPages0[iPage].uReserved);
+                RTPrintf("%-4d: Phys=%RHp Reserved=%p\n", iPage, aPages0[iPage].Phys, aPages0[iPage].uReserved);
                 if (aPages0[iPage].uReserved != 0)
                 {
                     rcRet++;
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
                     ||  (aPages0[iPage].Phys & PAGE_OFFSET_MASK))
                 {
                     rcRet++;
-                    RTPrintf("tstLow: error: aPages0[%d].Phys=%VHp!\n", iPage, aPages0[iPage].Phys);
+                    RTPrintf("tstLow: error: aPages0[%d].Phys=%RHp!\n", iPage, aPages0[iPage].Phys);
                 }
             }
             if (!rcRet)
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
                 /* check that the pages are below 4GB and valid. */
                 for (unsigned iPage = 0; iPage < cPages; iPage++)
                 {
-                    RTPrintf("%-4d::%-4d: Phys=%VHp Reserved=%p\n", cPages, iPage, aPages1[iPage].Phys, aPages1[iPage].uReserved);
+                    RTPrintf("%-4d::%-4d: Phys=%RHp Reserved=%p\n", cPages, iPage, aPages1[iPage].Phys, aPages1[iPage].uReserved);
                     if (aPages1[iPage].uReserved != 0)
                     {
                         rcRet++;
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
                         ||  (aPages1[iPage].Phys & PAGE_OFFSET_MASK))
                     {
                         rcRet++;
-                        RTPrintf("tstLow: error: aPages1[%d].Phys=%VHp!\n", iPage, aPages1[iPage].Phys);
+                        RTPrintf("tstLow: error: aPages1[%d].Phys=%RHp!\n", iPage, aPages1[iPage].Phys);
                     }
                 }
                 if (!rcRet)

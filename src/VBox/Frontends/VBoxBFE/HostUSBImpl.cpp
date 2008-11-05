@@ -241,7 +241,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
     BOOL fRemote = FALSE;
     void *pvRemote = NULL;
 
-    LogFlowMember (("Console::AttachUSBDevice: Proxying USB device '%s' %Vuuid...\n", Address.c_str(), &Uuid));
+    LogFlowMember (("Console::AttachUSBDevice: Proxying USB device '%s' %Ruuid...\n", Address.c_str(), &Uuid));
     PVMREQ pReq;
     vrc = VMR3ReqCall (mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                        (PFNRT)pRhConfig->pfnCreateProxyDevice,
@@ -254,7 +254,7 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
         hostDevice->setCaptured();
     else
     {
-        Log (("Console::AttachUSBDevice: Failed to create proxy device for '%s' %Vuuid, vrc=%Rrc\n", Address.c_str(),
+        Log (("Console::AttachUSBDevice: Failed to create proxy device for '%s' %Ruuid, vrc=%Rrc\n", Address.c_str(),
         &Uuid, vrc));
         AssertRC (vrc);
     /* michael: I presume this is not needed. */
@@ -300,7 +300,7 @@ STDMETHODIMP HostUSB::DetachUSBDevice (HostUSBDevice *aDevice)
             Assert (pRhConfig);
 
             RTUUID Uuid = aDevice->id();
-            LogFlowMember (("Console::DetachUSBDevice: Detaching USB proxy device %Vuuid...\n", &Uuid));
+            LogFlowMember (("Console::DetachUSBDevice: Detaching USB proxy device %Ruuid...\n", &Uuid));
             PVMREQ pReq;
             vrc = VMR3ReqCall (mpVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)pRhConfig->pfnDestroyProxyDevice,
                                2, pRhConfig, &Uuid);

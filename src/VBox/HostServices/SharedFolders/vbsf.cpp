@@ -1523,10 +1523,10 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     if (rc != VINF_SUCCESS)
     {
         Log(("RTFileSetTimes failed with %Rrc\n", rc));
-        Log(("AccessTime       %VX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
-        Log(("ModificationTime %VX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
-        Log(("ChangeTime       %VX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
-        Log(("BirthTime        %VX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
+        Log(("AccessTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
+        Log(("ModificationTime %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
+        Log(("ChangeTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
+        Log(("BirthTime        %RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
         /* temporary hack */
         rc = VINF_SUCCESS;
     }
