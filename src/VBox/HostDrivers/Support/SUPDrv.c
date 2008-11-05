@@ -154,7 +154,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 
 #ifdef RT_WITH_W64_UNWIND_HACK
 DECLASM(int)    supdrvNtWrapVMMR0EntryEx(PFNRT pfnVMMR0EntryEx, PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession);
-DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned uOperation);
+DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned idCPU, unsigned uOperation);
 DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, void *pvUser1, void *pvUser2);
 DECLASM(void *) supdrvNtWrapQueryFactoryInterface(PFNRT pfnQueryFactoryInterface, struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid);
 DECLASM(int)    supdrvNtWrapModuleInit(PFNRT pfnModuleInit);
@@ -860,10 +860,11 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
  *
  * @returns VBox status code that should be passed down to ring-3 unchanged.
  * @param   uIOCtl      Function number.
+ * @param   idCPU       VMCPU id.
  * @param   pDevExt     Device extention.
  * @param   pSession    Session data.
  */
-int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, unsigned idCPU, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     /*
      * We check the two prereqs after doing this only to allow the compiler to optimize things better.
@@ -874,23 +875,23 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSES
         {
             case SUP_IOCTL_FAST_DO_RAW_RUN:
 #ifdef RT_WITH_W64_UNWIND_HACK
-                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, idCPU, SUP_VMMR0_DO_RAW_RUN);
 #else
-                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_RAW_RUN);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCPU, SUP_VMMR0_DO_RAW_RUN);
 #endif
                 break;
             case SUP_IOCTL_FAST_DO_HWACC_RUN:
 #ifdef RT_WITH_W64_UNWIND_HACK
-                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, idCPU, SUP_VMMR0_DO_HWACC_RUN);
 #else
-                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_HWACC_RUN);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCPU, SUP_VMMR0_DO_HWACC_RUN);
 #endif
                 break;
             case SUP_IOCTL_FAST_DO_NOP:
 #ifdef RT_WITH_W64_UNWIND_HACK
-                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, SUP_VMMR0_DO_NOP);
+                supdrvNtWrapVMMR0EntryFast((PFNRT)pDevExt->pfnVMMR0EntryFast, pSession->pVM, idCPU, SUP_VMMR0_DO_NOP);
 #else
-                pDevExt->pfnVMMR0EntryFast(pSession->pVM, SUP_VMMR0_DO_NOP);
+                pDevExt->pfnVMMR0EntryFast(pSession->pVM, idCPU, SUP_VMMR0_DO_NOP);
 #endif
                 break;
             default:

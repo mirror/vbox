@@ -440,8 +440,9 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg);
  * @returns VBox status code.
  * @param   pVMR0       The ring-0 VM handle.
  * @param   uOperation  The operation; only the SUP_VMMR0_DO_* ones are valid.
+ * @param   idCPU       VMCPU id.
  */
-SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation);
+SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCPU);
 
 /**
  * Calls the HC R0 VMM entry point, in a safer but slower manner than SUPCallVMMR0.

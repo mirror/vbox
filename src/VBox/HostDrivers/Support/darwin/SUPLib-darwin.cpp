@@ -270,7 +270,7 @@ int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cb
 }
 
 
-int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction)
+int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, unsigned idCpu)
 {
     int rc = ioctl(pThis->hDevice, uFunction, NULL);
     if (rc == -1)

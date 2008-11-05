@@ -192,11 +192,12 @@ ENDPROC   supdrvNtWrapVMMR0EntryEx
 
 
 ;;
-; @cproto DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned uOperation);
+; @cproto DECLASM(int)    supdrvNtWrapVMMR0EntryFast(PFNRT pfnVMMR0EntryFast, PVM pVM, unsigned idCPU, unsigned uOperation);
 ;
 ; @param    pfnVMMR0EntryFast   rcx
 ; @param    pVM                 rdx
-; @param    uOperation          r8
+; @param    idCPU               r8
+; @param    uOperation          r9
 ;
 BEGINPROC supdrvNtWrapVMMR0EntryFast
         NtWrapProlog supdrvNtWrapVMMR0EntryFast
@@ -205,6 +206,7 @@ BEGINPROC supdrvNtWrapVMMR0EntryFast
         mov     rax, rcx
         mov     rcx, rdx
         mov     rdx, r8
+        mov     r8, r9
         call    rax
 
         NtWrapDestroyMarker

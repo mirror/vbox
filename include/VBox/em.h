@@ -171,7 +171,7 @@ VMMR3DECL(void)     EMR3Reset(PVM pVM);
 VMMR3DECL(int)      EMR3Term(PVM pVM);
 VMMR3DECL(int)      EMR3TermCPU(PVM pVM);
 VMMR3DECL(DECLNORETURN(void)) EMR3FatalError(PVM pVM, int rc);
-VMMR3DECL(int)      EMR3ExecuteVM(PVM pVM);
+VMMR3DECL(int)      EMR3ExecuteVM(PVM pVM, RTCPUID idCpu);
 VMMR3DECL(int)      EMR3CheckRawForcedActions(PVM pVM);
 VMMR3DECL(int)      EMR3Interpret(PVM pVM);
 
