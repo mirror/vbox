@@ -630,11 +630,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* We convert it here every time as pci regions could be reconfigured. */
             rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
             AssertRC(rc);
-            LogRel(("HWACCM: Real Mode TSS guest physaddr  = %VGp\n", GCPhys));
+            LogRel(("HWACCM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
 
             rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
             AssertRC(rc);
-            LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %VGp\n", GCPhys));
+            LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
@@ -1065,7 +1065,7 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
         break;
 
     case VERR_VMX_INVALID_VMCS_PTR:
-        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current pointer %VGp vs %VGp\n", pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->hwaccm.s.vmx.pVMCSPhys));
+        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current pointer %RGp vs %RGp\n", pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->hwaccm.s.vmx.pVMCSPhys));
         LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current VMCS version %x\n", pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
         break;
 

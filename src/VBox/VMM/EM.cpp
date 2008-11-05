@@ -1590,7 +1590,7 @@ static int emR3RawGuestTrap(PVM pVM)
     uint64_t    fFlags = 0;
     RTGCPHYS    GCPhys = 0;
     int rc2 = PGMGstGetPage(pVM, uCR2, &fFlags, &GCPhys);
-    Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%VGp fFlags=%08llx %s %s %s%s rc2=%d\n",
+    Log(("emR3RawGuestTrap: cs:eip=%04x:%08x: trap=%02x err=%08x cr2=%08x cr0=%08x%s: Phys=%RGp fFlags=%08llx %s %s %s%s rc2=%d\n",
          pCtx->cs, pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0, (enmType == TRPM_SOFTWARE_INT) ? " software" : "",  GCPhys, fFlags,
          fFlags & X86_PTE_P  ? "P " : "NP", fFlags & X86_PTE_US ? "U"  : "S",
          fFlags & X86_PTE_RW ? "RW" : "R0", fFlags & X86_PTE_G  ? " G" : "", rc2));
@@ -2064,7 +2064,7 @@ int emR3RawPrivileged(PVM pVM)
                                 RTGCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtx->rip, &enmState);
 
                                 Assert(pCtx->eflags.Bits.u1IF == 0);
-                                Log(("Force recompiler switch due to cr0 (%VGp) update\n", pCtx->cr0));
+                                Log(("Force recompiler switch due to cr0 (%RGp) update\n", pCtx->cr0));
                                 if (enmState == PATMTRANS_OVERWRITTEN)
                                 {
                                     rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);

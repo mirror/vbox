@@ -1248,7 +1248,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp cbValue=%d\n", GCPhys, cbValue),
+                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue),
                     VERR_INTERNAL_ERROR);
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
@@ -1287,7 +1287,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
                     case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
                     case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 return VINF_SUCCESS;
@@ -1299,7 +1299,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
                     case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
                     case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 return VINF_SUCCESS;
@@ -1326,7 +1326,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
         case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
         case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
         case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
-        default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%VGp\n", cbValue, GCPhys)); break;
+        default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
     }
     Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
     return VINF_SUCCESS;
@@ -1350,7 +1350,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp cbValue=%d\n", GCPhys, cbValue),
+                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue),
                     VERR_INTERNAL_ERROR);
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
@@ -1741,14 +1741,14 @@ VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped
 {
     Assert(fPageFlags == (X86_PTE_RW | X86_PTE_P));
 
-    Log(("IOMMMIOModifyPage %VGp -> %VGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
+    Log(("IOMMMIOModifyPage %RGp -> %RGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
 
     /*
      * Lookup the current context range node and statistics.
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp\n", GCPhys),
+                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
                     VERR_INTERNAL_ERROR);
 
     GCPhys         &= ~(RTGCPHYS)0xfff;
@@ -1789,14 +1789,14 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 {
     uint32_t cb;
 
-    Log(("IOMMMIOResetRegion %VGp\n", GCPhys));
+    Log(("IOMMMIOResetRegion %RGp\n", GCPhys));
 
     /*
      * Lookup the current context range node and statistics.
      */
     PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
     AssertMsgReturn(pRange,
-                    ("Handlers and page tables are out of sync or something! GCPhys=%VGp\n", GCPhys),
+                    ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys),
                     VERR_INTERNAL_ERROR);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */

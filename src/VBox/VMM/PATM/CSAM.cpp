@@ -1471,7 +1471,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
             return VINF_SUCCESS;
         }
 
-        Log(("CSAMR3FlushPage: page %RRv has changed -> FLUSH (rc=%Rrc) (Phys: %VGp vs %VGp)\n", addr, rc, GCPhys, pPageRec->page.GCPhys));
+        Log(("CSAMR3FlushPage: page %RRv has changed -> FLUSH (rc=%Rrc) (Phys: %RGp vs %RGp)\n", addr, rc, GCPhys, pPageRec->page.GCPhys));
 
         STAM_COUNTER_ADD(&pVM->csam.s.StatNrFlushes, 1);
 
@@ -1669,7 +1669,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         break; /* to shut up GCC */
     }
 
-    Log(("csamCreatePageRecord %RRv GCPhys=%VGp\n", GCPtr, pPage->page.GCPhys));
+    Log(("csamCreatePageRecord %RRv GCPhys=%RGp\n", GCPtr, pPage->page.GCPhys));
 
 #ifdef VBOX_WITH_STATISTICS
     switch (enmTag)

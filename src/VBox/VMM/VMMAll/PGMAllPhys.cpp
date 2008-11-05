@@ -681,7 +681,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
             if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
                 if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
                 {
-                    AssertMsgFailed(("%VGp is entering permanent locked state!\n", GCPhys));
+                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
                 }
 
@@ -871,8 +871,8 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
 
     if ((GCPhys & PGM_DYNAMIC_CHUNK_BASE_MASK) != ((GCPhys+cbRange-1) & PGM_DYNAMIC_CHUNK_BASE_MASK))
     {
-        AssertMsgFailed(("%VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
-        LogRel(("PGMPhysGCPhys2HCPtr %VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
+        AssertMsgFailed(("%RGp - %RGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
+        LogRel(("PGMPhysGCPhys2HCPtr %RGp - %RGp crosses a chunk boundary!!\n", GCPhys, GCPhys+cbRange));
         return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
     }
 
@@ -890,7 +890,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
     RTGCPHYS off = GCPhys - pRam->GCPhys;
     if (RT_UNLIKELY(off + cbRange > pRam->cb))
     {
-        AssertMsgFailed(("%VGp - %VGp crosses a chunk boundary!!\n", GCPhys, GCPhys + cbRange));
+        AssertMsgFailed(("%RGp - %RGp crosses a chunk boundary!!\n", GCPhys, GCPhys + cbRange));
         return VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY;
     }
 
@@ -1150,7 +1150,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
     if (cbRead == 0)
         return;
 
-    LogFlow(("PGMPhysRead: %VGp %d\n", GCPhys, cbRead));
+    LogFlow(("PGMPhysRead: %RGp %d\n", GCPhys, cbRead));
 
 #ifdef IN_RING3
     if (!VM_IS_EMT(pVM))
@@ -1344,7 +1344,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif
 
                             /** @todo fix me later. */
-                            AssertReleaseMsgFailed(("Unknown read at %VGp size %u implement the complex physical reading case %RHp\n",
+                            AssertReleaseMsgFailed(("Unknown read at %RGp size %u implement the complex physical reading case %RHp\n",
                                                     GCPhys, cbRead,
                                                     pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_ROM))); /** @todo PAGE FLAGS */
                             cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
@@ -1360,7 +1360,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
         }
         else
         {
-            LogFlow(("PGMPhysRead: Unassigned %VGp size=%u\n", GCPhys, cbRead));
+            LogFlow(("PGMPhysRead: Unassigned %RGp size=%u\n", GCPhys, cbRead));
 
             /*
              * Unassigned address space.
@@ -1410,7 +1410,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
     if (cbWrite == 0)
         return;
 
-    LogFlow(("PGMPhysWrite: %VGp %d\n", GCPhys, cbWrite));
+    LogFlow(("PGMPhysWrite: %RGp %d\n", GCPhys, cbWrite));
 
 #ifdef IN_RING3
     if (!VM_IS_EMT(pVM))
@@ -1682,7 +1682,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif
 
                             /** @todo fix me later. */
-                            AssertReleaseMsgFailed(("Unknown write at %VGp size %u implement the complex physical writing case %RHp\n",
+                            AssertReleaseMsgFailed(("Unknown write at %RGp size %u implement the complex physical writing case %RHp\n",
                                                     GCPhys, cbWrite,
                                                     (pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2)))); /** @todo PAGE FLAGS */
                             /* skip the write */
