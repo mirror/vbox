@@ -212,13 +212,18 @@ buildserver-additions_CLEANS = $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARG
 
 $(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/additions.sh | $$(dir $$@)
 	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
-#	$(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
-	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
+ ifneq ($(KBUILD_HOST),win)
+	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+ else
+	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-additions-affinity-hack
+ endif
 	$(CP) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp $(PATH_TARGET)/VBoxGuestAdditions.iso
 	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
 
+ ifeq ($(KBUILD_HOST),win)
 buildserver-additions-affinity-hack:
 	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
+ endif
 endif
 
 
@@ -254,13 +259,18 @@ $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), + $(PATH_TARGET)/VirtualBox_$(f).chm +
 
 $(PATH_TARGET)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
 	$(RM) -f $(PATH_TARGET)/VBoxDocumentation.zip $(PATH_TARGET)/VBoxDocumentation.zip.tmp
-#	$(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
-	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-documentation-affinity-hack
+ ifneq ($(KBUILD_HOST),win)
+	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+ else
+	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-documentation-affinity-hack
+ endif
 	$(CP) -f $(PATH_TARGET)/VBoxDocumentation.zip.tmp $(PATH_TARGET)/VBoxDocumentation.zip
 	$(RM) -f $(PATH_TARGET)/VBoxDocumentation.zip.tmp
 
+ ifeq ($(KBUILD_HOST),win)
 buildserver-documentation-affinity-hack:
 	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+ endif
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
