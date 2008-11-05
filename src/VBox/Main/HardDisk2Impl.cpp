@@ -630,7 +630,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
             AssertFailed();
     }
 
-    LogFlowThisFunc (("m.location='%ls', mm.format=%ls, m.id={%Ruuid}\n",
+    LogFlowThisFunc (("m.location='%ls', mm.format=%ls, m.id={%RTuuid}\n",
                       m.location.raw(), mm.format.raw(), m.id.raw()));
     LogFlowThisFunc (("m.locationFull='%ls'\n", m.locationFull.raw()));
 
@@ -1827,7 +1827,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
             {
                 return setError (E_FAIL,
                     tr ("Hard disk '%ls' is attached to a virtual machine "
-                        "with UUID {%Ruuid}. No differencing hard disks "
+                        "with UUID {%RTuuid}. No differencing hard disks "
                         "based on it may be created until it is detached"),
                     m.location.raw(), it->machineId.raw());
             }
@@ -2196,7 +2196,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
             id.create();
 
             /// @todo NEWMEDIA use the default extension for the given VD backend
-            location = Utf8StrFmt ("%s{%Ruuid}.vdi", location.raw(), id.raw());
+            location = Utf8StrFmt ("%s{%RTuuid}.vdi", location.raw(), id.raw());
         }
         else
         {
@@ -2368,8 +2368,8 @@ HRESULT HardDisk2::queryInfo()
                 if (m.id != uuid)
                 {
                     lastAccessError = Utf8StrFmt (
-                        tr ("UUID {%Ruuid} of the hard disk '%ls' "
-                            "does not match the value {%Ruuid} stored in the "
+                        tr ("UUID {%RTuuid} of the hard disk '%ls' "
+                            "does not match the value {%RTuuid} stored in the "
                             "media registry ('%ls')"),
                         &uuid, m.locationFull.raw(), m.id.raw(),
                         mVirtualBox->settingsFileName().raw());
@@ -2404,7 +2404,7 @@ HRESULT HardDisk2::queryInfo()
                     if (FAILED (rc))
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("Parent hard disk with UUID {%Ruuid} of the "
+                            tr ("Parent hard disk with UUID {%RTuuid} of the "
                                 "hard disk '%ls' is not found in the media "
                                 "registry ('%ls')"),
                             &uuid, m.locationFull.raw(),
@@ -2440,8 +2440,8 @@ HRESULT HardDisk2::queryInfo()
                         mParent->id() != uuid)
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("Parent UUID {%Ruuid} of the hard disk '%ls' "
-                                "does not match UUID {%Ruuid} of its parent "
+                            tr ("Parent UUID {%RTuuid} of the hard disk '%ls' "
+                                "does not match UUID {%RTuuid} of its parent "
                                 "hard disk stored in the media registry ('%ls')"),
                             &uuid, m.locationFull.raw(),
                             mParent->id().raw(),

@@ -2069,7 +2069,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         Guid id;
         id.create();
         SVCHlpClient client;
-        vrc = client.create (Utf8StrFmt ("VirtualBox\\SVCHelper\\{%Ruuid}",
+        vrc = client.create (Utf8StrFmt ("VirtualBox\\SVCHelper\\{%RTuuid}",
                                          id.raw()));
         if (RT_FAILURE (vrc))
         {
@@ -2241,18 +2241,18 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         switch (what)
         {
             case DataChanged:
-                LogFlow (("OnMachineDataChange: id={%Ruuid}\n", id.ptr()));
+                LogFlow (("OnMachineDataChange: id={%RTuuid}\n", id.ptr()));
                 aCallback->OnMachineDataChange (id);
                 break;
 
             case StateChanged:
-                LogFlow (("OnMachineStateChange: id={%Ruuid}, state=%d\n",
+                LogFlow (("OnMachineStateChange: id={%RTuuid}, state=%d\n",
                           id.ptr(), state));
                 aCallback->OnMachineStateChange (id, state);
                 break;
 
             case Registered:
-                LogFlow (("OnMachineRegistered: id={%Ruuid}, registered=%d\n",
+                LogFlow (("OnMachineRegistered: id={%RTuuid}, registered=%d\n",
                           id.ptr(), registered));
                 aCallback->OnMachineRegistered (id, registered);
                 break;
@@ -2332,7 +2332,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
 
     void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
     {
-        LogFlow (("OnExtraDataChange: machineId={%Ruuid}, key='%ls', val='%ls'\n",
+        LogFlow (("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
                   machineId.ptr(), key.raw(), val.raw()));
         aCallback->OnExtraDataChange (machineId, key, val);
     }
@@ -2366,7 +2366,7 @@ struct SessionEvent : public VirtualBox::CallbackEvent
 
     void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
     {
-        LogFlow (("OnSessionStateChange: machineId={%Ruuid}, sessionState=%d\n",
+        LogFlow (("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
                   machineId.ptr(), sessionState));
         aCallback->OnSessionStateChange (machineId, sessionState);
     }
@@ -2400,19 +2400,19 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
         switch (what)
         {
             case Taken:
-                LogFlow (("OnSnapshotTaken: machineId={%Ruuid}, snapshotId={%Ruuid}\n",
+                LogFlow (("OnSnapshotTaken: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
                 aCallback->OnSnapshotTaken (machineId, snapshotId);
                 break;
 
             case Discarded:
-                LogFlow (("OnSnapshotDiscarded: machineId={%Ruuid}, snapshotId={%Ruuid}\n",
+                LogFlow (("OnSnapshotDiscarded: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
                 aCallback->OnSnapshotDiscarded (machineId, snapshotId);
                 break;
 
             case Changed:
-                LogFlow (("OnSnapshotChange: machineId={%Ruuid}, snapshotId={%Ruuid}\n",
+                LogFlow (("OnSnapshotChange: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
                 aCallback->OnSnapshotChange (machineId, snapshotId);
                 break;
@@ -2460,7 +2460,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 
     void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
     {
-        LogFlow (("OnGuestPropertyChange: machineId={%Ruuid}, name='%ls', value='%ls', flags='%ls'\n",
+        LogFlow (("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
                   machineId.ptr(), name.raw(), value.raw(), flags.raw()));
         aCallback->OnGuestPropertyChange (machineId, name, value, flags);
     }
@@ -2587,7 +2587,7 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
     if (aSetError && !found)
     {
         setError (E_INVALIDARG,
-            tr ("Could not find a registered machine with UUID {%Ruuid}"),
+            tr ("Could not find a registered machine with UUID {%RTuuid}"),
             aId.raw());
     }
 
@@ -2658,7 +2658,7 @@ findHardDisk2 (const Guid *aId, const BSTR aLocation,
     if (aSetError && result != 0)
     {
         if (aId)
-            setError (rc, tr ("Could not find a hard disk with UUID {%Ruuid} "
+            setError (rc, tr ("Could not find a hard disk with UUID {%RTuuid} "
                               "in the media registry ('%ls')"),
                       aId->raw(), mData.mCfgFile.mName.raw());
         else
@@ -2729,7 +2729,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
     if (aSetError && !found)
     {
         if (aId)
-            setError (rc, tr ("Could not find a CD/DVD image with UUID {%Ruuid} "
+            setError (rc, tr ("Could not find a CD/DVD image with UUID {%RTuuid} "
                               "in the media registry ('%ls')"),
                       aId->raw(), mData.mCfgFile.mName.raw());
         else
@@ -2801,7 +2801,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
     if (aSetError && !found)
     {
         if (aId)
-            setError (rc, tr ("Could not find a floppy image with UUID {%Ruuid} "
+            setError (rc, tr ("Could not find a floppy image with UUID {%RTuuid} "
                               "in the media registry ('%ls')"),
                       aId->raw(), mData.mCfgFile.mName.raw());
         else
@@ -2907,7 +2907,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (hardDisk);
             aConflict = Utf8StrFmt (
-                tr ("hard disk '%ls' with UUID {%Ruuid}"),
+                tr ("hard disk '%ls' with UUID {%RTuuid}"),
                 hardDisk->locationFull().raw(), hardDisk->id().raw());
             return S_OK;
         }
@@ -2921,7 +2921,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
             aConflict = Utf8StrFmt (
-                tr ("CD/DVD image '%ls' with UUID {%Ruuid}"),
+                tr ("CD/DVD image '%ls' with UUID {%RTuuid}"),
                 image->locationFull().raw(), image->id().raw());
             return S_OK;
         }
@@ -2935,7 +2935,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
             aConflict = Utf8StrFmt (
-                tr ("floppy image '%ls' with UUID {%Ruuid}"),
+                tr ("floppy image '%ls' with UUID {%RTuuid}"),
                 image->locationFull().raw(), image->id().raw());
             return S_OK;
         }
@@ -3242,7 +3242,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
             AssertComRC (machCaller.rc());
 
             return setError (E_INVALIDARG,
-                tr ("Registered machine with UUID {%Ruuid} ('%ls') already exists"),
+                tr ("Registered machine with UUID {%RTuuid} ('%ls') already exists"),
                 aMachine->id().raw(), m->settingsFileFull().raw());
         }
 
@@ -3305,7 +3305,7 @@ HRESULT VirtualBox::registerHardDisk2 (HardDisk2 *aHardDisk,
     if (!conflict.isNull())
     {
         return setError (E_INVALIDARG,
-            tr ("Cannot register the hard disk '%ls' with UUID {%Ruuid} "
+            tr ("Cannot register the hard disk '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aHardDisk->locationFull().raw(), aHardDisk->id().raw(),
             conflict.raw(), mData.mCfgFile.mName.raw());
@@ -3420,7 +3420,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage2 *aImage,
     if (!conflict.isNull())
     {
         return setError (E_INVALIDARG,
-            tr ("Cannot register the CD/DVD image '%ls' with UUID {%Ruuid} "
+            tr ("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aImage->locationFull().raw(), aImage->id().raw(),
             conflict.raw(), mData.mCfgFile.mName.raw());
@@ -3521,7 +3521,7 @@ HRESULT VirtualBox::registerFloppyImage (FloppyImage2 *aImage,
     if (!conflict.isNull())
     {
         return setError (E_INVALIDARG,
-            tr ("Cannot register the floppy image '%ls' with UUID {%Ruuid} "
+            tr ("Cannot register the floppy image '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aImage->locationFull().raw(), aImage->id().raw(),
             conflict.raw(), mData.mCfgFile.mName.raw());
