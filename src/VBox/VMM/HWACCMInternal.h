@@ -132,7 +132,7 @@ __BEGIN_DECLS
  */
 #define HWACCM_SSM_VERSION                  3
 
-/* Per-cpu information. */
+/* Per-cpu information. (host) */
 typedef struct
 {
     RTCPUID             idCpu;
@@ -228,13 +228,6 @@ typedef struct HWACCM
         /** Set if VPID is supported. */
         bool                        fVPID;
 
-        /** R0 memory object for the VM control structure (VMCS). */
-        RTR0MEMOBJ                  pMemObjVMCS;
-        /** Physical address of the VM control structure (VMCS). */
-        RTHCPHYS                    pVMCSPhys;
-        /** Virtual address of the VM control structure (VMCS). */
-        R0PTRTYPE(void *)           pVMCS;
-
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
 
@@ -277,7 +270,6 @@ typedef struct HWACCM
         R0PTRTYPE(uint8_t *)        pMSRExitLoad;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
         DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM));
 
 #if HC_ARCH_BITS == 32
@@ -286,17 +278,6 @@ typedef struct HWACCM
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
-
-        /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
-        uint64_t                    proc_ctls;
-
-        /** Current CR0 mask. */
-        uint64_t                    cr0_mask;
-        /** Current CR4 mask. */
-        uint64_t                    cr4_mask;
-
-        /** Current EPTP. */
-        RTHCPHYS                    GCPhysEPTP;
 
         /** VMX MSR values */
         struct
@@ -355,13 +336,6 @@ typedef struct HWACCM
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
 
-        /** R0 memory object for the VM control block (VMCB). */
-        RTR0MEMOBJ                  pMemObjVMCB;
-        /** Physical address of the VM control block (VMCB). */
-        RTHCPHYS                    pVMCBPhys;
-        /** Virtual address of the VM control block (VMCB). */
-        R0PTRTYPE(void *)           pVMCB;
-
         /** R0 memory object for the host VM control block (VMCB). */
         RTR0MEMOBJ                  pMemObjVMCBHost;
         /** Physical address of the host VM control block (VMCB). */
@@ -382,9 +356,6 @@ typedef struct HWACCM
         RTHCPHYS                    pMSRBitmapPhys;
         /** Virtual address of the MSR bitmap. */
         R0PTRTYPE(void *)           pMSRBitmap;
-
-        /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx));
 
         /** SVM revision. */
         uint32_t                    u32Rev;
@@ -500,6 +471,45 @@ typedef struct HWACCMCPU
     /** Offset to the VM structure.
      * See HWACCMCPU2VM(). */
     RTUINT                      offVMCPU;
+
+    struct
+    {
+        /** R0 memory object for the VM control structure (VMCS). */
+        RTR0MEMOBJ                  pMemObjVMCS;
+        /** Physical address of the VM control structure (VMCS). */
+        RTHCPHYS                    pVMCSPhys;
+        /** Virtual address of the VM control structure (VMCS). */
+        R0PTRTYPE(void *)           pVMCS;
+
+        /** Ring 0 handlers for VT-x. */
+        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
+
+        /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
+        uint64_t                    proc_ctls;
+
+        /** Current CR0 mask. */
+        uint64_t                    cr0_mask;
+        /** Current CR4 mask. */
+        uint64_t                    cr4_mask;
+
+        /** Current EPTP. */
+        RTHCPHYS                    GCPhysEPTP;
+    } vmx;
+
+    struct
+    {
+        /** R0 memory object for the VM control block (VMCB). */
+        RTR0MEMOBJ                  pMemObjVMCB;
+        /** Physical address of the VM control block (VMCB). */
+        RTHCPHYS                    pVMCBPhys;
+        /** Virtual address of the VM control block (VMCB). */
+        R0PTRTYPE(void *)           pVMCB;
+
+        /** Ring 0 handlers for VT-x. */
+        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx));
+
+    } svm;
+
 } HWACCMCPU;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCMCPU *PHWACCMCPU;
@@ -518,16 +528,16 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC  Desc, RTSEL Sel, const char *
 #endif
 
 /* Dummy callback handlers. */
-VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu);
-VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu);
+VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
 VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
 VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, RTCPUID idVCpu);
-VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 #endif /* IN_RING0 */
 

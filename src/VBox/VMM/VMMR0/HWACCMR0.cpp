@@ -64,11 +64,11 @@ static struct
     HWACCM_CPUINFO aCpuInfo[RTCPUSET_MAX_CPUS];
 
     /** Ring 0 handlers for VT-x and AMD-V. */
-    DECLR0CALLBACKMEMBER(int, pfnEnterSession,(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu));
-    DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx));
-    DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM, RTCPUID idVCpu));
-    DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx));
-    DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(int, pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu));
+    DECLR0CALLBACKMEMBER(int, pfnLeaveSession,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(int, pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
+    DECLR0CALLBACKMEMBER(int, pfnLoadGuestState,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
+    DECLR0CALLBACKMEMBER(int, pfnRunGuestCode,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int, pfnEnableCpu, (PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys));
     DECLR0CALLBACKMEMBER(int, pfnDisableCpu, (PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys));
     DECLR0CALLBACKMEMBER(int, pfnInitVM, (PVM pVM));
@@ -864,9 +864,9 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VMCPUD id.
+ * @param   pVCpu      VMCPUD id.
  */
-VMMR0DECL(int) HWACCMR0Enter(PVM pVM, RTCPUID idVCpu)
+VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
 {
     PCPUMCTX        pCtx;
     int             rc;
@@ -894,12 +894,12 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, RTCPUID idVCpu)
     else
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
-    rc  = HWACCMR0Globals.pfnEnterSession(pVM, idVCpu, pCpu);
+    rc  = HWACCMR0Globals.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertRC(rc);
     /* We must save the host context here (VT-x) as we might be rescheduled on a different cpu after a long jump back to ring 3. */
-    rc |= HWACCMR0Globals.pfnSaveHostState(pVM, idVCpu);
+    rc |= HWACCMR0Globals.pfnSaveHostState(pVM, pVCpu);
     AssertRC(rc);
-    rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, idVCpu, pCtx);
+    rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
 
 #ifdef VBOX_STRICT
@@ -919,9 +919,9 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, RTCPUID idVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VMCPUD id.
+ * @param   pVCpu      VMCPUD id.
  */
-VMMR0DECL(int) HWACCMR0Leave(PVM pVM, RTCPUID idVCpu)
+VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 {
     PCPUMCTX        pCtx;
     int             rc;
@@ -945,7 +945,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, RTCPUID idVCpu)
         pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
 
-    rc = HWACCMR0Globals.pfnLeaveSession(pVM, idVCpu, pCtx);
+    rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);
 
 #ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
@@ -962,12 +962,11 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, RTCPUID idVCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VMCPUD id.
+ * @param   pVCpu      VMCPUD id.
  */
-VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, uintptr_t idVCpu)
+VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
     CPUMCTX *pCtx;
-    int      rc;
     RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
 #ifdef VBOX_STRICT
     PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
@@ -980,7 +979,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, uintptr_t idVCpu)
 
     pCtx = CPUMQueryGuestCtxPtr(pVM);
 
-    return HWACCMR0Globals.pfnRunGuestCode(pVM, idVCpu, pCtx);
+    return HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
 }
 
 /**
@@ -1279,12 +1278,12 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PCPUMCTX pCtx)
 #endif /* VBOX_STRICT */
 
 /* Dummy callback handlers. */
-VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
 {
     return VINF_SUCCESS;
 }
 
-VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
+VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
 }
@@ -1314,17 +1313,17 @@ VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
     return VINF_SUCCESS;
 }
 
-VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
+VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
 }
 
-VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, RTCPUID idVCpu)
+VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu)
 {
     return VINF_SUCCESS;
 }
 
-VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx)
+VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     return VINF_SUCCESS;
 }
