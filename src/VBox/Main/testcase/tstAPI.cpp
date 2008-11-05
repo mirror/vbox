@@ -776,7 +776,7 @@ int main(int argc, char *argv[])
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                COMGETTER(Id) (description.asOutParam()));
 
-            unsigned int caps;
+            ULONG caps;
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                COMGETTER(Capabilities) (&caps));
 
