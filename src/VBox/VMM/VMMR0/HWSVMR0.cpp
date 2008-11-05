@@ -526,6 +526,8 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, RTCPUID idVCpu)
 /**
  * Loads the guest state
  *
+ * NOTE: Don't do anything here that can cause a jump back to ring 3!!!!!
+ *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   idVCpu      VPCPU id.
