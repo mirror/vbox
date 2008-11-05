@@ -293,7 +293,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
             ||  pGuestTSS->ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
         {
             Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%VGv -> %RTsel:%VGv\n",
-                 (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, (RTSEL)pGuestTSS->ss0, pGuestTSS->esp0));
+                 (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)pGuestTSS->ss0, (RTGCPTR)pGuestTSS->esp0));
             pVM->selm.s.Tss.esp1 = pGuestTSS->esp0;
             pVM->selm.s.Tss.ss1 = pGuestTSS->ss0 | 1;
             STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
@@ -318,12 +318,12 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                         rc = PGMPrefetchPage(pVM, (RTGCPTR)(RTRCUINTPTR)((uint8_t *)pGuestTSS + offIntRedirBitmap + i*8));
                         if (RT_FAILURE(rc))
                         {
-                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Rrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i*8, rc));
+                            AssertMsg(rc == VINF_SUCCESS, ("PGMPrefetchPage %VGv failed with %Rrc\n", (RTGCPTR)((uintptr_t)pGuestTSS + offIntRedirBitmap + i*8), rc));
                             break;
                         }
                         rc = MMGCRamRead(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8], (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, 8);
                     }
-                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Rrc\n", (uint8_t *)pGuestTSS + offIntRedirBitmap + i * 8, rc));
+                    AssertMsg(rc == VINF_SUCCESS, ("MMGCRamRead %VGv failed with %Rrc\n", (RTGCPTR)((uintptr_t)pGuestTSS + offIntRedirBitmap + i * 8), rc));
                 }
                 STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
             }

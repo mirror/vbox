@@ -81,7 +81,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     /** When patch code is executing instructions that must complete, then we must *never* interrupt it. */
     if (!pPATMGCState->fPIF && fPatchCode)
     {
-        Log(("CSAMGCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %VGv!\n", pRegFrame->eip));
+        Log(("CSAMGCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %08RX32!\n", pRegFrame->eip));
         /** @note there are cases when pages previously used for code are now used for stack; patch generated code will fault (pushf))
          *  Just make the page r/w and continue.
          */

@@ -195,7 +195,7 @@ int vmmR3SwitcherInit(PVM pVM)
         }
 
         /* shit */
-        AssertMsgFailed(("PGMR3Map(,%VRv, %VGp, %#x, 0) failed with rc=%Rrc\n", pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
+        AssertMsgFailed(("PGMR3Map(,%RRv, %RHp, %#x, 0) failed with rc=%Rrc\n", pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, cbCoreCode, rc));
         SUPContFree(pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.cbCoreCode >> PAGE_SHIFT);
     }
     else
@@ -710,23 +710,29 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                     "   pu8CodeR3   = %p\n"
                     "   GCPtrCode   = %VGv\n"
                     "   u32IDCode   = %08x\n"
-                    "   pVMGC       = %VGv\n"
-                    "   pCPUMGC     = %VGv\n"
-                    "   pVMHC       = %p\n"
-                    "   pCPUMHC     = %p\n"
+                    "   pVMRC       = %RRv\n"
+                    "   pCPUMRC     = %RRv\n"
+                    "   pVMR3       = %p\n"
+                    "   pCPUMR3     = %p\n"
                     "   GCPtrGDT    = %VGv\n"
-                    "   InterCR3s   = %08x, %08x, %08x (32-Bit, PAE, AMD64)\n"
-                    "   HyperCR3s   = %08x, %08x, %08x (32-Bit, PAE, AMD64)\n"
+                    "   InterCR3s   = %08RHp, %08RHp, %08RHp (32-Bit, PAE, AMD64)\n"
+                    "   HyperCR3s   = %08RHp, %08RHp, %08RHp (32-Bit, PAE, AMD64)\n"
                     "   SelCS       = %04x\n"
                     "   SelDS       = %04x\n"
                     "   SelCS64     = %04x\n"
                     "   SelTSS      = %04x\n",
                     pSwitcher->enmType, pSwitcher->pszDesc, pSwitcher->cbCode,
-                    R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode, VM_GUEST_ADDR(pVM, pVM),
-                    VM_GUEST_ADDR(pVM, &pVM->cpum), pVM, &pVM->cpum,
+                    R0PtrCode,
+                    pu8CodeR3,
+                    GCPtrCode,
+                    u32IDCode,
+                    VM_RC_ADDR(pVM, pVM),
+                    VM_RC_ADDR(pVM, &pVM->cpum),
+                    pVM,
+                    &pVM->cpum,
                     GCPtrGDT,
-                    PGMGetHyper32BitCR3(pVM), PGMGetHyperPaeCR3(pVM), PGMGetHyperAmd64CR3(pVM),
                     PGMGetInter32BitCR3(pVM), PGMGetInterPaeCR3(pVM), PGMGetInterAmd64CR3(pVM),
+                    PGMGetHyper32BitCR3(pVM), PGMGetHyperPaeCR3(pVM), PGMGetHyperAmd64CR3(pVM),
                     SelCS, SelDS, SelCS64, SelTSS);
 
         uint32_t offCode = 0;

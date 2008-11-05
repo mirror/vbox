@@ -600,7 +600,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                       RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VRv pfnOutCallback=%VGv pfnInCallback=%VRv pfnOutStrCallback=%VRv  pfnInStrCallback=%VRv pszDesc=%s\n",
+    LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv  pfnInStrCallback=%RRv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
 
     /*
@@ -1328,7 +1328,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (pVM->iom.s.pRangeLastWriteR0)
     {
         PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastWriteR0);
-        pHlp->pfnPrintf(pHlp, "R0 Write Ports: %#04x-%#04x %VGv %s\n",
+        pHlp->pfnPrintf(pHlp, "R0 Write Ports: %#04x-%#04x %p %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastWriteR0)

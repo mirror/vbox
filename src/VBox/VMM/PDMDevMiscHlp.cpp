@@ -95,7 +95,7 @@ static DECLCALLBACK(PCPDMPICHLPRC) pdmR3PicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
     int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCPicHlp", &pRCHelpers);
     AssertReleaseRC(rc);
     AssertRelease(pRCHelpers);
-    LogFlow(("pdmR3PicHlp_GetRCHelpers: caller='%s'/%d: returns %VGv\n",
+    LogFlow(("pdmR3PicHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pRCHelpers));
     return pRCHelpers;
 }
@@ -226,7 +226,7 @@ static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns
     int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCApicHlp", &pRCHelpers);
     AssertReleaseRC(rc);
     AssertRelease(pRCHelpers);
-    LogFlow(("pdmR3ApicHlp_GetRCHelpers: caller='%s'/%d: returns %VGv\n",
+    LogFlow(("pdmR3ApicHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pRCHelpers));
     return pRCHelpers;
 }
@@ -313,7 +313,7 @@ static DECLCALLBACK(PCPDMIOAPICHLPRC) pdmR3IoApicHlp_GetRCHelpers(PPDMDEVINS pDe
     int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCIoApicHlp", &pRCHelpers);
     AssertReleaseRC(rc);
     AssertRelease(pRCHelpers);
-    LogFlow(("pdmR3IoApicHlp_GetRCHelpers: caller='%s'/%d: returns %VGv\n",
+    LogFlow(("pdmR3IoApicHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pRCHelpers));
     return pRCHelpers;
 }

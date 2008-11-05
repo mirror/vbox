@@ -2613,7 +2613,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
                 pHlp->pfnPrintf(pHlp,
                                 "%04X - %VGp P=%d U=%d RW=%d [G=%d]\n",
                                 iPD,
-                                PdeSrc.u & X86_PDE_PG_MASK,
+                                (RTGCPHYS)(PdeSrc.u & X86_PDE_PG_MASK),
                                 PdeSrc.n.u1Present, PdeSrc.n.u1User, PdeSrc.n.u1Write, PdeSrc.b.u1Global && fPGE);
         }
     }

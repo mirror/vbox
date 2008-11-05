@@ -359,7 +359,7 @@ typedef struct PGMHVUSTATE
  */
 VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%VGv eip=%VGv\n", uErr, pvFault, pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%VGv eip=%VGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
     STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 
@@ -1926,7 +1926,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
         void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
         *ppv = pv;
         STAM_COUNTER_INC(&pVM->pgm.s.StatRCDynMapCacheHits);
-        //Log(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%VGv iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
+        //Log(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d iCache=%d\n", HCPhys, pv, iPage, iCache));
         return VINF_SUCCESS;
     }
     Assert(RT_ELEMENTS(pVM->pgm.s.aHCPhysDynPageMapCache) == 4);
@@ -1946,7 +1946,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     void *pv = pVM->pgm.s.pbDynPageMapBaseGC + (iPage << PAGE_SHIFT);
     *ppv = pv;
     ASMInvalidatePage(pv);
-    Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%VGv iPage=%d\n", HCPhys, pv, iPage));
+    Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d\n", HCPhys, pv, iPage));
     return VINF_SUCCESS;
 
 #else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */

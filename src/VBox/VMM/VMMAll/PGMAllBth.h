@@ -657,7 +657,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #    endif /* CSAM_DETECT_NEW_CODE_PAGES */
                            )
                         {
-                            LogFlow(("CSAMExecFault %VGv\n", pRegFrame->eip));
+                            LogFlow(("CSAMExecFault %RX32\n", pRegFrame->eip));
                             rc = CSAMExecFault(pVM, (RTRCPTR)pRegFrame->eip);
                             if (rc != VINF_SUCCESS)
                             {
@@ -1019,7 +1019,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         ||  pShwPdpt->GCPhys != GCPhysPdpt)
     {
         LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %VGv GCPhys=%VGp vs %VGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
-                    GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+                 GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
         pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
@@ -1443,7 +1443,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
                 }
                 else
                 {
-                    LogFlow(("SyncPageWorker: monitored page (%VGp) -> mark not present\n", HCPhys));
+                    LogFlow(("SyncPageWorker: monitored page (%VHp) -> mark not present\n", HCPhys));
                     PteDst.u = 0;
                 }
                 /** @todo count these two kinds. */
@@ -1560,7 +1560,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVM pVM, PSHWPTE pPteDst, GSTPDE P
  */
 PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uErr)
 {
-    LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%d uErr=%#x\n", GCPtrPage, cPages, uErr));
+    LogFlow(("SyncPage: GCPtrPage=%VGv cPages=%u uErr=%#x\n", GCPtrPage, cPages, uErr));
 
 #if    (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
         || PGM_GST_TYPE == PGM_TYPE_PAE    \
@@ -2530,7 +2530,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCUINTPTR G
                               PteSrc.n.u1User & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : "", pPTDst->a[iPTDst].u, iPTSrc, PdeSrc.au32[0],
-                              (PdeSrc.u & GST_PDE_PG_MASK) + iPTSrc*sizeof(PteSrc)));
+                              (RTGCPHYS)((PdeSrc.u & GST_PDE_PG_MASK) + iPTSrc*sizeof(PteSrc)) ));
                     }
                 } /* for PTEs */
             }
@@ -3205,7 +3205,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             ||  GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
             /* Free it. */
-            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+            LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%RX64 %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                      (uint64_t)iPml4e << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
             pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
             pPml4eDst->u = 0;
@@ -3290,7 +3290,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 ||  GCPhysPdeSrc != pShwPde->GCPhys)
             {
                 /* Free it. */
-                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%VGv %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
+                LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%RX64 %VGp vs %VGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
                         ((uint64_t)iPml4e << X86_PML4_SHIFT) + ((uint64_t)iPdpte << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
 
                 /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
@@ -3868,7 +3868,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                     PPGMPOOLPAGE pPoolPage = pgmPoolGetPageByHCPhys(pVM, HCPhysShw);
                     if (!pPoolPage)
                     {
-                        AssertMsgFailed(("Invalid page table address %VGp at %VGv! PdeDst=%#RX64\n",
+                        AssertMsgFailed(("Invalid page table address %VHp at %VGv! PdeDst=%#RX64\n",
                                         HCPhysShw, GCPtr, (uint64_t)PdeDst.u));
                         cErrors++;
                         continue;
@@ -4078,7 +4078,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                                 {
                                     if (PteDst.n.u1Write)
                                     {
-                                        AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PteSrc=%#RX64 PteDst=%#RX64\n",
+                                        AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%RHp PteSrc=%#RX64 PteDst=%#RX64\n",
                                                         GCPtr + off, pPhysPage->HCPhys, (uint64_t)PteSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;
@@ -4308,7 +4308,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                                     {
                                         if (PteDst.n.u1Write)
                                         {
-                                            AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                            AssertMsgFailed(("WRITE access flagged at %VGv but the page is writable! HCPhys=%RHp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                             GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                             cErrors++;
                                             continue;
@@ -4320,7 +4320,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                                 {
                                     if (PteDst.n.u1Present)
                                     {
-                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%VGv PdeSrc=%#RX64 PteDst=%#RX64\n",
+                                        AssertMsgFailed(("ALL access flagged at %VGv but the page is present! HCPhys=%RHp PdeSrc=%#RX64 PteDst=%#RX64\n",
                                                         GCPtr + off, pPhysPage->HCPhys, (uint64_t)PdeSrc.u, (uint64_t)PteDst.u));
                                         cErrors++;
                                         continue;

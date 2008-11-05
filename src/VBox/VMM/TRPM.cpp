@@ -660,7 +660,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         if (pVM->trpm.s.aGuestTrapHandler[iTrap] != TRPM_INVALID_HANDLER)
         {
-            Log(("TRPMR3Relocate: iGate=%2X Handler %VGv -> %VGv\n", iTrap, pVM->trpm.s.aGuestTrapHandler[iTrap], pVM->trpm.s.aGuestTrapHandler[iTrap] + offDelta));
+            Log(("TRPMR3Relocate: iGate=%2X Handler %RRv -> %RRv\n", iTrap, pVM->trpm.s.aGuestTrapHandler[iTrap], pVM->trpm.s.aGuestTrapHandler[iTrap] + offDelta));
             pVM->trpm.s.aGuestTrapHandler[iTrap] += offDelta;
         }
 

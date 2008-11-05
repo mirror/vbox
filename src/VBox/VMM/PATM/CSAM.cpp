@@ -1669,7 +1669,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         break; /* to shut up GCC */
     }
 
-    Log(("csamCreatePageRecord %VRv HCPhys=%VGp\n", GCPtr, pPage->page.GCPhys));
+    Log(("csamCreatePageRecord %VRv GCPhys=%VGp\n", GCPtr, pPage->page.GCPhys));
 
 #ifdef VBOX_WITH_STATISTICS
     switch (enmTag)
@@ -1940,7 +1940,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
     int rc;
 
     Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("CSAMCodePageWriteHandler: write to %VGv size=%d\n", GCPtr, cbBuf));
+    Log(("CSAMCodePageWriteHandler: write to %VGv size=%zu\n", GCPtr, cbBuf));
 
     if (VM_IS_EMT(pVM))
     {

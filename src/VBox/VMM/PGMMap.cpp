@@ -1069,8 +1069,8 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
                     &&  (fRawR0 || pPD->a[iPDE + iPT].n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
-                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s (32 bits)\n"
-                        "                          iPDE=%#x iPT=%#x PDE=%VGp.\n",
+                    Log(("PGMR3HasMappingConflicts: Conflict was detected at %08RX32 for mapping %s (32 bits)\n"
+                         "                          iPDE=%#x iPT=%#x PDE=%VGp.\n",
                         (iPT + iPDE) << X86_PD_SHIFT, pCur->pszDesc,
                         iPDE, iPT, pPD->a[iPDE + iPT].au32[0]));
                     return true;
@@ -1095,7 +1095,7 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.StatR3DetectedConflicts);
                     Log(("PGMR3HasMappingConflicts: Conflict was detected at %VGv for mapping %s (PAE)\n"
-                        "                          PDE=%VGp.\n",
+                         "                          PDE=%016RX64.\n",
                         GCPtr, pCur->pszDesc, Pde.u));
                     return true;
                 }

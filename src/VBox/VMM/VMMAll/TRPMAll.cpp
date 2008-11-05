@@ -207,7 +207,7 @@ VMMDECL(int)  TRPMAssertTrap(PVM pVM, uint8_t u8TrapNo, TRPMEVENT enmType)
  */
 VMMDECL(void)  TRPMSetErrorCode(PVM pVM, RTGCUINT uErrorCode)
 {
-    Log2(("TRPMSetErrorCode: uErrorCode=%VGv\n", uErrorCode));
+    Log2(("TRPMSetErrorCode: uErrorCode=%VGv\n", uErrorCode)); /** @todo RTGCUINT mess! */
     AssertMsg(pVM->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
     pVM->trpm.s.uActiveErrorCode = uErrorCode;
 #ifdef VBOX_STRICT
@@ -367,7 +367,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
 
     STAM_PROFILE_ADV_START(&pVM->trpm.s.CTX_SUFF_Z(StatForwardProf), a);
 
-#ifdef DEBUG
+# if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     if (pRegFrame->eflags.Bits.u1VM)
         Log(("TRPMForwardTrap-VM: eip=%04X:%04X iGate=%d\n", pRegFrame->cs, pRegFrame->eip, iGate));
     else
@@ -379,15 +379,13 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         {
             int rc;
             RTGCPTR pCallerGC;
-#ifdef IN_GC
+#  ifdef IN_GC
             rc = MMGCRamRead(pVM, &pCallerGC, (void *)pRegFrame->esp, sizeof(pCallerGC));
-#else
+#  else
             rc = PGMPhysSimpleReadGCPtr(pVM, &pCallerGC, (RTGCPTR)pRegFrame->esp, sizeof(pCallerGC));
-#endif
+#  endif
             if (RT_SUCCESS(rc))
-            {
                 Log(("TRPMForwardTrap: caller=%VGv\n", pCallerGC));
-            }
         }
         /* no break */
     case 8:
@@ -403,7 +401,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
         Assert(enmError == TRPM_TRAP_NO_ERRORCODE);
         break;
     }
-#endif /* DEBUG */
+# endif /* VBOX_STRICT || LOG_ENABLED */
 
     /* Retrieve the eflags including the virtualized bits. */
     /* Note: hackish as the cpumctxcore structure doesn't contain the right value */

@@ -1017,8 +1017,8 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatRZMMIOHandler, a);
-    Log(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv eip=%VGv\n",
-          GCPhysFault, (uint32_t)uErrorCode, pvFault, pCtxCore->rip));
+    Log(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%VGv rip=%RGv\n",
+         GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);
@@ -1739,7 +1739,7 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
  */
 VMMDECL(int) IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
-    Assert(fPageFlags == (X86_PTE_RW|X86_PTE_P));
+    Assert(fPageFlags == (X86_PTE_RW | X86_PTE_P));
 
     Log(("IOMMMIOModifyPage %VGp -> %VGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
 

@@ -887,7 +887,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 }
                 else
                 {
-                    AssertReleaseMsgFailed(("Couldn't read GDT at %VGv, rc=%Rrc!\n", GDTR.pGdt, rc));
+                    AssertReleaseMsgFailed(("Couldn't read GDT at %016RX64, rc=%Rrc!\n", GDTR.pGdt, rc));
                     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
                     return VERR_NOT_IMPLEMENTED;
                 }
@@ -1050,7 +1050,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
         if (    GDTR.pGdt != pVM->selm.s.GuestGdtr.pGdt
             ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
         {
-            Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%VGv cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
+            Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
 
             /*
              * [Re]Register write virtual handler for guest's GDT.
@@ -1179,7 +1179,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
             if (    GCPtrLdt != pVM->selm.s.GCPtrGuestLdt
                 ||  cbLdt != pVM->selm.s.cbLdtLimit)
             {
-                Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %VGv:%04x to %VGv:%04x. (GDTR=%VGv:%04x)\n",
+                Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %VGv:%04x to %VGv:%04x. (GDTR=%016RX64:%04x)\n",
                      pVM->selm.s.GCPtrGuestLdt, pVM->selm.s.cbLdtLimit, GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
 
                 /*
@@ -1201,7 +1201,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM)
                 {
                     /** @todo investigate the various cases where conflicts happen and try avoid them by enh. the instruction emulation. */
                     pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-                    Log(("WARNING: Guest LDT (%VGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%VGv:%04x)\n",
+                    Log(("WARNING: Guest LDT (%VGv:%04x) conflicted with existing access range!! Assumes LDT is begin updated. (GDTR=%016RX64:%04x)\n",
                          GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
                 }
                 else if (RT_SUCCESS(rc))
@@ -1782,13 +1782,13 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 
         if (!pVM->selm.s.fSyncTSSRing0Stack)
         {
-            RTGCPTR     pGuestTSS = pVM->selm.s.GCPtrGuestTss;
+            RTGCPTR     GCPtrGuestTSS = pVM->selm.s.GCPtrGuestTss;
             uint32_t    ESPR0;
-            int rc = PGMPhysSimpleReadGCPtr(pVM, &ESPR0, pGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
+            int rc = PGMPhysSimpleReadGCPtr(pVM, &ESPR0, GCPtrGuestTSS + RT_OFFSETOF(VBOXTSS, esp0), sizeof(ESPR0));
             if (RT_SUCCESS(rc))
             {
                 RTSEL SelSS0;
-                rc = PGMPhysSimpleReadGCPtr(pVM, &SelSS0, pGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
+                rc = PGMPhysSimpleReadGCPtr(pVM, &SelSS0, GCPtrGuestTSS + RT_OFFSETOF(VBOXTSS, ss0), sizeof(SelSS0));
                 if (RT_SUCCESS(rc))
                 {
                     if (    ESPR0 == pVM->selm.s.Tss.esp1
@@ -1798,10 +1798,10 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                     RTGCPHYS GCPhys;
                     uint64_t fFlags;
 
-                    rc = PGMGstGetPage(pVM, pGuestTSS, &fFlags, &GCPhys);
+                    rc = PGMGstGetPage(pVM, GCPtrGuestTSS, &fFlags, &GCPhys);
                     AssertRC(rc);
                     AssertMsgFailed(("TSS out of sync!! (%04X:%08X vs %04X:%08X (guest)) Tss=%VGv Phys=%VGp\n",
-                                     (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, pGuestTSS, GCPhys));
+                                     (pVM->selm.s.Tss.ss1 & ~1), pVM->selm.s.Tss.esp1, SelSS0, ESPR0, GCPtrGuestTSS, GCPhys));
                 }
                 else
                     AssertRC(rc);
@@ -2269,7 +2269,7 @@ VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMs
  */
 static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    pHlp->pfnPrintf(pHlp, "Shadow GDT (GCAddr=%VGv):\n", MMHyperHC2GC(pVM, pVM->selm.s.paGdtR3));
+    pHlp->pfnPrintf(pHlp, "Shadow GDT (GCAddr=%RRv):\n", MMHyperR3ToRC(pVM, pVM->selm.s.paGdtR3));
     for (unsigned iGDT = 0; iGDT < SELM_GDT_ELEMENTS; iGDT++)
     {
         if (pVM->selm.s.paGdtR3[iGDT].Gen.u1Present)
@@ -2304,14 +2304,14 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 {
     VBOXGDTR    GDTR;
     CPUMGetGuestGDTR(pVM, &GDTR);
-    RTGCPTR     pGDTGC = GDTR.pGdt;
+    RTGCPTR     GCPtrGDT = GDTR.pGdt;
     unsigned    cGDTs = ((unsigned)GDTR.cbGdt + 1) / sizeof(X86DESC);
 
-    pHlp->pfnPrintf(pHlp, "Guest GDT (GCAddr=%VGv limit=%x):\n", pGDTGC, GDTR.cbGdt);
-    for (unsigned iGDT = 0; iGDT < cGDTs; iGDT++, pGDTGC += sizeof(X86DESC))
+    pHlp->pfnPrintf(pHlp, "Guest GDT (GCAddr=%VGv limit=%x):\n", GCPtrGDT, GDTR.cbGdt);
+    for (unsigned iGDT = 0; iGDT < cGDTs; iGDT++, GCPtrGDT += sizeof(X86DESC))
     {
         X86DESC GDTE;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTE, pGDTGC, sizeof(GDTE));
+        int rc = PGMPhysSimpleReadGCPtr(pVM, &GDTE, GCPtrGDT, sizeof(GDTE));
         if (RT_SUCCESS(rc))
         {
             if (GDTE.Gen.u1Present)
@@ -2323,11 +2323,11 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         }
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
-            if ((pGDTGC & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
-                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", iGDT << X86_SEL_SHIFT, pGDTGC);
+            if ((GCPtrGDT & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", iGDT << X86_SEL_SHIFT, GCPtrGDT);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", iGDT << X86_SEL_SHIFT, rc, pGDTGC);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", iGDT << X86_SEL_SHIFT, rc, GCPtrGDT);
     }
 }
 
@@ -2343,7 +2343,7 @@ static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 {
     unsigned    cLDTs = ((unsigned)pVM->selm.s.cbLdtLimit + 1) >> X86_SEL_SHIFT;
     PX86DESC    paLDT = (PX86DESC)((char *)pVM->selm.s.pvLdtR3 + pVM->selm.s.offLdtHyper);
-    pHlp->pfnPrintf(pHlp, "Shadow LDT (GCAddr=%VGv limit=%d):\n", pVM->selm.s.pvLdtRC + pVM->selm.s.offLdtHyper, pVM->selm.s.cbLdtLimit);
+    pHlp->pfnPrintf(pHlp, "Shadow LDT (GCAddr=%RRv limit=%#x):\n", pVM->selm.s.pvLdtRC + pVM->selm.s.offLdtHyper, pVM->selm.s.cbLdtLimit);
     for (unsigned iLDT = 0; iLDT < cLDTs; iLDT++)
     {
         if (paLDT[iLDT].Gen.u1Present)
@@ -2372,21 +2372,21 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         return;
     }
 
-    RTGCPTR     pLdtGC;
+    RTGCPTR     GCPtrLdt;
     unsigned    cbLdt;
-    int rc = SELMGetLDTFromSel(pVM, SelLdt, &pLdtGC, &cbLdt);
+    int rc = SELMGetLDTFromSel(pVM, SelLdt, &GCPtrLdt, &cbLdt);
     if (RT_FAILURE(rc))
     {
         pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x): rc=%Rrc\n", SelLdt, rc);
         return;
     }
 
-    pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x GCAddr=%VGv limit=%x):\n", SelLdt, pLdtGC, cbLdt);
+    pHlp->pfnPrintf(pHlp, "Guest LDT (Sel=%x GCAddr=%VGv limit=%x):\n", SelLdt, GCPtrLdt, cbLdt);
     unsigned    cLdts  = (cbLdt + 1) >> X86_SEL_SHIFT;
-    for (unsigned iLdt = 0; iLdt < cLdts; iLdt++, pLdtGC += sizeof(X86DESC))
+    for (unsigned iLdt = 0; iLdt < cLdts; iLdt++, GCPtrLdt += sizeof(X86DESC))
     {
         X86DESC LdtE;
-        int rc = PGMPhysSimpleReadGCPtr(pVM, &LdtE, pLdtGC, sizeof(LdtE));
+        int rc = PGMPhysSimpleReadGCPtr(pVM, &LdtE, GCPtrLdt, sizeof(LdtE));
         if (RT_SUCCESS(rc))
         {
             if (LdtE.Gen.u1Present)
@@ -2398,11 +2398,11 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         }
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
-            if ((pLdtGC & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
-                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, pLdtGC);
+            if ((GCPtrLdt & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
+                pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%VGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, GCPtrLdt);
         }
         else
-            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, pLdtGC);
+            pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%VGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, GCPtrLdt);
     }
 }
 

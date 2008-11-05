@@ -1344,7 +1344,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif
 
                             /** @todo fix me later. */
-                            AssertReleaseMsgFailed(("Unknown read at %VGp size %d implement the complex physical reading case %x\n",
+                            AssertReleaseMsgFailed(("Unknown read at %VGp size %u implement the complex physical reading case %RHp\n",
                                                     GCPhys, cbRead,
                                                     pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_ROM))); /** @todo PAGE FLAGS */
                             cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
@@ -1360,7 +1360,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
         }
         else
         {
-            LogFlow(("PGMPhysRead: Unassigned %VGp size=%d\n", GCPhys, cbRead));
+            LogFlow(("PGMPhysRead: Unassigned %VGp size=%u\n", GCPhys, cbRead));
 
             /*
              * Unassigned address space.
@@ -1682,7 +1682,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif
 
                             /** @todo fix me later. */
-                            AssertReleaseMsgFailed(("Unknown write at %VGp size %d implement the complex physical writing case %x\n",
+                            AssertReleaseMsgFailed(("Unknown write at %VGp size %u implement the complex physical writing case %RHp\n",
                                                     GCPhys, cbWrite,
                                                     (pPage->HCPhys & (MM_RAM_FLAGS_RESERVED | MM_RAM_FLAGS_MMIO | MM_RAM_FLAGS_MMIO2)))); /** @todo PAGE FLAGS */
                             /* skip the write */
@@ -2113,7 +2113,7 @@ VMMDECL(int) PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysReadGCPtr: %VGv %d\n", GCPtrSrc, cb));
+    LogFlow(("PGMPhysReadGCPtr: %VGv %zu\n", GCPtrSrc, cb));
 
     /*
      * Optimize reads within a single page.
@@ -2185,7 +2185,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     if (!cb)
         return VINF_SUCCESS;
 
-    LogFlow(("PGMPhysWriteGCPtr: %VGv %d\n", GCPtrDst, cb));
+    LogFlow(("PGMPhysWriteGCPtr: %VGv %zu\n", GCPtrDst, cb));
 
     /*
      * Optimize writes within a single page.
