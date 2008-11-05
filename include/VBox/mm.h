@@ -237,7 +237,7 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 #endif
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 VMMDECL(void *)     MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
 #else
 DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
@@ -267,7 +267,7 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 }
 #endif
 
-#ifndef IN_GC
+#ifndef IN_RC
 VMMDECL(RTRCPTR)    MMHyperCCToRC(PVM pVM, void *pv);
 #else
 DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
@@ -298,10 +298,10 @@ VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvP
 
 /** @def MMHYPER_RC_ASSERT_RCPTR
  * Asserts that an address is either NULL or inside the hypervisor memory area.
- * This assertion only works while IN_GC, it's a NOP everywhere else.
+ * This assertion only works while IN_RC, it's a NOP everywhere else.
  * @thread  The Emulation Thread.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   Assert(MMHyperIsInsideArea((pVM), (RTRCUINTPTR)(RCPtr)) || !(RCPtr))
 #else
 # define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   do { } while (0)
@@ -404,7 +404,7 @@ VMMR3DECL(void)     MMR3HeapFree(void *pv);
 
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_mm_gc    The MM Guest Context API
  * @ingroup grp_mm
  * @{
@@ -418,7 +418,7 @@ VMMRCDECL(int)      MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
 VMMRCDECL(int)      MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
 
 /** @} */
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 /** @} */
 __END_DECLS

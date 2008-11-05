@@ -492,7 +492,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  */
 int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
 {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
      * Just some sketchy GC/R0-darwin code.
      */
@@ -558,7 +558,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
 }
 
 
-#if !defined(IN_GC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /**
  * Load a guest page into the ring-3 physical TLB.
  *
@@ -614,7 +614,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
     pTlbe->pPage = pPage;
     return VINF_SUCCESS;
 }
-#endif /* !IN_GC && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+#endif /* !IN_RC && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 
 /**
@@ -645,7 +645,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-# if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /** @todo this needs to be fixed, it really ain't right. */
     /* Until a physical TLB is implemented for GC or/and R0-darwin, let PGMDynMapGCPageEx handle it. */
     return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
@@ -700,7 +700,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     /*
      * Temporary fallback code.
      */
-# if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /** @todo @bugref{3202}: check up this path. */
     return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
 # else
@@ -820,7 +820,7 @@ VMMDECL(int) PGMPhysGCPtr2CCPtrReadOnly(PVM pVM, RTGCPTR GCPtr, void const **ppv
 VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /* currently nothing to do here. */
 /* --- postponed
 #elif defined(IN_RING0)
@@ -897,7 +897,7 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES this is a rare occurence */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES this is a rare occurence */
         PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(pVM, pRam->paChunkR3Ptrs);
         *pHCPtr = (RTHCPTR)(paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
@@ -1223,7 +1223,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                         void *pvSrc = NULL;
                         PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
 #else
@@ -1271,7 +1271,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                         void *pvSrc = NULL;
                         PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
 #else
@@ -1300,7 +1300,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         //case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* = shadow */ - //MMIO2 isn't in the mask.
                         case MM_RAM_FLAGS_MMIO2: // MMIO2 isn't in the mask.
                         {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                             void *pvSrc = NULL;
                             PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
 #else
@@ -1524,7 +1524,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                             void *pvDst = NULL;
                             PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
 #else
@@ -1568,7 +1568,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                             void *pvDst = NULL;
                             PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
 #else
@@ -1612,7 +1612,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
 #endif /* IN_RING3 */
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                         void *pvDst = NULL;
                         PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
 #else
@@ -1640,7 +1640,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         case MM_RAM_FLAGS_MMIO2:
                         case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* shadow rom */
                         {
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
                             void *pvDst = NULL;
                             PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
 #else
@@ -1721,7 +1721,7 @@ end:
     return;
 }
 
-#ifndef IN_GC /* Ring 0 & 3 only. (Just not needed in GC.) */
+#ifndef IN_RC /* Ring 0 & 3 only. (Just not needed in GC.) */
 
 /**
  * Read from guest physical memory by GC physical address, bypassing
@@ -2233,7 +2233,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     }
 }
 
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 /**
  * Performs a read of guest virtual memory for instruction emulation.

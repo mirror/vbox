@@ -26,7 +26,7 @@
 #define LOG_GROUP LOG_GROUP_PDM_QUEUE
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
-#ifndef IN_GC
+#ifndef IN_RC
 # include <VBox/rem.h>
 # include <VBox/mm.h>
 #endif
@@ -113,7 +113,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay)
 {
     PDMQueueInsert(pQueue, pItem);
-#ifdef IN_GC
+#ifdef IN_RC
     PVM pVM = pQueue->CTX_SUFF(pVM);
     /** @todo figure out where to put this, the next bit should go there too.
     if (NanoMaxDelay)
@@ -141,7 +141,7 @@ VMMDECL(RCPTRTYPE(PPDMQUEUE)) PDMQueueRCPtr(PPDMQUEUE pQueue)
 {
     Assert(VALID_PTR(pQueue));
     Assert(pQueue->pVMR3 && pQueue->pVMRC);
-#ifdef IN_GC
+#ifdef IN_RC
     return pQueue;
 #else
     return MMHyperCCToRC(pQueue->CTX_SUFF(pVM), pQueue);
@@ -179,7 +179,7 @@ VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
     Assert(pQueue->pVMR3);
     PVM pVM = pQueue->CTX_SUFF(pVM);
 
-#ifdef IN_GC
+#ifdef IN_RC
     Assert(pQueue->pVMRC);
     pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
     VMMGCCallHost(pVM, VMMCALLHOST_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);

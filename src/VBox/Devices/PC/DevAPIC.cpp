@@ -184,7 +184,7 @@
 #define APIC_MAX_PATCH_ATTEMPTS         100
 
 typedef uint32_t PhysApicId;
-typedef uint32_t LogApicId; 
+typedef uint32_t LogApicId;
 #endif
 
 typedef struct APICState {
@@ -193,7 +193,7 @@ typedef struct APICState {
 #endif /* !VBOX */
     uint32_t apicbase;
 #ifdef VBOX
-    /* Task priority register (interrupt level) */ 
+    /* Task priority register (interrupt level) */
     uint32_t   tpr;
     /* Logical APIC id */
     LogApicId  id;
@@ -323,7 +323,7 @@ static void apic_deliver(APICDeviceInfo* dev, APICState *s,
                          uint8_t dest, uint8_t dest_mode,
                          uint8_t delivery_mode, uint8_t vector_num,
                          uint8_t polarity, uint8_t trigger_mode);
-static void apic_timer_update(APICDeviceInfo* dev, APICState *s, 
+static void apic_timer_update(APICDeviceInfo* dev, APICState *s,
                               int64_t current_time);
 static int apic_get_arb_pri(APICState *s);
 static int apic_get_ppr(APICState *s);
@@ -537,12 +537,12 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val)
     /** @todo If this change is valid immediately, then we should change the MMIO registration! */
     /* We cannot change if this CPU is BSP or not by writing to MSR - it's hardwired */
     PDMAPICVERSION oldMode = getApicMode(s);
-    s->apicbase = 
+    s->apicbase =
             (val & 0xfffff000) | /* base */
-            (val & getApicEnableBits(dev)) | /* mode */ 
+            (val & getApicEnableBits(dev)) | /* mode */
             (s->apicbase & MSR_IA32_APICBASE_BSP) /* keep BSP bit */;
     PDMAPICVERSION newMode = getApicMode(s);
-    
+
     if (oldMode != newMode)
     {
         switch (newMode)
@@ -659,7 +659,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns)
 PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    
+
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
         return VERR_EM_INTERPRETER;
 
@@ -668,7 +668,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
 
     APICState* apic = getLapicById(dev, idCpu);
 
-    switch (index) 
+    switch (index)
     {
         case 0x02:
             apic->id = (u64Value >> 24);
@@ -739,7 +739,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
             int vector = u64Value & 0xff;
             apic_bus_deliver(dev,
                              1 << getLapicById(dev, idCpu)->id /* Self */,
-                             0 /* Delivery mode - fixed */, 
+                             0 /* Delivery mode - fixed */,
                              vector,
                              0 /* Polarity - conform to the bus */,
                              0 /* Trigger mode - edge */);
@@ -765,7 +765,7 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
     APICState* apic = getLapicById(dev, idCpu);
     uint64_t val = 0;
 
-    switch (index) 
+    switch (index)
     {
         case 0x02: /* id */
             val = apic->id << 24;
@@ -1589,7 +1589,7 @@ static int apic_load(QEMUFile *f, void *opaque, int version_id)
 #ifdef VBOX
     if ((version_id < 1) || (version_id > 2))
         return -EINVAL;
-    
+
      /* XXX: what if the base changes? (registered memory regions) */
     qemu_get_be32s(f, &s->apicbase);
 
@@ -2017,7 +2017,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             if (    index == 0x08 /* TPR */
                 &&  ++s->ulTPRPatchAttempts < APIC_MAX_PATCH_ATTEMPTS)
             {
-#ifdef IN_GC
+#ifdef IN_RC
                 pDevIns->pDevHlpGC->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, &s->tpr);
 #else
                 RTGCPTR pDevInsGC = PDMINS2DATA_GCPTR(pDevIns);

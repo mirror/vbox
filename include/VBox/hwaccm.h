@@ -68,7 +68,7 @@ __BEGIN_DECLS
 VMMDECL(int)    HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt);
 VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 
-#ifndef IN_GC
+#ifndef IN_RC
 VMMDECL(int)     HWACCMFlushTLB(PVM pVM);
 VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);

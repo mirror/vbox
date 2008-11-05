@@ -4841,13 +4841,13 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
             cTransAvailable = cTransfer;
         cbTransfer = cTransAvailable * cb;
 
-#ifdef IN_GC
+#ifdef IN_RC
         for (uint32_t i = 0; i < cbTransfer; i += cb)
             MMGCRamWriteNoTrapHandler((char *)GCDst + i, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart + i, cb);
-#else /* !IN_GC */
+#else /* !IN_RC */
         rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVM(pDevIns), GCDst, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
         Assert(rc == VINF_SUCCESS);
-#endif /* IN_GC */
+#endif /* IN_RC */
 
         if (cbTransfer)
             Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
@@ -4898,13 +4898,13 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             cTransAvailable = cTransfer;
         cbTransfer = cTransAvailable * cb;
 
-#ifdef IN_GC
+#ifdef IN_RC
         for (uint32_t i = 0; i < cbTransfer; i += cb)
             MMGCRamReadNoTrapHandler(s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart + i, (char *)GCSrc + i, cb);
-#else /* !IN_GC */
+#else /* !IN_RC */
         rc = PGMPhysSimpleReadGCPtr(PDMDevHlpGetVM(pDevIns), s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
         Assert(rc == VINF_SUCCESS);
-#endif /* IN_GC */
+#endif /* IN_RC */
 
         if (cbTransfer)
             Log3(("%s: addr=%#x val=%.*Vhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));

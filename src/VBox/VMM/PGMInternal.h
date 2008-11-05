@@ -225,7 +225,7 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
      PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
 #else
@@ -245,7 +245,7 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
      PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
@@ -265,7 +265,7 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
      PGMDynMapGCPageOff(pVM, GCPhys, (void **)(ppv))
 #else
@@ -278,7 +278,7 @@
  *
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define PGM_INVL_PG(GCVirt)            ASMInvalidatePage((void *)(GCVirt))
 #elif defined(IN_RING0)
 # define PGM_INVL_PG(GCVirt)            HWACCMInvalidatePage(pVM, (RTGCPTR)(GCVirt))
@@ -291,7 +291,7 @@
  *
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define PGM_INVL_BIG_PG(GCVirt)        ASMReloadCR3()
 #elif defined(IN_RING0)
 # define PGM_INVL_BIG_PG(GCVirt)        HWACCMFlushTLB(pVM)
@@ -302,7 +302,7 @@
 /** @def PGM_INVL_GUEST_TLBS()
  * Invalidates all guest TLBs.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define PGM_INVL_GUEST_TLBS()          ASMReloadCR3()
 #elif defined(IN_RING0)
 # define PGM_INVL_GUEST_TLBS()          HWACCMFlushTLB(pVM)
@@ -1260,7 +1260,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  * Pointer to a page mapper unit for current context. */
 /** @typedef PPPGMPAGEMAP
  * Pointer to a page mapper unit pointer for current context. */
-#ifdef IN_GC
+#ifdef IN_RC
 // typedef PPGMPAGEGCMAPTLB               PPGMPAGEMAPTLB;
 // typedef PPGMPAGEGCMAPTLBE              PPGMPAGEMAPTLBE;
 // typedef PPGMPAGEGCMAPTLBE             *PPPGMPAGEMAPTLBE;
@@ -1693,7 +1693,7 @@ typedef struct PGMPOOL
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)    pgmPoolMapPage((pVM), (pPage))
 #else
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)    ((pPage)->pvPageR3)
@@ -1722,7 +1722,7 @@ typedef PGMTREES *PPGMTREES;
 
 /** @name Paging mode macros
  * @{ */
-#ifdef IN_GC
+#ifdef IN_RC
 # define PGM_CTX(a,b)                   a##RC##b
 # define PGM_CTX_STR(a,b)               a "GC" b
 # define PGM_CTX_DECL(type)             VMMRCDECL(type)
@@ -2680,7 +2680,7 @@ void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
 
 #endif /* IN_RING3 */
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 void           *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
@@ -3016,7 +3016,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
 }
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Queries the Physical TLB entry for a physical guest page,
  * attemting to load the TLB entry if necessary.
@@ -3043,9 +3043,9 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
     *ppTlbe = pTlbe;
     return rc;
 }
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
-#if !defined(IN_GC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
 # ifndef VBOX_WITH_NEW_PHYS_CODE
 /**
@@ -3132,7 +3132,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 
-#endif /* !IN_GC && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
+#endif /* !IN_RC && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
 
 /**
  * Convert GC Phys to HC Virt and HC Phys.
@@ -3163,7 +3163,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
     {
         unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-#if defined(IN_GC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES only MapCR3 usage. */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES only MapCR3 usage. */
         PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(PGM2VM(pPGM), pRam->paChunkR3Ptrs);
         *pHCPtr = (RTHCPTR)(paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
@@ -3407,7 +3407,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
     return NULL;
 }
 
-#ifndef IN_GC
+#ifndef IN_RC
 
 /**
  * Gets the page directory pointer entry for the specified address.
@@ -3663,7 +3663,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
     return 0ULL;
 }
 
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 
 /**
  * Checks if any of the specified page flags are set for the given page.

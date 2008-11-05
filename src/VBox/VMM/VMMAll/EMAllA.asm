@@ -313,7 +313,7 @@ BEGINPROC   EMEmulateLockOr
     mov     eax, VINF_SUCCESS
     retn
 
-%ifdef IN_GC
+%ifdef IN_RC
 ; #PF resume point.
 GLOBALNAME EMEmulateLockOr_Error
     mov     eax, VERR_ACCESS_DENIED
@@ -777,7 +777,7 @@ BEGINPROC   EMEmulateLockBtr
     mov     eax, VINF_SUCCESS
     retn
 
-%ifdef IN_GC
+%ifdef IN_RC
 ; #PF resume point.
 GLOBALNAME EMEmulateLockBtr_Error
     mov     eax, VERR_ACCESS_DENIED
@@ -1134,7 +1134,7 @@ BEGINPROC   EMEmulateCmpXchg8b
 %endif
 
     cmpxchg8b qword [xBP]          ; do CMPXCHG8B
-    
+
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     dword [r10], eax

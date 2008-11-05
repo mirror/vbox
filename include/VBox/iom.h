@@ -216,14 +216,14 @@ VMMDECL(int)  IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIO
 VMMDECL(int)  IOMMMIOModifyPage(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags);
 VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys);
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_iom_gc    The IOM Guest Context API
  * @ingroup grp_iom
  * @{
  */
 VMMRCDECL(int) IOMGCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 /** @} */
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 
 

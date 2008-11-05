@@ -1330,7 +1330,7 @@ unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
         /* 64 bits op mode means *sign* extend to 64 bits. */
         if (pCpu->opmode == CPUMODE_64BIT)
         {
-            pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, lpszCodeBlock);           
+            pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE64;
             pParam->size   = sizeof(uint64_t);
             disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
@@ -1832,7 +1832,7 @@ unsigned ParseThreeByteEsc4(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER
             if (pOpcode->opcode != OP_INVALID)
             {
                 /* Table entry is valid, so use the extension table. */
-            
+
                 /* Cancel prefix changes. */
                 pCpu->prefix &= ~PREFIX_REPNE;
             }
@@ -2307,7 +2307,7 @@ void disasmModRMReg(PDISCPUSTATE pCpu, PCOPCODE pOp, unsigned idx, POP_PARAMETER
         /* AH, BH, CH & DH map to DIL, SIL, EBL & SPL when a rex prefix is present. */
         /* Intel® 64 and IA-32 Architectures Software Developer’s Manual: 3.4.1.1 */
         if (    (pCpu->prefix & PREFIX_REX)
-            &&  idx >= USE_REG_AH 
+            &&  idx >= USE_REG_AH
             &&  idx <= USE_REG_BH)
         {
             idx += (USE_REG_SPL - USE_REG_AH);
@@ -2475,7 +2475,7 @@ void disasmGetPtrString(PDISCPUSTATE pCpu, PCOPCODE pOp, POP_PARAMETER pParam)
     if (pCpu->prefix & PREFIX_SEG)
         disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "%s:", szModRMSegReg[pCpu->enmPrefixSeg]);
 }
-#ifndef IN_GC
+#ifndef IN_RC
 //*****************************************************************************
 /* Read functions for getting the opcode bytes */
 //*****************************************************************************
@@ -2574,7 +2574,7 @@ uint64_t DISReadQWord(PDISCPUSTATE pCpu, RTUINTPTR pAddress)
     else return *(uint64_t *)pAddress;
 #endif
 }
-#endif /* IN_GC */
+#endif /* IN_RC */
 
 #if !defined(DIS_CORE_ONLY) && defined(LOG_ENABLED)
 //*****************************************************************************

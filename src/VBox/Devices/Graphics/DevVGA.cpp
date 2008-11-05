@@ -319,7 +319,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) vgaIOPortReadBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-#ifdef IN_GC
+#ifdef IN_RC
 PDMBOTHCBDECL(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 #endif
 #ifdef IN_RING0
@@ -684,7 +684,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 #endif
         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
 
-#ifndef IN_GC
+#ifndef IN_RC
         /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
         if (    s->sr_index == 4 /* mode */
             ||  s->sr_index == 2 /* plane mask */)
@@ -724,7 +724,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 #endif
         s->gr[s->gr_index] = val & gr_mask[s->gr_index];
 
-#ifndef IN_GC
+#ifndef IN_RC
         /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
         if (s->gr_index == 6 /* memory map mode */)
         {
@@ -906,7 +906,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             s->vbe_regs[s->vbe_index] = val;
             s->bank_offset = (val << 16);
 
-#ifndef IN_GC
+#ifndef IN_RC
             /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
             if (s->fRemappedVGA)
             {
@@ -1148,7 +1148,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         break;
     }
 
-#ifdef IN_GC
+#ifdef IN_RC
     if (addr >= VGA_MAPPING_SIZE)
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
@@ -1183,9 +1183,9 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         /* standard VGA latched access */
 #ifndef VBOX
         s->latch = ((uint32_t *)s->vram_ptr)[addr];
-#else /* VBOX && IN_GC */
+#else /* VBOX && IN_RC */
         s->latch = ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr];
-#endif /* VBOX && IN_GC */
+#endif /* VBOX && IN_RC */
 
         if (!(s->gr[5] & 0x08)) {
             /* read mode 0 */
@@ -1285,7 +1285,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-# ifdef IN_GC
+# ifdef IN_RC
             if (addr >= VGA_MAPPING_SIZE)
                 return VINF_IOM_HC_MMIO_WRITE;
 # else
@@ -1336,7 +1336,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-#ifdef IN_GC
+#ifdef IN_RC
             if (addr >= VGA_MAPPING_SIZE)
                 return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -1360,7 +1360,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #endif /* VBOX */
         }
     } else {
-#ifdef IN_GC
+#ifdef IN_RC
         if (addr * 4 >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -2958,7 +2958,7 @@ static int vga_copy_screen_from(PVGASTATE s, uint8_t *buf, int x, int y, int wid
 }
 #endif
 
-#endif /* !VBOX || !IN_GC || !IN_RING0 */
+#endif /* !VBOX || !IN_RC || !IN_RING0 */
 
 
 
@@ -3077,7 +3077,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #endif
     if (cb == 2 || cb == 4)
     {
-//#ifdef IN_GC
+//#ifdef IN_RC
 //        /*
 //         * The VBE_DISPI_INDEX_ENABLE memsets the entire frame buffer.
 //         * Since we're not mapping the entire framebuffer any longer that
@@ -3319,7 +3319,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (pThis->sr[4] & 0x08) {
         /* chain 4 mode : simplest access */
-#ifdef IN_GC
+#ifdef IN_RC
         if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3342,7 +3342,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
             }
     } else if (pThis->gr[5] & 0x10) {
         /* odd/even mode (aka text mode mapping) */
-#ifdef IN_GC
+#ifdef IN_RC
         if (GCPhysAddr * 2 + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3364,7 +3364,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 GCPhysAddr++;
             }
     } else {
-#ifdef IN_GC
+#ifdef IN_RC
         if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3648,7 +3648,7 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 }
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /**
  * #PF Handler for VBE LFB access.
  *

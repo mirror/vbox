@@ -72,7 +72,7 @@ VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
  */
 static void remFlushHandlerNotifications(PVM pVM)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     VMMGCCallHost(pVM, VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS, 0);
 #elif defined(IN_RING0)
     /** @todo necessary? */

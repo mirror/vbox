@@ -67,7 +67,7 @@ __BEGIN_DECLS
  * @param   pVM     Pointer to the VM.
  * @param   pvInVM  CC pointer within the VM.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
 #elif defined(IN_RING0)
 # define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
@@ -84,7 +84,7 @@ __BEGIN_DECLS
  * @param   pVM     Pointer to the VM.
  * @param   pvInVM  CC pointer within the VM.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
 #elif defined(IN_RING3)
 # define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
@@ -312,7 +312,7 @@ typedef VMREQ *PVMREQ;
 /** @} */
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /** @defgroup grp_vmm_apis_hc  VM Host Context API
  * @ingroup grp_vm
  * @{ */
@@ -424,7 +424,7 @@ VMMR3DECL(RTNATIVETHREAD)   VMR3GetVMCPUNativeThreadU(PUVM pUVM);
 #endif /* IN_RING3 */
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 /** @defgroup grp_vmm_apis_gc  VM Guest Context APIs
  * @ingroup grp_vm
  * @{ */

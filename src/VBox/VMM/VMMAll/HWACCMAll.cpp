@@ -141,7 +141,7 @@ VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
     return !!pVM->hwaccm.s.Event.fPending;
 }
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Returns the VMCPU id of the current EMT thread.
  *

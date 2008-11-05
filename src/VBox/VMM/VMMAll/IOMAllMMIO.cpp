@@ -255,7 +255,7 @@ static int iomInterpretMOVxXWrite(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE 
 /** Wrapper for reading virtual memory. */
 DECLINLINE(int) iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     return MMGCRamReadNoTrapHandler(pDest, (void *)GCSrc, cb);
 #else
     return PGMPhysReadGCPtr(pVM, pDest, GCSrc, cb);
@@ -266,7 +266,7 @@ DECLINLINE(int) iomRamRead(PVM pVM, void *pDest, RTGCPTR GCSrc, uint32_t cb)
 /** Wrapper for writing virtual memory. */
 DECLINLINE(int) iomRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     return MMGCRamWriteNoTrapHandler((void *)GCDest, pSrc, cb);
 #else
     return PGMPhysWriteGCPtr(pVM, GCDest, pSrc, cb);
@@ -308,7 +308,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
     uint32_t cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
     {
-#ifndef IN_GC
+#ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
@@ -369,7 +369,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-#ifdef IN_GC
+#ifdef IN_RC
             MMGCRamRegisterTrapHandler(pVM);
 #endif
 
@@ -390,7 +390,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                 pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
-#ifdef IN_GC
+#ifdef IN_RC
             MMGCRamDeregisterTrapHandler(pVM);
 #endif
             /* Update ecx. */
@@ -467,7 +467,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
             }
 
             /* copy loop. */
-#ifdef IN_GC
+#ifdef IN_RC
             MMGCRamRegisterTrapHandler(pVM);
 #endif
             while (cTransfers)
@@ -489,7 +489,7 @@ static int iomInterpretMOVS(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame
                 pRegFrame->rdi += offIncrement;
                 cTransfers--;
             }
-#ifdef IN_GC
+#ifdef IN_RC
             MMGCRamDeregisterTrapHandler(pVM);
 #endif
         }
@@ -538,7 +538,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
     uint32_t cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
     {
-#ifndef IN_GC
+#ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
@@ -1442,7 +1442,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
-#ifndef IN_GC
+#ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
@@ -1489,7 +1489,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         pRegFrame->rdi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
-#ifdef IN_GC
+#ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
 
@@ -1505,7 +1505,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
         pRegFrame->rdi += cbTransfer;
         cTransfers--;
     }
-#ifdef IN_GC
+#ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
 #endif
 
@@ -1603,7 +1603,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
-#ifndef IN_GC
+#ifndef IN_RC
         if (    CPUMIsGuestIn64BitCode(pVM, pRegFrame)
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
@@ -1650,7 +1650,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         pRegFrame->rsi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
-#ifdef IN_GC
+#ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
 
@@ -1668,7 +1668,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
         cTransfers--;
     }
 
-#ifdef IN_GC
+#ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
 #endif
 
@@ -1726,7 +1726,7 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
 }
 
 
-#ifndef IN_GC
+#ifndef IN_RC
 /**
  * Modify an existing MMIO region page; map to another guest physical region and change the access flags
  *
@@ -1828,5 +1828,5 @@ VMMDECL(int)  IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     }
     return VINF_SUCCESS;
 }
-#endif /* !IN_GC */
+#endif /* !IN_RC */
 

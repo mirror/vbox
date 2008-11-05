@@ -38,7 +38,7 @@
 #endif
 
 
-#ifdef IN_GC
+#ifdef IN_RC
 # error "There are no RTMem APIs available Guest Context!"
 #endif
 

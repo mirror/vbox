@@ -60,7 +60,7 @@ VMCPUID VMMGetCpuId(PVM pVM)
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
-# if defined(IN_GC)
+# if defined(IN_RC)
     /* There is only one CPU if we're in GC. */
     return 0;
 

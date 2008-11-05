@@ -37,7 +37,7 @@
 #ifdef IN_RING0
 # error "There are no VRDP APIs available in Ring-0 Host Context!"
 #endif
-#ifdef IN_GC
+#ifdef IN_RC
 # error "There are no VRDP APIs available Guest Context!"
 #endif
 
@@ -337,7 +337,7 @@ typedef struct _VRDP_USB_REQ_REAP_URB_PARM
 #define VRDP_USB_XFER_DU    (9)
 #define VRDP_USB_XFER_BO    (10)
 #define VRDP_USB_XFER_BU    (11)
-#define VRDP_USB_XFER_ERR   (12) /* VBox protocol error. */ 
+#define VRDP_USB_XFER_ERR   (12) /* VBox protocol error. */
 
 #define VRDP_USB_REAP_FLAG_CONTINUED (0x0)
 #define VRDP_USB_REAP_FLAG_LAST      (0x1)
@@ -471,7 +471,7 @@ typedef struct _VRDPUSBREQNEGOTIATERET
 typedef struct _VRDPUSBREQNEGOTIATERET_2
 {
     uint8_t flags;
-    uint32_t u32Version; /* This field presents only if the VRDP_USB_CAPS2_FLAG_VERSION flag is set. */ 
+    uint32_t u32Version; /* This field presents only if the VRDP_USB_CAPS2_FLAG_VERSION flag is set. */
 } VRDPUSBREQNEGOTIATERET_2;
 #pragma pack()
 
@@ -610,7 +610,7 @@ typedef struct _VRDPENTRYPOINTS_1
      *
      * @param hServer     The server instance handle.
      * @param u32ClientId The client identifier.
-     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the 
+     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the
      *                    client before disconnecting.
      *
      * @return IPRT status code.
@@ -746,7 +746,7 @@ typedef struct _VRDPENTRYPOINTS_1
                                             uint32_t *pcbOut));
 } VRDPENTRYPOINTS_1;
 
-/** The VRDP server entry points. Interface version 2. 
+/** The VRDP server entry points. Interface version 2.
  *  A new entry point VRDPRedirect has been added relative to version 1.
  */
 typedef struct _VRDPENTRYPOINTS_2
@@ -777,7 +777,7 @@ typedef struct _VRDPENTRYPOINTS_2
      *
      * @param hServer     The server instance handle.
      * @param u32ClientId The client identifier.
-     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the 
+     * @param fReconnect  Whether to send a "REDIRECT to the same server" packet to the
      *                    client before disconnecting.
      *
      * @return IPRT status code.
@@ -1011,7 +1011,7 @@ typedef struct _VRDPCALLBACKS_1
                                                        uint32_t *pcbOut));
 
     /* A client is logging in, the application must decide whether
-     * to let to connect the client. The server will drop the connection, 
+     * to let to connect the client. The server will drop the connection,
      * when an error code is returned by the callback.
      *
      * @param pvCallback   The callback specific pointer.
@@ -1150,7 +1150,7 @@ typedef struct _VRDPCALLBACKS_1
      */
     DECLR3CALLBACKMEMBER(void, VRDPCallbackVideoModeHint,(void *pvCallback,
                                                         unsigned cWidth,
-                                                        unsigned cHeight, 
+                                                        unsigned cHeight,
                                                         unsigned cBitsPerPixel,
                                                         unsigned uScreenId));
 

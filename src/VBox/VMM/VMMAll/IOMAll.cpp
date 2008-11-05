@@ -808,7 +808,7 @@ VMMDECL(int) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCore, RTIOP
  */
 VMMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIn);
 #endif
 
@@ -867,7 +867,7 @@ VMMDECL(int) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  */
 VMMDECL(int) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOut);
 #endif
 

@@ -169,7 +169,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
             u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
             u64Delta = ASMReadTSC();
             u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
-#ifdef IN_GC
+#ifdef IN_RC
             Assert(!(ASMGetFlags() & X86_EFL_IF));
 #else
             if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))

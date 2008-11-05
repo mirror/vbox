@@ -49,7 +49,7 @@
 #include "timesupref.h"
 
 #define ASYNC_GIP
-#ifdef IN_GC
+#ifdef IN_RC
 # undef NEED_TRANSACTION_ID
 #endif
 #undef  rtTimeNanoTSInternalRef
@@ -69,7 +69,7 @@
 #include "timesupref.h"
 
 #define ASYNC_GIP
-#ifdef IN_GC
+#ifdef IN_RC
 # undef NEED_TRANSACTION_ID
 #endif
 #undef  rtTimeNanoTSInternalRef

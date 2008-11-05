@@ -621,7 +621,7 @@ typedef const RTHCPHYS *PCRTHCPHYS;
 
 
 /** HC pointer. */
-#ifndef IN_GC
+#ifndef IN_RC
 typedef void *          RTHCPTR;
 #else
 typedef RTHCUINTPTR     RTHCPTR;
@@ -913,7 +913,7 @@ typedef const RTGCUINTREG  *PCRTGCUINTREG;
  * Keep in mind that this type is an unsigned integer in
  * HC and void pointer in RC.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 typedef void *          RTRCPTR;
 #else
 typedef uint32_t        RTRCPTR;
@@ -958,7 +958,7 @@ typedef uint32_t        RTRCUINTPTR;
  */
 
 /** Current Context Physical Memory Address.*/
-#ifdef IN_GC
+#ifdef IN_RC
 typedef RTGCPHYS RTCCPHYS;
 #else
 typedef RTHCPHYS RTCCPHYS;
@@ -972,7 +972,7 @@ typedef const RTCCPHYS *PCRTCCPHYS;
  * NIL_RTCCPHYS is used to signal an invalid physical address, similar
  * to the NULL pointer.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define NIL_RTCCPHYS   NIL_RTGCPHYS
 #else
 # define NIL_RTCCPHYS   NIL_RTHCPHYS

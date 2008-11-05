@@ -76,7 +76,8 @@
 #define RT_ARCH_X86
 #define IN_RING0
 #define IN_RING3
-#define IN_GC
+#define IN_RC
+#define IN_RC
 #define IN_RT_GC
 #define IN_RT_R0
 #define IN_RT_R3
@@ -141,17 +142,17 @@
  * in Ring-3 Host Context.
  */
 
-/** @def IN_GC
+/** @def IN_RC
  * Used to indicate that we're compiling code which is running
- * in Guest Context (implies R0).
+ * in the Raw-mode Context (implies R0).
  */
-#if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_GC)
-# error "You must defined which context the compiled code should run in; IN_RING3, IN_RING0 or IN_GC"
+#if !defined(IN_RING3) && !defined(IN_RING0) && !defined(IN_RC) && !defined(IN_RC)
+# error "You must defined which context the compiled code should run in; IN_RING3, IN_RING0 or IN_RC"
 #endif
-#if (defined(IN_RING3) && (defined(IN_RING0) || defined(IN_GC)) ) \
- || (defined(IN_RING0) && (defined(IN_RING3) || defined(IN_GC)) ) \
- || (defined(IN_GC)    && (defined(IN_RING3) || defined(IN_RING0)) )
-# error "Only one of the IN_RING3, IN_RING0, IN_GC defines should be defined."
+#if (defined(IN_RING3) && (defined(IN_RING0) || defined(IN_RC)) ) \
+ || (defined(IN_RING0) && (defined(IN_RING3) || defined(IN_RC)) ) \
+ || (defined(IN_RC)    && (defined(IN_RING3) || defined(IN_RING0)) )
+# error "Only one of the IN_RING3, IN_RING0, IN_RC defines should be defined."
 #endif
 
 
@@ -170,7 +171,7 @@
  * Defines the host architecture bit count.
  */
 #if !defined(HC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# ifndef IN_GC
+# ifndef IN_RC
 #  define HC_ARCH_BITS ARCH_BITS
 # else
 #  define HC_ARCH_BITS 32
@@ -214,7 +215,7 @@
  * Defines the guest architecture bit count.
  */
 #if !defined(GC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# ifdef IN_GC
+# ifdef IN_RC
 #  define GC_ARCH_BITS ARCH_BITS
 # else
 #  define GC_ARCH_BITS 32
@@ -230,7 +231,7 @@
  * @param   R0Type  The R0 type.
  * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTXTYPE(GCType, R3Type, R0Type)  GCType
 #elif defined(IN_RING3)
 # define CTXTYPE(GCType, R3Type, R0Type)  R3Type
@@ -291,7 +292,7 @@
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTXSUFF(var)       var##GC
 # define OTHERCTXSUFF(var)  var##HC
 #else
@@ -307,7 +308,7 @@
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTXALLSUFF(var)    var##GC
 #elif defined(IN_RING0)
 # define CTXALLSUFF(var)    var##R0
@@ -324,7 +325,7 @@
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTX_SUFF(var)      var##RC
 #elif defined(IN_RING0)
 # define CTX_SUFF(var)      var##R0
@@ -366,7 +367,7 @@
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTXMID(first, last)        first##GC##last
 # define OTHERCTXMID(first, last)   first##HC##last
 #else
@@ -383,7 +384,7 @@
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTXALLMID(first, last)     first##GC##last
 #elif defined(IN_RING0)
 # define CTXALLMID(first, last)     first##R0##last
@@ -399,7 +400,7 @@
  * @param   first   First name.
  * @param   last    Surname.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define CTX_MID(first, last)       first##RC##last
 #elif defined(IN_RING0)
 # define CTX_MID(first, last)       first##R0##last
@@ -465,7 +466,7 @@
  * @param   pR0String   The RC string. Only referenced in RC.
  * @see R3STRING, R0STRING
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define RCSTRING(pRCString)    (pRCString)
 #else
 # define RCSTRING(pRCString)    ("<RC_STRING>")
@@ -610,7 +611,7 @@
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  */
-#ifdef IN_GC
+#ifdef IN_RC
 # define DECLRCCALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
 #else
 # define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name

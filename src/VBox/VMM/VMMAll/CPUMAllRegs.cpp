@@ -504,7 +504,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVM pVM, uint16_t ldtr)
  */
 VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
 {
-#ifdef IN_GC
+#ifdef IN_RC
     /*
      * Check if we need to change hypervisor CR0 because
      * of math stuff.
@@ -553,7 +553,7 @@ VMMDECL(int) CPUMSetGuestCR0(PVM pVM, uint64_t cr0)
             ASMSetCR0(HyperCR0);
         }
     }
-#endif /* IN_GC */
+#endif /* IN_RC */
 
     /*
      * Check for changes causing TLB flushes (for REM).
@@ -1540,7 +1540,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
         /*
          * Apply the updates.
          */
-#ifdef IN_GC
+#ifdef IN_RC
         if (!(pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS))
         {
             /** @todo save host DBx registers. */
@@ -1560,7 +1560,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVM pVM)
     }
     else
     {
-#ifdef IN_GC
+#ifdef IN_RC
         if (pVM->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS)
         {
             /** @todo restore host DBx registers. */
