@@ -191,11 +191,12 @@ typedef struct HWACCM
      *  naturally. */
     bool                        padding[1];
 
+    /** And mask for copying register contents. */
+    uint64_t                    u64RegisterMask;
+
     /** Maximum ASID allowed. */
     RTUINT                      uMaxASID;
 
-    /** And mask for copying register contents. */
-    uint64_t                    u64RegisterMask;
     struct
     {
         /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
