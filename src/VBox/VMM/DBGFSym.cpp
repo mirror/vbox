@@ -509,7 +509,7 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
                 {
                     int rc2 = DBGFR3SymbolAdd(pVM, ModuleAddress, Address + AddressDelta, 0, psz);
                     if (RT_FAILURE(rc2))
-                        Log2(("DBGFR3SymbolAdd(,, %#VGv, 0, '%s') -> %Rrc\n", Address, psz, rc2));
+                        Log2(("DBGFR3SymbolAdd(,, %RGv, 0, '%s') -> %Rrc\n", Address, psz, rc2));
                 }
             }
         }

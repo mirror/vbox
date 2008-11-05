@@ -287,7 +287,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
-        LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %#VGp-%#VGp %s\n",
+        LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %RGp-%RGp %s\n",
                  pCur->Core.Key, pCur->Core.KeyLast, R3STRING(pCur->pszDesc)));
 
         /*

@@ -78,10 +78,10 @@ int main()
     RTLogPrintf("%%RU32: %RU32\n", _2G32);
     RTLogPrintf("%%RU64: %RU64\n", _2E);
 
-    RTLogPrintf("%%RX8 : %RX8 %#VX8\n",   (uint8_t)808, (uint8_t)808);
-    RTLogPrintf("%%RX16: %RX16 %#VX16\n", (uint16_t)16016, (uint16_t)16016);
-    RTLogPrintf("%%RX32: %RX32 %#VX32\n", _2G32, _2G32);
-    RTLogPrintf("%%RX64: %RX64 %#VX64\n", _2E, _2E);
+    RTLogPrintf("%%RX8 : %RX8 %#RX8\n",   (uint8_t)808, (uint8_t)808);
+    RTLogPrintf("%%RX16: %RX16 %#RX16\n", (uint16_t)16016, (uint16_t)16016);
+    RTLogPrintf("%%RX32: %RX32 %#RX32\n", _2G32, _2G32);
+    RTLogPrintf("%%RX64: %RX64 %#RX64\n", _2E, _2E);
 
     RTLogFlush(NULL);
 
