@@ -121,7 +121,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
     rc = MMR3HyperAllocOnceNoRel(pVM, PATCH_MEMORY_SIZE + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE + PATM_STAT_MEMSIZE, PAGE_SIZE, MM_TAG_PATM, (void **)&pVM->patm.s.pPatchMemHC);
     if (RT_FAILURE(rc))
     {
-        Log(("MMR3HyperAlloc failed with %Vrc\n", rc));
+        Log(("MMR3HyperAlloc failed with %Rrc\n", rc));
         return rc;
     }
     pVM->patm.s.pPatchMemGC = MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC);
@@ -283,15 +283,15 @@ VMMR3DECL(int) PATMR3InitFinalize(PVM pVM)
     /* The GC state, stack and statistics must be read/write for the guest (supervisor only of course). */
     int rc = PGMMapSetPage(pVM, pVM->patm.s.pGCStateGC, PAGE_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
     if (RT_FAILURE(rc))
-        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
+        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Rrc!!\n", rc));
 
     rc = PGMMapSetPage(pVM, pVM->patm.s.pGCStackGC, PATM_STACK_TOTAL_SIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
     if (RT_FAILURE(rc))
-        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
+        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Rrc!!\n", rc));
 
     rc = PGMMapSetPage(pVM, pVM->patm.s.pStatsGC, PATM_STAT_MEMSIZE, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
     if (RT_FAILURE(rc))
-        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Vrc!!\n", rc));
+        Log(("PATMR3InitFinalize: PGMMapSetPage failed with %Rrc!!\n", rc));
 
     return rc;
 }
@@ -326,7 +326,7 @@ static int patmReinit(PVM pVM)
     memset(pVM->patm.s.pGCStateHC, 0, PAGE_SIZE);
     AssertReleaseMsg(pVM->patm.s.pGCStateGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pGCStateGC));
 
-    Log(("Patch memory allocated at %p - %VRv\n", pVM->patm.s.pPatchMemHC, pVM->patm.s.pPatchMemGC));
+    Log(("Patch memory allocated at %p - %RRv\n", pVM->patm.s.pPatchMemHC, pVM->patm.s.pPatchMemGC));
     pVM->patm.s.pGCStateHC->uVMFlags = X86_EFL_IF;
 
     Assert(pVM->patm.s.pGCStackHC);
@@ -414,7 +414,7 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
     RTRCPTR     GCPtrNew = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStateHC);
     RTRCINTPTR  delta = GCPtrNew - pVM->patm.s.pGCStateGC;
 
-    Log(("PATMR3Relocate from %VRv to %VRv - delta %08X\n", pVM->patm.s.pGCStateGC, GCPtrNew, delta));
+    Log(("PATMR3Relocate from %RRv to %RRv - delta %08X\n", pVM->patm.s.pGCStateGC, GCPtrNew, delta));
     if (delta)
     {
         PCPUMCTX pCtx;
@@ -635,7 +635,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
         switch (pRec->uType)
         {
         case FIXUP_ABSOLUTE:
-            Log(("Absolute fixup at %VRv %VHv -> %VHv at %VRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
+            Log(("Absolute fixup at %RRv %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
             if (!pRec->pSource || PATMIsPatchGCAddr(pVM, pRec->pSource))
             {
                 *(RTRCUINTPTR *)pRec->pRelocPos += delta;
@@ -1065,7 +1065,7 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
                     Assert(pOrgInstrGC);
 
                     /* Failure for some reason -> mark exit point with int 3. */
-                    Log(("Failed to install function replacement patch (at %x) for reason %Vrc\n", pOrgInstrGC, rc));
+                    Log(("Failed to install function replacement patch (at %x) for reason %Rrc\n", pOrgInstrGC, rc));
 
                     pPatchGC = patmGuestGCPtrToPatchGCPtr(pVM, pPatch, pOrgInstrGC);
                     Assert(pPatchGC);
@@ -1080,7 +1080,7 @@ static int patmr3SetBranchTargets(PVM pVM, PPATCHINFO pPatch)
             }
             else
             {
-                Log(("Patch block %VRv called as function\n", pFunctionRec->patch.pPrivInstrGC));
+                Log(("Patch block %RRv called as function\n", pFunctionRec->patch.pPrivInstrGC));
                 pFunctionRec->patch.flags |= PATMFL_CODE_REFERENCED;
             }
 
@@ -1306,7 +1306,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     /* Bail out if the patch gets too big. */
     if (pPatch->cbPatchBlockSize >= MAX_PATCH_SIZE)
     {
-        Log(("Code block too big (%x) for patch at %VRv!!\n", pPatch->cbPatchBlockSize, pCurInstrGC));
+        Log(("Code block too big (%x) for patch at %RRv!!\n", pPatch->cbPatchBlockSize, pCurInstrGC));
         fIllegalInstr = true;
         patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
     }
@@ -1430,7 +1430,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     if ((pPatch->flags & PATMFL_CHECK_SIZE) && pPatch->cbPatchBlockSize > SIZEOF_NEARJUMP32 && !(pCpu->pCurInstr->optype & OPTYPE_RELATIVE_CONTROLFLOW))
     {
         // The end marker for this kind of patch is any instruction at a location outside our patch jump
-        Log(("End of block at %VRv size %d\n", pCurInstrGC, pCpu->opsize));
+        Log(("End of block at %RRv size %d\n", pCurInstrGC, pCpu->opsize));
         return VINF_SUCCESS;
     }
 
@@ -1462,7 +1462,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     // bail out if the patch gets too big
     if (pPatch->cbPatchBlockSize >= MAX_PATCH_SIZE)
     {
-        Log(("Code block too big (%x) for function patch at %VRv!!\n", pPatch->cbPatchBlockSize, pCurInstrGC));
+        Log(("Code block too big (%x) for function patch at %RRv!!\n", pPatch->cbPatchBlockSize, pCurInstrGC));
         fIllegalInstr = true;
         patmAddIllegalInstrRecord(pVM, pPatch, pCurInstrGC);
     }
@@ -1559,7 +1559,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     int rc = VINF_SUCCESS;
     bool fInhibitIRQInstr = false;  /* did the instruction cause PATMFL_INHIBITIRQS to be set? */
 
-    LogFlow(("patmRecompileCallback %VRv %VRv\n", pInstrGC, pCurInstrGC));
+    LogFlow(("patmRecompileCallback %RRv %RRv\n", pInstrGC, pCurInstrGC));
 
     if (    patmGuestGCPtrToPatchGCPtr(pVM, pPatch, pCurInstrGC) != 0
         &&  !(pPatch->flags & PATMFL_RECOMPILE_NEXT)) /* do not do this when the next instruction *must* be executed! */
@@ -1568,7 +1568,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
          * Been there, done that; so insert a jump (we don't want to duplicate code)
          * no need to record this instruction as it's glue code that never crashes (it had better not!)
          */
-        Log(("patmRecompileCallback: jump to code we've recompiled before %VRv!\n", pCurInstrGC));
+        Log(("patmRecompileCallback: jump to code we've recompiled before %RRv!\n", pCurInstrGC));
         return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->prefix & PREFIX_OPSIZE));
     }
 
@@ -1601,7 +1601,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     /* Illegal instruction -> end of recompile phase for this code block. */
     if (patmIsIllegalInstr(pPatch, pCurInstrGC))
     {
-        Log(("Illegal instruction at %VRv -> mark with int 3\n", pCurInstrGC));
+        Log(("Illegal instruction at %RRv -> mark with int 3\n", pCurInstrGC));
         rc = patmPatchGenIllegalInstr(pVM, pPatch);
         goto end;
     }
@@ -1666,7 +1666,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             if (    (pCpu->param1.flags & USE_REG_SEG)
                 &&  (pCpu->param1.base.reg_seg == DIS_SELREG_SS))
             {
-                Log(("Force recompilation of next instruction for OP_MOV at %VRv\n", pCurInstrGC));
+                Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
                 pPatch->flags |= PATMFL_RECOMPILE_NEXT;
                 /** @todo this could cause a fault (ring 0 selector being loaded in ring 1) */
             }
@@ -1691,7 +1691,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         {
             Assert(pCpu->pCurInstr->optype & OPTYPE_INHIBIT_IRQS);
 
-            Log(("Force recompilation of next instruction for OP_MOV at %VRv\n", pCurInstrGC));
+            Log(("Force recompilation of next instruction for OP_MOV at %RRv\n", pCurInstrGC));
             pPatch->flags |= PATMFL_RECOMPILE_NEXT;
         }
         goto duplicate_instr;
@@ -1706,7 +1706,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             pPatch->flags   |= PATMFL_INHIBIT_IRQS | PATMFL_GENERATE_JUMPTOGUEST;
             fInhibitIRQInstr = true;
             pNextInstrGC     = pCurInstrGC + pCpu->opsize;
-            Log(("Inhibit irqs for instruction OP_STI at %VRv\n", pCurInstrGC));
+            Log(("Inhibit irqs for instruction OP_STI at %RRv\n", pCurInstrGC));
         }
         rc = patmPatchGenSti(pVM, pPatch, pCurInstrGC, pNextInstrGC);
 
@@ -1803,7 +1803,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto duplicate_instr;
 
     case OP_IRET:
-        Log(("IRET at %VRv\n", pCurInstrGC));
+        Log(("IRET at %RRv\n", pCurInstrGC));
         rc = patmPatchGenIret(pVM, pPatch, pCurInstrGC, !!(pCpu->prefix & PREFIX_OPSIZE));
         if (RT_SUCCESS(rc))
         {
@@ -1941,10 +1941,10 @@ end:
         RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->opsize;
 
         pPatch->flags &= ~PATMFL_INHIBIT_IRQS;
-        Log(("Clear inhibit IRQ flag at %VRv\n", pCurInstrGC));
+        Log(("Clear inhibit IRQ flag at %RRv\n", pCurInstrGC));
         if (pPatch->flags & PATMFL_GENERATE_JUMPTOGUEST)
         {
-            Log(("patmRecompileCallback: generate jump back to guest (%VRv) after fused instruction\n", pNextInstrGC));
+            Log(("patmRecompileCallback: generate jump back to guest (%RRv) after fused instruction\n", pNextInstrGC));
 
             rc2 = patmPatchGenJumpToGuest(pVM, pPatch, pNextInstrGC, true /* clear inhibit irq flag */);
             pPatch->flags &= ~PATMFL_GENERATE_JUMPTOGUEST;
@@ -1970,7 +1970,7 @@ end:
             RTRCPTR pNextInstrGC = pCurInstrGC + pCpu->opsize;
 
             // The end marker for this kind of patch is any instruction at a location outside our patch jump
-            Log(("patmRecompileCallback: end found for single instruction patch at %VRv opsize %d\n", pNextInstrGC, pCpu->opsize));
+            Log(("patmRecompileCallback: end found for single instruction patch at %RRv opsize %d\n", pNextInstrGC, pCpu->opsize));
 
             rc = patmPatchGenJumpToGuest(pVM, pPatch, pNextInstrGC);
             AssertRC(rc);
@@ -2120,7 +2120,7 @@ int patmr3DisasmCode(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *
             RTRCPTR pOrgInstrGC = patmPatchGCPtr2GuestGCPtr(pVM, pPatch, pCurInstrGC);
 
             if (pOrgInstrGC != pPatch->pTempInfo->pLastDisasmInstrGC)
-                Log(("DIS %VRv<-%s", pOrgInstrGC, szOutput));
+                Log(("DIS %RRv<-%s", pOrgInstrGC, szOutput));
             else
                 Log(("DIS           %s", szOutput));
 
@@ -2275,7 +2275,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
     {
         cpu.mode = (pPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
 
-        ////Log(("patmRecompileCodeStream %VRv %VRv\n", pInstrGC, pCurInstrGC));
+        ////Log(("patmRecompileCodeStream %RRv %RRv\n", pInstrGC, pCurInstrGC));
 
         pCurInstrHC = PATMGCVirtToHCVirt(pVM, pPatch, pCurInstrGC);
         if (pCurInstrHC == NULL)
@@ -2312,7 +2312,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 uint8_t *pNextInstrHC;
                 RTRCPTR  pNextInstrGC = pCurInstrGC + opsize;
 
-                Log(("patmRecompileCodeStream: irqs inhibited by instruction %VRv\n", pNextInstrGC));
+                Log(("patmRecompileCodeStream: irqs inhibited by instruction %RRv\n", pNextInstrGC));
 
                 /* Certain instructions (e.g. sti) force the next instruction to be executed before any interrupts can occur.
                  * Recompile the next instruction as well
@@ -2385,7 +2385,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 break;
             }
 
-            Log(("Jump encountered target %VRv\n", addr));
+            Log(("Jump encountered target %RRv\n", addr));
 
             /* We don't check if the branch target lies in a valid page as we've already done that in the analysis phase. */
             if (!(cpu.pCurInstr->optype & OPTYPE_UNCOND_CONTROLFLOW))
@@ -2414,7 +2414,7 @@ static int patmRecompileCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTR
                 PPATCHINFO pTargetPatch = PATMFindActivePatchByEntrypoint(pVM, addr);
                 if(pTargetPatch)
                 {
-                    Log(("Found active patch at target %VRv (%VRv) -> temporarily disabling it!!\n", addr, pTargetPatch->pPrivInstrGC));
+                    Log(("Found active patch at target %RRv (%RRv) -> temporarily disabling it!!\n", addr, pTargetPatch->pPrivInstrGC));
                     PATMR3DisablePatch(pVM, pTargetPatch->pPrivInstrGC);
                 }
 
@@ -2765,7 +2765,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     /*
      * Insert into patch to guest lookup tree
      */
-    LogFlow(("Insert %VRv patch offset %VRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
+    LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
     rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
     AssertMsg(rc, ("RTAvlULInsert failed for %x\n", pPatchRec->CoreOffset.Key));
@@ -2799,7 +2799,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     {
         /*uint8_t ASMInt3 = 0xCC; - unused */
 
-        Log(("PATMR3PatchBlock %VRv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
+        Log(("PATMR3PatchBlock %RRv -> int 3 callable patch.\n", pPatch->pPrivInstrGC));
         /* Replace first opcode byte with 'int 3'. */
         rc = patmActivateInt3Patch(pVM, pPatch);
         if (RT_FAILURE(rc))
@@ -2832,7 +2832,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     patmEmptyTree(pVM, &pPatch->pTempInfo->IllegalInstrTree);
     pPatch->pTempInfo->nrIllegalInstr = 0;
 
-    Log(("Successfully installed %s patch at %VRv\n", patmGetInstructionString(pPatch->opcode, pPatch->flags), pInstrGC));
+    Log(("Successfully installed %s patch at %RRv\n", patmGetInstructionString(pPatch->opcode, pPatch->flags), pInstrGC));
 
     pPatch->uState = PATCH_ENABLED;
     return VINF_SUCCESS;
@@ -2969,12 +2969,12 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstr
             patmr3DisasmCodeStream(pVM, PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_GC(pPatch), patmr3DisasmCallback, pPatch);
             Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
-            Log(("Successfully installed IDT handler patch at %VRv\n", pInstrGC));
+            Log(("Successfully installed IDT handler patch at %RRv\n", pInstrGC));
 
             /*
              * Insert into patch to guest lookup tree
              */
-            LogFlow(("Insert %VRv patch offset %VRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
+            LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
             pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
             rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
             AssertMsg(rc, ("RTAvlULInsert failed for %x\n", pPatchRec->CoreOffset.Key));
@@ -3052,12 +3052,12 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
     disret = PATMR3DISInstr(pVM, pPatch, &cpu, pPatch->pPrivInstrGC, pPatch->pPrivInstrHC, &opsize, szOutput);
     Log(("TRAP handler patch: %s", szOutput));
 #endif
-    Log(("Successfully installed Trap Trampoline patch at %VRv\n", pInstrGC));
+    Log(("Successfully installed Trap Trampoline patch at %RRv\n", pInstrGC));
 
     /*
      * Insert into patch to guest lookup tree
      */
-    LogFlow(("Insert %VRv patch offset %VRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
+    LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
     rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
     AssertMsg(rc, ("RTAvlULInsert failed for %x\n", pPatchRec->CoreOffset.Key));
@@ -3117,7 +3117,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
     DISCPUSTATE cpu;
     uint32_t orgOffsetPatchMem = ~0;
 
-    Log(("patmDuplicateFunction %VRv\n", pInstrGC));
+    Log(("patmDuplicateFunction %RRv\n", pInstrGC));
     /* Save original offset (in case of failures later on). */
     orgOffsetPatchMem = pVM->patm.s.offPatchMem;
 
@@ -3172,7 +3172,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
     /*
      * Insert into patch to guest lookup tree
      */
-    LogFlow(("Insert %VRv patch offset %VRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
+    LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
     rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
     AssertMsg(rc, ("RTAvloU32Insert failed for %x\n", pPatchRec->CoreOffset.Key));
@@ -3196,7 +3196,7 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
     Log(("Patch code ends -----------------------------------------------------\n"));
 #endif
 
-    Log(("Successfully installed function duplication patch at %VRv\n", pInstrGC));
+    Log(("Successfully installed function duplication patch at %RRv\n", pInstrGC));
 
     patmEmptyTree(pVM, &pPatch->pTempInfo->IllegalInstrTree);
     pPatch->pTempInfo->nrIllegalInstr = 0;
@@ -3227,7 +3227,7 @@ failure:
     pVM->patm.s.offPatchMem = orgOffsetPatchMem;
 
     pVM->patm.s.ulCallDepth--;
-    Log(("patmDupicateFunction %VRv failed!!\n", pInstrGC));
+    Log(("patmDupicateFunction %RRv failed!!\n", pInstrGC));
     return rc;
 }
 
@@ -3247,7 +3247,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
     uint32_t    orgOffsetPatchMem = ~0;
     int         rc = VERR_PATCHING_REFUSED;
 
-    Log(("patmCreateTrampoline %VRv\n", pInstrGC));
+    Log(("patmCreateTrampoline %RRv\n", pInstrGC));
     /* Save original offset (in case of failures later on). */
     orgOffsetPatchMem = pVM->patm.s.offPatchMem;
 
@@ -3278,7 +3278,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
 
                         pPatchToGuestRec->fJumpTarget = true;
                         Assert(pPatchTargetGC != pPatch->pPrivInstrGC);
-                        Log(("patmCreateTrampoline: generating jump to code inside patch at %VRv\n", pPatch->pPrivInstrGC));
+                        Log(("patmCreateTrampoline: generating jump to code inside patch at %RRv\n", pPatch->pPrivInstrGC));
                         pPatch->flags |= PATMFL_EXTERNAL_JUMP_INSIDE;
                         break;
                     }
@@ -3310,7 +3310,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
     /*
      * Insert into patch to guest lookup tree
      */
-    LogFlow(("Insert %VRv patch offset %VRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
+    LogFlow(("Insert %RRv patch offset %RRv\n", pPatchRec->patch.pPrivInstrGC, pPatch->pPatchBlockOffset));
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
     rc = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
     AssertMsg(rc, ("RTAvloU32Insert failed for %x\n", pPatchRec->CoreOffset.Key));
@@ -3515,7 +3515,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
         }
         if (pPatchFunction == 0)
         {
-            AssertMsgFailed(("Unable to find duplicate function %VRv\n", pTargetGC));
+            AssertMsgFailed(("Unable to find duplicate function %RRv\n", pTargetGC));
             rc = VERR_PATCHING_REFUSED;
             goto failure;
         }
@@ -3543,7 +3543,7 @@ static int patmReplaceFunctionCall(PVM pVM, DISCPUSTATE *pCpu, RTRCPTR pInstrGC,
     Log(("Call patch: %s", szOutput));
 #endif
 
-    Log(("Successfully installed function replacement patch at %VRv\n", pInstrGC));
+    Log(("Successfully installed function replacement patch at %RRv\n", pInstrGC));
 
     pPatch->uState = PATCH_ENABLED;
     return VINF_SUCCESS;
@@ -3887,7 +3887,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
      */
     RTRCPTR pJmpDest = PATMR3GuestGCPtrToPatchGCPtr(pVM, pInstrGC + pCpu->opsize + (int32_t)pCpu->param1.parval);
 
-    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %VRv\n", pInstrGC + pCpu->opsize + (int32_t)pCpu->param1.parval));
+    AssertMsg(pJmpDest, ("PATMR3GuestGCPtrToPatchGCPtr failed for %RRv\n", pInstrGC + pCpu->opsize + (int32_t)pCpu->param1.parval));
     pPatch->pPatchJumpDestGC = pJmpDest;
 
     rc = patmGenJumpToPatch(pVM, pPatch, true);
@@ -3903,7 +3903,7 @@ int patmPatchJump(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pInstrHC, DISC
     Log(("%s patch: %s", patmGetInstructionString(pPatch->opcode, pPatch->flags), szOutput));
 #endif
 
-    Log(("Successfully installed %s patch at %VRv\n", patmGetInstructionString(pPatch->opcode, pPatch->flags), pInstrGC));
+    Log(("Successfully installed %s patch at %RRv\n", patmGetInstructionString(pPatch->opcode, pPatch->flags), pInstrGC));
 
     STAM_COUNTER_INC(&pVM->patm.s.StatInstalledJump);
 
@@ -3936,7 +3936,7 @@ VMMR3DECL(int) PATMR3AddHint(PVM pVM, RTRCPTR pInstrGC, uint32_t flags)
     Assert(pInstrGC);
     Assert(flags == PATMFL_CODE32);
 
-    Log(("PATMR3AddHint %VRv\n", pInstrGC));
+    Log(("PATMR3AddHint %RRv\n", pInstrGC));
     return PATMR3InstallPatch(pVM, pInstrGC, PATMFL_CODE32 | PATMFL_INSTR_HINT);
 }
 
@@ -3973,7 +3973,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     if (!(flags & (PATMFL_GUEST_SPECIFIC|PATMFL_IDTHANDLER|PATMFL_INTHANDLER|PATMFL_TRAMPOLINE)))
     {
         PPATCHINFO pConflictPatch = PATMFindActivePatchByEntrypoint(pVM, pInstrGC);
-        AssertReleaseMsg(pConflictPatch == 0, ("Unable to patch overwritten instruction at %VRv (%VRv)\n", pInstrGC, pConflictPatch->pPrivInstrGC));
+        AssertReleaseMsg(pConflictPatch == 0, ("Unable to patch overwritten instruction at %RRv (%RRv)\n", pInstrGC, pConflictPatch->pPrivInstrGC));
         if (pConflictPatch != 0)
             return VERR_PATCHING_REFUSED;
     }
@@ -3996,7 +3996,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         RTRCPTR pInstrGCFlat = SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
         if (pInstrGCFlat != pInstrGC)
         {
-            Log(("PATMR3InstallPatch: code selector not wide open: %04x:%VRv != %VRv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
+            Log(("PATMR3InstallPatch: code selector not wide open: %04x:%RRv != %RRv eflags=%08x\n", pCtx->cs, pInstrGCFlat, pInstrGC, pCtx->eflags.u32));
             return VERR_PATCHING_REFUSED;
         }
     }
@@ -4020,7 +4020,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         pvPatchCoreOffset = RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, offset, false);
         if (pvPatchCoreOffset == NULL)
         {
-            AssertMsgFailed(("PATMR3InstallPatch: patch not found at address %VRv!!\n", pInstrGC));
+            AssertMsgFailed(("PATMR3InstallPatch: patch not found at address %RRv!!\n", pInstrGC));
             return VERR_PATCH_NOT_FOUND;    //fatal error
         }
         pPatchRec = PATM_PATCHREC_FROM_COREOFFSET(pvPatchCoreOffset);
@@ -4041,7 +4041,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
         if (pPatchRec->patch.uState == PATCH_DISABLE_PENDING)
         {
-            Log(("PATMR3InstallPatch: disable operation is pending for patch at %VRv\n", pPatchRec->patch.pPrivInstrGC));
+            Log(("PATMR3InstallPatch: disable operation is pending for patch at %RRv\n", pPatchRec->patch.pPrivInstrGC));
             PATMR3DisablePatch(pVM, pPatchRec->patch.pPrivInstrGC);
             Assert(pPatchRec->patch.uState == PATCH_DISABLED);
         }
@@ -4051,11 +4051,11 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
             /* A patch, for which we previously received a hint, will be enabled and turned into a normal patch. */
             if (pPatchRec->patch.flags & PATMFL_INSTR_HINT)
             {
-                Log(("Enabling HINTED patch %VRv\n", pInstrGC));
+                Log(("Enabling HINTED patch %RRv\n", pInstrGC));
                 pPatchRec->patch.flags &= ~PATMFL_INSTR_HINT;
             }
             else
-                Log(("Enabling patch %VRv again\n", pInstrGC));
+                Log(("Enabling patch %RRv again\n", pInstrGC));
 
             /** @todo we shouldn't disable and enable patches too often (it's relatively cheap, but pointless if it always happens) */
             rc = PATMR3EnablePatch(pVM, pInstrGC);
@@ -4074,7 +4074,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
             if (pPatchRec->patch.uState != PATCH_REFUSED && pPatchRec->patch.uState != PATCH_UNUSABLE)
             {
                 /* Patch must have been overwritten; remove it and pretend nothing happened. */
-                Log(("Patch an existing patched instruction?!? (%VRv)\n", pInstrGC));
+                Log(("Patch an existing patched instruction?!? (%RRv)\n", pInstrGC));
                 if (pPatchRec->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_MMIO_ACCESS|PATMFL_INT3_REPLACEMENT|PATMFL_INT3_REPLACEMENT_BLOCK))
                 {
                     if (flags & PATMFL_IDTHANDLER)
@@ -4089,7 +4089,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         }
         else
         {
-            AssertMsg(pPatchRec->patch.uState == PATCH_REFUSED || pPatchRec->patch.uState == PATCH_UNUSABLE, ("Patch an existing patched instruction?!? (%VRv, state=%d)\n", pInstrGC, pPatchRec->patch.uState));
+            AssertMsg(pPatchRec->patch.uState == PATCH_REFUSED || pPatchRec->patch.uState == PATCH_UNUSABLE, ("Patch an existing patched instruction?!? (%RRv, state=%d)\n", pInstrGC, pPatchRec->patch.uState));
             /* already tried it once! */
             return VERR_PATCHING_REFUSED;
         }
@@ -4110,7 +4110,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
     rc = PGMGstGetPage(pVM, pInstrGC, NULL, &GCPhys);
     if (rc != VINF_SUCCESS)
     {
-        Log(("PGMGstGetPage failed with %Vrc\n", rc));
+        Log(("PGMGstGetPage failed with %Rrc\n", rc));
         return rc;
     }
     /* Disallow patching instructions inside ROM code; complete function duplication is allowed though. */
@@ -4142,7 +4142,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         {
             if (pPatchNear->patch.uState == PATCH_UNUSABLE && pInstrGC < pPatchNear->patch.pPrivInstrGC && pInstrGC + SIZEOF_NEARJUMP32 > pPatchNear->patch.pPrivInstrGC)
             {
-                Log(("Dangerous patch; would overwrite the ususable patch at %VRv\n", pPatchNear->patch.pPrivInstrGC));
+                Log(("Dangerous patch; would overwrite the ususable patch at %RRv\n", pPatchNear->patch.pPrivInstrGC));
 
                 pPatchRec->patch.uState = PATCH_UNUSABLE;
                 /*
@@ -4246,7 +4246,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
             if (rc == VINF_SUCCESS)
             {
                 if (rc == VINF_SUCCESS)
-                    Log(("PATMR3InstallPatch GUEST: %s %VRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
+                    Log(("PATMR3InstallPatch GUEST: %s %RRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
                 return rc;
             }
             break;
@@ -4264,7 +4264,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
             rc = PATMInstallGuestSpecificPatch(pVM, &cpu, pInstrGC, pInstrHC, pPatchRec);
             if (rc == VINF_SUCCESS)
             {
-                Log(("PATMR3InstallPatch GUEST: %s %VRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
+                Log(("PATMR3InstallPatch GUEST: %s %RRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
                 return VINF_SUCCESS;
             }
             break;
@@ -4301,7 +4301,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
 
         case OP_PUSHF:
         case OP_CLI:
-            Log(("PATMR3InstallPatch %s %VRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
+            Log(("PATMR3InstallPatch %s %RRv code32=%d\n", patmGetInstructionString(pPatchRec->patch.opcode, pPatchRec->patch.flags), pInstrGC, (flags & PATMFL_CODE32) ? 1 : 0));
             rc = PATMR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->opcode, opsize, pPatchRec);
             break;
 
@@ -4344,8 +4344,8 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         if (pPatchRec->patch.pInstrGCHighest > pVM->patm.s.pPatchedInstrGCHighest)
             pVM->patm.s.pPatchedInstrGCHighest = pPatchRec->patch.pInstrGCHighest;
 
-        Log(("Patch  lowest %VRv highest %VRv\n", pPatchRec->patch.pInstrGCLowest, pPatchRec->patch.pInstrGCHighest));
-        Log(("Global lowest %VRv highest %VRv\n", pVM->patm.s.pPatchedInstrGCLowest, pVM->patm.s.pPatchedInstrGCHighest));
+        Log(("Patch  lowest %RRv highest %RRv\n", pPatchRec->patch.pInstrGCLowest, pPatchRec->patch.pInstrGCHighest));
+        Log(("Global lowest %RRv highest %RRv\n", pVM->patm.s.pPatchedInstrGCLowest, pVM->patm.s.pPatchedInstrGCHighest));
 
         STAM_COUNTER_ADD(&pVM->patm.s.StatInstalled, 1);
         STAM_COUNTER_ADD(&pVM->patm.s.StatPATMMemoryUsed, pPatchRec->patch.cbPatchBlockSize);
@@ -4364,25 +4364,25 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         if (PATM_STAT_INDEX_IS_VALID(pPatchRec->patch.uPatchIdx))
         {
             STAMR3RegisterCallback(pVM, &pPatchRec->patch, STAMVISIBILITY_NOT_GUI, STAMUNIT_GOOD_BAD, patmResetStat, patmPrintStat, "Patch statistics",
-                                   "/PATM/Stats/Patch/0x%VRv", pPatchRec->patch.pPrivInstrGC);
+                                   "/PATM/Stats/Patch/0x%RRv", pPatchRec->patch.pPrivInstrGC);
 #ifndef DEBUG_sandervl
             /* Full breakdown for the GUI. */
             STAMR3RegisterF(pVM, &pVM->patm.s.pStatsHC[pPatchRec->patch.uPatchIdx], STAMTYPE_RATIO_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_GOOD_BAD, PATMPatchType(pVM, &pPatchRec->patch),
-                            "/PATM/Stats/PatchBD/0x%VRv", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPatchBlockSize,STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%VRv/cbPatchBlockSize", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPatchJump,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%VRv/cbPatchJump", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPrivInstr,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%VRv/cbPrivInstr", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cCodeWrites,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/cCodeWrites", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cInvalidWrites,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/cInvalidWrites", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.cTraps,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/cTraps", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.flags,           STAMTYPE_X32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%VRv/flags", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.nrJumpRecs,      STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/nrJumpRecs", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.nrFixups,        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/nrFixups", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.opcode,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%VRv/opcode", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.uOldState,       STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%VRv/uOldState", pPatchRec->patch.pPrivInstrGC);
-            STAMR3RegisterF(pVM, &pPatchRec->patch.uOpMode,         STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%VRv/uOpMode", pPatchRec->patch.pPrivInstrGC);
+                            "/PATM/Stats/PatchBD/0x%RRv", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPatchBlockSize,STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%RRv/cbPatchBlockSize", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPatchJump,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%RRv/cbPatchJump", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cbPrivInstr,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      NULL, "/PATM/Stats/PatchBD/0x%RRv/cbPrivInstr", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cCodeWrites,     STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/cCodeWrites", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cInvalidWrites,  STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/cInvalidWrites", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.cTraps,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/cTraps", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.flags,           STAMTYPE_X32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%RRv/flags", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.nrJumpRecs,      STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/nrJumpRecs", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.nrFixups,        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/nrFixups", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.opcode,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, NULL, "/PATM/Stats/PatchBD/0x%RRv/opcode", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.uOldState,       STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%RRv/uOldState", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.uOpMode,         STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%RRv/uOpMode", pPatchRec->patch.pPrivInstrGC);
             /// @todo change the state to be a callback so we can get a state mnemonic instead.
-            STAMR3RegisterF(pVM, &pPatchRec->patch.uState,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%VRv/uState", pPatchRec->patch.pPrivInstrGC);
+            STAMR3RegisterF(pVM, &pPatchRec->patch.uState,          STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,       NULL, "/PATM/Stats/PatchBD/0x%RRv/uState", pPatchRec->patch.pPrivInstrGC);
 #endif
         }
 #endif
@@ -4430,7 +4430,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     PPATMPATCHPAGE pPatchPage;
     int            rc;
 
-    Log(("patmAddPatchToPage: insert patch %VHv to page %VRv\n", pPatch, pPage));
+    Log(("patmAddPatchToPage: insert patch %RHv to page %RRv\n", pPatch, pPage));
 
     pPatchPage = (PPATMPATCHPAGE)RTAvloU32Get(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPage, pPage);
     if (pPatchPage)
@@ -4488,7 +4488,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
-        LogFlow(("patmAddPatchToPage: lowest patch page address %VRv current lowest %VRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pLowestAddrGC));
+        LogFlow(("patmAddPatchToPage: lowest patch page address %RRv current lowest %RRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pLowestAddrGC));
         if (    pPatchPage->pLowestAddrGC == 0
             ||  pPatchPage->pLowestAddrGC > (RTRCPTR)pGuestToPatchRec->Core.Key)
         {
@@ -4509,7 +4509,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
                     if ((RTRCUINTPTR)pGuestToPatchRec->Core.Key + size  > pPage)
                     {
                         pPatchPage->pLowestAddrGC = pPage;
-                        LogFlow(("patmAddPatchToPage: new lowest %VRv\n", pPatchPage->pLowestAddrGC));
+                        LogFlow(("patmAddPatchToPage: new lowest %RRv\n", pPatchPage->pLowestAddrGC));
                     }
                 }
             }
@@ -4521,7 +4521,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
-        LogFlow(("patmAddPatchToPage: highest patch page address %VRv current lowest %VRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pHighestAddrGC));
+        LogFlow(("patmAddPatchToPage: highest patch page address %RRv current lowest %RRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pHighestAddrGC));
         if (    pPatchPage->pHighestAddrGC == 0
             ||  pPatchPage->pHighestAddrGC <= (RTRCPTR)pGuestToPatchRec->Core.Key)
         {
@@ -4530,7 +4530,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
             uint32_t size = patmGetInstrSize(pVM, pPatch, pPatchPage->pHighestAddrGC);
 ////            Assert(size);
             pPatchPage->pHighestAddrGC += size;
-            LogFlow(("patmAddPatchToPage: new highest %VRv\n", pPatchPage->pHighestAddrGC));
+            LogFlow(("patmAddPatchToPage: new highest %RRv\n", pPatchPage->pHighestAddrGC));
         }
     }
 
@@ -4558,7 +4558,7 @@ int patmRemovePatchFromPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
 
     Assert(pPatchPage->cCount <= pPatchPage->cMaxPatches);
 
-    Log(("patmRemovePatchPage: remove patch %VHv from page %VRv\n", pPatch, pPage));
+    Log(("patmRemovePatchPage: remove patch %RHv from page %RRv\n", pPatch, pPage));
     if (pPatchPage->cCount > 1)
     {
         uint32_t i;
@@ -4577,7 +4577,7 @@ int patmRemovePatchFromPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
         {
             memcpy(&pPatchPage->aPatch[i], &pPatchPage->aPatch[i+1], sizeof(PPATCHINFO)*(pPatchPage->cCount - (i+1)));
         }
-        AssertMsg(i < pPatchPage->cCount, ("Unable to find patch %VHv in page %VRv\n", pPatch, pPage));
+        AssertMsg(i < pPatchPage->cCount, ("Unable to find patch %RHv in page %RRv\n", pPatch, pPage));
 
         pPatchPage->cCount--;
     }
@@ -4585,7 +4585,7 @@ int patmRemovePatchFromPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     {
         PPATMPATCHPAGE pPatchNode;
 
-        Log(("patmRemovePatchFromPage %VRv\n", pPage));
+        Log(("patmRemovePatchFromPage %RRv\n", pPage));
 
         STAM_COUNTER_INC(&pVM->patm.s.StatPatchPageRemoved);
         pPatchNode = (PPATMPATCHPAGE)RTAvloU32Remove(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPage, pPage);
@@ -4681,7 +4681,7 @@ VMMR3DECL(int) PATMR3PatchWrite(PVM pVM, RTRCPTR GCPtr, uint32_t cbWrite)
 {
     RTRCUINTPTR          pWritePageStart, pWritePageEnd, pPage;
 
-    Log(("PATMR3PatchWrite %VRv %x\n", GCPtr, cbWrite));
+    Log(("PATMR3PatchWrite %RRv %x\n", GCPtr, cbWrite));
 
     Assert(VM_IS_EMT(pVM));
 
@@ -4768,11 +4768,11 @@ loop_start:
                             Assert(pPatchToGuestRec);
                             if (pPatchToGuestRec && !pPatchToGuestRec->fDirty)
                             {
-                                Log(("PATMR3PatchWrite: Found patched instruction %VRv -> %VRv\n", pGuestPtrGC, pPatchInstrGC));
+                                Log(("PATMR3PatchWrite: Found patched instruction %RRv -> %RRv\n", pGuestPtrGC, pPatchInstrGC));
 
                                 if (++pPatch->cCodeWrites > PATM_MAX_CODE_WRITES)
                                 {
-                                    LogRel(("PATM: Disable block at %VRv - write %VRv-%VRv\n", pPatch->pPrivInstrGC, pGuestPtrGC, pGuestPtrGC+cbWrite));
+                                    LogRel(("PATM: Disable block at %RRv - write %RRv-%RRv\n", pPatch->pPrivInstrGC, pGuestPtrGC, pGuestPtrGC+cbWrite));
 
                                     PATMR3MarkDirtyPatch(pVM, pPatch);
 
@@ -4818,7 +4818,7 @@ invalid_write_loop_start:
                             /** @note possibly dangerous assumption that all future writes will be harmless. */
                             if (pPatch->flags & PATMFL_IDTHANDLER)
                             {
-                                LogRel(("PATM: Stop monitoring IDT handler pages at %VRv - invalid write %VRv-%VRv (this is not a fatal error)\n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
+                                LogRel(("PATM: Stop monitoring IDT handler pages at %RRv - invalid write %RRv-%RRv (this is not a fatal error)\n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
 
                                 Assert(pPatch->flags & PATMFL_CODE_MONITORED);
                                 int rc = patmRemovePatchPages(pVM, pPatch);
@@ -4826,7 +4826,7 @@ invalid_write_loop_start:
                             }
                             else
                             {
-                                LogRel(("PATM: Disable block at %VRv - invalid write %VRv-%VRv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
+                                LogRel(("PATM: Disable block at %RRv - invalid write %RRv-%RRv \n", pPatch->pPrivInstrGC, GCPtr, GCPtr+cbWrite));
                                 PATMR3MarkDirtyPatch(pVM, pPatch);
                             }
                             /** @note jump back to the start as the pPatchPage has been deleted or changed */
@@ -4867,7 +4867,7 @@ VMMR3DECL(int) PATMR3FlushPage(PVM pVM, RTRCPTR addr)
             {
                 PPATCHINFO pPatch = pPatchPage->aPatch[i];
 
-                Log(("PATMR3FlushPage %VRv remove patch at %VRv\n", addr, pPatch->pPrivInstrGC));
+                Log(("PATMR3FlushPage %RRv remove patch at %RRv\n", addr, pPatch->pPrivInstrGC));
                 PATMR3MarkDirtyPatch(pVM, pPatch);
             }
         }
@@ -4927,7 +4927,7 @@ VMMR3DECL(int) PATMR3QueryOpcode(PVM pVM, RTRCPTR pInstrGC, uint8_t *pByte)
 
         if (pPatchRec->patch.cbPatchJump == 1)
         {
-            Log(("PATMR3QueryOpcode: returning opcode %2X for instruction at %VRv\n", *pByte, pInstrGC));
+            Log(("PATMR3QueryOpcode: returning opcode %2X for instruction at %RRv\n", *pByte, pInstrGC));
         }
         STAM_COUNTER_ADD(&pVM->patm.s.StatNrOpcodeRead, 1);
         return VINF_SUCCESS;
@@ -4950,7 +4950,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
     PPATMPATCHREC pPatchRec;
     PPATCHINFO    pPatch;
 
-    Log(("PATMR3DisablePatch: %VRv\n", pInstrGC));
+    Log(("PATMR3DisablePatch: %RRv\n", pInstrGC));
     pPatchRec = (PPATMPATCHREC)RTAvloU32Get(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC);
     if (pPatchRec)
     {
@@ -4974,7 +4974,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
             {
                 TRPMR3SetGuestTrapHandler(pVM, iGate, TRPM_INVALID_HANDLER);
                 if (++cIDTHandlersDisabled < 256)
-                    LogRel(("PATM: Disabling IDT %x patch handler %VRv\n", iGate, pInstrGC));
+                    LogRel(("PATM: Disabling IDT %x patch handler %RRv\n", iGate, pInstrGC));
             }
         }
 
@@ -4982,7 +4982,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
         if (    pPatch->pPatchBlockOffset
             &&  pPatch->uState == PATCH_ENABLED)
         {
-            Log(("Invalidate patch at %VRv (HC=%VRv)\n", PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_HC(pPatch)));
+            Log(("Invalidate patch at %RRv (HC=%RRv)\n", PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_HC(pPatch)));
             pPatch->bDirtyOpcode   = *PATCHCODE_PTR_HC(pPatch);
             *PATCHCODE_PTR_HC(pPatch) = 0xCC;
         }
@@ -4995,7 +4995,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
 
             if (pPatch->uState != PATCH_REFUSED)
             {
-                AssertMsg(pPatch->pPrivInstrHC, ("Invalid HC pointer?!? (%VRv)\n", pInstrGC));
+                AssertMsg(pPatch->pPrivInstrHC, ("Invalid HC pointer?!? (%RRv)\n", pInstrGC));
                 Assert(pPatch->cbPatchJump);
 
                 /** pPrivInstrHC is probably not valid anymore */
@@ -5084,7 +5084,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
             STAM_COUNTER_ADD(&pVM->patm.s.StatDisabled, 1);
         }
 
-        Log(("PATMR3DisablePatch: disabled patch at %VRv\n", pInstrGC));
+        Log(("PATMR3DisablePatch: disabled patch at %RRv\n", pInstrGC));
         return VINF_SUCCESS;
     }
     Log(("Patch not found!\n"));
@@ -5127,7 +5127,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
         /* Hint patches must be enabled first. */
         if (pConflictPatch->flags & PATMFL_INSTR_HINT)
         {
-            Log(("Enabling HINTED patch %VRv\n", pConflictPatch->pPrivInstrGC));
+            Log(("Enabling HINTED patch %RRv\n", pConflictPatch->pPrivInstrGC));
             pConflictPatch->flags &= ~PATMFL_INSTR_HINT;
             rc = PATMR3EnablePatch(pVM, pConflictPatch->pPrivInstrGC);
             Assert(rc == VINF_SUCCESS || rc == VERR_PATCH_NOT_FOUND);
@@ -5139,7 +5139,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
         rc = PATMR3InstallPatch(pVM, pInstrGC, PATMFL_CODE32 | PATMFL_JUMP_CONFLICT);
         if (RT_SUCCESS(rc))
         {
-            Log(("PATM -> CONFLICT: Installed JMP patch for patch conflict at %VRv\n", pInstrGC));
+            Log(("PATM -> CONFLICT: Installed JMP patch for patch conflict at %RRv\n", pInstrGC));
             STAM_COUNTER_INC(&pVM->patm.s.StatFixedConflicts);
             return VINF_SUCCESS;
         }
@@ -5149,7 +5149,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
     if (pConflictPatch->opcode == OP_CLI)
     {
         /* Turn it into an int3 patch; our GC trap handler will call the generated code manually. */
-        Log(("PATM -> CONFLICT: Found active patch at instruction %VRv with target %VRv -> turn into int 3 patch!!\n", pInstrGC, pConflictPatch->pPrivInstrGC));
+        Log(("PATM -> CONFLICT: Found active patch at instruction %RRv with target %RRv -> turn into int 3 patch!!\n", pInstrGC, pConflictPatch->pPrivInstrGC));
         int rc =  PATMR3DisablePatch(pVM, pConflictPatch->pPrivInstrGC);
         if (rc == VWRN_PATCH_REMOVED)
             return VINF_SUCCESS;
@@ -5172,7 +5172,7 @@ static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflict
     }
     else
     {
-        Log(("PATM -> CONFLICT: Found active patch at instruction %VRv with target %VRv -> DISABLING it!!\n", pInstrGC, pConflictPatch->pPrivInstrGC));
+        Log(("PATM -> CONFLICT: Found active patch at instruction %RRv with target %RRv -> DISABLING it!!\n", pInstrGC, pConflictPatch->pPrivInstrGC));
         int rc = PATMR3DisablePatch(pVM, pConflictPatch->pPrivInstrGC);
         if (rc == VWRN_PATCH_REMOVED)
             return VINF_SUCCESS;
@@ -5204,7 +5204,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
     PPATMPATCHREC pPatchRec;
     PPATCHINFO    pPatch;
 
-    Log(("PATMR3EnablePatch %VRv\n", pInstrGC));
+    Log(("PATMR3EnablePatch %RRv\n", pInstrGC));
     pPatchRec = (PPATMPATCHREC)RTAvloU32Get(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC);
     if (pPatchRec)
     {
@@ -5298,7 +5298,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
             STAM_COUNTER_ADD(&pVM->patm.s.StatEnabled, 1);
         }
         else
-            Log(("PATMR3EnablePatch: Unable to enable patch %VRv with state %d\n", pInstrGC, pPatch->uState));
+            Log(("PATMR3EnablePatch: Unable to enable patch %RRv with state %d\n", pInstrGC, pPatch->uState));
 
         return rc;
     }
@@ -5322,10 +5322,10 @@ int PATMRemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
     /* Strictly forbidden to remove such patches. There can be dependencies!! */
     if (!fForceRemove && (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED)))
     {
-        Log(("PATMRemovePatch %VRv REFUSED!\n", pPatch->pPrivInstrGC));
+        Log(("PATMRemovePatch %RRv REFUSED!\n", pPatch->pPrivInstrGC));
         return VERR_ACCESS_DENIED;
     }
-    Log(("PATMRemovePatch %VRv\n", pPatch->pPrivInstrGC));
+    Log(("PATMRemovePatch %RRv\n", pPatch->pPrivInstrGC));
 
     /** @note NEVER EVER REUSE PATCH MEMORY */
     /** @note PATMR3DisablePatch put a breakpoint (0xCC) at the entry of this patch */
@@ -5400,7 +5400,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
     int         rc;
     RTRCPTR     pInstrGC = pPatchRec->patch.pPrivInstrGC;
 
-    Log(("patmR3RefreshPatch: attempt to refresh patch at %VRv\n", pInstrGC));
+    Log(("patmR3RefreshPatch: attempt to refresh patch at %RRv\n", pInstrGC));
 
     pPatch = &pPatchRec->patch;
     AssertReturn(pPatch->flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_IDTHANDLER|PATMFL_TRAPHANDLER), VERR_PATCHING_REFUSED);
@@ -5476,7 +5476,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
         /* Put the new patch back into the tree, because removing the old one kicked this one out. (hack alert) */
         RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pNewPatchRec->Core);
 
-        LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %VRv \n", pInstrGC));
+        LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %RRv \n", pInstrGC));
         STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshSuccess);
 
         /* Used by another patch, so don't remove it! */
@@ -5486,7 +5486,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 failure:
     if (RT_FAILURE(rc))
     {
-        LogRel(("PATM: patmR3RefreshPatch: failed to refresh patch at %VRv. Reactiving old one. \n", pInstrGC));
+        LogRel(("PATM: patmR3RefreshPatch: failed to refresh patch at %RRv. Reactiving old one. \n", pInstrGC));
 
         /* Remove the new inactive patch */
         rc = PATMR3RemovePatch(pVM, pInstrGC);
@@ -5524,7 +5524,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncl
             &&  pInstrGC > pPatchRec->patch.pPrivInstrGC
             &&  pInstrGC < pPatchRec->patch.pPrivInstrGC + pPatchRec->patch.cbPatchJump)
         {
-            Log(("Found active patch at %VRv (org %VRv)\n", pInstrGC, pPatchRec->patch.pPrivInstrGC));
+            Log(("Found active patch at %RRv (org %RRv)\n", pInstrGC, pPatchRec->patch.pPrivInstrGC));
             return &pPatchRec->patch;
         }
         else
@@ -5534,7 +5534,7 @@ PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncl
             &&  pInstrGC > pPatchRec->patch.pPrivInstrGC
             &&  pInstrGC < pPatchRec->patch.pPrivInstrGC + pPatchRec->patch.cbPatchJump)
         {
-            Log(("Found HINT patch at %VRv (org %VRv)\n", pInstrGC, pPatchRec->patch.pPrivInstrGC));
+            Log(("Found HINT patch at %RRv (org %RRv)\n", pInstrGC, pPatchRec->patch.pPrivInstrGC));
             return &pPatchRec->patch;
         }
     }
@@ -5610,7 +5610,7 @@ VMMR3DECL(int) PATMR3MarkDirtyPatch(PVM pVM, PPATCHINFO pPatch)
 {
     if (pPatch->pPatchBlockOffset)
     {
-        Log(("Invalidate patch at %VRv (HC=%VRv)\n", PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_HC(pPatch)));
+        Log(("Invalidate patch at %RRv (HC=%RRv)\n", PATCHCODE_PTR_GC(pPatch), PATCHCODE_PTR_HC(pPatch)));
         pPatch->bDirtyOpcode   = *PATCHCODE_PTR_HC(pPatch);
         *PATCHCODE_PTR_HC(pPatch) = 0xCC;
     }
@@ -5730,7 +5730,7 @@ VMMR3DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSSTATE 
     pvPatchCoreOffset = RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, pPatchGC - pVM->patm.s.pPatchMemGC, false);
     if (pvPatchCoreOffset == 0)
     {
-        Log(("PATMR3PatchToGCPtr failed for %VRv offset %x\n", pPatchGC, pPatchGC - pVM->patm.s.pPatchMemGC));
+        Log(("PATMR3PatchToGCPtr failed for %RRv offset %x\n", pPatchGC, pPatchGC - pVM->patm.s.pPatchMemGC));
         return 0;
     }
     pPatchRec = PATM_PATCHREC_FROM_COREOFFSET(pvPatchCoreOffset);
@@ -5741,7 +5741,7 @@ VMMR3DECL(RTRCPTR) PATMR3PatchToGCPtr(PVM pVM, RTRCPTR pPatchGC, PATMTRANSSTATE 
                                     ||  pPatchRec->patch.uState == PATCH_DIRTY
                                     ||  pPatchRec->patch.uState == PATCH_DISABLE_PENDING
                                     ||  pPatchRec->patch.uState == PATCH_UNUSABLE),
-                  ("pPrivInstrGC=%VRv uState=%d\n", pPrivInstrGC, pPatchRec->patch.uState));
+                  ("pPrivInstrGC=%RRv uState=%d\n", pPrivInstrGC, pPatchRec->patch.uState));
 
         if (    !pPrivInstrGC
             ||   pPatchRec->patch.uState == PATCH_UNUSABLE
@@ -5818,7 +5818,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     uint32_t     cbDirty;
     PRECPATCHTOGUEST pRec;
 
-    Log(("patmR3HandleDirtyInstr: dirty instruction at %VRv (%VRv)\n", pEip, pPatchToGuestRec->pOrgInstrGC));
+    Log(("patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv)\n", pEip, pPatchToGuestRec->pOrgInstrGC));
 
     pRec             = pPatchToGuestRec;
     pCurInstrGC      = pPatchToGuestRec->pOrgInstrGC;
@@ -5831,7 +5831,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
     {
         if (pRec->fJumpTarget)
         {
-            LogRel(("PATM: patmR3HandleDirtyInstr: dirty instruction at %VRv (%VRv) ignored, because instruction in function was reused as target of jump\n", pEip, pPatchToGuestRec->pOrgInstrGC));
+            LogRel(("PATM: patmR3HandleDirtyInstr: dirty instruction at %RRv (%RRv) ignored, because instruction in function was reused as target of jump\n", pEip, pPatchToGuestRec->pOrgInstrGC));
             pRec->fDirty = false;
             return VERR_PATCHING_REFUSED;
         }
@@ -5962,7 +5962,7 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             rc = patmR3RefreshPatch(pVM, pPatch);
             if (RT_FAILURE(rc))
             {
-                LogRel(("PATM: Failed to refresh dirty patch at %VRv. Disabling it.\n", pPatch->patch.pPrivInstrGC));
+                LogRel(("PATM: Failed to refresh dirty patch at %RRv. Disabling it.\n", pPatch->patch.pPrivInstrGC));
             }
             /* Even if we succeed, we must go back to the original instruction as the patched one could be invalid. */
             rc = VERR_PATCHING_REFUSED;
@@ -6006,7 +6006,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 
         if (pPatch->patch.uState == PATCH_DIRTY)
         {
-            Log(("PATMR3HandleTrap: trap in dirty patch at %VRv\n", pEip));
+            Log(("PATMR3HandleTrap: trap in dirty patch at %RRv\n", pEip));
             if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED))
             {
                 /* Function duplication patches set fPIF to 1 on entry */
@@ -6016,7 +6016,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         else
         if (pPatch->patch.uState == PATCH_DISABLED)
         {
-            Log(("PATMR3HandleTrap: trap in disabled patch at %VRv\n", pEip));
+            Log(("PATMR3HandleTrap: trap in disabled patch at %RRv\n", pEip));
             if (pPatch->patch.flags & (PATMFL_DUPLICATE_FUNCTION|PATMFL_CODE_REFERENCED))
             {
                 /* Function duplication patches set fPIF to 1 on entry */
@@ -6028,21 +6028,21 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         {
             RTRCPTR pPrivInstrGC = pPatch->patch.pPrivInstrGC;
 
-            Log(("PATMR3HandleTrap: disable operation is pending for patch at %VRv\n", pPatch->patch.pPrivInstrGC));
+            Log(("PATMR3HandleTrap: disable operation is pending for patch at %RRv\n", pPatch->patch.pPrivInstrGC));
             rc = PATMR3DisablePatch(pVM, pPatch->patch.pPrivInstrGC);
-            AssertReleaseMsg(rc != VWRN_PATCH_REMOVED, ("PATMR3DisablePatch removed patch at %VRv\n", pPrivInstrGC));
-            AssertMsg(pPatch->patch.uState == PATCH_DISABLED || pPatch->patch.uState == PATCH_UNUSABLE, ("Unexpected failure to disable patch state=%d rc=%Vrc\n", pPatch->patch.uState, rc));
+            AssertReleaseMsg(rc != VWRN_PATCH_REMOVED, ("PATMR3DisablePatch removed patch at %RRv\n", pPrivInstrGC));
+            AssertMsg(pPatch->patch.uState == PATCH_DISABLED || pPatch->patch.uState == PATCH_UNUSABLE, ("Unexpected failure to disable patch state=%d rc=%Rrc\n", pPatch->patch.uState, rc));
         }
 
         pPatchToGuestRec = (PRECPATCHTOGUEST)RTAvlU32GetBestFit(&pPatch->patch.Patch2GuestAddrTree, offset, false);
-        AssertReleaseMsg(pPatchToGuestRec, ("PATMR3HandleTrap: Unable to find corresponding guest address for %VRv (offset %x)\n", pEip, offset));
+        AssertReleaseMsg(pPatchToGuestRec, ("PATMR3HandleTrap: Unable to find corresponding guest address for %RRv (offset %x)\n", pEip, offset));
 
         pNewEip = pPatchToGuestRec->pOrgInstrGC;
         pPatch->patch.cTraps++;
         PATM_STAT_FAULT_INC(&pPatch->patch);
     }
     else
-        AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 0, ("PATMR3HandleTrap: Unable to find translation record for %VRv (PIF=0)\n", pEip));
+        AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 0, ("PATMR3HandleTrap: Unable to find translation record for %RRv (PIF=0)\n", pEip));
 
     /* Check if we were interrupted in PATM generated instruction code. */
     if (pVM->patm.s.pGCStateHC->fPIF == 0)
@@ -6085,7 +6085,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
 
             /* Typical pushf (most patches)/push (call patch) trap because of a monitored page. */
             rc = PGMShwModifyPage(pVM, pCtx->esp, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
-            AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Vrc\n", rc));
+            AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
             if (rc == VINF_SUCCESS)
             {
 
@@ -6125,11 +6125,11 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         if (pPatch)
         {
             AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
-                            ("Crash in patch code %VRv (%VRv) esp=%RX32\nPatch state=%x flags=%x fDirty=%d\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVM), pPatch->patch.uState, pPatch->patch.flags, pPatchToGuestRec->fDirty, szBuf));
+                            ("Crash in patch code %RRv (%RRv) esp=%RX32\nPatch state=%x flags=%x fDirty=%d\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVM), pPatch->patch.uState, pPatch->patch.flags, pPatchToGuestRec->fDirty, szBuf));
         }
         else
             AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
-                            ("Crash in patch code %VRv (%VRv) esp=%RX32\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVM), szBuf));
+                            ("Crash in patch code %RRv (%RRv) esp=%RX32\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVM), szBuf));
         EMR3FatalError(pVM, VERR_INTERNAL_ERROR);
     }
 
@@ -6137,7 +6137,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     if (pvPatchCoreOffset == 0)
     {
         STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
-        AssertMsgFailed(("PATMR3HandleTrap: patch not found at address %VRv!!\n", pEip));
+        AssertMsgFailed(("PATMR3HandleTrap: patch not found at address %RRv!!\n", pEip));
         return VERR_PATCH_NOT_FOUND;    //fatal error
     }
 
@@ -6186,8 +6186,8 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
             rc = PGMPhysSimpleReadGCPtr(pVM, &retaddr, pCtx->esp, sizeof(retaddr));
             AssertRC(rc);
 
-            Log(("Return failed at %VRv (%VRv)\n", pEip, pNewEip));
-            Log(("Expected return address %VRv found address %VRv Psp=%x\n", pVM->patm.s.pGCStackHC[(pVM->patm.s.pGCStateHC->Psp+PATM_STACK_SIZE)/sizeof(RTRCPTR)], retaddr, pVM->patm.s.pGCStateHC->Psp));
+            Log(("Return failed at %RRv (%RRv)\n", pEip, pNewEip));
+            Log(("Expected return address %RRv found address %RRv Psp=%x\n", pVM->patm.s.pGCStackHC[(pVM->patm.s.pGCStateHC->Psp+PATM_STACK_SIZE)/sizeof(RTRCPTR)], retaddr, pVM->patm.s.pGCStateHC->Psp));
         }
     }
 #endif
@@ -6201,7 +6201,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     if (pVM->patm.s.pGCStateHC->GCPtrInhibitInterrupts == pNewEip)
     {
         /* Must be a faulting instruction after sti; currently only sysexit, hlt or iret */
-        Log(("PATMR3HandleTrap %VRv -> inhibit irqs set!\n", pEip));
+        Log(("PATMR3HandleTrap %RRv -> inhibit irqs set!\n", pEip));
 #ifdef VBOX_STRICT
         DISCPUSTATE cpu;
         bool        disret;
@@ -6222,14 +6222,14 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         pVM->patm.s.pGCStateHC->GCPtrInhibitInterrupts = 0;
     }
 
-    Log2(("pPatchBlockGC %VRv - pEip %VRv corresponding GC address %VRv\n", PATCHCODE_PTR_GC(&pPatch->patch), pEip, pNewEip));
+    Log2(("pPatchBlockGC %RRv - pEip %RRv corresponding GC address %RRv\n", PATCHCODE_PTR_GC(&pPatch->patch), pEip, pNewEip));
 #ifdef LOG_ENABLED
     CPUMR3DisasmInstr(pVM, pCtx, pNewEip, "PATCHRET: ");
 #endif
     if (pNewEip >= pPatch->patch.pPrivInstrGC && pNewEip < pPatch->patch.pPrivInstrGC + pPatch->patch.cbPatchJump)
     {
         /* We can't jump back to code that we've overwritten with a 5 byte jump! */
-        Log(("Disabling patch at location %VRv due to trap too close to the privileged instruction \n", pPatch->patch.pPrivInstrGC));
+        Log(("Disabling patch at location %RRv due to trap too close to the privileged instruction \n", pPatch->patch.pPrivInstrGC));
         PATMR3DisablePatch(pVM, pPatch->patch.pPrivInstrGC);
         STAM_PROFILE_ADV_STOP(&pVM->patm.s.StatHandleTrap, a);
         return VERR_PATCH_DISABLED;
@@ -6239,7 +6239,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     /** @todo compare to nr of successful runs. add some aging algorithm and determine the best time to disable the patch */
     if (pPatch->patch.cTraps > MAX_PATCH_TRAPS)
     {
-        Log(("Disabling patch at location %VRv due to too many traps inside patch code\n", pPatch->patch.pPrivInstrGC));
+        Log(("Disabling patch at location %RRv due to too many traps inside patch code\n", pPatch->patch.pPrivInstrGC));
         //we are only wasting time, back out the patch
         PATMR3DisablePatch(pVM, pPatch->patch.pPrivInstrGC);
         pTrapRec->pNextPatchInstr = 0;
@@ -6272,7 +6272,7 @@ VMMR3DECL(int) PATMR3HandleMonitoredPage(PVM pVM)
     if (pPatchRec && pPatchRec->patch.uState == PATCH_ENABLED && PAGE_ADDRESS(pPatchRec->patch.pPrivInstrGC) == PAGE_ADDRESS(addr))
     {
         STAM_COUNTER_INC(&pVM->patm.s.StatMonitored);
-        Log(("Renewing patch at %VRv\n", pPatchRec->patch.pPrivInstrGC));
+        Log(("Renewing patch at %RRv\n", pPatchRec->patch.pPrivInstrGC));
         rc = PATMR3DisablePatch(pVM, pPatchRec->patch.pPrivInstrGC);
         if (rc == VWRN_PATCH_REMOVED)
             return VINF_SUCCESS;
@@ -6293,7 +6293,7 @@ VMMR3DECL(int) PATMR3HandleMonitoredPage(PVM pVM)
         if (pPatchRec && pPatchRec->patch.uState == PATCH_ENABLED)
         {
             STAM_COUNTER_INC(&pVM->patm.s.StatMonitored);
-            Log(("Renewing patch at %VRv\n", pPatchRec->patch.pPrivInstrGC));
+            Log(("Renewing patch at %RRv\n", pPatchRec->patch.pPrivInstrGC));
             PATMR3DisablePatch(pVM, pPatchRec->patch.pPrivInstrGC);
             PATMR3EnablePatch(pVM, pPatchRec->patch.pPrivInstrGC);
         }
