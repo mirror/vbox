@@ -573,7 +573,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             {
                 /* We actually generated code for this patch. */
                 ret = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
-                AssertMsg(ret, ("Inserting patch %VGv offset %VGv failed!!\n", pPatchRec->patch.pPrivInstrGC, pPatchRec->CoreOffset.Key));
+                AssertMsg(ret, ("Inserting patch %RRv offset %08RX32 failed!!\n", pPatchRec->patch.pPrivInstrGC, pPatchRec->CoreOffset.Key));
             }
         }
         /* Set to zero as we don't need it anymore. */

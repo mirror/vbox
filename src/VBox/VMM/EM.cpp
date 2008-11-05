@@ -576,13 +576,13 @@ VMMR3DECL(const char *) EMR3GetStateName(EMSTATE enmState)
 /**
  * Just a braindead function to keep track of cli addresses.
  * @param   pVM         VM handle.
- * @param   pInstrGC    The EIP of the cli instruction.
+ * @param   GCPtrInstr  The EIP of the cli instruction.
  */
-static void emR3RecordCli(PVM pVM, RTGCPTR pInstrGC)
+static void emR3RecordCli(PVM pVM, RTGCPTR GCPtrInstr)
 {
     PCLISTAT pRec;
 
-    pRec = (PCLISTAT)RTAvlPVGet(&pVM->em.s.pCliStatTree, (AVLPVKEY)pInstrGC);
+    pRec = (PCLISTAT)RTAvlPVGet(&pVM->em.s.pCliStatTree, (AVLPVKEY)GCPtrInstr);
     if (!pRec)
     {
         /* New cli instruction; insert into the tree. */
@@ -590,10 +590,10 @@ static void emR3RecordCli(PVM pVM, RTGCPTR pInstrGC)
         Assert(pRec);
         if (!pRec)
             return;
-        pRec->Core.Key = (AVLPVKEY)pInstrGC;
+        pRec->Core.Key = (AVLPVKEY)GCPtrInstr;
 
         char szCliStatName[32];
-        RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%VGv", pInstrGC);
+        RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%VGv", GCPtrInstr);
         STAM_REG(pVM, &pRec->Counter, STAMTYPE_COUNTER, szCliStatName, STAMUNIT_OCCURENCES, "Number of times cli was executed.");
 
         bool fRc = RTAvlPVInsert(&pVM->em.s.pCliStatTree, &pRec->Core);
@@ -1751,15 +1751,15 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                         rc |= PGMPhysSimpleReadGCPtr(pVM, &selGS,   pCtx->esp + 32, 4);
                         if (rc == VINF_SUCCESS)
                         {
-                            Log(("Patch code: IRET->VM stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                            Log(("Patch code: IRET->VM stack frame: return address %04X:%08RX32 eflags=%08x ss:esp=%04X:%08RX32\n", selCS, eip, uEFlags, selSS, esp));
                             Log(("Patch code: IRET->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
                         }
                     }
                     else
-                        Log(("Patch code: IRET stack frame: return address %04X:%VGv eflags=%08x ss:esp=%04X:%VGv\n", selCS, eip, uEFlags, selSS, esp));
+                        Log(("Patch code: IRET stack frame: return address %04X:%08RX32 eflags=%08x ss:esp=%04X:%08RX32\n", selCS, eip, uEFlags, selSS, esp));
                 }
                 else
-                    Log(("Patch code: IRET stack frame: return address %04X:%VGv eflags=%08x\n", selCS, eip, uEFlags));
+                    Log(("Patch code: IRET stack frame: return address %04X:%08RX32 eflags=%08x\n", selCS, eip, uEFlags));
             }
         }
 #endif /* LOG_ENABLED */
@@ -1792,7 +1792,7 @@ static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret)
                         &&  PATMIsInt3Patch(pVM, pCtx->eip, NULL, NULL))
                     {
                         /** @todo move to PATMR3HandleTrap */
-                        Log(("Possible Windows XP iret fault at %VGv\n", pCtx->eip));
+                        Log(("Possible Windows XP iret fault at %08RX32\n", pCtx->eip));
                         PATMR3RemovePatch(pVM, pCtx->eip);
                     }
 
@@ -2022,13 +2022,13 @@ int emR3RawPrivileged(PVM pVM)
                             rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);
                             Assert(rc == VERR_PATCH_DISABLED);
                             /* Conflict detected, patch disabled */
-                            Log(("emR3RawPrivileged: detected conflict -> disabled patch at %VGv\n", pCtx->eip));
+                            Log(("emR3RawPrivileged: detected conflict -> disabled patch at %08RX32\n", pCtx->eip));
 
                             enmState = PATMTRANS_SAFE;
                         }
 
                         /* The translation had better be successful. Otherwise we can't recover. */
-                        AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %VGv\n", pCtx->eip));
+                        AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %08RX32\n", pCtx->eip));
                         if (enmState != PATMTRANS_OVERWRITTEN)
                             pCtx->eip = pOrgInstrGC;
                     }
@@ -2070,11 +2070,11 @@ int emR3RawPrivileged(PVM pVM)
                                     rc = PATMR3DetectConflict(pVM, pOrgInstrGC, pOrgInstrGC);
                                     Assert(rc == VERR_PATCH_DISABLED);
                                     /* Conflict detected, patch disabled */
-                                    Log(("emR3RawPrivileged: detected conflict -> disabled patch at %VGv\n", pCtx->rip));
+                                    Log(("emR3RawPrivileged: detected conflict -> disabled patch at %VGv\n", (RTGCPTR)pCtx->rip));
                                     enmState = PATMTRANS_SAFE;
                                 }
                                 /* The translation had better be successful. Otherwise we can't recover. */
-                                AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %VGv\n", pCtx->rip));
+                                AssertReleaseMsg(pOrgInstrGC && enmState != PATMTRANS_OVERWRITTEN, ("Unable to translate instruction address at %VGv\n", (RTGCPTR)pCtx->rip));
                                 if (enmState != PATMTRANS_OVERWRITTEN)
                                     pCtx->rip = pOrgInstrGC;
                             }
@@ -2768,7 +2768,7 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
     int      rc = VERR_INTERNAL_ERROR;
     PCPUMCTX pCtx = pVM->em.s.pCtx;
 
-    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%VGv)\n", pCtx->cs, pCtx->rip));
+    LogFlow(("emR3HwAccExecute: (cs:eip=%04x:%VGv)\n", pCtx->cs, (RTGCPTR)pCtx->rip));
     *pfFFDone = false;
 
     STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
@@ -2800,15 +2800,15 @@ static int emR3HwAccExecute(PVM pVM, bool *pfFFDone)
          * Log important stuff before entering GC.
          */
         if (TRPMHasTrap(pVM))
-            Log(("Pending hardware interrupt=0x%x cs:eip=%04X:%VGv\n", TRPMGetTrapNo(pVM), pCtx->cs, pCtx->rip));
+            Log(("Pending hardware interrupt=0x%x cs:rip=%04X:%VGv\n", TRPMGetTrapNo(pVM), pCtx->cs, (RTGCPTR)pCtx->rip));
 
         uint32_t cpl = CPUMGetGuestCPL(pVM, CPUMCTX2CORE(pCtx));
         if (pCtx->eflags.Bits.u1VM)
             Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));
         else if (CPUMIsGuestIn64BitCode(pVM, CPUMCTX2CORE(pCtx)))
-            Log(("HWR%d: %04X:%VGv ESP=%VGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            Log(("HWR%d: %04X:%VGv ESP=%VGv IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->rsp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
         else
-            Log(("HWR%d: %04X:%08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
+            Log(("HWR%d: %04X:%08X ESP=%08X IF=%d CR0=%x CR4=%x EFER=%x\n", cpl, pCtx->cs,          pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, (uint32_t)pCtx->cr4, (uint32_t)pCtx->msrEFER));
 #endif /* LOG_ENABLED */
 
         /*

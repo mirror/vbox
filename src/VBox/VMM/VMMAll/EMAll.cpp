@@ -154,7 +154,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
     if (RT_FAILURE(rc))
     {
         Log(("EMInterpretDisasOne: Failed to convert %RTsel:%VGv (cpl=%d) - rc=%Rrc !!\n",
-             pCtxCore->cs, pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
+             pCtxCore->cs, (RTGCPTR)pCtxCore->rip, pCtxCore->ss & X86_SEL_RPL, rc));
         return rc;
     }
     return EMInterpretDisasOneEx(pVM, (RTGCUINTPTR)GCPtrInstr, pCtxCore, pCpu, pcbInstr);
@@ -210,7 +210,7 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvF
 {
     RTGCPTR pbCode;
 
-    LogFlow(("EMInterpretInstruction %VGv fault %VGv\n", pRegFrame->rip, pvFault));
+    LogFlow(("EMInterpretInstruction %RGv fault %VGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
     int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
@@ -727,7 +727,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -813,7 +813,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     if (pCpu->param1.size != pCpu->param2.size)
     {
         AssertMsgReturn(pCpu->param1.size >= pCpu->param2.size, /* should never happen! */
-                        ("%s at %VGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), pRegFrame->rip, pCpu->param1.size, pCpu->param2.size),
+                        ("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size),
                         VERR_EM_INTERPRETER);
 
         /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -902,7 +902,7 @@ static int emInterpretAddSub(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
             {
                 if (pCpu->param1.size < pCpu->param2.size)
                 {
-                    AssertMsgFailed(("%s at %VGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
+                    AssertMsgFailed(("%s at %RGv parameter mismatch %d vs %d!!\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip, pCpu->param1.size, pCpu->param2.size)); /* should never happen! */
                     return VERR_EM_INTERPRETER;
                 }
                 /* Or %Ev, Ib -> just a hack to save some space; the data width of the 1st parameter determines the real width */
@@ -1186,14 +1186,14 @@ static int emInterpretMov(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RT
                 break;
 
             default:
-                Log(("emInterpretMov: unexpected type=%d eip=%VGv\n", param2.type, pRegFrame->rip));
+                Log(("emInterpretMov: unexpected type=%d rip=%RGv\n", param2.type, (RTGCPTR)pRegFrame->rip));
                 return VERR_EM_INTERPRETER;
             }
 #ifdef LOG_ENABLED
             if (pCpu->mode == CPUMODE_64BIT)
-                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %RX64 (%d) &val64=%RHv\n", pRegFrame->rip, pDest, val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %VGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
             else
-                LogFlow(("EMInterpretInstruction at %VGv: OP_MOV %VGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
+                LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %VGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
 #endif
 
             Assert(param2.size <= 8 && param2.size > 0);
@@ -1999,7 +1999,7 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
     int      rc;
 
     /** @todo Clean up this mess. */
-    LogFlow(("EMInterpretCRxWrite at %VGv CR%d <- %VX64\n", pRegFrame->rip, DestRegCrx, val));
+    LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %VX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
     switch (DestRegCrx)
     {
     case USE_REG_CR0:
@@ -2348,7 +2348,7 @@ static int emInterpretLIGdt(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, 
     RTGCPTR     pParam1;
     X86XDTR32   dtr32;
 
-    Log(("Emulate %s at %VGv\n", emGetMnemonic(pCpu), pRegFrame->rip));
+    Log(("Emulate %s at %RGv\n", emGetMnemonic(pCpu), (RTGCPTR)pRegFrame->rip));
 
     /* Only for the VT-x real-mode emulation case. */
     if (!CPUMIsGuestInRealMode(pVM))

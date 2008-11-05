@@ -1008,9 +1008,9 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
         Assert(iPD2 < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(pGuestPD)->a));
 
 #ifdef DEBUG
-        Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%VGv\n", iPD1, iPD1 << X86_PD_SHIFT));
+        Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%x\n", iPD1, iPD1 << X86_PD_SHIFT));
         if (iPD1 != iPD2)
-            Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%VGv\n", iPD2, iPD2 << X86_PD_SHIFT));
+            Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%x\n", iPD2, iPD2 << X86_PD_SHIFT));
 #endif
 
         if (!pVM->pgm.s.fMappingsFixed)
@@ -1157,10 +1157,10 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
                 Assert(iPD2 < X86_PG_PAE_ENTRIES);
 
 #ifdef DEBUG
-                Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD1=%#05x (%VGv)\n",
+                Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD1=%#05x (%x)\n",
                      i, iPD1, (i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)));
                 if (iPD1 != iPD2)
-                    Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD2=%#05x (%VGv)\n",
+                    Log(("pgmXXGstPaeWriteHandlerPD: emulated change to i=%d iPD2=%#05x (%x)\n",
                          i, iPD2, (i << X86_PDPT_SHIFT) | (iPD2 << X86_PD_PAE_SHIFT)));
 #endif
 

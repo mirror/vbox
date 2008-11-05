@@ -591,7 +591,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
         }
         else
             pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
-        Log(("PDM: GC Module at %VGvx %s (%s)\n", (RTGCPTR)pModule->ImageBase, pszName, pszFilename));
+        Log(("PDM: R0 Module at %RHv %s (%s)\n", (RTR0PTR)pModule->ImageBase, pszName, pszFilename));
         RTMemTmpFree(pszFile);
         return VINF_SUCCESS;
     }

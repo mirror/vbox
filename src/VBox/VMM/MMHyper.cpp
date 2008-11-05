@@ -228,8 +228,8 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
 
         if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("rc=%Rrc cb=%d GCPtr=%VGv enmType=%d pszDesc=%s\n",
-                             rc, pLookup->cb, pLookup->enmType, pLookup->pszDesc));
+            AssertMsgFailed(("rc=%Rrc cb=%d off=%#RX32 enmType=%d pszDesc=%s\n",
+                             rc, pLookup->cb, pLookup->off, pLookup->enmType, pLookup->pszDesc));
             return rc;
         }
 
@@ -408,7 +408,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
             AssertRC(rc);
             if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("rc=%Rrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                AssertMsgFailed(("rc=%Rrc GCPhys=%VGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
                 break;
             }
             if (pVM->mm.s.fPGMInitialized)
@@ -417,7 +417,7 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
                 AssertRC(rc);
                 if (RT_FAILURE(rc))
                 {
-                    AssertMsgFailed(("rc=%Rrc GCPhys=%VGv off=%#x %s\n", rc, GCPhys, off, pszDesc));
+                    AssertMsgFailed(("rc=%Rrc GCPhys=%VGp off=%#x %s\n", rc, GCPhys, off, pszDesc));
                     break;
                 }
             }

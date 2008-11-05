@@ -133,7 +133,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
             RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Rrc!\n", pszFaultEIP, rc);
         else if (RCPtrFault != CPUMGetHyperEIP(pVM))
         {
-            RTPrintf("VMM: FAILURE - EIP=%VGv expected %VGv (%s)\n", CPUMGetHyperEIP(pVM), RCPtrFault, pszFaultEIP);
+            RTPrintf("VMM: FAILURE - EIP=%08RX32 expected %RRv (%s)\n", CPUMGetHyperEIP(pVM), RCPtrFault, pszFaultEIP);
             fDump = true;
         }
     }
@@ -186,7 +186,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
     int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
+        RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
 
         /*
          * Test various crashes which we must be able to recover from.
@@ -497,7 +497,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
     rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("VMM: VMMGCEntry=%VGv\n", RCPtrEP);
+        RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
 
         CPUMQueryHyperCtxPtr(pVM, &pHyperCtx);
 

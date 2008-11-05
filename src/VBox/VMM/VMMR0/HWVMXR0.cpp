@@ -529,13 +529,13 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
 
 #ifdef VBOX_STRICT
     if (iGate == 0xE)
-        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, pCtx->rip, errCode, pCtx->cr2, intInfo));
+        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x CR2=%08x intInfo=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode, pCtx->cr2, intInfo));
     else
     if (iGate < 0x20)
-        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x\n", iGate, pCtx->rip, errCode));
+        LogFlow(("VMXR0InjectEvent: Injecting interrupt %d at %VGv error code=%08x\n", iGate, (RTGCPTR)pCtx->rip, errCode));
     else
     {
-        LogFlow(("INJ-EI: %x at %VGv\n", iGate, pCtx->rip));
+        LogFlow(("INJ-EI: %x at %VGv\n", iGate, (RTGCPTR)pCtx->rip));
         Assert(!VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS));
         Assert(pCtx->eflags.u32 & X86_EFL_IF);
     }
@@ -636,7 +636,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
     if (pVM->hwaccm.s.Event.fPending)
     {
-        Log(("Reinjecting event %VX64 %08x at %VGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, pCtx->rip, pCtx->cr2));
+        Log(("Reinjecting event %VX64 %08x at %VGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
         rc = VMXR0InjectEvent(pVM, pCtx, pVM->hwaccm.s.Event.intInfo, 0, pVM->hwaccm.s.Event.errCode);
         AssertRC(rc);
@@ -666,7 +666,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
             uint8_t u8Interrupt;
 
             rc = PDMGetInterrupt(pVM, &u8Interrupt);
-            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:eip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, pCtx->rip));
+            Log(("Dispatch interrupt: u8Interrupt=%x (%d) rc=%Rrc cs:rip=%04X:%VGv\n", u8Interrupt, u8Interrupt, rc, pCtx->cs, (RTGCPTR)pCtx->rip));
             if (RT_SUCCESS(rc))
             {
                 rc = TRPMAssertTrap(pVM, u8Interrupt, TRPM_HARDWARE_INT);
@@ -681,7 +681,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, CPUMCTX *pCtx)
             }
         }
         else
-            Log(("Pending interrupt blocked at %VGv by VM_FF_INHIBIT_INTERRUPTS!!\n", pCtx->rip));
+            Log(("Pending interrupt blocked at %VGv by VM_FF_INHIBIT_INTERRUPTS!!\n", (RTGCPTR)pCtx->rip));
     }
 
 #ifdef VBOX_STRICT
@@ -1770,7 +1770,7 @@ ResumeExecution:
     /* Check for irq inhibition due to instruction fusing (sti, mov ss). */
     if (VM_FF_ISSET(pVM, VM_FF_INHIBIT_INTERRUPTS))
     {
-        Log(("VM_FF_INHIBIT_INTERRUPTS at %VGv successor %VGv\n", pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
+        Log(("VM_FF_INHIBIT_INTERRUPTS at %VGv successor %VGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVM)));
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVM))
         {
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
@@ -1985,11 +1985,11 @@ ResumeExecution:
             rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
             pVM->hwaccm.s.Event.errCode  = val;
-            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification, val));
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
         {
-            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, pCtx->rip, exitReason, intInfo, exitQualification));
+            Log(("Pending inject %VX64 at %VGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
             pVM->hwaccm.s.Event.errCode  = 0;
         }
     }
@@ -2004,7 +2004,7 @@ ResumeExecution:
     Log2(("instrInfo=%d instrError=%d instr length=%d\n", instrInfo, instrError, cbInstr));
     Log2(("Interruption error code %d\n", errCode));
     Log2(("IntInfo = %08x\n", intInfo));
-    Log2(("New EIP=%VGv\n", pCtx->rip));
+    Log2(("New EIP=%VGv\n", (RTGCPTR)pCtx->rip));
 
     if (fSyncTPR)
     {
@@ -2047,7 +2047,7 @@ ResumeExecution:
             {
             case X86_XCPT_NM:
             {
-                Log(("#NM fault at %VGv error code %x\n", pCtx->rip, errCode));
+                Log(("#NM fault at %VGv error code %x\n", (RTGCPTR)pCtx->rip, errCode));
 
                 /** @todo don't intercept #NM exceptions anymore when we've activated the guest FPU state. */
                 /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
@@ -2105,10 +2105,10 @@ ResumeExecution:
 
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
                 rc = PGMTrap0eHandler(pVM, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
-                Log2(("PGMTrap0eHandler %VGv returned %Rrc\n", pCtx->rip, rc));
+                Log2(("PGMTrap0eHandler %VGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-                    Log2(("Shadow page fault at %VGv cr2=%VGv error code %x\n", pCtx->rip, exitQualification ,errCode));
+                    Log2(("Shadow page fault at %VGv cr2=%VGv error code %x\n", (RTGCPTR)pCtx->rip, exitQualification ,errCode));
                     STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
 
                     TRPMResetTrap(pVM);
@@ -2156,7 +2156,7 @@ ResumeExecution:
                     rc = VINF_EM_RAW_EMULATE_INSTR;
                     break;
                 }
-                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
+                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
                 rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
@@ -2204,7 +2204,7 @@ ResumeExecution:
                     rc = VMXWriteVMCS(VMX_VMCS_GUEST_DR7, pCtx->dr[7]);
                     AssertRC(rc);
 
-                    Log(("Trap %x (debug) at %VGv exit qualification %VX64\n", vector, pCtx->rip, exitQualification));
+                    Log(("Trap %x (debug) at %VGv exit qualification %VX64\n", vector, (RTGCPTR)pCtx->rip, exitQualification));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
@@ -2223,7 +2223,7 @@ ResumeExecution:
 #ifdef VBOX_STRICT
                 if (!CPUMIsGuestInRealModeEx(pCtx))
                 {
-                    Log(("Trap %x at %04X:%VGv errorCode=%x\n", vector, pCtx->cs, pCtx->rip, errCode));
+                    Log(("Trap %x at %04X:%VGv errorCode=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
                     rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2232,7 +2232,7 @@ ResumeExecution:
 #endif
                 Assert(CPUMIsGuestInRealModeEx(pCtx));
 
-                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %VGv\n", pCtx->rip));
+                LogFlow(("Real mode X86_XCPT_GP instruction emulation at %VGv\n", (RTGCPTR)pCtx->rip));
                 rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
                 if (rc == VINF_SUCCESS)
                 {
@@ -2271,7 +2271,7 @@ ResumeExecution:
                     break;
                 }
 
-                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, pCtx->rip));
+                Log(("Trap %x at %04X:%VGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
                 rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
@@ -2353,10 +2353,10 @@ ResumeExecution:
 
         /* Handle the pagefault trap for the nested shadow table. */
         rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMMODE_EPT, errCode, CPUMCTX2CORE(pCtx), GCPhys);
-        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Rrc\n", pCtx->rip, rc));
+        Log2(("PGMR0Trap0eHandlerNestedPaging %VGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
-            Log2(("Shadow page fault at %VGv cr2=%VGp error code %x\n", pCtx->rip, exitQualification , errCode));
+            Log2(("Shadow page fault at %VGv cr2=%VGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVM);
@@ -2376,7 +2376,7 @@ ResumeExecution:
 
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
         /* Clear VM-exit on IF=1 change. */
-        LogFlow(("VMX_EXIT_IRQ_WINDOW %VGv pending=%d IF=%d\n", pCtx->rip, VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
+        LogFlow(("VMX_EXIT_IRQ_WINDOW %VGv pending=%d IF=%d\n", (RTGCPTR)pCtx->rip, VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
         pVM->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVM->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
@@ -2471,7 +2471,7 @@ ResumeExecution:
         switch (VMX_EXIT_QUALIFICATION_CRX_ACCESS(exitQualification))
         {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:
-            Log2(("VMX: %VGv mov cr%d, x\n", pCtx->rip, VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification)));
+            Log2(("VMX: %VGv mov cr%d, x\n", (RTGCPTR)pCtx->rip, VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification)));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxWrite);
             rc = EMInterpretCRxWrite(pVM, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification),
@@ -2643,13 +2643,13 @@ ResumeExecution:
 
             if (fIOWrite)
             {
-                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", pCtx->rip, uPort, cbSize));
+                Log2(("IOMInterpretOUTSEx %VGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
                 rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
             else
             {
-                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", pCtx->rip, uPort, cbSize));
+                Log2(("IOMInterpretINSEx  %VGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
@@ -2734,7 +2734,7 @@ ResumeExecution:
                             intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
                             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-                            Log(("Inject IO debug trap at %VGv\n", pCtx->rip));
+                            Log(("Inject IO debug trap at %VGv\n", (RTGCPTR)pCtx->rip));
                             rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
                             AssertRC(rc);
 
@@ -2875,7 +2875,7 @@ ResumeExecution:
         Log(("VMX_EXIT_ERR_INVALID_GUEST_STATE\n"));
 
         VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
-        Log(("Old eip %VGv new %VGv\n", pCtx->rip, (RTGCPTR)val));
+        Log(("Old eip %VGv new %VGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_CR0, &val);
         Log(("VMX_VMCS_GUEST_CR0        %RX64\n", val));
@@ -3147,7 +3147,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             ASMGetGDTR(&gdtr);
 
             VMXReadVMCS(VMX_VMCS_GUEST_RIP, &val);
-            Log(("Old eip %VGv new %VGv\n", pCtx->rip, (RTGCPTR)val));
+            Log(("Old eip %VGv new %VGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)val));
             VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
             Log(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS   %08x\n", val));
             VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
