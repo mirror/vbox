@@ -33,6 +33,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <VBox/err.h>
 
 /** @todo proper comments. */
 
@@ -102,6 +103,79 @@ typedef struct VBOXHGCMSVCPARM
             void *addr;
         } pointer;
     } u;
+#ifdef __cplusplus
+    /** Extract a uint32_t value from an HGCM parameter structure */
+    int getUInt32 (uint32_t *u32)
+    {
+        int rc = VINF_SUCCESS;
+        if (type != VBOX_HGCM_SVC_PARM_64BIT)
+            rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc))
+            *u32 = u.uint32;
+        return rc;
+    }
+
+    /** Extract a uint64_t value from an HGCM parameter structure */
+    int getUInt64 (uint64_t *u64)
+    {
+        int rc = VINF_SUCCESS;
+        if (type != VBOX_HGCM_SVC_PARM_64BIT)
+            rc = VERR_INVALID_PARAMETER;
+        if (RT_SUCCESS(rc))
+            *u64 = u.uint64;
+        return rc;
+    }
+
+    /** Extract a pointer value from an HGCM parameter structure */
+    int getPointer (void **ppv, uint32_t *pcb)
+    {
+        if (type == VBOX_HGCM_SVC_PARM_PTR)
+        {
+            *ppv = u.pointer.addr;
+            *pcb = u.pointer.size;
+            return VINF_SUCCESS;
+        }
+
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /** Extract a constant pointer value from an HGCM parameter structure */
+    int getPointer (const void **ppv, uint32_t *pcb)
+    {
+        if (type == VBOX_HGCM_SVC_PARM_PTR)
+        {
+            *ppv = u.pointer.addr;
+            *pcb = u.pointer.size;
+            return VINF_SUCCESS;
+        }
+
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /** Set a uint32_t value to an HGCM parameter structure */
+    void setUInt32(uint32_t u32)
+    {
+        type = VBOX_HGCM_SVC_PARM_32BIT;
+        u.uint32 = u32;
+    }
+
+    /** Set a uint64_t value to an HGCM parameter structure */
+    void setUInt64(uint64_t u64)
+    {
+        type = VBOX_HGCM_SVC_PARM_64BIT;
+        u.uint64 = u64;
+    }
+
+    /** Set a pointer value to an HGCM parameter structure */
+    void setPointer(void *pv, uint32_t cb)
+    {
+        type = VBOX_HGCM_SVC_PARM_PTR;
+        u.pointer.addr = pv;
+        u.pointer.size = cb;
+    }
+
+    VBOXHGCMSVCPARM() : type(VBOX_HGCM_SVC_PARM_INVALID) {}
+#endif
 } VBOXHGCMSVCPARM;
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
