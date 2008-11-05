@@ -1080,48 +1080,58 @@ void VirtualBoxBaseWithChildren::removeDependentChild (const ComPtr <IUnknown> &
  * parent is uninitialized: usually at the begnning of the parent
  * uninitialization sequence.
  *
- * @note May lock something through the called children.
+ * Keep in mind that the uninitialized child objects may be no longer available
+ * (i.e. may be deleted) after this method returns.
+ *
+ * @note Locks #childrenLock() for writing.
+ *
+ * @note May lock something else through the called children.
  */
 void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
 {
     AutoCaller autoCaller (this);
 
-    /* We don't want to hold the childrenLock() write lock here (necessary
-     * to protect mDependentChildren) when uninitializing children because
-     * we want to avoid a possible deadlock where we could get stuck in
-     * child->uninit() blocked by AutoUninitSpan waiting for the number of
-     * child's callers to drop to zero, while some caller is stuck in our
-     * removeDependentChild() method waiting for the write lock.
-     *
-     * The only safe place to not lock and keep accessing our data members
-     * is the InUninit state (no active call to our object may exist on
-     * another thread when we are in InUinint, provided that all such calls
-     * use the AutoCaller class of course). InUinint is also used as a flag
-     * by removeDependentChild() that prevents touching mDependentChildren
-     * from outside. Therefore, we assert. Note that InInit is also fine since
-     * no any object may access us by that time.
-     */
+    /* sanity */
     AssertReturnVoid (autoCaller.state() == InUninit ||
                       autoCaller.state() == InInit);
 
-    if (mDependentChildren.size())
+    AutoWriteLock chLock (childrenLock());
+
+    size_t count = mDependentChildren.size();
+
+    while (count != 0)
     {
-        for (DependentChildren::iterator it = mDependentChildren.begin();
-             it != mDependentChildren.end(); ++ it)
-        {
-            VirtualBoxBase *child = (*it).second;
-            Assert (child);
+        /* strongly reference the weak child from the map to make sure it won't
+         * be deleted while we've released the lock */
+        DependentChildren::iterator it = mDependentChildren.begin();
+        ComPtr <IUnknown> unk = it->first;
+        Assert (!unk.isNull());
 
-            /* Note that if child->uninit() happens to be called on another
-             * thread right before us and is not yet finished, the second
-             * uninit() call will wait until the first one has done so
-             * (thanks to AutoUninitSpan). */
-            if (child)
-                child->uninit();
-        }
+        VirtualBoxBase *child = it->second;
 
-        /* release all weak references we hold */
-        mDependentChildren.clear();
+        /* release the lock to let children stuck in removeDependentChild() go
+         * on (otherwise we'll deadlock in uninit() */
+        chLock.leave();
+
+        /* Note that if child->uninit() happens to be called on another
+         * thread right before us and is not yet finished, the second
+         * uninit() call will wait until the first one has done so
+         * (thanks to AutoUninitSpan). */
+        Assert (child);
+        if (child)
+            child->uninit();
+
+        chLock.enter();
+
+        /* uninit() is guaranteed to be done here so the child must be already
+         * deleted from the list by removeDependentChild() called from there.
+         * Do some checks to avoid endless loops when the user is forgetful */
+        -- count;
+        Assert (count == mDependentChildren.size());
+        if (count != mDependentChildren.size())
+            mDependentChildren.erase (it);
+
+        Assert (count == mDependentChildren.size());
     }
 }
 
@@ -1190,9 +1200,11 @@ void VirtualBoxBaseWithChildrenNEXT::doRemoveDependentChild (IUnknown *aUnk)
 
     AutoCaller autoCaller (this);
 
-    /* return shortly; uninitDependentChildren() will do the job */
-    if (autoCaller.state() == InUninit)
-        return;
+    /* sanity */
+    AssertReturnVoid (autoCaller.state() == InUninit ||
+                      autoCaller.state() == InInit ||
+                      autoCaller.state() == Ready ||
+                      autoCaller.state() == Limited);
 
     AutoWriteLock alock (childrenLock());
 

@@ -1951,7 +1951,8 @@ private:
  * Note that if the parent object does not call #uninitDependentChildren() when
  * it gets uninitialized, it must call uninit() methods of individual children
  * manually to disconnect them; a failure to do so will cause crashes in these
- * methods when chidren get destroyed.
+ * methods when chidren get destroyed. The same applies to children not calling
+ * #removeDependentChild() when getting destrooyed.
  *
  * Note that children added by #addDependentChild() are <b>weakly</b> referenced
  * (i.e. AddRef() is not called), so when a child object is deleted externally
@@ -1964,6 +1965,8 @@ private:
  * VirtualBoxBase::lockHandle()). This lock is used by all add/remove methods of
  * this class so be aware of the need to preserve the {parent, child} lock order
  * when calling these methods.
+ *
+ * Read individual method descriptions to get further information.
  *
  * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
  *       VirtualBoxBaseNEXT implementation. Will completely supercede
@@ -2033,6 +2036,10 @@ public:
      * Removes the given child from the list of dependent children.
      *
      * Usually gets called from the child's uninit() method.
+     *
+     * Keep in mind that the called (parent) object may be no longer available
+     * (i.e. may be deleted deleted) after this method returns, so you must not
+     * call any other parent's methods after that!
      *
      * @note Locks #childrenLock() for writing.
      *
@@ -2258,9 +2265,13 @@ private:
  *
  * Also, as opposed to VirtualBoxBaseWithChildren, children added by
  * #addDependentChild() are <b>strongly</b> referenced, so that they cannot be
- * deleted until #removeDependentChild() is called on them.
+ * deleted (even by a third party) until #removeDependentChild() is called on
+ * them. This also means that a failure to call #removeDependentChild() and
+ * #uninitDependentChildren() at appropriate times as described in
+ * VirtualBoxBaseWithChildrenNEXT may cause stuck references that won't be able
+ * uninitialize themselves.
  *
- * See individual method descriptions for more information.
+ * See individual method descriptions for further information.
  *
  * @param C Type of child objects (must inherit VirtualBoxBase AND implement
  *          some interface).
@@ -2322,7 +2333,7 @@ public:
                           autoCaller.state() == Ready ||
                           autoCaller.state() == Limited);
 
-        AutoWriteLock alock (childrenLock());
+        AutoWriteLock chLock (childrenLock());
         mDependentChildren.push_back (aChild);
     }
 
@@ -2331,9 +2342,9 @@ public:
      *
      * Usually gets called from the child's uninit() method.
      *
-     * Note that once this method returns, the argument (@a aChild) is not
-     * guaranteed to be valid any more, so the caller of this method must not
-     * call its other methods.
+     * Keep in mind that the called (parent) object may be no longer available
+     * (i.e. may be deleted deleted) after this method returns, so you must not
+     * call any other parent's methods after that!
      *
      * @note @a aChild (unless it is in InUninit state) must be protected by
      *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
@@ -2357,11 +2368,20 @@ public:
 
         AutoCaller autoCaller (this);
 
-        /* return shortly; uninitDependentChildren() will do the job */
+        /* sanity */
+        AssertReturnVoid (autoCaller.state() == InUninit ||
+                          autoCaller.state() == InInit ||
+                          autoCaller.state() == Ready ||
+                          autoCaller.state() == Limited);
+
+        /* return shortly; we are strongly referenced so the object won't get
+         * deleted if it calls init() before uninitDependentChildren() does
+         * and therefore the list will still contain a valid reference that will
+         * be correctly processed by uninitDependentChildren() anyway */
         if (autoCaller.state() == InUninit)
             return;
 
-        AutoWriteLock alock (childrenLock());
+        AutoWriteLock chLock (childrenLock());
         mDependentChildren.remove (aChild);
     }
 
@@ -2399,17 +2419,21 @@ protected:
          * to protect mDependentChildren) when uninitializing children because
          * we want to avoid a possible deadlock where we could get stuck in
          * child->uninit() blocked by AutoUninitSpan waiting for the number of
-         * child's callers to drop to zero, while some caller is stuck in our
-         * removeDependentChild() method waiting for the write lock.
+         * child's callers to drop to zero (or for another AutoUninitSpan to
+         * finish), while some other thread is stuck in our
+         * removeDependentChild() method called for that child and waiting for
+         * the childrenLock()'s write lock.
          *
          * The only safe place to not lock and keep accessing our data members
          * is the InUninit state (no active call to our object may exist on
          * another thread when we are in InUinint, provided that all such calls
          * use the AutoCaller class of course). InUinint is also used as a flag
          * by removeDependentChild() that prevents touching mDependentChildren
-         * from outside. Therefore, we assert.
+         * from outside. Therefore, we assert. Note that InInit is also fine
+         * since no any object may access us by that time.
          */
-        AssertReturnVoid (autoCaller.state() == InUninit);
+        AssertReturnVoid (autoCaller.state() == InUninit ||
+                          autoCaller.state() == InInit);
 
         if (mDependentChildren.size())
         {
@@ -2444,7 +2468,7 @@ protected:
      */
     void removeDependentChildren()
     {
-        AutoWriteLock alock (childrenLock());
+        AutoWriteLock chLock (childrenLock());
         mDependentChildren.clear();
     }
 
