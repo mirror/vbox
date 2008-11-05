@@ -257,7 +257,7 @@ DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
     /*
      * Dispatch the fast IOCtl.
      */
-    supdrvIOCtlFast(iFunction, &g_DevExt, pSession);
+    supdrvIOCtlFast(iFunction, 0, &g_DevExt, pSession);
     return 0;
 }
 
