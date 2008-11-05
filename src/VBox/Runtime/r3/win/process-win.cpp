@@ -94,7 +94,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
     const char * const *papszEnv = RTEnvGetExecEnvP(Env);
     AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
     /* later: path searching. */
-    
+
     /*
      * Spawn the child.
      */
@@ -125,7 +125,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
                 if (!*pProcess)
                 {
                     int rc = RTErrConvertFromWin32(GetLastError());
-                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Vrc\n", hProcess, rc));
+                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Rrc\n", hProcess, rc));
                     return rc;
                 }
             }
@@ -140,7 +140,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
                 if (Status != 0)
                 {
                     int rc = ERROR_INTERNAL_ERROR; /* (we don't have a valid conversion here, but this shouldn't happen anyway.) */
-                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Vrc Status=%#x\n", hProcess, rc, Status));
+                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Rrc Status=%#x\n", hProcess, rc, Status));
                     return rc;
                 }
                 *pProcess = ProcInfo.UniqueProcessId;
@@ -151,7 +151,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
     }
 
     int rc = RTErrConvertFromErrno(errno);
-    AssertMsgFailed(("spawn/exec failed rc=%Vrc\n", rc)); /* this migth be annoying... */
+    AssertMsgFailed(("spawn/exec failed rc=%Rrc\n", rc)); /* this migth be annoying... */
     return rc;
 }
 

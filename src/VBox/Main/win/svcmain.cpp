@@ -253,7 +253,7 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
             if (RT_FAILURE (vrc))
             {
                 Utf8Str err = Utf8StrFmt (
-                    "Failed to process Helper request (%Vrc).", vrc);
+                    "Failed to process Helper request (%Rrc).", vrc);
                 Log (("SVCMAIN: %s\n", err.raw()));
             }
 

@@ -1112,7 +1112,7 @@ int ConsoleVRDPServer::Launch (void)
 #endif /* VBOX_WITH_USB */
             }
             else
-                AssertMsgFailed(("Could not start VRDP server: rc = %Vrc\n", rc));
+                AssertMsgFailed(("Could not start VRDP server: rc = %Rrc\n", rc));
         }
         else
         {
@@ -1280,7 +1280,7 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
 
     if (RT_FAILURE (rc))
     {
-        LogRel(("Warning: could not start the remote USB thread, rc = %Vrc!!!\n", rc));
+        LogRel(("Warning: could not start the remote USB thread, rc = %Rrc!!!\n", rc));
         mUSBBackends.thread = NIL_RTTHREAD;
     }
     else
@@ -1353,7 +1353,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
 
         int rc = RTLdrLoad (filename.raw(), &mAuthLibrary);
         if (RT_FAILURE (rc))
-            LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Vrc\n", rc));
+            LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
 
         if (RT_SUCCESS (rc))
         {
@@ -1362,7 +1362,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
             if (RT_FAILURE (rc2))
             {
-                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth2", rc2));
+                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth2", rc2));
                 rc = rc2;
             }
 
@@ -1371,7 +1371,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
             if (RT_FAILURE (rc2))
             {
-                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth", rc2));
+                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth", rc2));
                 rc = rc2;
             }
 
@@ -1985,7 +1985,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
         }
         else
         {
-            LogRel(("VRDPServer::loadLibrary(): failed to load VRDP library! VRDP not available: rc = %Vrc\n", rc));
+            LogRel(("VRDPServer::loadLibrary(): failed to load VRDP library! VRDP not available: rc = %Rrc\n", rc));
             mVRDPLibrary = NULL;
         }
     }

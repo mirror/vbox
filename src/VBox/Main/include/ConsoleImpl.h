@@ -224,7 +224,7 @@ public:
 
     void reportAuthLibraryError (const char *filename, int rc)
     {
-        setError (E_FAIL, tr("Could not load the external authentication library '%s' (%Vrc)"), filename, rc);
+        setError (E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
     }
 
     // for VirtualBoxSupportErrorInfoImpl

@@ -713,7 +713,7 @@ RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC
     {
         DWORD Err = GetLastError();
         rc = RTErrConvertFromWin32(Err);
-        Log(("RTFileSetTimes(%RTfile, %p, %p, %p, %p): SetFileTime failed with lasterr %d (%Vrc)\n",
+        Log(("RTFileSetTimes(%RTfile, %p, %p, %p, %p): SetFileTime failed with lasterr %d (%Rrc)\n",
              File, pAccessTime, pModificationTime, pChangeTime, pBirthTime, Err, rc));
     }
     return rc;

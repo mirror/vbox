@@ -1974,7 +1974,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             rcVBox = gpFrameBuffer->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
         if (RT_FAILURE(rcVBox))
         {
-            RTPrintf("Error: could not initialize secure labeling: rc = %Vrc\n", rcVBox);
+            RTPrintf("Error: could not initialize secure labeling: rc = %Rrc\n", rcVBox);
             goto leave;
         }
         Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;

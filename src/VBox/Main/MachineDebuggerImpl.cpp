@@ -254,7 +254,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 
-    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Vrc\n",
+    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
                      rawModeFlag, rcVBox));
     return E_FAIL;
 }
@@ -323,7 +323,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 
-    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Vrc\n",
+    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
                      rawModeFlag, rcVBox));
     return E_FAIL;
 }

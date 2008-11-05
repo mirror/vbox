@@ -309,7 +309,7 @@ static DECLCALLBACK(int) rtldrPEResolveImports32(PRTLDRMODPE pModPe, const void 
             if (pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG32)
             {
                 rc = pfnGetImport(&pModPe->Core, pszModName, NULL, IMAGE_ORDINAL32(pThunk->u1.Ordinal), &Value, pvUser);
-                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %RTptr #%u\n" : "RTLdrPE:  %08RX32 #%u rc=%Vrc\n",
+                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %RTptr #%u\n" : "RTLdrPE:  %08RX32 #%u rc=%Rrc\n",
                       (uint32_t)Value, IMAGE_ORDINAL32(pThunk->u1.Ordinal), rc));
             }
             else if (   pThunk->u1.Ordinal > 0
@@ -317,7 +317,7 @@ static DECLCALLBACK(int) rtldrPEResolveImports32(PRTLDRMODPE pModPe, const void 
             {
                 rc = pfnGetImport(&pModPe->Core, pszModName, PE_RVA2TYPE(pvBitsR, (char*)pThunk->u1.AddressOfData + 2, const char *),
                                   ~0, &Value, pvUser);
-                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %RTptr %s\n" : "RTLdrPE:  %08RX32 %s rc=%Vrc\n",
+                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %RTptr %s\n" : "RTLdrPE:  %08RX32 %s rc=%Rrc\n",
                       (uint32_t)Value, PE_RVA2TYPE(pvBitsR, (char*)pThunk->u1.AddressOfData + 2, const char *), rc));
             }
             else
@@ -384,7 +384,7 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
             if (pThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG64)
             {
                 rc = pfnGetImport(&pModPe->Core, pszModName, NULL, (unsigned)IMAGE_ORDINAL64(pThunk->u1.Ordinal), &Value, pvUser);
-                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %016RX64 #%u\n" : "RTLdrPE:  %016RX64 #%u rc=%Vrc\n",
+                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %016RX64 #%u\n" : "RTLdrPE:  %016RX64 #%u rc=%Rrc\n",
                       (uint64_t)Value, (unsigned)IMAGE_ORDINAL64(pThunk->u1.Ordinal), rc));
             }
             else if (   pThunk->u1.Ordinal > 0
@@ -393,7 +393,7 @@ static DECLCALLBACK(int) rtldrPEResolveImports64(PRTLDRMODPE pModPe, const void 
                 /** @todo add validation of the string pointer! */
                 rc = pfnGetImport(&pModPe->Core, pszModName, PE_RVA2TYPE(pvBitsR, (uintptr_t)pThunk->u1.AddressOfData + 2, const char *),
                                   ~0, &Value, pvUser);
-                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %016RX64 %s\n" : "RTLdrPE:  %016RX64 %s rc=%Vrc\n",
+                Log4((RT_SUCCESS(rc) ? "RTLdrPE:  %016RX64 %s\n" : "RTLdrPE:  %016RX64 %s rc=%Rrc\n",
                       (uint64_t)Value, PE_RVA2TYPE(pvBitsR, (uintptr_t)pThunk->u1.AddressOfData + 2, const char *), rc));
             }
             else

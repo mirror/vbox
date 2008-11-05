@@ -77,7 +77,7 @@ struct TstU32
         } \
         else if (rc != Test.rc) \
         { \
-            RTPrintf("failure: '%s' -> rc=%Vrc expected %Vrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
+            RTPrintf("failure: '%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
             cErrors++; \
         } \
     } while (0)

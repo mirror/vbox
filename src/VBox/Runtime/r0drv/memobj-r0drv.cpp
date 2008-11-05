@@ -333,7 +333,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
             rc = rtR0MemObjNativeFree(pChild);
             if (RT_FAILURE(rc))
             {
-                Log(("RTR0MemObjFree: failed to free mapping %p: %p %#zx; rc=%Vrc\n", pChild, pChild->pv, pChild->cb, rc));
+                Log(("RTR0MemObjFree: failed to free mapping %p: %p %#zx; rc=%Rrc\n", pChild, pChild->pv, pChild->cb, rc));
                 pMem->uRel.Parent.papMappings[pMem->uRel.Parent.cMappings++] = pChild;
                 return rc;
             }
@@ -387,7 +387,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
         RTMemFree(pMem);
     }
     else
-        Log(("RTR0MemObjFree: failed to free %p: %d %p %#zx; rc=%Vrc\n",
+        Log(("RTR0MemObjFree: failed to free %p: %d %p %#zx; rc=%Rrc\n",
              pMem, pMem->enmType, pMem->pv, pMem->cb, rc));
     return rc;
 }

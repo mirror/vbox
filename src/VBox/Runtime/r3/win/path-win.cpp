@@ -317,7 +317,7 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
                 {
                     DWORD Err = GetLastError();
                     rc = RTErrConvertFromWin32(Err);
-                    Log(("RTPathSetTimes('%s', %p, %p, %p, %p): SetFileTime failed with lasterr %d (%Vrc)\n",
+                    Log(("RTPathSetTimes('%s', %p, %p, %p, %p): SetFileTime failed with lasterr %d (%Rrc)\n",
                          pszPath, pAccessTime, pModificationTime, pChangeTime, pBirthTime, Err, rc));
                 }
             }

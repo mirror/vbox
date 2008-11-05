@@ -295,7 +295,7 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
         }
         rcVBox = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT, &info);
         if (RT_FAILURE(rcVBox) || (RT_FAILURE(info.result))) {
-                LogRelFunc(("VBOXGUEST_IOCTL_HGCM_CONNECT: hgcm connection failed.  internal ioctl result %Vrc, hgcm result %Vrc\n", rcVBox, info.result));
+                LogRelFunc(("VBOXGUEST_IOCTL_HGCM_CONNECT: hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n", rcVBox, info.result));
                 rc = RT_FAILURE(rcVBox) ?   -RTErrConvertToErrno(rcVBox)
                                           : -RTErrConvertToErrno(info.result);
         } else {
@@ -690,7 +690,7 @@ static irqreturn_t vboxadd_irq_handler(int irq, void *dev_id, struct pt_regs *re
         else
         {
             /* impossible... */
-            LogRelFunc(("IRQ was not acknowledged! rc = %Vrc, header.rc = %Vrc\n",
+            LogRelFunc(("IRQ was not acknowledged! rc = %Rrc, header.rc = %Rrc\n",
                         rcVBox, vboxDev->irqAckRequest->header.rc));
             BUG ();
         }
@@ -730,7 +730,7 @@ static int vboxadd_reserve_hypervisor(void)
         );
     if (RT_FAILURE(rcVBox))
     {
-        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
+        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Rrc\n", rcVBox));
         goto bail_out;
     }
     /* query the hypervisor information */
@@ -762,7 +762,7 @@ static int vboxadd_reserve_hypervisor(void)
                 }
                 else
                 {
-                    LogRelFunc(("failed to set hypervisor region! rc = %Vrc, header.rc = %Vrc\n",
+                    LogRelFunc(("failed to set hypervisor region! rc = %Rrc, header.rc = %Rrc\n",
                                 rcVBox, req->header.rc));
                     goto bail_out;
                 }
@@ -776,7 +776,7 @@ static int vboxadd_reserve_hypervisor(void)
     }
     else
     {
-        LogRelFunc(("failed to query hypervisor info! rc = %Vrc, header.rc = %Vrc\n",
+        LogRelFunc(("failed to query hypervisor info! rc = %Rrc, header.rc = %Rrc\n",
                     rcVBox, req->header.rc));
         goto bail_out;
     }
@@ -807,7 +807,7 @@ static int vboxadd_free_hypervisor(void)
         );
     if (RT_FAILURE(rcVBox))
     {
-        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Vrc\n", rcVBox));
+        LogRelFunc(("failed to allocate hypervisor info structure! rc = %Rrc\n", rcVBox));
         goto bail_out;
     }
     /* reset the hypervisor information */
@@ -822,7 +822,7 @@ static int vboxadd_free_hypervisor(void)
     }
     else
     {
-        LogRelFunc(("failed to reset hypervisor info! rc = %Vrc, header.rc = %Vrc\n",
+        LogRelFunc(("failed to reset hypervisor info! rc = %Rrc, header.rc = %Rrc\n",
                     rcVBox, req->header.rc));
         goto bail_out;
     }
@@ -995,7 +995,7 @@ static __init int init(void)
     rcVBox = VbglInit(vboxDev->io_port, vboxDev->pVMMDevMemory);
     if (RT_FAILURE(rcVBox))
     {
-        LogRelFunc(("could not initialize VBGL subsystem! rc = %Vrc\n", rcVBox));
+        LogRelFunc(("could not initialize VBGL subsystem! rc = %Rrc\n", rcVBox));
         err = -ENXIO;
         goto fail;
     }
@@ -1005,7 +1005,7 @@ static __init int init(void)
                          sizeof(VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
     if (RT_FAILURE(rcVBox))
     {
-        LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+        LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
         err = -ENOMEM;
         goto fail;
     }
@@ -1020,7 +1020,7 @@ static __init int init(void)
     rcVBox = VbglGRPerform(&infoReq->header);
     if (RT_FAILURE(rcVBox) || RT_FAILURE(infoReq->header.rc))
     {
-        LogRelFunc(("error reporting guest info to host! rc = %Vrc, header.rc = %Vrc\n",
+        LogRelFunc(("error reporting guest info to host! rc = %Rrc, header.rc = %Rrc\n",
                     rcVBox, infoReq->header.rc));
         VbglGRFree(&infoReq->header);
         err = -ENXIO;
@@ -1040,7 +1040,7 @@ static __init int init(void)
                               VMMDevReq_SetGuestCapabilities);
         if (RT_FAILURE(rcVBox))
         {
-            LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+            LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
             err = -ENOMEM;
             goto fail;
         }
@@ -1066,7 +1066,7 @@ static __init int init(void)
                          sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
     if (RT_FAILURE(rcVBox))
     {
-        LogRelFunc(("could not allocate request structure! rc = %Vrc\n", rcVBox));
+        LogRelFunc(("could not allocate request structure! rc = %Rrc\n", rcVBox));
         err = -ENOMEM;
         goto fail;
     }

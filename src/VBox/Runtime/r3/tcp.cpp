@@ -317,7 +317,7 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
             if (!pHostEnt)
             {
                 rc = rtTcpError();
-                AssertMsgFailed(("Could not get host address rc=%Vrc\n", rc));
+                AssertMsgFailed(("Could not get host address rc=%Rrc\n", rc));
                 return rc;
             }
         }
@@ -376,7 +376,7 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
                 else
                 {
                     rc = rtTcpError();
-                    AssertMsgFailed(("listen() %Vrc\n", rc));
+                    AssertMsgFailed(("listen() %Rrc\n", rc));
                 }
             }
             else
@@ -387,14 +387,14 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
         else
         {
             rc = rtTcpError();
-            AssertMsgFailed(("setsockopt() %Vrc\n", rc));
+            AssertMsgFailed(("setsockopt() %Rrc\n", rc));
         }
         rtTcpClose(WaitSock, "RTServerCreateEx");
     }
     else
     {
         rc = rtTcpError();
-        AssertMsgFailed(("socket() %Vrc\n", rc));
+        AssertMsgFailed(("socket() %Rrc\n", rc));
     }
 
     return rc;
@@ -835,7 +835,7 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
         if (!pHostEnt)
         {
             rc = rtTcpError();
-            AssertMsgFailed(("Could not resolve '%s', rc=%Vrc\n", pszAddress, rc));
+            AssertMsgFailed(("Could not resolve '%s', rc=%Rrc\n", pszAddress, rc));
             return rc;
         }
     }
@@ -890,7 +890,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg)
     if (!rc)
         return VINF_SUCCESS;
     rc = rtTcpError();
-    AssertMsgFailed(("\"%s\": close(%d) -> %Vrc\n", pszMsg, Sock, rc));
+    AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", pszMsg, Sock, rc));
     return rc;
 }
 

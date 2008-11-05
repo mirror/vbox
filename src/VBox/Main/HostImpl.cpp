@@ -2248,14 +2248,14 @@ HRESULT Host::checkUSBProxyService()
 
         if (mUSBProxyService->getLastError() == VERR_FILE_NOT_FOUND)
             return setWarning (E_FAIL,
-                tr ("Could not load the Host USB Proxy Service (%Vrc). "
+                tr ("Could not load the Host USB Proxy Service (%Rrc). "
                     "The service might be not installed on the host computer"),
                 mUSBProxyService->getLastError());
         if (mUSBProxyService->getLastError() == VINF_SUCCESS)
             return setWarning (E_FAIL,
                 tr ("The USB Proxy Service has not yet been ported to this host"));
         return setWarning (E_FAIL,
-            tr ("Could not load the Host USB Proxy service (%Vrc)"),
+            tr ("Could not load the Host USB Proxy service (%Rrc)"),
             mUSBProxyService->getLastError());
     }
 
@@ -2665,7 +2665,7 @@ int Host::createNetworkInterface (SVCHlpClient *aClient,
         Assert (!aGUID.isEmpty());
     }
 
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFunc (("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
 }
@@ -2877,7 +2877,7 @@ int Host::removeNetworkInterface (SVCHlpClient *aClient,
     }
     while (0);
 
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFunc (("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
 }
@@ -3036,7 +3036,7 @@ HRESULT Host::networkInterfaceHelperClient (SVCHlpClient *aClient,
     if (aVrc)
         *aVrc = vrc;
 
-    LogFlowFunc (("rc=0x%08X, vrc=%Vrc\n", rc, vrc));
+    LogFlowFunc (("rc=0x%08X, vrc=%Rrc\n", rc, vrc));
     LogFlowFuncLeave();
     return rc;
 }
@@ -3078,7 +3078,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
-                    errMsg = Utf8StrFmt ("Unspecified error (%Vrc)", vrc);
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
                 if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (errMsg);
@@ -3108,7 +3108,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write failure followed by error message */
                 if (errMsg.isEmpty())
-                    errMsg = Utf8StrFmt ("Unspecified error (%Vrc)", vrc);
+                    errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
                 if (RT_FAILURE (vrc)) break;
                 vrc = aClient->write (errMsg);
@@ -3123,7 +3123,7 @@ int Host::networkInterfaceHelperServer (SVCHlpClient *aClient,
                 VERR_GENERAL_FAILURE);
     }
 
-    LogFlowFunc (("vrc=%Vrc\n", vrc));
+    LogFlowFunc (("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
     return vrc;
 }

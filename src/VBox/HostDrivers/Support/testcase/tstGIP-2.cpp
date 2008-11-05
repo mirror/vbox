@@ -180,6 +180,6 @@ int main(int argc, char **argv)
         SUPTerm();
     }
     else
-        RTPrintf("tstGIP-2: SUPR3Init failed: %Vrc\n", rc);
+        RTPrintf("tstGIP-2: SUPR3Init failed: %Rrc\n", rc);
     return !!rc;
 }

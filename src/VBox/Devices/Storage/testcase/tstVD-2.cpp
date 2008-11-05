@@ -47,7 +47,7 @@ static int tstVDBackendInfo(void)
 #define CHECK(str) \
     do \
     { \
-        RTPrintf("%s rc=%Vrc\n", str, rc); \
+        RTPrintf("%s rc=%Rrc\n", str, rc); \
         if (RT_FAILURE(rc)) \
             return rc; \
     } while (0)
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     rc = tstVDBackendInfo();
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstVD-2: getting backend info test failed! rc=%Vrc\n", rc);
+        RTPrintf("tstVD-2: getting backend info test failed! rc=%Rrc\n", rc);
         g_cErrors++;
     }
 

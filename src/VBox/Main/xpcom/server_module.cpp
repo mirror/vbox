@@ -246,7 +246,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
     }
     while (0);
 
-    LogFlowFunc (("rc=%08X, vrc=%Vrc\n", rc, vrc));
+    LogFlowFunc (("rc=%08X, vrc=%Rrc\n", rc, vrc));
     LogFlowFuncLeave();
 
     return rc;

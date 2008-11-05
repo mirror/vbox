@@ -367,7 +367,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
 
         suplibOsTerm(&g_supLibData);
     }
-    AssertMsgFailed(("SUPR3Init() failed rc=%Vrc\n", rc));
+    AssertMsgFailed(("SUPR3Init() failed rc=%Rrc\n", rc));
     g_cInits--;
 
     return rc;
@@ -1332,7 +1332,7 @@ static int supInstallIDTE(void)
             if (RT_FAILURE(rc2))
             {
                 u64AffMaskPatched &= ~u64Mask;
-                LogRel(("SUPLoadVMM: Failed to set affinity to cpu no. %d, rc=%Vrc.\n", i, rc2));
+                LogRel(("SUPLoadVMM: Failed to set affinity to cpu no. %d, rc=%Rrc.\n", i, rc2));
                 continue;
             }
 
@@ -1355,7 +1355,7 @@ static int supInstallIDTE(void)
                     rc2 = suplibGenerateCallVMMR0(Req.u.Out.u8Idt);
                     if (RT_FAILURE(rc2))
                     {
-                        LogRel(("suplibGenerateCallVMMR0 failed with rc=%Vrc.\n", i, rc2));
+                        LogRel(("suplibGenerateCallVMMR0 failed with rc=%Rrc.\n", i, rc2));
                         rc = rc2;
                     }
                 }
@@ -1366,7 +1366,7 @@ static int supInstallIDTE(void)
             else
             {
 
-                LogRel(("SUPLoadVMM: Failed to patch cpu no. %d, rc=%Vrc.\n", i, rc2));
+                LogRel(("SUPLoadVMM: Failed to patch cpu no. %d, rc=%Rrc.\n", i, rc2));
                 if (RT_SUCCESS(rc))
                     rc = rc2;
             }

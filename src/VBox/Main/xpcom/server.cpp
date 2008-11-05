@@ -502,7 +502,7 @@ public:
         int vrc = RTTimerLRCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
         if (RT_FAILURE (vrc))
         {
-            LogFlowFunc (("Failed to create a timer! (vrc=%Vrc)\n", vrc));
+            LogFlowFunc (("Failed to create a timer! (vrc=%Rrc)\n", vrc));
             return NS_ERROR_FAILURE;
         }
 

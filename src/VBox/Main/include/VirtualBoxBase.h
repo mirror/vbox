@@ -181,7 +181,7 @@ public:
 #if defined (DEBUG)
 #define ComAssertRC(vrc)    AssertRC (vrc)
 #else
-#define ComAssertRC(vrc)    ComAssertMsgRC (vrc, ("%Vra", vrc))
+#define ComAssertRC(vrc)    ComAssertMsgRC (vrc, ("%Rra", vrc))
 #endif
 
 /**

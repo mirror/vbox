@@ -708,7 +708,7 @@ HRESULT MediumBase::setLocation (const BSTR aLocation)
     int vrc = mVirtualBox->calculateFullPath (Utf8Str (aLocation), locationFull);
     if (RT_FAILURE (vrc))
         return setError (E_FAIL,
-            tr ("Invalid image file location '%ls' (%Vrc)"),
+            tr ("Invalid image file location '%ls' (%Rrc)"),
             aLocation, vrc);
 
     m.location = aLocation;
@@ -802,7 +802,7 @@ HRESULT MediumBase::queryInfo()
         if (RT_FAILURE (vrc))
         {
             m.lastAccessError = Utf8StrFmt (
-                tr ("Could not access the image file '%ls' (%Vrc)"),
+                tr ("Could not access the image file '%ls' (%Rrc)"),
                 m.locationFull.raw(), vrc);
         }
 

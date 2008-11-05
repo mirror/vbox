@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     int rc = RTR3Init();
     if (RT_FAILURE(rc))
     {
-        RTPrintf("RTR3Init failed: %Vrc\n", rc);
+        RTPrintf("RTR3Init failed: %Rrc\n", rc);
         return 1;
     }
     RTPrintf("tstHeapSimple: TESTING...\n");
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     rc = RTHeapSimpleInit(&Heap, &s_abMem[1], sizeof(s_abMem) - 1);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("RTHeapSimpleInit failed: %Vrc\n", rc);
+        RTPrintf("RTHeapSimpleInit failed: %Rrc\n", rc);
         return 1;
     }
 

@@ -165,7 +165,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -174,7 +174,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         pData->iFirstLUN = 0;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"First\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -183,7 +183,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         pData->iLastLUN = 0;
     else if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: Failed to query the \"Last\" value! rc=%Rrc\n", rc));
         return rc;
     }
     if (pData->iFirstLUN > pData->iLastLUN)

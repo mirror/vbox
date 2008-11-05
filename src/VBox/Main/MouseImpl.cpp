@@ -234,7 +234,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 
     int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
     if (RT_FAILURE (vrc))
-        rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
+        rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
                        vrc);
 
     return rc;
@@ -316,7 +316,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
         vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
                                           fButtons);
         if (RT_FAILURE (vrc))
-            rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Vrc)"),
+            rc = setError (E_FAIL, tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
                            vrc);
     }
 
@@ -418,7 +418,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
+        AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
     pData->pMouse = (Mouse *)pv;        /** @todo Check this cast! */

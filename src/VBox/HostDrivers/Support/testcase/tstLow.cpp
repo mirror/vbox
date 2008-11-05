@@ -94,7 +94,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Vrc\n", RT_ELEMENTS(aPages0), rc);
+            RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Rrc\n", RT_ELEMENTS(aPages0), rc);
             rcRet++;
         }
 
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Vrc\n", cPages, rc);
+                RTPrintf("SUPLowAlloc(%d,,) failed -> rc=%Rrc\n", cPages, rc);
                 rcRet++;
             }
         }
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTPrintf("SUPR3Init -> rc=%Vrc\n", rc);
+        RTPrintf("SUPR3Init -> rc=%Rrc\n", rc);
         rcRet++;
     }
 

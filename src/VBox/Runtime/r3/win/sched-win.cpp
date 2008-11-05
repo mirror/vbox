@@ -321,7 +321,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 
     DWORD dwLastError = GetLastError();
     int rc = RTErrConvertFromWin32(dwLastError);
-    AssertMsgFailed(("SetThreadPriority(%p, %d) failed, dwLastError=%d rc=%Vrc\n",
+    AssertMsgFailed(("SetThreadPriority(%p, %d) failed, dwLastError=%d rc=%Rrc\n",
                      rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].dwThreadPriority, dwLastError, rc));
     return rc;
 #else

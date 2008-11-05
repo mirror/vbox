@@ -188,7 +188,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                 if (RT_FAILURE (rc))
                 {
                     RTUtf16Free (pwszTmp);
-                    Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Vrc.  Abandoning.\n", rc));
+                    Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetWinSize returned %Rrc.  Abandoning.\n", rc));
                     AssertRCReturn (rc, rc);
                 }
                 /* Set the actually needed data size */
@@ -202,7 +202,7 @@ int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, u
                     if (RT_FAILURE (rc))
                     {
                         RTUtf16Free (pwszTmp);
-                        Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Vrc.  Abandoning.\n", rc));
+                        Log (("readFromPasteboard: clipboard conversion failed.  vboxClipboardUtf16LinToWin() returned %Rrc.  Abandoning.\n", rc));
                         AssertRCReturn (rc, rc);
                     }
 #ifdef SHOW_CLIPBOARD_CONTENT
@@ -252,7 +252,7 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
         rc = vboxClipboardUtf16GetLinSize (pwszSrcText, cwSrc, &cwDest);
         if (RT_FAILURE (rc))
         {
-            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Vrc.  Abandoning.\n", rc));
+            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16GetLinSize returned %Rrc.  Abandoning.\n", rc));
             AssertRCReturn (rc, rc);
         }
         /* Empty clipboard? Not critical */
@@ -272,7 +272,7 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
         rc = vboxClipboardUtf16WinToLin (pwszSrcText, cwSrc, pwszDestText, cwDest);
         if (RT_FAILURE (rc))
         {
-            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Vrc.  Abandoning.\n", rc));
+            Log (("writeToPasteboard: clipboard conversion failed.  vboxClipboardUtf16WinToLin() returned %Rrc.  Abandoning.\n", rc));
             RTMemFree (pwszDestText);
             AssertRCReturn (rc, rc);
         }

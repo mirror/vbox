@@ -96,7 +96,7 @@ static int suplibDarwinOpenDevice(PSUPLIBDATA pThis)
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("SUP: Failed to open \"%s\", errno=%d, rc=%Vrc\n", DEVICE_NAME, errno, rc));
+        LogRel(("SUP: Failed to open \"%s\", errno=%d, rc=%Rrc\n", DEVICE_NAME, errno, rc));
         return rc;
     }
 

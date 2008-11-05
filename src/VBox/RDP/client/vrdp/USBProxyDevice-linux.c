@@ -916,7 +916,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev)
         ASMAtomicDecU32(&g_cResetActive);
 # endif /* NO_LOGICAL_RECONNECT */
 
-        Log(("usb-linux: Reset failed, rc=%Vrc errno=%d.\n", RTErrConvertFromErrno(rc), rc));
+        Log(("usb-linux: Reset failed, rc=%Rrc errno=%d.\n", RTErrConvertFromErrno(rc), rc));
         pProxyDev->iActiveCfg = -1;
         return RTErrConvertFromErrno(rc);
     }

@@ -52,7 +52,7 @@
     for (int call = 0; call < n; ++call) \
         rc = collector->fn; \
     if (RT_FAILURE(rc)) \
-        RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc)
+        RTPrintf("tstCollector: "#fn" -> %Rrc\n", rc)
 
 #define CALLS_PER_SECOND(fn) \
     nCalls = 0; \
@@ -65,7 +65,7 @@
     } while(RTTimeMilliTS() - start < RUN_TIME_MS); \
     if (RT_FAILURE(rc)) \
     { \
-        RTPrintf("tstCollector: "#fn" -> %Vrc\n", rc); \
+        RTPrintf("tstCollector: "#fn" -> %Rrc\n", rc); \
     } \
     else \
         RTPrintf("%70s -- %u calls per second\n", #fn, nCalls)
@@ -88,7 +88,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
         {
             hints.getProcesses(processes);
             std::for_each(processes.begin(), processes.end(), std::ptr_fun(RTProcTerminate));
-            RTPrintf("tstCollector: RTProcCreate() -> %Vrc\n", rc);
+            RTPrintf("tstCollector: RTProcCreate() -> %Rrc\n", rc);
             return;
         }
         hints.collectProcessCpuLoad(pid);
@@ -199,19 +199,19 @@ int main(int argc, char *argv[])
     rc = collector->preCollect(hints);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawHostCpuLoad(&hostUserStart, &hostKernelStart, &hostIdleStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStart, &processKernelStart, &processTotalStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
 
@@ -220,19 +220,19 @@ int main(int argc, char *argv[])
     rc = collector->preCollect(hints);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawHostCpuLoad(&hostUserStop, &hostKernelStop, &hostIdleStop);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStop, &processKernelStop, &processTotalStop);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     hostTotal = hostUserStop - hostUserStart
@@ -252,19 +252,19 @@ int main(int argc, char *argv[])
     rc = collector->preCollect(hints);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawHostCpuLoad(&hostUserStart, &hostKernelStart, &hostIdleStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStart, &processKernelStart, &processTotalStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     start = RTTimeMilliTS();
@@ -273,19 +273,19 @@ int main(int argc, char *argv[])
     rc = collector->preCollect(hints);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: preCollect() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawHostCpuLoad(&hostUserStop, &hostKernelStop, &hostIdleStop);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawHostCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getRawProcessCpuLoad(RTProcSelf(), &processUserStop, &processKernelStop, &processTotalStop);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getRawProcessCpuLoad() -> %Rrc\n", rc);
         return 1;
     }
     hostTotal = hostUserStop - hostUserStart
@@ -304,13 +304,13 @@ int main(int argc, char *argv[])
     rc = collector->getHostMemoryUsage(&total, &used, &available);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getHostMemoryUsage() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getHostMemoryUsage() -> %Rrc\n", rc);
         return 1;
     }
     rc = collector->getProcessMemoryUsage(RTProcSelf(), &processUsed);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: getProcessMemoryUsage() -> %Vrc\n", rc);
+        RTPrintf("tstCollector: getProcessMemoryUsage() -> %Rrc\n", rc);
         return 1;
     }
     RTPrintf("tstCollector: host mem total     = %lu kB\n", total);
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
     RTPrintf("\ntstCollector: TESTING - Performance\n\n");
 
     measurePerformance(collector, argv[0], 100);
-    
+
     delete collector;
 
     printf ("\ntstCollector FINISHED.\n");

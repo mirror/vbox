@@ -1093,18 +1093,18 @@ ioctl_error:
     RTFileClose(pData->DeviceFile);
     /* Open again to make use after suspend possible again. */
     rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
-    AssertMsgRC(rc, ("Opening device file again failed rc=%Vrc\n", rc));
+    AssertMsgRC(rc, ("Opening device file again failed rc=%Rrc\n", rc));
 
     if (RT_FAILURE(rc))
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Opening failed for serial host device '%s' (%Vrc). The device will not work"),
+                                    N_("Opening failed for serial host device '%s' (%Rrc). The device will not work"),
                                     pData->pszDevicePath, rc);
 #  endif
 
     rc = RTThreadPoke(pThread->Thread);
     if (RT_FAILURE(rc))
         PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Vrc). The shutdown may take longer than expected"),
+                                    N_("Suspending serial monitor thread failed for serial device '%s' (%Rrc). The shutdown may take longer than expected"),
                                     pThis->pszDevicePath, RTErrConvertFromErrno(rc));
 
 # else  /* !RT_OS_LINUX*/

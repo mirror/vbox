@@ -1338,7 +1338,7 @@ Return Value:
 
     if (RT_FAILURE(vboxRC))
     {
-        dprintf(("i8042prt::DriverEntry: could not initialize guest library, rc = %Vrc\n", vboxRC));
+        dprintf(("i8042prt::DriverEntry: could not initialize guest library, rc = %Rrc\n", vboxRC));
         /* Continue working in non-VBox mode. */
     }
     else
@@ -1359,7 +1359,7 @@ Return Value:
             if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
             {
                 dprintf(("i8042prt::DriverEntry: ERROR communicating new mouse capabilities to VMMDev."
-                         "rc = %d, VMMDev rc = %Vrc\n", vboxRC, req->header.rc));
+                         "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
             }
             else
             {
@@ -1372,7 +1372,7 @@ Return Value:
         {
             VbglTerminate ();
 
-            dprintf(("i8042prt::DriverEntry: could not allocate request buffer, rc = %Vrc\n", vboxRC));
+            dprintf(("i8042prt::DriverEntry: could not allocate request buffer, rc = %Rrc\n", vboxRC));
             /* Continue working in non-VBox mode. */
         }
     }

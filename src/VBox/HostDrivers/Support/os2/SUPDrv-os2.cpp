@@ -129,15 +129,15 @@ DECLASM(int) VBoxDrvInit(const char *pszArgs)
                 }
                 return VINF_SUCCESS;
             }
-            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: RTSpinlockCreate failed, rc=%Vrc\n", rc);
+            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: RTSpinlockCreate failed, rc=%Rrc\n", rc);
             supdrvDeleteDevExt(&g_DevExt);
         }
         else
-            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: supdrvInitDevExt failed, rc=%Vrc\n", rc);
+            g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: supdrvInitDevExt failed, rc=%Rrc\n", rc);
         RTR0Term();
     }
     else
-        g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: RTR0Init failed, rc=%Vrc\n", rc);
+        g_cchInitText = RTStrPrintf(&g_szInitText[0], g_cchInitTextMax, "VBoxDrv.sys: RTR0Init failed, rc=%Rrc\n", rc);
     return rc;
 }
 

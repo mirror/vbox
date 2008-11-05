@@ -800,7 +800,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
                         rc = VINF_EM_DBG_BREAKPOINT;
                         break;
                     }
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Vrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
+                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
                 break;
             }
 
@@ -941,7 +941,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
              * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
              */
             case EXCP_RC:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_RC rc=%Vrc\n", pVM->rem.s.rc));
+                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_RC rc=%Rrc\n", pVM->rem.s.rc));
                 rc = pVM->rem.s.rc;
                 pVM->rem.s.rc = VERR_INTERNAL_ERROR;
                 break;
@@ -966,7 +966,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         AssertRC(rc2);
     }
 
-    Log2(("REMR3EmulateInstruction: returns %Vrc (cs:eip=%04x:%VGv)\n",
+    Log2(("REMR3EmulateInstruction: returns %Rrc (cs:eip=%04x:%VGv)\n",
           rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     return rc;
 }
@@ -1054,7 +1054,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
                     rc = VINF_EM_DBG_BREAKPOINT;
                     break;
                 }
-            Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Vrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
+            Log2(("REMR3Run: cpu_exec -> EXCP_DEBUG rc=%Rrc iBP=%d GCPtrPC=%VGv\n", rc, iBP, GCPtrPC));
 #endif
             break;
         }
@@ -1089,7 +1089,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
          * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
          */
         case EXCP_RC:
-            Log2(("REMR3Run: cpu_exec -> EXCP_RC rc=%Vrc\n", pVM->rem.s.rc));
+            Log2(("REMR3Run: cpu_exec -> EXCP_RC rc=%Rrc\n", pVM->rem.s.rc));
             rc = pVM->rem.s.rc;
             pVM->rem.s.rc = VERR_INTERNAL_ERROR;
             break;
@@ -1104,7 +1104,7 @@ REMR3DECL(int) REMR3Run(PVM pVM)
             break;
     }
 
-    Log2(("REMR3Run: returns %Vrc (cs:eip=%04x:%VGv)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
+    Log2(("REMR3Run: returns %Rrc (cs:eip=%04x:%VGv)\n", rc, pVM->rem.s.Env.segs[R_CS].selector, pVM->rem.s.Env.eip));
     return rc;
 }
 
@@ -1508,11 +1508,11 @@ void remR3ChangeCpuMode(CPUState *env)
 #ifdef TARGET_X86_64
     rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], env->efer);
     if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Vrc\n", env->cr[0], env->cr[4], env->efer, rc);
+        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc\n", env->cr[0], env->cr[4], env->efer, rc);
 #else
     rc = PGMChangeMode(pVM, env->cr[0], env->cr[4], 0);
     if (rc != VINF_SUCCESS)
-        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Vrc\n", env->cr[0], env->cr[4], 0LL, rc);
+        cpu_abort(env, "PGMChangeMode(, %RX64, %RX64, %RX64) -> %Rrc\n", env->cr[0], env->cr[4], 0LL, rc);
 #endif
 }
 
@@ -3270,7 +3270,7 @@ static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 1);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU8: GCPhys=%VGp -> %02x\n", GCPhys, u32));
     return u32;
 }
@@ -3280,7 +3280,7 @@ static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 2);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU16: GCPhys=%VGp -> %04x\n", GCPhys, u32));
     return u32;
 }
@@ -3290,7 +3290,7 @@ static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32 = 0;
     int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 4);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU32: GCPhys=%VGp -> %08x\n", GCPhys, u32));
     return u32;
 }
@@ -3300,7 +3300,7 @@ static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t
 {
     Log2(("remR3MMIOWriteU8: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
     int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
@@ -3308,7 +3308,7 @@ static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_
 {
     Log2(("remR3MMIOWriteU16: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
     int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
@@ -3316,7 +3316,7 @@ static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_
 {
     Log2(("remR3MMIOWriteU32: GCPhys=%VGp u32=%#x\n", GCPhys, u32));
     int rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
-    AssertMsg(rc == VINF_SUCCESS, ("rc=%Vrc\n", rc)); NOREF(rc);
+    AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 
@@ -4012,7 +4012,7 @@ void remR3ProfileStop(int statcode)
  */
 void remR3RaiseRC(PVM pVM, int rc)
 {
-    Log(("remR3RaiseRC: rc=%Vrc\n", rc));
+    Log(("remR3RaiseRC: rc=%Rrc\n", rc));
     Assert(pVM->rem.s.fInREM);
     VM_ASSERT_EMT(pVM);
     pVM->rem.s.rc = rc;
@@ -4060,7 +4060,7 @@ int cpu_get_pic_interrupt(CPUState *env)
     else
         rc = PDMGetInterrupt(env->pVM, &u8Interrupt);
 
-    LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Vrc\n", u8Interrupt, rc));
+    LogFlow(("cpu_get_pic_interrupt: u8Interrupt=%d rc=%Rrc\n", u8Interrupt, rc));
     if (RT_SUCCESS(rc))
     {
         if (VM_FF_ISPENDING(env->pVM, VM_FF_INTERRUPT_APIC | VM_FF_INTERRUPT_PIC))
@@ -4076,7 +4076,7 @@ int cpu_get_pic_interrupt(CPUState *env)
 void cpu_set_apic_base(CPUX86State *env, uint64_t val)
 {
     int rc = PDMApicSetBase(env->pVM, val);
-    LogFlow(("cpu_set_apic_base: val=%#llx rc=%Vrc\n", val, rc)); NOREF(rc);
+    LogFlow(("cpu_set_apic_base: val=%#llx rc=%Rrc\n", val, rc)); NOREF(rc);
 }
 
 uint64_t cpu_get_apic_base(CPUX86State *env)
@@ -4088,14 +4088,14 @@ uint64_t cpu_get_apic_base(CPUX86State *env)
         LogFlow(("cpu_get_apic_base: returns %#llx \n", u64));
         return u64;
     }
-    LogFlow(("cpu_get_apic_base: returns 0 (rc=%Vrc)\n", rc));
+    LogFlow(("cpu_get_apic_base: returns 0 (rc=%Rrc)\n", rc));
     return 0;
 }
 
 void cpu_set_apic_tpr(CPUX86State *env, uint8_t val)
 {
     int rc = PDMApicSetTPR(env->pVM, val);
-    LogFlow(("cpu_set_apic_tpr: val=%#x rc=%Vrc\n", val, rc)); NOREF(rc);
+    LogFlow(("cpu_set_apic_tpr: val=%#x rc=%Rrc\n", val, rc)); NOREF(rc);
 }
 
 uint8_t cpu_get_apic_tpr(CPUX86State *env)
@@ -4107,7 +4107,7 @@ uint8_t cpu_get_apic_tpr(CPUX86State *env)
         LogFlow(("cpu_get_apic_tpr: returns %#x\n", u8));
         return u8;
     }
-    LogFlow(("cpu_get_apic_tpr: returns 0 (rc=%Vrc)\n", rc));
+    LogFlow(("cpu_get_apic_tpr: returns 0 (rc=%Rrc)\n", rc));
     return 0;
 }
 
@@ -4122,7 +4122,7 @@ uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg)
         return value;
     }
     /** @todo: exception ? */
-    LogFlow(("cpu_apic_rdms returns 0 (rc=%Vrc)\n", rc));
+    LogFlow(("cpu_apic_rdms returns 0 (rc=%Rrc)\n", rc));
     return value;
 }
 
@@ -4130,7 +4130,7 @@ void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
 {
     int rc = PDMApicWriteMSR(env->pVM, 0 /* cpu */, reg, value);
     /** @todo: exception if error ? */
-    LogFlow(("cpu_apic_wrmsr: rc=%Vrc\n", rc)); NOREF(rc);
+    LogFlow(("cpu_apic_wrmsr: rc=%Rrc\n", rc)); NOREF(rc);
 }
 /* -+- I/O Ports -+- */
 
@@ -4147,7 +4147,7 @@ void cpu_outb(CPUState *env, int addr, int val)
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_outb: addr=%#06x val=%#x -> %Vrc\n", addr, val, rc));
+        Log(("cpu_outb: addr=%#06x val=%#x -> %Rrc\n", addr, val, rc));
         remR3RaiseRC(env->pVM, rc);
         return;
     }
@@ -4162,7 +4162,7 @@ void cpu_outw(CPUState *env, int addr, int val)
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_outw: addr=%#06x val=%#x -> %Vrc\n", addr, val, rc));
+        Log(("cpu_outw: addr=%#06x val=%#x -> %Rrc\n", addr, val, rc));
         remR3RaiseRC(env->pVM, rc);
         return;
     }
@@ -4177,7 +4177,7 @@ void cpu_outl(CPUState *env, int addr, int val)
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_outl: addr=%#06x val=%#x -> %Vrc\n", addr, val, rc));
+        Log(("cpu_outl: addr=%#06x val=%#x -> %Rrc\n", addr, val, rc));
         remR3RaiseRC(env->pVM, rc);
         return;
     }
@@ -4196,7 +4196,7 @@ int cpu_inb(CPUState *env, int addr)
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_inb: addr=%#06x -> %#x rc=%Vrc\n", addr, u32, rc));
+        Log(("cpu_inb: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
         return (int)u32;
     }
@@ -4215,7 +4215,7 @@ int cpu_inw(CPUState *env, int addr)
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_inw: addr=%#06x -> %#x rc=%Vrc\n", addr, u32, rc));
+        Log(("cpu_inw: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
         return (int)u32;
     }
@@ -4236,7 +4236,7 @@ int cpu_inl(CPUState *env, int addr)
     }
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
     {
-        Log(("cpu_inl: addr=%#06x -> %#x rc=%Vrc\n", addr, u32, rc));
+        Log(("cpu_inl: addr=%#06x -> %#x rc=%Rrc\n", addr, u32, rc));
         remR3RaiseRC(env->pVM, rc);
         return (int)u32;
     }
@@ -4340,8 +4340,8 @@ static void remAbort(int rc, const char *pszTip)
     /*
      * Bitch about it.
      */
-    RTLogPrintf("internal REM fatal error: rc=%Vrc %s\n", rc, pszTip);
-    AssertReleaseMsgFailed(("internal REM fatal error: rc=%Vrc %s\n", rc, pszTip));
+    RTLogPrintf("internal REM fatal error: rc=%Rrc %s\n", rc, pszTip);
+    AssertReleaseMsgFailed(("internal REM fatal error: rc=%Rrc %s\n", rc, pszTip));
 
     /*
      * Jump back to where we entered the recompiler.

@@ -82,7 +82,7 @@ int main(int argc, char **argv)
     PSUPDRVSESSION pSession;
     rc = SUPR3Init(&pSession);
     rcRet += rc != 0;
-    RTPrintf("tstInt: SUPR3Init -> rc=%Vrc\n", rc);
+    RTPrintf("tstInt: SUPR3Init -> rc=%Rrc\n", rc);
     if (!rc)
     {
         /*
@@ -124,12 +124,12 @@ int main(int argc, char **argv)
                         rc = SUPCallVMMR0(pVMR0, VMMR0_DO_SLOW_NOP, NULL);
                         if (rc != VINF_SUCCESS)
                         {
-                            RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                            RTPrintf("tstInt: SUPCallVMMR0 -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                             rcRet++;
                             break;
                         }
                     }
-                    RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Vrc)\n", cIterations, rc);
+                    RTPrintf("tstInt: Performed SUPCallVMMR0 %d times (rc=%Rrc)\n", cIterations, rc);
 
                     /*
                      * The fast path.
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0Fast -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0Fast -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0/idt -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0/idt -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
 
                             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                             {
-                                RTPrintf("tstInt: SUPCallVMMR0Ex -> rc=%Vrc i=%d Expected VINF_SUCCESS!\n", rc, i);
+                                RTPrintf("tstInt: SUPCallVMMR0Ex -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
                                 rcRet++;
                                 break;
                             }
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    RTPrintf("tstInt: SUPSetVMForFastIOCtl failed: %Vrc\n", rc);
+                    RTPrintf("tstInt: SUPSetVMForFastIOCtl failed: %Rrc\n", rc);
                     rcRet++;
                 }
             }
@@ -238,13 +238,13 @@ int main(int argc, char **argv)
             rc = SUPUnloadVMM();
             if (rc)
             {
-                RTPrintf("tstInt: SUPUnloadVMM failed with rc=%Vrc\n", rc);
+                RTPrintf("tstInt: SUPUnloadVMM failed with rc=%Rrc\n", rc);
                 rcRet++;
             }
         }
         else
         {
-            RTPrintf("tstInt: SUPLoadVMM failed with rc=%Vrc\n", rc);
+            RTPrintf("tstInt: SUPLoadVMM failed with rc=%Rrc\n", rc);
             rcRet++;
         }
 
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
          */
         rc = SUPTerm();
         rcRet += rc != 0;
-        RTPrintf("tstInt: SUPTerm -> rc=%Vrc\n", rc);
+        RTPrintf("tstInt: SUPTerm -> rc=%Rrc\n", rc);
     }
 
     return !!rc;

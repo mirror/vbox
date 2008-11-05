@@ -264,7 +264,7 @@ int HGCMThread::WaitForTermination (void)
         rc = RTThreadWait (m_thread, 5000, NULL);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -336,7 +336,7 @@ inline int HGCMThread::Enter (void)
 #ifdef LOG_ENABLED
     if (RT_FAILURE (rc))
     {
-        Log(("HGCMThread::MsgPost: FAILURE: could not obtain worker thread mutex, rc = %Vrc!!!\n", rc));
+        Log(("HGCMThread::MsgPost: FAILURE: could not obtain worker thread mutex, rc = %Rrc!!!\n", rc));
     }
 #endif /* LOG_ENABLED */
 
@@ -448,7 +448,7 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
         }
     }
 
-    LogFlow(("HGCMThread::MsgPost: rc = %Vrc\n", rc));
+    LogFlow(("HGCMThread::MsgPost: rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -530,7 +530,7 @@ int HGCMThread::MsgGet (HGCMMsgCore **ppMsg)
         RTSemEventMultiReset (m_eventThread);
     }
 
-    LogFlow(("HGCMThread::MsgGet: *ppMsg = %p, return rc = %Vrc\n", *ppMsg, rc));
+    LogFlow(("HGCMThread::MsgGet: *ppMsg = %p, return rc = %Rrc\n", *ppMsg, rc));
 
     return rc;
 }
@@ -643,7 +643,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
     }
     else
     {
-        Log(("hgcmThreadCreate: FAILURE: rc = %Vrc.\n", rc));
+        Log(("hgcmThreadCreate: FAILURE: rc = %Rrc.\n", rc));
 
         if (handle != 0)
         {
@@ -652,7 +652,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
         }
     }
 
-    LogFlow(("MAIN::hgcmThreadCreate: rc = %Vrc\n", rc));
+    LogFlow(("MAIN::hgcmThreadCreate: rc = %Rrc\n", rc));
 
     return rc;
 }
@@ -671,7 +671,7 @@ int hgcmThreadWait (HGCMTHREADHANDLE hThread)
         hgcmObjDereference (pThread);
     }
 
-    LogFlowFunc(("rc = %Vrc\n", rc));
+    LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -699,7 +699,7 @@ int hgcmMsgAlloc (HGCMTHREADHANDLE hThread, HGCMMSGHANDLE *pHandle, uint32_t u32
         hgcmObjDereference (pThread);
     }
 
-    LogFlow(("MAIN::hgcmMsgAlloc: handle 0x%08X, rc = %Vrc\n", *pHandle, rc));
+    LogFlow(("MAIN::hgcmMsgAlloc: handle 0x%08X, rc = %Rrc\n", *pHandle, rc));
 
     return rc;
 }
@@ -723,7 +723,7 @@ static int hgcmMsgPostInternal (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback
         hgcmObjDereference (pMsg);
     }
 
-    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg 0x%08X, rc = %Vrc\n", hMsg, rc));
+    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg 0x%08X, rc = %Rrc\n", hMsg, rc));
 
     return rc;
 }
@@ -781,7 +781,7 @@ int hgcmMsgGet (HGCMTHREADHANDLE hThread, HGCMMsgCore **ppMsg)
         hgcmObjDereference (pThread);
     }
 
-    LogFlow(("MAIN::hgcmMsgGet: *ppMsg = %p, rc = %Vrc\n", *ppMsg, rc));
+    LogFlow(("MAIN::hgcmMsgGet: *ppMsg = %p, rc = %Rrc\n", *ppMsg, rc));
 
     return rc;
 }
@@ -814,7 +814,7 @@ int hgcmThreadInit (void)
 
     rc = hgcmObjInit ();
 
-    LogFlow(("MAIN::hgcmThreadInit: rc = %Vrc\n", rc));
+    LogFlow(("MAIN::hgcmThreadInit: rc = %Rrc\n", rc));
 
     return rc;
 }

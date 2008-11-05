@@ -161,7 +161,7 @@ USBProxyServiceLinux::USBProxyServiceLinux (HostUSB *aHost, const char *aUsbfsRo
             /* I'm currently using Linux with disabled USB support */
             AssertRC (rc);
 #endif
-            Log (("USBProxyServiceLinux::USBProxyServiceLinux: RTFileOpen(,%s,,) -> %Vrc\n", pszDevices, rc));
+            Log (("USBProxyServiceLinux::USBProxyServiceLinux: RTFileOpen(,%s,,) -> %Rrc\n", pszDevices, rc));
         }
         RTStrFree (pszDevices);
     }
@@ -169,7 +169,7 @@ USBProxyServiceLinux::USBProxyServiceLinux (HostUSB *aHost, const char *aUsbfsRo
         Log (("USBProxyServiceLinux::USBProxyServiceLinux: out of memory!\n"));
 
     mLastError = rc;
-    LogFlowMember (("USBProxyServiceLinux::USBProxyServiceLinux: returns failure!!! (rc=%Vrc)\n", rc));
+    LogFlowMember (("USBProxyServiceLinux::USBProxyServiceLinux: returns failure!!! (rc=%Rrc)\n", rc));
 }
 
 
@@ -1041,7 +1041,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
          */
         if (RT_FAILURE (rc))
         {
-            LogFlow (("USBProxyServiceLinux::getDevices: rc=%Vrc\n", rc));
+            LogFlow (("USBProxyServiceLinux::getDevices: rc=%Rrc\n", rc));
             while (pFirst)
             {
                 PUSBDEVICE pFree = pFirst;

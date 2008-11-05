@@ -55,7 +55,7 @@ DECLINLINE(int) vbglHandleHeapEnter (void)
     int rc = RTSemFastMutexRequest(g_vbgldata.mutexHGCMHandle);
 
     VBGL_HGCM_ASSERTMsg(RT_SUCCESS(rc),
-                        ("Failed to request handle heap mutex, rc = %Vrc\n", rc));
+                        ("Failed to request handle heap mutex, rc = %Rrc\n", rc));
 
     return rc;
 }
