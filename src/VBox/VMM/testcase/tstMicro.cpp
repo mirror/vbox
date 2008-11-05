@@ -160,8 +160,8 @@ static void SetupSelectors(PVM pVM)
     /*
      * Find the GDT - This is a HACK :-)
      */
-    RTGCPTR     GCPtr = CPUMGetHyperGDTR(pVM, NULL);
-    PX86DESC    paGDTEs = (PX86DESC)MMHyperGC2HC(pVM, GCPtr);
+    RTRCPTR     RCPtr = CPUMGetHyperGDTR(pVM, NULL);
+    PX86DESC    paGDTEs = (PX86DESC)MMHyperRCToR3(pVM, RCPtr);
 
     for (unsigned i = 0; i <= 3; i++)
     {

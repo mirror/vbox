@@ -124,11 +124,11 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
         Log(("MMR3HyperAlloc failed with %Vrc\n", rc));
         return rc;
     }
-    pVM->patm.s.pPatchMemGC = MMHyperHC2GC(pVM, pVM->patm.s.pPatchMemHC);
+    pVM->patm.s.pPatchMemGC = MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC);
 
     /* PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
     pVM->patm.s.pGCStackHC  = (RTRCPTR *)(pVM->patm.s.pPatchMemHC + PATCH_MEMORY_SIZE + PAGE_SIZE);
-    pVM->patm.s.pGCStackGC  = MMHyperHC2GC(pVM, pVM->patm.s.pGCStackHC);
+    pVM->patm.s.pGCStackGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStackHC);
 
     /*
      * Hypervisor memory for GC status data (read/write)
@@ -139,16 +139,16 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
      */
     Assert(sizeof(PATMGCSTATE) < PAGE_SIZE);    /** @note hardcoded dependencies on this exist. */
     pVM->patm.s.pGCStateHC  = (PPATMGCSTATE)((uint8_t *)pVM->patm.s.pGCStackHC + PATM_STACK_TOTAL_SIZE);
-    pVM->patm.s.pGCStateGC  = MMHyperHC2GC(pVM, pVM->patm.s.pGCStateHC);
+    pVM->patm.s.pGCStateGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStateHC);
 
     /* Hypervisor memory for patch statistics */
     pVM->patm.s.pStatsHC  = (PSTAMRATIOU32)((uint8_t *)pVM->patm.s.pGCStateHC + PAGE_SIZE);
-    pVM->patm.s.pStatsGC  = MMHyperHC2GC(pVM, pVM->patm.s.pStatsHC);
+    pVM->patm.s.pStatsGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pStatsHC);
 
     /* Memory for patch lookup trees. */
     rc = MMHyperAlloc(pVM, sizeof(*pVM->patm.s.PatchLookupTreeHC), 0, MM_TAG_PATM, (void **)&pVM->patm.s.PatchLookupTreeHC);
     AssertRCReturn(rc, rc);
-    pVM->patm.s.PatchLookupTreeGC = MMHyperHC2GC(pVM, pVM->patm.s.PatchLookupTreeHC);
+    pVM->patm.s.PatchLookupTreeGC = MMHyperR3ToRC(pVM, pVM->patm.s.PatchLookupTreeHC);
 
 #ifdef RT_ARCH_AMD64 /* see patmReinit(). */
     /* Check CFGM option. */
@@ -340,7 +340,7 @@ static int patmReinit(PVM pVM)
     AssertReleaseMsg(pVM->patm.s.pStatsGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pStatsGC));
 
     Assert(pVM->patm.s.pPatchMemHC);
-    Assert(pVM->patm.s.pPatchMemGC = MMHyperHC2GC(pVM, pVM->patm.s.pPatchMemHC));
+    Assert(pVM->patm.s.pPatchMemGC = MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC));
     memset(pVM->patm.s.pPatchMemHC, 0, PATCH_MEMORY_SIZE);
     AssertReleaseMsg(pVM->patm.s.pPatchMemGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pPatchMemHC));
 
@@ -349,7 +349,7 @@ static int patmReinit(PVM pVM)
     AssertRCReturn(rc, rc);
 
     Assert(pVM->patm.s.PatchLookupTreeHC);
-    Assert(pVM->patm.s.PatchLookupTreeGC == MMHyperHC2GC(pVM, pVM->patm.s.PatchLookupTreeHC));
+    Assert(pVM->patm.s.PatchLookupTreeGC == MMHyperR3ToRC(pVM, pVM->patm.s.PatchLookupTreeHC));
 
     /*
      * (Re)Initialize PATM structure
@@ -411,7 +411,7 @@ static int patmReinit(PVM pVM)
  */
 VMMR3DECL(void) PATMR3Relocate(PVM pVM)
 {
-    RTRCPTR     GCPtrNew = MMHyperHC2GC(pVM, pVM->patm.s.pGCStateHC);
+    RTRCPTR     GCPtrNew = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStateHC);
     RTRCINTPTR  delta = GCPtrNew - pVM->patm.s.pGCStateGC;
 
     Log(("PATMR3Relocate from %VRv to %VRv - delta %08X\n", pVM->patm.s.pGCStateGC, GCPtrNew, delta));
@@ -433,13 +433,13 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
             pCtx->eip += delta;
 
         pVM->patm.s.pGCStateGC  = GCPtrNew;
-        pVM->patm.s.pPatchMemGC = MMHyperHC2GC(pVM, pVM->patm.s.pPatchMemHC);
+        pVM->patm.s.pPatchMemGC = MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC);
 
-        pVM->patm.s.pGCStackGC  = MMHyperHC2GC(pVM, pVM->patm.s.pGCStackHC);
+        pVM->patm.s.pGCStackGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStackHC);
 
-        pVM->patm.s.pStatsGC    = MMHyperHC2GC(pVM, pVM->patm.s.pStatsHC);
+        pVM->patm.s.pStatsGC    = MMHyperR3ToRC(pVM, pVM->patm.s.pStatsHC);
 
-        pVM->patm.s.PatchLookupTreeGC = MMHyperHC2GC(pVM, pVM->patm.s.PatchLookupTreeHC);
+        pVM->patm.s.PatchLookupTreeGC = MMHyperR3ToRC(pVM, pVM->patm.s.PatchLookupTreeHC);
 
         if (pVM->patm.s.pfnSysEnterPatchGC)
             pVM->patm.s.pfnSysEnterPatchGC += delta;

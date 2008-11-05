@@ -137,14 +137,14 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
             return rc;
         }
 #ifdef IN_GC
-        pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperGC2HC(pVM, (RCPTRTYPE(void*))pVM->csam.s.pPDBitmapGC[pgdir]);
+        pVM->csam.s.pPDHCBitmapGC[pgdir] = MMHyperRCToR3(pVM, (RCPTRTYPE(void*))pVM->csam.s.pPDBitmapGC[pgdir]);
         if (!pVM->csam.s.pPDHCBitmapGC[pgdir])
         {
             Log(("MMHyperHC2GC failed for %RRv\n", pVM->csam.s.pPDBitmapGC[pgdir]));
             return rc;
         }
 #else
-        pVM->csam.s.pPDGCBitmapHC[pgdir] = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC[pgdir]);
+        pVM->csam.s.pPDGCBitmapHC[pgdir] = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC[pgdir]);
         if (!pVM->csam.s.pPDGCBitmapHC[pgdir])
         {
             Log(("MMHyperHC2GC failed for %RHv\n", pVM->csam.s.pPDBitmapHC[pgdir]));
