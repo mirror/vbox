@@ -1519,7 +1519,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
     {
         case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
         {
-            pServer->mpfnClipboardCallback = (PFNVRDPCLIPBOARDEXTCALLBACK)pParms->pvData;
+            pServer->mpfnClipboardCallback = (PFNVRDPCLIPBOARDEXTCALLBACK)pParms->u.pfnCallback;
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
@@ -1547,7 +1547,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                 mpEntryPoints->VRDPClipboard (pServer->mhServer,
                                               VRDP_CLIPBOARD_FUNCTION_DATA_READ,
                                               pParms->u32Format,
-                                              pParms->pvData,
+                                              pParms->u.pvData,
                                               pParms->cbData,
                                               &pParms->cbData);
             }
@@ -1560,7 +1560,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension (void *pvExtensio
                 mpEntryPoints->VRDPClipboard (pServer->mhServer,
                                               VRDP_CLIPBOARD_FUNCTION_DATA_WRITE,
                                               pParms->u32Format,
-                                              pParms->pvData,
+                                              pParms->u.pvData,
                                               pParms->cbData,
                                               NULL);
             }

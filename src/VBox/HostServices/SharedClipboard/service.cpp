@@ -473,7 +473,7 @@ static DECLCALLBACK(void) svcCall (void *,
                             VBOXCLIPBOARDEXTPARMS parms;
 
                             parms.u32Format = u32Format;
-                            parms.pvData = pv;
+                            parms.u.pvData = pv;
                             parms.cbData = cb;
 
                             g_fReadingData = true;
@@ -547,7 +547,7 @@ static DECLCALLBACK(void) svcCall (void *,
                             VBOXCLIPBOARDEXTPARMS parms;
 
                             parms.u32Format = u32Format;
-                            parms.pvData = pv;
+                            parms.u.pvData = pv;
                             parms.cbData = cb;
 
                             g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof (parms));
@@ -742,14 +742,14 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
         g_pfnExtension = pfnExtension;
         g_pvExtension = pvExtension;
 
-        parms.pvData = (void *)extCallback;
+        parms.u.pfnCallback = (void (*)())extCallback;
         g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof (parms));
     }
     else
     {
         if (g_pfnExtension)
         {
-            parms.pvData = NULL;
+            parms.u.pfnCallback = NULL;
             g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof (parms));
         }
 
