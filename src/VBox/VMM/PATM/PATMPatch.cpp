@@ -235,22 +235,22 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_CPUID_STD_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdStdGCPtr(pVM);
+                    dest = CPUMGetGuestCpuIdStdRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_EXT_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdExtGCPtr(pVM);
+                    dest = CPUMGetGuestCpuIdExtRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdCentaurGCPtr(pVM);
+                    dest = CPUMGetGuestCpuIdCentaurRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_DEF_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMGetGuestCpuIdDefGCPtr(pVM);
+                    dest = CPUMGetGuestCpuIdDefRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_STD_MAX:
@@ -286,7 +286,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_VM_FORCEDACTIONS:
                     /* @todo dirty assumptions when correcting this fixup during saved state loading. */
-                    dest = pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions);
+                    dest = pVM->pVMRC + RT_OFFSETOF(VM, fForcedActions);
                     break;
 
                 case PATM_TEMP_EAX:

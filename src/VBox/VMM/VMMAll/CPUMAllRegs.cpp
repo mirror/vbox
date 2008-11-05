@@ -62,7 +62,7 @@ VMMDECL(void) CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
         pCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Hyper);
         pVM->cpum.s.pHyperCoreR3 = (R3PTRTYPE(PCPUMCTXCORE))VM_R3_ADDR(pVM, pCtxCore);
         pVM->cpum.s.pHyperCoreR0 = (R0PTRTYPE(PCPUMCTXCORE))VM_R0_ADDR(pVM, pCtxCore);
-        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_GUEST_ADDR(pVM, pCtxCore);
+        pVM->cpum.s.pHyperCoreRC = (RCPTRTYPE(PCPUMCTXCORE))VM_RC_ADDR(pVM, pCtxCore);
     }
     else
     {
@@ -1044,9 +1044,9 @@ VMMDECL(void) CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM)
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdRCPtr(PVM pVM)
 {
-    return RCPTRTYPE(PCCPUMCPUID)VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
+    return RCPTRTYPE(PCCPUMCPUID)VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
 }
 
 
@@ -1059,9 +1059,9 @@ VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM)
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtRCPtr(PVM pVM)
 {
-    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
 }
 
 
@@ -1074,9 +1074,9 @@ VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM)
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurRCPtr(PVM pVM)
 {
-    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
 }
 
 
@@ -1087,9 +1087,9 @@ VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM)
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM)
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefRCPtr(PVM pVM)
 {
-    return (RCPTRTYPE(PCCPUMCPUID))VM_GUEST_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
 }
 
 

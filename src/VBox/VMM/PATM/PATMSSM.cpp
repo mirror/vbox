@@ -869,15 +869,15 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
         }
         else
         /* Note: rather assumptive! */
-        if (    *pFixup >= pVM->pVMGC
-            &&  *pFixup < pVM->pVMGC + 32)
+        if (    *pFixup >= pVM->pVMRC
+            &&  *pFixup < pVM->pVMRC + 32)
         {
-            LogFlow(("Changing fForcedActions fixup from %x to %x\n", *pFixup, pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions)));
-            *pFixup = pVM->pVMGC + RT_OFFSETOF(VM, fForcedActions);
+            LogFlow(("Changing fForcedActions fixup from %x to %x\n", *pFixup, pVM->pVMRC + RT_OFFSETOF(VM, fForcedActions)));
+            *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, fForcedActions);
         }
         else
-        if (    *pFixup >= pVM->pVMGC
-            &&  *pFixup < pVM->pVMGC + 8192)
+        if (    *pFixup >= pVM->pVMRC
+            &&  *pFixup < pVM->pVMRC + 8192)
         {
             static int cCpuidFixup = 0;
 #ifdef LOG_ENABLED
@@ -887,16 +887,16 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             switch(cCpuidFixup & 3)
             {
             case 0:
-                *pFixup = CPUMGetGuestCpuIdDefGCPtr(pVM);
+                *pFixup = CPUMGetGuestCpuIdDefRCPtr(pVM);
                 break;
             case 1:
-                *pFixup = CPUMGetGuestCpuIdStdGCPtr(pVM);
+                *pFixup = CPUMGetGuestCpuIdStdRCPtr(pVM);
                 break;
             case 2:
-                *pFixup = CPUMGetGuestCpuIdExtGCPtr(pVM);
+                *pFixup = CPUMGetGuestCpuIdExtRCPtr(pVM);
                 break;
             case 3:
-                *pFixup = CPUMGetGuestCpuIdCentaurGCPtr(pVM);
+                *pFixup = CPUMGetGuestCpuIdCentaurRCPtr(pVM);
                 break;
             }
             LogFlow(("Changing cpuid fixup %d from %x to %x\n", cCpuidFixup, oldFixup, *pFixup));

@@ -348,10 +348,10 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
      * TSS descriptor
      */
     pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3];
-    RTGCPTR pGCTSS = VM_GUEST_ADDR(pVM, &pVM->selm.s.Tss);
-    pDesc->Gen.u16BaseLow       = RT_LOWORD(pGCTSS);
-    pDesc->Gen.u8BaseHigh1      = RT_BYTE3(pGCTSS);
-    pDesc->Gen.u8BaseHigh2      = RT_BYTE4(pGCTSS);
+    RTRCPTR RCPtrTSS = VM_RC_ADDR(pVM, &pVM->selm.s.Tss);
+    pDesc->Gen.u16BaseLow       = RT_LOWORD(RCPtrTSS);
+    pDesc->Gen.u8BaseHigh1      = RT_BYTE3(RCPtrTSS);
+    pDesc->Gen.u8BaseHigh2      = RT_BYTE4(RCPtrTSS);
     pDesc->Gen.u16LimitLow      = sizeof(VBOXTSS) - 1;
     pDesc->Gen.u4LimitHigh      = 0;
     pDesc->Gen.u4Type           = X86_SEL_TYPE_SYS_386_TSS_AVAIL;
@@ -369,10 +369,10 @@ static void selmR3SetupHyperGDTSelectors(PVM pVM)
     pDesc = &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3];
     pDesc->Gen.u16LimitLow      = sizeof(VBOXTSS) - 1;
     pDesc->Gen.u4LimitHigh      = 0;
-    pGCTSS = VM_GUEST_ADDR(pVM, &pVM->selm.s.TssTrap08);
-    pDesc->Gen.u16BaseLow       = RT_LOWORD(pGCTSS);
-    pDesc->Gen.u8BaseHigh1      = RT_BYTE3(pGCTSS);
-    pDesc->Gen.u8BaseHigh2      = RT_BYTE4(pGCTSS);
+    RCPtrTSS = VM_RC_ADDR(pVM, &pVM->selm.s.TssTrap08);
+    pDesc->Gen.u16BaseLow       = RT_LOWORD(RCPtrTSS);
+    pDesc->Gen.u8BaseHigh1      = RT_BYTE3(RCPtrTSS);
+    pDesc->Gen.u8BaseHigh2      = RT_BYTE4(RCPtrTSS);
     pDesc->Gen.u4Type           = X86_SEL_TYPE_SYS_386_TSS_AVAIL;
     pDesc->Gen.u1DescType       = 0; /* system */
     pDesc->Gen.u2Dpl            = 0; /* supervisor */
@@ -437,10 +437,10 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     pVM->selm.s.TssTrap08.gs     = 0;
     pVM->selm.s.TssTrap08.selLdt = 0;
     pVM->selm.s.TssTrap08.eflags = 0x2;    /* all cleared */
-    pVM->selm.s.TssTrap08.ecx    = VM_GUEST_ADDR(pVM, &pVM->selm.s.Tss);    /* setup ecx to normal Hypervisor TSS address. */
+    pVM->selm.s.TssTrap08.ecx    = VM_RC_ADDR(pVM, &pVM->selm.s.Tss);       /* setup ecx to normal Hypervisor TSS address. */
     pVM->selm.s.TssTrap08.edi    = pVM->selm.s.TssTrap08.ecx;
     pVM->selm.s.TssTrap08.eax    = pVM->selm.s.TssTrap08.ecx;
-    pVM->selm.s.TssTrap08.edx    = VM_GUEST_ADDR(pVM, pVM);                 /* setup edx VM address. */
+    pVM->selm.s.TssTrap08.edx    = VM_RC_ADDR(pVM, pVM);                    /* setup edx VM address. */
     pVM->selm.s.TssTrap08.edi    = pVM->selm.s.TssTrap08.edx;
     pVM->selm.s.TssTrap08.ebx    = pVM->selm.s.TssTrap08.edx;
     pVM->selm.s.TssTrap08.offIoBitmap = sizeof(VBOXTSS);

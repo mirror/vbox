@@ -638,7 +638,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Update IDTR (limit is including!).
      */
-    CPUMSetHyperIDTR(pVM, VM_GUEST_ADDR(pVM, &pVM->trpm.s.aIdt[0]), sizeof(pVM->trpm.s.aIdt)-1);
+    CPUMSetHyperIDTR(pVM, VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]), sizeof(pVM->trpm.s.aIdt)-1);
 
     if (!pVM->trpm.s.fDisableMonitoring)
     {
@@ -648,7 +648,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.pvMonShwIdtRC);
             AssertRC(rc);
         }
-        pVM->trpm.s.pvMonShwIdtRC = VM_GUEST_ADDR(pVM, &pVM->trpm.s.aIdt[0]);
+        pVM->trpm.s.pvMonShwIdtRC = VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]);
         rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_HYPERVISOR, pVM->trpm.s.pvMonShwIdtRC, pVM->trpm.s.pvMonShwIdtRC + sizeof(pVM->trpm.s.aIdt) - 1,
                                          0, 0, "trpmRCShadowIDTWriteHandler", 0, "Shadow IDT write access handler");
         AssertRC(rc);

@@ -638,10 +638,10 @@ VMMDECL(uint64_t)   CPUMGetGuestDR6(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestDR7(PVM pVM);
 VMMDECL(int)        CPUMGetGuestDRx(PVM pVM, uint32_t iReg, uint64_t *pValue);
 VMMDECL(void)       CPUMGetGuestCpuId(PVM pVM, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdGCPtr(PVM pVM);
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtGCPtr(PVM pVM);
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurGCPtr(PVM pVM);
-VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefGCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdStdRCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdExtRCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdCentaurRCPtr(PVM pVM);
+VMMDECL(RCPTRTYPE(PCCPUMCPUID)) CPUMGetGuestCpuIdDefRCPtr(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
 VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
@@ -965,7 +965,7 @@ VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(int)          CPUMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
-VMMR3DECL(int)          CPUMR3QueryGuestCtxGCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
+VMMR3DECL(int)          CPUMR3QueryGuestCtxRCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
 # ifdef DEBUG
 VMMR3DECL(void)         CPUMR3SaveEntryCtx(PVM pVM);
 # endif

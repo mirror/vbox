@@ -65,7 +65,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, enmTestcase);
-    CPUMPushHyper(pVM, pVM->pVMGC);
+    CPUMPushHyper(pVM, pVM->pVMRC);
     CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
     CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
@@ -102,7 +102,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
     CPUMPushHyper(pVM, uVariation);
     CPUMPushHyper(pVM, u8Trap + VMMGC_DO_TESTCASE_TRAP_FIRST);
-    CPUMPushHyper(pVM, pVM->pVMGC);
+    CPUMPushHyper(pVM, pVM->pVMRC);
     CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
     CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
     CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
@@ -336,7 +336,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         CPUMPushHyper(pVM, 0);
         CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HYPER_INTERRUPT);
-        CPUMPushHyper(pVM, pVM->pVMGC);
+        CPUMPushHyper(pVM, pVM->pVMRC);
         CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
         CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
         CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
@@ -398,7 +398,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_NOP);
-            CPUMPushHyper(pVM, pVM->pVMGC);
+            CPUMPushHyper(pVM, pVM->pVMRC);
             CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
             CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
@@ -525,7 +525,7 @@ VMMR3DECL(int) VMMDoHwAccmTest(PVM pVM)
             CPUMSetHyperESP(pVM, pVM->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
             CPUMPushHyper(pVM, 0);
             CPUMPushHyper(pVM, VMMGC_DO_TESTCASE_HWACCM_NOP);
-            CPUMPushHyper(pVM, pVM->pVMGC);
+            CPUMPushHyper(pVM, pVM->pVMRC);
             CPUMPushHyper(pVM, 3 * sizeof(RTRCPTR));    /* stack frame size */
             CPUMPushHyper(pVM, RCPtrEP);                /* what to call */
             CPUMSetHyperEIP(pVM, pVM->vmm.s.pfnCallTrampolineRC);
