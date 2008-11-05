@@ -2842,9 +2842,9 @@ static int handleList(int argc, char *argv[],
                     RTPrintf ("key='%ls' desc='%ls' type=", Bstr (propertyNames [a]).raw(), Bstr (propertyDescriptions [a]).raw());
                     switch (propertyTypes [a])
                     {
-                        case DataType::Int32Type: RTPrintf ("int"); break;
-                        case DataType::Int8Type: RTPrintf ("byte"); break;
-                        case DataType::StringType: RTPrintf ("string"); break;
+                        case DataType_Int32Type: RTPrintf ("int"); break;
+                        case DataType_Int8Type: RTPrintf ("byte"); break;
+                        case DataType_StringType: RTPrintf ("string"); break;
                     }
                     RTPrintf (" flags=%#04x", propertyFlags [a]);
                     RTPrintf (" default='%ls'", Bstr (propertyDefaults [a]).raw());
