@@ -632,11 +632,11 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
 #endif
             if (!HWACCMR0SuspendPending())
             {
-                rc = HWACCMR0Enter(pVM, idCPU);
+                rc = HWACCMR0Enter(pVM, idCpu);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, idCPU); /* this may resume code. */
-                    int rc2 = HWACCMR0Leave(pVM, idCPU);
+                    rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, idCpu); /* this may resume code. */
+                    int rc2 = HWACCMR0Leave(pVM, idCpu);
                     AssertRC(rc2);
                 }
             }

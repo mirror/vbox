@@ -964,7 +964,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, RTCPUID idVCpu)
  * @param   pVM         The VM to operate on.
  * @param   idVCpu      VMCPUD id.
  */
-VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, RTCPUID idVCpu)
+VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, uintptr_t idVCpu)
 {
     CPUMCTX *pCtx;
     int      rc;
