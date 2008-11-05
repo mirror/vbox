@@ -198,10 +198,10 @@ void VBoxVMDetailsView::languageChange()
     if (mRefreshAction && mRefreshButton)
     {
         mRefreshButton->setText (mRefreshAction->menuText());
-        /* If we set the combination of the text label and icon
-         * below, we lose the Alt+R shortcut functionality... */
+        /* By setting set the combination of the text label and icon below, we
+         * lose the Alt+R shortcut functionality, so no need to display an
+         * underscore contained in menuText(), therefore use just text() */
         mRefreshButton->setTextLabel (mRefreshAction->text());
-        mRefreshButton->setAccel (mRefreshAction->accel());
         mRefreshButton->setIconSet (mRefreshAction->iconSet());
         mRefreshButton->setTextPosition (QToolButton::BesideIcon);
         mRefreshButton->setUsesTextLabel (true);
