@@ -1286,7 +1286,7 @@ unsigned ParseImmV(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
         pParam->flags |= USE_IMMEDIATE64;
         pParam->size   = sizeof(uint64_t);
 
-        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%RX64h", pParam->parval);
         return sizeof(uint64_t);
     }
     else
@@ -1333,7 +1333,7 @@ unsigned ParseImmZ(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, 
             pParam->parval = (uint64_t)(int32_t)DISReadDWord(pCpu, lpszCodeBlock);
             pParam->flags |= USE_IMMEDIATE64;
             pParam->size   = sizeof(uint64_t);
-            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%VX64h", pParam->parval);
+            disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), "0%RX64h", pParam->parval);
         }
         else
         {
@@ -1396,7 +1396,7 @@ unsigned ParseImmVRel(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pPara
         pParam->flags |= USE_IMMEDIATE64_REL;
         pParam->size   = sizeof(int64_t);
 
-        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%VX64h)", pParam->parval);
+        disasmAddStringF(pParam->szParam, sizeof(pParam->szParam), " (0%RX64h)", pParam->parval);
         return sizeof(int32_t);
     }
     else

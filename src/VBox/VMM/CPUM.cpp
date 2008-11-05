@@ -1109,7 +1109,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     "%sr14=%016RX64 %sr15=%016RX64\n"
                     "%srip=%016RX64 %srsp=%016RX64 %srbp=%016RX64 %siopl=%d %*s\n"
                     "%scs=%04x %sss=%04x %sds=%04x %ses=%04x %sfs=%04x %sgs=%04x %str=%04x      %seflags=%08x\n"
-                    "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%VGv:%04x %sldtr=%04x\n"
+                    "%scr0=%08RX64 %scr2=%08RX64 %scr3=%08RX64 %scr4=%08RX64 %sgdtr=%016RX64:%04x %sldtr=%04x\n"
                     ,
                     pszPrefix, pCtxCore->rax, pszPrefix, pCtxCore->rbx, pszPrefix, pCtxCore->rcx, pszPrefix, pCtxCore->rdx, pszPrefix, pCtxCore->rsi, pszPrefix, pCtxCore->rdi,
                     pszPrefix, pCtxCore->r8, pszPrefix, pCtxCore->r9, pszPrefix, pCtxCore->r10, pszPrefix, pCtxCore->r11, pszPrefix, pCtxCore->r12, pszPrefix, pCtxCore->r13,
@@ -2219,7 +2219,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
             rc = SELMR3GetShadowSelectorInfo(pVM, pCtx->cs, &SelInfo);
             if (!RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%VGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
+                AssertMsgFailed(("SELMR3GetShadowSelectorInfo failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;
             }
 
@@ -2229,7 +2229,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
             rc = SELMSelInfoValidateCS(&SelInfo, pCtx->ss);
             if (!RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%VGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
+                AssertMsgFailed(("SELMSelInfoValidateCS failed for %04X:%RGv rc=%d\n", pCtx->cs, GCPtrPC, rc));
                 return rc;
             }
             State.GCPtrSegBase    = SelInfo.GCPtrBase;
@@ -2272,7 +2272,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PCPUMCTX pCtx, RTGCPTR GCPtrPC, PDI
         rc = VINF_SUCCESS;
     }
     else
-        Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%VGv rc=%Vrc\n", pCtx->cs, GCPtrPC, rc));
+        Log(("CPUMR3DisasmInstrCPU: DISInstr failed for %04X:%RGv rc=%Rrc\n", pCtx->cs, GCPtrPC, rc));
 
     /* Release mapping lock acquired in cpumR3DisasInstrRead. */
     if (State.fLocked)
