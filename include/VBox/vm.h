@@ -132,7 +132,7 @@ typedef struct VMCPU
 #ifdef ___HWACCMInternal_h
         struct HWACCMCPU    s;
 #endif
-        char                padding[32];        /* multiple of 32 */
+        char                padding[512];        /* multiple of 32 */
     } hwaccm;
 
     /** EM part. */

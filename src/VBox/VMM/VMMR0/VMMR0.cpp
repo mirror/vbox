@@ -624,6 +624,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
         case VMMR0_DO_HWACC_RUN:
         {
             int rc;
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
             STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
@@ -632,11 +633,11 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, unsigned idCpu, VMMR0OPERATION enmOperat
 #endif
             if (!HWACCMR0SuspendPending())
             {
-                rc = HWACCMR0Enter(pVM, idCpu);
+                rc = HWACCMR0Enter(pVM, pVCpu);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, idCpu); /* this may resume code. */
-                    int rc2 = HWACCMR0Leave(pVM, idCpu);
+                    rc = vmmR0CallHostSetJmp(&pVM->vmm.s.CallHostR0JmpBuf, HWACCMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
+                    int rc2 = HWACCMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
                 }
             }

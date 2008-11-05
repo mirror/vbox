@@ -46,20 +46,20 @@ __BEGIN_DECLS
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu      VPCPU id.
  * @param   pCpu        CPU info struct
  */
-VMMR0DECL(int) SVMR0Enter(PVM pVM, RTCPUID idVCpu, PHWACCM_CPUINFO pCpu);
+VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu);
 
 /**
  * Leaves the AMD-V session
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu      VPCPU id.
  * @param   pCtx        CPU context
  */
-VMMR0DECL(int) SVMR0Leave(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /**
  * Sets up and activates AMD-V on the current CPU
@@ -112,10 +112,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 /**
@@ -123,19 +123,19 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu      VPCPU id.
  */
-VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, RTCPUID idVCpu);
+VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
 
 /**
  * Loads the guest state
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu      VPCPU id.
  * @param   pCtx        Guest context
  */
-VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, RTCPUID idVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 /** Convert hidden selector attribute word between VMX and SVM formats. */

@@ -449,7 +449,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, uintptr_t idCpu);
+typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, PVMCPU pVCpu);
 /** Pointer to FNVMMR0SETJMP(). */
 typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
 
@@ -465,7 +465,7 @@ typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
  * @param   pfn         The function to be called when not resuming..
  * @param   pVM         The argument of that function.
  */
-DECLASM(int)    vmmR0CallHostSetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, uintptr_t idCpu);
+DECLASM(int)    vmmR0CallHostSetJmp(PVMMR0JMPBUF pJmpBuf, PFNVMMR0SETJMP pfn, PVM pVM, PVMCPU pVCpu);
 
 /**
  * Callback function for vmmR0CallHostSetJmpEx.

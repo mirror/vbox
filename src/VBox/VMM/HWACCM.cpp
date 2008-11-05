@@ -106,9 +106,6 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     /* On first entry we'll sync everything. */
     pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
 
-    pVM->hwaccm.s.vmx.cr0_mask = 0;
-    pVM->hwaccm.s.vmx.cr4_mask = 0;
-
     /*
      * Statistics.
      */
@@ -585,9 +582,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: MSR_IA32_VMX_CR4_FIXED1       = %RX64\n", pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed1));
             LogRel(("HWACCM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum));
 
-            LogRel(("HWACCM: VMCS physaddr                 = %RHp\n", pVM->hwaccm.s.vmx.pVMCSPhys));
             LogRel(("HWACCM: TPR shadow physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
             LogRel(("HWACCM: MSR bitmap physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
+
+            for (unsigned i=0;i<pVM->cCPUs;i++)
+                LogRel(("HWACCM: VMCS physaddr VCPU%d           = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
 
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -877,8 +876,11 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     /* On first entry we'll sync everything. */
     pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
 
-    pVM->hwaccm.s.vmx.cr0_mask = 0;
-    pVM->hwaccm.s.vmx.cr4_mask = 0;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        pVM->aCpus[i].hwaccm.s.vmx.cr0_mask = 0;
+        pVM->aCpus[i].hwaccm.s.vmx.cr4_mask = 0;
+    }
 
     pVM->hwaccm.s.Event.fPending = false;
 
@@ -1059,28 +1061,31 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
  */
 VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
 {
-    switch(iStatusCode)
+    for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-    case VERR_VMX_INVALID_VMCS_FIELD:
-        break;
+        switch(iStatusCode)
+        {
+        case VERR_VMX_INVALID_VMCS_FIELD:
+            break;
 
-    case VERR_VMX_INVALID_VMCS_PTR:
-        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current pointer %RGp vs %RGp\n", pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->hwaccm.s.vmx.pVMCSPhys));
-        LogRel(("VERR_VMX_INVALID_VMCS_PTR: Current VMCS version %x\n", pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
-        break;
+        case VERR_VMX_INVALID_VMCS_PTR:
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
+            break;
 
-    case VERR_VMX_UNABLE_TO_START_VM:
-        LogRel(("VERR_VMX_UNABLE_TO_START_VM: instruction error %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
-        LogRel(("VERR_VMX_UNABLE_TO_START_VM: exit reason       %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
-        break;
+        case VERR_VMX_UNABLE_TO_START_VM:
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+            break;
 
-    case VERR_VMX_UNABLE_TO_RESUME_VM:
-        LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: instruction error %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
-        LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: exit reason       %x\n", pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
-        break;
+        case VERR_VMX_UNABLE_TO_RESUME_VM:
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+            break;
 
-    case VERR_VMX_INVALID_VMXON_PTR:
-        break;
+        case VERR_VMX_INVALID_VMXON_PTR:
+            break;
+        }
     }
 }
 
