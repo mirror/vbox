@@ -46,7 +46,7 @@ __BEGIN_DECLS
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCpu        CPU info struct
  */
 VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu);
@@ -56,7 +56,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        CPU context
  */
 VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -112,7 +112,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -123,7 +123,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  */
 VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
 
@@ -132,7 +132,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   pVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);

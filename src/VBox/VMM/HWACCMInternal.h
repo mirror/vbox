@@ -187,27 +187,9 @@ typedef struct HWACCM
     /** Set if VT-x VPID is allowed. */
     bool                        fAllowVPID;
 
-    /** Set if we need to flush the TLB during the world switch. */
-    bool                        fForceTLBFlush;
-
-    /** Old style FPU reporting trap mask override performed (optimization) */
-    bool                        fFPUOldStyleOverride;
-
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
     bool                        padding[1];
-
-    /** HWACCM_CHANGED_* flags. */
-    RTUINT                      fContextUseFlags;
-
-    /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
-    RTCPUID                     idLastCpu;
-
-    /* TLB flush count */
-    RTUINT                      cTLBFlushes;
-
-    /* Current ASID in use by the VM */
-    RTUINT                      uCurrentASID;
 
     /** Maximum ASID allowed. */
     RTUINT                      uMaxASID;
@@ -221,9 +203,6 @@ typedef struct HWACCM
 
         /** Set when we've enabled VMX. */
         bool                        fEnabled;
-
-        /** Set if we can use VMXResume to execute guest code. */
-        bool                        fResumeVM;
 
         /** Set if VPID is supported. */
         bool                        fVPID;
@@ -270,7 +249,7 @@ typedef struct HWACCM
         R0PTRTYPE(uint8_t *)        pMSRExitLoad;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM));
+        DECLR0CALLBACKMEMBER(void, pfnSetupTaggedTLB, (PVM pVM, PVMCPU pVCpu));
 
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
@@ -303,22 +282,6 @@ typedef struct HWACCM
         /** Flush types for invept & invvpid; they depend on capabilities. */
         VMX_FLUSH                   enmFlushPage;
         VMX_FLUSH                   enmFlushContext;
-
-        /** Real-mode emulation state. */
-        struct
-        {
-            X86EFLAGS                   eflags;
-            uint32_t                    fValid;
-        } RealMode;
-
-        struct
-        {
-            uint64_t                u64VMCSPhys;
-            uint32_t                ulVMCSRevision;
-            uint32_t                ulLastInstrError;
-            uint32_t                ulLastExitReason;
-            uint32_t                padding;
-        } lasterror;
     } vmx;
 
     struct
@@ -327,10 +290,11 @@ typedef struct HWACCM
         bool                        fSupported;
         /** Set when we've enabled SVM. */
         bool                        fEnabled;
-        /** Set if we don't have to flush the TLB on VM entry. */
-        bool                        fResumeVM;
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
+        /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
+         *  naturally. */
+        bool                        padding[1];
 
         /** R0 memory object for the host VM control block (VMCB). */
         RTR0MEMOBJ                  pMemObjVMCBHost;
@@ -365,18 +329,6 @@ typedef struct HWACCM
         uint32_t                    u32AMDFeatureECX;
         uint32_t                    u32AMDFeatureEDX;
     } cpuid;
-
-#if HC_ARCH_BITS == 32
-    uint32_t                        Alignment1;
-#endif
-
-    /** Event injection state. */
-    struct
-    {
-        uint32_t                    fPending;
-        uint32_t                    errCode;
-        uint64_t                    intInfo;
-    } Event;
 
     /** Saved error from detection */
     int32_t                 lLastError;
@@ -468,9 +420,30 @@ typedef HWACCM *PHWACCM;
  */
 typedef struct HWACCMCPU
 {
-    /** Offset to the VM structure.
-     * See HWACCMCPU2VM(). */
-    RTUINT                      offVMCPU;
+    /** Old style FPU reporting trap mask override performed (optimization) */
+    bool                        fFPUOldStyleOverride;
+
+    /** Set if we don't have to flush the TLB on VM entry. */
+    bool                        fResumeVM;
+
+    /** Set if we need to flush the TLB during the world switch. */
+    bool                        fForceTLBFlush;
+
+    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
+     *  naturally. */
+    bool                        padding[1];
+
+    /** HWACCM_CHANGED_* flags. */
+    RTUINT                      fContextUseFlags;
+
+    /* Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
+    RTCPUID                     idLastCpu;
+
+    /* TLB flush count */
+    RTUINT                      cTLBFlushes;
+
+    /* Current ASID in use by the VM */
+    RTUINT                      uCurrentASID;
 
     struct
     {
@@ -494,6 +467,23 @@ typedef struct HWACCMCPU
 
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
+
+        /** Real-mode emulation state. */
+        struct
+        {
+            X86EFLAGS                   eflags;
+            uint32_t                    fValid;
+        } RealMode;
+
+        struct
+        {
+            uint64_t                u64VMCSPhys;
+            uint32_t                ulVMCSRevision;
+            uint32_t                ulLastInstrError;
+            uint32_t                ulLastExitReason;
+            uint32_t                padding;
+        } lasterror;
+
     } vmx;
 
     struct
@@ -509,6 +499,14 @@ typedef struct HWACCMCPU
         DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx));
 
     } svm;
+
+    /** Event injection state. */
+    struct
+    {
+        uint32_t                    fPending;
+        uint32_t                    errCode;
+        uint64_t                    intInfo;
+    } Event;
 
 } HWACCMCPU;
 /** Pointer to HWACCM VM instance data. */

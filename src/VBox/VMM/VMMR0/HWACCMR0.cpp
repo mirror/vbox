@@ -779,11 +779,14 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 
     pVM->hwaccm.s.uMaxASID                  = HWACCMR0Globals.uMaxASID;
 
-    /* Invalidate the last cpu we were running on. */
-    pVM->hwaccm.s.idLastCpu                 = NIL_RTCPUID;
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        /* Invalidate the last cpu we were running on. */
+        pVM->aCpus[i].hwaccm.s.idLastCpu                 = NIL_RTCPUID;
 
-    /* we'll aways increment this the first time (host uses ASID 0) */
-    pVM->hwaccm.s.uCurrentASID              = 0;
+        /* we'll aways increment this the first time (host uses ASID 0) */
+        pVM->aCpus[i].hwaccm.s.uCurrentASID              = 0;
+    }
 
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
@@ -850,6 +853,12 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        /* On first entry we'll sync everything. */
+        pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
+    }
+
     /* Setup VT-x or AMD-V. */
     rc = HWACCMR0Globals.pfnSetupVM(pVM);
 
@@ -886,7 +895,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     CPUMDeactivateGuestDebugState(pVM);
 
     /* Always reload the host context and the guest's CR0 register. (!!!!) */
-    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
+    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_HOST_CONTEXT;
 
     /* Setup the register and mask according to the current execution mode. */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
@@ -942,7 +951,7 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
         Log2(("CPUMR0SaveGuestFPU\n"));
         CPUMR0SaveGuestFPU(pVM, pCtx);
 
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
 
     rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);

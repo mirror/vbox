@@ -50,13 +50,13 @@ static uint32_t const g_aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
 /*******************************************************************************
 *   Local Functions                                                            *
 *******************************************************************************/
-static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx);
-static void vmxR0SetupTLBEPT(PVM pVM);
-static void vmxR0SetupTLBVPID(PVM pVM);
-static void vmxR0SetupTLBDummy(PVM pVM);
-static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
-static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
-static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx);
+static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX pCtx);
+static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu);
+static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu);
+static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu);
+static void vmxR0FlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
+static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
+static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
 static void VMXR0CheckError(PVM pVM, int rc)
@@ -532,12 +532,13 @@ vmx_end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        CPU Context
  * @param   intInfo     VMX interrupt info
  * @param   cbInstr     Opcode length of faulting instruction
  * @param   errCode     Error code (optional)
  */
-static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t cbInstr, uint32_t errCode)
+static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intInfo, uint32_t cbInstr, uint32_t errCode)
 {
     int         rc;
     uint32_t    iGate = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
@@ -582,7 +583,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
                 intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                 intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-                return VMXR0InjectEvent(pVM, pCtx, intInfo, 0, 0 /* no error code according to the Intel docs */);
+                return VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, 0, 0 /* no error code according to the Intel docs */);
             }
             Log(("Triple fault -> reset the VM!\n"));
             return VINF_EM_RESET;
@@ -621,7 +622,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
         pCtx->csHid.u64Base = sel << 4;
         pCtx->eflags.u     &= ~(X86_EFL_IF|X86_EFL_TF|X86_EFL_RF|X86_EFL_AC);
 
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_SEGMENT_REGS;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_SEGMENT_REGS;
         return VINF_SUCCESS;
     }
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
@@ -642,7 +643,7 @@ static int VMXR0InjectEvent(PVM pVM, CPUMCTX *pCtx, uint32_t intInfo, uint32_t c
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VMCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        CPU Context
  */
 static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
@@ -650,14 +651,14 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     int rc;
 
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
-    if (pVM->hwaccm.s.Event.fPending)
+    if (pVCpu->hwaccm.s.Event.fPending)
     {
-        Log(("Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVM->hwaccm.s.Event.intInfo, pVM->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
+        Log(("Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
-        rc = VMXR0InjectEvent(pVM, pCtx, pVM->hwaccm.s.Event.intInfo, 0, pVM->hwaccm.s.Event.errCode);
+        rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, pVCpu->hwaccm.s.Event.intInfo, 0, pVCpu->hwaccm.s.Event.errCode);
         AssertRC(rc);
 
-        pVM->hwaccm.s.Event.fPending = false;
+        pVCpu->hwaccm.s.Event.fPending = false;
         return VINF_SUCCESS;
     }
 
@@ -758,7 +759,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntInject);
-        rc = VMXR0InjectEvent(pVM, pCtx, intInfo, 0, errCode);
+        rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, 0, errCode);
         AssertRC(rc);
     } /* if (interrupts can be dispatched) */
 
@@ -770,7 +771,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  */
 VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 {
@@ -779,7 +780,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
     /*
      * Host CPU Context
      */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_HOST_CONTEXT)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_HOST_CONTEXT)
     {
         RTIDTR      idtr;
         RTGDTR      gdtr;
@@ -869,7 +870,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #endif
         AssertRC(rc);
 
-        pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_HOST_CONTEXT;
+        pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_HOST_CONTEXT;
     }
     return rc;
 }
@@ -902,9 +903,10 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
  * Update the exception bitmap according to the current CPU state
  *
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
-static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
+static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     uint32_t u32TrapMask;
     Assert(pCtx);
@@ -918,10 +920,10 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
     /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
     if (    CPUMIsGuestFPUStateActive(pVM) == true
         && !(pCtx->cr0 & X86_CR0_NE)
-        && !pVM->hwaccm.s.fFPUOldStyleOverride)
+        && !pVCpu->hwaccm.s.fFPUOldStyleOverride)
     {
         u32TrapMask |= RT_BIT(X86_XCPT_MF);
-        pVM->hwaccm.s.fFPUOldStyleOverride = true;
+        pVCpu->hwaccm.s.fFPUOldStyleOverride = true;
     }
 
 #ifdef DEBUG
@@ -951,7 +953,7 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -961,7 +963,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     X86EFLAGS   eflags;
 
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
@@ -1033,7 +1035,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Guest CPU context: LDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_LDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_LDTR)
     {
         if (pCtx->ldtr == 0)
         {
@@ -1053,7 +1055,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
     }
     /* Guest CPU context: TR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
@@ -1097,14 +1099,14 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
     }
     /* Guest CPU context: GDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_GDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_GDTR)
     {
         rc  = VMXWriteVMCS(VMX_VMCS_GUEST_GDTR_LIMIT,       pCtx->gdtr.cbGdt);
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_GDTR_BASE,        pCtx->gdtr.pGdt);
         AssertRC(rc);
     }
     /* Guest CPU context: IDTR. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_IDTR)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_IDTR)
     {
         rc  = VMXWriteVMCS(VMX_VMCS_GUEST_IDTR_LIMIT,       pCtx->idtr.cbIdt);
         rc |= VMXWriteVMCS(VMX_VMCS_GUEST_IDTR_BASE,        pCtx->idtr.pIdt);
@@ -1120,7 +1122,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertRC(rc);
 
     /* Control registers */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
     {
         val = pCtx->cr0;
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_CR0_READ_SHADOW,   val);
@@ -1186,7 +1188,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Log2(("Guest CR0-mask %08x\n", val));
         AssertRC(rc);
     }
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR4)
     {
         /* CR4 */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_CR4_READ_SHADOW,   pCtx->cr4);
@@ -1257,7 +1259,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
     }
 
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
@@ -1308,7 +1310,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Debug registers. */
-    if (pVM->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
+    if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_DEBUG)
     {
         pCtx->dr[6] |= X86_DR6_INIT_VAL;                                          /* set all reserved bits to 1. */
         pCtx->dr[6] &= ~RT_BIT(12);                                               /* must be zero. */
@@ -1362,7 +1364,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
     if (CPUMIsGuestInRealModeEx(pCtx))
     {
-        pVM->hwaccm.s.vmx.RealMode.eflags = eflags;
+        pVCpu->hwaccm.s.vmx.RealMode.eflags = eflags;
 
         eflags.Bits.u1VM   = 1;
         eflags.Bits.u2IOPL = 3;
@@ -1432,10 +1434,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
 
-    vmxR0UpdateExceptionBitmap(pVM, pCtx);
+    vmxR0UpdateExceptionBitmap(pVM, pVCpu, pCtx);
 
     /* Done. */
-    pVM->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
+    pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
 
     return rc;
 }
@@ -1445,7 +1447,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VMCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
 DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1548,10 +1550,10 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /* Hide our emulation flags */
         pCtx->eflags.Bits.u1VM   = 0;
-        pCtx->eflags.Bits.u2IOPL = pVM->hwaccm.s.vmx.RealMode.eflags.Bits.u2IOPL;
+        pCtx->eflags.Bits.u2IOPL = pVCpu->hwaccm.s.vmx.RealMode.eflags.Bits.u2IOPL;
 
         /* Force a TR resync every time in case we switch modes. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
     }
     else
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
@@ -1566,9 +1568,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Dummy placeholder
  *
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-static void vmxR0SetupTLBDummy(PVM pVM)
+static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM);
+    NOREF(pVCpu);
     return;
 }
 
@@ -1577,8 +1582,9 @@ static void vmxR0SetupTLBDummy(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-static void vmxR0SetupTLBEPT(PVM pVM)
+static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
 {
     PHWACCM_CPUINFO pCpu;
 
@@ -1589,24 +1595,24 @@ static void vmxR0SetupTLBEPT(PVM pVM)
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
-    if (    pVM->hwaccm.s.idLastCpu != pCpu->idCpu
+    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
             /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
         /* Force a TLB flush on VM entry. */
-        pVM->hwaccm.s.fForceTLBFlush = true;
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
     else
         Assert(!pCpu->fFlushTLB);
 
-    pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
     pCpu->fFlushTLB         = false;
 
-    if (pVM->hwaccm.s.fForceTLBFlush)
-        vmxR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
+    if (pVCpu->hwaccm.s.fForceTLBFlush)
+        vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, 0);
 
 #ifdef VBOX_WITH_STATISTICS
-    if (pVM->hwaccm.s.fForceTLBFlush)
+    if (pVCpu->hwaccm.s.fForceTLBFlush)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
     else
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
@@ -1619,8 +1625,9 @@ static void vmxR0SetupTLBEPT(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-static void vmxR0SetupTLBVPID(PVM pVM)
+static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 {
     PHWACCM_CPUINFO pCpu;
 
@@ -1631,20 +1638,20 @@ static void vmxR0SetupTLBVPID(PVM pVM)
     pCpu = HWACCMR0GetCurrentCpu();
     /* Force a TLB flush for the first world switch if the current cpu differs from the one we ran on last. */
     /* Note that this can happen both for start and resume due to long jumps back to ring 3. */
-    if (    pVM->hwaccm.s.idLastCpu != pCpu->idCpu
+    if (    pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu
             /* if the tlb flush count has changed, another VM has flushed the TLB of this cpu, so we can't use our current ASID anymore. */
-        ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
     {
         /* Force a TLB flush on VM entry. */
-        pVM->hwaccm.s.fForceTLBFlush = true;
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
     else
         Assert(!pCpu->fFlushTLB);
 
-    pVM->hwaccm.s.idLastCpu = pCpu->idCpu;
+    pVCpu->hwaccm.s.idLastCpu = pCpu->idCpu;
 
     /* Make sure we flush the TLB when required. Switch ASID to achieve the same thing, but without actually flushing the whole TLB (which is expensive). */
-    if (pVM->hwaccm.s.fForceTLBFlush)
+    if (pVCpu->hwaccm.s.fForceTLBFlush)
     {
         if (    ++pCpu->uCurrentASID >= pVM->hwaccm.s.uMaxASID
             ||  pCpu->fFlushTLB)
@@ -1656,31 +1663,31 @@ static void vmxR0SetupTLBVPID(PVM pVM)
         else
         {
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
-            pVM->hwaccm.s.fForceTLBFlush     = false;
+            pVCpu->hwaccm.s.fForceTLBFlush     = false;
         }
 
-        pVM->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
-        pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
+        pVCpu->hwaccm.s.cTLBFlushes  = pCpu->cTLBFlushes;
+        pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID;
     }
     else
     {
         Assert(!pCpu->fFlushTLB);
 
-        if (!pCpu->uCurrentASID || !pVM->hwaccm.s.uCurrentASID)
-            pVM->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
+        if (!pCpu->uCurrentASID || !pVCpu->hwaccm.s.uCurrentASID)
+            pVCpu->hwaccm.s.uCurrentASID = pCpu->uCurrentASID = 1;
     }
-    AssertMsg(pVM->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+    AssertMsg(pVCpu->hwaccm.s.cTLBFlushes == pCpu->cTLBFlushes, ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
     AssertMsg(pCpu->uCurrentASID >= 1 && pCpu->uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d uCurrentASID = %x\n", pCpu->idCpu, pCpu->uCurrentASID));
-    AssertMsg(pVM->hwaccm.s.uCurrentASID >= 1 && pVM->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVM->hwaccm.s.uCurrentASID));
+    AssertMsg(pVCpu->hwaccm.s.uCurrentASID >= 1 && pVCpu->hwaccm.s.uCurrentASID < pVM->hwaccm.s.uMaxASID, ("cpu%d VM uCurrentASID = %x\n", pCpu->idCpu, pVCpu->hwaccm.s.uCurrentASID));
 
-    int rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_VPID, pVM->hwaccm.s.uCurrentASID);
+    int rc  = VMXWriteVMCS(VMX_VMCS_GUEST_FIELD_VPID, pVCpu->hwaccm.s.uCurrentASID);
     AssertRC(rc);
 
-    if (pVM->hwaccm.s.fForceTLBFlush)
-        vmxR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushContext, 0);
+    if (pVCpu->hwaccm.s.fForceTLBFlush)
+        vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, 0);
 
 #ifdef VBOX_WITH_STATISTICS
-    if (pVM->hwaccm.s.fForceTLBFlush)
+    if (pVCpu->hwaccm.s.fForceTLBFlush)
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
     else
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
@@ -1693,7 +1700,7 @@ static void vmxR0SetupTLBVPID(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -1878,18 +1885,18 @@ ResumeExecution:
         )
     {
         pCpu = HWACCMR0GetCurrentCpu();
-        if (    pVM->hwaccm.s.idLastCpu   != pCpu->idCpu
-            ||  pVM->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
+        if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
+            ||  pVCpu->hwaccm.s.cTLBFlushes != pCpu->cTLBFlushes)
         {
-            if (pVM->hwaccm.s.idLastCpu != pCpu->idCpu)
-                Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVM->hwaccm.s.idLastCpu, pCpu->idCpu));
+            if (pVCpu->hwaccm.s.idLastCpu != pCpu->idCpu)
+                Log(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hwaccm.s.idLastCpu, pCpu->idCpu));
             else
-                Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVM->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
+                Log(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hwaccm.s.cTLBFlushes, pCpu->cTLBFlushes));
         }
         if (pCpu->fFlushTLB)
             Log(("Force TLB flush: first time cpu %d is used -> flush\n", pCpu->idCpu));
         else
-        if (pVM->hwaccm.s.fForceTLBFlush)
+        if (pVCpu->hwaccm.s.fForceTLBFlush)
             LogFlow(("Manual TLB flush\n"));
     }
 #endif
@@ -1917,7 +1924,7 @@ ResumeExecution:
     }
 
     /* Deal with tagged TLB setup and invalidation. */
-    pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM);
+    pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
 
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
@@ -1944,12 +1951,12 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVM);
-    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVM->hwaccm.s.vmx.fResumeVM, pCtx);
+    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx);
     TMNotifyEndOfExecution(pVM);
 
     /* In case we execute a goto ResumeExecution later on. */
-    pVM->hwaccm.s.vmx.fResumeVM  = true;
-    pVM->hwaccm.s.fForceTLBFlush = false;
+    pVCpu->hwaccm.s.fResumeVM  = true;
+    pVCpu->hwaccm.s.fForceTLBFlush = false;
 
     /*
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1962,7 +1969,7 @@ ResumeExecution:
 
     if (rc != VINF_SUCCESS)
     {
-        VMXR0ReportWorldSwitchError(pVM, rc, pCtx);
+        VMXR0ReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
         goto end;
     }
     /* Success. Query the guest state and figure out what has happened. */
@@ -1994,23 +2001,23 @@ ResumeExecution:
     /* Check if an injected event was interrupted prematurely. */
     rc = VMXReadVMCS(VMX_VMCS_RO_IDT_INFO,            &val);
     AssertRC(rc);
-    pVM->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
-    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVM->hwaccm.s.Event.intInfo)
-        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVM->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
+    pVCpu->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
+    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hwaccm.s.Event.intInfo)
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hwaccm.s.Event.intInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW)
     {
-        pVM->hwaccm.s.Event.fPending = true;
+        pVCpu->hwaccm.s.Event.fPending = true;
         /* Error code present? */
-        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVM->hwaccm.s.Event.intInfo))
+        if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hwaccm.s.Event.intInfo))
         {
             rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
-            pVM->hwaccm.s.Event.errCode  = val;
-            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
+            pVCpu->hwaccm.s.Event.errCode  = val;
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
         {
-            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVM->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
-            pVM->hwaccm.s.Event.errCode  = 0;
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+            pVCpu->hwaccm.s.Event.errCode  = 0;
         }
     }
 
@@ -2080,14 +2087,14 @@ ResumeExecution:
 
                     /* Continue execution. */
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
-                    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+                    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
 
                     goto ResumeExecution;
                 }
 
                 Log(("Forward #NM fault to the guest\n"));
                 STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestNM);
-                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, 0);
+                rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, 0);
                 AssertRC(rc);
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
@@ -2108,7 +2115,7 @@ ResumeExecution:
 
                     /* Now we must update CR2. */
                     pCtx->cr2 = exitQualification;
-                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2151,7 +2158,7 @@ ResumeExecution:
 
                     /* Now we must update CR2. */
                     pCtx->cr2 = exitQualification;
-                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2177,7 +2184,7 @@ ResumeExecution:
                     break;
                 }
                 Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
-                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2225,7 +2232,7 @@ ResumeExecution:
                     AssertRC(rc);
 
                     Log(("Trap %x (debug) at %RGv exit qualification %RX64\n", vector, (RTGCPTR)pCtx->rip, exitQualification));
-                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2244,7 +2251,7 @@ ResumeExecution:
                 if (!CPUMIsGuestInRealModeEx(pCtx))
                 {
                     Log(("Trap %x at %04X:%RGv errorCode=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
-                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
@@ -2259,7 +2266,7 @@ ResumeExecution:
                     /* EIP has been updated already. */
 
                     /* lidt, lgdt can end up here. In the future crx changes as well. Just reload the whole context to be done with it. */
-                    pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
+                    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
 
                     /* Only resume if successful. */
                     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2292,7 +2299,7 @@ ResumeExecution:
                 }
 
                 Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
-                rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
                 STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2304,7 +2311,7 @@ ResumeExecution:
                 if (CPUMIsGuestInRealModeEx(pCtx))
                 {
                     Log(("Real Mode Trap %x at %04x:%04X error code %x\n", vector, pCtx->cs, pCtx->eip, errCode));
-                    rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
+                    rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
                     /* Go back to ring 3 in case of a triple fault. */
@@ -2500,16 +2507,16 @@ ResumeExecution:
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification))
             {
             case 0:
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_GUEST_CR3;
+                pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0 | HWACCM_CHANGED_GUEST_CR3;
                 break;
             case 2:
                 break;
             case 3:
                 Assert(!pVM->hwaccm.s.fNestedPaging || !CPUMIsGuestInPagedProtectedModeEx(pCtx));
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
+                pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR3;
                 break;
             case 4:
-                pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
+                pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR4;
                 break;
             case 8:
                 /* CR8 contains the APIC TPR */
@@ -2547,14 +2554,14 @@ ResumeExecution:
             Log2(("VMX: clts\n"));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCLTS);
             rc = EMInterpretCLTS(pVM);
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:
             Log2(("VMX: lmsw %x\n", VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification)));
             STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitLMSW);
             rc = EMInterpretLMSW(pVM, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
         }
 
@@ -2605,7 +2612,7 @@ ResumeExecution:
             rc = EMInterpretDRxWrite(pVM, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification));
-            pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
+            pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
             Log2(("DR7=%08x\n", pCtx->dr[7]));
         }
         else
@@ -2755,7 +2762,7 @@ ResumeExecution:
                             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
                             Log(("Inject IO debug trap at %RGv\n", (RTGCPTR)pCtx->rip));
-                            rc = VMXR0InjectEvent(pVM, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
+                            rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
                             AssertRC(rc);
 
                             STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2946,14 +2953,14 @@ end:
     {
         STAM_COUNTER_INC(&pVM->hwaccm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_HOST_CONTEXT;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_HOST_CONTEXT;
     }
     else
     {
         /* On the next entry we'll sync everything. */
         /** @todo we can do better than this */
         /* Not in the VINF_PGM_CHANGE_MODE though! */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
     }
 
     /* translate into a less severe return code */
@@ -2963,8 +2970,8 @@ end:
     /* Try to extract more information about what might have gone wrong here. */
     if (rc == VERR_VMX_INVALID_VMCS_PTR)
     {
-        VMXGetActivateVMCS(&pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys);
-        pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
+        VMXGetActivateVMCS(&pVCpu->hwaccm.s.vmx.lasterror.u64VMCSPhys);
+        pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
     }
 
     STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
@@ -2979,7 +2986,7 @@ end:
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCpu        CPU info struct
  */
 VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
@@ -2998,7 +3005,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
     if (RT_FAILURE(rc))
         return rc;
 
-    pVM->hwaccm.s.vmx.fResumeVM = false;
+    pVCpu->hwaccm.s.fResumeVM = false;
     return VINF_SUCCESS;
 }
 
@@ -3008,7 +3015,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
- * @param   idVCpu      VPCPU id.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        CPU context
  */
 VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
@@ -3026,7 +3033,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
 
         /* Resync the debug registers the next time. */
-        pVM->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
+        pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
     }
     else
         Assert(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
@@ -3043,17 +3050,17 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   enmFlush    Type of flush
  * @param   GCPhys      Physical address of the page to flush
  */
-static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
+static void vmxR0FlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
 {
     uint64_t descriptor[2];
 
     LogFlow(("vmxR0FlushEPT %d %RGv\n", enmFlush, GCPhys));
     Assert(pVM->hwaccm.s.fNestedPaging);
-    /* @todo SMP */
-    descriptor[0] = pVM->aCpus[0].hwaccm.s.vmx.GCPhysEPTP;
+    descriptor[0] = pVCpu->hwaccm.s.vmx.GCPhysEPTP;
     descriptor[1] = GCPhys;
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
     AssertRC(rc);
@@ -3065,15 +3072,16 @@ static void vmxR0FlushEPT(PVM pVM, VMX_FLUSH enmFlush, RTGCPHYS GCPhys)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   enmFlush    Type of flush
  * @param   GCPtr       Virtual address of the page to flush
  */
-static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
+static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
 {
     uint64_t descriptor[2];
 
     Assert(pVM->hwaccm.s.vmx.fVPID);
-    descriptor[0] = pVM->hwaccm.s.uCurrentASID;
+    descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
     descriptor[1] = GCPtr;
     int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
     AssertRC(rc);
@@ -3085,11 +3093,12 @@ static void vmxR0FlushVPID(PVM pVM, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   GCVirt      Page to invalidate
  */
-VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
+VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = pVCpu->hwaccm.s.fForceTLBFlush;
 
     LogFlow(("VMXR0InvalidatePage %RGv\n", GCVirt));
 
@@ -3101,7 +3110,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
     /* Skip it if a TLB flush is already pending. */
     if (   !fFlushPending
         && pVM->hwaccm.s.vmx.fVPID)
-        vmxR0FlushVPID(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
+        vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushPage, GCVirt);
 #endif /* HWACCM_VTX_WITH_VPID */
 
     return VINF_SUCCESS;
@@ -3114,11 +3123,12 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, RTGCPTR GCVirt)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
  * @param   GCPhys      Page to invalidate
  */
-VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
-    bool fFlushPending = pVM->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = pVCpu->hwaccm.s.fForceTLBFlush;
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 
@@ -3126,7 +3136,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
-        vmxR0FlushEPT(pVM, pVM->hwaccm.s.vmx.enmFlushPage, GCPhys);
+        vmxR0FlushEPT(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushPage, GCPhys);
 
     return VINF_SUCCESS;
 }
@@ -3135,10 +3145,11 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  * Report world switch error and dump some useful debug info
  *
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   rc          Return code
  * @param   pCtx        Current CPU context (not updated)
  */
-static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
+static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX pCtx)
 {
     switch (rc)
     {
@@ -3160,8 +3171,8 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, int rc, PCPUMCTX pCtx)
             Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
             Log(("Current stack %08x\n", &rc));
 
-            pVM->hwaccm.s.vmx.lasterror.ulLastInstrError = instrError;
-            pVM->hwaccm.s.vmx.lasterror.ulLastExitReason = exitReason;
+            pVCpu->hwaccm.s.vmx.lasterror.ulLastInstrError = instrError;
+            pVCpu->hwaccm.s.vmx.lasterror.ulLastExitReason = exitReason;
 
 #ifdef VBOX_STRICT
             RTGDTR     gdtr;

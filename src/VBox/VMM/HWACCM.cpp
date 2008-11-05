@@ -103,9 +103,6 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     pVM->hwaccm.s.fActive        = false;
     pVM->hwaccm.s.fNestedPaging  = false;
 
-    /* On first entry we'll sync everything. */
-    pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
-
     /*
      * Statistics.
      */
@@ -873,16 +870,16 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     if (pVM->fHWACCMEnabled)
         hwaccmR3DisableRawMode(pVM);
 
-    /* On first entry we'll sync everything. */
-    pVM->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
-
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
+        /* On first entry we'll sync everything. */
+        pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
+
         pVM->aCpus[i].hwaccm.s.vmx.cr0_mask = 0;
         pVM->aCpus[i].hwaccm.s.vmx.cr4_mask = 0;
-    }
 
-    pVM->hwaccm.s.Event.fPending = false;
+        pVM->aCpus[i].hwaccm.s.Event.fPending = false;
+    }
 
     /* Reset state information for real-mode emulation in VT-x. */
     pVM->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
@@ -1049,7 +1046,8 @@ VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM)
  */
 VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
 {
-    return HWACCMIsEnabled(pVM) && pVM->hwaccm.s.Event.fPending;
+    /* @todo SMP */
+    return HWACCMIsEnabled(pVM) && pVM->aCpus[0].hwaccm.s.Event.fPending;
 }
 
 /**
@@ -1069,18 +1067,18 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
             break;
 
         case VERR_VMX_INVALID_VMCS_PTR:
-            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
-            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulVMCSRevision));
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulVMCSRevision));
             break;
 
         case VERR_VMX_UNABLE_TO_START_VM:
-            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
-            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastExitReason));
             break;
 
         case VERR_VMX_UNABLE_TO_RESUME_VM:
-            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastInstrError));
-            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->hwaccm.s.vmx.lasterror.ulLastExitReason));
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastExitReason));
             break;
 
         case VERR_VMX_INVALID_VMXON_PTR:
@@ -1102,15 +1100,18 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     Log(("hwaccmR3Save:\n"));
 
-    /*
-     * Save the basic bits - fortunately all the other things can be resynced on load.
-     */
-    rc = SSMR3PutU32(pSSM, pVM->hwaccm.s.Event.fPending);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pVM->hwaccm.s.Event.errCode);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU64(pSSM, pVM->hwaccm.s.Event.intInfo);
-    AssertRCReturn(rc, rc);
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        /*
+         * Save the basic bits - fortunately all the other things can be resynced on load.
+         */
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.Event.fPending);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.Event.errCode);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hwaccm.s.Event.intInfo);
+        AssertRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
@@ -1137,13 +1138,15 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.Event.fPending);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.Event.errCode);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3GetU64(pSSM, &pVM->hwaccm.s.Event.intInfo);
-    AssertRCReturn(rc, rc);
-
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hwaccm.s.Event.fPending);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hwaccm.s.Event.errCode);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hwaccm.s.Event.intInfo);
+        AssertRCReturn(rc, rc);
+    }
     return VINF_SUCCESS;
 }
 

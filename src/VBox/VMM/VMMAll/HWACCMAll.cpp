@@ -53,11 +53,12 @@
 VMMDECL(int) HWACCMInvalidatePage(PVM pVM, RTGCPTR GCVirt)
 {
 #ifdef IN_RING0
+    PVMCPU pVCpu = &pVM->aCpus[HWACCMGetVMCPUId(pVM)];
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0InvalidatePage(pVM, GCVirt);
+        return VMXR0InvalidatePage(pVM, pVCpu, GCVirt);
 
     Assert(pVM->hwaccm.s.svm.fSupported);
-    return SVMR0InvalidatePage(pVM, GCVirt);
+    return SVMR0InvalidatePage(pVM, pVCpu, GCVirt);
 #endif
 
     return VINF_SUCCESS;
@@ -73,7 +74,7 @@ VMMDECL(int) HWACCMFlushTLB(PVM pVM)
 {
     LogFlow(("HWACCMFlushTLB\n"));
 
-    pVM->hwaccm.s.fForceTLBFlush = true;
+    pVM->aCpus[HWACCMGetVMCPUId(pVM)].hwaccm.s.fForceTLBFlush = true;
     STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBManual);
     return VINF_SUCCESS;
 }
@@ -119,11 +120,12 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
         return VINF_SUCCESS;
 
 #ifdef IN_RING0
+    PVMCPU pVCpu = &pVM->aCpus[HWACCMGetVMCPUId(pVM)];
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0InvalidatePhysPage(pVM, GCPhys);
+        return VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
 
     Assert(pVM->hwaccm.s.svm.fSupported);
-    SVMR0InvalidatePhysPage(pVM, GCPhys);
+    SVMR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
 #else
     HWACCMFlushTLB(pVM);
 #endif
@@ -138,7 +140,8 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
  */
 VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
 {
-    return !!pVM->hwaccm.s.Event.fPending;
+    /* @todo SMP */
+    return !!pVM->aCpus[0].hwaccm.s.Event.fPending;
 }
 
 #ifndef IN_RC
