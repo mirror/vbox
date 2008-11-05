@@ -47,6 +47,7 @@
 #include <VBox/selm.h>
 #include <VBox/dbgf.h>
 #include <VBox/patm.h>
+#include <VBox/hwaccm.h>
 #include <VBox/ssm.h>
 #include "CPUMInternal.h"
 #include <VBox/vm.h>
