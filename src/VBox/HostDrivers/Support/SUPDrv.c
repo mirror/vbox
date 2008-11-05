@@ -2153,7 +2153,7 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
                 for (iPage = 0; iPage < cPages; iPage++)
                 {
                     paPages[iPage] = RTR0MemObjGetPagePhysAddr(Mem.MemObj, iPage);
-                    AssertMsg(!(paPages[iPage] & (PAGE_SIZE - 1)), ("iPage=%d Phys=%VHp\n", paPages[iPage]));
+                    AssertMsg(!(paPages[iPage] & (PAGE_SIZE - 1)), ("iPage=%d Phys=%RHp\n", paPages[iPage]));
                 }
                 *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);

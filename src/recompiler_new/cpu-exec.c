@@ -325,7 +325,7 @@ int cpu_exec(CPUState *env1)
                        trigger new exceptions, but we do not handle
                        double or triple faults yet. */
                     RAWEx_ProfileStart(env, STATS_IRQ_HANDLING);
-                    Log(("do_interrupt %d %d %VGv\n", env->exception_index, env->exception_is_int, env->exception_next_eip));
+                    Log(("do_interrupt %d %d %RGv\n", env->exception_index, env->exception_is_int, env->exception_next_eip));
                     do_interrupt(env->exception_index,
                                  env->exception_is_int,
                                  env->error_code,
@@ -359,7 +359,7 @@ int cpu_exec(CPUState *env1)
                             ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request, CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT);
                             env->exception_index = EXCP_SINGLE_INSTR;
                             if (emulate_single_instr(env) == -1)
-                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%VGv!!\n", env->eip));
+                                AssertMsgFailed(("REM: emulate_single_instr failed for EIP=%RGv!!\n", env->eip));
 
                             /* When we receive an external interrupt during execution of this single
                                instruction, then we should stay here. We will leave when we're ready
@@ -503,7 +503,7 @@ int cpu_exec(CPUState *env1)
                         }
                      }
                 }
-                    
+
                 /* reset soft MMU for next block (it can currently
                    only be set by a memory fault) */
 #if defined(TARGET_I386) && !defined(CONFIG_SOFTMMU)
@@ -694,10 +694,10 @@ int cpu_exec(CPUState *env1)
                             do_interrupt(EXCP02_NMI, 0, 0, 0, 1);
                             next_tb = 0;
                         } else if ((interrupt_request & CPU_INTERRUPT_HARD) &&
-                                   (((env->hflags2 & HF2_VINTR_MASK) && 
+                                   (((env->hflags2 & HF2_VINTR_MASK) &&
                                      (env->hflags2 & HF2_HIF_MASK)) ||
-                                    (!(env->hflags2 & HF2_VINTR_MASK) && 
-                                     (env->eflags & IF_MASK && 
+                                    (!(env->hflags2 & HF2_VINTR_MASK) &&
+                                     (env->eflags & IF_MASK &&
                                       !(env->hflags & HF_INHIBIT_IRQ_MASK))))) {
                             int intno;
                             svm_check_intercept(SVM_EXIT_INTR);
@@ -712,7 +712,7 @@ int cpu_exec(CPUState *env1)
                             next_tb = 0;
 #if !defined(CONFIG_USER_ONLY)
                         } else if ((interrupt_request & CPU_INTERRUPT_VIRQ) &&
-                                   (env->eflags & IF_MASK) && 
+                                   (env->eflags & IF_MASK) &&
                                    !(env->hflags & HF_INHIBIT_IRQ_MASK)) {
                             int intno;
                             /* FIXME: this should respect TPR */
@@ -1095,7 +1095,7 @@ static inline int handle_cpu_signal(unsigned long pc, unsigned long address,
     }
     if (ret == 1) {
 #if 0
-        printf("PF exception: EIP=0x%VGv CR2=0x%VGv error=0x%x\n",
+        printf("PF exception: EIP=0x%RGv CR2=0x%RGv error=0x%x\n",
                env->eip, env->cr[2], env->error_code);
 #endif
         /* we restore the process signal mask as the sigreturn should

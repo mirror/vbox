@@ -1065,8 +1065,8 @@ static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
 #ifdef VBOX
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return 0;
     }
 #endif
@@ -1079,8 +1079,8 @@ static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
 #ifdef VBOX
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return 0xff & dirty_flags; /** @todo I don't think this is the right thing to return, fix! */
     }
 #endif
@@ -1092,8 +1092,8 @@ static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
 #ifdef VBOX
     if (RT_UNLIKELY((addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
     {
-        Log(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));
-        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %VGp\n", (RTGCPHYS)addr));*/
+        Log(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));
+        /*AssertMsgFailed(("cpu_physical_memory_is_dirty: %RGp\n", (RTGCPHYS)addr));*/
         return;
     }
 #endif

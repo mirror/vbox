@@ -41,7 +41,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
     if (pMdl == NULL)
     {
         rc = VERR_NOT_SUPPORTED;
-        AssertMsgFailed(("IoAllocateMdl %VGv %x failed!!\n", pv, u32Size));
+        AssertMsgFailed(("IoAllocateMdl %p %x failed!!\n", pv, u32Size));
     }
     else
     {
@@ -57,7 +57,7 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
 
             IoFreeMdl (pMdl);
             rc = VERR_INVALID_PARAMETER;
-            AssertMsgFailed(("MmProbeAndLockPages %VGv %x failed!!\n", pv, u32Size));
+            AssertMsgFailed(("MmProbeAndLockPages %p %x failed!!\n", pv, u32Size));
         }
     }
 
@@ -279,7 +279,7 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
     nextStack->Parameters.DeviceIoControl.Type3InputBuffer = pvData;
 
     irp->AssociatedIrp.SystemBuffer = pvData; /* Output buffer. */
-    irp->MdlAddress = NULL;    
+    irp->MdlAddress = NULL;
 
     /* A completion routine is required to signal the Event. */
     IoSetCompletionRoutine (irp, vbglDriverIOCtlCompletion, &Event, TRUE, TRUE, TRUE);
