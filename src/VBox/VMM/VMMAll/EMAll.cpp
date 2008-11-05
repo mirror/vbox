@@ -1124,7 +1124,7 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
         return VERR_EM_INTERPRETER;
     }
 
-    Log2(("emInterpretLockBitTest %s: GCPtrPar1=%RGv imm=%VX64 CF=%d\n", emGetMnemonic(pCpu), GCPtrPar1, ValPar2, !!(eflags & X86_EFL_CF)));
+    Log2(("emInterpretLockBitTest %s: GCPtrPar1=%RGv imm=%RX64 CF=%d\n", emGetMnemonic(pCpu), GCPtrPar1, ValPar2, !!(eflags & X86_EFL_CF)));
 
     /* Update guest's eflags and finish. */
     pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -1950,7 +1950,7 @@ VMMDECL(int) EMInterpretCRxRead(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRe
 
     if(RT_SUCCESS(rc))
     {
-        LogFlow(("MOV_CR: gen32=%d CR=%d val=%VX64\n", DestRegGen, SrcRegCrx, val64));
+        LogFlow(("MOV_CR: gen32=%d CR=%d val=%RX64\n", DestRegGen, SrcRegCrx, val64));
         return VINF_SUCCESS;
     }
     return VERR_EM_INTERPRETER;
@@ -1999,7 +1999,7 @@ static int EMUpdateCRx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uin
     int      rc;
 
     /** @todo Clean up this mess. */
-    LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %VX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
+    LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
     switch (DestRegCrx)
     {
     case USE_REG_CR0:
@@ -2678,7 +2678,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
             val = 0;
         break;
     }
-    Log(("EMInterpretRdmsr %s (%x) -> val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
+    Log(("EMInterpretRdmsr %s (%x) -> val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     if (rc == VINF_SUCCESS)
     {
         pRegFrame->eax = (uint32_t) val;
@@ -2725,7 +2725,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         return VERR_EM_INTERPRETER; /* not supported */
 
     val = RT_MAKE_U64(pRegFrame->eax, pRegFrame->edx);
-    Log(("EMInterpretWrmsr %s (%x) val=%VX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
+    Log(("EMInterpretWrmsr %s (%x) val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     switch (pRegFrame->ecx)
     {
     case MSR_IA32_APICBASE:
