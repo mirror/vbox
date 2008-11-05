@@ -5811,8 +5811,7 @@ HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapD
  */
 HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
 {
-//#if !defined(RT_OS_LINUX)
-#if 1
+#if !defined(RT_OS_LINUX) || defined(VBOX_WITH_NETFLT)
     /*
      * Nothing to do here.
      *
@@ -5999,9 +5998,7 @@ HRESULT Console::attachToHostInterface(INetworkAdapter *networkAdapter)
  */
 HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
 {
-//#if !defined(RT_OS_LINUX)
-#if 1
-
+#if !defined(RT_OS_LINUX) || defined(VBOX_WITH_NETFLT)
     /*
      * Nothing to do here.
      */
@@ -6096,7 +6093,6 @@ HRESULT Console::detachFromHostInterface(INetworkAdapter *networkAdapter)
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
 #endif /* RT_OS_LINUX */
-
 }
 
 
