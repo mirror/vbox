@@ -3541,7 +3541,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
     PX86PDPAE pPD = (PX86PDPAE)MMPagePhys2Page(pVM, HCPhys);
     if (!pPD)
     {
-        pHlp->pfnPrintf(pHlp, "%0*llx error! Page directory at HCPhys=%#VHp was not found in the page pool!\n",
+        pHlp->pfnPrintf(pHlp, "%0*llx error! Page directory at HCPhys=%RHp was not found in the page pool!\n",
                         fLongMode ? 16 : 8, u64Address, HCPhys);
         return VERR_INVALID_PARAMETER;
     }
@@ -3620,7 +3620,7 @@ static int  pgmR3DumpHierarchyHCPaePD(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Addr
                     if (pPT)
                         rc2 = pgmR3DumpHierarchyHCPaePT(pVM, pPT, u64AddressPT, fLongMode, cMaxDepth - 1, pHlp);
                     else
-                        pHlp->pfnPrintf(pHlp, "%0*llx error! Page table at HCPhys=%#VHp was not found in the page pool!\n",
+                        pHlp->pfnPrintf(pHlp, "%0*llx error! Page table at HCPhys=%RHp was not found in the page pool!\n",
                                         fLongMode ? 16 : 8, u64AddressPT, HCPhysPT);
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
@@ -3649,7 +3649,7 @@ static int  pgmR3DumpHierarchyHCPaePDPT(PVM pVM, RTHCPHYS HCPhys, uint64_t u64Ad
     PX86PDPT pPDPT = (PX86PDPT)MMPagePhys2Page(pVM, HCPhys);
     if (!pPDPT)
     {
-        pHlp->pfnPrintf(pHlp, "%0*llx error! Page directory pointer table at HCPhys=%#VHp was not found in the page pool!\n",
+        pHlp->pfnPrintf(pHlp, "%0*llx error! Page directory pointer table at HCPhys=%RHp was not found in the page pool!\n",
                         fLongMode ? 16 : 8, u64Address, HCPhys);
         return VERR_INVALID_PARAMETER;
     }
@@ -3719,7 +3719,7 @@ static int pgmR3DumpHierarchyHcPaePML4(PVM pVM, RTHCPHYS HCPhys, uint32_t cr4, u
     PX86PML4 pPML4 = (PX86PML4)MMPagePhys2Page(pVM, HCPhys);
     if (!pPML4)
     {
-        pHlp->pfnPrintf(pHlp, "Page map level 4 at HCPhys=%#VHp was not found in the page pool!\n", HCPhys);
+        pHlp->pfnPrintf(pHlp, "Page map level 4 at HCPhys=%RHp was not found in the page pool!\n", HCPhys);
         return VERR_INVALID_PARAMETER;
     }
 

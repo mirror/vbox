@@ -250,12 +250,12 @@ VMMR3DECL(int) MMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
             break;
     if (!pCur)
     {
-        AssertMsgFailed(("No physical range was found matching the ROM location (%#VGp LB%#x)\n", GCPhys, cbRange));
+        AssertMsgFailed(("No physical range was found matching the ROM location (%RGp LB%#x)\n", GCPhys, cbRange));
         return VERR_INVALID_PARAMETER;
     }
     if (GCPhysLast - pCur->u.phys.GCPhys >= pCur->cb)
     {
-        AssertMsgFailed(("The ROM range (%#VGp LB%#x) was crossing the end of the physical range (%#VGp LB%#x)\n",
+        AssertMsgFailed(("The ROM range (%RGp LB%#x) was crossing the end of the physical range (%RGp LB%#x)\n",
                          GCPhys, cbRange, pCur->u.phys.GCPhys, pCur->cb));
         return VERR_INVALID_PARAMETER;
     }
@@ -385,7 +385,7 @@ VMMR3DECL(int) MMR3PhysReserve(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, const c
     }
     if (GCPhysLast - pCur->u.phys.GCPhys >= pCur->cb)
     {
-        AssertMsgFailed(("The reserved range (%#VGp LB%#x) was crossing the end of the physical range (%#VGp LB%#x)\n",
+        AssertMsgFailed(("The reserved range (%RGp LB%#x) was crossing the end of the physical range (%RGp LB%#x)\n",
                          GCPhys, cbRange, pCur->u.phys.GCPhys, pCur->cb));
         return VERR_INVALID_PARAMETER;
     }
