@@ -293,7 +293,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
                 dprintf(("vboxClipboardReadDataFromClient vboxrc = %d\n", vboxrc));
 
-                if (   VBOX_SUCCESS (vboxrc)
+                if (   RT_SUCCESS (vboxrc)
                     && pCtx->pClient->data.pv != NULL
                     && pCtx->pClient->data.cb > 0
                     && pCtx->pClient->data.u32Format == u32Format)

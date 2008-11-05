@@ -653,7 +653,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
             if (mWaitersCount == 0)
                 RTSemEventMultiReset (mCompletedSem);
 
-            if (VBOX_FAILURE (vrc) && vrc != VERR_TIMEOUT)
+            if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
                 break;
 
             if (!forever)
@@ -664,7 +664,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
             }
         }
 
-        if (VBOX_FAILURE (vrc) && vrc != VERR_TIMEOUT)
+        if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
             return setError (E_FAIL,
                 tr ("Failed to wait for the task completion (%Vrc)"), vrc);
     }
@@ -721,7 +721,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
             if (mWaitersCount == 0)
                 RTSemEventMultiReset (mCompletedSem);
 
-            if (VBOX_FAILURE (vrc) && vrc != VERR_TIMEOUT)
+            if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
                 break;
 
             if (!forever)
@@ -732,7 +732,7 @@ STDMETHODIMP Progress::WaitForOperationCompletion (ULONG aOperation, LONG aTimeo
             }
         }
 
-        if (VBOX_FAILURE (vrc) && vrc != VERR_TIMEOUT)
+        if (RT_FAILURE (vrc) && vrc != VERR_TIMEOUT)
             return setError (E_FAIL,
                 tr ("Failed to wait for the operation completion (%Vrc)"), vrc);
     }

@@ -46,16 +46,16 @@ static void vbglQueryVMMDevPort (void)
 
     rc = vbglDriverOpen (&driver);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         VBoxGuestPortInfo port;
 
         rc = vbglDriverIOCtl (&driver, VBOXGUEST_IOCTL_GETVMMDEVPORT, &port, sizeof (port));
 
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             dprintf (("port = 0x%04X, mem = %p\n", port.portAddress, port.pVMMDevMemory));
-            
+
             g_vbgldata.portVMMDev = port.portAddress;
             g_vbgldata.pVMMDevMemory = port.pVMMDevMemory;
 
@@ -81,9 +81,9 @@ int VbglEnter (void)
 #endif
 
     rc = g_vbgldata.status == VbglStatusReady? VINF_SUCCESS: VERR_VBGL_NOT_INITIALIZED;
-    
+
     // dprintf(("VbglEnter: rc = %d\n", rc));
-    
+
     return rc;
 }
 
@@ -97,14 +97,14 @@ int vbglInitCommon (void)
 
     rc = VbglPhysHeapInit ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* other subsystems, none yet */
         ;
     }
 
     dprintf(("vbglInitCommon: rc = %d\n", rc));
-    
+
     return rc;
 }
 
@@ -124,7 +124,7 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
     int rc = VINF_SUCCESS;
 
     dprintf(("vbglInit: starts g_vbgldata.status %d\n", g_vbgldata.status));
-    
+
     if (g_vbgldata.status == VbglStatusInitializing
         || g_vbgldata.status == VbglStatusReady)
     {
@@ -134,7 +134,7 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
 
     rc = vbglInitCommon ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         g_vbgldata.portVMMDev = portVMMDev;
         g_vbgldata.pVMMDevMemory = pVMMDevMemory;
@@ -172,7 +172,7 @@ DECLVBGL(int) VbglInit (void)
 
     rc = vbglInitCommon ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
         vbglQueryVMMDevPort ();
@@ -181,7 +181,7 @@ DECLVBGL(int) VbglInit (void)
         rc = vbglHGCMInit ();
 #endif /* VBOX_WITH_HGCM */
 
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
         {
             vbglTerminateCommon ();
         }

@@ -68,7 +68,7 @@ static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvCl
 }
 
 /**
- * We can't save the OpenGL state, so there's not much to do. Perhaps we should invalidate the client id? 
+ * We can't save the OpenGL state, so there's not much to do. Perhaps we should invalidate the client id?
  */
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
@@ -78,7 +78,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     NOREF(pSSM);
 
     Log(("svcSaveState: u32ClientID = %d\n", u32ClientID));
-    
+
     return VINF_SUCCESS;
 }
 
@@ -123,7 +123,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else 
+            else
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT     /* name */
                 ||  paParms[1].type != VBOX_HGCM_SVC_PARM_PTR       /* string */
                )
@@ -148,7 +148,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     /* Execute the function. */
                     rc = vboxglGetString(pClient, name, pString, &cbString);
 
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         /* Update parameters.*/
                         paParms[1].u.pointer.size = cbString;
@@ -156,7 +156,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
             }
             break;
-        } 
+        }
 
         case VBOXOGL_FN_GLFLUSH:
         {
@@ -167,7 +167,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else 
+            else
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR       /* pCmdBuffer */
                 ||  paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT     /* cCommands */
                 ||  paParms[2].type != VBOX_HGCM_SVC_PARM_64BIT     /* retval */
@@ -188,7 +188,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 /* Execute the function. */
                 rc = vboxglFlushBuffer(pClient, pCmdBuffer, cbCmdBuffer, cCommands, &lasterror, &lastretval);
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Update parameters.*/
                     paParms[2].u.uint64 = lastretval;
@@ -196,7 +196,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
             }
             break;
-        } 
+        }
 
         case VBOXOGL_FN_GLFLUSHPTR:
         {
@@ -207,7 +207,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else 
+            else
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR       /* pCmdBuffer */
                 ||  paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT     /* cCommands */
                 ||  (    paParms[2].type != VBOX_HGCM_SVC_PARM_PTR       /* pLastParam */
@@ -247,7 +247,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 pClient->pLastParam  = 0;
                 pClient->cbLastParam = 0;
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Update parameters.*/
                     paParms[3].u.uint64 = lastretval;
@@ -255,7 +255,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
             }
             break;
-        } 
+        }
 
         case VBOXOGL_FN_GLCHECKEXT:
         {
@@ -266,7 +266,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else 
+            else
             if (    paParms[0].type != VBOX_HGCM_SVC_PARM_PTR       /* pszExtFnName */
                )
             {
@@ -296,14 +296,14 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 #else
                         rc = VERR_FILE_NOT_FOUND;
 #endif
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         /* Update parameters.*/
                     }
                 }
             }
             break;
-        } 
+        }
 
         default:
         {

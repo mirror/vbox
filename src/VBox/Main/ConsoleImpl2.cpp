@@ -121,7 +121,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 #define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (VBOX_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
+#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Vrc\n", rc)); STR_FREE(); return rc; } } while (0)
 #define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
@@ -1673,7 +1673,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* Load the service */
             rc = pConsole->mVMMDev->hgcmLoadService ("VBoxSharedClipboard", "VBoxSharedClipboard");
 
-            if (VBOX_FAILURE (rc))
+            if (RT_FAILURE (rc))
             {
                 LogRel(("VBoxSharedClipboard is not available. rc = %Vrc\n", rc));
                 /* That is not a fatal failure. */
@@ -1729,7 +1729,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Load the service */
         rc = pConsole->mVMMDev->hgcmLoadService ("VBoxGuestPropSvc", "VBoxGuestPropSvc");
 
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
             LogRel(("VBoxGuestPropSvc is not available. rc = %Vrc\n", rc));
             /* That is not a fatal failure. */
@@ -1890,7 +1890,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 /* create the node */
                 rc = CFGMR3InsertNode(pRoot, pszExtraDataKey, &pNode);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     AssertLogRelMsgRC(rc, ("failed to insert node '%s'\n", pszExtraDataKey));
                     continue;
@@ -1947,13 +1947,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Register VM state change handler */
     int rc2 = VMR3AtStateRegister (pVM, Console::vmstateChangeCallback, pConsole);
     AssertRC (rc2);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
         rc = rc2;
 
     /* Register VM runtime error handler */
     rc2 = VMR3AtRuntimeErrorRegister (pVM, Console::setVMRuntimeErrorCallback, pConsole);
     AssertRC (rc2);
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
         rc = rc2;
 
     /* Save the VM pointer in the machine object */

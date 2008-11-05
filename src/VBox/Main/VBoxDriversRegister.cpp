@@ -48,27 +48,27 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     AssertReleaseMsg(u32Version == VBOX_VERSION, ("u32Version=%#x VBOX_VERSION=%#x\n", u32Version, VBOX_VERSION));
 
     int rc = pCallbacks->pfnRegister(pCallbacks, &Mouse::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &Keyboard::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &Display::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &VMMDev::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &AudioSniffer::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &Console::DrvStatusReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     return VINF_SUCCESS;
 }

@@ -340,7 +340,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateLnxIO(PPPDMASYNCCOMPLETIONTASK ppTask,
     PPDMASYNCCOMPLETIONTASK pTask;
 
     rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)pIoCB, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Creating Linux task failed\n"));
         return rc;
@@ -374,7 +374,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateUnxAIO(PPPDMASYNCCOMPLETIONTASK ppTask
     PPDMASYNCCOMPLETIONTASK pTask;
 
     rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)pAioCB, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Creating AIO task failed\n"));
         return rc;
@@ -404,7 +404,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateOs2Event(PPPDMASYNCCOMPLETIONTASK ppTa
     PPDMASYNCCOMPLETIONTASK pTask;
 
     rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)&hev, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Creating OS/2 task failed\n"));
         return rc;
@@ -434,7 +434,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateWinObject(PPPDMASYNCCOMPLETIONTASK ppT
     PPDMASYNCCOMPLETIONTASK pTask;
 
     rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_HOST, (void *)hObject, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Creating Windows task failed\n"));
         return rc;
@@ -489,7 +489,7 @@ DECLINLINE(int) PDMR3AsyncCompletionCreateSocket(PPPDMASYNCCOMPLETIONTASK ppTask
     SocketContext.fXcpt      = fXcpt;
 
     rc = PDMR3AsyncCompletionTaskCreate(&pTask, pTemplate, PDMASYNCCOMPLETIONTASKTYPE_SOCKET, (void *)&SocketContext, pvUser);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Creating Socket task failed\n"));
         return rc;
@@ -524,7 +524,7 @@ DECLINLINE(int) PDMR3AsyncCompletionModifySocket(PPDMASYNCCOMPLETIONTASK pTask, 
     SocketContext.fXcpt      = fXcpt;
 
     rc = PDMR3AsyncCompletionTaskAssociate(pTask, &SocketContext);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Modifying Socket task failed\n"));
         return rc;

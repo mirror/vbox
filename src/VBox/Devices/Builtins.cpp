@@ -143,11 +143,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
 #endif
 #ifdef VBOX_WITH_BUSLOGIC
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceBusLogic);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePCIBridge);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 
@@ -267,12 +267,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 #endif
 #ifdef VBOX_WITH_SCSI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSI);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
 #if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSIHost);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
 #endif

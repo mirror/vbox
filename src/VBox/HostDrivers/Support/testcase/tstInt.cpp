@@ -103,7 +103,7 @@ int main(int argc, char **argv)
                 rc = SUPLowAlloc(cPages, (void **)&pVM, &pVMR0, &paPages[0]);
             else
                 rc = VERR_NO_MEMORY;
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 pVM->pVMRC = 0;
                 pVM->pVMR3 = pVM;

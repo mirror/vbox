@@ -93,7 +93,7 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     unsigned cEntries;
     int vrc = VDBackendInfo (RT_ELEMENTS (aVDInfo), aVDInfo, &cEntries);
     AssertRC (vrc);
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         for (unsigned i = 0; i < cEntries; ++ i)
         {
@@ -576,7 +576,7 @@ HRESULT SystemProperties::setDefaultMachineFolder (const BSTR aPath)
     /* get the full file name */
     Utf8Str folder;
     int vrc = mParent->calculateFullPath (path, folder);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid default machine folder '%ls' (%Vrc)"),
             path.raw(), vrc);
@@ -598,7 +598,7 @@ HRESULT SystemProperties::setDefaultHardDiskFolder (const BSTR aPath)
     /* get the full file name */
     Utf8Str folder;
     int vrc = mParent->calculateFullPath (path, folder);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid default hard disk folder '%ls' (%Vrc)"),
             path.raw(), vrc);

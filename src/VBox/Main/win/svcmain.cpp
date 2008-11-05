@@ -242,15 +242,15 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
             if (pipeName.isEmpty())
                 vrc = VERR_INVALID_PARAMETER;
 
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
             {
                 /* do the helper job */
                 SVCHlpServer server;
                 vrc = server.open (pipeName);
-                if (VBOX_SUCCESS (vrc))
+                if (RT_SUCCESS (vrc))
                     vrc = server.run();
             }
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
             {
                 Utf8Str err = Utf8StrFmt (
                     "Failed to process Helper request (%Vrc).", vrc);

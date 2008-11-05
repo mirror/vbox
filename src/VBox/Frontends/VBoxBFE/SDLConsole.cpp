@@ -200,7 +200,7 @@ CONEVENT SDLConsole::eventWait()
                             enmHKeyState = HKEYSTATE_USED;
                             break;
                         }
-                        if (VBOX_SUCCESS(rc))
+                        if (RT_SUCCESS(rc))
                         {
                             return CONEVENT_QUIT;
                         }
@@ -239,7 +239,7 @@ CONEVENT SDLConsole::eventWait()
                     if (ev->type == SDL_KEYDOWN)
                     {
                         int rc = handleHostKey(&ev->key);
-                        if (VBOX_SUCCESS(rc) && rc != VINF_SUCCESS)
+                        if (RT_SUCCESS(rc) && rc != VINF_SUCCESS)
                         {
                             return CONEVENT_QUIT;
                         }

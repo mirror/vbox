@@ -149,7 +149,7 @@ void vboxDeviceAdded (PDEVICE_EXTENSION devExt)
             /*  Do one time initialization. */
             int vboxRC = VbglInit ();
 
-            if (VBOX_SUCCESS (vboxRC))
+            if (RT_SUCCESS (vboxRC))
             {
                 /* Atomically set the flag. */
                 InterlockedExchange (&g_ctx.fVBGLInited, TRUE);
@@ -192,7 +192,7 @@ void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
 
             int vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
 
-            if (VBOX_SUCCESS(vboxRC))
+            if (RT_SUCCESS(vboxRC))
             {
                 req->mouseFeatures = 0;
                 req->pointerXPos = 0;
@@ -200,7 +200,7 @@ void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
 
                 vboxRC = VbglGRPerform (&req->header);
 
-                if (VBOX_FAILURE(vboxRC) || VBOX_FAILURE(req->header.rc))
+                if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
                 {
                     dprintf(("VBoxMouse::vboxDeviceRemoved: ERROR communicating new mouse capabilities to VMMDev.\n"
                              "rc = %d, VMMDev rc = %Vrc\n", vboxRC, req->header.rc));
@@ -236,7 +236,7 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
 
             int vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
 
-            if (VBOX_SUCCESS(vboxRC))
+            if (RT_SUCCESS(vboxRC))
             {
                 /* Inform host that we support absolute */
                 req->mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE;
@@ -245,7 +245,7 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
 
                 vboxRC = VbglGRPerform (&req->header);
 
-                if (VBOX_FAILURE(vboxRC) || VBOX_FAILURE(req->header.rc))
+                if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
                 {
                     dprintf(("VBoxMouse::vboxInformHost: ERROR communicating new mouse capabilities to VMMDev."
                               "rc = %d, VMMDev rc = %Vrc\n", vboxRC, req->header.rc));
@@ -266,7 +266,7 @@ void vboxInformHost (PDEVICE_EXTENSION devExt)
 
             int vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_GetMouseStatus);
 
-            if (VBOX_SUCCESS(vboxRC))
+            if (RT_SUCCESS(vboxRC))
             {
                 devExt->reqSC = req;
                 dumpDevExt (devExt);
@@ -711,7 +711,7 @@ Return Value:
     case IRP_MN_START_DEVICE: {
 
         dprintf(("IRP_MN_START_DEVICE\n"));
-        
+
         //
         // The device is starting.
         //
@@ -762,9 +762,9 @@ Return Value:
     }
 
     case IRP_MN_SURPRISE_REMOVAL:
-    
+
         dprintf(("IRP_MN_SURPRISE_REMOVAL\n"));
-        
+
         //
         // Same as a remove device, but don't call IoDetach or IoDeleteDevice
         //
@@ -1009,7 +1009,7 @@ Return Value:
     {
         int rc = VbglGRPerform (&req->header);
 
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             if (req->mouseFeatures & VBOXGUEST_MOUSE_HOST_CAN_ABSOLUTE)
             {

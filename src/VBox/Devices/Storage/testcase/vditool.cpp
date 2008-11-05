@@ -70,7 +70,7 @@ static int SyntaxError(const char *pszMsg)
 static int FilenameToUtf8(char **pszUtf8Filename, const char *pszFilename)
 {
     int rc = RTStrCurrentCPToUtf8(pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         RTPrintf("Error converting filename '%s' to UTF8! (rc=%Rrc)\n",
                  pszFilename, rc);
     return rc;
@@ -85,7 +85,7 @@ static int PrintDone(int rc)
 {
     if (rc == VINF_SUCCESS)
         RTPrintf("The operation completed successfully!\n");
-    else if (VBOX_SUCCESS(rc))
+    else if (RT_SUCCESS(rc))
         RTPrintf("The operation completed successfully! (rc=%Rrc)\n", rc);
     else
         RTPrintf("FAILURE: %Rrf (%Rrc)\n", rc, rc);
@@ -100,7 +100,7 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = VDICreateBaseImage(pszUtf8Filename,
@@ -118,16 +118,16 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename, *pszUtf8DDFilename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = FilenameToUtf8(&pszUtf8DDFilename, pszDDFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /* open raw image file. */
     RTFILE File;
     rc = RTFileOpen(&File, pszUtf8DDFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("File=\"%s\" open error: %Rrf\n", pszDDFilename, rc);
         return rc;
@@ -136,7 +136,7 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
     /* get image size. */
     uint64_t cbFile;
     rc = RTFileGetSize(File, &cbFile);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTPrintf("Creating fixed image with size %u Bytes...\n", (unsigned)cbFile);
         rc = VDICreateBaseImage(pszUtf8Filename,
@@ -144,12 +144,12 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
                                 cbFile,
                                 "Converted from DD test image", NULL, NULL);
         PrintDone(rc);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             RTPrintf("Writing data...\n");
             PVDIDISK pVdi = VDIDiskCreate();
             rc = VDIDiskOpenImage(pVdi, pszUtf8Filename, VDI_OPEN_FLAGS_NORMAL);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* alloc work buffer. */
                 void *pvBuf = RTMemAlloc(VDIDiskGetBufferSize(pVdi));
@@ -160,10 +160,10 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
                     {
                         size_t cbRead = 0;
                         rc = RTFileRead(File, pvBuf, VDIDiskGetBufferSize(pVdi), &cbRead);
-                        if (VBOX_FAILURE(rc) || !cbRead)
+                        if (RT_FAILURE(rc) || !cbRead)
                             break;
                         rc = VDIDiskWrite(pVdi, off, pvBuf, cbRead);
-                        if (VBOX_FAILURE(rc))
+                        if (RT_FAILURE(rc))
                             break;
                         off += cbRead;
                     }
@@ -176,7 +176,7 @@ static int ConvertDDImage(const char *pszFilename, const char *pszDDFilename)
                 VDIDiskCloseImage(pVdi);
             }
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 /* delete image on error */
                 VDIDeleteImage(pszUtf8Filename);
@@ -214,7 +214,7 @@ static int ConvertOldImage(const char *pszFilename)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     unsigned uPercent = 0;
@@ -231,10 +231,10 @@ static int DumpImage(const char *pszFilename)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = VDIDiskOpenImage(pVdi, pszUtf8Filename, VDI_OPEN_FLAGS_READONLY);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         VDIDiskDumpImages(pVdi);
         VDIDiskCloseAllImages(pVdi);
@@ -250,11 +250,11 @@ static int ResetImageGeometry(const char *pszFilename)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = VDIDiskOpenImage(pVdi, pszUtf8Filename, VDI_OPEN_FLAGS_NORMAL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         PDMMEDIAGEOMETRY LCHSGeometry = {0, 0, 0};
         rc = VDIDiskSetLCHSGeometry(pVdi, &LCHSGeometry);
@@ -272,10 +272,10 @@ static int CopyImage(const char *pszDstFile, const char *pszSrcFile)
     /* translate argv[] to UTF8 */
     char *pszUtf8SrcFile, *pszUtf8DstFile;
     int rc = FilenameToUtf8(&pszUtf8SrcFile, pszSrcFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = FilenameToUtf8(&pszUtf8DstFile, pszDstFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     unsigned uPrecent = 0;
@@ -293,18 +293,18 @@ static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
     /* translate argv[] to UTF8 */
     char *pszUtf8SrcFile, *pszUtf8DstFile;
     int rc = FilenameToUtf8(&pszUtf8SrcFile, pszSrcFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = FilenameToUtf8(&pszUtf8DstFile, pszDstFile);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = VDIDiskOpenImage(pVdi, pszUtf8SrcFile, VDI_OPEN_FLAGS_NORMAL);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         RTFILE FileDst;
         rc = RTFileOpen(&FileDst, pszUtf8DstFile, RTFILE_O_CREATE | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             uint64_t        cbSrc = VDIDiskGetSize(pVdi);
             const unsigned  cbBuf = VDIDiskGetBlockSize(pVdi); /* or perhaps VDIDiskGetBufferSize(pVdi)? */
@@ -315,10 +315,10 @@ static int CopyToDD(const char *pszDstFile, const char *pszSrcFile)
                 while (off < cbSrc)
                 {
                     rc = VDIDiskRead(pVdi, off, pvBuf, cbBuf);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     rc = RTFileWrite(FileDst, pvBuf, cbBuf, NULL);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                         break;
                     off += cbBuf;
                 }
@@ -340,7 +340,7 @@ static int ShrinkImage(const char *pszFilename)
     /* translate argv[] to UTF8 */
     char *pszUtf8Filename;
     int rc = FilenameToUtf8(&pszUtf8Filename, pszFilename);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     unsigned uPrecent;
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
 
         uint32_t cMBs;
         rc = RTStrToUInt32Ex(argv[3], NULL, 10, &cMBs);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return SyntaxError("Invalid number!");
         if (    cMBs < 2
             ||  cMBs > 1024*1024)
@@ -441,5 +441,5 @@ int main(int argc, char **argv)
         return SyntaxError("Invalid command!");
 
     RTLogFlush(NULL);
-    return !VBOX_SUCCESS(rc);
+    return !RT_SUCCESS(rc);
 }

@@ -79,7 +79,7 @@ vboxadd_cmc_ctl_guest_filter_mask (uint32_t or_mask, uint32_t not_mask)
     rc = VbglGRAlloc ((VMMDevRequestHeader**) &req, sizeof (*req),
                       VMMDevReq_CtlGuestFilterMask);
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         elog ("VbglGRAlloc (CtlGuestFilterMask) failed rc=%d\n", rc);
         return -1;
@@ -90,7 +90,7 @@ vboxadd_cmc_ctl_guest_filter_mask (uint32_t or_mask, uint32_t not_mask)
 
     rc = VbglGRPerform (&req->header);
     VbglGRFree (&req->header);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         elog ("VbglGRPerform (CtlGuestFilterMask) failed rc=%d\n", rc);
         return -1;

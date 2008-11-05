@@ -1105,7 +1105,7 @@ int ConsoleVRDPServer::Launch (void)
         {
             rc = mpfnVRDPCreateServer (&mCallbacks.header, this, (VRDPINTERFACEHDR **)&mpEntryPoints, &mhServer);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_USB
                 remoteUSBThreadStart ();
@@ -1258,7 +1258,7 @@ bool ConsoleVRDPServer::isRemoteUSBThreadRunning (void)
 void ConsoleVRDPServer::waitRemoteUSBThreadEvent (unsigned cMillies)
 {
     int rc = RTSemEventWait (mUSBBackends.event, cMillies);
-    Assert (VBOX_SUCCESS(rc) || rc == VERR_TIMEOUT);
+    Assert (RT_SUCCESS(rc) || rc == VERR_TIMEOUT);
     NOREF(rc);
 }
 
@@ -1266,19 +1266,19 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
 {
     int rc = RTSemEventCreate (&mUSBBackends.event);
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         AssertFailed ();
         mUSBBackends.event = 0;
     }
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         rc = RTThreadCreate (&mUSBBackends.thread, threadRemoteUSB, this, 65536,
                              RTTHREADTYPE_VRDP_IO, RTTHREADFLAGS_WAITABLE, "remote usb");
     }
 
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         LogRel(("Warning: could not start the remote USB thread, rc = %Vrc!!!\n", rc));
         mUSBBackends.thread = NIL_RTTHREAD;
@@ -1288,7 +1288,7 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
         /* Wait until the thread is ready. */
         rc = RTThreadUserWait (mUSBBackends.thread, 60000);
         AssertRC (rc);
-        Assert (mUSBBackends.fThreadRunning || VBOX_FAILURE (rc));
+        Assert (mUSBBackends.fThreadRunning || RT_FAILURE (rc));
     }
 }
 
@@ -1352,15 +1352,15 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
         LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc = RTLdrLoad (filename.raw(), &mAuthLibrary);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Vrc\n", rc));
 
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             /* Get the entry point. */
             mpfnAuthEntry2 = NULL;
             int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
-            if (VBOX_FAILURE (rc2))
+            if (RT_FAILURE (rc2))
             {
                 LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth2", rc2));
                 rc = rc2;
@@ -1369,7 +1369,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             /* Get the entry point. */
             mpfnAuthEntry = NULL;
             rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
-            if (VBOX_FAILURE (rc2))
+            if (RT_FAILURE (rc2))
             {
                 LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Vrc\n", "VRDPAuth", rc2));
                 rc = rc2;
@@ -1382,7 +1382,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             }
         }
 
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
             mConsole->reportAuthLibraryError (filename.raw(), rc);
 
@@ -1578,13 +1578,13 @@ void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId)
 {
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         if (mcClipboardRefs == 0)
         {
             rc = HGCMHostRegisterServiceExtension (&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
 
-            if (VBOX_SUCCESS (rc))
+            if (RT_SUCCESS (rc))
             {
                 mcClipboardRefs++;
             }
@@ -1598,7 +1598,7 @@ void ConsoleVRDPServer::ClipboardDelete (uint32_t u32ClientId)
 {
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         mcClipboardRefs--;
 
@@ -1629,7 +1629,7 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvInterc
         /* Append the new instance in the list. */
         int rc = lockConsoleVRDPServer ();
 
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             pRemoteUSBBackend->pNext = mUSBBackends.pHead;
             if (mUSBBackends.pHead)
@@ -1651,7 +1651,7 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvInterc
             }
         }
 
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
             pRemoteUSBBackend->Release ();
         }
@@ -1669,7 +1669,7 @@ void ConsoleVRDPServer::USBBackendDelete (uint32_t u32ClientId)
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
 
@@ -1698,7 +1698,7 @@ void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const G
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
 
@@ -1738,7 +1738,7 @@ void ConsoleVRDPServer::USBBackendReleasePointer (const Guid *pGuid)
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         pRemoteUSBBackend = usbBackendFindByUUID (pGuid);
 
@@ -1766,7 +1766,7 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
 
     int rc = lockConsoleVRDPServer ();
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         if (pRemoteUSBBackend == NULL)
         {
@@ -1952,7 +1952,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
     {
         rc = SUPR3HardenedLdrLoadAppPriv ("VBoxVRDP", &mVRDPLibrary);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             LogFlow(("VRDPServer::loadLibrary(): successfully loaded VRDP library.\n"));
 
@@ -1977,7 +1977,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 
                 AssertMsgRC(rc, ("Error resolving VRDP symbol %s\n", symbols[i].name));
 
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                 {
                     break;
                 }
@@ -1991,7 +1991,7 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
     }
 
     // just to be safe
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         if (mVRDPLibrary)
         {

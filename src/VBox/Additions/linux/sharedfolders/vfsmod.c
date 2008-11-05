@@ -142,7 +142,7 @@ sf_glob_alloc (struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
         rc = vboxCallMapFolder (&client_handle, str_name, &sf_g->map);
         kfree (str_name);
 
-        if (VBOX_FAILURE (rc)) {
+        if (RT_FAILURE (rc)) {
                 err = -EPROTO;
                 LogFunc(("vboxCallMapFolder failed rc=%d\n", rc));
                 goto fail2;
@@ -187,7 +187,7 @@ sf_glob_free (struct sf_glob_info *sf_g)
 
         TRACE ();
         rc = vboxCallUnmapFolder (&client_handle, &sf_g->map);
-        if (VBOX_FAILURE (rc)) {
+        if (RT_FAILURE (rc)) {
                 LogFunc(("vboxCallUnmapFolder failed rc=%d\n", rc));
         }
 
@@ -474,21 +474,21 @@ init (void)
         }
 
         rcVBox = vboxInit ();
-        if (VBOX_FAILURE (rcVBox)) {
+        if (RT_FAILURE (rcVBox)) {
                 LogRelFunc (("vboxInit failed, rc=%d\n", rcVBox));
                 rcRet = -EPROTO;
                 goto fail0;
         }
 
         rcVBox = vboxConnect (&client_handle);
-        if (VBOX_FAILURE (rcVBox)) {
+        if (RT_FAILURE (rcVBox)) {
                 LogRelFunc (("vboxConnect failed, rc=%d\n", rcVBox));
                 rcRet = -EPROTO;
                 goto fail1;
         }
 
         rcVBox = vboxCallSetUtf8 (&client_handle);
-        if (VBOX_FAILURE (rcVBox)) {
+        if (RT_FAILURE (rcVBox)) {
                 LogRelFunc (("vboxCallSetUtf8 failed, rc=%d\n", rcVBox));
                 rcRet = -EPROTO;
                 goto fail2;

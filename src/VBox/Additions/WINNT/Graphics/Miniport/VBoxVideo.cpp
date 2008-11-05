@@ -1729,7 +1729,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             rc = vboxVbvaEnable (pDevExt, ulEnable, (VBVAENABLERESULT *)RequestPacket->OutputBuffer);
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_VBVA_ENABLE completed rc = %Vrc\n", rc));
 
-            if (VBOX_FAILURE (rc))
+            if (RT_FAILURE (rc))
             {
                 dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_VBVA_ENABLE: failed to enable VBVA\n"));
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
@@ -1766,14 +1766,14 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                               sizeof (VMMDevVideoSetVisibleRegion) + (cRect-1)*sizeof(RTRECT),
                               VMMDevReq_VideoSetVisibleRegion);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 req->cRect = cRect;
                 memcpy(&req->Rect, RequestPacket->InputBuffer, cRect*sizeof(RTRECT));
 
                 rc = VbglGRPerform (&req->header);
 
-                if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+                if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
                 {
                     Result = TRUE;
                     break;
@@ -2169,7 +2169,7 @@ static DECLCALLBACK(void) vboxVbvaFlush (void *pvFlush)
         {
             int rc = VbglGRPerform (&req->header);
 
-            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
             {
                 dprintf(("VBoxVideo::vbvaFlush: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
             }
@@ -2216,7 +2216,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
         return rc;
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Allocate the memory block for VMMDevReq_VideoAccelFlush request. */
         if (pDevExt->u.primary.pvReqFlush == NULL)
@@ -2227,7 +2227,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
                               sizeof (VMMDevVideoAccelFlush),
                               VMMDevReq_VideoAccelFlush);
 
-            if (VBOX_SUCCESS (rc))
+            if (RT_SUCCESS (rc))
             {
                 pDevExt->u.primary.pvReqFlush = req;
             }
@@ -2242,7 +2242,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
         dprintf(("VBoxVideo::vboxVbvaEnable: VbglQueryVMMDevMemory rc = %Vrc!!!\n", rc));
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         ULONG ulEnabled = 0;
 
@@ -2255,7 +2255,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
                           sizeof (VMMDevVideoAccelEnable),
                           VMMDevReq_VideoAccelEnable);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             req->u32Enable = ulEnable;
             req->cbRingBuffer = VBVA_RING_BUFFER_SIZE;
@@ -2263,7 +2263,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
 
             rc = VbglGRPerform (&req->header);
 
-            if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
             {
                 if (req->fu32Status & VBVA_F_STATUS_ACCEPTED)
                 {
@@ -2302,7 +2302,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
             {
                 dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Vrc, VMMDev rc = %Vrc!!!\n", rc, req->header.rc));
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = req->header.rc;
                 }

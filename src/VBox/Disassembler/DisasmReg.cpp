@@ -533,27 +533,27 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
             if (pParam->flags & USE_REG_GEN8)
             {
                 pParamVal->flags |= PARAM_VAL8;
-                if (VBOX_FAILURE(DISFetchReg8(pCtx, pParam->base.reg_gen, &pParamVal->val.val8))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg8(pCtx, pParam->base.reg_gen, &pParamVal->val.val8))) return VERR_INVALID_PARAMETER;
             }
             else
             if (pParam->flags & USE_REG_GEN16)
             {
                 pParamVal->flags |= PARAM_VAL16;
-                if (VBOX_FAILURE(DISFetchReg16(pCtx, pParam->base.reg_gen, &pParamVal->val.val16))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg16(pCtx, pParam->base.reg_gen, &pParamVal->val.val16))) return VERR_INVALID_PARAMETER;
             }
             else
             if (pParam->flags & USE_REG_GEN32)
             {
                 pParamVal->flags |= PARAM_VAL32;
-                if (VBOX_FAILURE(DISFetchReg32(pCtx, pParam->base.reg_gen, &pParamVal->val.val32))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg32(pCtx, pParam->base.reg_gen, &pParamVal->val.val32))) return VERR_INVALID_PARAMETER;
             }
             else
             if (pParam->flags & USE_REG_GEN64)
             {
                 pParamVal->flags |= PARAM_VAL64;
-                if (VBOX_FAILURE(DISFetchReg64(pCtx, pParam->base.reg_gen, &pParamVal->val.val64))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg64(pCtx, pParam->base.reg_gen, &pParamVal->val.val64))) return VERR_INVALID_PARAMETER;
             }
-            else 
+            else
             {
                 AssertFailed();
                 return VERR_INVALID_PARAMETER;
@@ -567,10 +567,10 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
                 uint16_t val16;
 
                 pParamVal->flags |= PARAM_VAL16;
-                if (VBOX_FAILURE(DISFetchReg16(pCtx, pParam->index.reg_gen, &val16))) return VERR_INVALID_PARAMETER;
-                
+                if (RT_FAILURE(DISFetchReg16(pCtx, pParam->index.reg_gen, &val16))) return VERR_INVALID_PARAMETER;
+
                 Assert(!(pParam->flags & USE_SCALE));   /* shouldn't be possible in 16 bits mode */
-                
+
                 pParamVal->val.val16 += val16;
             }
             else
@@ -579,7 +579,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
                 uint32_t val32;
 
                 pParamVal->flags |= PARAM_VAL32;
-                if (VBOX_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg32(pCtx, pParam->index.reg_gen, &val32))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->flags & USE_SCALE)
                     val32 *= pParam->scale;
@@ -592,7 +592,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
                 uint64_t val64;
 
                 pParamVal->flags |= PARAM_VAL64;
-                if (VBOX_FAILURE(DISFetchReg64(pCtx, pParam->index.reg_gen, &val64))) return VERR_INVALID_PARAMETER;
+                if (RT_FAILURE(DISFetchReg64(pCtx, pParam->index.reg_gen, &val64))) return VERR_INVALID_PARAMETER;
 
                 if (pParam->flags & USE_SCALE)
                     val64 *= pParam->scale;
@@ -665,28 +665,28 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
         {
             pParamVal->flags |= PARAM_VAL8;
             pParamVal->size   = sizeof(uint8_t);
-            if (VBOX_FAILURE(DISFetchReg8(pCtx, pParam->base.reg_gen, &pParamVal->val.val8))) return VERR_INVALID_PARAMETER;
+            if (RT_FAILURE(DISFetchReg8(pCtx, pParam->base.reg_gen, &pParamVal->val.val8))) return VERR_INVALID_PARAMETER;
         }
         else
         if (pParam->flags & USE_REG_GEN16)
         {
             pParamVal->flags |= PARAM_VAL16;
             pParamVal->size   = sizeof(uint16_t);
-            if (VBOX_FAILURE(DISFetchReg16(pCtx, pParam->base.reg_gen, &pParamVal->val.val16))) return VERR_INVALID_PARAMETER;
+            if (RT_FAILURE(DISFetchReg16(pCtx, pParam->base.reg_gen, &pParamVal->val.val16))) return VERR_INVALID_PARAMETER;
         }
         else
         if (pParam->flags & USE_REG_GEN32)
         {
             pParamVal->flags |= PARAM_VAL32;
             pParamVal->size   = sizeof(uint32_t);
-            if (VBOX_FAILURE(DISFetchReg32(pCtx, pParam->base.reg_gen, &pParamVal->val.val32))) return VERR_INVALID_PARAMETER;
+            if (RT_FAILURE(DISFetchReg32(pCtx, pParam->base.reg_gen, &pParamVal->val.val32))) return VERR_INVALID_PARAMETER;
         }
         else
         if (pParam->flags & USE_REG_GEN64)
         {
             pParamVal->flags |= PARAM_VAL64;
             pParamVal->size   = sizeof(uint64_t);
-            if (VBOX_FAILURE(DISFetchReg64(pCtx, pParam->base.reg_gen, &pParamVal->val.val64))) return VERR_INVALID_PARAMETER;
+            if (RT_FAILURE(DISFetchReg64(pCtx, pParam->base.reg_gen, &pParamVal->val.val64))) return VERR_INVALID_PARAMETER;
         }
         else
         {
@@ -784,7 +784,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
         if (pParam->flags & USE_REG_GEN8)
         {
             uint8_t *pu8Reg;
-            if (VBOX_SUCCESS(DISPtrReg8(pCtx, pParam->base.reg_gen, &pu8Reg)))
+            if (RT_SUCCESS(DISPtrReg8(pCtx, pParam->base.reg_gen, &pu8Reg)))
             {
                 *pcbSize = sizeof(uint8_t);
                 *ppReg = (void *)pu8Reg;
@@ -795,7 +795,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
         if (pParam->flags & USE_REG_GEN16)
         {
             uint16_t *pu16Reg;
-            if (VBOX_SUCCESS(DISPtrReg16(pCtx, pParam->base.reg_gen, &pu16Reg)))
+            if (RT_SUCCESS(DISPtrReg16(pCtx, pParam->base.reg_gen, &pu16Reg)))
             {
                 *pcbSize = sizeof(uint16_t);
                 *ppReg = (void *)pu16Reg;
@@ -806,7 +806,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
         if (pParam->flags & USE_REG_GEN32)
         {
             uint32_t *pu32Reg;
-            if (VBOX_SUCCESS(DISPtrReg32(pCtx, pParam->base.reg_gen, &pu32Reg)))
+            if (RT_SUCCESS(DISPtrReg32(pCtx, pParam->base.reg_gen, &pu32Reg)))
             {
                 *pcbSize = sizeof(uint32_t);
                 *ppReg = (void *)pu32Reg;
@@ -817,7 +817,7 @@ DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAM
         if (pParam->flags & USE_REG_GEN64)
         {
             uint64_t *pu64Reg;
-            if (VBOX_SUCCESS(DISPtrReg64(pCtx, pParam->base.reg_gen, &pu64Reg)))
+            if (RT_SUCCESS(DISPtrReg64(pCtx, pParam->base.reg_gen, &pu64Reg)))
             {
                 *pcbSize = sizeof(uint64_t);
                 *ppReg = (void *)pu64Reg;

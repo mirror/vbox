@@ -157,7 +157,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             if (NT_SUCCESS(rc) && NT_SUCCESS(pIrp->IoStatus.Status))
             {
                 dprintf(("VBoxGuest::START_DEVICE: pStack->Parameters.StartDevice.AllocatedResources = %p\n", pStack->Parameters.StartDevice.AllocatedResources));
-                
+
                 if (!pStack->Parameters.StartDevice.AllocatedResources)
                 {
                     dprintf(("VBoxGuest::START_DEVICE: no resources, pDevExt = %p, nextLowerDriver = %p!!!\n", pDevExt, pDevExt? pDevExt->nextLowerDriver: NULL));
@@ -173,7 +173,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     /** @todo cleanup and merging codepath with NT */
                     int rcVBox;
                     rcVBox = VbglInit (pDevExt->startPortAddress, pDevExt->pVMMDevMemory);
-                    if (!VBOX_SUCCESS(rcVBox))
+                    if (!RT_SUCCESS(rcVBox))
                     {
                         dprintf(("VBoxGuest::START_DEVICE: VbglInit failed. rcVBox = %d\n", rcVBox));
                         rc = STATUS_UNSUCCESSFUL;
@@ -182,7 +182,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     if (NT_SUCCESS(rc))
                     {
                         rcVBox = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->irqAckEvents, sizeof (VMMDevEvents), VMMDevReq_AcknowledgeEvents);
-                        if (!VBOX_SUCCESS(rc))
+                        if (!RT_SUCCESS(rc))
                         {
                             dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for irqAckEvents. rcVBox = %d\n", rcVBox));
                             rc = STATUS_UNSUCCESSFUL;
@@ -192,7 +192,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                     if (NT_SUCCESS(rc))
                     {
                         rcVBox = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->powerStateRequest, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
-                        if (!VBOX_SUCCESS(rc))
+                        if (!RT_SUCCESS(rc))
                         {
                             dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for powerStateRequest. rcVBox = %d\n", rcVBox));
                             rc = STATUS_UNSUCCESSFUL;
@@ -283,7 +283,7 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             pIrp->IoStatus.Information = 0;
             IoCompleteRequest(pIrp, IO_NO_INCREMENT);
             rc = STATUS_UNSUCCESSFUL;
-            
+
             dprintf(("VBoxGuest::VBoxGuestPnp: refuse with rc = %p\n", pIrp->IoStatus.Status));
 #else
             pIrp->IoStatus.Status = STATUS_SUCCESS;
@@ -544,7 +544,7 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                             int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
 
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                             {
                                 req->mouseFeatures = 0;
                                 req->pointerXPos = 0;
@@ -552,7 +552,7 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                                 rc = VbglGRPerform (&req->header);
 
-                                if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+                                if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                                 {
                                     dprintf(("VBoxGuest::PowerStateRequest: error communicating new power status to VMMDev."
                                              "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -580,7 +580,7 @@ NTSTATUS VBoxGuestPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                                     int rc = VbglGRPerform (&req->header);
 
-                                    if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+                                    if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                                     {
                                         dprintf(("VBoxGuest::PowerStateRequest: error communicating new power status to VMMDev."
                                                  "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));

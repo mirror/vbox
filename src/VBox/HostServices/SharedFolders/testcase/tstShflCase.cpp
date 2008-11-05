@@ -51,21 +51,21 @@
 static int iDirList = 0;
 static int iDirFile = 0;
 
-static const char *pszDirList[] = 
+static const char *pszDirList[] =
 {
 "c:",
 "c:\\test dir",
 "c:\\test dir\\SUBDIR",
 };
 
-static const char *pszDirListC[] = 
+static const char *pszDirListC[] =
 {
 ".",
 "..",
 "test dir"
 };
 
-static const char *pszDirListTestdir[] = 
+static const char *pszDirListTestdir[] =
 {
 ".",
 "..",
@@ -84,7 +84,7 @@ static const char *pszDirListTestdir[] =
 "z.bat",
 };
 
-static const char *pszDirListSUBDIR[] = 
+static const char *pszDirListSUBDIR[] =
 {
 ".",
 "..",
@@ -162,7 +162,7 @@ int rtPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD e
         if(!strcmp(pszPath, pszDirList[i]))
             return VINF_SUCCESS;
     }
-    
+
     switch(iDirList)
     {
     case 1:
@@ -220,7 +220,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 
     rc = RTDirOpenFiltered (&hSearch, pDirEntry->szName, RTDIRFILTER_WINNT);
     *(pszStartComponent-1) = RTPATH_DELIMITER;
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto end;
 
     for(;;)
@@ -250,7 +250,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
             break;
         }
     }
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         Log(("vbsfCorrectCasing %s failed with %d\n", pszStartComponent, rc));
 
 end:
@@ -312,7 +312,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
     {
         uint32_t len = strlen(pszFullPath);
         char    *src = pszFullPath + len - 1;
-        
+
         Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
         /* Find partial path that's valid */
@@ -336,9 +336,9 @@ int testCase(char *pszFullPath, bool fWildCard = false)
 
             src--;
         }
-        Assert(*src == RTPATH_DELIMITER && VBOX_SUCCESS(rc));
-        if (    *src == RTPATH_DELIMITER 
-            &&  VBOX_SUCCESS(rc))
+        Assert(*src == RTPATH_DELIMITER && RT_SUCCESS(rc));
+        if (    *src == RTPATH_DELIMITER
+            &&  RT_SUCCESS(rc))
         {
             src++;
             for(;;)
@@ -365,12 +365,12 @@ int testCase(char *pszFullPath, bool fWildCard = false)
                     rc = VINF_SUCCESS;  /* trailing delimiter */
                 else
                     rc = VERR_FILE_NOT_FOUND;
-            
+
                 if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                 {
                     /* path component is invalid; try to correct the casing */
                     rc = vbsfCorrectCasing(pszFullPath, src);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         if (!fEndOfString)
                               *end = RTPATH_DELIMITER;
@@ -384,7 +384,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
                 *end = RTPATH_DELIMITER;
                 src = end + 1;
             }
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 Log(("Unable to find suitable component rc=%d\n", rc));
         }
         else
@@ -394,7 +394,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
     if (pszWildCardComponent)
         *pszWildCardComponent = RTPATH_DELIMITER;
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         Log(("New valid path %s\n", pszFullPath));
     else
         Log(("Old invalid path %s\n", pszFullPath));

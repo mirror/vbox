@@ -10,7 +10,7 @@ Abstract:
 
     The initialization and hardware-dependent portions of
     the Intel i8042 port driver which are common to both
-    the keyboard and the auxiliary (PS/2 mouse) device.  
+    the keyboard and the auxiliary (PS/2 mouse) device.
 
 Environment:
 
@@ -31,9 +31,9 @@ Notes:
       (thereby possibly trashing something that was already in the output
       buffer).  Unfortunately, on rev K8 of the AMI 8042, disabling the
       device where we do caused some commands to timeout, because
-      the keyboard was unable to return the expected bytes.  Interestingly, 
-      AMI claim that the device is only really disabled until the next ACK 
-      comes back.  
+      the keyboard was unable to return the expected bytes.  Interestingly,
+      AMI claim that the device is only really disabled until the next ACK
+      comes back.
 
 Revision History:
 
@@ -134,7 +134,7 @@ Return Value:
 
 #define DUMP_COUNT 4
     ULONG dumpData[DUMP_COUNT];
-    
+
 // VBOX start
     int vboxRC = VINF_SUCCESS;
 // VBOX end
@@ -240,15 +240,15 @@ Return Value:
     //
 
     I8xKeyboardConfiguration(
-        initializationData, 
-        &registryPath, 
+        initializationData,
+        &registryPath,
         &baseKeyboardName,
         &basePointerName
         );
 
     I8xMouseConfiguration(
-        initializationData, 
-        &registryPath, 
+        initializationData,
+        &registryPath,
         &baseKeyboardName,
         &basePointerName
         );
@@ -269,7 +269,7 @@ Return Value:
     } else if (!(initializationData->DeviceExtension.HardwarePresent &
                  KEYBOARD_HARDWARE_PRESENT)) {
         //
-        // Log a warning about the missing keyboard later on, but 
+        // Log a warning about the missing keyboard later on, but
         // continue processing.
         //
 
@@ -279,11 +279,11 @@ Return Value:
         uniqueErrorValue = I8042_ERROR_VALUE_BASE + 5;
         dumpCount = 0;
 
-    } 
+    }
 #if 0
     //
     // This code was removed so that we don't log an error when the mouse
-    // is not present.  It was annoying to those who did not have 
+    // is not present.  It was annoying to those who did not have
     // PS/2 compatible mice to get the informational message on every boot.
     //
 
@@ -291,7 +291,7 @@ Return Value:
                MOUSE_HARDWARE_PRESENT)) {
 
         //
-        // Log a warning about the missing mouse later on, but 
+        // Log a warning about the missing mouse later on, but
         // continue processing.
         //
 
@@ -315,32 +315,32 @@ Return Value:
         &deviceNameSuffix,
         NULL
         );
-    
-    deviceNameSuffix.MaximumLength = 
+
+    deviceNameSuffix.MaximumLength =
         (KEYBOARD_PORTS_MAXIMUM > POINTER_PORTS_MAXIMUM)?
-            KEYBOARD_PORTS_MAXIMUM * sizeof(WCHAR): 
+            KEYBOARD_PORTS_MAXIMUM * sizeof(WCHAR):
             POINTER_PORTS_MAXIMUM * sizeof(WCHAR);
     deviceNameSuffix.MaximumLength += sizeof(UNICODE_NULL);
-    
+
     deviceNameSuffix.Buffer = ExAllocatePool(
                                   PagedPool,
                                   deviceNameSuffix.MaximumLength
                                   );
-    
+
     if (!deviceNameSuffix.Buffer) {
-    
+
         I8xPrint((
             1,
             "I8042PRT-I8042Initialize: Couldn't allocate string for device object suffix\n"
             ));
-    
+
         status = STATUS_UNSUCCESSFUL;
         errorCode = I8042_INSUFFICIENT_RESOURCES;
         uniqueErrorValue = I8042_ERROR_VALUE_BASE + 8;
         dumpData[0] = (ULONG) deviceNameSuffix.MaximumLength;
         dumpCount = 1;
         goto I8042InitializeExit;
-    
+
     }
 
     RtlZeroMemory(
@@ -349,38 +349,38 @@ Return Value:
         );
 
     //
-    // Set up space for the port's full keyboard device object name.  
+    // Set up space for the port's full keyboard device object name.
     //
 
     RtlInitUnicodeString(
         &fullKeyboardName,
         NULL
         );
-    
+
     fullKeyboardName.MaximumLength = sizeof(L"\\Device\\") +
                                       baseKeyboardName.Length +
                                       deviceNameSuffix.MaximumLength;
-                                      
-    
+
+
     fullKeyboardName.Buffer = ExAllocatePool(
                                   PagedPool,
                                   fullKeyboardName.MaximumLength
                                   );
-    
+
     if (!fullKeyboardName.Buffer) {
-    
+
         I8xPrint((
             1,
             "I8042PRT-I8042Initialize: Couldn't allocate string for keyboard device object name\n"
             ));
-    
+
         status = STATUS_UNSUCCESSFUL;
         errorCode = I8042_INSUFFICIENT_RESOURCES;
         uniqueErrorValue = I8042_ERROR_VALUE_BASE + 10;
         dumpData[0] = (ULONG) fullKeyboardName.MaximumLength;
         dumpCount = 1;
         goto I8042InitializeExit;
-    
+
     }
 
     RtlZeroMemory(
@@ -397,7 +397,7 @@ Return Value:
         );
 
     for (i = 0; i < KEYBOARD_PORTS_MAXIMUM; i++) {
-    
+
         //
         // Append the suffix to the device object name string.  E.g., turn
         // \Device\KeyboardPort into \Device\KeyboardPort0.  Then we attempt
@@ -413,7 +413,7 @@ Return Value:
                      );
 
         if (!NT_SUCCESS(status)) {
-            break; 
+            break;
         }
 
         RtlAppendUnicodeStringToString(
@@ -462,14 +462,14 @@ Return Value:
             }
 #endif
 
-            break; 
+            break;
         } else {
 
            //
            // We'll increment the suffix and try again.  Note that we reset
            // the length of the string here to get back to the beginning
            // of the suffix portion of the name.  Do not bother to
-           // zero the suffix, though, because the string for the 
+           // zero the suffix, though, because the string for the
            // incremented suffix will be at least as long as the previous
            // one.
            //
@@ -489,7 +489,7 @@ Return Value:
         dumpData[0] = (ULONG) i;
         dumpCount = 1;
         goto I8042InitializeExit;
-    } 
+    }
 
     //
     // Set up the device extension.
@@ -528,37 +528,37 @@ Return Value:
     I8xBuildResourceList(deviceExtension, &resources, &resourceListSize);
 
     //
-    // Set up space for the resource device class name.  
+    // Set up space for the resource device class name.
     //
 
     RtlInitUnicodeString(
         &resourceDeviceClass,
         NULL
         );
-    
+
     resourceDeviceClass.MaximumLength = baseKeyboardName.Length +
                                         sizeof(L"/") +
                                         basePointerName.Length;
-    
+
     resourceDeviceClass.Buffer = ExAllocatePool(
                                      PagedPool,
                                      resourceDeviceClass.MaximumLength
                                   );
-    
+
     if (!resourceDeviceClass.Buffer) {
-    
+
         I8xPrint((
             1,
             "I8042PRT-I8042Initialize: Couldn't allocate string for resource device class name\n"
             ));
-    
+
         status = STATUS_UNSUCCESSFUL;
         errorCode = I8042_INSUFFICIENT_RESOURCES;
         uniqueErrorValue = I8042_ERROR_VALUE_BASE + 15;
         dumpData[0] = (ULONG) resourceDeviceClass.MaximumLength;
         dumpCount = 1;
         goto I8042InitializeExit;
-    
+
     }
 
     //
@@ -589,12 +589,12 @@ Return Value:
 
 
     IoReportResourceUsage(
-        &resourceDeviceClass, 
+        &resourceDeviceClass,
         DriverObject,
         NULL,
         0,
         portDeviceObject,
-        resources, 
+        resources,
         resourceListSize,
         FALSE,
         &conflictDetected
@@ -619,7 +619,7 @@ Return Value:
         status = STATUS_INSUFFICIENT_RESOURCES;
         errorCode = I8042_RESOURCE_CONFLICT;
         uniqueErrorValue = I8042_ERROR_VALUE_BASE + 20;
-        dumpData[0] =  (ULONG) 
+        dumpData[0] =  (ULONG)
             resources->List[0].PartialResourceList.PartialDescriptors[0].u.Interrupt.Level;
         dumpData[1] = (ULONG)
             resources->List[0].PartialResourceList.PartialDescriptors[1].u.Interrupt.Level;
@@ -639,7 +639,7 @@ Return Value:
 
     for (i = 0; i < deviceExtension->Configuration.PortListCount; i++) {
 
-        addressSpace = (deviceExtension->Configuration.PortList[i].Flags 
+        addressSpace = (deviceExtension->Configuration.PortList[i].Flags
                            & CM_RESOURCE_PORT_IO) == CM_RESOURCE_PORT_IO? 1:0;
 
         if (!HalTranslateBusAddress(
@@ -657,7 +657,7 @@ Return Value:
         if (!addressSpace) {
 
             deviceExtension->UnmapRegistersRequired = TRUE;
-            deviceExtension->DeviceRegisters[i] = 
+            deviceExtension->DeviceRegisters[i] =
                 MmMapIoSpace(
                     cardAddress,
                     deviceExtension->Configuration.PortList[i].u.Port.Length,
@@ -670,11 +670,11 @@ Return Value:
             deviceExtension->DeviceRegisters[i] = (PVOID)cardAddress.LowPart;
 
         }
-   
+
         if (!deviceExtension->DeviceRegisters[i]) {
 
             I8xPrint((
-                1, 
+                1,
                 "I8042PRT-I8042Initialize: Couldn't map the device registers.\n"
                 ));
             status = STATUS_NONE_MAPPED;
@@ -723,19 +723,19 @@ Return Value:
         // Allocate memory for the keyboard data queue.
         //
 
-        deviceExtension->KeyboardExtension.InputData = 
+        deviceExtension->KeyboardExtension.InputData =
             ExAllocatePool(
                 NonPagedPool,
                 deviceExtension->Configuration.KeyboardAttributes.InputDataQueueLength
                 );
 
         if (!deviceExtension->KeyboardExtension.InputData) {
-   
+
             //
             // Could not allocate memory for the keyboard data queue.
             //
 
-            
+
             I8xPrint((
                 1,
                 "I8042PRT-I8042Initialize: Could not allocate keyboard input data queue\n"
@@ -746,10 +746,10 @@ Return Value:
             //
             // Set up error log info.
             //
-    
+
             errorCode = I8042_NO_BUFFER_ALLOCATED;
             uniqueErrorValue = I8042_ERROR_VALUE_BASE + 50;
-            dumpData[0] = 
+            dumpData[0] =
                 deviceExtension->Configuration.KeyboardAttributes.InputDataQueueLength;
             dumpCount = 1;
 
@@ -757,8 +757,8 @@ Return Value:
         }
 
         deviceExtension->KeyboardExtension.DataEnd =
-            (PKEYBOARD_INPUT_DATA) 
-            ((PCHAR) (deviceExtension->KeyboardExtension.InputData) 
+            (PKEYBOARD_INPUT_DATA)
+            ((PCHAR) (deviceExtension->KeyboardExtension.InputData)
                  + deviceExtension->Configuration.KeyboardAttributes.InputDataQueueLength);
 
         //
@@ -766,45 +766,45 @@ Return Value:
         //
 
         RtlZeroMemory(
-            deviceExtension->KeyboardExtension.InputData, 
+            deviceExtension->KeyboardExtension.InputData,
             deviceExtension->Configuration.KeyboardAttributes.InputDataQueueLength
             );
 
     }
-    
+
     if (deviceExtension->HardwarePresent & MOUSE_HARDWARE_PRESENT) {
 
         //
-        // Set up space for the port's full pointer device object name.  
+        // Set up space for the port's full pointer device object name.
         //
-    
+
         RtlInitUnicodeString(
             &fullPointerName,
             NULL
             );
-        
+
         fullPointerName.MaximumLength = sizeof(L"\\Device\\") +
                                         basePointerName.Length +
                                         deviceNameSuffix.MaximumLength;
-                                          
-        
+
+
         fullPointerName.Buffer = ExAllocatePool(
                                      PagedPool,
                                      fullPointerName.MaximumLength
                                       );
-        
+
         if (!fullPointerName.Buffer) {
-        
+
             I8xPrint((
                 1,
                 "I8042PRT-I8042Initialize: Couldn't allocate string for pointer device object name\n"
                 ));
-        
+
             status = STATUS_UNSUCCESSFUL;
             goto I8042InitializeExit;
-        
+
         }
-    
+
         RtlZeroMemory(
             fullPointerName.Buffer,
             fullPointerName.MaximumLength
@@ -823,28 +823,28 @@ Return Value:
             deviceNameSuffix.MaximumLength
             );
         deviceNameSuffix.Length = 0;
-    
+
         for (i = 0; i < POINTER_PORTS_MAXIMUM; i++) {
-        
+
             //
             // Append the suffix to the device object name string.  E.g., turn
             // \Device\PointerPort into \Device\PointerPort0.  Then we attempt
-            // to create a symbolic link to the keyboard device object.  If 
+            // to create a symbolic link to the keyboard device object.  If
             // a device object with the symbolic link name already
             // exists (because it was created by another port driver),
             // increment the suffix and try again.
             //
-    
+
             status = RtlIntegerToUnicodeString(
                          i,
                          10,
                          &deviceNameSuffix
                          );
-    
+
             if (!NT_SUCCESS(status)) {
-                break; 
+                break;
             }
-    
+
             RtlAppendUnicodeStringToString(
                 &fullPointerName,
                 &deviceNameSuffix
@@ -853,12 +853,12 @@ Return Value:
             dprintf(("I8042PRT-I8042Initialize: pointer port name (symbolic link) = %S\n", fullPointerName.Buffer));
             I8xPrint((
                 1,
-                "I8042PRT-I8042Initialize: pointer port name (symbolic link) = %ws\n", 
+                "I8042PRT-I8042Initialize: pointer port name (symbolic link) = %ws\n",
                 fullPointerName.Buffer
                 ));
-    
+
             //
-            // Set up a symbolic link so that the keyboard and mouse class 
+            // Set up a symbolic link so that the keyboard and mouse class
             // drivers can access the port device object by different names.
             //
 
@@ -872,9 +872,9 @@ Return Value:
                 goto I8042InitializeExit;
             }
 #endif
-            status = IoCreateSymbolicLink( 
+            status = IoCreateSymbolicLink(
                          &fullPointerName,
-                         &fullKeyboardName 
+                         &fullKeyboardName
                          );
 
             if (NT_SUCCESS(status)) {
@@ -886,20 +886,20 @@ Return Value:
                 break;
 
             } else {
-    
+
                //
                // We'll increment the suffix and try again.  Note that we reset
                // the length of the string here to get back to the beginning
                // of the suffix portion of the name.  Do not bother to
-               // zero the suffix, though, because the string for the 
+               // zero the suffix, though, because the string for the
                // incremented suffix will be at least as long as the previous
                // one.
                //
-    
+
                fullPointerName.Length -= deviceNameSuffix.Length;
             }
         }
-    
+
         if (!NT_SUCCESS(status)) {
             I8xPrint((
                 1,
@@ -907,20 +907,20 @@ Return Value:
                 fullPointerName.Buffer
                 ));
             goto I8042InitializeExit;
-        } 
-    
+        }
+
         //
         // Allocate memory for the mouse data queue.
         //
 
-        deviceExtension->MouseExtension.InputData = 
+        deviceExtension->MouseExtension.InputData =
             ExAllocatePool(
                 NonPagedPool,
                 deviceExtension->Configuration.MouseAttributes.InputDataQueueLength
                 );
 
         if (!deviceExtension->MouseExtension.InputData) {
-   
+
             //
             // Could not allocate memory for the mouse data queue.
             //
@@ -935,10 +935,10 @@ Return Value:
             //
             // Set up error log info.
             //
-    
+
             errorCode = I8042_NO_BUFFER_ALLOCATED;
             uniqueErrorValue = I8042_ERROR_VALUE_BASE + 60;
-            dumpData[0] = 
+            dumpData[0] =
                 deviceExtension->Configuration.MouseAttributes.InputDataQueueLength;
             dumpCount = 1;
 
@@ -946,8 +946,8 @@ Return Value:
         }
 
         deviceExtension->MouseExtension.DataEnd =
-            (PMOUSE_INPUT_DATA) 
-            ((PCHAR) (deviceExtension->MouseExtension.InputData) 
+            (PMOUSE_INPUT_DATA)
+            ((PCHAR) (deviceExtension->MouseExtension.InputData)
                  + deviceExtension->Configuration.MouseAttributes.InputDataQueueLength);
 
         //
@@ -955,7 +955,7 @@ Return Value:
         //
 
         RtlZeroMemory(
-            deviceExtension->MouseExtension.InputData, 
+            deviceExtension->MouseExtension.InputData,
             deviceExtension->Configuration.MouseAttributes.InputDataQueueLength
             );
 
@@ -1043,7 +1043,7 @@ Return Value:
         );
 
     //
-    // Initialize the port DPC queue for timeouts. 
+    // Initialize the port DPC queue for timeouts.
     //
 
     KeInitializeDpc(
@@ -1089,7 +1089,7 @@ Return Value:
                                );
 
     //
-    // Determine the coordinator interrupt object 
+    // Determine the coordinator interrupt object
     // based on which device has the highest IRQL.
     //
 
@@ -1118,9 +1118,9 @@ Return Value:
                      mouseInterruptLevel,
                      (KIRQL) ((coordinatorIrql == (KIRQL)0) ?
                           mouseInterruptLevel : coordinatorIrql),
-                     deviceExtension->Configuration.MouseInterrupt.Flags 
+                     deviceExtension->Configuration.MouseInterrupt.Flags
                          == CM_RESOURCE_INTERRUPT_LATCHED ?
-                         Latched : LevelSensitive, 
+                         Latched : LevelSensitive,
                      deviceExtension->Configuration.MouseInterrupt.ShareDisposition,
                      mouseAffinity,
                      deviceExtension->Configuration.FloatingSave
@@ -1140,7 +1140,7 @@ Return Value:
             //
             // Set up error log info.
             //
-    
+
             errorCode = I8042_NO_INTERRUPT_CONNECTED;
             uniqueErrorValue = I8042_ERROR_VALUE_BASE + 70;
             dumpData[0] = mouseInterruptLevel;
@@ -1192,10 +1192,10 @@ Return Value:
                      keyboardInterruptLevel,
                      (KIRQL) ((coordinatorIrql == (KIRQL)0) ?
                           keyboardInterruptLevel : coordinatorIrql),
-                     deviceExtension->Configuration.KeyboardInterrupt.Flags 
+                     deviceExtension->Configuration.KeyboardInterrupt.Flags
                          == CM_RESOURCE_INTERRUPT_LATCHED ?
-                         Latched : LevelSensitive, 
-                     deviceExtension->Configuration.KeyboardInterrupt.ShareDisposition, 
+                         Latched : LevelSensitive,
+                     deviceExtension->Configuration.KeyboardInterrupt.ShareDisposition,
                      keyboardAffinity,
                      deviceExtension->Configuration.FloatingSave
                      );
@@ -1214,10 +1214,10 @@ Return Value:
             //
             // Set up error log info.
             //
-    
+
             errorCode = I8042_NO_INTERRUPT_CONNECTED;
             uniqueErrorValue = I8042_ERROR_VALUE_BASE + 80;
-            dumpData[0] = keyboardInterruptLevel; 
+            dumpData[0] = keyboardInterruptLevel;
             dumpCount = 1;
 
             goto I8042InitializeExit;
@@ -1227,9 +1227,9 @@ Return Value:
     }
 
     //
-    // Once initialization is finished, load the device map information 
+    // Once initialization is finished, load the device map information
     // into the registry so that setup can determine which pointer port
-    // and keyboard port are active.  
+    // and keyboard port are active.
     //
 
     if (deviceExtension->HardwarePresent & KEYBOARD_HARDWARE_PRESENT) {
@@ -1242,24 +1242,24 @@ Return Value:
                      registryPath.Buffer,
                      registryPath.Length
                      );
-    
+
         if (!NT_SUCCESS(status)) {
-    
+
             I8xPrint((
-                1, 
+                1,
                 "I8042PRT-I8042Initialize: Could not store keyboard name in DeviceMap\n"
                 ));
-    
+
             errorCode = I8042_NO_DEVICEMAP_CREATED;
             uniqueErrorValue = I8042_ERROR_VALUE_BASE + 90;
             dumpCount = 0;
 
             goto I8042InitializeExit;
-    
+
         } else {
-    
+
             I8xPrint((
-                1, 
+                1,
                 "I8042PRT-I8042Initialize: Stored keyboard name in DeviceMap\n"
                 ));
 
@@ -1277,11 +1277,11 @@ Return Value:
                      registryPath.Buffer,
                      registryPath.Length
                      );
-    
+
         if (!NT_SUCCESS(status)) {
-    
+
             I8xPrint((
-                1, 
+                1,
                 "I8042PRT-I8042Initialize: Could not store pointer name in DeviceMap\n"
                 ));
 
@@ -1290,11 +1290,11 @@ Return Value:
             dumpCount = 0;
 
             goto I8042InitializeExit;
-    
+
         } else {
-    
+
             I8xPrint((
-                1, 
+                1,
                 "I8042PRT-I8042Initialize: Stored pointer name in DeviceMap\n"
                 ));
         }
@@ -1335,8 +1335,8 @@ Return Value:
 
 // VBOX start
     vboxRC = VbglInit ();
-    
-    if (VBOX_FAILURE(vboxRC))
+
+    if (RT_FAILURE(vboxRC))
     {
         dprintf(("i8042prt::DriverEntry: could not initialize guest library, rc = %Vrc\n", vboxRC));
         /* Continue working in non-VBox mode. */
@@ -1344,19 +1344,19 @@ Return Value:
     else
     {
         VMMDevReqMouseStatus *req = NULL;
-                
+
         vboxRC = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqMouseStatus), VMMDevReq_SetMouseStatus);
-    
-        if (VBOX_SUCCESS(vboxRC))
+
+        if (RT_SUCCESS(vboxRC))
         {
             /* Inform host that we support absolute */
             req->mouseFeatures = VBOXGUEST_MOUSE_GUEST_CAN_ABSOLUTE;
             req->pointerXPos = 0;
             req->pointerYPos = 0;
-        
+
             vboxRC = VbglGRPerform (&req->header);
-        
-            if (VBOX_FAILURE(vboxRC) || VBOX_FAILURE(req->header.rc))
+
+            if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
             {
                 dprintf(("i8042prt::DriverEntry: ERROR communicating new mouse capabilities to VMMDev."
                          "rc = %d, VMMDev rc = %Vrc\n", vboxRC, req->header.rc));
@@ -1371,7 +1371,7 @@ Return Value:
         else
         {
             VbglTerminate ();
-            
+
             dprintf(("i8042prt::DriverEntry: could not allocate request buffer, rc = %Vrc\n", vboxRC));
             /* Continue working in non-VBox mode. */
         }
@@ -1404,9 +1404,9 @@ I8042InitializeExit:
 
         errorLogEntry = (PIO_ERROR_LOG_PACKET)
             IoAllocateErrorLogEntry(
-                (portDeviceObject == NULL) ? 
+                (portDeviceObject == NULL) ?
                     (PVOID) DriverObject : (PVOID) portDeviceObject,
-                (UCHAR) (sizeof(IO_ERROR_LOG_PACKET) 
+                (UCHAR) (sizeof(IO_ERROR_LOG_PACKET)
                          + (dumpCount * sizeof(ULONG)))
                 );
 
@@ -1437,7 +1437,7 @@ I8042InitializeExit:
         //
 
         //
-        // Note:  No need/way to undo the KeInitializeDpc or 
+        // Note:  No need/way to undo the KeInitializeDpc or
         //        KeInitializeTimer calls.
         //
 
@@ -1448,19 +1448,19 @@ I8042InitializeExit:
         if (resources) {
 
             //
-            // Call IoReportResourceUsage to remove the resources from 
+            // Call IoReportResourceUsage to remove the resources from
             // the map.
             //
 
-            resources->Count = 0; 
+            resources->Count = 0;
 
             IoReportResourceUsage(
-                &resourceDeviceClass, 
+                &resourceDeviceClass,
                 DriverObject,
                 NULL,
                 0,
                 portDeviceObject,
-                resources, 
+                resources,
                 resourceListSize,
                 FALSE,
                 &conflictDetected
@@ -1479,7 +1479,7 @@ I8042InitializeExit:
                 ExFreePool(deviceExtension->MouseExtension.InputData);
 
             if (deviceExtension->UnmapRegistersRequired) {
-                for (i = 0; 
+                for (i = 0;
                      i < deviceExtension->Configuration.PortListCount; i++){
                     if (deviceExtension->DeviceRegisters[i]) {
                         MmUnmapIoSpace(
@@ -1569,8 +1569,8 @@ Arguments:
 
     ResourceList - Pointer to a pointer to the resource list to be allocated
         and filled.
-    
-    ResourceListSize - Pointer to the returned size of the resource 
+
+    ResourceListSize - Pointer to the returned size of the resource
         list (in bytes).
 
 Return Value:
@@ -1587,21 +1587,21 @@ Note:
 --*/
 
 {
-    ULONG count = 0; 
+    ULONG count = 0;
     ULONG i = 0;
     ULONG j = 0;
 #define DUMP_COUNT 4
     ULONG dumpData[DUMP_COUNT];
 
     count += DeviceExtension->Configuration.PortListCount;
-    if (DeviceExtension->Configuration.KeyboardInterrupt.Type 
+    if (DeviceExtension->Configuration.KeyboardInterrupt.Type
         == CmResourceTypeInterrupt)
         count += 1;
-    if (DeviceExtension->Configuration.MouseInterrupt.Type 
+    if (DeviceExtension->Configuration.MouseInterrupt.Type
         == CmResourceTypeInterrupt)
         count += 1;
 
-    *ResourceListSize = sizeof(CM_RESOURCE_LIST) + 
+    *ResourceListSize = sizeof(CM_RESOURCE_LIST) +
                        ((count - 1) * sizeof(CM_PARTIAL_RESOURCE_DESCRIPTOR));
 
     *ResourceList = (PCM_RESOURCE_LIST) ExAllocatePool(
@@ -1640,7 +1640,7 @@ Note:
             dumpData,
             1
             );
-             
+
         return;
     }
 
@@ -1655,10 +1655,10 @@ Note:
 
     (*ResourceList)->Count = 1;
 
-    (*ResourceList)->List[0].InterfaceType = 
-        DeviceExtension->Configuration.InterfaceType; 
-    (*ResourceList)->List[0].BusNumber = 
-        DeviceExtension->Configuration.BusNumber; 
+    (*ResourceList)->List[0].InterfaceType =
+        DeviceExtension->Configuration.InterfaceType;
+    (*ResourceList)->List[0].BusNumber =
+        DeviceExtension->Configuration.BusNumber;
 
     //
     // Build the partial resource descriptors for interrupt and port
@@ -1666,21 +1666,21 @@ Note:
     //
 
     (*ResourceList)->List[0].PartialResourceList.Count = count;
-    if (DeviceExtension->Configuration.KeyboardInterrupt.Type 
+    if (DeviceExtension->Configuration.KeyboardInterrupt.Type
         == CmResourceTypeInterrupt)
         (*ResourceList)->List[0].PartialResourceList.PartialDescriptors[i++] =
             DeviceExtension->Configuration.KeyboardInterrupt;
-    if (DeviceExtension->Configuration.MouseInterrupt.Type 
+    if (DeviceExtension->Configuration.MouseInterrupt.Type
         == CmResourceTypeInterrupt)
-        (*ResourceList)->List[0].PartialResourceList.PartialDescriptors[i++] = 
+        (*ResourceList)->List[0].PartialResourceList.PartialDescriptors[i++] =
             DeviceExtension->Configuration.MouseInterrupt;
 
     for (j = 0; j < DeviceExtension->Configuration.PortListCount; j++) {
-        (*ResourceList)->List[0].PartialResourceList.PartialDescriptors[i++] = 
+        (*ResourceList)->List[0].PartialResourceList.PartialDescriptors[i++] =
             DeviceExtension->Configuration.PortList[j];
     }
 
-} 
+}
 
 VOID
 I8xDrainOutputBuffer(
@@ -1700,7 +1700,7 @@ Arguments:
 
     DataAddress - Pointer to the data address to read/write from/to.
 
-    CommandAddress - Pointer to the command/status address to 
+    CommandAddress - Pointer to the command/status address to
         read/write from/to.
 
 
@@ -1727,7 +1727,7 @@ Return Value:
         if (!(I8X_GET_STATUS_BYTE(CommandAddress)&INPUT_BUFFER_FULL)) {
             break;
         }
-        KeStallExecutionProcessor(500);                            
+        KeStallExecutionProcessor(500);
     }
 
     while (I8X_GET_STATUS_BYTE(CommandAddress) & OUTPUT_BUFFER_FULL) {
@@ -1802,8 +1802,8 @@ Return Value:
     //
 
     while ((i < (ULONG)DeviceExtension->Configuration.PollingIterations) &&
-           ((UCHAR)((response = 
-               I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort])) 
+           ((UCHAR)((response =
+               I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort]))
                & desiredMask) != desiredMask)) {
 
         if (response & OUTPUT_BUFFER_FULL) {
@@ -1825,7 +1825,7 @@ Return Value:
             i += 1;
 
             I8xPrint((
-                2, 
+                2,
                 "I8042PRT-I8xGetByteAsynchronous: wait for correct status\n"
                 ));
         }
@@ -1843,7 +1843,7 @@ Return Value:
     *Byte = I8X_GET_DATA_BYTE(DeviceExtension->DeviceRegisters[DataPort]);
 
     I8xPrint((
-        3, 
+        3,
         "I8042PRT-I8xGetByteAsynchronous: exit with Byte 0x%x\n", *Byte
         ));
 
@@ -1912,8 +1912,8 @@ Return Value:
     //
 
     while ((i < (ULONG)DeviceExtension->Configuration.PollingIterations) &&
-           ((UCHAR)((response = 
-               I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort])) 
+           ((UCHAR)((response =
+               I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort]))
                & desiredMask) != desiredMask)) {
         if (response & OUTPUT_BUFFER_FULL) {
 
@@ -1996,7 +1996,7 @@ Return Value:
         status = I8xPutBytePolled(
                      (CCHAR) CommandPort,
                      NO_WAIT_FOR_ACKNOWLEDGE,
-                     (CCHAR) UndefinedDeviceType, 
+                     (CCHAR) UndefinedDeviceType,
                      DeviceExtension,
                      (UCHAR) I8042_DISABLE_KEYBOARD_DEVICE
                      );
@@ -2009,7 +2009,7 @@ Return Value:
         status = I8xPutBytePolled(
                      (CCHAR) CommandPort,
                      NO_WAIT_FOR_ACKNOWLEDGE,
-                     (CCHAR) UndefinedDeviceType, 
+                     (CCHAR) UndefinedDeviceType,
                      DeviceExtension,
                      (UCHAR) I8042_DISABLE_MOUSE_DEVICE
                      );
@@ -2023,7 +2023,7 @@ Return Value:
                 secondStatus = I8xPutBytePolled(
                                    (CCHAR) CommandPort,
                                    NO_WAIT_FOR_ACKNOWLEDGE,
-                                   (CCHAR) UndefinedDeviceType, 
+                                   (CCHAR) UndefinedDeviceType,
                                    DeviceExtension,
                                    (UCHAR) I8042_ENABLE_KEYBOARD_DEVICE
                                    );
@@ -2040,7 +2040,7 @@ Return Value:
     status = I8xPutBytePolled(
                  (CCHAR) CommandPort,
                  NO_WAIT_FOR_ACKNOWLEDGE,
-                 (CCHAR) UndefinedDeviceType, 
+                 (CCHAR) UndefinedDeviceType,
                  DeviceExtension,
                  (UCHAR) I8042_READ_CONTROLLER_COMMAND_BYTE
                  );
@@ -2078,7 +2078,7 @@ Return Value:
         secondStatus = I8xPutBytePolled(
                            (CCHAR) CommandPort,
                            NO_WAIT_FOR_ACKNOWLEDGE,
-                           (CCHAR) UndefinedDeviceType, 
+                           (CCHAR) UndefinedDeviceType,
                            DeviceExtension,
                            (UCHAR) I8042_ENABLE_KEYBOARD_DEVICE
                            );
@@ -2095,7 +2095,7 @@ Return Value:
         secondStatus = I8xPutBytePolled(
                            (CCHAR) CommandPort,
                            NO_WAIT_FOR_ACKNOWLEDGE,
-                           (CCHAR) UndefinedDeviceType, 
+                           (CCHAR) UndefinedDeviceType,
                            DeviceExtension,
                            (UCHAR) I8042_ENABLE_MOUSE_DEVICE
                            );
@@ -2206,14 +2206,14 @@ Return Value:
     //
     // NOTE:  This is supposedly the "correct" thing to do.  However,
     // disabling the keyboard device here causes the AMI rev K8 machines
-    // (e.g., some Northgates) to fail some commands (e.g., the READID 
+    // (e.g., some Northgates) to fail some commands (e.g., the READID
     // command).
     //
 
     status = I8xPutBytePolled(
                  (CCHAR) CommandPort,
                  NO_WAIT_FOR_ACKNOWLEDGE,
-                 (CCHAR) UndefinedDeviceType, 
+                 (CCHAR) UndefinedDeviceType,
                  deviceExtension,
                  (UCHAR) I8042_DISABLE_KEYBOARD_DEVICE
                  );
@@ -2238,7 +2238,7 @@ Return Value:
     status = I8xPutBytePolled(
                  (CCHAR) CommandPort,
                  NO_WAIT_FOR_ACKNOWLEDGE,
-                 (CCHAR) UndefinedDeviceType, 
+                 (CCHAR) UndefinedDeviceType,
                  deviceExtension,
                  (UCHAR) I8042_DISABLE_MOUSE_DEVICE
                  );
@@ -2279,7 +2279,7 @@ Return Value:
     }
 
     //
-    // Setup the keyboard hardware.  
+    // Setup the keyboard hardware.
     //
 
     if (deviceExtension->HardwarePresent & KEYBOARD_HARDWARE_PRESENT) {
@@ -2318,8 +2318,8 @@ Return Value:
     // I8xPutBytePolled() won't time out waiting for the Output Buffer Full
     // bit to clear, even if we drain the output buffer (because the user
     // could be playing with the mouse/keyboard, and continuing to set the
-    // OBF bit).  KeyboardEnableCount and MouseEnableCount remain zero until 
-    // their respective IOCTL_INTERNAL_*_ENABLE call succeeds, so the ISR 
+    // OBF bit).  KeyboardEnableCount and MouseEnableCount remain zero until
+    // their respective IOCTL_INTERNAL_*_ENABLE call succeeds, so the ISR
     // ignores the unexpected interrupts.
     //
 
@@ -2334,7 +2334,7 @@ Return Value:
         status = I8xPutBytePolled(
                      (CCHAR) CommandPort,
                      NO_WAIT_FOR_ACKNOWLEDGE,
-                     (CCHAR) UndefinedDeviceType, 
+                     (CCHAR) UndefinedDeviceType,
                      deviceExtension,
                      (UCHAR) I8042_ENABLE_KEYBOARD_DEVICE
                      );
@@ -2359,7 +2359,7 @@ Return Value:
         status = I8xPutBytePolled(
                      (CCHAR) CommandPort,
                      NO_WAIT_FOR_ACKNOWLEDGE,
-                     (CCHAR) UndefinedDeviceType, 
+                     (CCHAR) UndefinedDeviceType,
                      deviceExtension,
                      (UCHAR) I8042_ENABLE_MOUSE_DEVICE
                      );
@@ -2390,7 +2390,7 @@ Return Value:
             CCB_ENABLE_MOUSE_INTERRUPT : 0;
 
         I8xTransmitControllerCommand(
-            deviceExtension, 
+            deviceExtension,
             (PVOID) &transmitCCBContext
             );
 
@@ -2454,13 +2454,13 @@ Return Value:
     I8xPrint((3, "I8042PRT-I8xPutByteAsynchronous: enter\n"));
 
     //
-    // Make sure the Input Buffer Full controller status bit is clear.  
+    // Make sure the Input Buffer Full controller status bit is clear.
     // Time out if necessary.
     //
 
     i = 0;
     while ((i++ < (ULONG)DeviceExtension->Configuration.PollingIterations) &&
-           (I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort]) 
+           (I8X_GET_STATUS_BYTE(DeviceExtension->DeviceRegisters[CommandPort])
                 & INPUT_BUFFER_FULL)) {
 
         //
@@ -2475,7 +2475,7 @@ Return Value:
     }
     if (i >= (ULONG)DeviceExtension->Configuration.PollingIterations) {
         I8xPrint((
-            3, 
+            3,
             "I8042PRT-I8xPutByteAsynchronous: exceeded number of retries\n"
             ));
         return;
@@ -2562,7 +2562,7 @@ Return Value:
         // sent to the controller should go to the auxiliary device
         // (by default it would go to the keyboard device).  We
         // do this by calling I8xPutBytePolled recursively to send
-        // the "send next byte to auxiliary device" command 
+        // the "send next byte to auxiliary device" command
         // before sending the intended byte to the mouse.  Note that
         // there is only one level of recursion, since the AckDeviceType
         // for the recursive call is guaranteed to be UndefinedDeviceType,
@@ -2650,7 +2650,7 @@ Return Value:
         keepTrying = FALSE;
         while ((status = I8xGetBytePolled(
                              AckDeviceType,
-                             DeviceExtension, 
+                             DeviceExtension,
                              &response
                              )
                ) == STATUS_SUCCESS) {
@@ -2664,15 +2664,15 @@ Return Value:
                 if (AckDeviceType == MouseDeviceType) {
 
                     //
-                    // We need to precede the "resent" PutByte for the 
-                    // mouse device with a PutByte that tells the controller 
-                    // that the next byte sent to the controller should go 
-                    // to the auxiliary device (by default it would go to 
-                    // the keyboard device).  We do this by calling 
-                    // I8xPutBytePolled recursively to send the "send next 
-                    // byte to auxiliary device" command before resending 
-                    // the byte to the mouse.  Note that there is only one 
-                    // level of recursion, since the AckDeviceType for the 
+                    // We need to precede the "resent" PutByte for the
+                    // mouse device with a PutByte that tells the controller
+                    // that the next byte sent to the controller should go
+                    // to the auxiliary device (by default it would go to
+                    // the keyboard device).  We do this by calling
+                    // I8xPutBytePolled recursively to send the "send next
+                    // byte to auxiliary device" command before resending
+                    // the byte to the mouse.  Note that there is only one
+                    // level of recursion, since the AckDeviceType for the
                     // recursive call is guaranteed to be UndefinedDeviceType.
                     //
 
@@ -2705,7 +2705,7 @@ Return Value:
 
     if (j >= (ULONG)DeviceExtension->Configuration.ResendIterations) {
         I8xPrint((
-            2, 
+            2,
             "I8042PRT-I8xPutBytePolled: exceeded number of retries\n"
             ));
         status = STATUS_IO_TIMEOUT;
@@ -2753,7 +2753,7 @@ Return Value:
     status = I8xPutBytePolled(
                  (CCHAR) CommandPort,
                  NO_WAIT_FOR_ACKNOWLEDGE,
-                 (CCHAR) UndefinedDeviceType, 
+                 (CCHAR) UndefinedDeviceType,
                  DeviceExtension,
                  (UCHAR) I8042_WRITE_CONTROLLER_COMMAND_BYTE
                  );
@@ -2790,7 +2790,7 @@ I8xServiceParameters(
 
 Routine Description:
 
-    This routine retrieves this driver's service parameters information 
+    This routine retrieves this driver's service parameters information
     from the registry.
 
 Arguments:
@@ -2798,7 +2798,7 @@ Arguments:
     InitializationData - Pointer to the initialization data, including the
         the device extension.
 
-    RegistryPath - Pointer to the null-terminated Unicode name of the 
+    RegistryPath - Pointer to the null-terminated Unicode name of the
         registry path for this driver.
 
     KeyboardDeviceName - Pointer to the Unicode string that will receive
@@ -2860,56 +2860,56 @@ Return Value:
         //
         // Allocate the Rtl query table.
         //
-    
+
         parameters = ExAllocatePool(
                          PagedPool,
                          sizeof(RTL_QUERY_REGISTRY_TABLE) * (queries + 1)
                          );
-    
+
         if (!parameters) {
-    
+
             I8xPrint((
                 1,
                 "I8042PRT-I8xServiceParameters: Couldn't allocate table for Rtl query to parameters for %ws\n",
                  path
                  ));
-    
+
             status = STATUS_UNSUCCESSFUL;
-    
+
         } else {
-    
+
             RtlZeroMemory(
                 parameters,
                 sizeof(RTL_QUERY_REGISTRY_TABLE) * (queries + 1)
                 );
-    
+
             //
             // Form a path to this driver's Parameters subkey.
             //
-    
+
             RtlInitUnicodeString(
                 &parametersPath,
                 NULL
                 );
-    
+
             parametersPath.MaximumLength = RegistryPath->Length +
                                            sizeof(L"\\Parameters");
-    
+
             parametersPath.Buffer = ExAllocatePool(
                                         PagedPool,
                                         parametersPath.MaximumLength
                                         );
-    
+
             if (!parametersPath.Buffer) {
-    
+
                 I8xPrint((
                     1,
                     "I8042PRT-I8xServiceParameters: Couldn't allocate string for path to parameters for %ws\n",
                      path
                     ));
-    
+
                 status = STATUS_UNSUCCESSFUL;
-    
+
             }
         }
     }
@@ -2919,7 +2919,7 @@ Return Value:
         //
         // Form the parameters path.
         //
-    
+
         RtlZeroMemory(
             parametersPath.Buffer,
             parametersPath.MaximumLength
@@ -2932,13 +2932,13 @@ Return Value:
             &parametersPath,
             L"\\Parameters"
             );
-    
+
         I8xPrint((
             1,
             "I8042PRT-I8xServiceParameters: parameters path is %ws\n",
              parametersPath.Buffer
             ));
-    
+
         //
         // Form the default port device names, in case they are not
         // specified in the registry.
@@ -2964,72 +2964,72 @@ Return Value:
         parameters[0].DefaultType = REG_DWORD;
         parameters[0].DefaultData = &defaultResendIterations;
         parameters[0].DefaultLength = sizeof(USHORT);
-    
+
         parameters[1].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[1].Name = L"PollingIterations";
         parameters[1].EntryContext = &pollingIterations;
         parameters[1].DefaultType = REG_DWORD;
         parameters[1].DefaultData = &defaultPollingIterations;
         parameters[1].DefaultLength = sizeof(USHORT);
-    
+
         parameters[2].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[2].Name = L"PollingIterationsMaximum";
         parameters[2].EntryContext = &pollingIterationsMaximum;
         parameters[2].DefaultType = REG_DWORD;
         parameters[2].DefaultData = &defaultPollingIterationsMaximum;
         parameters[2].DefaultLength = sizeof(USHORT);
-    
+
         parameters[3].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[3].Name = L"KeyboardDataQueueSize";
-        parameters[3].EntryContext = 
+        parameters[3].EntryContext =
             &configuration->KeyboardAttributes.InputDataQueueLength;
         parameters[3].DefaultType = REG_DWORD;
         parameters[3].DefaultData = &defaultDataQueueSize;
         parameters[3].DefaultLength = sizeof(ULONG);
-    
+
         parameters[4].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[4].Name = L"MouseDataQueueSize";
-        parameters[4].EntryContext = 
+        parameters[4].EntryContext =
             &configuration->MouseAttributes.InputDataQueueLength;
         parameters[4].DefaultType = REG_DWORD;
         parameters[4].DefaultData = &defaultDataQueueSize;
         parameters[4].DefaultLength = sizeof(ULONG);
-    
+
         parameters[5].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[5].Name = L"NumberOfButtons";
         parameters[5].EntryContext = &numberOfButtons;
         parameters[5].DefaultType = REG_DWORD;
         parameters[5].DefaultData = &defaultNumberOfButtons;
         parameters[5].DefaultLength = sizeof(USHORT);
-    
+
         parameters[6].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[6].Name = L"SampleRate";
         parameters[6].EntryContext = &sampleRate;
         parameters[6].DefaultType = REG_DWORD;
         parameters[6].DefaultData = &defaultSampleRate;
         parameters[6].DefaultLength = sizeof(USHORT);
-    
+
         parameters[7].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[7].Name = L"MouseResolution";
         parameters[7].EntryContext = &mouseResolution;
         parameters[7].DefaultType = REG_DWORD;
         parameters[7].DefaultData = &defaultMouseResolution;
         parameters[7].DefaultLength = sizeof(USHORT);
-    
+
         parameters[8].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[8].Name = L"OverrideKeyboardType";
         parameters[8].EntryContext = &overrideKeyboardType;
         parameters[8].DefaultType = REG_DWORD;
         parameters[8].DefaultData = &invalidKeyboardType;
         parameters[8].DefaultLength = sizeof(ULONG);
-    
+
         parameters[9].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[9].Name = L"OverrideKeyboardSubtype";
         parameters[9].EntryContext = &overrideKeyboardSubtype;
         parameters[9].DefaultType = REG_DWORD;
         parameters[9].DefaultData = &invalidKeyboardSubtype;
         parameters[9].DefaultLength = sizeof(ULONG);
-    
+
         parameters[10].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[10].Name = L"KeyboardDeviceBaseName";
         parameters[10].EntryContext = KeyboardDeviceName;
@@ -3046,12 +3046,12 @@ Return Value:
 
         parameters[12].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[12].Name = L"MouseSynchIn100ns";
-        parameters[12].EntryContext = 
+        parameters[12].EntryContext =
             &(InitializationData->DeviceExtension.MouseExtension.SynchTickCount);
         parameters[12].DefaultType = REG_DWORD;
         parameters[12].DefaultData = &defaultSynchPacket100ns;
         parameters[12].DefaultLength = sizeof(ULONG);
-    
+
         parameters[13].Flags = RTL_QUERY_REGISTRY_DIRECT;
         parameters[13].Name = L"PollStatusIterations";
         parameters[13].EntryContext = &pollStatusIterations;
@@ -3070,7 +3070,7 @@ Return Value:
                      RTL_REGISTRY_ABSOLUTE | RTL_REGISTRY_OPTIONAL,
                      parametersPath.Buffer,
                      parameters,
-                     NULL,             
+                     NULL,
                      NULL
                      );
 
@@ -3091,12 +3091,12 @@ Return Value:
 
         configuration->ResendIterations = defaultResendIterations;
         configuration->PollingIterations = defaultPollingIterations;
-        configuration->PollingIterationsMaximum = 
+        configuration->PollingIterationsMaximum =
             defaultPollingIterationsMaximum;
         configuration->PollStatusIterations = defaultPollStatusIterations;
-        configuration->KeyboardAttributes.InputDataQueueLength = 
+        configuration->KeyboardAttributes.InputDataQueueLength =
             defaultDataQueueSize;
-        configuration->MouseAttributes.InputDataQueueLength = 
+        configuration->MouseAttributes.InputDataQueueLength =
             defaultDataQueueSize;
         configuration->EnableWheelDetection =
             defaultEnableWheelDetection;
@@ -3107,7 +3107,7 @@ Return Value:
     } else {
         configuration->ResendIterations = (USHORT) resendIterations;
         configuration->PollingIterations = (USHORT) pollingIterations;
-        configuration->PollingIterationsMaximum = 
+        configuration->PollingIterationsMaximum =
             (USHORT) pollingIterationsMaximum;
         configuration->PollStatusIterations = (USHORT) pollStatusIterations;
         configuration->EnableWheelDetection = (ULONG) ((enableWheelDetection) ? 1 : 0);
@@ -3128,7 +3128,7 @@ Return Value:
     I8xPrint((
         1,
         "I8042PRT-I8xServiceParameters: StallMicroseconds = %d\n",
-        configuration->StallMicroseconds 
+        configuration->StallMicroseconds
         ));
     I8xPrint((
         1,
@@ -3159,11 +3159,11 @@ Return Value:
             configuration->KeyboardAttributes.InputDataQueueLength
             ));
 
-        configuration->KeyboardAttributes.InputDataQueueLength = 
+        configuration->KeyboardAttributes.InputDataQueueLength =
             defaultDataQueueSize;
     }
 
-    configuration->KeyboardAttributes.InputDataQueueLength *= 
+    configuration->KeyboardAttributes.InputDataQueueLength *=
         sizeof(KEYBOARD_INPUT_DATA);
 
     I8xPrint((
@@ -3180,11 +3180,11 @@ Return Value:
             configuration->MouseAttributes.InputDataQueueLength
             ));
 
-        configuration->MouseAttributes.InputDataQueueLength = 
+        configuration->MouseAttributes.InputDataQueueLength =
             defaultDataQueueSize;
     }
 
-    configuration->MouseAttributes.InputDataQueueLength *= 
+    configuration->MouseAttributes.InputDataQueueLength *=
         sizeof(MOUSE_INPUT_DATA);
 
     I8xPrint((
@@ -3256,7 +3256,7 @@ Return Value:
     //
     // Convert SynchTickCount to be the number of interval timer
     // interrupts that occur during the time specified by MouseSynchIn100ns.
-    // Note that KeQueryTimeIncrement returns the number of 100ns units that 
+    // Note that KeQueryTimeIncrement returns the number of 100ns units that
     // are added to the system time each time the interval clock interrupts.
     //
 
@@ -3382,24 +3382,24 @@ Return Value:
             &verifyCommandByte
             );
 
-    if (NT_SUCCESS(transmitCCBContext->Status) 
+    if (NT_SUCCESS(transmitCCBContext->Status)
         && (verifyCommandByte != controllerCommandByte)) {
             transmitCCBContext->Status = STATUS_DEVICE_DATA_ERROR;
 
         //
         // Log an error.
         //
-    
+
         errorLogEntry = (PIO_ERROR_LOG_PACKET)IoAllocateErrorLogEntry(
                                                   DeviceExtension->DeviceObject,
                                                   sizeof(IO_ERROR_LOG_PACKET)
                                                   + (4 * sizeof(ULONG))
                                                   );
         if (errorLogEntry != NULL) {
-    
+
             errorLogEntry->ErrorCode = I8042_CCB_WRITE_FAILED;
-            errorLogEntry->DumpDataSize = 4 * sizeof(ULONG); 
-            errorLogEntry->SequenceNumber = 0; 
+            errorLogEntry->DumpDataSize = 4 * sizeof(ULONG);
+            errorLogEntry->SequenceNumber = 0;
             errorLogEntry->MajorFunctionCode = 0;
             errorLogEntry->IoControlCode = 0;
             errorLogEntry->RetryCount = 0;
@@ -3409,7 +3409,7 @@ Return Value:
             errorLogEntry->DumpData[1] = DataPort;
             errorLogEntry->DumpData[2] = I8042_WRITE_CONTROLLER_COMMAND_BYTE;
             errorLogEntry->DumpData[3] = controllerCommandByte;
-    
+
             IoWriteErrorLogEntry(errorLogEntry);
         }
 

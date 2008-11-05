@@ -465,7 +465,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
      */
     void *pv;
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;
@@ -478,8 +478,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     if (fActivateHGCM())
     {
         rc = pData->pVMMDev->hgcmLoadService (VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
-        pData->pVMMDev->fSharedFolderActive = VBOX_SUCCESS(rc);
-        if (VBOX_SUCCESS(rc))
+        pData->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
+        if (RT_SUCCESS(rc))
             LogRel(("Shared Folders service loaded.\n"));
         else
             LogRel(("Failed to load Shared Folders service %Vrc\n", rc));

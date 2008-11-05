@@ -185,7 +185,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                 const char *args[] = { VBoxSVCPath, "--automate", 0 };
                 RTPROCESS pid = NIL_RTPROCESS;
                 vrc = RTProcCreate (VBoxSVCPath, args, RTENV_DEFAULT, 0, &pid);
-                if (VBOX_FAILURE (vrc))
+                if (RT_FAILURE (vrc))
                 {
                     rc = NS_ERROR_FAILURE;
                     break;

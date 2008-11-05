@@ -142,7 +142,7 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
 
     int vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)scancode);
 
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         rc = setError (E_FAIL, tr ("Could not send scan code 0x%08X to the virtual keyboard (%Vrc)"),
                        scancode, vrc);
 
@@ -177,10 +177,10 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
     com::SafeArray <LONG> keys (ComSafeArrayInArg (scancodes));
     int vrc = VINF_SUCCESS;
 
-    for (uint32_t i = 0; (i < keys.size()) && VBOX_SUCCESS (vrc); i++)
+    for (uint32_t i = 0; (i < keys.size()) && RT_SUCCESS (vrc); i++)
         vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)keys [i]);
 
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL, tr ("Could not send all scan codes to the virtual keyboard (%Vrc)"),
                          vrc);
 
@@ -316,7 +316,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     void *pv;
     rc = CFGMR3QueryPtr (pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         AssertMsgFailed (("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;

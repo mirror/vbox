@@ -242,7 +242,7 @@ static int networkArg2Index(const char *pszArg, int cchRoot)
 {
     uint32_t n;
     int rc = RTStrToUInt32Ex(&pszArg[cchRoot], NULL, 10, &n);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Error: invalid network device option (rc=%Vrc): %s\n", rc, pszArg);
         return -1;
@@ -490,7 +490,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             if (++curArg >= argc)
                 return SyntaxError("missing argument for memory size!\n");
             rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &g_u32MemorySizeMB);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return SyntaxError("bad memory size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
         }
@@ -501,7 +501,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             uint32_t uVRAMMB;
             rc = RTStrToUInt32Ex(argv[curArg], NULL, 0, &uVRAMMB);
             g_u32VRamSize = uVRAMMB * _1M;
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return SyntaxError("bad video ram size: %s (error %Vrc)\n",
                                    argv[curArg], rc);
         }
@@ -707,7 +707,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             if (++curArg >= argc)
                 return SyntaxError("missing argument for %s!\n", pszArg);
             rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &g_aNetDevs[i].fd);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 return SyntaxError("bad tap file descriptor: %s (error %VRc)\n", argv[curArg], rc);
             g_aNetDevs[i].fHaveFd = true;
         }
@@ -720,7 +720,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             if (curArg + 1 < argc && argv[curArg + 1][0] != '-')
             {
                 rc = RTStrToInt32Ex(argv[curArg], NULL, 0, &portVRDP);
-                if (VBOX_FAILURE(rc))
+                if (RT_FAILURE(rc))
                     return SyntaxError("cannot vrpd port: %s (%VRc)\n", argv[curArg], rc);
                 if (portVRDP < 0 || portVRDP >= 0x10000)
                     return SyntaxError("vrdp port number is out of range: %RI32\n", portVRDP);
@@ -815,7 +815,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 
     RTTHREAD thread;
     rc = RTThreadCreate(&thread, VMPowerUpThread, 0, 0, RTTHREADTYPE_MAIN_WORKER, 0, "PowerUp");
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Error: Thread creation failed with %d\n", rc);
         return -1;
@@ -981,7 +981,7 @@ leave:
     delete gMachineDebugger;
 
     RTLogFlush(NULL);
-    return VBOX_FAILURE (rc) ? 1 : 0;
+    return RT_FAILURE (rc) ? 1 : 0;
 }
 
 
@@ -1013,7 +1013,7 @@ int main(int argc, char **argv)
      * Before we do *anything*, we initialize the runtime.
      */
     int rc = RTR3Init();
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return FatalError("RTR3Init failed rc=%Vrc\n", rc);
 
     return TrustedMain(argc, argv, NULL);
@@ -1086,7 +1086,7 @@ DECLCALLBACK(void) setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_
                                       const char *pszFormat, va_list args)
 {
     /** @todo accessing shared resource without any kind of synchronization */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         szError[0] = '\0';
     else
     {
@@ -1139,7 +1139,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         rc2 = RTLogCreateEx(&pLogger, RTLOGFLAGS_PREFIX_TIME_PROG, "all",
                             "VBOX_RELEASE_LOG", ELEMENTS(s_apszGroups), s_apszGroups,
                             RTLOGDEST_FILE, szError, sizeof(szError), "./VBoxBFE.log");
-        if (VBOX_SUCCESS(rc2))
+        if (RT_SUCCESS(rc2))
         {
             /* some introductory information */
             RTTIMESPEC TimeSpec;
@@ -1167,7 +1167,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
      * Create empty VM.
      */
     rc = VMR3Create(1, setVMErrorCallback, NULL, vboxbfeConfigConstructor, NULL, &pVM);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Error: VM creation failed with %Vrc.\n", rc);
         goto failure;
@@ -1178,7 +1178,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
      * Register VM state change handler
      */
     rc = VMR3AtStateRegister(pVM, vmstateChangeCallback, NULL);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Error: VMR3AtStateRegister failed with %Vrc.\n", rc);
         goto failure;
@@ -1263,7 +1263,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * Power on the VM (i.e. start executing).
      */
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         PVMREQ pReq;
 
@@ -1276,12 +1276,12 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
             endProgressInfo();
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 VMR3ReqFree(pReq);
                 rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)VMR3Resume, 1, pVM);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = pReq->iStatus;
                     VMR3ReqFree(pReq);
@@ -1294,7 +1294,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         else
         {
             rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
                 AssertRC(rc);
@@ -1308,7 +1308,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
     /*
      * On failure destroy the VM.
      */
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         goto failure;
 
     return 0;
@@ -1341,24 +1341,24 @@ DECLCALLBACK(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_t u32Vers
 
     rc = pCallbacks->pfnRegister(pCallbacks, &Mouse::DrvReg);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &Keyboard::DrvReg);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &VMDisplay::DrvReg);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &VMMDev::DrvReg);
     AssertRC(rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     rc = pCallbacks->pfnRegister(pCallbacks, &VMStatus::DrvReg);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
@@ -1376,7 +1376,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
     int rcAll = VINF_SUCCESS;
     int rc;
 
-#define UPDATE_RC() do { if (VBOX_FAILURE(rc) && VBOX_SUCCESS(rcAll)) rcAll = rc; } while (0)
+#define UPDATE_RC() do { if (RT_FAILURE(rc) && RT_SUCCESS(rcAll)) rcAll = rc; } while (0)
 
     /*
      * Root values.
@@ -1806,7 +1806,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     rc = RTFileOpen(&tapFD, "/dev/net/tun",
                                     RTFILE_O_READWRITE | RTFILE_O_OPEN |
                                     RTFILE_O_DENY_NONE | RTFILE_O_INHERIT);
-                    if (VBOX_FAILURE(rc))
+                    if (RT_FAILURE(rc))
                     {
                         FatalError("Failed to open /dev/net/tun: %Vrc\n", rc);
                         return rc;

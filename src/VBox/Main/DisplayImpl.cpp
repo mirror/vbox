@@ -1351,7 +1351,7 @@ STDMETHODIMP Display::SetupInternalFramebuffer (ULONG depth)
                                (PFNRT) changeFramebuffer, 4,
                                this, static_cast <IFramebuffer *> (frameBuf),
                                true /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
-        if (VBOX_SUCCESS (vrc))
+        if (RT_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
@@ -1437,7 +1437,7 @@ STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
         int vrc = VMR3ReqCall (pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 4,
                                this, frameBuf, false /* aInternal */, VBOX_VIDEO_PRIMARY_SCREEN);
-        if (VBOX_SUCCESS (vrc))
+        if (RT_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
@@ -1478,7 +1478,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId, IFramebuffer *aFramebuffe
         int vrc = VMR3ReqCall (pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                (PFNRT) changeFramebuffer, 4,
                                this, aFramebuffer, false /* aInternal */, aScreenId);
-        if (VBOX_SUCCESS (vrc))
+        if (RT_SUCCESS (vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
@@ -1633,7 +1633,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
         rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
                              address, cbData, NULL, NULL, NULL);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
         {
             rcVBox = pReq->iStatus;
             VMR3ReqFree(pReq);
@@ -1649,7 +1649,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
         /** @todo implement snapshot stretching and generic snapshot fallback. */
         rc = setError (E_NOTIMPL, tr ("This feature is not implemented"));
     }
-    else if (VBOX_FAILURE(rcVBox))
+    else if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
             tr ("Could not take a screenshot (%Vrc)"), rcVBox);
 
@@ -1694,7 +1694,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     int rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
                              address, x, y, width, height);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
     {
         rcVBox = pReq->iStatus;
         VMR3ReqFree(pReq);
@@ -1710,7 +1710,7 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
         /** @todo implement generic fallback for screen blitting. */
         rc = E_NOTIMPL;
     }
-    else if (VBOX_FAILURE(rcVBox))
+    else if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
             tr ("Could not draw to the screen (%Vrc)"), rcVBox);
 //@todo
@@ -1753,10 +1753,10 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     PVMREQ pReq;
     int rcVBox = VMR3ReqCallVoid(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                                  (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
-    if (VBOX_SUCCESS(rcVBox))
+    if (RT_SUCCESS(rcVBox))
         VMR3ReqFree(pReq);
 
-    if (VBOX_FAILURE(rcVBox))
+    if (RT_FAILURE(rcVBox))
         rc = setError (E_FAIL,
             tr ("Could not invalidate and update the screen (%Vrc)"), rcVBox);
 
@@ -2496,7 +2496,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
      */
     void *pv;
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;

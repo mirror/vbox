@@ -31,7 +31,7 @@ DECLVBGL(int) VbglGRAlloc (VMMDevRequestHeader **ppReq, uint32_t cbSize, VMMDevR
     VMMDevRequestHeader *pReq;
     int rc = VbglEnter ();
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (!ppReq || cbSize < sizeof (VMMDevRequestHeader))
@@ -68,7 +68,7 @@ DECLVBGL(int) VbglGRPerform (VMMDevRequestHeader *pReq)
     RTCCPHYS physaddr;
     int rc = VbglEnter ();
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     if (!pReq)
@@ -94,7 +94,7 @@ DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq)
 {
     int rc = VbglEnter ();
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return;
 
     VbglPhysHeapFree (pReq);

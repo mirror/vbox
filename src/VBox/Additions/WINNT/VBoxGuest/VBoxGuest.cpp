@@ -412,13 +412,13 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
     int rc = VbglGRAlloc ((VMMDevRequestHeader **) &req, sizeof (*req),
                           VMMDevReq_CtlGuestFilterMask);
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         req->u32OrMask = u32OrMask;
         req->u32NotMask = u32NotMask;
 
         rc = VbglGRPerform (&req->header);
-        if (VBOX_FAILURE (rc) || VBOX_FAILURE (req->header.rc))
+        if (RT_FAILURE (rc) || RT_FAILURE (req->header.rc))
         {
             dprintf (("VBoxGuest::VBoxGuestDeviceControl: error issuing request to VMMDev! "
                       "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -450,7 +450,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
 
     /* Allocate request packet */
     rc = VbglGRAlloc((VMMDevRequestHeader **)&req, RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]), VMMDevReq_ChangeMemBalloon);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     vmmdevInitRequest(&req->header, VMMDevReq_ChangeMemBalloon);
@@ -524,7 +524,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
             req->fInflate    = true;
 
             rc = VbglGRPerform(&req->header);
-            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
             {
                 dprintf(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev!"
                          "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -576,7 +576,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 req->fInflate    = false;
 
                 rc = VbglGRPerform(&req->header);
-                if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+                if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                 {
                     AssertMsgFailed(("VBoxGuest::VBoxGuestSetBalloonSize: error issuing request to VMMDev! rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
                     break;
@@ -617,11 +617,11 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
     vmmdevInitRequest(&req->header, VMMDevReq_GetMemBalloonChangeRequest);
     req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = VbglGRPerform(&req->header);
 
-        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_CTL_CHECK_BALLOON: error issuing request to VMMDev!"
                      "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -832,13 +832,13 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, requestHeader->size, requestHeader->requestType);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* copy the request information */
                 memcpy((void*)req, (void*)pBuf, requestHeader->size);
                 rc = VbglGRPerform(req);
 
-                if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->rc))
+                if (RT_FAILURE(rc) || RT_FAILURE(req->rc))
                 {
                     dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_VMMREQUEST: Error issuing request to VMMDev! "
                              "rc = %d, VMMDev rc = %Vrc\n", rc, req->rc));
@@ -919,7 +919,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             dprintf(("b) ptr->u32ClientID = %d\n", ptr->u32ClientID));
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_HGCM_CONNECT: vbox rc = %Vrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
@@ -960,7 +960,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             int rc = VbglHGCMDisconnect (ptr, VBoxHGCMCallback, pDevExt, 0);
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_HGCM_DISCONNECT: vbox rc = %Vrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
@@ -989,7 +989,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             int rc = VbglHGCMCall (ptr, VBoxHGCMCallback, pDevExt, 0);
 
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_HGCM_CALL: vbox rc = %Vrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
@@ -1048,7 +1048,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
             int rc = VBoxGuestQueryMemoryBalloon(pDevExt, pMemBalloonSize);
-            if (VBOX_FAILURE(rc))
+            if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_CTL_CHECK_BALLOON: vbox rc = %Vrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
@@ -1128,7 +1128,7 @@ NTSTATUS VBoxGuestShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
         int rc = VbglGRPerform (&req->header);
 
-        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::PowerStateRequest: error performing request to VMMDev."
                       "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -1227,7 +1227,7 @@ BOOLEAN VBoxGuestIsrHandler(PKINTERRUPT interrupt, PVOID serviceContext)
         VMMDevEvents *req = pDevExt->irqAckEvents;
 
         rc = VbglGRPerform (&req->header);
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             dprintf(("VBoxGuest::VBoxGuestIsrHandler: acknowledge events succeeded %#x\n",
                      req->events));
@@ -1267,7 +1267,7 @@ VOID vboxWorkerThread(PVOID context)
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHostTime), VMMDevReq_GetHostTime);
 
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxGuest::vboxWorkerThread: could not allocate request buffer, exiting rc = %d!\n", rc));
         return;
@@ -1294,7 +1294,7 @@ VOID vboxWorkerThread(PVOID context)
 
             rc = VbglGRPerform (&req->header);
 
-            if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
             {
                 uint64_t hostTime = req->time;
 
@@ -1429,14 +1429,14 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHypervisorInfo), VMMDevReq_GetHypervisorInfo);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         req->hypervisorStart = 0;
         req->hypervisorSize = 0;
 
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_SUCCESS(rc) && VBOX_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
         {
             hypervisorSize = req->hypervisorSize;
 
@@ -1479,7 +1479,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             /* issue request */
             rc = VbglGRPerform (&req->header);
 
-            if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+            if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
             {
                 dprintf(("VBoxGuest::reserveHypervisorMemory: error communicating physical address to VMMDev!"
                          "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -1506,7 +1506,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHypervisorInfo), VMMDevReq_SetHypervisorInfo);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* tell the hypervisor that the mapping is no longer available */
 
@@ -1515,7 +1515,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 
         rc = VbglGRPerform (&req->header);
 
-        if (VBOX_FAILURE(rc) || VBOX_FAILURE(req->header.rc))
+        if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
         {
             dprintf(("VBoxGuest::unreserveHypervisorMemory: error communicating physical address to VMMDev!"
                      "rc = %d, VMMDev rc = %Vrc\n", rc, req->header.rc));
@@ -1557,7 +1557,7 @@ VOID vboxIdleThread(PVOID context)
     /* allocate VMMDev request structure */
     VMMDevReqIdle *req;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHypervisorInfo), VMMDevReq_Idle);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         dprintf(("VBoxGuest::vboxIdleThread: error %Vrc allocating request structure!\n"));
         return;

@@ -37,13 +37,13 @@ enum { PipeBufSize = 1024 };
  *  function (i.e. Write() to a non-connected server end of a pipe) returns
  *  FALSE... This method ensures that at least VERR_GENERAL_FAILURE is returned
  *  in cases like that. Intended to be called immediately after a failed API
- *  call. 
+ *  call.
  */
 static inline int rtErrConvertFromWin32OnFailure()
 {
     DWORD err = GetLastError();
     return err == NO_ERROR ? VERR_GENERAL_FAILURE
-                           : RTErrConvertFromWin32 (err); 
+                           : RTErrConvertFromWin32 (err);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ int SVCHlpClient::open (const char *aName)
         return VERR_WRONG_ORDER;
 
     Bstr pipeName = Utf8StrFmt ("\\\\.\\pipe\\%s", aName);
-    
+
     HANDLE pipe = CreateFile (pipeName,
                               GENERIC_READ | GENERIC_WRITE,
                               0,
@@ -113,7 +113,7 @@ int SVCHlpClient::open (const char *aName)
     mReadEnd = pipe;
     mWriteEnd = pipe;
     mName = aName;
-    
+
     return VINF_SUCCESS;
 }
 
@@ -147,11 +147,11 @@ int SVCHlpClient::close()
             rtErrConvertFromWin32OnFailure();
         mReadEnd = NULL;
     }
-        
+
     mIsOpen = false;
     mIsServer = false;
     mName.setNull();
- 
+
     return VINF_SUCCESS;
 }
 
@@ -173,16 +173,16 @@ int SVCHlpClient::write (const Utf8Str &aVal)
 {
     if (!mIsOpen)
         return VERR_WRONG_ORDER;
-    
+
     /* write -1 for NULL strings */
     if (aVal.isNull())
         return write ((size_t) ~0);
-    
+
     size_t len = aVal.length();
-    
+
     /* write string length */
     int vrc = write (len);
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
     {
         /* write string data */
         vrc = write (aVal.raw(), len);
@@ -215,24 +215,24 @@ int SVCHlpClient::read (Utf8Str &aVal)
 {
     if (!mIsOpen)
         return VERR_WRONG_ORDER;
-    
+
     size_t len = 0;
-    
+
     /* read string length */
     int vrc = read (len);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return vrc;
-    
+
     /* length -1 means a NULL string */
     if (len == (size_t) ~0)
     {
         aVal.setNull();
         return VINF_SUCCESS;
     }
-    
+
     aVal.alloc (len + 1);
     aVal.mutableRaw() [len] = 0;
-    
+
     /* read string data */
     vrc = read (aVal.mutableRaw(), len);
 
@@ -243,7 +243,7 @@ int SVCHlpClient::read (Guid &aGuid)
 {
     Utf8Str guidStr;
     int vrc = read (guidStr);
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
         aGuid = Guid (guidStr);
     return vrc;
 }
@@ -258,13 +258,13 @@ int SVCHlpServer::run()
 {
     int vrc = VINF_SUCCESS;
     SVCHlpMsg::Code msgCode = SVCHlpMsg::Null;
-    
+
     do
-    { 
+    {
         vrc = read (msgCode);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return vrc;
-        
+
         /* terminate request received */
         if (msgCode == SVCHlpMsg::Null)
             return VINF_SUCCESS;
@@ -282,12 +282,12 @@ int SVCHlpServer::run()
                     "Invalid message code %d (%08lX)\n", msgCode, msgCode),
                     VERR_GENERAL_FAILURE);
         }
-        
-        if (VBOX_FAILURE (vrc))
+
+        if (RT_FAILURE (vrc))
             return vrc;
     }
     while (1);
-    
+
     /* we never get here */
     AssertFailed();
     return VERR_GENERAL_FAILURE;

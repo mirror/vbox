@@ -139,19 +139,19 @@ NTSTATUS ntCreateDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE
     rc = VBoxScanPCIResourceList(resourceList, pDevExt);
 
     rc = VbglInit (pDevExt->startPortAddress, pDevExt->pVMMDevMemory);
-    if (!VBOX_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
         dprintf(("VBoxGuest::START_DEVICE: VbglInit failed. rc = %d\n", rc));
     }
 
 
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->irqAckEvents, sizeof (VMMDevEvents), VMMDevReq_AcknowledgeEvents);
-    if (!VBOX_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
        dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for irqAckEvents. rc = %d\n", rc));
     }
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pDevExt->powerStateRequest, sizeof (VMMDevPowerStateRequest), VMMDevReq_SetPowerStatus);
-    if (!VBOX_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
        dprintf(("VBoxGuest::START_DEVICE: VbglAlloc failed for powerStateRequest. rc = %d\n", rc));
     }

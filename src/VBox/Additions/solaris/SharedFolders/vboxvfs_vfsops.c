@@ -193,15 +193,15 @@ static int VBoxVFS_Init(int fType, char *pszName)
 
     /* Initialize the R0 guest library. */
     rc = vboxInit();
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Connect to the host service. */
         rc = vboxConnect(&g_VBoxVFSClient);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Use UTF-8 encoding. */
             rc = vboxCallSetUtf8 (&g_VBoxVFSClient);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* Fill up VFS user entry points. */
                 static const fs_operation_def_t s_VBoxVFS_vfsops_template[] =
@@ -386,7 +386,7 @@ static int VBoxVFS_Mount(vfs_t *pVFS, vnode_t *pVNode, struct mounta *pMount, cr
 
             rc = vboxCallMapFolder(&g_VBoxVFSClient, pShflShareName, &pVBoxVFSGlobalInfo->Map);
             RTMemFree(pShflShareName);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 rc = 0;
             else
             {
@@ -501,7 +501,7 @@ static int VBoxVFS_Unmount(vfs_t *pVFS, int fUnmount, cred_t *pCred)
     pVBoxVFSGlobalInfo = VFS_TO_VBOXVFS(pVFS);
 
     rc = vboxCallUnmapFolder(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         LogRel((DEVICE_NAME ":VBoxVFS_Unmount: failed to unmap shared folder. rc=%d\n", rc));
 
     VN_RELE(VBOXVN_TO_VN(pVBoxVFSGlobalInfo->pVNodeRoot));
@@ -536,7 +536,7 @@ static int VBoxVFS_Statfs(register vfs_t *pVFS, struct statvfs64 *pStat)
     cbBuffer = sizeof(VolumeInfo);
     rc = vboxCallFSInfo(&g_VBoxVFSClient, &pVBoxVFSGlobalInfo->Map, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbBuffer,
                     (PSHFLDIRINFO)&VolumeInfo);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return RTErrConvertToErrno(rc);
 
     bzero(pStat, sizeof(*pStat));

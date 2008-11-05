@@ -87,12 +87,12 @@ uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn)
 
     int rc = hgcmObjEnter ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         ObjectAVLCore *pCore = &pObject->Core;
 
         /* Generate a new handle value. */
-        
+
         uint32_t volatile *pu32HandleCountSource = pObject->Type () == HGCMOBJ_CLIENT?
                                                        &g_u32ClientHandleCount:
                                                        &g_u32InternalHandleCount;
@@ -101,8 +101,8 @@ uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn)
 
         for (;;)
         {
-            uint32_t Key; 
-            
+            uint32_t Key;
+
             if (u32HandleIn == 0)
             {
                 Key = ASMAtomicIncU32 (pu32HandleCountSource);
@@ -157,7 +157,7 @@ uint32_t hgcmObjMake (HGCMObject *pObject, uint32_t u32HandleIn)
 
             /* Store returned handle. */
             handle = Key;
-            
+
             Log(("Object key inserted 0x%08X\n", Key));
 
             break;
@@ -195,7 +195,7 @@ void hgcmObjDeleteHandle (uint32_t handle)
     {
         rc = hgcmObjEnter ();
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlULRemove (&g_pTree, handle);
 
@@ -232,12 +232,12 @@ HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
 
     int rc = hgcmObjEnter ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         ObjectAVLCore *pCore = (ObjectAVLCore *)RTAvlULGet (&g_pTree, handle);
 
         Assert(!pCore || (pCore->pSelf && pCore->pSelf->Type() == enmObjType));
-        if (    pCore 
+        if (    pCore
             &&  pCore->pSelf
             &&  pCore->pSelf->Type() == enmObjType)
         {
@@ -282,7 +282,7 @@ void hgcmObjSetHandleCount (uint32_t u32ClientHandleCount)
 
     int rc = hgcmObjEnter ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         if (g_u32ClientHandleCount <= u32ClientHandleCount)
             g_u32ClientHandleCount = u32ClientHandleCount;

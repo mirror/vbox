@@ -412,7 +412,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     /* get the full file name */
     Utf8Str configFileFull;
     int vrc = mParent->calculateFullPath (Utf8Str (aConfigFile), configFileFull);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid machine settings file name '%ls' (%Vrc)"),
             aConfigFile, vrc);
@@ -440,12 +440,12 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             /* check for the file existence */
             RTFILE f = NIL_RTFILE;
             int vrc = RTFileOpen (&f, configFileFull, RTFILE_O_READ);
-            if (VBOX_SUCCESS (vrc) || vrc == VERR_SHARING_VIOLATION)
+            if (RT_SUCCESS (vrc) || vrc == VERR_SHARING_VIOLATION)
             {
                 rc = setError (E_FAIL,
                     tr ("Machine settings file '%s' already exists"),
                     configFileFull.raw());
-                if (VBOX_SUCCESS (vrc))
+                if (RT_SUCCESS (vrc))
                     RTFileClose (f);
             }
             else
@@ -1325,7 +1325,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
     }
 
     int vrc = calculateFullPath (snapshotFolder, snapshotFolder);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid snapshot folder '%ls' (%Vrc)"),
                 aSnapshotFolder, vrc);
@@ -2693,7 +2693,7 @@ STDMETHODIMP Machine::DeleteSettings()
     {
         unlockConfig();
         int vrc = RTFileDelete (Utf8Str (mData->mConfigFileFull));
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Could not delete the settings file '%ls' (%Vrc)"),
                 mData->mConfigFileFull.raw(), vrc);
@@ -3256,7 +3256,7 @@ int Machine::calculateFullPath (const char *aPath, Utf8Str &aResult)
     RTPathStripFilename (settingsDir.mutableRaw());
     char folder [RTPATH_MAX];
     int vrc = RTPathAbsEx (settingsDir, aPath, folder, sizeof (folder));
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
         aResult = folder;
 
     return vrc;
@@ -3606,13 +3606,13 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
                         }
                         else
                             vrc2 = RTEnvUnsetEx (env, var);
-                        if (VBOX_FAILURE (vrc2))
+                        if (RT_FAILURE (vrc2))
                             break;
                     }
                     var = p + 1;
                 }
             }
-            if (VBOX_SUCCESS (vrc2) && *var)
+            if (RT_SUCCESS (vrc2) && *var)
                 vrc2 = RTEnvPutEx (env, var);
 
             AssertRCBreakStmt (vrc2, vrc = vrc2);
@@ -3733,7 +3733,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 
     RTEnvDestroy (env);
 
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Could not launch a process for the machine '%ls' (%Vrc)"),
             mUserData->mName.raw(), vrc);
@@ -4717,7 +4717,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
             {
                 Utf8Str stateFilePathFull = stateFilePath;
                 int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
-                if (VBOX_FAILURE (vrc))
+                if (RT_FAILURE (vrc))
                 {
                     throw setError (E_FAIL,
                         tr ("Invalid saved state file path '%ls' (%Vrc)"),
@@ -4854,7 +4854,7 @@ HRESULT Machine::loadSnapshot (const settings::Key &aNode,
         {
             Utf8Str stateFilePathFull = stateFilePath;
             int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
                 return setError (E_FAIL,
                                  tr ("Invalid saved state file path '%ls' (%Vrc)"),
                                  stateFilePath.raw(), vrc);
@@ -5591,7 +5591,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTPathRename (configDir.raw(), newConfigDir.raw(), 0);
-                    if (VBOX_FAILURE (vrc))
+                    if (RT_FAILURE (vrc))
                     {
                         rc = setError (E_FAIL,
                             tr ("Could not rename the directory '%s' to '%s' "
@@ -5617,7 +5617,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTFileRename (configFile.raw(), newConfigFile.raw(), 0);
-                    if (VBOX_FAILURE (vrc))
+                    if (RT_FAILURE (vrc))
                     {
                         rc = setError (E_FAIL,
                             tr ("Could not rename the settings file '%s' to '%s' "
@@ -5711,7 +5711,7 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         if (!RTDirExists (path))
         {
             vrc = RTDirCreateFullPath (path, 0777);
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
             {
                 return setError (E_FAIL,
                     tr ("Could not create a directory '%s' "
@@ -5725,13 +5725,13 @@ HRESULT Machine::prepareSaveSettings (bool &aRenamed, bool &aNew)
         vrc = RTFileOpen (&mData->mHandleCfgFile, path,
                           RTFILE_O_READWRITE | RTFILE_O_CREATE |
                           RTFILE_O_DENY_WRITE);
-        if (VBOX_SUCCESS (vrc))
+        if (RT_SUCCESS (vrc))
         {
             vrc = RTFileWrite (mData->mHandleCfgFile,
                                (void *) DefaultMachineConfig,
                                sizeof (DefaultMachineConfig), NULL);
         }
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             mData->mHandleCfgFile = NIL_RTFILE;
             return setError (E_FAIL,
@@ -7113,7 +7113,7 @@ HRESULT Machine::lockConfig()
                               Utf8Str (mData->mConfigFileFull),
                               RTFILE_O_READWRITE | RTFILE_O_OPEN |
                               RTFILE_O_DENY_WRITE);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             mData->mHandleCfgFile = NIL_RTFILE;
 
@@ -8354,7 +8354,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
 
     Utf8Str stateFilePathFull = aSavedStateFile;
     int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid saved state file path '%ls' (%Vrc)"),
                 aSavedStateFile, vrc);
@@ -8500,7 +8500,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     int vrc = RTThreadCreate (NULL, taskHandler,
                               (void *) task,
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "TakeSnapshot");
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
     {
         snapshot->uninit();
         delete task;
@@ -8624,7 +8624,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     int vrc = RTThreadCreate (NULL, taskHandler,
                               (void *) task,
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardSnapshot");
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         delete task;
     ComAssertRCRet (vrc, E_FAIL);
 
@@ -8686,7 +8686,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     int vrc = RTThreadCreate (NULL, taskHandler,
                               (void *) task,
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurState");
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
     {
         delete task;
         ComAssertRCRet (vrc, E_FAIL);
@@ -8773,7 +8773,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     int vrc = RTThreadCreate (NULL, taskHandler,
                               (void *) task,
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurStSnp");
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
     {
         delete task;
         ComAssertRCRet (vrc, E_FAIL);
@@ -9533,7 +9533,7 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
 
         alock.enter();
 
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             rc = setError (E_FAIL,
                 tr ("Could not copy the state file '%ls' to '%ls' (%Vrc)"),
                 stateFrom.raw(), stateTo.raw());
@@ -10044,7 +10044,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                 alock.enter();
                 snapshotLock.lock();
 
-                if (VBOX_SUCCESS (vrc))
+                if (RT_SUCCESS (vrc))
                 {
                     mSSData->mStateFilePath = stateFilePath;
                 }

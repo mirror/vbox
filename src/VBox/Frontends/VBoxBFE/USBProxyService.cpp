@@ -84,7 +84,7 @@ int USBProxyService::start (void)
         rc = RTThreadCreate (&mThread, USBProxyService::serviceThread, this,
                              0, RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "USBPROXY");
         AssertRC (rc);
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
             LogFlow (("USBProxyService::start: started mThread=%RTthrd\n", mThread));
         else
         {
@@ -116,7 +116,7 @@ int USBProxyService::stop (void)
         rc = RTThreadWait (mThread, 60000, NULL);
         if (rc == VERR_INVALID_HANDLE)
             rc = VINF_SUCCESS;
-        if (VBOX_SUCCESS (rc))
+        if (RT_SUCCESS (rc))
         {
             LogFlowMember (("USBProxyService::stop: stopped mThread=%RTthrd\n", mThread));
             mThread = NIL_RTTHREAD;

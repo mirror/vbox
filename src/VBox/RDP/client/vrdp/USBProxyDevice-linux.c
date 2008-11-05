@@ -904,7 +904,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev)
              * So, we're in for a real treat from our excellent OS now...
              */
             rc2 = usb_reset_logical_reconnect(pProxyDev);
-            if (VBOX_FAILURE(rc2))
+            if (RT_FAILURE(rc2))
                 usbProxLinuxUrbUnplugged(pProxyDev);
             if (RT_SUCCESS(rc2))
             {

@@ -321,7 +321,7 @@ int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev)
     vbox_hgcm_dump_params(hgcmR0);
     /* Call the internal VBoxGuest ioctl interface with the ioctl structure we have just copied. */
     rc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CALL(0), hgcmR0);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: internal ioctl call failed, rc=%Rrc\n", rc));
         rc = -RTErrConvertToErrno(rc);

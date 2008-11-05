@@ -211,7 +211,7 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
      */
     void *pv;
     rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Vrc\n", rc));
         return rc;

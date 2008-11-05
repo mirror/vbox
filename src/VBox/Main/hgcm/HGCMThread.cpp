@@ -208,7 +208,7 @@ static DECLCALLBACK(int) hgcmWorkerThreadFunc (RTTHREAD ThreadSelf, void *pvUser
     return rc;
 }
 
-HGCMThread::HGCMThread () 
+HGCMThread::HGCMThread ()
     :
     HGCMObject(HGCMOBJ_THREAD),
     m_pfnThread (NULL),
@@ -274,15 +274,15 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
 
     rc = RTSemEventMultiCreate (&m_eventThread);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTSemEventMultiCreate (&m_eventSend);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             rc = RTCritSectInit (&m_critsect);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 m_pfnThread = pfnThread;
                 m_pvUser    = pvUser;
@@ -295,12 +295,12 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
                                      RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
                                      pszThreadName);
 
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Wait until the thread is ready. */
                     rc = RTThreadUserWait (thread, 30000);
                     AssertRC (rc);
-                    Assert (!(m_fu32ThreadFlags & HGCMMSG_TF_INITIALIZING) || VBOX_FAILURE (rc));
+                    Assert (!(m_fu32ThreadFlags & HGCMMSG_TF_INITIALIZING) || RT_FAILURE (rc));
                 }
                 else
                 {
@@ -334,7 +334,7 @@ inline int HGCMThread::Enter (void)
     int rc = RTCritSectEnter (&m_critsect);
 
 #ifdef LOG_ENABLED
-    if (VBOX_FAILURE (rc))
+    if (RT_FAILURE (rc))
     {
         Log(("HGCMThread::MsgPost: FAILURE: could not obtain worker thread mutex, rc = %Vrc!!!\n", rc));
     }
@@ -357,7 +357,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWM
 
     bool fFromFreeList = false;
 
-    if (!pmsg && VBOX_SUCCESS(rc))
+    if (!pmsg && RT_SUCCESS(rc))
     {
         /* We have to allocate a new memory block. */
         pmsg = pfnNewMessage (u32MsgId);
@@ -368,7 +368,7 @@ int HGCMThread::MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWM
         }
     }
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Initialize just allocated message core */
         pmsg->InitializeCore (u32MsgId, m_handle);
@@ -401,7 +401,7 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
 
     rc = Enter ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         pMsg->m_pfnCallback = pfnCallback;
 
@@ -475,7 +475,7 @@ int HGCMThread::MsgGet (HGCMMsgCore **ppMsg)
             /* Move the message to the m_pMsgInProcessHead list */
             rc = Enter ();
 
-            if (VBOX_FAILURE (rc))
+            if (RT_FAILURE (rc))
             {
                 break;
             }
@@ -557,7 +557,7 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
     rc = Enter ();
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Remove the message from the InProcess queue. */
 
@@ -595,7 +595,7 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
         if (fWaited)
         {
-            /* If message is being waited, then it is referenced by the waiter and the pointer 
+            /* If message is being waited, then it is referenced by the waiter and the pointer
              * if valid even after hgcmObjDeleteHandle.
              */
             pMsg->m_rcSend = result;
@@ -637,7 +637,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
         rc = VERR_NO_MEMORY;
     }
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         *pHandle = handle;
     }
@@ -738,7 +738,7 @@ int hgcmMsgPost (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback)
 {
     int rc = hgcmMsgPostInternal (hMsg, pfnCallback, false);
 
-    if (VBOX_SUCCESS (rc))
+    if (RT_SUCCESS (rc))
     {
         rc = VINF_HGCM_ASYNC_EXECUTE;
     }

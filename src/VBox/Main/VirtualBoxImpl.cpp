@@ -167,7 +167,7 @@ HRESULT VirtualBox::init()
     {
         char homeDir [RTPATH_MAX];
         int vrc = com::GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Could not create the VirtualBox home directory '%s'"
                     "(%Vrc)"),
@@ -197,11 +197,11 @@ HRESULT VirtualBox::init()
             int vrc = RTFileOpen (&handle, vboxConfigFile,
                                   RTFILE_O_READWRITE | RTFILE_O_CREATE |
                                   RTFILE_O_DENY_WRITE);
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
                 vrc = RTFileWrite (handle,
                                    (void *) gDefaultGlobalConfig,
                                    sizeof (gDefaultGlobalConfig), NULL);
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
             {
                 rc = setError (E_FAIL, tr ("Could not create the default settings file "
                                            "'%s' (%Vrc)"),
@@ -323,7 +323,7 @@ HRESULT VirtualBox::init()
                                   0, RTTHREADTYPE_MAIN_WORKER,
                                   RTTHREADFLAGS_WAITABLE, "Watcher");
         ComAssertRC (vrc);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             rc = E_FAIL;
     }
 
@@ -432,7 +432,7 @@ void VirtualBox::uninit()
              *  a NULL event!)
              */
             int vrc = RTThreadWait (mAsyncEventThread, 60000, NULL);
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
                 LogWarningFunc (("RTThreadWait(%RTthrd) -> %Vrc\n",
                                  mAsyncEventThread, vrc));
         }
@@ -2071,7 +2071,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         SVCHlpClient client;
         vrc = client.create (Utf8StrFmt ("VirtualBox\\SVCHelper\\{%Vuuid}",
                                          id.raw()));
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             rc = setError (E_FAIL,
                 tr ("Could not create the communication channel (%Vrc)"), vrc);
@@ -2128,7 +2128,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         {
             const char *args[] = { exePath, "/Helper", client.name(), 0 };
             vrc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &pid);
-            if (VBOX_FAILURE (vrc))
+            if (RT_FAILURE (vrc))
             {
                 rc = setError (E_FAIL,
                     tr ("Could not launch a process '%s' (%Vrc)"), exePath, vrc);
@@ -2138,7 +2138,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
         /* wait for the client to connect */
         vrc = client.connect();
-        if (VBOX_SUCCESS (vrc))
+        if (RT_SUCCESS (vrc))
         {
             /* start the user supplied function */
             rc = d->func (&client, d->progress, d->user, &vrc);
@@ -2148,11 +2148,11 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         /* send the termination signal to the process anyway */
         {
             int vrc2 = client.write (SVCHlpMsg::Null);
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
                 vrc = vrc2;
         }
 
-        if (SUCCEEDED (rc) && VBOX_FAILURE (vrc))
+        if (SUCCEEDED (rc) && RT_FAILURE (vrc))
         {
             rc = setError (E_FAIL,
                 tr ("Could not operate the communication channel (%Vrc)"), vrc);
@@ -2696,7 +2696,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
     if (aLocation != NULL)
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Invalid image file location '%ls' (%Vrc)"),
                 aLocation, vrc);
@@ -2768,7 +2768,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
     if (aLocation != NULL)
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Invalid image file location '%ls' (%Vrc)"),
                 aLocation, vrc);
@@ -2833,7 +2833,7 @@ int VirtualBox::calculateFullPath (const char *aPath, Utf8Str &aResult)
 
     char folder [RTPATH_MAX];
     int vrc = RTPathAbsEx (mData.mHomeDir, aPath, folder, sizeof (folder));
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS (vrc))
         aResult = folder;
 
     return vrc;
@@ -3687,7 +3687,7 @@ HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
     if (!RTDirExists (dir))
     {
         int vrc = RTDirCreateFullPath (dir, 0777);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             return setError (E_FAIL,
                 tr ("Could not create the directory '%s' (%Vrc)"),
@@ -3935,7 +3935,7 @@ HRESULT VirtualBox::lockConfig()
                              Utf8Str (mData.mCfgFile.mName),
                              RTFILE_O_READWRITE | RTFILE_O_OPEN |
                              RTFILE_O_DENY_WRITE);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
         {
             mData.mCfgFile.mHandle = NIL_RTFILE;
 
@@ -4166,7 +4166,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             bool update = false;
             bool updateSpawned = false;
 
-            if (VBOX_SUCCESS (vrc))
+            if (RT_SUCCESS (vrc))
             {
                 /* update event is signaled */
                 update = true;
@@ -4351,13 +4351,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
             if (!autoCaller.isOk())
                 break;
 
-            if (VBOX_SUCCESS (rc) || update || updateSpawned)
+            if (RT_SUCCESS (rc) || update || updateSpawned)
             {
-                /* VBOX_SUCCESS (rc) means an update event is signaled */
+                /* RT_SUCCESS (rc) means an update event is signaled */
 
                 AutoReadLock thatLock (that);
 
-                if (VBOX_SUCCESS (rc) || update)
+                if (RT_SUCCESS (rc) || update)
                 {
                     /* obtain a new set of opened machines */
                     machines.clear();
@@ -4374,7 +4374,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD thread, void *pvUser)
                     LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
                 }
 
-                if (VBOX_SUCCESS (rc) || updateSpawned)
+                if (RT_SUCCESS (rc) || updateSpawned)
                 {
                     /* obtain a new set of spawned machines */
                     spawnedMachines.clear();

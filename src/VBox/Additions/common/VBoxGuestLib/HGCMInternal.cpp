@@ -46,7 +46,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMConnect, sizeof (VMMDevHGCMConnect), VMMDevReq_HGCMConnect);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Initialize request memory */
         pHGCMConnect->header.fu32Flags = 0;
@@ -57,7 +57,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
         /* Issue request */
         rc = VbglGRPerform (&pHGCMConnect->header.header);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Check if host decides to process the request asynchronously. */
             if (rc == VINF_HGCM_ASYNC_EXECUTE)
@@ -68,7 +68,7 @@ DECLVBGL(int) VbglHGCMConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
 
             pConnectInfo->result = pHGCMConnect->header.result;
 
-            if (VBOX_SUCCESS (pConnectInfo->result))
+            if (RT_SUCCESS (pConnectInfo->result))
                 pConnectInfo->u32ClientID = pHGCMConnect->u32ClientID;
         }
 
@@ -93,7 +93,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMDisconnect, sizeof (VMMDevHGCMDisconnect), VMMDevReq_HGCMDisconnect);
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /* Initialize request memory */
         pHGCMDisconnect->header.fu32Flags = 0;
@@ -103,7 +103,7 @@ DECLVBGL(int) VbglHGCMDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
         /* Issue request */
         rc = VbglGRPerform (&pHGCMDisconnect->header.header);
 
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Check if host decides to process the request asynchronously. */
             if (rc == VINF_HGCM_ASYNC_EXECUTE)
@@ -150,7 +150,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     /* Anyone who needs this can re-enable it locally */
     /* dprintf (("VbglHGCMCall Allocated gr %p, rc = %Vrc, cbParms = %d\n", pHGCMCall, rc, cbParms)); */
 
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         void *apvCtx[VBOX_HGCM_MAX_PARMS];
         memset (apvCtx, 0, sizeof(void *) * pCallInfo->cParms);
@@ -164,7 +164,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         pHGCMCall->cParms      = pCallInfo->cParms;
 
         if (cbParms)
-        {           
+        {
             /* Lock user buffers. */
             pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
 
@@ -193,20 +193,20 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
 
                        These kind of problems actually applies to some patched linux kernels too, including older
                        fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);                   
+                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size, (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */);
                     break;
                 default:
                     /* make gcc happy */
                     break;
                 }
-                if (VBOX_FAILURE (rc))
+                if (RT_FAILURE (rc))
                     break;
             }
             memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
         }
 
         /* Check that the parameter locking was ok. */
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /* Anyone who needs this can re-enable it locally */
             /* dprintf (("calling VbglGRPerform\n")); */
@@ -217,16 +217,16 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
             /* Anyone who needs this can re-enable it locally */
             /* dprintf (("VbglGRPerform rc = %Vrc (header rc=%d)\n", rc, pHGCMCall->header.result)); */
 
-            /** If the call failed, but as a result of the request itself, then pretend success  
+            /** If the call failed, but as a result of the request itself, then pretend success
              *  Upper layers will interpret the result code in the packet.
              */
-            if (VBOX_FAILURE(rc) && rc == pHGCMCall->header.result)
+            if (RT_FAILURE(rc) && rc == pHGCMCall->header.result)
             {
                 Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
                 rc = VINF_SUCCESS;
             }
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 /* Check if host decides to process the request asynchronously. */
                 if (rc == VINF_HGCM_ASYNC_EXECUTE)
@@ -259,7 +259,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                 }
             }
         }
-            
+
         /* Unlock user buffers. */
         pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
 

@@ -35,7 +35,7 @@ int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
     do \
     { \
         RTPrintf("%s rc=%Vrc\n", str, rc); \
-        if (VBOX_FAILURE(rc)) \
+        if (RT_FAILURE(rc)) \
         { \
             VDIDiskCloseAllImages(pVdi); \
             return rc; \
@@ -45,7 +45,7 @@ int dotest(const char *pszBaseFilename, const char *pszDiffFilename)
 
     int rc = VDIDiskOpenImage(pVdi, pszBaseFilename, VDI_OPEN_FLAGS_NORMAL);
     RTPrintf("openImage() rc=%Vrc\n", rc);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         rc = VDICreateBaseImage(pszBaseFilename, VDI_IMAGE_TYPE_NORMAL,
 #ifdef _MSC_VER

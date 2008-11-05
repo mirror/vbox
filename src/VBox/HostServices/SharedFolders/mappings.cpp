@@ -85,10 +85,10 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
             int rc = RTUtf16ToUtf8(FolderMapping[i].pFolderName->String.ucs2, &utf8Root);
             AssertRC(rc);
 
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
                 rc = RTStrUtf8ToCurrentCP(&asciiroot, utf8Root);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = RTFsQueryProperties(asciiroot, &prop);
                     AssertRC(rc);
@@ -96,7 +96,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
                 }
                 RTStrFree(utf8Root);
             }
-            FolderMapping[i].fHostCaseSensitive = VBOX_SUCCESS(rc) ? prop.fCaseSensitive : false;
+            FolderMapping[i].fHostCaseSensitive = RT_SUCCESS(rc) ? prop.fCaseSensitive : false;
             break;
         }
     }
@@ -302,7 +302,7 @@ int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 deli
         PRTUTF16 utf16Name;
 
         rc = RTStrToUtf16 ((const char *) pszMapName->String.utf8, &utf16Name);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
             return rc;
 
         rc = vbsfQueryMappingIndex (utf16Name, &index);

@@ -140,7 +140,7 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
 
     TRACE_ENTRY();
     int vrc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    if (VBOX_FAILURE(vrc))
+    if (RT_FAILURE(vrc))
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                  "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", vrc);
     else
@@ -665,7 +665,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
                  (unsigned long) sizeRequest);
 
     rc = vmmdevInitRequest((VMMDevRequestHeader *)p, VMMDevReq_SetPointerShape);
-    if (VBOX_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         xf86DrvMsg(scrnIndex, X_ERROR, "Could not init VMM request: rc = %d\n", rc);
         xfree(p);
@@ -1047,7 +1047,7 @@ vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBi
 
 /**
  * Save video mode parameters to the registry.
- * 
+ *
  * @returns iprt status value
  * @param   pszName the name to save the mode parameters under
  * @param   cx      mode width
@@ -1066,7 +1066,7 @@ vboxSaveVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBits)
 
 /**
  * Retrieve video mode parameters from the registry.
- * 
+ *
  * @returns iprt status value
  * @param   pszName the name under which the mode parameters are saved
  * @param   pcx     where to store the mode width

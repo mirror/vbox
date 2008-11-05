@@ -1213,7 +1213,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             // first check if a UUID was supplied
-            if (VBOX_FAILURE(RTUuidFromStr(uuid.ptr(), argv[curArg])))
+            if (RT_FAILURE(RTUuidFromStr(uuid.ptr(), argv[curArg])))
             {
                 LogFlow(("invalid UUID format, assuming it's a VM name\n"));
                 vmName = argv[curArg];
@@ -1952,27 +1952,27 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* load the SDL_ttf library and get the required imports */
         int rcVBox;
         rcVBox = RTLdrLoad(LIBSDL_TTF_NAME, &gLibrarySDL_ttf);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Init", (void**)&pTTF_Init);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_OpenFont", (void**)&pTTF_OpenFont);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Solid", (void**)&pTTF_RenderUTF8_Solid);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
         {
             /* silently ignore errors here */
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Blended", (void**)&pTTF_RenderUTF8_Blended);
-            if (VBOX_FAILURE(rcVBox))
+            if (RT_FAILURE(rcVBox))
                 pTTF_RenderUTF8_Blended = NULL;
             rcVBox = VINF_SUCCESS;
         }
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_CloseFont", (void**)&pTTF_CloseFont);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
-        if (VBOX_SUCCESS(rcVBox))
+        if (RT_SUCCESS(rcVBox))
             rcVBox = gpFrameBuffer->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
-        if (VBOX_FAILURE(rcVBox))
+        if (RT_FAILURE(rcVBox))
         {
             RTPrintf("Error: could not initialize secure labeling: rc = %Vrc\n", rcVBox);
             goto leave;
@@ -2462,7 +2462,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                 enmHKeyState = HKEYSTATE_USED;
                                 break;
                             }
-                            if (VBOX_SUCCESS(rc))
+                            if (RT_SUCCESS(rc))
                                 goto leave;
                         }
                         else /* SDL_KEYUP */
@@ -2499,7 +2499,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         if (event.type == SDL_KEYDOWN)
                         {
                             int rc = HandleHostKey(&event.key);
-                            if (VBOX_SUCCESS(rc) && rc != VINF_SUCCESS)
+                            if (RT_SUCCESS(rc) && rc != VINF_SUCCESS)
                                 goto leave;
                         }
                         break;
@@ -2930,7 +2930,7 @@ int main(int argc, char **argv)
      * Before we do *anything*, we initialize the runtime.
      */
     int rcRT = RTR3InitAndSUPLib();
-    if (VBOX_FAILURE(rcRT))
+    if (RT_FAILURE(rcRT))
     {
         RTPrintf("Error: RTR3Init failed rcRC=%d\n", rcRT);
         return 1;
@@ -4820,7 +4820,7 @@ static Uint32 QuitTimer(Uint32 interval, void *param)
     {
         int rc = gConsole->GetPowerButtonHandled(&fHandled);
         LogRel(("QuitTimer: rc=%d handled=%d\n", rc, fHandled));
-        if (VBOX_FAILURE(rc) || !fHandled)
+        if (RT_FAILURE(rc) || !fHandled)
         {
             /* event was not handled, power down the guest */
             gfACPITerm = FALSE;

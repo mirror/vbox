@@ -56,7 +56,7 @@ int main(int argc, char **argv)
      * Init runtime.
      */
     rc = RTR3Init();
-    if (!VBOX_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
         printf("fatal error: failed to initialize runtime. (rc=%d)\n", rc);
         return 1;
@@ -99,13 +99,13 @@ int main(int argc, char **argv)
      */
     PVM pVM = NULL;
     rc = VMR3Create(pszVMConfig, &pVM);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         /*
          * Run the VM.
          */
         rc = VMR3PowerOn(pVM);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
         {
             /*
              * Wait for user to press Control-C,
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
          * Destroy the VM.
          */
         int rc2 = VMR3Destroy(pVM);
-        if (!VBOX_SUCCESS(rc2))
+        if (!RT_SUCCESS(rc2))
         {
             printf("warning: VMR3Destroy() failed with rc=%d\n", rc);
             rc = 1;

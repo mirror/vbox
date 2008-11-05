@@ -65,7 +65,7 @@ DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, 
     {
         unsigned cbInstr;
         int rc = DISInstr(pCpu, pvCodeBlock + i, 0, &cbInstr, szOutput);
-        if (VBOX_FAILURE(rc))
+        if (RT_FAILURE(rc))
             return rc;
 
         i += cbInstr;

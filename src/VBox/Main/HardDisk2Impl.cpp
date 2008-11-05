@@ -1314,7 +1314,7 @@ HRESULT HardDisk2::compareLocationTo (const char *aLocation, int &aResult)
         }
 
         int vrc = mVirtualBox->calculateFullPath (location, location);
-        if (VBOX_FAILURE (vrc))
+        if (RT_FAILURE (vrc))
             return setError (E_FAIL,
                 tr ("Invalid hard disk storage file location '%s' (%Vrc)"),
                 location.raw(), vrc);
@@ -2221,7 +2221,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
     /* get the full file name */
     Utf8Str locationFull;
     int vrc = mVirtualBox->calculateFullPath (location, locationFull);
-    if (VBOX_FAILURE (vrc))
+    if (RT_FAILURE (vrc))
         return setError (E_FAIL,
             tr ("Invalid hard disk storage file location '%s' (%Vrc)"),
             location.raw(), vrc);
