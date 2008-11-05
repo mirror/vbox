@@ -1098,9 +1098,11 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
      * another thread when we are in InUinint, provided that all such calls
      * use the AutoCaller class of course). InUinint is also used as a flag
      * by removeDependentChild() that prevents touching mDependentChildren
-     * from outside. Therefore, we assert.
+     * from outside. Therefore, we assert. Note that InInit is also fine since
+     * no any object may access us by that time.
      */
-    AssertReturnVoid (autoCaller.state() == InUninit);
+    AssertReturnVoid (autoCaller.state() == InUninit ||
+                      autoCaller.state() == InInit);
 
     if (mDependentChildren.size())
     {
