@@ -34,6 +34,7 @@
 #define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 #define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 
+#define assert(cond) Assert(cond)
 
 #else /* !VBOX */
 
