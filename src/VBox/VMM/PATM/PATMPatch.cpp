@@ -70,7 +70,7 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
 
     Assert(uType == FIXUP_ABSOLUTE || ((uType == FIXUP_REL_JMPTOPATCH || uType == FIXUP_REL_JMPTOGUEST) && pSource && pDest));
 
-    LogFlow(("patmPatchAddReloc32 type=%d pRelocGC=%VRv source=%VRv dest=%VRv\n", uType, pRelocHC - pVM->patm.s.pPatchMemGC + pVM->patm.s.pPatchMemGC , pSource, pDest));
+    LogFlow(("patmPatchAddReloc32 type=%d pRelocGC=%RRv source=%RRv dest=%RRv\n", uType, pRelocHC - pVM->patm.s.pPatchMemGC + pVM->patm.s.pPatchMemGC , pSource, pDest));
 
     pRec = (PRELOCREC)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pRec));
     Assert(pRec);
@@ -470,7 +470,7 @@ int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RTRCPTR pNe
     PATMCALLINFO callInfo;
     uint32_t     size;
 
-    Log(("patmPatchGenSti at %VRv; next %VRv\n", pCurInstrGC, pNextInstrGC));
+    Log(("patmPatchGenSti at %RRv; next %RRv\n", pCurInstrGC, pNextInstrGC));
     PATCHGEN_PROLOG(pVM, pPatch);
     callInfo.pNextInstrGC = pNextInstrGC;
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMStiRecord, 0, false, &callInfo);
@@ -489,7 +489,7 @@ int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAdd
 
     callInfo.pNextInstrGC = pReturnAddrGC;
 
-    Log(("patmPatchGenPopf at %VRv\n", pReturnAddrGC));
+    Log(("patmPatchGenPopf at %RRv\n", pReturnAddrGC));
 
     /* Note: keep IOPL in mind when changing any of this!! (see comments in PATMA.asm, PATMPopf32Replacement) */
     if (fSizeOverride == true)
@@ -724,14 +724,14 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     }
     else
     {
-        AssertMsg(PATMIsPatchGCAddr(pVM, pTargetGC) == false, ("Target is already a patch address (%VRv)?!?\n", pTargetGC));
+        AssertMsg(PATMIsPatchGCAddr(pVM, pTargetGC) == false, ("Target is already a patch address (%RRv)?!?\n", pTargetGC));
         Assert(pTargetGC);
         Assert(OP_PARM_VTYPE(pCpu->pCurInstr->param1) == OP_PARM_J);
 
         /** @todo wasting memory as the complex search is overkill and we need only one lookup slot... */
 
         /* Relative call to patch code (patch to patch -> no fixup). */
-        Log(("PatchGenCall from %VRv (next=%VRv) to %VRv\n", pCurInstrGC, pCurInstrGC + pCpu->opsize, pTargetGC));
+        Log(("PatchGenCall from %RRv (next=%RRv) to %RRv\n", pCurInstrGC, pCurInstrGC + pCpu->opsize, pTargetGC));
 
         /* We push it onto the stack here, so the guest's context isn't ruined when this happens to cause
          * a page fault. The assembly code restores the stack afterwards.
@@ -859,7 +859,7 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     /* Remember start of this patch for below. */
     pPatchRetInstrGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
 
-    Log(("patmPatchGenRet %VRv\n", pCurInstrGC));
+    Log(("patmPatchGenRet %RRv\n", pCurInstrGC));
 
     /** @note optimization: multiple identical ret instruction in a single patch can share a single patched ret. */
     if (    pPatch->pTempInfo->pPatchRetInstrGC
@@ -943,10 +943,10 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretFunctionRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
-    Log(("pfnHelperCallGC %VRv\n", pVM->patm.s.pfnHelperCallGC));
-    Log(("pfnHelperRetGC  %VRv\n", pVM->patm.s.pfnHelperRetGC));
-    Log(("pfnHelperJumpGC %VRv\n", pVM->patm.s.pfnHelperJumpGC));
-    Log(("pfnHelperIretGC %VRv\n", pVM->patm.s.pfnHelperIretGC));
+    Log(("pfnHelperCallGC %RRv\n", pVM->patm.s.pfnHelperCallGC));
+    Log(("pfnHelperRetGC  %RRv\n", pVM->patm.s.pfnHelperRetGC));
+    Log(("pfnHelperJumpGC %RRv\n", pVM->patm.s.pfnHelperJumpGC));
+    Log(("pfnHelperIretGC %RRv\n", pVM->patm.s.pfnHelperIretGC));
 
     return VINF_SUCCESS;
 }
@@ -1272,7 +1272,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
 {
     uint32_t size, offset;
 
-    Log(("patmPatchGenMovFromSS %VRv\n", pCurInstrGC));
+    Log(("patmPatchGenMovFromSS %RRv\n", pCurInstrGC));
 
     Assert(pPatch->flags & PATMFL_CODE32);
 

@@ -657,7 +657,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                     eflags.u32 &= ~(X86_EFL_TF | X86_EFL_VM | X86_EFL_RF | X86_EFL_NT);
 #ifdef DEBUG
                     for (int j = idx; j < 0; j++)
-                        Log4(("Stack %VRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
+                        Log4(("Stack %RRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
 
                     Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
                           "eip=%08x esp=%08x ebp=%08x iopl=%d\n"
@@ -668,7 +668,7 @@ VMMDECL(int) TRPMForwardTrap(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t iGate, ui
                           (RTSEL)pRegFrame->fs, (RTSEL)pRegFrame->gs, eflags.u32));
 #endif
 
-                    Log(("PATM Handler %VRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
+                    Log(("PATM Handler %RRv Adjusted stack %08X new EFLAGS=%08X idx=%d dpl=%d cpl=%d\n", pVM->trpm.s.aGuestTrapHandler[iGate], esp_r0, eflags.u32, idx, dpl, cpl));
 
                     /* Make sure the internal guest context structure is up-to-date. */
                     CPUMSetGuestCR2(pVM, pVM->trpm.s.uActiveCR2);

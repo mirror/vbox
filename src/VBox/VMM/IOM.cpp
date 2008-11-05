@@ -600,7 +600,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
                                       RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                       RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%VRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv  pfnInStrCallback=%RRv pszDesc=%s\n",
+    LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv  pfnInStrCallback=%RRv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
 
     /*
@@ -1208,7 +1208,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneRC(PAVLROIOPORTNODECORE pNode, void *
     PIOMIOPORTRANGERC pRange = (PIOMIOPORTRANGERC)pNode;
     PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
     pHlp->pfnPrintf(pHlp,
-                    "%04x-%04x %VRv %VRv %VRv %VRv %s\n",
+                    "%04x-%04x %RRv %RRv %RRv %RRv %s\n",
                     pRange->Core.Key,
                     pRange->Core.KeyLast,
                     pRange->pDevIns,
@@ -1263,26 +1263,26 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (pVM->iom.s.pRangeLastReadRC)
     {
         PIOMIOPORTRANGERC pRange = (PIOMIOPORTRANGERC)MMHyperRCToCC(pVM, pVM->iom.s.pRangeLastReadRC);
-        pHlp->pfnPrintf(pHlp, "RC Read  Ports: %#04x-%#04x %VRv %s\n",
+        pHlp->pfnPrintf(pHlp, "RC Read  Ports: %#04x-%#04x %RRv %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pVM->iom.s.pRangeLastReadRC, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastReadRC)
     {
         PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperRCToCC(pVM, pVM->iom.s.pStatsLastReadRC);
-        pHlp->pfnPrintf(pHlp, "RC Read  Stats: %#04x %VRv\n",
+        pHlp->pfnPrintf(pHlp, "RC Read  Stats: %#04x %RRv\n",
                         pRange->Core.Key, pVM->iom.s.pStatsLastReadRC);
     }
 
     if (pVM->iom.s.pRangeLastWriteRC)
     {
         PIOMIOPORTRANGERC pRange = (PIOMIOPORTRANGERC)MMHyperRCToCC(pVM, pVM->iom.s.pRangeLastWriteRC);
-        pHlp->pfnPrintf(pHlp, "RC Write Ports: %#04x-%#04x %VRv %s\n",
+        pHlp->pfnPrintf(pHlp, "RC Write Ports: %#04x-%#04x %RRv %s\n",
                         pRange->Port, pRange->Port + pRange->cPorts, pVM->iom.s.pRangeLastWriteRC, pRange->pszDesc);
     }
     if (pVM->iom.s.pStatsLastWriteRC)
     {
         PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperRCToCC(pVM, pVM->iom.s.pStatsLastWriteRC);
-        pHlp->pfnPrintf(pHlp, "RC Write Stats: %#04x %VRv\n",
+        pHlp->pfnPrintf(pHlp, "RC Write Stats: %#04x %RRv\n",
                         pRange->Core.Key, pVM->iom.s.pStatsLastWriteRC);
     }
 
