@@ -61,8 +61,8 @@ typedef struct
     RTGCUINTPTR     cbSegLimit;
     /** The guest paging mode. */
     PGMMODE         enmMode;
-    /** Pointer to the current page - HC Ptr. */
-    void const     *pvPageHC;
+    /** Pointer to the current page - R3 Ptr. */
+    void const     *pvPageR3;
     /** Pointer to the current page - GC Ptr. */
     RTGCPTR         pvPageGC;
     /** Pointer to the next instruction (relative to GCPtrSegBase). */
@@ -100,7 +100,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->cbSegLimit      = pSelInfo->cbLimit;
     pState->enmMode         = enmMode;
     pState->pvPageGC        = 0;
-    pState->pvPageHC        = NULL;
+    pState->pvPageR3        = NULL;
     pState->pVM             = pVM;
     pState->fLocked         = false;
     pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long;
@@ -188,7 +188,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
         RTGCUINTPTR GCPtr = PtrSrc + pState->GCPtrSegBase;
 
         /* Need to update the page translation? */
-        if (    !pState->pvPageHC
+        if (    !pState->pvPageR3
             ||  (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
         {
             int rc = VINF_SUCCESS;
@@ -197,8 +197,8 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
             if (MMHyperIsInsideArea(pState->pVM, pState->pvPageGC))
             {
-                pState->pvPageHC = MMHyperGC2HC(pState->pVM, pState->pvPageGC);
-                if (!pState->pvPageHC)
+                pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->pvPageGC);
+                if (!pState->pvPageR3)
                     rc = VERR_INVALID_POINTER;
             }
             else
@@ -207,14 +207,14 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
                     PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
 
                 if (pState->enmMode <= PGMMODE_PROTECTED)
-                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
                 else
-                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageHC, &pState->PageMapLock);
+                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVM, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
                 pState->fLocked = RT_SUCCESS_NP(rc);
             }
             if (RT_FAILURE(rc))
             {
-                pState->pvPageHC = NULL;
+                pState->pvPageR3 = NULL;
                 return rc;
             }
         }
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             cb = cbRead;
 
         /* read and advance */
-        memcpy(pu8Dst, (char *)pState->pvPageHC + (GCPtr & PAGE_OFFSET_MASK), cb);
+        memcpy(pu8Dst, (char *)pState->pvPageR3 + (GCPtr & PAGE_OFFSET_MASK), cb);
         cbRead -= cb;
         if (!cbRead)
             return VINF_SUCCESS;

@@ -119,8 +119,8 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
     rc = MMR3HyperAllocOnceNoRel(pVM, CSAM_PGDIRBMP_CHUNKS*sizeof(RTRCPTR), 0, MM_TAG_CSAM, (void **)&pVM->csam.s.pPDGCBitmapHC);
     AssertRCReturn(rc, rc);
-    pVM->csam.s.pPDBitmapGC   = MMHyperHC2GC(pVM, pVM->csam.s.pPDGCBitmapHC);
-    pVM->csam.s.pPDHCBitmapGC = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC);
+    pVM->csam.s.pPDBitmapGC   = MMHyperR3ToRC(pVM, pVM->csam.s.pPDGCBitmapHC);
+    pVM->csam.s.pPDHCBitmapGC = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC);
 
     rc = csamReinit(pVM);
     AssertRCReturn(rc, rc);
@@ -259,8 +259,8 @@ VMMR3DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     if (offDelta)
     {
         /* Adjust pgdir and page bitmap pointers. */
-        pVM->csam.s.pPDBitmapGC   = MMHyperHC2GC(pVM, pVM->csam.s.pPDGCBitmapHC);
-        pVM->csam.s.pPDHCBitmapGC = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC);
+        pVM->csam.s.pPDBitmapGC   = MMHyperR3ToRC(pVM, pVM->csam.s.pPDGCBitmapHC);
+        pVM->csam.s.pPDHCBitmapGC = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC);
 
         for(int i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
         {
@@ -492,7 +492,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
                 return rc;
             }
             /* Convert to GC pointer. */
-            pVM->csam.s.pPDGCBitmapHC[i] = MMHyperHC2GC(pVM, pVM->csam.s.pPDBitmapHC[i]);
+            pVM->csam.s.pPDGCBitmapHC[i] = MMHyperR3ToRC(pVM, pVM->csam.s.pPDBitmapHC[i]);
             Assert(pVM->csam.s.pPDGCBitmapHC[i]);
 
             /* Restore the bitmap. */

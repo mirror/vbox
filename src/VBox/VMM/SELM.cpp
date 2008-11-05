@@ -267,16 +267,16 @@ VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
     if (f)
     {
         PX86DESC paGdt = pVM->selm.s.paGdtR3;
-        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3]), sizeof(paGdt[0]),
+        rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] >> 3]), sizeof(paGdt[0]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, MMHyperHC2GC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3]), sizeof(paGdt[0]),
+        rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, &paGdt[pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS] >> 3]), sizeof(paGdt[0]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]),
+        rc = PGMMapSetPage(pVM, VM_RC_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
-        rc = PGMMapSetPage(pVM, VM_GUEST_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]),
+        rc = PGMMapSetPage(pVM, VM_RC_ADDR(pVM, &pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]), sizeof(pVM->selm.s.aHyperSel[SELM_HYPER_SEL_TSS_TRAP08]),
                            X86_PTE_RW | X86_PTE_P | X86_PTE_A | X86_PTE_D);
         AssertRC(rc);
     }
@@ -398,7 +398,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     /*
      * Update GDTR and selector.
      */
-    CPUMSetHyperGDTR(pVM, MMHyperHC2GC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
+    CPUMSetHyperGDTR(pVM, MMHyperR3ToRC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
 
     /** @todo selector relocations should be a seperate operation? */
     CPUMSetHyperCS(pVM, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);

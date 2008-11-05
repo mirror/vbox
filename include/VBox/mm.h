@@ -278,20 +278,6 @@ DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
 #endif
 
 
-#ifdef IN_GC
-VMMDECL(RTHCPTR)    MMHyper2HC(PVM pVM, uintptr_t Ptr);
-#else
-DECLINLINE(RTHCPTR) MMHyper2HC(PVM pVM, uintptr_t Ptr)
-{
-    NOREF(pVM);
-    return (RTHCPTR)Ptr;
-}
-#endif
-
-#define MMHyperHC2GC(pVM, R3Ptr) MMHyperR3ToRC((pVM), (R3Ptr)) /**< @deprecated */
-#define MMHyperGC2HC(pVM, RCPtr) MMHyperRCToR3((pVM), (RCPtr)) /**< @deprecated */
-
-
 VMMDECL(int)        MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 VMMDECL(int)        MMHyperFree(PVM pVM, void *pv);
 VMMDECL(void)       MMHyperHeapCheck(PVM pVM);
