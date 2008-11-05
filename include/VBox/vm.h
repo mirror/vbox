@@ -463,9 +463,6 @@ typedef struct VM
     R3PTRTYPE(struct VM *)      pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
-    /** Raw-mode Context VM Pointer.
-     * @deprecated Use VM::pVMRC. */
-    RCPTRTYPE(struct VM *)      pVMGCUnused;
     /** Raw-mode Context VM Pointer. */
     RCPTRTYPE(struct VM *)      pVMRC;
 
@@ -481,7 +478,7 @@ typedef struct VM
     uint32_t                    offVMCPU;
 
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[5];
+    uint32_t                    u32Reserved[6];
 
     /** @name Public VMM Switcher APIs
      * @{ */
