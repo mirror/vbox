@@ -108,7 +108,7 @@ typedef struct VBOXHGCMSVCPARM
     int getUInt32 (uint32_t *u32)
     {
         int rc = VINF_SUCCESS;
-        if (type != VBOX_HGCM_SVC_PARM_64BIT)
+        if (type != VBOX_HGCM_SVC_PARM_32BIT)
             rc = VERR_INVALID_PARAMETER;
         if (RT_SUCCESS(rc))
             *u32 = u.uint32;
