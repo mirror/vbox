@@ -1158,7 +1158,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings);
     while (pCur)
     {
-        RTGCUINTPTR off = (RTGCUINTPTR)GCPtrSrc - (RTGCUINTPTR)pCur->GCPtr;
+        RTGCUINTPTR off = GCPtrSrc - pCur->GCPtr;
         if (off < pCur->cb)
         {
             if (off + cb > pCur->cb)

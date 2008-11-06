@@ -434,7 +434,7 @@ VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame
 VMMDECL(int) PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
-    int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, (RTGCUINTPTR)GCPtrPage);
+    int rc = PGM_BTH_PFN(PrefetchPage, pVM)(pVM, GCPtrPage);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,Prefetch), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     return rc;
@@ -744,7 +744,7 @@ VMMDECL(int) PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pv
  */
 VMMDECL(int) PGMShwGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-    return PGM_SHW_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, pfFlags, pHCPhys);
+    return PGM_SHW_PFN(GetPage,pVM)(pVM, GCPtr, pfFlags, pHCPhys);
 }
 
 
@@ -786,14 +786,14 @@ VMMDECL(int) PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
     /*
      * Align the input.
      */
-    cb     += (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
+    cb     += GCPtr & PAGE_OFFSET_MASK;
     cb      = RT_ALIGN_Z(cb, PAGE_SIZE);
-    GCPtr   = (RTGCPTR)((RTGCUINTPTR)GCPtr & PAGE_BASE_GC_MASK); /** @todo this ain't necessary, right... */
+    GCPtr   = (GCPtr & PAGE_BASE_GC_MASK); /** @todo this ain't necessary, right... */
 
     /*
      * Call worker.
      */
-    return PGM_SHW_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
+    return PGM_SHW_PFN(ModifyPage, pVM)(pVM, GCPtr, cb, fFlags, fMask);
 }
 
 
@@ -1149,7 +1149,7 @@ VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, P
  */
 VMMDECL(int) PGMGstGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
-    return PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, pfFlags, pGCPhys);
+    return PGM_GST_PFN(GetPage,pVM)(pVM, GCPtr, pfFlags, pGCPhys);
 }
 
 
@@ -1211,14 +1211,14 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
     /*
      * Adjust input.
      */
-    cb     += (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
+    cb     += GCPtr & PAGE_OFFSET_MASK;
     cb      = RT_ALIGN_Z(cb, PAGE_SIZE);
-    GCPtr   = (RTGCPTR)((RTGCUINTPTR)GCPtr & PAGE_BASE_GC_MASK);
+    GCPtr   = (GCPtr & PAGE_BASE_GC_MASK);
 
     /*
      * Call worker.
      */
-    int rc = PGM_GST_PFN(ModifyPage, pVM)(pVM, (RTGCUINTPTR)GCPtr, cb, fFlags, fMask);
+    int rc = PGM_GST_PFN(ModifyPage, pVM)(pVM, GCPtr, cb, fFlags, fMask);
 
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,GstModifyPage), a);
     return rc;
@@ -2008,8 +2008,8 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
          pMapping = pMapping->CTX_SUFF(pNext))
     {
         /** @todo This is slow and should be optimized, but since it's just assertions I don't care now. */
-        for (RTGCUINTPTR GCPtr = (RTGCUINTPTR)pMapping->GCPtr;
-              GCPtr <= (RTGCUINTPTR)pMapping->GCPtrLast;
+        for (RTGCUINTPTR GCPtr = pMapping->GCPtr;
+              GCPtr <= pMapping->GCPtrLast;
               GCPtr += PAGE_SIZE)
         {
             int rc = PGMGstGetPage(pVM, (RTGCPTR)GCPtr, NULL, NULL);
@@ -2041,7 +2041,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 VMMDECL(unsigned) PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCUINTPTR)0);
+    unsigned cErrors = PGM_BTH_PFN(AssertCR3, pVM)(pVM, cr3, cr4, 0, ~(RTGCPTR)0);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     return cErrors;
     return 0;

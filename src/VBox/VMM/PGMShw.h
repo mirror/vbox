@@ -80,12 +80,12 @@ __BEGIN_DECLS
 /* r3 */
 PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_SHW_DECL(int, Enter)(PVM pVM);
-PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta);
+PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta);
 PGM_SHW_DECL(int, Exit)(PVM pVM);
 
 /* all */
-PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 __END_DECLS
 
 
@@ -156,7 +156,7 @@ PGM_SHW_DECL(int, Enter)(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   offDelta    The reloation offset.
  */
-PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta)
+PGM_SHW_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
 {
     /* nothing special to do here - InitData does the job. */
     return VINF_SUCCESS;
