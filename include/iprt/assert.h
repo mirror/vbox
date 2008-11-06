@@ -2038,6 +2038,17 @@ __END_DECLS
  */
 #define AssertGCPhys32(GCPhys)          AssertMsg(VALID_PHYS32(GCPhys), ("%RGp\n", (RTGCPHYS)(GCPhys)))
 
+/** @def AssertGCPtr32
+ * Asserts that the high dword of a physical address is zero
+ *
+ * @param   GCPtr       The address (RTGCPTR).
+ */
+#if GC_ARCH_BITS == 32
+# define AssertGCPtr32(GCPtr)           do { } while (0)
+#else
+# define AssertGCPtr32(GCPtr)           AssertMsg(!((GCPtr) & UINT64_C(0xffffffff00000000)), ("%RGv\n", GCPtr))
+#endif
+
 /** @} */
 
 /** @} */
