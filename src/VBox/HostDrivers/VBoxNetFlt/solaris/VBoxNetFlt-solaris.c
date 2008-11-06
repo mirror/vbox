@@ -1793,6 +1793,12 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 && RT_SUCCESS(rc2))
                             {
                                 /*
+                                 * Inject/Eject from the host IP stack.
+                                 */
+                                if (!fAttach)
+                                    vboxNetFltRetain(pThis, false /* fBusy */);
+
+                                /*
                                  * Set global data which will be grabbed by ModOpen.
                                  * There is a known (though very unlikely) race here because
                                  * of the inability to pass user data while inserting.
@@ -1800,11 +1806,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 g_VBoxNetFltSolarisInstance = pThis;
                                 g_VBoxNetFltSolarisStreamType = kIp4Stream;
 
-                                /*
-                                 * Inject/Eject from the host IP stack.
-                                 */
-                                if (!fAttach)
-                                    vboxNetFltRetain(pThis, false /* fBusy */);
                                 rc = strioctl(pIp4VNode, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K,
                                             kcred, &ret);
                                 if (!rc)
@@ -1853,28 +1854,33 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                          * Try failing gracefully during attach.
                                          */
                                         if (fAttach)
-                                            strioctl(pIp4VNode, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
+                                            strioctl(pArpVNode, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
                                     }
                                     else
                                     {
                                         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to %s the ARP stack. rc=%d\n",
                                                 fAttach ? "inject into" : "eject from", rc));
-                                        if (!fAttach)
-                                            vboxNetFltRelease(pThis, false /* fBusy */);
                                     }
 
                                     if (fAttach)
                                         strioctl(pIp4VNode, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
 
                                     vboxNetFltSolarisRelinkIp4(pUdp4VNode, &Ip4Interface, Ip4MuxFd, ArpMuxFd);
+
+                                    if (!fAttach)
+                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
                                 else
                                 {
                                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to %s the IP stack. rc=%d\n",
                                             fAttach ? "inject into" : "eject from", rc));
-                                    if (!fAttach)
-                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
+
+                                g_VBoxNetFltSolarisInstance = NULL;
+                                g_VBoxNetFltSolarisStreamType = kUndefined;
+
+                                if (!fAttach)
+                                    vboxNetFltRelease(pThis, false /* fBusy */);
                             }
                             else
                                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc, rc2));
@@ -2010,6 +2016,9 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                             rc = vboxNetFltSolarisDetermineModPos(fAttach, pIp6VNode, &StrMod.pos);
                             if (RT_SUCCESS(rc))
                             {
+                                if (!fAttach)
+                                    vboxNetFltRetain(pThis, false /* fBusy */);
+
                                 /*
                                  * Set global data which will be grabbed by ModOpen.
                                  * There is a known (though very unlikely) race here because
@@ -2017,9 +2026,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                  */
                                 g_VBoxNetFltSolarisInstance = pThis;
                                 g_VBoxNetFltSolarisStreamType = kIp6Stream;
-
-                                if (!fAttach)
-                                    vboxNetFltRetain(pThis, false /* fBusy */);
 
                                 /*
                                  * Inject/Eject from the host IPv6 stack.
