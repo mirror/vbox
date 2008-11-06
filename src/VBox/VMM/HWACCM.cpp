@@ -172,10 +172,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvd,               "/HWACCM/CPU%d/Exit/Instr/Invd");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCpuid,              "/HWACCM/CPU%d/Exit/Instr/Cpuid");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitRdtsc,              "/HWACCM/CPU%d/Exit/Instr/Rdtsc");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxWrite,           "/HWACCM/CPU%d/Exit/Instr/CRx/Write");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxRead,            "/HWACCM/CPU%d/Exit/Instr/CRx/Read");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxWrite,           "/HWACCM/CPU%d/Exit/Instr/DRx/Write");
-        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxRead,            "/HWACCM/CPU%d/Exit/Instr/DRx/Read");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxWrite,           "/HWACCM/CPU%d/Exit/Instr/CR/Write");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxRead,            "/HWACCM/CPU%d/Exit/Instr/CR/Read");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxWrite,           "/HWACCM/CPU%d/Exit/Instr/DR/Write");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxRead,            "/HWACCM/CPU%d/Exit/Instr/DR/Read");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCLTS,               "/HWACCM/CPU%d/Exit/Instr/CLTS");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitLMSW,               "/HWACCM/CPU%d/Exit/Instr/LMSW");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOWrite,            "/HWACCM/CPU%d/Exit/IO/Write");
