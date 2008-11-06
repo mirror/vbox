@@ -1009,13 +1009,13 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
         /*
          * Check if the modified PDEs are present and mappings.
          */
-        const RTGCUINTPTR offPD = GCPhysFault & PAGE_OFFSET_MASK;
+        const RTGCUINTPTR   offPD = GCPhysFault & PAGE_OFFSET_MASK;
         const unsigned      iPD1  = offPD / sizeof(X86PDE);
         const unsigned      iPD2  = (offPD + cb - 1) / sizeof(X86PDE);
 
         Assert(cb > 0 && cb <= 8);
-        Assert(iPD1 < RT_ELEMENTS(pVM->pgm.s.CTX_SUFF(pGuestPD)->a)); /// @todo R3/R0 separation.
-        Assert(iPD2 < RT_ELEMENTS(pVM->pgm.s.CTX_SUFF(pGuestPD)->a));
+        Assert(iPD1 < X86_PG_ENTRIES);
+        Assert(iPD2 < X86_PG_ENTRIES);
 
 #ifdef DEBUG
         Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%x\n", iPD1, iPD1 << X86_PD_SHIFT));
@@ -1025,7 +1025,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
 
         if (!pVM->pgm.s.fMappingsFixed)
         {
-            PX86PD pPDSrc = pVM->pgm.s.CTX_SUFF(pGuestPD);
+            PX86PD pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
             if (    (   pPDSrc->a[iPD1].n.u1Present
                      && pgmGetMapping(pVM, (RTGCPTR)(iPD1 << X86_PD_SHIFT)) )
                 ||  (   iPD1 != iPD2
