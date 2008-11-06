@@ -477,7 +477,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
  * @remarks Current not in use.
  */
-VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess)
+VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
     /*
      * Validate input.
@@ -529,7 +529,7 @@ VMMDECL(int) PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32
  * @param   cbSize      Access size
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
  */
-VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess)
+VMMDECL(int) PGMVerifyAccess(PVM pVM, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
     AssertMsg(!(fAccess & ~(X86_PTE_US | X86_PTE_RW)), ("PGMVerifyAccess: invalid access type %08x\n", fAccess));
 
@@ -808,7 +808,7 @@ VMMDECL(int) PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
@@ -861,7 +861,7 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, P
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
@@ -2008,7 +2008,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
          pMapping = pMapping->CTX_SUFF(pNext))
     {
         /** @todo This is slow and should be optimized, but since it's just assertions I don't care now. */
-        for (RTGCUINTPTR GCPtr = pMapping->GCPtr;
+        for (RTGCPTR GCPtr = pMapping->GCPtr;
               GCPtr <= pMapping->GCPtrLast;
               GCPtr += PAGE_SIZE)
         {

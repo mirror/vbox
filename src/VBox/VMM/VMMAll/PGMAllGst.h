@@ -812,7 +812,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     PX86PD          pPDSrc = pgmGstGet32bitPDPtr(&pState->pVM->pgm.s);
 #endif
 
-    RTGCUINTPTR     GCPtr = (RTUINTPTR)pCur->Core.Key;
+    RTGCPTR         GCPtr = pCur->Core.Key;
 #if PGM_GST_MODE != PGM_MODE_AMD64
     /* skip all stuff above 4GB if not AMD64 mode. */
     if (GCPtr >= _4GB)
@@ -1032,9 +1032,9 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
         /*
          * Check if the modified PDEs are present and mappings.
          */
-        const RTGCUINTPTR   offPD = GCPhysFault & PAGE_OFFSET_MASK;
-        const unsigned      iPD1  = offPD / sizeof(X86PDE);
-        const unsigned      iPD2  = (offPD + cb - 1) / sizeof(X86PDE);
+        const RTGCPTR   offPD = GCPhysFault & PAGE_OFFSET_MASK;
+        const unsigned  iPD1  = offPD / sizeof(X86PDE);
+        const unsigned  iPD2  = (offPD + cb - 1) / sizeof(X86PDE);
 
         Assert(cb > 0 && cb <= 8);
         Assert(iPD1 < X86_PG_ENTRIES);
@@ -1177,15 +1177,15 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
         /*
          * Figure out which of the 4 PDs this is.
          */
-        RTGCUINTPTR i;
+        RTGCPTR i;
         PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(&pVM->pgm.s);
         for (i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
             if (pGuestPDPT->a[i].u == (GCPhysFault & X86_PTE_PAE_PG_MASK))
             {
-                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
-                const RTGCUINTPTR   offPD  = GCPhysFault & PAGE_OFFSET_MASK;
-                const unsigned      iPD1   = offPD / sizeof(X86PDEPAE);
-                const unsigned      iPD2   = (offPD + cb - 1) / sizeof(X86PDEPAE);
+                PX86PDPAE       pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
+                const RTGCPTR   offPD  = GCPhysFault & PAGE_OFFSET_MASK;
+                const unsigned  iPD1   = offPD / sizeof(X86PDEPAE);
+                const unsigned  iPD2   = (offPD + cb - 1) / sizeof(X86PDEPAE);
 
                 Assert(cb > 0 && cb <= 8);
                 Assert(iPD1 < X86_PG_PAE_ENTRIES);
