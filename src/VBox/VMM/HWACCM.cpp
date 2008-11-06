@@ -71,18 +71,18 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     AssertRelease(sizeof(pVM->hwaccm.s) <= sizeof(pVM->hwaccm.padding));
 
     /* Some structure checks. */
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved3) == 0xC0, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved3)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, ctrl.EventInject) == 0xA8, ("ctrl.EventInject offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.EventInject)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo) == 0x88, ("ctrl.ExitIntInfo offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl) == 0x58, ("ctrl.TLBCtrl offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved3) == 0xC0, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved3)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.EventInject) == 0xA8, ("ctrl.EventInject offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.EventInject)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo) == 0x88, ("ctrl.ExitIntInfo offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.ExitIntInfo)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl) == 0x58, ("ctrl.TLBCtrl offset = %x\n", RT_OFFSETOF(SVM_VMCB, ctrl.TLBCtrl)));
 
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, guest) == 0x400, ("guest offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4) == 0x4A0, ("guest.u8Reserved4 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6) == 0x4D8, ("guest.u8Reserved6 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7) == 0x580, ("guest.u8Reserved7 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9) == 0x648, ("guest.u8Reserved9 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9)));
-    AssertMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved10) == 0x698, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved10)));
-    AssertMsg(sizeof(SVM_VMCB) == 0x1000, ("SVM_VMCB size = %x\n", sizeof(SVM_VMCB)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest) == 0x400, ("guest offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4) == 0x4A0, ("guest.u8Reserved4 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved4)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6) == 0x4D8, ("guest.u8Reserved6 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved6)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7) == 0x580, ("guest.u8Reserved7 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved7)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9) == 0x648, ("guest.u8Reserved9 offset = %x\n", RT_OFFSETOF(SVM_VMCB, guest.u8Reserved9)));
+    AssertReleaseMsg(RT_OFFSETOF(SVM_VMCB, u8Reserved10) == 0x698, ("u8Reserved3 offset = %x\n", RT_OFFSETOF(SVM_VMCB, u8Reserved10)));
+    AssertReleaseMsg(sizeof(SVM_VMCB) == 0x1000, ("SVM_VMCB size = %x\n", sizeof(SVM_VMCB)));
 
 
     /*
@@ -685,7 +685,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             else
             {
                 LogRel(("HWACCM: VMX setup failed with rc=%Rrc!\n", rc));
-                LogRel(("HWACCM: Last instruction error %x\n", pVM->hwaccm.s.vmx.ulLastInstrError));
+                LogRel(("HWACCM: Last instruction error %x\n", pVM->aCpus[0].hwaccm.s.vmx.lasterror.ulInstrError));
                 pVM->fHWACCMEnabled = false;
             }
         }
@@ -821,7 +821,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
     if (   pVM->hwaccm.s.vmx.fEnabled
         && pVM->fHWACCMEnabled)
     {
-        if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+        if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
             &&  enmGuestMode >= PGMMODE_PROTECTED)
         {
             PCPUMCTX pCtx;
@@ -897,17 +897,19 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
         /* On first entry we'll sync everything. */
-        pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
+        pVCpu->hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
 
-        pVM->aCpus[i].hwaccm.s.vmx.cr0_mask = 0;
-        pVM->aCpus[i].hwaccm.s.vmx.cr4_mask = 0;
+        pVCpu->hwaccm.s.vmx.cr0_mask = 0;
+        pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
-        pVM->aCpus[i].hwaccm.s.Event.fPending = false;
+        pVCpu->hwaccm.s.Event.fPending = false;
+
+        /* Reset state information for real-mode emulation in VT-x. */
+        pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
     }
-
-    /* Reset state information for real-mode emulation in VT-x. */
-    pVM->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
 }
 
 /**
@@ -952,7 +954,9 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
          * from real to protected mode. (all sorts of RPL & DPL assumptions)
          */
-        if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+        PVMCPU pVCpu = VMMGetCpu(pVM);
+
+        if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
             &&  enmGuestMode >= PGMMODE_PROTECTED)
         {
             if (   (pCtx->cs & X86_SEL_RPL)
@@ -1097,13 +1101,13 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
             break;
 
         case VERR_VMX_UNABLE_TO_START_VM:
-            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastInstrError));
-            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastExitReason));
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulExitReason));
             break;
 
         case VERR_VMX_UNABLE_TO_RESUME_VM:
-            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastInstrError));
-            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulLastExitReason));
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulInstrError));
+            LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulExitReason));
             break;
 
         case VERR_VMX_INVALID_VMXON_PTR:

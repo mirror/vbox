@@ -279,12 +279,6 @@ typedef struct HWACCM
             uint64_t                vmx_eptcaps;
         } msr;
 
-        /* Last instruction error */
-        uint32_t                    ulLastInstrError;
-
-        /** The last known guest paging mode. */
-        PGMMODE                     enmCurrGuestMode;
-
         /** Flush types for invept & invvpid; they depend on capabilities. */
         VMX_FLUSH                   enmFlushPage;
         VMX_FLUSH                   enmFlushContext;
@@ -409,11 +403,13 @@ typedef struct HWACCMCPU
         {
             uint64_t                u64VMCSPhys;
             uint32_t                ulVMCSRevision;
-            uint32_t                ulLastInstrError;
-            uint32_t                ulLastExitReason;
+            uint32_t                ulInstrError;
+            uint32_t                ulExitReason;
             uint32_t                padding;
         } lasterror;
 
+        /** The last known guest paging mode. */
+        PGMMODE                     enmCurrGuestMode;
     } vmx;
 
     struct
