@@ -155,13 +155,13 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                     OBJECT_ATTRIBUTES   Attr;
 
                     RtlInitUnicodeString(&CallbackName, L"\\Callback\\PowerState");
-	                InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+                    InitializeObjectAttributes(&Attr, &CallbackName, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-	                rc = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
+                    rc = ExCreateCallback(&pDevExt->pObjPowerCallback, &Attr, TRUE, TRUE);
                     if (rc == STATUS_SUCCESS)
-		                pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback, pDevObj);
+                        pDevExt->hPowerCallback = ExRegisterCallback(pDevExt->pObjPowerCallback, VBoxPowerDispatchCallback, pDevObj);
 
-                    dprintf(("VBoxDrv::DriverEntry   returning STATUS_SUCCESS\n"));
+                    dprintf(("VBoxDrv::DriverEntry returning STATUS_SUCCESS\n"));
                     return STATUS_SUCCESS;
                 }
 
