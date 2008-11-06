@@ -59,6 +59,7 @@
 #include <memory>  /* for auto_ptr */
 #include <string>
 #include <list>
+#include <iterator>
 
 namespace guestProp {
 
