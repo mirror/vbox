@@ -341,9 +341,6 @@ typedef struct HWACCM
 
     /** HWACCMR0Init was run */
     bool                    fHWACCMR0Init;
-
-    /** Currenty shadow paging mode. */
-    PGMMODE                 enmShadowMode;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
@@ -444,6 +441,9 @@ typedef struct HWACCMCPU
         uint32_t                    errCode;
         uint64_t                    intInfo;
     } Event;
+
+    /** Currenty shadow paging mode. */
+    PGMMODE                 enmShadowMode;
 
 #ifdef VBOX_STRICT
     /** The CPU ID of the CPU currently owning the VMCS. Set in

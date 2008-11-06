@@ -1198,7 +1198,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (!pVM->hwaccm.s.fNestedPaging)
         {
-            switch(pVM->hwaccm.s.enmShadowMode)
+            switch(pVCpu->hwaccm.s.enmShadowMode)
             {
             case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
             case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */

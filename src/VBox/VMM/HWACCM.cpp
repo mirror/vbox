@@ -815,7 +815,9 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  */
 VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
-    pVM->hwaccm.s.enmShadowMode = enmShadowMode;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    pVCpu->hwaccm.s.enmShadowMode = enmShadowMode;
+
     if (   pVM->hwaccm.s.vmx.fEnabled
         && pVM->fHWACCMEnabled)
     {
