@@ -1141,12 +1141,18 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
-    pVM->pgm.s.pGstPaePDPTHC    = NULL;
-    pVM->pgm.s.pGstPaePDPTGC    = 0;
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsHC); i++)
+    pVM->pgm.s.pGstPaePDPTR3    = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGstPaePDPTR0    = NIL_RTR0PTR;
+#endif
+    pVM->pgm.s.pGstPaePDPTRC    = NIL_RTRCPTR;
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsR3); i++)
     {
-        pVM->pgm.s.apGstPaePDsHC[i]             = NULL;
-        pVM->pgm.s.apGstPaePDsGC[i]             = 0;
+        pVM->pgm.s.apGstPaePDsR3[i]             = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.apGstPaePDsR0[i]             = NIL_RTR0PTR;
+#endif
+        pVM->pgm.s.apGstPaePDsRC[i]             = NIL_RTRCPTR;
         pVM->pgm.s.aGCPhysGstPaePDs[i]          = NIL_RTGCPHYS;
         pVM->pgm.s.aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
     }
@@ -1884,13 +1890,13 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
     pVM->pgm.s.pGC32BitPD    += offDelta;
     pVM->pgm.s.pGuestPDRC    += offDelta;
-    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apGCPaePDs) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsGC));
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apGCPaePDs) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC));
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
     {
         pVM->pgm.s.apGCPaePDs[i]    += offDelta;
-        pVM->pgm.s.apGstPaePDsGC[i] += offDelta;
+        pVM->pgm.s.apGstPaePDsRC[i] += offDelta;
     }
-    pVM->pgm.s.pGstPaePDPTGC += offDelta;
+    pVM->pgm.s.pGstPaePDPTRC += offDelta;
     pVM->pgm.s.pGCPaePDPT    += offDelta;
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);

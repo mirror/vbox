@@ -108,7 +108,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 
 #    if PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCUINTPTR)pvFault, &iPDSrc, NULL);
 
 #    elif PGM_GST_TYPE == PGM_TYPE_AMD64
     unsigned        iPDSrc;
@@ -958,8 +958,8 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
     unsigned        iPDSrc;
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
-    PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
-    X86PDPE         PdpeSrc     = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
+    X86PDPE         PdpeSrc;
+    PX86PDPAE       pPDSrc      = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, &PdpeSrc);
 #  else /* AMD64 */
     PX86PML4E       pPml4eSrc;
     X86PDPE         PdpeSrc;
@@ -1094,7 +1094,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
-    /* Note: This shouldn't actually be necessary as we monitor the PDPT page for changes. */
+    /*
+     * Update the shadow PDPE and free all the shadow PD entries if the PDPE is marked not present.
+     * Note: This shouldn't actually be necessary as we monitor the PDPT page for changes.
+     */
     if (!pPDSrc)
     {
         /* Guest PDPE not present */
@@ -1102,18 +1105,19 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
         PX86PDEPAE pPDEDst = &pPDPAE->a[iPdpte * X86_PG_PAE_ENTRIES];
         PPGMPOOL   pPool   = pVM->pgm.s.CTX_SUFF(pPool);
 
-        Assert(!(CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte].n.u1Present));
+        Assert(!PdpeSrc.n.u1Present);
         LogFlow(("InvalidatePage: guest PDPE %d not present; clear shw pdpe\n", iPdpte));
- 	    /* for each page directory entry */
- 	    for (unsigned iPD = 0; iPD < X86_PG_PAE_ENTRIES; iPD++)
+
+        /* for each page directory entry */
+ 	for (unsigned iPD = 0; iPD < X86_PG_PAE_ENTRIES; iPD++)
+ 	{
+ 	    if (   pPDEDst[iPD].n.u1Present
+ 	        && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
  	    {
- 	        if (   pPDEDst[iPD].n.u1Present
- 	            && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
- 	        {
-                    pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpte * X86_PG_PAE_ENTRIES + iPD);
-                    pPDEDst[iPD].u = 0;
- 	        }
-	    }
+                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpte * X86_PG_PAE_ENTRIES + iPD);
+                pPDEDst[iPD].u = 0;
+ 	    }
+	}
         if (!(pPdptDst->a[iPdpte].u & PGM_PLXFLAGS_MAPPING))
  	        pPdptDst->a[iPdpte].n.u1Present = 0;
         PGM_INVL_GUEST_TLBS();
@@ -2019,9 +2023,9 @@ PGM_BTH_DECL(int, CheckPageFault)(PVM pVM, uint32_t uErr, PSHWPDE pPdeDst, PGSTP
     }
     Assert(pPdpeSrc);
 
-#  else /* PAE */
-    PX86PDPE pPdpeSrc = &pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[(GCPtrPage >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
-#  endif
+#  else  /* PAE */
+    PX86PDPE pPdpeSrc = pgmGstGetPaePDPEPtr(&pVM->pgm.s, GCPtrPage);
+#  endif /* PAE */
 
     /*
      * Real page fault? (PDPE level)
@@ -2812,7 +2816,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
     if (!pPDSrc)
         return VINF_SUCCESS; /* not present */
 #  elif PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -2931,7 +2935,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
     PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
-    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
+    PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc, NULL);
 
     if (pPDSrc)
     {
@@ -3224,11 +3228,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         {
             unsigned        iPDSrc;
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
+            X86PDPE         PdpeSrc;
+            PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpte << X86_PDPT_SHIFT, &iPDSrc, &PdpeSrc);
             PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPdpte * X86_PG_PAE_ENTRIES];
-            PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpte << X86_PDPT_SHIFT, &iPDSrc);
             PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);   NOREF(pPdptDst);
-            X86PDPE         PdpeSrc   = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
 
             if (pPDSrc == NULL)
             {
@@ -3654,7 +3658,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDRC, NULL, &HCPhysShw);
 #  else
-    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePDPTRC, NULL, &HCPhysShw);
 #  endif
     AssertRCReturn(rc, 1);
     HCPhys = NIL_RTHCPHYS;
@@ -3763,10 +3767,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
             PX86PDPE        pPdpeDst;
             RTGCPHYS        GCPhysPdeSrc;
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
+            X86PDPE         PdpeSrc;
+            PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtr, &iPDSrc, &PdpeSrc);
             PX86PDPAE       pPDDst    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
-            PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtr, &iPDSrc);
             PX86PDPT        pPdptDst  = pVM->pgm.s.CTXMID(p,PaePDPT);
-            X86PDPE         PdpeSrc   = CTXSUFF(pVM->pgm.s.pGstPaePDPT)->a[iPdpte];
 #   else
             PX86PML4E       pPml4eSrc;
             X86PDPE         PdpeSrc;
