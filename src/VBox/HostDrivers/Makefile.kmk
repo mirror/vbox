@@ -32,7 +32,7 @@ ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_USB
   include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
  endif
- if1of ($(KBUILD_TARGET), darwin solaris win)
+ if1of ($(KBUILD_TARGET), darwin solaris win linux)
   ifdef VBOX_WITH_NETFLT
    include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
   endif
