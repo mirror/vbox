@@ -59,14 +59,14 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
 static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
-static void VMXR0CheckError(PVM pVM, int rc)
+static void VMXR0CheckError(PVM pVM, PVMCPU pVCpu, int rc)
 {
     if (rc == VERR_VMX_GENERIC)
     {
         RTCCUINTREG instrError;
 
         VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
-        pVM->hwaccm.s.vmx.ulLastInstrError = instrError;
+        pVCpu->hwaccm.s.vmx.lasterror.ulInstrError = instrError;
     }
     pVM->hwaccm.s.lLastError = rc;
 }
@@ -106,7 +106,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     if (RT_FAILURE(rc))
     {
         if (pVM)
-            VMXR0CheckError(pVM, rc);
+            VMXR0CheckError(pVM, &pVM->aCpus[0], rc);
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         return VERR_VMX_VMXON_FAILED;
     }
@@ -189,28 +189,30 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     /* Allocate VMCBs for all guest CPUs. */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+        pVCpu->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the VM control structure (VMCS). */
-        rc = RTR0MemObjAllocCont(&pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjVMCS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVM->aCpus[i].hwaccm.s.vmx.pVMCS     = RTR0MemObjAddress(pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS);
-        pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys = RTR0MemObjGetPagePhysAddr(pVM->aCpus[i].hwaccm.s.vmx.pMemObjVMCS, 0);
-        ASMMemZero32(pVM->aCpus[i].hwaccm.s.vmx.pVMCS, PAGE_SIZE);
+        pVCpu->hwaccm.s.vmx.pVMCS     = RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjVMCS);
+        pVCpu->hwaccm.s.vmx.pVMCSPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjVMCS, 0);
+        ASMMemZero32(pVCpu->hwaccm.s.vmx.pVMCS, PAGE_SIZE);
 
-        pVM->aCpus[i].hwaccm.s.vmx.cr0_mask = 0;
-        pVM->aCpus[i].hwaccm.s.vmx.cr4_mask = 0;
+        pVCpu->hwaccm.s.vmx.cr0_mask = 0;
+        pVCpu->hwaccm.s.vmx.cr4_mask = 0;
+
+        /* Current guest paging mode. */
+        pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
 
 #ifdef LOG_ENABLED
-        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVM->aCpus[i].hwaccm.s.vmx.pVMCS, (uint32_t)pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys);
+        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hwaccm.s.vmx.pVMCS, (uint32_t)pVCpu->hwaccm.s.vmx.pVMCSPhys);
 #endif
     }
-
-    /* Current guest paging mode. */
-    pVM->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
 
     return VINF_SUCCESS;
 }
@@ -522,7 +524,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         pVM->hwaccm.s.vmx.pfnSetupTaggedTLB = vmxR0SetupTLBDummy;
 
 vmx_end:
-    VMXR0CheckError(pVM, rc);
+    VMXR0CheckError(pVM, &pVM->aCpus[0], rc);
     return rc;
 }
 
@@ -967,10 +969,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
-        if (pVM->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
+        if (pVCpu->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
         {
             /* Correct weird requirements for switching to protected mode. */
-            if (    pVM->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+            if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
                 &&  enmGuestMode >= PGMMODE_PROTECTED)
             {
                 /* DPL of all hidden selector registers must match the current CPL (0). */
@@ -985,7 +987,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             }
             else
             /* Switching from protected mode to real mode. */
-            if (    pVM->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
+            if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
                 &&  enmGuestMode == PGMMODE_REAL)
             {
                 /* The limit must also be adjusted. */
@@ -1002,7 +1004,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 Assert(pCtx->fsHid.u64Base <= 0xfffff);
                 Assert(pCtx->gsHid.u64Base <= 0xfffff);
             }
-            pVM->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
+            pVCpu->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
         }
         else
         /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
@@ -3171,8 +3173,8 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("Unable to start/resume VM for reason: %x. Instruction error %x\n", (uint32_t)exitReason, (uint32_t)instrError));
             Log(("Current stack %08x\n", &rc));
 
-            pVCpu->hwaccm.s.vmx.lasterror.ulLastInstrError = instrError;
-            pVCpu->hwaccm.s.vmx.lasterror.ulLastExitReason = exitReason;
+            pVCpu->hwaccm.s.vmx.lasterror.ulInstrError = instrError;
+            pVCpu->hwaccm.s.vmx.lasterror.ulExitReason = exitReason;
 
 #ifdef VBOX_STRICT
             RTGDTR     gdtr;
