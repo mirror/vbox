@@ -45,6 +45,7 @@
 #include <iprt/process.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/power.h>
 #include <VBox/log.h>
 #include <iprt/mp.h>
 
@@ -60,6 +61,9 @@
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 #  include <asm/nmi.h>
 # endif
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# include <linux/suspend.h>
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
@@ -228,6 +232,9 @@ static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsi
 #endif
 static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 static int      VBoxDrvLinuxErr2LinuxErr(int);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+static int      VBoxDrvSuspendNotifier(struct notifier_block *pBlock, unsigned long uEvent, void *dummy);
+#endif
 
 
 /** The file_operations structure. */
@@ -257,7 +264,13 @@ static struct miscdevice gMiscDevice =
 };
 #endif
 
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+/** Suspend/resume notifier. */
+static struct notifier_block gSuspendNotifierBlock =
+{
+    .notifier_call = VBoxDrvSuspendNotifier,
+};
+#endif
 
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -555,20 +568,29 @@ nmi_activated:
              */
             if (RT_SUCCESS(rc))
                 rc = supdrvInitDevExt(&g_DevExt);
-            if (!rc)
+            if (RT_SUCCESS(rc))
             {
-                printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
-#ifdef VBOX_HRTIMER
-                       "'high-res'"
-#else
-                       "'normal'"
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+                /*
+                 * Register the suspend/resume notifier.
+                 */
+                rc = register_pm_notifier(&gSuspendNotifierBlock);
+                if (rc == 0)
 #endif
-                       ".\n",
-                       g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
-                LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                       VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
-                return rc;
+                {
+                    printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+#ifdef VBOX_HRTIMER
+                           "'high-res'"
+#else
+                           "'normal'"
+#endif
+                           ".\n",
+                           g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                    LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                            VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
+                    return rc;
+                }
             }
 
             rc = -EINVAL;
@@ -604,6 +626,13 @@ static void __exit VBoxDrvLinuxUnload(void)
     dprintf(("VBoxDrvLinuxUnload\n"));
     NOREF(rc);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+    /*
+     * Unregister the suspend/resume notifier.
+     */
+    unregister_pm_notifier(&gSuspendNotifierBlock);
+#endif
+
     /*
      * I Don't think it's possible to unload a driver which processes have
      * opened, at least we'll blindly assume that here.
@@ -611,9 +640,7 @@ static void __exit VBoxDrvLinuxUnload(void)
 #ifdef CONFIG_VBOXDRV_AS_MISC
     rc = misc_deregister(&gMiscDevice);
     if (rc < 0)
-    {
         dprintf(("misc_deregister failed with rc=%#x\n", rc));
-    }
 #else  /* !CONFIG_VBOXDRV_AS_MISC */
 # ifdef CONFIG_DEVFS_FS
     /*
@@ -688,6 +715,29 @@ static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
     pFilp->private_data = NULL;
     return 0;
 }
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+/**
+ * Suspend/resume callback.
+ *
+ * @param   pNotifier
+ * @param   uEvent      event type
+ * @param   dummy
+ */
+static int VBoxDrvSuspendNotifier(struct notifier_block *pBlock, unsigned long uEvent, void *dummy)
+{
+    switch (uEvent)
+    {
+        case PM_SUSPEND_PREPARE:
+        case PM_POST_SUSPEND:
+            RTPowerSignalEvent(uEvent == PM_SUSPEND_PREPARE ? RTPOWEREVENT_SUSPEND
+                                                            : RTPOWEREVENT_RESUME);
+            break;
+    }
+    return 0;
+}
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) */
 
 
 /**
