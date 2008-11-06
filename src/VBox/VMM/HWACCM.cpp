@@ -217,13 +217,13 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            for (int i=0;i<MAX_EXITREASON_STAT;i++)
+            for (int j=0;j<MAX_EXITREASON_STAT;j++)
             {
-                rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatExitReason[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Exit reason",
-                                         "/HWACCM/Exit/Reason/%02x", i);
+                rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Exit reason",
+                                         "/HWACCM/CPU%d/Exit/Reason/%02x", i, j);
                 AssertRC(rc);
             }
-            rc = STAMR3Register(pVM, &pVCpu->hwaccm.s.StatExitReasonNPF, STAMTYPE_COUNTER, STAMVISIBILITY_USED, "/HWACCM/Exit/Reason/#NPF", STAMUNIT_OCCURENCES, "Exit reason");
+            rc = STAMR3Register(pVM, &pVCpu->hwaccm.s.StatExitReasonNPF, STAMTYPE_COUNTER, STAMVISIBILITY_USED, "/HWACCM/CPU%d/Exit/Reason/#NPF", STAMUNIT_OCCURENCES, "Exit reason", i);
             AssertRC(rc);
         }
         pVCpu->hwaccm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatExitReason);
