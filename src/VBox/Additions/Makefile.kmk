@@ -201,12 +201,12 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	32Bit/Windows/Drivers/VBoxVideo/VBoxVideo.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxVideo.inf \
 	32Bit/Windows/Drivers/VBoxVideo/VBoxDisp.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxDisp.dll \
 	32Bit/Windows/Gina/VBoxGINA.dll=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGINA.dll \
-	32Bit/Windows/3rdParty/AMD_PCnet/netamd.inf=./WINNT/Network/AMD/netamd.inf \
-	32Bit/Windows/3rdParty/AMD_PCnet/pcntpci5.cat=./WINNT/Network/AMD/pcntpci5.cat \
-	32Bit/Windows/3rdParty/AMD_PCnet/PCNTPCI5.sys=./WINNT/Network/AMD/PCNTPCI5.sys \
+	32Bit/Windows/3rdParty/AMD_PCnet/netamd.inf=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/netamd.inf \
+	32Bit/Windows/3rdParty/AMD_PCnet/pcntpci5.cat=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/pcntpci5.cat \
+	32Bit/Windows/3rdParty/AMD_PCnet/PCNTPCI5.sys=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Network/AMD/PCNTPCI5.sys \
 	VBoxWindowsAdditions-x86.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions-x86.exe \
 	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
-	AUTORUN.INF=./WINNT/Installer/AUTORUN.INF
+	AUTORUN.INF=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/AUTORUN.INF
  ifdef VBOX_WITH_WIN32_ADDITIONS_SHAREDFOLDERS
   GUESTADDITIONS_FILESPEC.win.x86 += \
 	32Bit/Windows/Drivers/VBoxSF/VBoxSF.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxSF.sys \
