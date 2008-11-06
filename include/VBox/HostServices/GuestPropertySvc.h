@@ -58,6 +58,8 @@ enum { MAX_VALUE_LEN = 128 };
 enum { MAX_PROPS = 256 };
 /** Maximum size for enumeration patterns */
 enum { MAX_PATTERN_LEN = 1024 };
+/** Maximum number of changes we remember for guest notifications */
+enum { MAX_GUEST_NOTIFICATIONS = 256 };
 
 /**
  * The guest property flag values which are currently accepted.
@@ -263,7 +265,9 @@ enum eGuestFn
     /** Delete a guest property */
     DEL_PROP = 4,
     /** Enumerate guest properties */
-    ENUM_PROPS = 5
+    ENUM_PROPS = 5,
+    /** Poll for guest notifications */
+    GET_NOTIFICATION = 6
 };
 
 /**
@@ -425,6 +429,53 @@ typedef struct _EnumProperties
      */
     HGCMFunctionParameter size;
 } EnumProperties;
+
+/**
+ * The guest is polling for notifications on changes to properties, optionally
+ * specifying the timestamp of the last notification seen.
+ * On success, VINF_SUCCESS will be returned and the buffer will contain
+ * details of a property notification.  If no new notification is available,
+ * a timestamp of zero will be returned.
+ * If the last notification could not be found by timestamp, VWRN_NOT_FOUND
+ * will be returned and the oldest available notification will be returned.
+ * if no timestamp is specified, the oldest available notification will be
+ * returned.
+ * If the buffer supplied was not large enough to hold the notification,
+ * VERR_BUFFER_OVERFLOW will be returned and the size parameter will contain
+ * the size of the buffer needed.
+ */
+typedef struct _GetNotification
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /**
+     * The timestamp of the last change seen (IN uint64_t)
+     * This may be zero, in which case the oldest available change will be
+     * sent.  If the service does not remember an event matching the
+     * timestamp, then VWRN_NOT_FOUND will be returned, and the guest should
+     * assume that it has missed a certain number of notifications.
+     *
+     * The timestamp of the change being notified of (OUT uint64_t)
+     * If this is zero then no new events are available.  Undefined on
+     * failure.
+     */
+    HGCMFunctionParameter timestamp;
+
+    /**
+     * The returned data. if any will be placed here.  (OUT pointer)
+     * This call returns three null-terminated strings which will be placed
+     * one after another: name, value and flags.  For a delete notification,
+     * value and flags will be empty strings.  Undefined on failure.
+     */
+    HGCMFunctionParameter buffer;
+
+    /**
+     * On success, the size of the returned data.  (OUT uint32_t)
+     * On buffer overflow, the size of the buffer needed to hold the data.
+     * Undefined on failure.
+     */
+    HGCMFunctionParameter size;
+} GetNotification;
 #pragma pack ()
 
 } /* namespace guestProp */

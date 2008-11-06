@@ -41,7 +41,7 @@ ifdef VBOX_RUN_GUEST_PROPERTY_TEST
   TESTING  += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
   OTHERS += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
 $$(PATH_tstGuestPropSvc)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
-	$(INSTARGET_tstGuestPropSvc) quiet
+	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstGuestPropSvc) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif
 endif
