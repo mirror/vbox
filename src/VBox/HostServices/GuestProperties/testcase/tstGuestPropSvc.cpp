@@ -31,38 +31,6 @@ using namespace guestProp;
 
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
 
-/** Set a pointer value to an HGCM parameter structure */
-static void VBoxHGCMParmPtrSet (VBOXHGCMSVCPARM *pParm, void *pv, uint32_t cb)
-{
-    pParm->type = VBOX_HGCM_SVC_PARM_PTR;
-    pParm->u.pointer.addr = pv;
-    pParm->u.pointer.size = cb;
-}
-
-/** Extract a uint64_t value from an HGCM parameter structure */
-static int VBoxHGCMParmUInt32Get (VBOXHGCMSVCPARM *pParm, uint32_t *pu32Value)
-{
-    if (pParm->type == VBOX_HGCM_SVC_PARM_32BIT)
-    {
-        *pu32Value = pParm->u.uint32;
-        return VINF_SUCCESS;
-    }
-
-    return VERR_INVALID_PARAMETER;
-}
-
-/** Extract a uint64_t value from an HGCM parameter structure */
-static int VBoxHGCMParmUInt64Get (VBOXHGCMSVCPARM *pParm, uint64_t *pu64Value)
-{
-    if (pParm->type == VBOX_HGCM_SVC_PARM_64BIT)
-    {
-        *pu64Value = pParm->u.uint64;
-        return VINF_SUCCESS;
-    }
-
-    return VERR_INVALID_PARAMETER;
-}
-
 /** Simple call handle structure for the guest call completion callback */
 struct VBOXHGCMCALLHANDLE_TYPEDEF
 {
@@ -249,10 +217,10 @@ int testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     if (RT_SUCCESS(rc))
     {
         VBOXHGCMSVCPARM paParms[4];
-        VBoxHGCMParmPtrSet(&paParms[0], (void *) apcszNameBlock, 0);
-        VBoxHGCMParmPtrSet(&paParms[1], (void *) apcszValueBlock, 0);
-        VBoxHGCMParmPtrSet(&paParms[2], (void *) au64TimestampBlock, 0);
-        VBoxHGCMParmPtrSet(&paParms[3], (void *) apcszFlagsBlock, 0);
+        paParms[0].setPointer ((void *) apcszNameBlock, 0);
+        paParms[1].setPointer ((void *) apcszValueBlock, 0);
+        paParms[2].setPointer ((void *) au64TimestampBlock, 0);
+        paParms[3].setPointer ((void *) apcszFlagsBlock, 0);
         rc = ptable->pfnHostCall(ptable->pvService, SET_PROPS_HOST, 4,
                                  paParms);
         if (RT_FAILURE(rc))
@@ -369,12 +337,10 @@ int testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     {
         char buffer[2048];
         VBOXHGCMSVCPARM paParms[3];
-        VBoxHGCMParmPtrSet(&paParms[0],
-                           (void *) enumStrings[i].pcszPatterns,
-                           enumStrings[i].cchPatterns);
-        VBoxHGCMParmPtrSet(&paParms[1],
-                           (void *) buffer,
-                           enumStrings[i].cchBuffer - 1);
+        paParms[0].setPointer ((void *) enumStrings[i].pcszPatterns,
+                               enumStrings[i].cchPatterns);
+        paParms[1].setPointer ((void *) buffer,
+                               enumStrings[i].cchBuffer - 1);
         AssertBreakStmt(sizeof(buffer) > enumStrings[i].cchBuffer,
                         rc = VERR_INTERNAL_ERROR);
         if (RT_SUCCESS(rc))
@@ -390,7 +356,7 @@ int testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
             else
             {
                 uint32_t cchBufferActual;
-                rc = VBoxHGCMParmUInt32Get(&paParms[2], &cchBufferActual);
+                rc = paParms[2].getUInt32 (&cchBufferActual);
                 if (RT_SUCCESS(rc) && cchBufferActual != enumStrings[i].cchBuffer)
                 {
                     RTPrintf("ENUM_PROPS_HOST requested a buffer size of %lu instead of %lu for pattern number %d\n", cchBufferActual, enumStrings[i].cchBuffer, i);
@@ -402,8 +368,7 @@ int testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         }
         if (RT_SUCCESS(rc))
         {
-            VBoxHGCMParmPtrSet(&paParms[1], (void *) buffer,
-                               enumStrings[i].cchBuffer);
+            paParms[1].setPointer ((void *) buffer, enumStrings[i].cchBuffer);
             rc = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST,
                                       3, paParms);
             if (RT_FAILURE(rc))
@@ -494,9 +459,9 @@ int testSetProp(VBOXHGCMSVCFNTABLE *pTable)
         strncat(szName, setProperties[i].pcszName, sizeof(szName));
         strncat(szValue, setProperties[i].pcszValue, sizeof(szValue));
         strncat(szFlags, setProperties[i].pcszFlags, sizeof(szFlags));
-        VBoxHGCMParmPtrSet(&paParms[0], szName, strlen(szName) + 1);
-        VBoxHGCMParmPtrSet(&paParms[1], szValue, strlen(szValue) + 1);
-        VBoxHGCMParmPtrSet(&paParms[2], szFlags, strlen(szFlags) + 1);
+        paParms[0].setPointer (szName, strlen(szName) + 1);
+        paParms[1].setPointer (szValue, strlen(szValue) + 1);
+        paParms[2].setPointer (szFlags, strlen(szFlags) + 1);
         if (setProperties[i].isHost)
             callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                                 setProperties[i].useSetProp
@@ -566,7 +531,7 @@ int testDelProp(VBOXHGCMSVCFNTABLE *pTable)
          * constant strings in the hgcm parameters. */
         char szName[MAX_NAME_LEN] = "";
         strncat(szName, delProperties[i].pcszName, sizeof(szName));
-        VBoxHGCMParmPtrSet(&paParms[0], szName, strlen(szName) + 1);
+        paParms[0].setPointer (szName, strlen(szName) + 1);
         if (delProperties[i].isHost)
             callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                                 1, paParms);
@@ -643,8 +608,8 @@ int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         AssertBreakStmt(sizeof(szBuffer) >= getProperties[i].cchValue,
                         rc = VERR_INTERNAL_ERROR);
         strncat(szName, getProperties[i].pcszName, sizeof(szName));
-        VBoxHGCMParmPtrSet(&paParms[0], szName, strlen(szName) + 1);
-        VBoxHGCMParmPtrSet(&paParms[1], szBuffer, sizeof(szBuffer));
+        paParms[0].setPointer (szName, strlen(szName) + 1);
+        paParms[1].setPointer (szBuffer, sizeof(szBuffer));
         rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4,
                                   paParms);
         if (getProperties[i].exists && RT_FAILURE(rc2))
@@ -662,7 +627,7 @@ int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         if (RT_SUCCESS(rc) && getProperties[i].exists)
         {
             uint32_t u32ValueLen;
-            rc = VBoxHGCMParmUInt32Get(&paParms[3], &u32ValueLen);
+            rc = paParms[3].getUInt32 (&u32ValueLen);
             if (RT_FAILURE(rc))
                 RTPrintf("Failed to get the size of the output buffer for property '%s'\n",
                          getProperties[i].pcszName);
@@ -679,7 +644,7 @@ int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
             if (RT_SUCCESS(rc) && getProperties[i].hasTimestamp)
             {
                 uint64_t u64Timestamp;
-                rc = VBoxHGCMParmUInt64Get(&paParms[2], &u64Timestamp);
+                rc = paParms[2].getUInt64 (&u64Timestamp);
                 if (RT_FAILURE(rc))
                     RTPrintf("Failed to get the timestamp for property '%s'\n",
                              getProperties[i].pcszName);
@@ -694,6 +659,143 @@ int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
                 }
             }
         }
+    }
+    return rc;
+}
+
+/** Array of properties for testing GET_PROP_HOST. */
+static const struct
+{
+    /** Buffer returned */
+    const char *pchBuffer;
+    /** What size should the buffer be? */
+    uint32_t cchBuffer;
+}
+getNotifications[] =
+{
+    { "Red\0Stop!\0TRANSIENT", sizeof("Red\0Stop!\0TRANSIENT") },
+    { "Amber\0Caution!\0", sizeof("Amber\0Caution!\0") },
+    { "Green\0Go!\0READONLY", sizeof("Green\0Go!\0READONLY") },
+    { "Blue\0What on earth...?\0", sizeof("Blue\0What on earth...?\0") },
+    { "Red\0\0", sizeof("Red\0\0") },
+    { "Amber\0\0", sizeof("Amber\0\0") },
+    { NULL, 0 }
+};
+
+/**
+ * Test the GET_NOTIFICATION function.
+ * @returns iprt status value to indicate whether the test went as expected.
+ * @note    prints its own diagnostic information to stdout.
+ */
+int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
+{
+    int rc = VINF_SUCCESS;
+    VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
+    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+
+    RTPrintf("Testing the GET_NOTIFICATION call.\n");
+    uint64_t u64Timestamp = 0;
+    uint32_t u32Size = 0;
+    VBOXHGCMSVCPARM paParms[3];
+
+    /* Test "buffer too small" */
+    paParms[0].setUInt64 (u64Timestamp);
+    paParms[1].setPointer ((void *) chBuffer, getNotifications[0].cchBuffer - 1);
+    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+                    GET_NOTIFICATION, 3, paParms);
+    if (   callHandle.rc != VERR_BUFFER_OVERFLOW
+        || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
+        || u32Size != getNotifications[0].cchBuffer
+       )
+    {
+        RTPrintf("Getting notification for property '%s' with a too small buffer did not fail correctly.\n",
+                 getNotifications[0].pchBuffer);
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+
+    /* Test successful notification queries */
+    for (unsigned i = 0; RT_SUCCESS(rc) && (getNotifications[i].pchBuffer != NULL);
+         ++i)
+    {
+        paParms[0].setUInt64 (u64Timestamp);
+        paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+                        GET_NOTIFICATION, 3, paParms);
+        if (   RT_FAILURE(callHandle.rc)
+            || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
+            || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
+            || u32Size != getNotifications[i].cchBuffer
+            || memcmp(chBuffer, getNotifications[i].pchBuffer, u32Size) != 0
+           )
+        {
+            RTPrintf("Failed to get notification for property '%s'.\n",
+                     getNotifications[i].pchBuffer);
+            rc = VERR_UNRESOLVED_ERROR;
+        }
+    }
+
+    /* Test when no new events are available */
+    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+                    GET_NOTIFICATION, 3, paParms);
+    if (   RT_FAILURE(callHandle.rc)
+        || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
+        || u64Timestamp != 0
+       )
+    {
+        RTPrintf("Failed to signal properly that no new notifications are available.\n");
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+
+    /* Test a query with an unknown timestamp */
+    paParms[0].setUInt64 (1);
+    paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
+    if (RT_SUCCESS(rc))
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+                        GET_NOTIFICATION, 3, paParms);
+    if (   RT_SUCCESS(rc)
+        && (   callHandle.rc != VWRN_NOT_FOUND
+            || RT_FAILURE(callHandle.rc)
+            || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
+            || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
+            || u32Size != getNotifications[0].cchBuffer
+            || memcmp(chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
+           )
+       )
+    {
+        RTPrintf("Problem getting notification for property '%s' with unknown timestamp, rc=%Rrc.\n",
+                 getNotifications[0].pchBuffer, callHandle.rc);
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+    return rc;
+}
+
+/**
+ * Test the GET_NOTIFICATION function when no notifications are available.
+ * @returns iprt status value to indicate whether the test went as expected.
+ * @note    prints its own diagnostic information to stdout.
+ */
+int testNoNotifications(VBOXHGCMSVCFNTABLE *pTable)
+{
+    int rc = VINF_SUCCESS;
+    VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
+    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+
+    RTPrintf("Testing the GET_NOTIFICATION call when no notifications are available.\n");
+    uint64_t u64Timestamp = 0;
+    uint32_t u32Size = 0;
+    VBOXHGCMSVCPARM paParms[3];
+
+    paParms[0].setUInt64 (u64Timestamp);
+    paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
+    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+                    GET_NOTIFICATION, 3, paParms);
+    if (   RT_FAILURE(callHandle.rc)
+        || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
+        || u64Timestamp != 0
+       )
+    {
+        RTPrintf("Failed to signal properly that no new notifications are available.\n");
+        rc = VERR_UNRESOLVED_ERROR;
     }
     return rc;
 }
@@ -716,11 +818,15 @@ int main(int argc, char **argv)
         return 1;
     if (RT_FAILURE(testEnumPropsHost(&svcTable)))
         return 1;
+    if (RT_FAILURE(testNoNotifications(&svcTable)))
+        return 1;
     if (RT_FAILURE(testSetProp(&svcTable)))
         return 1;
     if (RT_FAILURE(testDelProp(&svcTable)))
         return 1;
     if (RT_FAILURE(testGetProp(&svcTable)))
+        return 1;
+    if (RT_FAILURE(testGetNotification(&svcTable)))
         return 1;
     RTPrintf("tstGuestPropSvc: SUCCEEDED.\n");
     return 0;
