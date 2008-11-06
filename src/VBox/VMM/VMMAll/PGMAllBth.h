@@ -102,7 +102,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDSrc = (RTGCUINTPTR)pvFault >> GST_PD_SHIFT;
-    PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+    PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 
 #   elif PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 
@@ -952,7 +952,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCUINTPTR GCPtrPage)
      * Get the guest PD entry and calc big page.
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PD          pPDSrc      = CTXSUFF(pVM->pgm.s.pGuestPD);
+    PGSTPD          pPDSrc      = pgmGstGet32bitPDPtr(&pVM->pgm.s);
     const unsigned  iPDSrc      = GCPtrPage >> GST_PD_SHIFT;
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 # else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
@@ -2809,7 +2809,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage)
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDSrc = (RTGCUINTPTR)GCPtrPage >> GST_PD_SHIFT;
-    PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+    PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
@@ -2928,7 +2928,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned
 # if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     const unsigned  iPDSrc = (RTGCUINTPTR)GCPtrPage >> GST_PD_SHIFT;
-    PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+    PGSTPD          pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
     unsigned        iPDSrc;
     PGSTPD          pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtrPage, &iPDSrc);
@@ -3157,7 +3157,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  endif
 
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PGSTPD          pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+    PGSTPD      pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
     Assert(pPDSrc);
 #   ifndef IN_RC
     Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
@@ -3652,7 +3652,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
                     false);
 # if !defined(IN_RING0) && PGM_GST_TYPE != PGM_TYPE_AMD64
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDGC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDRC, NULL, &HCPhysShw);
 #  else
     rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePDPTGC, NULL, &HCPhysShw);
 #  endif
@@ -3662,7 +3662,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
-    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDHC, &GCPhys);
+    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDR3, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #  endif
@@ -3832,7 +3832,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         {
 # endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            const GSTPD    *pPDSrc = CTXSUFF(pPGM->pGuestPD);
+            GSTPD const    *pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             PCX86PD         pPDDst = pPGM->CTXMID(p,32BitPD);
 #  else
