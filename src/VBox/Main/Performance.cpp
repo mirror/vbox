@@ -27,6 +27,7 @@
  * 1) Detection of erroneous metric names
  */
 
+#include <VBox/types.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
