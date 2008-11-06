@@ -134,73 +134,86 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 {
     LogFlow(("HWACCMR3InitCPU\n"));
 
+#ifdef VBOX_WITH_STATISTICS
     /*
      * Statistics.
      */
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
+        int    rc;
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatEntry,    STAMTYPE_PROFILE, "/PROF/HWACCM/SwitchToGC",     STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExit,     STAMTYPE_PROFILE, "/PROF/HWACCM/SwitchFromGC",   STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatInGC,     STAMTYPE_PROFILE, "/PROF/HWACCM/InGC",           STAMUNIT_TICKS_PER_CALL, "Profiling of vmlaunch");
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatEntry, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry",
+                             "/PROF/HWACCM/CPU%d/SwitchToGC", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of vmlaunch",
+                             "/PROF/HWACCM/CPU%d/InGC", i);
+        AssertRC(rc);
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitShadowNM,  STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Shadow/#NM",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestNM,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#NM",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitShadowPF,  STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Shadow/#PF",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestPF,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#PF",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestUD,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#UD",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestSS,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#SS",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestNP,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#NP",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestGP,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#GP",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestMF,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#MF",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestDE,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#DE",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitGuestDB,   STAMTYPE_COUNTER, "/HWACCM/Exit/Trap/Guest/#DB",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitInvpg,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Invlpg",      STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitInvd,      STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Invd",        STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitCpuid,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Cpuid",       STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitRdtsc,     STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/Rdtsc",       STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitCRxWrite,  STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/CRx/Write",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitCRxRead,   STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/CRx/Read",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitDRxWrite,  STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/DRx/Write",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitDRxRead,   STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/DRx/Read",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitCLTS,      STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/CLTS",        STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitLMSW,      STAMTYPE_COUNTER, "/HWACCM/Exit/Instr/LMSW",        STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitIOWrite,   STAMTYPE_COUNTER, "/HWACCM/Exit/IO/Write",          STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitIORead,    STAMTYPE_COUNTER, "/HWACCM/Exit/IO/Read",           STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitIOStringWrite,   STAMTYPE_COUNTER, "/HWACCM/Exit/IO/WriteString",          STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitIOStringRead,    STAMTYPE_COUNTER, "/HWACCM/Exit/IO/ReadString",           STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitIrqWindow, STAMTYPE_COUNTER, "/HWACCM/Exit/GuestIrq/Pending",  STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatExitMaxResume, STAMTYPE_COUNTER, "/HWACCM/Exit/Safety/MaxResume",  STAMUNIT_OCCURENCES,    "Nr of occurances");
+#define HWACCM_REG_COUNTER(a, b) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling of vmlaunch", b, i); \
+        AssertRC(rc);
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatSwitchGuestIrq,STAMTYPE_COUNTER, "/HWACCM/Switch/IrqPending",      STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatSwitchToR3,    STAMTYPE_COUNTER, "/HWACCM/Switch/ToR3",            STAMUNIT_OCCURENCES,    "Nr of occurances");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowNM,           "/HWACCM/CPU%d/Exit/Trap/Shadow/#NM");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestNM,            "/HWACCM/CPU%d/Exit/Trap/Guest/#NM");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowPF,           "/HWACCM/CPU%d/Exit/Trap/Shadow/#PF");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestPF,            "/HWACCM/CPU%d/Exit/Trap/Guest/#PF");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestUD,            "/HWACCM/CPU%d/Exit/Trap/Guest/#UD");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestSS,            "/HWACCM/CPU%d/Exit/Trap/Guest/#SS");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestNP,            "/HWACCM/CPU%d/Exit/Trap/Guest/#NP");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestGP,            "/HWACCM/CPU%d/Exit/Trap/Guest/#GP");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestMF,            "/HWACCM/CPU%d/Exit/Trap/Guest/#MF");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestDE,            "/HWACCM/CPU%d/Exit/Trap/Guest/#DE");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestDB,            "/HWACCM/CPU%d/Exit/Trap/Guest/#DB");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvpg,              "/HWACCM/CPU%d/Exit/Instr/Invlpg");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvd,               "/HWACCM/CPU%d/Exit/Instr/Invd");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCpuid,              "/HWACCM/CPU%d/Exit/Instr/Cpuid");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitRdtsc,              "/HWACCM/CPU%d/Exit/Instr/Rdtsc");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxWrite,           "/HWACCM/CPU%d/Exit/Instr/CRx/Write");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCRxRead,            "/HWACCM/CPU%d/Exit/Instr/CRx/Read");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxWrite,           "/HWACCM/CPU%d/Exit/Instr/DRx/Write");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitDRxRead,            "/HWACCM/CPU%d/Exit/Instr/DRx/Read");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCLTS,               "/HWACCM/CPU%d/Exit/Instr/CLTS");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitLMSW,               "/HWACCM/CPU%d/Exit/Instr/LMSW");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOWrite,            "/HWACCM/CPU%d/Exit/IO/Write");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIORead,             "/HWACCM/CPU%d/Exit/IO/Read");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOStringWrite,      "/HWACCM/CPU%d/Exit/IO/WriteString");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIOStringRead,       "/HWACCM/CPU%d/Exit/IO/ReadString");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIrqWindow,          "/HWACCM/CPU%d/Exit/GuestIrq/Pending");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitMaxResume,          "/HWACCM/CPU%d/Exit/Safety/MaxResume");
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatIntInject,     STAMTYPE_COUNTER, "/HWACCM/Irq/Inject",             STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatIntReinject,   STAMTYPE_COUNTER, "/HWACCM/Irq/Reinject",           STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatPendingHostIrq,STAMTYPE_COUNTER, "/HWACCM/Irq/PendingOnHost",      STAMUNIT_OCCURENCES,    "Nr of occurances");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatSwitchGuestIrq,         "/HWACCM/CPU%d/Switch/IrqPending");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatSwitchToR3,             "/HWACCM/CPU%d/Switch/ToR3");
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushPageManual,       STAMTYPE_COUNTER, "/HWACCM/Flush/Page/Virt/Manual", STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushPhysPageManual,   STAMTYPE_COUNTER, "/HWACCM/Flush/Page/Phys/Manual", STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushTLBManual,        STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/Manual",  STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushTLBCRxChange,     STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/CRx",     STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushPageInvlpg,       STAMTYPE_COUNTER, "/HWACCM/Flush/Page/Invlpg", STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushTLBWorldSwitch,   STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/Switch",  STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch, STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/Skipped", STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushASID,             STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/ASID",    STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatFlushTLBInvlpga,       STAMTYPE_COUNTER, "/HWACCM/Flush/TLB/PhysInvlpg",  STAMUNIT_OCCURENCES,    "Nr of occurances");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatIntInject,              "/HWACCM/CPU%d/Irq/Inject");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatIntReinject,            "/HWACCM/CPU%d/Irq/Reinject");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatPendingHostIrq,         "/HWACCM/CPU%d/Irq/PendingOnHost");
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatTSCOffset,             STAMTYPE_COUNTER, "/HWACCM/TSC/Offset",        STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatTSCIntercept,          STAMTYPE_COUNTER, "/HWACCM/TSC/Intercept",     STAMUNIT_OCCURENCES,    "Nr of occurances");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPageManual,        "/HWACCM/CPU%d/Flush/Page/Virt/Manual");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPhysPageManual,    "/HWACCM/CPU%d/Flush/Page/Phys/Manual");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBManual,         "/HWACCM/CPU%d/Flush/TLB/Manual");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBCRxChange,      "/HWACCM/CPU%d/Flush/TLB/CRx");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushPageInvlpg,        "/HWACCM/CPU%d/Flush/Page/Invlpg");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch,    "/HWACCM/CPU%d/Flush/TLB/Switch");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch,  "/HWACCM/CPU%d/Flush/TLB/Skipped");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushASID,              "/HWACCM/CPU%d/Flush/TLB/ASID");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatFlushTLBInvlpga,        "/HWACCM/CPU%d/Flush/TLB/PhysInvlpg");
 
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatDRxArmed,              STAMTYPE_COUNTER, "/HWACCM/Debug/Armed",           STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatDRxContextSwitch,      STAMTYPE_COUNTER, "/HWACCM/Debug/ContextSwitch",   STAMUNIT_OCCURENCES,    "Nr of occurances");
-        STAM_REG(pVM, &pVCpu->hwaccm.s.StatDRxIOCheck,            STAMTYPE_COUNTER, "/HWACCM/Debug/IOCheck",         STAMUNIT_OCCURENCES,    "Nr of occurances");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTSCOffset,              "/HWACCM/CPU%d/TSC/Offset");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTSCIntercept,           "/HWACCM/CPU%d/TSC/Intercept");
+
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxArmed,               "/HWACCM/CPU%d/Debug/Armed");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxContextSwitch,       "/HWACCM/CPU%d/Debug/ContextSwitch");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxIOCheck,             "/HWACCM/CPU%d/Debug/IOCheck");
+
+#undef HWACCM_REG_COUNTER
 
         pVCpu->hwaccm.s.paStatExitReason = NULL;
 
-#ifdef VBOX_WITH_STATISTICS
-        int rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVCpu->hwaccm.s.paStatExitReason), 0, MM_TAG_HWACCM, (void **)&pVCpu->hwaccm.s.paStatExitReason);
+        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVCpu->hwaccm.s.paStatExitReason), 0, MM_TAG_HWACCM, (void **)&pVCpu->hwaccm.s.paStatExitReason);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -215,8 +228,8 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         }
         pVCpu->hwaccm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatExitReason);
         Assert(pVCpu->hwaccm.s.paStatExitReasonR0);
-#endif
     }
+#endif /* VBOX_WITH_STATISTICS */
     return VINF_SUCCESS;
 }
 
