@@ -15,6 +15,7 @@
  * the flags
  */
 
+#define IN_MBUF
 #include <slirp.h>
 
 
@@ -109,6 +110,7 @@ void
 m_free(PNATState pData, struct mbuf *m)
 {
 
+  VBOX_QUEUE_EDGE_CHECK(m);
   DEBUG_CALL("m_free");
   DEBUG_ARG("m = %lx", (long )m);
 
@@ -116,7 +118,8 @@ m_free(PNATState pData, struct mbuf *m)
 	/* Remove from m_usedlist */
 	if (m->m_flags & M_USEDLIST) {
            VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
-	   remque(pData, m);
+           if (m->m_next != NULL && m->m_prev != NULL)
+	     remque(pData, m);
            VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
         }
 
@@ -156,7 +159,8 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	/*
 	 * If there's no room, realloc
 	 */
-
+        VBOX_QUEUE_EDGE_CHECK(m);
+        VBOX_QUEUE_EDGE_CHECK(n);
 	if (M_FREEROOM(m) < n->m_len)
 		m_inc(m,m->m_size+MINCSIZE);
 
@@ -253,6 +257,9 @@ struct mbuf *
 dtom(PNATState pData, void *dat)
 {
 	struct mbuf *m;
+#ifdef VBOX_WITH_SYNC_SLIRP
+	struct mbuf *mnext;
+#endif
 
 	DEBUG_CALL("dtom");
 	DEBUG_ARG("dat = %lx", (long )dat);
@@ -261,7 +268,6 @@ dtom(PNATState pData, void *dat)
 #ifndef VBOX_WITH_SYNC_SLIRP
 	for (m = m_usedlist.m_next; m != &m_usedlist; m = m->m_next) {
 #else
-	struct mbuf *mnext;
         VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
         m = m_usedlist.m_next;
         while(1) {
