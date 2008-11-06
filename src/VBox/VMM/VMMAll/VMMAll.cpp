@@ -28,6 +28,7 @@
 #include "VMMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/param.h>
+#include <VBox/hwaccm.h>
 
 
 #ifndef IN_RING0
@@ -56,29 +57,43 @@ RTRCPTR VMMGetStackRC(PVM pVM)
  */
 VMCPUID VMMGetCpuId(PVM pVM)
 {
-#ifdef VBOX_WITH_SMP_GUESTS
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
-# if defined(IN_RC)
+#if defined(IN_RC)
     /* There is only one CPU if we're in GC. */
     return 0;
 
-# elif defined(IN_RING3)
+#elif defined(IN_RING3)
     return VMR3GetVMCPUId(pVM);
 
-# else  /* IN_RING0 */
-    /** @todo SMP: Get the real CPU ID and use a table in the VM structure to
-     *  translate it. */
-    return 0;
-# endif /* IN_RING0 */
-
-#else
-    VM_ASSERT_EMT(pVM);
-    return 0;
-#endif
+#else  /* IN_RING0 */
+    return HWACCMGetVMCPUId(pVM);
+#endif /* IN_RING0 */
 }
 
+/**
+ * Returns the VMCPU of the current EMT thread.
+ *
+ * @returns The VMCPU pointer.
+ * @param   pVM         The VM to operate on.
+ */
+PVMCPU VMMGetCpu(PVM pVM)
+{
+    /* Only emulation thread(s) allowed to ask for CPU id */
+    VM_ASSERT_EMT(pVM);
+
+#if defined(IN_RC)
+    /* There is only one CPU if we're in GC. */
+    return &pVM->aCpus[0];
+
+#elif defined(IN_RING3)
+    return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
+
+#else  /* IN_RING0 */
+    return &pVM->aCpus[HWACCMGetVMCPUId(pVM)];
+#endif /* IN_RING0 */
+}
 
 /**
  * Gets the VBOX_SVN_REV.
