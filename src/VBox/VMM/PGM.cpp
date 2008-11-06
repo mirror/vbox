@@ -1814,9 +1814,9 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         GCPtr += PAGE_SIZE;
     }
     /* A bit of paranoia is justified. */
-    AssertRelease((RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[0] + PAGE_SIZE == (RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[1]);
-    AssertRelease((RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[1] + PAGE_SIZE == (RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[2]);
-    AssertRelease((RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[2] + PAGE_SIZE == (RTGCUINTPTR)pVM->pgm.s.apGCPaePDs[3]);
+    AssertRelease(pVM->pgm.s.apGCPaePDs[0] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[1]);
+    AssertRelease(pVM->pgm.s.apGCPaePDs[1] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[2]);
+    AssertRelease(pVM->pgm.s.apGCPaePDs[2] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[3]);
     GCPtr += PAGE_SIZE; /* reserved page */
 
     rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPT, PAGE_SIZE, 0);

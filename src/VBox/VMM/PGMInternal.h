@@ -1911,7 +1911,7 @@ typedef struct PGMMODEDATA
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
 
     DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
@@ -1921,7 +1921,7 @@ typedef struct PGMMODEDATA
     DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
@@ -1931,7 +1931,7 @@ typedef struct PGMMODEDATA
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
 #ifdef VBOX_STRICT
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #endif
     /** @} */
 } PGMMODEDATA, *PPGMMODEDATA;
@@ -2181,7 +2181,7 @@ typedef struct PGM
     DECLR3CALLBACKMEMBER(int,       pfnR3BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR3CALLBACKMEMBER(int,       pfnR3BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR3CALLBACKMEMBER(unsigned,  pfnR3BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 
     DECLR0CALLBACKMEMBER(int,       pfnR0BthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2189,7 +2189,7 @@ typedef struct PGM
     DECLR0CALLBACKMEMBER(int,       pfnR0BthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLR0CALLBACKMEMBER(int,       pfnR0BthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLR0CALLBACKMEMBER(unsigned,  pfnR0BthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 
     DECLRCCALLBACKMEMBER(int,       pfnRCBthTrap0eHandler,(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthInvalidatePage,(PVM pVM, RTGCPTR GCPtrPage));
@@ -2197,7 +2197,7 @@ typedef struct PGM
     DECLRCCALLBACKMEMBER(int,       pfnRCBthSyncPage,(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthPrefetchPage,(PVM pVM, RTGCUINTPTR GCPtrPage));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthVerifyAccessSyncPage,(PVM pVM, RTGCUINTPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTPTR GCPtr, RTGCUINTPTR cb));
+    DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment2; /**< structure size alignment. */
 #endif

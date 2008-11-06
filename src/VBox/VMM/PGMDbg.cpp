@@ -458,7 +458,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
     size_t              cbPrev = 0;
     const RTGCUINTPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
                                   ? GCPtr + cbRange - 1
-                                  : ~(RTGCUINTPTR)0;
+                                  : ~(RTGCPTR)0;
     RTGCUINTPTR         cPages = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
     while (cPages-- > 0)
     {
@@ -473,7 +473,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys & ~(RTGCUINTPTR)PAGE_OFFSET_MASK, &pvPage, &Lock);
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys & ~(RTGCPTR)PAGE_OFFSET_MASK, &pvPage, &Lock);
                 if (RT_SUCCESS(rc))
                 {
                     int32_t  offPage = (GCPtr & PAGE_OFFSET_MASK);
@@ -485,7 +485,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
                     PGMPhysReleasePageMappingLock(pVM, &Lock);
                     if (fRc)
                     {
-                        *pGCPtrHit = (GCPtr & ~(RTGCUINTPTR)PAGE_OFFSET_MASK) + offPage;
+                        *pGCPtrHit = (GCPtr & ~(RTGCPTR)PAGE_OFFSET_MASK) + offPage;
                         return VINF_SUCCESS;
                     }
                 }
