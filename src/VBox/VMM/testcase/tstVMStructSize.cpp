@@ -166,6 +166,8 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Host, 64);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Guest, 64);
     CHECK_MEMBER_ALIGNMENT(VM, cpum.s.Hyper, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.GuestEntry, 64);
+
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CritSectVMLock, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.CallHostR0JmpBuf, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunRC, 8);
