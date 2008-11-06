@@ -132,7 +132,7 @@ typedef struct VMCPU
 #ifdef ___HWACCMInternal_h
         struct HWACCMCPU    s;
 #endif
-        char                padding[512];        /* multiple of 32 */
+        char                padding[1024];        /* multiple of 32 */
     } hwaccm;
 
     /** EM part. */
@@ -395,18 +395,6 @@ typedef struct VMCPU *PVMCPU;
 #endif
 
 
-/** @def VM_GET_VMCPUID
- * Returns the VMCPU id of the current EMT.
- * @todo r=bird: See VMMGetCpuId().
- */
-#ifdef IN_RC
-# define VM_GET_VMCPUID(pVM)                0
-#elif defined(IN_RING0)
-# define VM_GET_VMCPUID(pVM)                HWACCMGetVMCPUId(pVM)
-#else
-# define VM_GET_VMCPUID(pVM)                VMR3GetVMCPUId(pVM)
-#endif
-
 /**
  * Asserts that the current thread is NOT the emulation thread.
  */
@@ -619,7 +607,7 @@ typedef struct VM
 #ifdef ___HWACCMInternal_h
         struct HWACCM s;
 #endif
-        char        padding[1536];       /* multiple of 32 */
+        char        padding[512];       /* multiple of 32 */
     } hwaccm;
 
     /** TRPM part. */

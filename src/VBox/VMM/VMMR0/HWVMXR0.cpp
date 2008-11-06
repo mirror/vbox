@@ -654,7 +654,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     if (pVCpu->hwaccm.s.Event.fPending)
     {
         Log(("Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntReinject);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatIntReinject);
         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, pVCpu->hwaccm.s.Event.intInfo, 0, pVCpu->hwaccm.s.Event.errCode);
         AssertRC(rc);
 
@@ -693,7 +693,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             {
                 /* Can only happen in rare cases where a pending interrupt is cleared behind our back */
                 Assert(!VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)));
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatSwitchGuestIrq);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchGuestIrq);
                 /* Just continue */
             }
         }
@@ -758,7 +758,7 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         else
             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatIntInject);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatIntInject);
         rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, 0, errCode);
         AssertRC(rc);
     } /* if (interrupts can be dispatched) */
@@ -1328,7 +1328,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             &&  !CPUMIsGuestDebugStateActive(pVM)
             &&  !DBGFIsStepping(pVM))
         {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxArmed);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxArmed);
 
             /* Disable drx move intercepts. */
             pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
@@ -1388,14 +1388,14 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCOffset);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
     }
     else
     {
         pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatTSCIntercept);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCIntercept);
     }
 
     /* VMX_VMCS_CTRL_ENTRY_CONTROLS
@@ -1613,9 +1613,9 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVCpu->hwaccm.s.fForceTLBFlush)
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
     else
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
 #endif
 }
 
@@ -1662,7 +1662,7 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         }
         else
         {
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushASID);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushASID);
             pVCpu->hwaccm.s.fForceTLBFlush     = false;
         }
 
@@ -1688,9 +1688,9 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_STATISTICS
     if (pVCpu->hwaccm.s.fForceTLBFlush)
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
     else
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatNoFlushTLBWorldSwitch);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
 #endif
 }
 #endif /* HWACCM_VTX_WITH_VPID */
@@ -1720,7 +1720,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     Log2(("\nE"));
 
-    STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatEntry, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x);
 
 #ifdef VBOX_STRICT
     rc = VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
@@ -1781,15 +1781,15 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
-    AssertMsg(pVM->hwaccm.s.idEnteredCpu == RTMpCpuId(),
+    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == RTMpCpuId(),
               ("Expected %d, I'm %d; cResume=%d exitReason=%RTreg exitQualification=%RTreg\n",
-               (int)pVM->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
+               (int)pVCpu->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
     Assert(!HWACCMR0SuspendPending());
 
     /* Safety precaution; looping for too long here can have a very bad effect on the host */
     if (++cResume > HWACCM_MAX_RESUME_LOOPS)
     {
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitMaxResume);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMaxResume);
         rc = VINF_EM_RAW_INTERRUPT;
         goto end;
     }
@@ -1822,15 +1822,15 @@ ResumeExecution:
     if (VM_FF_ISPENDING(pVM, VM_FF_TO_R3 | VM_FF_TIMER))
     {
         VM_FF_CLEAR(pVM, VM_FF_TO_R3);
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatSwitchToR3);
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         rc = VINF_EM_RAW_TO_R3;
         goto end;
     }
     /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
     if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
     {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         rc = VINF_EM_PENDING_REQUEST;
         goto end;
     }
@@ -1840,7 +1840,7 @@ ResumeExecution:
     rc = VMXR0CheckPendingInterrupt(pVM, pVCpu, pCtx);
     if (RT_FAILURE(rc))
     {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         goto end;
     }
 
@@ -1912,14 +1912,14 @@ ResumeExecution:
     rc  = VMXR0SaveHostState(pVM, pVCpu);
     if (rc != VINF_SUCCESS)
     {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         goto end;
     }
     /* Load the guest state */
     rc = VMXR0LoadGuestState(pVM, pVCpu, pCtx);
     if (rc != VINF_SUCCESS)
     {
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
         goto end;
     }
 
@@ -1931,7 +1931,7 @@ ResumeExecution:
     rc = VMXWriteVMCS(VMX_VMCS_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
     AssertRC(rc);
 
-    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatEntry, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
 
     /* Manual save and restore:
      * - General purpose registers except RIP, RSP
@@ -1946,7 +1946,7 @@ ResumeExecution:
      */
 
     /* All done! Let's start VM execution. */
-    STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatInGC, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatInGC, x);
 #ifdef VBOX_STRICT
     Assert(idCpuCheck == RTMpCpuId());
 #endif
@@ -1964,8 +1964,8 @@ ResumeExecution:
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
 
-    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatInGC, x);
-    STAM_PROFILE_ADV_START(&pVM->hwaccm.s.StatExit, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit, x);
 
     if (rc != VINF_SUCCESS)
     {
@@ -1976,7 +1976,7 @@ ResumeExecution:
 
     /* Investigate why there was a VM-exit. */
     rc  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
-    STAM_COUNTER_INC(&pVM->hwaccm.s.paStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
+    STAM_COUNTER_INC(&pVCpu->hwaccm.s.paStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
 
     exitReason &= 0xffff;   /* bit 0-15 contain the exit code. */
     rc |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
@@ -2083,20 +2083,20 @@ ResumeExecution:
                 {
                     Assert(CPUMIsGuestFPUStateActive(pVM));
 
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowNM);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowNM);
 
                     /* Continue execution. */
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
 
                     goto ResumeExecution;
                 }
 
                 Log(("Forward #NM fault to the guest\n"));
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestNM);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNM);
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, 0);
                 AssertRC(rc);
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
 
@@ -2111,14 +2111,14 @@ ResumeExecution:
 
                     Assert(CPUMIsGuestInPagedProtectedModeEx(pCtx));
 
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestPF);
 
                     /* Now we must update CR2. */
                     pCtx->cr2 = exitQualification;
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
 #endif
@@ -2136,11 +2136,11 @@ ResumeExecution:
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
                     Log2(("Shadow page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, exitQualification ,errCode));
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
                     TRPMResetTrap(pVM);
 
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
                 else
@@ -2150,7 +2150,7 @@ ResumeExecution:
                      */
                     Log2(("Forward page fault to the guest\n"));
 
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestPF);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestPF);
                     /* The error code might have been changed. */
                     errCode = TRPMGetErrorCode(pVM);
 
@@ -2161,7 +2161,7 @@ ResumeExecution:
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
 #ifdef VBOX_STRICT
@@ -2175,7 +2175,7 @@ ResumeExecution:
 
             case X86_XCPT_MF: /* Floating point exception. */
             {
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestMF);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestMF);
                 if (!(pCtx->cr0 & X86_CR0_NE))
                 {
                     /* old style FPU error reporting needs some extra work. */
@@ -2187,7 +2187,7 @@ ResumeExecution:
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
 
@@ -2204,7 +2204,7 @@ ResumeExecution:
                  * 14       BS - single step execution or branch taken
                  * 63:15    Reserved (0)
                  */
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestDB);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDB);
 
                 /* Note that we don't support guest and host-initiated debugging at the same time. */
                 Assert(DBGFIsStepping(pVM) || CPUMIsGuestInRealModeEx(pCtx));
@@ -2235,7 +2235,7 @@ ResumeExecution:
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
                 /* Return to ring 3 to deal with the debug exit code. */
@@ -2246,14 +2246,14 @@ ResumeExecution:
             {
                 uint32_t cbSize;
 
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestGP);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
 #ifdef VBOX_STRICT
                 if (!CPUMIsGuestInRealModeEx(pCtx))
                 {
                     Log(("Trap %x at %04X:%RGv errorCode=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
 #endif
@@ -2269,7 +2269,7 @@ ResumeExecution:
                     pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
 
                     /* Only resume if successful. */
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
                 AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Rrc\n", rc));
@@ -2285,16 +2285,16 @@ ResumeExecution:
                 switch(vector)
                 {
                 case X86_XCPT_DE:
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestDE);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestDE);
                     break;
                 case X86_XCPT_UD:
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestUD);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestUD);
                     break;
                 case X86_XCPT_SS:
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestSS);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestSS);
                     break;
                 case X86_XCPT_NP:
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitGuestNP);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNP);
                     break;
                 }
 
@@ -2302,7 +2302,7 @@ ResumeExecution:
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
 #endif
@@ -2319,7 +2319,7 @@ ResumeExecution:
                         &&  rc == VINF_EM_RESET)
                         break;
 
-                    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                     goto ResumeExecution;
                 }
 #endif
@@ -2384,11 +2384,11 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitShadowPF);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVM);
 
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
 
@@ -2407,29 +2407,29 @@ ResumeExecution:
         pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_IRQ_WINDOW_EXIT;
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIrqWindow);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIrqWindow);
         goto ResumeExecution;   /* we check for pending guest interrupts there */
 
     case VMX_EXIT_WBINVD:               /* 54 Guest software attempted to execute WBINVD. (conditional) */
     case VMX_EXIT_INVD:                 /* 13 Guest software attempted to execute INVD. (unconditional) */
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvd);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvd);
         /* Skip instruction and continue directly. */
         pCtx->rip += cbInstr;
         /* Continue execution.*/
-        STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
         goto ResumeExecution;
 
     case VMX_EXIT_CPUID:                /* 10 Guest software attempted to execute CPUID. */
     {
         Log2(("VMX: Cpuid %x\n", pCtx->eax));
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCpuid);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCpuid);
         rc = EMInterpretCpuId(pVM, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
             Assert(cbInstr == 2);
             pCtx->rip += cbInstr;
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: cpuid failed with %Rrc\n", rc));
@@ -2440,14 +2440,14 @@ ResumeExecution:
     case VMX_EXIT_RDTSC:                /* 16 Guest software attempted to execute RDTSC. */
     {
         Log2(("VMX: Rdtsc\n"));
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitRdtsc);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtsc);
         rc = EMInterpretRdtsc(pVM, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
             Assert(cbInstr == 2);
             pCtx->rip += cbInstr;
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: rdtsc failed with %Rrc\n", rc));
@@ -2460,13 +2460,13 @@ ResumeExecution:
         Log2(("VMX: invlpg\n"));
         Assert(!pVM->hwaccm.s.fNestedPaging);
 
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitInvpg);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitInvpg);
         rc = EMInterpretInvlpg(pVM, CPUMCTX2CORE(pCtx), exitQualification);
         if (rc == VINF_SUCCESS)
         {
             /* Update EIP and continue execution. */
             pCtx->rip += cbInstr;
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: invlpg %RGv failed with %Rrc\n", exitQualification, rc));
@@ -2486,7 +2486,7 @@ ResumeExecution:
             /* EIP has been updated already. */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr", rc));
@@ -2499,7 +2499,7 @@ ResumeExecution:
         {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:
             Log2(("VMX: %RGv mov cr%d, x\n", (RTGCPTR)pCtx->rip, VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification)));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxWrite);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxWrite);
             rc = EMInterpretCRxWrite(pVM, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification));
@@ -2538,7 +2538,7 @@ ResumeExecution:
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:
             Log2(("VMX: mov x, crx\n"));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCRxRead);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead);
 
             Assert(!pVM->hwaccm.s.fNestedPaging || !CPUMIsGuestInPagedProtectedModeEx(pCtx) || VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != USE_REG_CR3);
 
@@ -2552,14 +2552,14 @@ ResumeExecution:
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:
             Log2(("VMX: clts\n"));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitCLTS);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCLTS);
             rc = EMInterpretCLTS(pVM);
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:
             Log2(("VMX: lmsw %x\n", VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification)));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitLMSW);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitLMSW);
             rc = EMInterpretLMSW(pVM, CPUMCTX2CORE(pCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(exitQualification));
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
             break;
@@ -2572,7 +2572,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -2593,14 +2593,14 @@ ResumeExecution:
             AssertRC(rc);
 
 #ifdef VBOX_WITH_STATISTICS
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxContextSwitch);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxContextSwitch);
             if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxWrite);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
             else
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxRead);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
 #endif
 
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
 
@@ -2608,7 +2608,7 @@ ResumeExecution:
         if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
         {
             Log2(("VMX: mov drx%d, genreg%d\n", VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification), VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification)));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxWrite);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
             rc = EMInterpretDRxWrite(pVM, CPUMCTX2CORE(pCtx),
                                      VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification),
                                      VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification));
@@ -2618,7 +2618,7 @@ ResumeExecution:
         else
         {
             Log2(("VMX: mov x, drx\n"));
-            STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitDRxRead);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
             rc = EMInterpretDRxRead(pVM, CPUMCTX2CORE(pCtx),
                                     VMX_EXIT_QUALIFICATION_DRX_GENREG(exitQualification),
                                     VMX_EXIT_QUALIFICATION_DRX_REGISTER(exitQualification));
@@ -2630,7 +2630,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER);
@@ -2671,13 +2671,13 @@ ResumeExecution:
             if (fIOWrite)
             {
                 Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringWrite);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
                 rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
             else
             {
                 Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOStringRead);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
                 rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
         }
@@ -2690,14 +2690,14 @@ ResumeExecution:
 
             if (fIOWrite)
             {
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIOWrite);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, uPort, pCtx->eax & uAndVal, cbSize);
             }
             else
             {
                 uint32_t u32Val = 0;
 
-                STAM_COUNTER_INC(&pVM->hwaccm.s.StatExitIORead);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIORead);
                 rc = IOMIOPortRead(pVM, uPort, &u32Val, cbSize);
                 if (IOM_SUCCESS(rc))
                 {
@@ -2719,7 +2719,7 @@ ResumeExecution:
                 /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
                 if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
                 {
-                    STAM_COUNTER_INC(&pVM->hwaccm.s.StatDRxIOCheck);
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDRxIOCheck);
                     for (unsigned i=0;i<4;i++)
                     {
                         unsigned uBPLen = g_aIOSize[X86_DR7_GET_LEN(pCtx->dr[7], i)];
@@ -2765,13 +2765,13 @@ ResumeExecution:
                             rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
                             AssertRC(rc);
 
-                            STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                             goto ResumeExecution;
                         }
                     }
                 }
 
-                STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
                 goto ResumeExecution;
             }
             break;
@@ -2951,7 +2951,7 @@ end:
     if (    exitReason == VMX_EXIT_EXTERNAL_IRQ
         &&  !VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
     {
-        STAM_COUNTER_INC(&pVM->hwaccm.s.StatPendingHostIrq);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_HOST_CONTEXT;
     }
@@ -2974,7 +2974,7 @@ end:
         pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
     }
 
-    STAM_PROFILE_ADV_STOP(&pVM->hwaccm.s.StatExit, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
 
     Log2(("X"));
     return rc;

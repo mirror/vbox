@@ -184,12 +184,10 @@ typedef struct HWACCM
 
     /** Set if nested paging is allowed. */
     bool                        fAllowNestedPaging;
-    /** Set if VT-x VPID is allowed. */
-    bool                        fAllowVPID;
 
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
-    bool                        padding[1];
+    bool                        padding[2];
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
@@ -211,6 +209,9 @@ typedef struct HWACCM
 
         /** Set if VPID is supported. */
         bool                        fVPID;
+
+        /** Set if VT-x VPID is allowed. */
+        bool                        fAllowVPID;
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
@@ -343,80 +344,6 @@ typedef struct HWACCM
 
     /** Currenty shadow paging mode. */
     PGMMODE                 enmShadowMode;
-
-    /** Explicit alignment padding of StatEntry (32-bit g++ again). */
-    int32_t                 padding2;
-
-#ifdef VBOX_STRICT
-    /** The CPU ID of the CPU currently owning the VMCS. Set in
-     * HWACCMR0Enter and cleared in HWACCMR0Leave. */
-    RTCPUID                 idEnteredCpu;
-#else
-# if HC_ARCH_BITS == 32
-    RTCPUID                 Alignment2;
-# endif
-#endif
-
-    STAMPROFILEADV          StatEntry;
-    STAMPROFILEADV          StatExit;
-    STAMPROFILEADV          StatInGC;
-
-    STAMCOUNTER             StatIntInject;
-
-    STAMCOUNTER             StatExitShadowNM;
-    STAMCOUNTER             StatExitGuestNM;
-    STAMCOUNTER             StatExitShadowPF;
-    STAMCOUNTER             StatExitGuestPF;
-    STAMCOUNTER             StatExitGuestUD;
-    STAMCOUNTER             StatExitGuestSS;
-    STAMCOUNTER             StatExitGuestNP;
-    STAMCOUNTER             StatExitGuestGP;
-    STAMCOUNTER             StatExitGuestDE;
-    STAMCOUNTER             StatExitGuestDB;
-    STAMCOUNTER             StatExitGuestMF;
-    STAMCOUNTER             StatExitInvpg;
-    STAMCOUNTER             StatExitInvd;
-    STAMCOUNTER             StatExitCpuid;
-    STAMCOUNTER             StatExitRdtsc;
-    STAMCOUNTER             StatExitCRxWrite;
-    STAMCOUNTER             StatExitCRxRead;
-    STAMCOUNTER             StatExitDRxWrite;
-    STAMCOUNTER             StatExitDRxRead;
-    STAMCOUNTER             StatExitCLTS;
-    STAMCOUNTER             StatExitLMSW;
-    STAMCOUNTER             StatExitIOWrite;
-    STAMCOUNTER             StatExitIORead;
-    STAMCOUNTER             StatExitIOStringWrite;
-    STAMCOUNTER             StatExitIOStringRead;
-    STAMCOUNTER             StatExitIrqWindow;
-    STAMCOUNTER             StatExitMaxResume;
-    STAMCOUNTER             StatIntReinject;
-    STAMCOUNTER             StatPendingHostIrq;
-
-    STAMCOUNTER             StatFlushPageManual;
-    STAMCOUNTER             StatFlushPhysPageManual;
-    STAMCOUNTER             StatFlushTLBManual;
-    STAMCOUNTER             StatFlushPageInvlpg;
-    STAMCOUNTER             StatFlushTLBWorldSwitch;
-    STAMCOUNTER             StatNoFlushTLBWorldSwitch;
-    STAMCOUNTER             StatFlushTLBCRxChange;
-    STAMCOUNTER             StatFlushASID;
-    STAMCOUNTER             StatFlushTLBInvlpga;
-
-    STAMCOUNTER             StatSwitchGuestIrq;
-    STAMCOUNTER             StatSwitchToR3;
-
-    STAMCOUNTER             StatTSCOffset;
-    STAMCOUNTER             StatTSCIntercept;
-
-    STAMCOUNTER             StatExitReasonNPF;
-    STAMCOUNTER             StatDRxArmed;
-    STAMCOUNTER             StatDRxContextSwitch;
-    STAMCOUNTER             StatDRxIOCheck;
-
-
-    R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
-    R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
@@ -518,6 +445,76 @@ typedef struct HWACCMCPU
         uint64_t                    intInfo;
     } Event;
 
+#ifdef VBOX_STRICT
+    /** The CPU ID of the CPU currently owning the VMCS. Set in
+     * HWACCMR0Enter and cleared in HWACCMR0Leave. */
+    RTCPUID                 idEnteredCpu;
+#else
+# if HC_ARCH_BITS == 32
+    RTCPUID                 Alignment2;
+# endif
+#endif
+
+    STAMPROFILEADV          StatEntry;
+    STAMPROFILEADV          StatExit;
+    STAMPROFILEADV          StatInGC;
+
+    STAMCOUNTER             StatIntInject;
+
+    STAMCOUNTER             StatExitShadowNM;
+    STAMCOUNTER             StatExitGuestNM;
+    STAMCOUNTER             StatExitShadowPF;
+    STAMCOUNTER             StatExitGuestPF;
+    STAMCOUNTER             StatExitGuestUD;
+    STAMCOUNTER             StatExitGuestSS;
+    STAMCOUNTER             StatExitGuestNP;
+    STAMCOUNTER             StatExitGuestGP;
+    STAMCOUNTER             StatExitGuestDE;
+    STAMCOUNTER             StatExitGuestDB;
+    STAMCOUNTER             StatExitGuestMF;
+    STAMCOUNTER             StatExitInvpg;
+    STAMCOUNTER             StatExitInvd;
+    STAMCOUNTER             StatExitCpuid;
+    STAMCOUNTER             StatExitRdtsc;
+    STAMCOUNTER             StatExitCRxWrite;
+    STAMCOUNTER             StatExitCRxRead;
+    STAMCOUNTER             StatExitDRxWrite;
+    STAMCOUNTER             StatExitDRxRead;
+    STAMCOUNTER             StatExitCLTS;
+    STAMCOUNTER             StatExitLMSW;
+    STAMCOUNTER             StatExitIOWrite;
+    STAMCOUNTER             StatExitIORead;
+    STAMCOUNTER             StatExitIOStringWrite;
+    STAMCOUNTER             StatExitIOStringRead;
+    STAMCOUNTER             StatExitIrqWindow;
+    STAMCOUNTER             StatExitMaxResume;
+    STAMCOUNTER             StatIntReinject;
+    STAMCOUNTER             StatPendingHostIrq;
+
+    STAMCOUNTER             StatFlushPageManual;
+    STAMCOUNTER             StatFlushPhysPageManual;
+    STAMCOUNTER             StatFlushTLBManual;
+    STAMCOUNTER             StatFlushPageInvlpg;
+    STAMCOUNTER             StatFlushTLBWorldSwitch;
+    STAMCOUNTER             StatNoFlushTLBWorldSwitch;
+    STAMCOUNTER             StatFlushTLBCRxChange;
+    STAMCOUNTER             StatFlushASID;
+    STAMCOUNTER             StatFlushTLBInvlpga;
+
+    STAMCOUNTER             StatSwitchGuestIrq;
+    STAMCOUNTER             StatSwitchToR3;
+
+    STAMCOUNTER             StatTSCOffset;
+    STAMCOUNTER             StatTSCIntercept;
+
+    STAMCOUNTER             StatExitReasonNPF;
+    STAMCOUNTER             StatDRxArmed;
+    STAMCOUNTER             StatDRxContextSwitch;
+    STAMCOUNTER             StatDRxIOCheck;
+
+
+    R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
+    R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
 } HWACCMCPU;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCMCPU *PHWACCMCPU;

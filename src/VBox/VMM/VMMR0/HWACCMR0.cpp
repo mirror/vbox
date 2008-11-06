@@ -773,19 +773,21 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     pVM->hwaccm.s.cpuid.u32AMDFeatureECX    = HWACCMR0Globals.cpuid.u32AMDFeatureECX;
     pVM->hwaccm.s.cpuid.u32AMDFeatureEDX    = HWACCMR0Globals.cpuid.u32AMDFeatureEDX;
     pVM->hwaccm.s.lLastError                = HWACCMR0Globals.lLastError;
-#ifdef VBOX_STRICT
-    pVM->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
-#endif
 
     pVM->hwaccm.s.uMaxASID                  = HWACCMR0Globals.uMaxASID;
 
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[i];
+
+#ifdef VBOX_STRICT
+        pVCpu->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
+#endif
         /* Invalidate the last cpu we were running on. */
-        pVM->aCpus[i].hwaccm.s.idLastCpu                 = NIL_RTCPUID;
+        pVCpu->hwaccm.s.idLastCpu                 = NIL_RTCPUID;
 
         /* we'll aways increment this the first time (host uses ASID 0) */
-        pVM->aCpus[i].hwaccm.s.uCurrentASID              = 0;
+        pVCpu->hwaccm.s.uCurrentASID              = 0;
     }
 
     ASMAtomicWriteBool(&pCpu->fInUse, true);
@@ -915,8 +917,8 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
     if (RT_SUCCESS(rc))
     {
-        AssertMsg(pVM->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVM->hwaccm.s.idEnteredCpu));
-        pVM->hwaccm.s.idEnteredCpu = idCpu;
+        AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
+        pVCpu->hwaccm.s.idEnteredCpu = idCpu;
     }
 #endif
     return rc;
@@ -958,8 +960,8 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
-    AssertMsg(pVM->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVM->hwaccm.s.idEnteredCpu, (int)idCpu));
-    pVM->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
+    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVCpu->hwaccm.s.idEnteredCpu, (int)idCpu));
+    pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
 #endif
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
