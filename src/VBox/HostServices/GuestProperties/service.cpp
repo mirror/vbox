@@ -59,7 +59,6 @@
 #include <memory>  /* for auto_ptr */
 #include <string>
 #include <list>
-#include <iterator>
 
 namespace guestProp {
 
@@ -783,7 +782,7 @@ int Service::getNotification(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
         /* We count backwards, as the guest should normally be querying the
          * most recent events. */
-        PropertyList::const_reverse_iterator it = mGuestNotifications.rbegin();
+        PropertyList::reverse_iterator it = mGuestNotifications.rbegin();
         for ( ;    it != mGuestNotifications.rend()
                 && it->mTimestamp != u64Timestamp;
              ++it
