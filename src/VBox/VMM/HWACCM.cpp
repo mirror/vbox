@@ -874,7 +874,7 @@ VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
         {
             MMHyperFree(pVM, pVCpu->hwaccm.s.paStatExitReason);
             pVCpu->hwaccm.s.paStatExitReason   = NULL;
-            pVCpu->hwaccm.s.paStatExitReasonR0 = NULL;
+            pVCpu->hwaccm.s.paStatExitReasonR0 = NIL_RTR0PTR;
         }
     }
     return 0;
