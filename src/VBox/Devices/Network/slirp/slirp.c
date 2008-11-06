@@ -377,7 +377,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #else
                 while (1) {
                     tcp_loop_begin:
-                    if (so == &tcb || so == NULL) {
+                    if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
@@ -567,7 +567,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #else
                 while (1) {
                     loop_begin:
-                    if (so == &tcb || so == NULL) {
+                    if (so == &tcb) {
                         VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
                         break;
                     }
