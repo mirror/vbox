@@ -1883,7 +1883,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /** @todo move this into shadow and guest specific relocation functions. */
     AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
     pVM->pgm.s.pGC32BitPD    += offDelta;
-    pVM->pgm.s.pGuestPDGC    += offDelta;
+    pVM->pgm.s.pGuestPDRC    += offDelta;
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.apGCPaePDs) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsGC));
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
     {
@@ -2591,7 +2591,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
     /*
      * Get page directory addresses.
      */
-    PX86PD     pPDSrc = pVM->pgm.s.pGuestPDHC;
+    PX86PD     pPDSrc = pVM->pgm.s.pGuestPDR3;
     Assert(pPDSrc);
     Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 

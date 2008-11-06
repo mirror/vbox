@@ -178,7 +178,9 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
      * Get the PDE.
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    const X86PDE Pde = CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
+    X86PDE Pde;
+    Pde.u = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
+
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     X86PDEPAE    Pde;
     bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
@@ -187,6 +189,7 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCP
      * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
      */
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     PX86PML4E    pPml4e;
     X86PDPE      Pdpe;
@@ -298,7 +301,8 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
          * Get the PD entry.
          */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-        PX86PDE pPde = &CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
+        PX86PDE pPde = pgmGstGet32bitPDEPtr(&pVM->pgm.s, GCPtr);
+
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
         /* pgmGstGetPaePDEPtr will return 0 if the PDPTE is marked as not present
          * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
@@ -397,7 +401,7 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE)
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     X86PDE    Pde;
-    Pde   = CTXSUFF(pVM->pgm.s.pGuestPD)->a[GCPtr >> GST_PD_SHIFT];
+    Pde.u = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
     X86PDEPAE Pde;
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
@@ -447,8 +451,11 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            pVM->pgm.s.pGuestPDHC = (R3R0PTRTYPE(PX86PD))HCPtrGuestCR3;
-            pVM->pgm.s.pGuestPDGC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
+            pVM->pgm.s.pGuestPDR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pGuestPDR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+#  endif
+            pVM->pgm.s.pGuestPDRC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
             unsigned offset = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
@@ -545,8 +552,11 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     int rc = VINF_SUCCESS;
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-    pVM->pgm.s.pGuestPDHC = 0;
-    pVM->pgm.s.pGuestPDGC = 0;
+    pVM->pgm.s.pGuestPDR3 = 0;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGuestPDR0 = 0;
+#endif
+    pVM->pgm.s.pGuestPDRC = 0;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     pVM->pgm.s.pGstPaePDPTHC = 0;
@@ -776,7 +786,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
     Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PD          pPDSrc = pState->pVM->pgm.s.CTXSUFF(pGuestPD);
+    PX86PD          pPDSrc = pgmGstGet32bitPDPtr(&pState->pVM->pgm.s);
 #endif
 
     RTGCUINTPTR     GCPtr = (RTUINTPTR)pCur->Core.Key;
@@ -1004,8 +1014,8 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
         const unsigned      iPD2  = (offPD + cb - 1) / sizeof(X86PDE);
 
         Assert(cb > 0 && cb <= 8);
-        Assert(iPD1 < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(pGuestPD)->a)); /// @todo R3/R0 separation.
-        Assert(iPD2 < RT_ELEMENTS(pVM->pgm.s.CTXSUFF(pGuestPD)->a));
+        Assert(iPD1 < RT_ELEMENTS(pVM->pgm.s.CTX_SUFF(pGuestPD)->a)); /// @todo R3/R0 separation.
+        Assert(iPD2 < RT_ELEMENTS(pVM->pgm.s.CTX_SUFF(pGuestPD)->a));
 
 #ifdef DEBUG
         Log(("pgmXXGst32BitWriteHandlerCR3: emulated change to PD %#x addr=%x\n", iPD1, iPD1 << X86_PD_SHIFT));
@@ -1015,7 +1025,7 @@ PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pR
 
         if (!pVM->pgm.s.fMappingsFixed)
         {
-            PX86PD pPDSrc = CTXSUFF(pVM->pgm.s.pGuestPD);
+            PX86PD pPDSrc = pVM->pgm.s.CTX_SUFF(pGuestPD);
             if (    (   pPDSrc->a[iPD1].n.u1Present
                      && pgmGetMapping(pVM, (RTGCPTR)(iPD1 << X86_PD_SHIFT)) )
                 ||  (   iPD1 != iPD2

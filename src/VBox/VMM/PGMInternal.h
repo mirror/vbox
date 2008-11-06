@@ -1989,14 +1989,14 @@ typedef struct PGM
 
     /** @name 32-bit Guest Paging.
      * @{ */
-    /** The guest's page directory, HC pointer. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PD)               pGuestPDHC;
-#else
-    R3R0PTRTYPE(PX86PD)             pGuestPDHC;
+    /** The guest's page directory, R3 pointer. */
+    R3PTRTYPE(PX86PD)               pGuestPDR3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory, R0 pointer. */
+    R0PTRTYPE(PX86PD)               pGuestPDR0;
 #endif
-    /** The guest's page directory, static GC mapping. */
-    RCPTRTYPE(PX86PD)               pGuestPDGC;
+    /** The guest's page directory, static RC mapping. */
+    RCPTRTYPE(PX86PD)               pGuestPDRC;
     /** @} */
 
     /** @name PAE Guest Paging.
@@ -2345,7 +2345,7 @@ typedef struct PGM
     struct
     {
         /** The chunk tree, ordered by chunk id. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         R3PTRTYPE(PAVLU32NODECORE)  pTree;
 #else
         R3R0PTRTYPE(PAVLU32NODECORE) pTree;
@@ -3283,6 +3283,65 @@ DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PPGM pPGM, X86PDE Pde)
     GCPhys |= (RTGCPHYS)Pde.b.u8PageNoHigh << 32;
 
     return GCPhys & pPGM->GCPhys4MBPSEMask;
+}
+
+
+/**
+ * Gets the page directory entry for the specified address (32-bit paging).
+ *
+ * @returns The page directory entry in question.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(X86PGUINT) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PCX86PD pGuestPD = 0;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    AssertRCReturn(rc, 0);
+    return pGuestPD->a[GCPtr >> X86_PD_SHIFT].u;
+#else
+    return pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT].u;
+#endif
+}
+
+
+/**
+ * Gets the address of a specific page directory entry (32-bit paging).
+ *
+ * @returns Pointer the page directory entry in question.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PD pGuestPD = 0;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    AssertRCReturn(rc, 0);
+    return &pGuestPD->a[GCPtr >> X86_PD_SHIFT];
+#else
+    return &pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
+#endif
+}
+
+
+/**
+ * Gets the address the guest page directory (32-bit paging).
+ *
+ * @returns Pointer the page directory entry in question.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PD pGuestPD = 0;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    AssertRCReturn(rc, 0);
+    return pGuestPD;
+#else
+    return pPGM->CTX_SUFF(pGuestPD);
+#endif
 }
 
 

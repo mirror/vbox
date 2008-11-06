@@ -1056,7 +1056,7 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
         /*
          * Resolve the page directory.
          */
-        PX86PD pPD = pVM->pgm.s.pGuestPDHC;
+        PX86PD pPD = pVM->pgm.s.pGuestPDR3;
         Assert(pPD);
         Assert(pPD == (PX86PD)PGMPhysGCPhys2HCPtrAssert(pVM, cr3 & X86_CR3_PAGE_MASK, sizeof(*pPD)));
 
