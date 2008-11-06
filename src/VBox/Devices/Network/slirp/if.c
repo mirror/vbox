@@ -190,14 +190,14 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 #else
         ifq = if_batchq.ifq_prev;
         while(1){
-            if (ifq == &if_batchq) {
+            if (ifq == &if_batchq || ifq == NULL) {
                 VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
                 break;
             }
             ifqprev = ifq->ifq_prev;
 #endif
             VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
-	    if (so == ifq->ifq_so) {
+	    if (so == ifq->ifq_so && ifq->ifs_prev != NULL ) {
 			/* A match! */
 			ifm->ifq_so = so;
 			ifs_insque(ifm, ifq->ifs_prev);
@@ -234,6 +234,7 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	/* Create a new doubly linked list for this session */
 	ifm->ifq_so = so;
 	ifs_init(ifm);
+        if (ifq != NULL)
 	insque(pData, ifm, ifq);
 
 diddit:
@@ -372,7 +373,9 @@ if_start(PNATState pData)
 #endif
 
 	/* If there are more packets for this session, re-queue them */
-	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm && ifm->ifs_next != NULL) {
+	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm
+                && ifm->ifs_next != NULL
+                && ifqt != NULL) {
 		insque(pData, ifm->ifs_next, ifqt);
 		ifs_remque(ifm);
 	}
@@ -387,6 +390,12 @@ if_start(PNATState pData)
 	/* Encapsulate the packet for sending */
         if_encap(pData, (const uint8_t *)ifm->m_data, ifm->m_len);
 
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (ifm != &if_fastq
+            && ifm != &if_batchq
+            && ifm != &m_freelist
+            && ifm != &m_usedlist)
+#endif
         m_free(pData, ifm);
 
         VBOX_SLIRP_LOCK(pData->if_queued_mutex);

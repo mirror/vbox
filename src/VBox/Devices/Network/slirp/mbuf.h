@@ -150,4 +150,38 @@ void m_adj _P((struct mbuf *, int));
 int m_copy _P((struct mbuf *, struct mbuf *, int, int));
 struct mbuf * dtom _P((PNATState, void *));
 
+#ifdef VBOX_WITH_SYNC_SLIRP
+#define VBOX_QUEUE_EDGE_CHECK(x)             \
+do {                                         \
+    AssertRelease((x) != &m_freelist);       \
+    AssertRelease((x) != &m_usedlist);       \
+    AssertRelease((x) != &if_fastq);         \
+    AssertRelease((x) != &if_batchq);        \
+} while(0)
+#ifndef IN_MBUF
+#define m_inc(a, b)                         \
+do {                                        \
+    VBOX_QUEUE_EDGE_CHECK((a));             \
+    m_inc((a),(b));                         \
+} while (0)
+
+#define m_adj(a, b)                         \
+do {                                        \
+    VBOX_QUEUE_EDGE_CHECK((a));             \
+    m_adj((a), (b));                        \
+} while (0)
+
+#ifndef RT_OS_WINDOWS
+#define m_copy(a, b, c, d)                  \
+({                                          \
+    VBOX_QUEUE_EDGE_CHECK((a));             \
+    VBOX_QUEUE_EDGE_CHECK((b));             \
+    m_copy((a), (b), (c), (d));             \
+})
+#endif
+#endif /*IN_MBUF*/
+#else
+#define VBOX_QUEUE_EDGE_CHECK(x) /*ignore*/
+#endif
+
 #endif
