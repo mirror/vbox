@@ -36,12 +36,7 @@
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-
-#include <string.h>
-
-#ifdef RT_OS_WINDOWS
-# define strncasecmp strnicmp
-#endif
+#include <iprt/string.h>
 
 /** Everything defined in this file lives in this namespace. */
 namespace guestProp {
@@ -128,7 +123,7 @@ enum { MAX_FLAGS_LEN =   sizeof("TRANSIENT, RDONLYGUEST") };
  */
 DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
 {
-    static uint32_t flagList[] =
+    const static uint32_t sFlagList[] =
     {
         TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
     };
@@ -142,18 +137,18 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
     while ((*pcszNext != '\0') && RT_SUCCESS(rc))
     {
         unsigned i = 0;
-        for (; i < RT_ELEMENTS(flagList); ++i)
-            if (strncasecmp(pcszNext, flagName(flagList[i]),
-                            flagNameLen(flagList[i])
+        for (; i < RT_ELEMENTS(sFlagList); ++i)
+            if (RTStrNICmp(pcszNext, flagName(sFlagList[i]),
+                           flagNameLen(sFlagList[i])
                            ) == 0
                )
                 break;
-        if (RT_ELEMENTS(flagList) == i)
+        if (RT_ELEMENTS(sFlagList) == i)
              rc = VERR_PARSE_ERROR;
         else
         {
-            fFlags |= flagList[i];
-            pcszNext += flagNameLen(flagList[i]);
+            fFlags |= sFlagList[i];
+            pcszNext += flagNameLen(sFlagList[i]);
             while (' ' == *pcszNext)
                 ++pcszNext;
             if (',' == *pcszNext)
@@ -178,7 +173,7 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
  */
 DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
 {
-    static uint32_t flagList[] =
+    const static uint32_t sFlagList[] =
     {
         TRANSIENT, READONLY, RDONLYGUEST, RDONLYHOST
     };
@@ -190,13 +185,13 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
     if (RT_SUCCESS(rc))
     {
         unsigned i = 0;
-        for (; i < RT_ELEMENTS(flagList); ++i)
+        for (; i < RT_ELEMENTS(sFlagList); ++i)
         {
-            if (flagList[i] == (fFlags & flagList[i]))
+            if (sFlagList[i] == (fFlags & sFlagList[i]))
             {
-                strcpy(pszNext, flagName(flagList[i]));
-                pszNext += flagNameLen(flagList[i]);
-                fFlags &= ~flagList[i];
+                strcpy(pszNext, flagName(sFlagList[i]));
+                pszNext += flagNameLen(sFlagList[i]);
+                fFlags &= ~sFlagList[i];
                 if (fFlags != NILFLAG)
                 {
                     strcpy(pszNext, ", ");
