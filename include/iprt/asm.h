@@ -147,7 +147,7 @@
  * The ASM* functions will then be implemented in an external .asm file.
  *
  * @remark  At the present time it's unconfirmed whether or not Microsoft skipped
- *          inline assmebly in their AMD64 compiler.
+ *          inline assembly in their AMD64 compiler.
  */
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
 # define RT_INLINE_ASM_EXTERNAL 1
@@ -156,7 +156,7 @@
 #endif
 
 /** @def RT_INLINE_ASM_GNU_STYLE
- * Defined as 1 if the compiler understand GNU style inline assembly.
+ * Defined as 1 if the compiler understands GNU style inline assembly.
  */
 #if defined(_MSC_VER)
 # define RT_INLINE_ASM_GNU_STYLE 0
