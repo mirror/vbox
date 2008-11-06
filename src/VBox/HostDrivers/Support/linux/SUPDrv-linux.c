@@ -48,6 +48,12 @@
 #include <VBox/log.h>
 #include <iprt/mp.h>
 
+/** @todo figure out the exact version number */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
+# include <iprt/power.h>
+# define VBOX_WITH_SUSPEND_NOTIFICATION
+#endif
+
 #include <linux/sched.h>
 #ifdef CONFIG_DEVFS_FS
 # include <linux/devfs_fs_kernel.h>
@@ -60,6 +66,9 @@
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 #  include <asm/nmi.h>
 # endif
+#endif
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+# include <linux/platform_device.h>
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
@@ -217,18 +226,23 @@ __asm__(".section execmemory, \"awx\", @progbits\n\t"
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int      VBoxDrvLinuxInit(void);
-static void     VBoxDrvLinuxUnload(void);
-static int      VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
-static int      VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
+static int  VBoxDrvLinuxInit(void);
+static void VBoxDrvLinuxUnload(void);
+static int  VBoxDrvLinuxCreate(struct inode *pInode, struct file *pFilp);
+static int  VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp);
 #ifdef HAVE_UNLOCKED_IOCTL
-static long     VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+static long VBoxDrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #else
-static int      VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+static int  VBoxDrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #endif
-static int      VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
-static int      VBoxDrvLinuxErr2LinuxErr(int);
-
+static int  VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
+static int  VBoxDrvLinuxErr2LinuxErr(int);
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+static int  VBoxDrvProbe(struct platform_device *pDev);
+static int  VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State);
+static int  VBoxDrvResume(struct platform_device *pDev);
+static void VBoxDevRelease(struct device *pDev);
+#endif
 
 /** The file_operations structure. */
 static struct file_operations gFileOpsVBoxDrv =
@@ -258,6 +272,28 @@ static struct miscdevice gMiscDevice =
 #endif
 
 
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+static struct platform_driver gPlatformDriver =
+{
+    .probe = VBoxDrvProbe,
+    .suspend = VBoxDrvSuspend,
+    .resume = VBoxDrvResume,
+    /** @todo .shutdown? */
+    .driver =
+    {
+        .name = "vboxdrv"
+    }
+};
+
+static struct platform_device gPlatformDevice =
+{
+    .name = "vboxdrv",
+    .dev =
+    {
+        .release = VBoxDevRelease
+    }
+};
+#endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
 
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -555,20 +591,34 @@ nmi_activated:
              */
             if (RT_SUCCESS(rc))
                 rc = supdrvInitDevExt(&g_DevExt);
-            if (!rc)
+            if (RT_SUCCESS(rc))
             {
-                printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
-#ifdef VBOX_HRTIMER
-                       "'high-res'"
-#else
-                       "'normal'"
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+                rc = platform_driver_register(&gPlatformDriver);
+                if (rc == 0)
+                {
+                    rc = platform_device_register(&gPlatformDevice);
+                    if (rc == 0)
 #endif
-                       ".\n",
-                       g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
-                LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
-                printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                       VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
-                return rc;
+                    {
+                        printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
+#ifdef VBOX_HRTIMER
+                               "'high-res'"
+#else
+                               "'normal'"
+#endif
+                               ".\n",
+                               g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
+                        LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
+                        printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                                VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
+                        return rc;
+                    }
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+                    else
+                        platform_driver_unregister(&gPlatformDriver);
+                }
+#endif
             }
 
             rc = -EINVAL;
@@ -603,6 +653,11 @@ static void __exit VBoxDrvLinuxUnload(void)
     int                 rc;
     dprintf(("VBoxDrvLinuxUnload\n"));
     NOREF(rc);
+
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+    platform_device_unregister(&gPlatformDevice);
+    platform_driver_unregister(&gPlatformDriver);
+#endif
 
     /*
      * I Don't think it's possible to unload a driver which processes have
@@ -688,6 +743,51 @@ static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
     pFilp->private_data = NULL;
     return 0;
 }
+
+
+#ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+/**
+ * Dummy device release function. We have to provide this function,
+ * otherwise the kernel will complain.
+ *
+ * @param   pDev        Pointer to the platform device.
+ */
+static void VBoxDevRelease(struct device *pDev)
+{
+}
+
+/**
+ * Dummy probe function.
+ *
+ * @param   pDev        Pointer to the platform device.
+ */
+static int VBoxDrvProbe(struct platform_device *pDev)
+{
+    return 0;
+}
+
+/**
+ * Suspend callback.
+ * @param   pDev        Pointer to the platform device.
+ * @param   State       message type, see Documentation/power/devices.txt.
+ */
+static int VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State)
+{
+    RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
+    return 0;
+}
+
+/**
+ * Resume callback.
+ *
+ * @param   pDev        Pointer to the platform device.
+ */
+static int VBoxDrvResume(struct platform_device *pDev)
+{
+    RTPowerSignalEvent(RTPOWEREVENT_RESUME);
+    return 0;
+}
+#endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
 
 
 /**
