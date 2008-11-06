@@ -831,6 +831,23 @@ void TstRTStrXCmp(void)
     CHECK_DIFF(RTStrCmp("abcdef", "abcdeF"), > );
 
 
+    CHECK_DIFF(RTStrNCmp(NULL, NULL, RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNCmp(NULL, "", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNCmp("", NULL, RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNCmp("", "", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcdef", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcde", RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNCmp("abcde", "abcdef", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNCmp("abcdeg", "abcdef", RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcdeg", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNCmp("abcdeF", "abcdef", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcdeF", RTSTR_MAX), > );
+
+    CHECK_DIFF(RTStrNCmp("abcdef", "fedcba", 0), ==);
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcdeF", 5), ==);
+    CHECK_DIFF(RTStrNCmp("abcdef", "abcdeF", 6), > );
+
+
     CHECK_DIFF(RTStrICmp(NULL, NULL), == );
     CHECK_DIFF(RTStrICmp(NULL, ""), < );
     CHECK_DIFF(RTStrICmp("", NULL), > );
@@ -848,6 +865,33 @@ void TstRTStrXCmp(void)
     CHECK_DIFF(RTStrICmp("AbCdEf", "aBcDeF"), ==);
     CHECK_DIFF(RTStrICmp("AbCdEg", "aBcDeF"), > );
     CHECK_DIFF(RTStrICmp("AbCdEG", "aBcDef"), > ); /* diff performed on the lower case cp. */
+
+
+
+    CHECK_DIFF(RTStrNICmp(NULL, NULL, RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp(NULL, "", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNICmp("", NULL, RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNICmp("", "", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp("abcdef", "abcdef", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp("abcdef", "abcde", RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNICmp("abcde", "abcdef", RTSTR_MAX), < );
+    CHECK_DIFF(RTStrNICmp("abcdeg", "abcdef", RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNICmp("abcdef", "abcdeg", RTSTR_MAX), < );
+
+    CHECK_DIFF(RTStrNICmp("abcdeF", "abcdef", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp("abcdef", "abcdeF", RTSTR_MAX), ==);
+    CHECK_DIFF(RTStrNICmp("ABCDEF", "abcdef", RTSTR_MAX), ==);
+    CHECK_DIFF(RTStrNICmp("abcdef", "ABCDEF", RTSTR_MAX), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEf", "aBcDeF", RTSTR_MAX), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEg", "aBcDeF", RTSTR_MAX), > );
+    CHECK_DIFF(RTStrNICmp("AbCdEG", "aBcDef", RTSTR_MAX), > ); /* diff performed on the lower case cp. */
+
+    CHECK_DIFF(RTStrNICmp("ABCDEF", "fedcba", 0), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEg", "aBcDeF", 5), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEg", "aBcDeF", 6), > );
+    CHECK_DIFF(RTStrNICmp("AbCdEG", "aBcDef", 6), > ); /* diff performed on the lower case cp. */
+    /* We should continue using byte comparison when we hit the invalid CP.  Will assert in debug builds. */
+    // CHECK_DIFF(RTStrNICmp("AbCd\xff""eg", "aBcD\xff""eF", 6), ==);
 }
 
 

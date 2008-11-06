@@ -915,6 +915,157 @@ RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp)
 }
 
 
+/**
+ * Handle invalid encodings passed to RTStrGetCpNEx().
+ * @returns rc
+ * @param   ppsz        The pointer to the the string position point.
+ * @param   pCp         Where to store RTUNICP_INVALID.
+ * @param   pcch        Pointer to the string length.
+ * @param   rc          The iprt error code.
+ */
+static int rtStrGetCpNExFailure(const char **ppsz, PRTUNICP pCp, size_t *pcch, int rc)
+{
+    /*
+     * Try find a valid encoding.
+     */
+    (*ppsz)++; /** @todo code this! */
+    (*pcch)--;
+    *pCp = RTUNICP_INVALID;
+    return rc;
+}
+
+
+RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, PRTUNICP pCp, size_t *pcch)
+{
+    const unsigned char *puch = (const unsigned char *)*ppsz;
+    const unsigned char uch = *puch;
+    RTUNICP             uc;
+
+    if (*pcch == 0)
+    {
+        *pCp = RTUNICP_INVALID;
+        return VERR_INVALID_UTF8_ENCODING;
+    }
+    /* ASCII ? */
+    if (!(uch & RT_BIT(7)))
+    {
+        uc = uch;
+        puch++;
+    }
+    else if (uch & RT_BIT(6))
+    {
+        /* figure the length and validate the first octet. */
+        unsigned cb;
+        if (!(uch & RT_BIT(5)))
+            cb = 2;
+        else if (!(uch & RT_BIT(4)))
+            cb = 3;
+        else if (!(uch & RT_BIT(3)))
+            cb = 4;
+        else if (!(uch & RT_BIT(2)))
+            cb = 5;
+        else if (!(uch & RT_BIT(1)))
+            cb = 6;
+        else
+        {
+            RTStrAssertMsgFailed(("Invalid UTF-8 first byte: %.*Rhxs\n", RT_MIN(strlen((char *)puch), 10), puch));
+            return rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING);
+        }
+
+        if (cb > *pcch)
+            return rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING);
+
+        /* validate the rest */
+        switch (cb)
+        {
+            case 6:
+                RTStrAssertMsgReturn((puch[5] & 0xc0) == 0x80, ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+            case 5:
+                RTStrAssertMsgReturn((puch[4] & 0xc0) == 0x80, ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+            case 4:
+                RTStrAssertMsgReturn((puch[3] & 0xc0) == 0x80, ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+            case 3:
+                RTStrAssertMsgReturn((puch[2] & 0xc0) == 0x80, ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+            case 2:
+                RTStrAssertMsgReturn((puch[1] & 0xc0) == 0x80, ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+               break;
+        }
+
+        /* get and validate the code point. */
+        switch (cb)
+        {
+            case 6:
+                uc =            (puch[5] & 0x3f)
+                    | ((RTUNICP)(puch[4] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[3] & 0x3f) << 12)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 18)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 24)
+                    | ((RTUNICP)(uch     & 0x01) << 30);
+                RTStrAssertMsgReturn(uc >= 0x04000000 && uc <= 0x7fffffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+                break;
+            case 5:
+                uc =            (puch[4] & 0x3f)
+                    | ((RTUNICP)(puch[3] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 12)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 18)
+                    | ((RTUNICP)(uch     & 0x03) << 24);
+                RTStrAssertMsgReturn(uc >= 0x00200000 && uc <= 0x03ffffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+                break;
+            case 4:
+                uc =            (puch[3] & 0x3f)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 12)
+                    | ((RTUNICP)(uch     & 0x07) << 18);
+                RTStrAssertMsgReturn(uc >= 0x00010000 && uc <= 0x001fffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+                break;
+            case 3:
+                uc =            (puch[2] & 0x3f)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 6)
+                    | ((RTUNICP)(uch     & 0x0f) << 12);
+                RTStrAssertMsgReturn(uc >= 0x00000800 && uc <= 0x0000fffd,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, uc == 0xffff || uc == 0xfffe ? VERR_CODE_POINT_ENDIAN_INDICATOR : VERR_INVALID_UTF8_ENCODING));
+                RTStrAssertMsgReturn(uc < 0xd800 || uc > 0xdfff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_CODE_POINT_SURROGATE));
+                break;
+            case 2:
+                uc =            (puch[1] & 0x3f)
+                    | ((RTUNICP)(uch     & 0x1f) << 6);
+                RTStrAssertMsgReturn(uc >= 0x00000080 && uc <= 0x000007ff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, strlen((char *)puch)), puch),
+                                     rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING));
+                break;
+            default: /* impossible, but GCC is bitching. */
+                uc = RTUNICP_INVALID;
+                break;
+        }
+        puch += cb;
+        (*pcch) -= cb;
+    }
+    else
+    {
+        /* 6th bit is always set. */
+        RTStrAssertMsgFailed(("Invalid UTF-8 first byte: %.*Rhxs\n", RT_MIN(strlen((char *)puch), 10), puch));
+        return rtStrGetCpNExFailure(ppsz, pCp, pcch, VERR_INVALID_UTF8_ENCODING);
+    }
+    *pCp = uc;
+    *ppsz = (const char *)puch;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(char *) RTStrPutCpInternal(char *psz, RTUNICP uc)
 {
     unsigned char *puch = (unsigned char *)psz;
@@ -1034,6 +1185,34 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2)
 
 
 /**
+ * Performs a case sensitive string compare between two UTF-8 strings, given
+ * a maximum string length.
+ *
+ * Encoding errors are ignored by the current implementation. So, the only
+ * difference between this and the CRT strncmp function is the handling of
+ * NULL arguments.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ * @param   cchMax      The maximum string length
+ */
+RTDECL(int) RTStrNCmp(const char *psz1, const char *psz2, size_t cchMax)
+{
+    if (psz1 == psz2)
+        return 0;
+    if (!psz1)
+        return -1;
+    if (!psz2)
+        return 1;
+
+    return strncmp(psz1, psz2, cchMax);
+}
+
+
+/**
  * Performs a case insensitive string compare between two UTF-8 strings.
  *
  * This is a simplified compare, as only the simplified lower/upper case folding
@@ -1113,3 +1292,93 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
 #endif /* !RT_OS_WINDOWS */
 #endif
 }
+
+
+/**
+ * Performs a case insensitive string compare between two UTF-8 strings, given a
+ * maximum string length.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * The result is the difference between the mismatching codepoints after they
+ * both have been lower cased.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ * @param   cchMax      Maximum string length
+ */
+RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
+{
+    if (psz1 == psz2)
+        return 0;
+    if (!psz1)
+        return -1;
+    if (!psz2)
+        return 1;
+    if (cchMax == 0)
+        return 0;
+
+#if 1 /* new */
+    const char *pszStart1 = psz1;
+    for (;;)
+    {
+        /* Get the codepoints */
+        RTUNICP cp1;
+        size_t cchMax2 = cchMax;
+        int rc = RTStrGetCpNEx(&psz1, &cp1, &cchMax);
+        if (RT_FAILURE(rc))
+        {
+            AssertRC(rc);
+            psz1--;
+            cchMax++;
+            break;
+        }
+
+        RTUNICP cp2;
+        rc = RTStrGetCpNEx(&psz2, &cp2, &cchMax2);
+        if (RT_FAILURE(rc))
+        {
+            AssertRC(rc);
+            psz2--;
+            psz1 -= (cchMax - cchMax2 + 1);  /* This can't overflow, can it? */
+            cchMax = cchMax2 + 1;
+            break;
+        }
+
+        /* compare */
+        int iDiff = cp1 - cp2;
+        if (iDiff)
+        {
+            iDiff = RTUniCpToUpper(cp1) != RTUniCpToUpper(cp2);
+            if (iDiff)
+            {
+                iDiff = RTUniCpToLower(cp1) - RTUniCpToLower(cp2); /* lower case diff last! */
+                if (iDiff)
+                    return iDiff;
+            }
+        }
+
+        /* hit the terminator? */
+        if (!cp1 || cchMax == 0)
+            return 0;
+    }
+
+    /* Hit some bad encoding, continue in case insensitive mode. */
+    return RTStrNCmp(psz1, psz2, cchMax);
+#else /* old */
+#ifdef RT_OS_WINDOWS
+    return strnicmp(psz1, psz2, cchMax);
+#else /* !RT_OS_WINDOWS */
+    return strncasecmp(psz1, psz2, cchMax);
+#endif /* !RT_OS_WINDOWS */
+#endif
+}
+

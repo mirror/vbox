@@ -301,12 +301,27 @@ RTDECL(RTUNICP) RTStrGetCpInternal(const char *psz);
 /**
  * Get the unicode code point at the given string position.
  *
- * @returns unicode code point.
- * @returns RTUNICP_INVALID if the encoding is invalid.
+ * @returns iprt status code
+ * @returns VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
  * @param   ppsz        The string.
  * @param   pCp         Where to store the unicode code point.
+ *                      Stores RTUNICP_INVALID if the encoding is invalid.
  */
 RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp);
+
+/**
+ * Get the unicode code point at the given string position for a string of a
+ * given length.
+ *
+ * @returns iprt status code
+ * @returns VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
+ * @param   ppsz        The string.
+ * @param   pCp         Where to store the unicode code point.
+ *                      Stores RTUNICP_INVALID if the encoding is invalid.
+ * @param   pcch        Pointer to the length of the string.  This will be
+ *                      decremented by the size of the code point.
+ */
+RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, PRTUNICP pCp, size_t *pcch);
 
 /**
  * Put the unicode code point at the given string position
@@ -369,6 +384,35 @@ DECLINLINE(int) RTStrGetCpEx(const char **ppsz, PRTUNICP pCp)
         return VINF_SUCCESS;
     }
     return RTStrGetCpExInternal(ppsz, pCp);
+}
+
+/**
+ * Get the unicode code point at the given string position for a string of a
+ * given maximum length.
+ *
+ * @returns iprt status code.
+ * @param   ppsz        Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ * @param   pcch        Pointer to the maximum string length.  This will be
+ *                      decremented by the size of the code point found.
+ *
+ * @remark  We optimize this operation by using an inline function for
+ *          the most frequent and simplest sequence, the rest is
+ *          handled by RTStrGetCpNExInternal().
+ */
+DECLINLINE(int) RTStrGetCpNEx(const char **ppsz, PRTUNICP pCp, size_t *pcch)
+{
+    const unsigned char uch = **(const unsigned char **)ppsz;
+    if (*pcch != 0 && !(uch & RT_BIT(7)))
+    {
+        (*ppsz)++;
+        (*pcch)--;
+        *pCp = uch;
+        return VINF_SUCCESS;
+    }
+    return RTStrGetCpNExInternal(ppsz, pCp, pcch);
 }
 
 /**
@@ -737,6 +781,23 @@ RTDECL(char *) RTStrStripR(char *psz);
 RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
 
 /**
+ * Performs a case sensitive string compare between two UTF-8 strings, given
+ * a maximum string length.
+ *
+ * Encoding errors are ignored by the current implementation. So, the only
+ * difference between this and the CRT strncmp function is the handling of
+ * NULL arguments.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ * @param   cchMax      The maximum string length
+ */
+RTDECL(int) RTStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
+
+/**
  * Performs a case insensitive string compare between two UTF-8 strings.
  *
  * This is a simplified compare, as only the simplified lower/upper case folding
@@ -756,6 +817,29 @@ RTDECL(int) RTStrCmp(const char *psz1, const char *psz2);
  * @param   psz2        Second UTF-8 string. Null is allowed.
  */
 RTDECL(int) RTStrICmp(const char *psz1, const char *psz2);
+
+/**
+ * Performs a case insensitive string compare between two UTF-8 strings, given a
+ * maximum string length.
+ *
+ * This is a simplified compare, as only the simplified lower/upper case folding
+ * specified by the unicode specs are used. It does not consider character pairs
+ * as they are used in some languages, just simple upper & lower case compares.
+ *
+ * The result is the difference between the mismatching codepoints after they
+ * both have been lower cased.
+ *
+ * If the string encoding is invalid the function will assert (strict builds)
+ * and use RTStrCmp for the remainder of the string.
+ *
+ * @returns < 0 if the first string less than the second string.
+ * @returns 0 if the first string identical to the second string.
+ * @returns > 0 if the first string greater than the second string.
+ * @param   psz1        First UTF-8 string. Null is allowed.
+ * @param   psz2        Second UTF-8 string. Null is allowed.
+ * @param   cchMax      Maximum string length
+ */
+RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax);
 
 /**
  * Find the length of a zero-terminated byte string, given
