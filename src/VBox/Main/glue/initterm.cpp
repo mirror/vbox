@@ -48,6 +48,11 @@
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
+#include "VBox/com/com.h"
+#include "VBox/com/assert.h"
+
+#include "../include/Logging.h"
+
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
@@ -55,11 +60,6 @@
 #include <iprt/asm.h>
 
 #include <VBox/err.h>
-
-#include "VBox/com/com.h"
-#include "VBox/com/assert.h"
-
-#include "../include/Logging.h"
 
 namespace com
 {

@@ -3881,7 +3881,7 @@ bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
                              ComPtr <IInternalSessionControl> *aControl /*= NULL*/,
                              HMTX *aIPCSem /*= NULL*/,
-                             bool aAllowClosing /*= false*/);
+                             bool aAllowClosing /*= false*/)
 #else
 bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
                              ComPtr <IInternalSessionControl> *aControl /*= NULL*/,

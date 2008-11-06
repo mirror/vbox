@@ -43,15 +43,13 @@
 
 #include "Logging.h"
 
+#include <VBox/param.h>
+#include <VBox/version.h>
+
 #include <iprt/runtime.h>
 #include <iprt/path.h>
 #include <iprt/critsect.h>
 #include <iprt/timer.h>
-
-#include <VBox/param.h>
-#include <VBox/version.h>
-
-#include <VBox/com/com.h>
 
 #include <stdio.h>
 

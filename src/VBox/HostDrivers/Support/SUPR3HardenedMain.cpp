@@ -36,6 +36,8 @@
 # define INCL_ERRORS
 # include <os2.h>
 # include <stdio.h>
+# include <stdlib.h>
+# include <dlfcn.h>
 
 #elif RT_OS_WINDOWS
 # include <Windows.h>
@@ -85,7 +87,7 @@
  * Decorate a symbol that's resolved dynamically.
  */
 #ifdef RT_OS_OS2
-# define SUP_HARDENED_SYM(sym)  "_" ## sym
+# define SUP_HARDENED_SYM(sym)  "_" sym
 #else
 # define SUP_HARDENED_SYM(sym)  sym
 #endif

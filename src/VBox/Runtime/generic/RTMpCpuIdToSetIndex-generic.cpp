@@ -37,6 +37,6 @@
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu != NIL_RTCPUID ? idCpu : -1;
+    return idCpu != NIL_RTCPUID ? (int) idCpu : -1;
 }
 

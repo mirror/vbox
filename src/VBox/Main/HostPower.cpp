@@ -23,10 +23,13 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/mem.h>
-#include <VBox/com/ptr.h>
+
 #include "HostPower.h"
 #include "Logging.h"
+
+#include <VBox/com/ptr.h>
+
+#include <iprt/mem.h>
 
 HostPowerService::HostPowerService (VirtualBox *aVirtualBox)
 {

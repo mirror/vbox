@@ -35,7 +35,7 @@
 #include <iprt/err.h>
 
 
-RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand)
+RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW
 {
     NOREF(phRand);
     return VERR_NOT_SUPPORTED;

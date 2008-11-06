@@ -31,8 +31,6 @@
 #ifndef ___VBox_com_array_h
 #define ___VBox_com_array_h
 
-#include <VBox/com/ptr.h>
-
 /** @defgroup   grp_COM_arrays    COM/XPCOM Arrays
  * @{
  *
@@ -167,10 +165,11 @@
  */
 
 #if defined (VBOX_WITH_XPCOM)
-#include <nsMemory.h>
+# include <nsMemory.h>
 #endif
 
 #include "VBox/com/defs.h"
+#include "VBox/com/ptr.h"
 #include "VBox/com/assert.h"
 
 #include "iprt/cpputils.h"

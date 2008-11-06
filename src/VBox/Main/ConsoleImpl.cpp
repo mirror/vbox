@@ -21,8 +21,6 @@
  * additional information or have any questions.
  */
 
-#include <iprt/types.h> /* for stdint.h constants */
-
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
 #   include <errno.h>
@@ -62,6 +60,8 @@
 #include "Logging.h"
 
 #include <VBox/com/array.h>
+
+#include <iprt/types.h> /* for stdint.h constants */
 
 #include <iprt/string.h>
 #include <iprt/asm.h>

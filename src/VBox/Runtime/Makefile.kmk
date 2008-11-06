@@ -1131,6 +1131,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/strpbrk.cpp \
 	\
 	common/misc/thread.cpp \
+	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \

@@ -421,8 +421,11 @@ void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread)
 static void rtThreadRemoveLocked(PRTTHREADINT pThread)
 {
     PRTTHREADINT pThread2 = (PRTTHREADINT)RTAvlPVRemove(&g_ThreadTree, pThread->Core.Key);
+#if !defined(RT_OS_OS2)
+    /// @todo this asserts for threads created by NSPR
     AssertMsg(pThread2 == pThread, ("%p(%s) != %p (%p/%s)\n", pThread2, pThread2  ? pThread2->szName : "<null>",
                                     pThread, pThread->Core.Key, pThread->szName));
+#endif
     NOREF(pThread2);
 }
 

@@ -639,7 +639,7 @@ ifeq ($(KBUILD_TARGET),os2)
 	$(VBOX_PATH_LIBIDL)/lib/glib.lib
  # install necessary DLLs to the same place where xpidl goes
  INSTALLS += xpidl-DLLS
- xpidl_ORDERDEPS = xpidl-DLLS
+ xpidl_ORDERDEPS = $(TARGET_xpidl-DLLS)
  xpidl-DLLS_INST = $(xpidl_INST)
  # static libraries of these may be provided instead,
  # so copy DLLs only when they are present
@@ -1747,7 +1747,7 @@ $(PATH_VBox-xpcom-string)/idl_ts: $$(addprefix $$(VBOX_PATH_SDK)/bindings/xpcom/
 # i.e. the copy residing in obj/, while VBOX_XPIDL is pointing to
 # INSTARGET_xpidl which is the one in bin/.
 #
-$(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
+$(lastword $(VBOX_XPIDL)): $$(PATH_VBox-xpcom-string)/idl_ts
 
 
 #

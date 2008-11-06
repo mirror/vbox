@@ -36,6 +36,12 @@
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
+#include "VBox/com/com.h"
+#include "VBox/com/assert.h"
+
+#include "VBox/com/Guid.h"
+#include "VBox/com/array.h"
+
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
@@ -43,12 +49,6 @@
 #include <iprt/string.h>
 
 #include <VBox/err.h>
-
-#include "VBox/com/com.h"
-#include "VBox/com/assert.h"
-
-#include "VBox/com/Guid.h"
-#include "VBox/com/array.h"
 
 
 #ifdef RT_OS_DARWIN

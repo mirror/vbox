@@ -106,9 +106,16 @@ void VBoxMediaComboBox::repopulate()
 
 QUuid VBoxMediaComboBox::id (int aIndex /*= -1*/)
 {
+#if (__GNUC__ * 100 + __GNUC_MINOR__) >= 304
     AssertReturn (aIndex == -1 ||
                   (aIndex >= 0 && (size_t) aIndex < mMedia.size()),
                   QUuid());
+#else
+    static QUuid null;
+    AssertReturn (aIndex == -1 ||
+                  (aIndex >= 0 && (size_t) aIndex < mMedia.size()),
+                  null);
+#endif
 
     return mMedia [aIndex == -1 ? currentItem() : aIndex].id;
 }

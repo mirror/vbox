@@ -1067,7 +1067,12 @@ BEGINPROC   EMEmulateLockCmpXchg8b
     mov     ecx, [esp + 14h + 8]        ; ECX
 %endif
 
+%ifdef RT_OS_OS2
+    lock    cmpxchg8b [xBP]                ; do CMPXCHG8B
+%else
     lock    cmpxchg8b qword [xBP]          ; do CMPXCHG8B
+%endif
+
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     dword [r10], eax
@@ -1133,7 +1138,11 @@ BEGINPROC   EMEmulateCmpXchg8b
     mov     ecx, [esp + 14h + 8]        ; ECX
 %endif
 
+%ifdef RT_OS_OS2
+    cmpxchg8b [xBP]                ; do CMPXCHG8B
+%else
     cmpxchg8b qword [xBP]          ; do CMPXCHG8B
+%endif
 
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS

@@ -53,7 +53,7 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
 
     char *pszTmp;
     int rc = rtPathFromNative(&pszTmp, pszPath);
-    AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchImageName, pszPath), rc);
+    AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchPath, pszPath), rc);
 
     size_t cch = strlen(pszTmp);
     AssertReturn(cch <= cchPath, VERR_BUFFER_OVERFLOW);
