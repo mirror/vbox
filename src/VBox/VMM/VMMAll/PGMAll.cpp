@@ -887,8 +887,12 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX8
 #ifndef IN_RC
 
 /**
- * Syncs the SHADOW page directory pointer for the specified address. Allocates
- * backing pages in case the PDPT or PML4 entry is missing.
+ * Syncs the SHADOW page directory pointer for the specified address.
+ *
+ * Allocates backing pages in case the PDPT or PML4 entry is missing.
+ *
+ * The caller is responsible for making sure the guest has a valid PD before
+ * calling this function.
  *
  * @returns VBox status.
  * @param   pVM         VM handle.
@@ -904,6 +908,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
     PX86PML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
+    X86PML4E       Pml4eGst;
     int            rc;
     bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
 
@@ -918,12 +923,13 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
 
         if (!fNestedPaging)
         {
+            /** @todo why are we looking up the guest PML4E here?  Isn't pGstPml4e
+             *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
+             *        are fine.) */
             Assert(pVM->pgm.s.pHCShwAmd64CR3);
-            Assert(pPGM->pGstPaePML4HC);
+            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4e);
 
-            PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
-
-            rc = pgmPoolAlloc(pVM, pPml4eGst->u & X86_PML4E_PG_MASK,
+            rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
                               PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
         }
         else
@@ -945,8 +951,8 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
     /* The PDPT was cached or created; hook it up now. */
-    pPml4e->u |=   pShwPage->Core.Key
-                | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
+    pPml4e->u |= pShwPage->Core.Key
+              | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -958,11 +964,11 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
     {
         if (!fNestedPaging)
         {
-            Assert(pPGM->pGstPaePML4HC);
-
-            PX86PML4E pPml4eGst = &pPGM->pGstPaePML4HC->a[iPml4e];
-            PX86PDPT  pPdptGst;
-            rc = PGM_GCPHYS_2_PTR(pVM, pPml4eGst->u & X86_PML4E_PG_MASK, &pPdptGst);
+            /** @todo why are we looking up the guest PDPTE here?  Isn't pGstPdpe
+             *        trustworthy? */
+            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4e);
+            PX86PDPT pPdptGst;
+            rc = PGM_GCPHYS_2_PTR(pVM, Pml4eGst.u & X86_PML4E_PG_MASK, &pPdptGst);
             AssertRCReturn(rc, rc);
 
             Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
@@ -987,8 +993,8 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
     /* The PD was cached or created; hook it up now. */
-    pPdpe->u |=    pShwPage->Core.Key
-                | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+    pPdpe->u |= pShwPage->Core.Key
+             | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;

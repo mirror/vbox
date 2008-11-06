@@ -2031,11 +2031,11 @@ typedef struct PGM
 
     /** @name AMD64 Guest Paging.
      * @{ */
-    /** The guest's page directory pointer table, HC pointer. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3R0PTRTYPE(PX86PML4)           pGstPaePML4HC;
-#else
-    R3R0PTRTYPE(PX86PML4)           pGstPaePML4HC;
+    /** The guest's page directory pointer table, R3 pointer. */
+    R3PTRTYPE(PX86PML4)             pGstAmd64PML4R3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory pointer table, R0 pointer. */
+    R0PTRTYPE(PX86PML4)             pGstAmd64PML4R0;
 #endif
     /** @} */
 
@@ -3557,6 +3557,68 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
 #ifndef IN_RC
 
 /**
+ * Gets the page map level-4 pointer for the guest.
+ *
+ * @returns Pointer to the PML4 page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PML4 pGuestPml4;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    AssertRCReturn(rc, NULL);
+    return pGuestPml4;
+#else
+    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
+    return pPGM->CTX_SUFF(pGstAmd64PML4);
+#endif
+}
+
+
+/**
+ * Gets the pointer to a page map level-4 entry.
+ *
+ * @returns Pointer to the PML4 entry.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   iPml4e      The index.
+ */
+DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4e)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PML4 pGuestPml4;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    AssertRCReturn(rc, NULL);
+    return &pGuestPml4->a[iPml4e];
+#else
+    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
+    return &pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4e];
+#endif
+}
+
+
+/**
+ * Gets a page map level-4 entry.
+ *
+ * @returns The PML4 entry.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   iPml4e      The index.
+ */
+DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4e)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PML4 pGuestPml4;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    AssertRCReturn(rc, 0);
+    return pGuestPml4->a[iPml4e].u;
+#else
+    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
+    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4e].u;
+#endif
+}
+
+
+/**
  * Gets the page directory pointer entry for the specified address.
  *
  * @returns Pointer to the page directory pointer entry in question.
@@ -3567,20 +3629,16 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *
  */
 DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e)
 {
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
-    if ((*ppPml4e)->n.u1Present)
+    PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    if (pPml4e->n.u1Present)
     {
         PX86PDPT pPdpt;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdpt);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return NULL;
-        }
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdpt);
+        AssertRCReturn(rc, NULL);
+
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         return &pPdpt->a[iPdPt];
     }
     return NULL;
@@ -3599,32 +3657,23 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX
  */
 DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
 {
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
-    if ((*ppPml4e)->n.u1Present)
+    PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    if (pPml4e->n.u1Present)
     {
-        PX86PDPT pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return 0;
-        }
+        PCX86PDPT   pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        AssertRCReturn(rc, 0);
 
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         *pPdpe = pPdptTemp->a[iPdPt];
-        if (pPdpe->n.u1Present)
+        if (pPdptTemp->a[iPdPt].n.u1Present)
         {
-            PX86PDPAE pPD;
+            PCX86PDPAE pPD;
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            AssertRCReturn(rc, 0);
 
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (RT_FAILURE(rc))
-            {
-                AssertFailed();
-                return 0;
-            }
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD->a[iPD].u;
         }
@@ -3643,30 +3692,21 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
  */
 DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
 {
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    if (pPGM->pGstPaePML4HC->a[iPml4e].n.u1Present)
+    PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4e].n.u1Present)
     {
-        PX86PDPT pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pGstPaePML4HC->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return 0;
-        }
+        PCX86PDPT   pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        AssertRCReturn(rc, 0);
 
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
-            PX86PDPAE pPD;
-
+            PCX86PDPAE pPD;
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            if (RT_FAILURE(rc))
-            {
-                AssertFailed();
-                return 0;
-            }
+            AssertRCReturn(rc, 0);
+
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD->a[iPD].u;
         }
@@ -3685,30 +3725,21 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
  */
 DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
 {
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    if (pPGM->pGstPaePML4HC->a[iPml4e].n.u1Present)
+    PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4e].n.u1Present)
     {
-        PX86PDPT pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPGM->pGstPaePML4HC->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return NULL;
-        }
+        PCX86PDPT   pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        AssertRCReturn(rc, NULL);
 
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
-
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            if (RT_FAILURE(rc))
-            {
-                AssertFailed();
-                return NULL;
-            }
+            AssertRCReturn(rc, NULL);
+
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return &pPD->a[iPD];
         }
@@ -3730,32 +3761,23 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
  */
 DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
 {
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    *ppPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
-    if ((*ppPml4e)->n.u1Present)
+    PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    if (pPml4e->n.u1Present)
     {
-        PX86PDPT pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), (*ppPml4e)->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return 0;
-        }
+        PCX86PDPT   pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        AssertRCReturn(rc, NULL);
 
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         *pPdpe = pPdptTemp->a[iPdPt];
-        if (pPdpe->n.u1Present)
+        if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            AssertRCReturn(rc, NULL);
 
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (RT_FAILURE(rc))
-            {
-                AssertFailed();
-                return 0;
-            }
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD;
         }
@@ -3775,39 +3797,26 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
  */
 DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, unsigned *piPD)
 {
-    PX86PML4E pPml4e;
-    PX86PDPE pPdpe;
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-
-    Assert(pPGM->pGstPaePML4HC);
-    pPml4e = &pPGM->pGstPaePML4HC->a[iPml4e];
-    if (pPml4e->n.u1Present)
+    PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
+    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4e].n.u1Present)
     {
-        PX86PDPT pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        if (RT_FAILURE(rc))
-        {
-            AssertFailed();
-            return 0;
-        }
+        PCX86PDPT   pPdptTemp;
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        AssertRCReturn(rc, NULL);
 
-        const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-        pPdpe = &pPdptTemp->a[iPdPt];
-        if (pPdpe->n.u1Present)
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+        if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
+            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            AssertRCReturn(rc, NULL);
 
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdpe->u & X86_PDPE_PG_MASK, &pPD);
-            if (RT_FAILURE(rc))
-            {
-                AssertFailed();
-                return 0;
-            }
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD;
         }
     }
-    return 0;
+    return NULL;
 }
 
 #endif /* !IN_RC */
