@@ -516,7 +516,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
     uint32_t *pu32End = (uint32_t *)((uint8_t *)(pRet + 1) + cb);
     uint32_t *pu32EndReal = pRet->offNext
                           ? (uint32_t *)((uint8_t *)pRet + pRet->offNext)
-                          : (uint32_t *)(pHeap->CTXSUFF(pbHeap) + pHeap->cbHeap);
+                          : (uint32_t *)(pHeap->CTX_SUFF(pbHeap) + pHeap->cbHeap);
     cbFence += (uintptr_t)pu32EndReal - (uintptr_t)pu32End; Assert(!(cbFence & 0x3));
     ASMMemFill32((uint8_t *)pu32EndReal - cbFence, cbFence, MMHYPER_HEAP_STRICT_FENCE_U32);
     pu32EndReal[-1] = cbFence;
