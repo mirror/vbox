@@ -504,13 +504,15 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                 pVM->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
                 PGM_INVL_PG(GCPtr); /** @todo this shouldn't be necessary? */
             }
+
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-
-            pVM->pgm.s.pGstPaePML4HC = (R3R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
-
+            pVM->pgm.s.pGstAmd64PML4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVM->pgm.s.pGstAmd64PML4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  endif
             if (!HWACCMIsNestedPagingActive(pVM))
             {
+                PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
                 if (pVM->pgm.s.pHCShwAmd64CR3)
                 {
                     /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
@@ -586,7 +588,10 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    pVM->pgm.s.pGstPaePML4HC = 0;
+    pVM->pgm.s.pGstAmd64PML4R3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pGstAmd64PML4R0 = 0;
+# endif
     if (!HWACCMIsNestedPagingActive(pVM))
     {
         pVM->pgm.s.pHCPaePML4    = 0;

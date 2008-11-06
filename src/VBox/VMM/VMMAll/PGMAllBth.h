@@ -3708,7 +3708,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCUINTP
         PX86PML4E       pPml4eDst;
         RTGCPHYS        GCPhysPdptSrc;
 
-        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4e];
+        pPml4eSrc     = pgmGstGetLongModePML4EPtr(&pVM->pgm.s, iPml4e);
         pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
