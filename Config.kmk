@@ -141,6 +141,8 @@ else ifeq ($(KBUILD_TARGET),darwin)
   VBOX_PACKAGE_OS = DARWIN
 else ifeq ($(KBUILD_TARGET),solaris)
   VBOX_PACKAGE_OS = SOLARIS
+else ifeq ($(KBUILD_TARGET),os2)
+  VBOX_PACKAGE_OS = OS2
 else if1of ($(KBUILD_TARGET), dragonfly freebsd netbsd openbsd)
   VBOX_PACKAGE_OS = BSD
 else
@@ -1163,7 +1165,7 @@ ifeq ($(KBUILD_TARGET),os2)
  LIB_XPCOM       = $(PATH_BIN)/VBoxXCOM.dll
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dll
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSett.dll
- OBJ_SYS0        = $(PATH_OBJ)/src/VBox/Runtime/RuntimeR0/os2/sys0.obj
+ OBJ_SYS0        = $(PATH_OBJ)/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(KBUILD_TARGET),win)
  LIB_RUNTIME     = $(PATH_LIB)/VBoxRT.lib
@@ -1715,6 +1717,8 @@ SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
 # For *NIX we require it to be present on the system.
 #
 ## @todo convert this into SDK and integrate the Qt stuff into kBuild.
+## @todo remove this section when win and darwin cases are moved to kBuild/units/qt3.kmk.
+##       vbox/Makefile.kmk that uses VBX_DLL_QT and others needs to be corrected too
 ifeq ($(KBUILD_TARGET),win)
  VBOX_PATH_QT ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v3.*)))
  VBOX_DLL_QT ?= $(firstword $(wildcard $(VBOX_PATH_QT)/bin/VBoxQt3*.dll) \

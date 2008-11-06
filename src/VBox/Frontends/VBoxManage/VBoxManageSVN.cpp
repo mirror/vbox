@@ -20,8 +20,9 @@
  * additional information or have any questions.
  */
 
-#include <VBox/version.h>
 #include "VBoxManage.h"
+
+#include <VBox/version.h>
 
 /**
  * Return the SVN revision number. We put this function into a separate file

@@ -421,7 +421,7 @@ PR_IMPLEMENT(PRFileDesc*) PR_OpenFile(
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 static PRInt32 PR_GetSysfdTableMax(void)
-#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PRInt32 PR_GetSysfdTableMax(void)
 #endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 {
@@ -458,7 +458,7 @@ PRInt32 PR_GetSysfdTableMax(void)
 
 #ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
 static PRInt32 PR_SetSysfdTableSize(int table_size)
-#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
+#else /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 PRInt32 PR_SetSysfdTableSize(int table_size)
 #endif /* !VBOX_WITH_XPCOM_NAMESPACE_CLEANUP */
 {

@@ -22,6 +22,8 @@
 #ifndef ____H_LINUX_SERVER
 #define ____H_LINUX_SERVER
 
+#include <VBox/com/com.h>
+
 #include <VBox/version.h>
 
 /**

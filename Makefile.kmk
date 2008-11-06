@@ -89,12 +89,16 @@ endif
 # The Qt DLLs.
 ifneq ($(VBOX_WITH_QTGUI),)
  if1of ($(KBUILD_TARGET), win os2)
-  #include $(KBUILD_PATH)/sdks/QT3.kmk
-  #bin_SOURCES += \
-  #	$(DLL_SDK_QT3_QT)
-  ifneq ($(strip $(VBOX_DLL_QT)),)
+  ## @todo remove ifeq and make it work for win too (see
+  ifeq ($(KBUILD_TARGET),os2)
+   include $(KBUILD_PATH)/units/qt3.kmk
    bin_SOURCES += \
-	$(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+    $(DLL_SDK_QT3_QT)=>$(not-dir $(DLL_SDK_QT3_QT))
+  else
+   ifneq ($(strip $(VBOX_DLL_QT)),)
+    bin_SOURCES += \
+     $(VBOX_DLL_QT)=>$(not-dir $(VBOX_DLL_QT))
+   endif
   endif
   ifdef VBOX_QT_BINARIES
    bin_SOURCES += $(VBOX_QT_BINARIES)

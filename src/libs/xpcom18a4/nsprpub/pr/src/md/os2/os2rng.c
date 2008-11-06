@@ -40,6 +40,7 @@
 #define INCL_DOSERRORS
 #include <os2.h>
 #include <stdlib.h>
+#include <memory.h>
 #include <time.h>
 #include "primpl.h"
 

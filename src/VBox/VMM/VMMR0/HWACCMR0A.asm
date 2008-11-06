@@ -837,17 +837,22 @@ ENDPROC VMXActivateVMCS
 ; */
 ;DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
 BEGINPROC VMXGetActivateVMCS
-%ifdef RT_ARCH_AMD64
- %ifdef ASM_CALL64_GCC
-    vmptrst qword [rdi]
- %else
-    vmptrst qword [rcx]
- %endif
+%ifdef RT_OS_OS2
+    mov     eax, VERR_NOT_SUPPORTED
+    ret
 %else
+ %ifdef RT_ARCH_AMD64
+  %ifdef ASM_CALL64_GCC
+    vmptrst qword [rdi]
+  %else
+    vmptrst qword [rcx]
+  %endif
+ %else
     vmptrst qword [esp+04h]
-%endif
+ %endif
     xor     eax, eax
     ret
+%endif
 ENDPROC VMXGetActivateVMCS
 
 ;/**

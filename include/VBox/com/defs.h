@@ -41,6 +41,11 @@
 
 #if defined (RT_OS_OS2)
 
+#if defined(RT_MAX) && RT_MAX != 22
+# error RT_MAX already defined by <iprt/cdefs.h>! Make sure <VBox/com/defs.h> \
+        is included before it.
+#endif
+
 /* Make sure OS/2 Toolkit headers are pulled in to have BOOL/ULONG/etc. typedefs
  * already defined in order to be able to redefine them using #define. It's
  * also important to do it before iprt/cdefs.h, otherwise we'll lose RT_MAX in

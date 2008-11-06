@@ -22,11 +22,12 @@
 #ifndef ___H_VBOXMANAGE
 #define ___H_VBOXMANAGE
 
-#include <iprt/types.h>
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
+
+#include <iprt/types.h>
 
 /** @name Syntax diagram category.
  * @{ */

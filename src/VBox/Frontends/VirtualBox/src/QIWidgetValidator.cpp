@@ -22,14 +22,14 @@
 
 #include "QIWidgetValidator.h"
 
+#include "VBoxGlobal.h"
+
 #include <qobjectlist.h>
 #include <qlineedit.h>
 #include <qcombobox.h>
 #include <qlabel.h>
 
 #include <iprt/assert.h>
-
-#include "VBoxGlobal.h"
 
 /** @class QIWidgetValidator
  *

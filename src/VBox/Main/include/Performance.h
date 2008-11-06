@@ -22,9 +22,12 @@
  */
 
 
-#include <iprt/types.h>
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>
+
+#include <iprt/types.h>
+#include <iprt/err.h>
+
 #include <algorithm>
 #include <list>
 #include <string>

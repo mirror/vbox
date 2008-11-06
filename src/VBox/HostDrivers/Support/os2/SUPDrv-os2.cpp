@@ -374,6 +374,14 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+
+bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+{
+	NOREF(pDevExt);
+    return false;
+}
+
+
 /**
  * Callback for writing to the log buffer.
  *

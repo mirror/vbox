@@ -21,12 +21,6 @@
  * additional information or have any questions.
  */
 
-#include <iprt/runtime.h>
-#include <iprt/stream.h>
-#include <iprt/env.h>
-#include <iprt/err.h>
-#include <iprt/process.h>
-
 #ifdef RT_OS_SOLARIS
 #include "../solaris/PerformanceSolaris.cpp"
 #endif
@@ -45,6 +39,12 @@
 #ifdef RT_OS_DARWIN
 #include "../darwin/PerformanceDarwin.cpp"
 #endif
+
+#include <iprt/runtime.h>
+#include <iprt/stream.h>
+#include <iprt/env.h>
+#include <iprt/err.h>
+#include <iprt/process.h>
 
 #define RUN_TIME_MS        1000
 

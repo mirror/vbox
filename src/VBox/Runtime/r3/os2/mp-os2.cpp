@@ -45,7 +45,7 @@
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < RTCPUSET_MAX_CPUS ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS ? (int) idCpu : -1;
 }
 
 
