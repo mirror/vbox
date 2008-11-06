@@ -351,7 +351,6 @@ static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, 
 static unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
 static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc);
 static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg);
-static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream);
 static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg);
 static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
 
@@ -2106,8 +2105,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
  *
  * @returns VBox status code.
  * @param   pThis           The instance.
- * @remarks Owns the globals mutex, so re-requesting it anytime during this phase
- *          would panic the system e.g. in vboxNetFltSolarisFindInstance).
  */
 static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 {
@@ -2735,26 +2732,6 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
 
     freemsg(pMsg);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Find the PVBOXNETFLTINS associated with a stream.
- *
- * @returns PVBOXNETFLTINS instance, or NULL if there's none.
- * @param   pStream     Pointer to the stream to search for.
- */
-static PVBOXNETFLTINS vboxNetFltSolarisFindInstance(vboxnetflt_stream_t *pStream)
-{
-    if (!pStream)
-        return NULL;
-
-    vboxnetflt_stream_t *pCur = g_VBoxNetFltSolarisStreams;
-    for (; pCur; pCur = pCur->pNext)
-        if (pCur == pStream)
-            return pCur->pThis;
-
-    return NULL;
 }
 
 
