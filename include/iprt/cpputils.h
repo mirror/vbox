@@ -82,7 +82,7 @@ template <class> class auto_ref_ptr;
  * Base class for objects willing to support smart reference counting using
  * the auto_ref_ptr template.
  *
- * When a class that wants to be used with the auto_ref_ptr template it simply
+ * When a class wants to be used with the auto_ref_ptr template it simply
  * declares the auto_ref class among its public base classes -- there is no
  * need to implement any additional methods.
  */
@@ -125,7 +125,7 @@ private:
  *      managed pointer.
  *
  * The object class to manage must provide ref() and unref() methods that have
- * the same syntax and symantics as defined in the auto_ref class.
+ * the same syntax and semantics as defined in the auto_ref class.
  *
  * @param C     Class to manage.
  */
