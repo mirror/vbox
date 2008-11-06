@@ -969,7 +969,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     for (int iPDPTE = X86_PG_PAE_PDPE_ENTRIES - 1; iPDPTE >= 0; iPDPTE--)
     {
         unsigned  iPDSrc;
-        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, iPDPTE << X86_PDPT_SHIFT, &iPDSrc);
+        PX86PDPAE pPDSrc = pgmGstGetPaePDPtr(&pVM->pgm.s, (RTGCPTR32)iPDPTE << X86_PDPT_SHIFT, &iPDSrc, NULL);
 
         /*
          * Scan for free page directory entries.
@@ -1013,7 +1013,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
             /*
              * Ask for the mapping.
              */
-            RTGCPTR GCPtrNewMapping = (iPDPTE << X86_PDPT_SHIFT) + (iPDNew << X86_PD_PAE_SHIFT);
+            RTGCPTR GCPtrNewMapping = ((RTGCPTR32)iPDPTE << X86_PDPT_SHIFT) + (iPDNew << X86_PD_PAE_SHIFT);
 
             if (pMapping->pfnRelocate(pVM, GCPtrOldMapping, GCPtrNewMapping, PGMRELOCATECALL_SUGGEST, pMapping->pvUser))
             {
@@ -1046,12 +1046,13 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
     if (pVM->pgm.s.fMappingsFixed)
         return false;
 
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
+    PGMMODE const enmGuestMode = PGMGetGuestMode(pVM);
+    Assert(enmGuestMode <= PGMMODE_PAE_NX);
 
     /*
      * Iterate mappings.
      */
-    if (PGMGetGuestMode(pVM) == PGMMODE_32_BIT)
+    if (enmGuestMode == PGMMODE_32_BIT)
     {
         /*
          * Resolve the page directory.
@@ -1077,8 +1078,8 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
                 }
         }
     }
-    else if (   PGMGetGuestMode(pVM) == PGMMODE_PAE
-             || PGMGetGuestMode(pVM) == PGMMODE_PAE_NX)
+    else if (   enmGuestMode == PGMMODE_PAE
+             || enmGuestMode == PGMMODE_PAE_NX)
     {
         for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         {
