@@ -664,7 +664,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         val = pCtx->cr4;
         if (!pVM->hwaccm.s.fNestedPaging)
         {
-            switch(pVM->hwaccm.s.enmShadowMode)
+            switch(pVCpu->hwaccm.s.enmShadowMode)
             {
             case PGMMODE_REAL:
             case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
