@@ -426,10 +426,6 @@ typedef struct HWACCMCPU
 
     } svm;
 
-#if HC_ARCH_BITS == 32
-    uint32_t                        Alignment;
-#endif
-
     /** Event injection state. */
     struct
     {
