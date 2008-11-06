@@ -351,11 +351,11 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, vo
          */
         for (unsigned i = 0; i < 4; i++)
         {
-            if (    pVM->pgm.s.pGstPaePDPTHC->a[i].n.u1Present
-                &&  (pVM->pgm.s.pGstPaePDPTHC->a[i].u & X86_PDPE_PG_MASK) != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
+            if (    pVM->pgm.s.pGstPaePDPTR3->a[i].n.u1Present
+                &&  (pVM->pgm.s.pGstPaePDPTR3->a[i].u & X86_PDPE_PG_MASK) != pVM->pgm.s.aGCPhysGstPaePDsMonitored[i])
             {
                 Log(("pgmR3GstPAEWriteHandlerCR3: detected updated PDPE; [%d] = %#llx, Old GCPhys=%RGp\n",
-                     i, pVM->pgm.s.pGstPaePDPTHC->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
+                     i, pVM->pgm.s.pGstPaePDPTR3->a[i].u, pVM->pgm.s.aGCPhysGstPaePDsMonitored[i]));
                 /*
                  * The PD has changed.
                  * We will schedule a monitoring update for the next TLB Flush,

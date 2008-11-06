@@ -400,10 +400,16 @@ int main()
     GEN_CHECK_OFF(PGM, pGuestPDR0);
 #endif
     GEN_CHECK_OFF(PGM, pGuestPDRC);
-    GEN_CHECK_OFF(PGM, pGstPaePDPTHC);
-    GEN_CHECK_OFF(PGM, pGstPaePDPTGC);
-    GEN_CHECK_OFF(PGM, apGstPaePDsHC);
-    GEN_CHECK_OFF(PGM, apGstPaePDsGC);
+    GEN_CHECK_OFF(PGM, pGstPaePDPTR3);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    GEN_CHECK_OFF(PGM, pGstPaePDPTR0);
+#endif
+    GEN_CHECK_OFF(PGM, pGstPaePDPTRC);
+    GEN_CHECK_OFF(PGM, apGstPaePDsR3);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    GEN_CHECK_OFF(PGM, apGstPaePDsR0);
+#endif
+    GEN_CHECK_OFF(PGM, apGstPaePDsRC);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDs);
     GEN_CHECK_OFF(PGM, aGCPhysGstPaePDsMonitored);
     GEN_CHECK_OFF(PGM, pHC32BitPD);

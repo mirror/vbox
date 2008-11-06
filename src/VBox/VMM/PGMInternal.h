@@ -2002,25 +2002,27 @@ typedef struct PGM
     /** @name PAE Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, static GC mapping. */
-    RCPTRTYPE(PX86PDPT)             pGstPaePDPTGC;
-    /** The guest's page directory pointer table, HC pointer. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PDPT)             pGstPaePDPTHC;
-#else
-    R3R0PTRTYPE(PX86PDPT)           pGstPaePDPTHC;
+    RCPTRTYPE(PX86PDPT)             pGstPaePDPTRC;
+    /** The guest's page directory pointer table, R3 pointer. */
+    R3PTRTYPE(PX86PDPT)             pGstPaePDPTR3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The guest's page directory pointer table, R0 pointer. */
+    R0PTRTYPE(PX86PDPT)             pGstPaePDPTR0;
 #endif
-    /** The guest's page directories, HC pointers.
+
+    /** The guest's page directories, R3 pointers.
      * These are individual pointers and don't have to be adjecent.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PDPAE)            apGstPaePDsHC[4];
-#else
-    R3R0PTRTYPE(PX86PDPAE)          apGstPaePDsHC[4];
+    R3PTRTYPE(PX86PDPAE)            apGstPaePDsR3[4];
+    /** The guest's page directories, R0 pointers.
+     * Same restrictions as apGstPaePDsR3. */
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
 #endif
     /** The guest's page directories, static GC mapping.
-     * Unlike the HC array the first entry can be accessed as a 2048 entry PD.
+     * Unlike the R3/R0 array the first entry can be accessed as a 2048 entry PD.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-    RCPTRTYPE(PX86PDPAE)            apGstPaePDsGC[4];
+    RCPTRTYPE(PX86PDPAE)            apGstPaePDsRC[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
@@ -3346,6 +3348,49 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
 
 
 /**
+ * Gets the guest page directory pointer table.
+ *
+ * @returns Pointer to the page directory in question.
+ * @returns NULL if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = 0;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPDPT);
+    AssertRCReturn(rc, 0);
+    return pGuestPDPT;
+#else
+    return pPGM->CTX_SUFF(pGstPaePDPT);
+#endif
+}
+
+
+/**
+ * Gets the guest page directory pointer table entry for the specified address.
+ *
+ * @returns Pointer to the page directory in question.
+ * @returns NULL if the page directory is not present or on an invalid page.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
+{
+    AssertGCPtr32(GCPtr);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = 0;
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPDPT);
+    AssertRCReturn(rc, 0);
+    return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
+#else
+    return &pPGM->CTX_SUFF(pGstPaePDPT)->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
+#endif
+}
+
+
+/**
  * Gets the page directory for the specified address.
  *
  * @returns Pointer to the page directory in question.
@@ -3355,19 +3400,29 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
  */
 DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCUINTPTR GCPtr)
 {
-    const unsigned iPdPt = GCPtr >> X86_PDPT_SHIFT;
-    if (CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].n.u1Present)
+    AssertGCPtr32(GCPtr);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
+    AssertReturn(pGuestPDPT, 0);
+#else
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+#endif
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    if (pGuestPDPT->a[iPdPt].n.u1Present)
     {
-        if ((CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
-            return CTXSUFF(pPGM->apGstPaePDs)[iPdPt];
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
+            return pPGM->CTX_SUFF(apGstPaePDs)[iPdPt];
+#endif
 
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return pPD;
-        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
-        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emulated as all 0s. */
+        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt].u));
+        /* returning NULL is ok if we assume it's just an invalid page of some kind emulated as all 0s. (not quite true) */
     }
     return NULL;
 }
@@ -3383,20 +3438,30 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCUINTPTR GCPtr)
  */
 DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCUINTPTR GCPtr)
 {
-    const unsigned iPdPt = GCPtr >> X86_PDPT_SHIFT;
-    if (CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].n.u1Present)
+    AssertGCPtr32(GCPtr);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
+    AssertReturn(pGuestPDPT, 0);
+#else
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+#endif
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    if (pGuestPDPT->a[iPdPt].n.u1Present)
     {
         const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        if ((CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
-            return &CTXSUFF(pPGM->apGstPaePDs)[iPdPt]->a[iPD];
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
+            return &pPGM->CTX_SUFF(apGstPaePDs)[iPdPt]->a[iPD];
+#endif
 
         /* The cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return &pPD->a[iPD];
-        AssertMsgFailed(("Impossible! rc=%Rrc PDPE=%RX64\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
-        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page or something which we'll emulate as all 0s. */
+        AssertMsgFailed(("Impossible! rc=%Rrc PDPE=%RX64\n", rc, pGuestPDPT->a[iPdPt].u));
+        /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page or something which we'll emulate as all 0s. (not quite true) */
     }
     return NULL;
 }
@@ -3412,21 +3477,31 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCUINTPTR GCPtr)
  */
 DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
 {
-    const unsigned iPdPt = GCPtr >> X86_PDPT_SHIFT;
-    if (CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].n.u1Present)
+    AssertGCPtr32(GCPtr);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
+    AssertReturn(pGuestPDPT, 0);
+#else
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+#endif
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    if (pGuestPDPT->a[iPdPt].n.u1Present)
     {
         const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        if ((CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
-            return CTXSUFF(pPGM->apGstPaePDs)[iPdPt]->a[iPD].u;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
+            return pPGM->CTX_SUFF(apGstPaePDs)[iPdPt]->a[iPD].u;
+#endif
 
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return pPD->a[iPD].u;
-        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
+        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt].u));
     }
-    return 0ULL;
+    return 0;
 }
 
 
@@ -3439,28 +3514,41 @@ DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCUINTPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  * @param   piPD        Receives the index into the returned page directory
+ * @param   pPdpe       Receives the page directory pointer entry. Optional.
  */
-DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCUINTPTR GCPtr, unsigned *piPD, PX86PDPE pPdpe)
 {
-    const unsigned iPdPt = GCPtr >> X86_PDPT_SHIFT;
-    if (CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].n.u1Present)
+    AssertGCPtr32(GCPtr);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
+    AssertReturn(pGuestPDPT, 0);
+#else
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+#endif
+    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    if (pPdpe)
+        *pPdpe = pGuestPDPT->a[iPdPt];
+    if (pGuestPDPT->a[iPdPt].n.u1Present)
     {
         const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        if ((CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
         {
             *piPD = iPD;
-            return CTXSUFF(pPGM->apGstPaePDs)[iPdPt];
+            return pPGM->CTX_SUFF(apGstPaePDs)[iPdPt];
         }
+#endif
 
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
         {
             *piPD = iPD;
             return pPD;
         }
-        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt].u));
+        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt].u));
         /* returning NIL_RTGCPHYS is ok if we assume it's just an invalid page of some kind emulated as all 0s. */
     }
     return NULL;
@@ -3522,7 +3610,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
         if (RT_FAILURE(rc))
         {
             AssertFailed();
-            return 0ULL;
+            return 0;
         }
 
         const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3535,13 +3623,13 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
             if (RT_FAILURE(rc))
             {
                 AssertFailed();
-                return 0ULL;
+                return 0;
             }
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD->a[iPD].u;
         }
     }
-    return 0ULL;
+    return 0;
 }
 
 
@@ -3565,7 +3653,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
         if (RT_FAILURE(rc))
         {
             AssertFailed();
-            return 0ULL;
+            return 0;
         }
 
         const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3577,13 +3665,13 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
             if (RT_FAILURE(rc))
             {
                 AssertFailed();
-                return 0ULL;
+                return 0;
             }
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD->a[iPD].u;
         }
     }
-    return 0ULL;
+    return 0;
 }
 
 
@@ -3653,7 +3741,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
         if (RT_FAILURE(rc))
         {
             AssertFailed();
-            return 0ULL;
+            return 0;
         }
 
         const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3666,13 +3754,13 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
             if (RT_FAILURE(rc))
             {
                 AssertFailed();
-                return 0ULL;
+                return 0;
             }
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD;
         }
     }
-    return 0ULL;
+    return 0;
 }
 
 
@@ -3700,7 +3788,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
         if (RT_FAILURE(rc))
         {
             AssertFailed();
-            return 0ULL;
+            return 0;
         }
 
         const unsigned iPdPt  = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3713,13 +3801,13 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, uns
             if (RT_FAILURE(rc))
             {
                 AssertFailed();
-                return 0ULL;
+                return 0;
             }
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
             return pPD;
         }
     }
-    return 0ULL;
+    return 0;
 }
 
 #endif /* !IN_RC */

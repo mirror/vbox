@@ -825,7 +825,7 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, P
     if (    !pPdpe->n.u1Present
         &&  !(pPdpe->u & X86_PDPE_PG_MASK))
     {
-        PX86PDPE pPdptGst = &CTXSUFF(pPGM->pGstPaePDPT)->a[iPdPt];
+        PX86PDPE pPdptGst = pgmGstGetPaePDPEPtr(pPGM, GCPtr);
 
         Assert(!(pPdpe->u & X86_PDPE_PG_MASK));
         /* Create a reference back to the PDPT by using the index in its shadow page. */
@@ -1229,7 +1229,7 @@ VMMDECL(int)  PGMGstModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
 VMMDECL(X86PDPE) PGMGstGetPaePDPtr(PVM pVM, unsigned iPdpt)
 {
     Assert(iPdpt <= 3);
-    return pVM->pgm.s.CTXSUFF(pGstPaePDPT)->a[iPdpt & 3];
+    return pgmGstGetPaePDPTPtr(&pVM->pgm.s)->a[iPdpt & 3];
 }
 
 
