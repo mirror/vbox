@@ -52,8 +52,8 @@
 # elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
     /*
      * Kludge for the FreeBSD kernel:
-     *  stddef.h and sys/types.h has sligtly different offsetof definitions
-     *  when compiling in kernel mode. This is just to make GCC keep shut.
+     *  stddef.h and sys/types.h have slightly different offsetof definitions
+     *  when compiling in kernel mode. This is just to make GCC shut up.
      */
 #  ifndef _STDDEF_H_
 #   undef offsetof
@@ -177,7 +177,7 @@ typedef struct int128_s
 
 
 /**
- * 16-bit unsigned interger union.
+ * 16-bit unsigned integer union.
  */
 typedef union RTUINT16U
 {
@@ -195,14 +195,14 @@ typedef union RTUINT16U
         uint16_t    Hi;
     } s;
 } RTUINT16U;
-/** Pointer to a 16-bit unsigned interger union. */
+/** Pointer to a 16-bit unsigned integer union. */
 typedef RTUINT16U *PRTUINT16U;
-/** Pointer to a const 32-bit unsigned interger union. */
+/** Pointer to a const 32-bit unsigned integer union. */
 typedef const RTUINT16U *PCRTUINT16U;
 
 
 /**
- * 32-bit unsigned interger union.
+ * 32-bit unsigned integer union.
  */
 typedef union RTUINT32U
 {
@@ -228,14 +228,14 @@ typedef union RTUINT32U
     /** 8-bit view. */
     uint8_t     au8[4];
 } RTUINT32U;
-/** Pointer to a 32-bit unsigned interger union. */
+/** Pointer to a 32-bit unsigned integer union. */
 typedef RTUINT32U *PRTUINT32U;
-/** Pointer to a const 32-bit unsigned interger union. */
+/** Pointer to a const 32-bit unsigned integer union. */
 typedef const RTUINT32U *PCRTUINT32U;
 
 
 /**
- * 64-bit unsigned interger union.
+ * 64-bit unsigned integer union.
  */
 typedef union RTUINT64U
 {
@@ -271,19 +271,19 @@ typedef union RTUINT64U
     /** 8-bit view. */
     uint8_t     au8[8];
 } RTUINT64U;
-/** Pointer to a 64-bit unsigned interger union. */
+/** Pointer to a 64-bit unsigned integer union. */
 typedef RTUINT64U *PRTUINT64U;
-/** Pointer to a const 64-bit unsigned interger union. */
+/** Pointer to a const 64-bit unsigned integer union. */
 typedef const RTUINT64U *PCRTUINT64U;
 
 
 /**
- * 128-bit unsigned interger union.
+ * 128-bit unsigned integer union.
  */
 typedef union RTUINT128U
 {
     /** Natural view.
-     * WARNING! This member depends on compiler supporing 128-bit stuff. */
+     * WARNING! This member depends on the compiler supporting 128-bit stuff. */
     uint128_t   u;
     /** Hi/Low view. */
     struct
@@ -327,9 +327,9 @@ typedef union RTUINT128U
     /** 8-bit view. */
     uint8_t     au8[16];
 } RTUINT128U;
-/** Pointer to a 64-bit unsigned interger union. */
+/** Pointer to a 64-bit unsigned integer union. */
 typedef RTUINT128U *PRTUINT128U;
-/** Pointer to a const 64-bit unsigned interger union. */
+/** Pointer to a const 64-bit unsigned integer union. */
 typedef const RTUINT128U *PCRTUINT128U;
 
 
@@ -534,9 +534,9 @@ typedef int64_t         RTHCINTPTR;
 #else
 #  error Unsupported HC_ARCH_BITS value.
 #endif
-/** Pointer to signed interger which can contain a HC pointer. */
+/** Pointer to signed integer which can contain a HC pointer. */
 typedef RTHCINTPTR     *PRTHCINTPTR;
-/** Pointer to const signed interger which can contain a HC pointer. */
+/** Pointer to const signed integer which can contain a HC pointer. */
 typedef const RTHCINTPTR *PCRTHCINTPTR;
 
 /** Signed integer which can contain a HC ring-3 pointer. */
@@ -547,9 +547,9 @@ typedef int64_t         RTR3INTPTR;
 #else
 #  error Unsupported R3_ARCH_BITS value.
 #endif
-/** Pointer to signed interger which can contain a HC ring-3 pointer. */
+/** Pointer to signed integer which can contain a HC ring-3 pointer. */
 typedef RTR3INTPTR     *PRTR3INTPTR;
-/** Pointer to const signed interger which can contain a HC ring-3 pointer. */
+/** Pointer to const signed integer which can contain a HC ring-3 pointer. */
 typedef const RTR3INTPTR *PCRTR3INTPTR;
 
 /** Signed integer which can contain a HC ring-0 pointer. */
@@ -560,9 +560,9 @@ typedef int64_t         RTR0INTPTR;
 #else
 #  error Unsupported R0_ARCH_BITS value.
 #endif
-/** Pointer to signed interger which can contain a HC ring-0 pointer. */
+/** Pointer to signed integer which can contain a HC ring-0 pointer. */
 typedef RTR0INTPTR     *PRTR0INTPTR;
-/** Pointer to const signed interger which can contain a HC ring-0 pointer. */
+/** Pointer to const signed integer which can contain a HC ring-0 pointer. */
 typedef const RTR0INTPTR *PCRTR0INTPTR;
 
 
@@ -574,9 +574,9 @@ typedef uint64_t        RTHCUINTPTR;
 #else
 #  error Unsupported HC_ARCH_BITS value.
 #endif
-/** Pointer to unsigned interger which can contain a HC pointer. */
+/** Pointer to unsigned integer which can contain a HC pointer. */
 typedef RTHCUINTPTR    *PRTHCUINTPTR;
-/** Pointer to unsigned interger which can contain a HC pointer. */
+/** Pointer to unsigned integer which can contain a HC pointer. */
 typedef const RTHCUINTPTR *PCRTHCUINTPTR;
 
 /** Unsigned integer which can contain a HC ring-3 pointer. */
@@ -587,9 +587,9 @@ typedef uint64_t        RTR3UINTPTR;
 #else
 #  error Unsupported R3_ARCH_BITS value.
 #endif
-/** Pointer to unsigned interger which can contain a HC ring-3 pointer. */
+/** Pointer to unsigned integer which can contain a HC ring-3 pointer. */
 typedef RTR3UINTPTR    *PRTR3UINTPTR;
-/** Pointer to unsigned interger which can contain a HC ring-3 pointer. */
+/** Pointer to unsigned integer which can contain a HC ring-3 pointer. */
 typedef const RTR3UINTPTR *PCRTR3UINTPTR;
 
 /** Unsigned integer which can contain a HC ring-0 pointer. */
@@ -600,9 +600,9 @@ typedef uint64_t        RTR0UINTPTR;
 #else
 #  error Unsupported R0_ARCH_BITS value.
 #endif
-/** Pointer to unsigned interger which can contain a HC ring-0 pointer. */
+/** Pointer to unsigned integer which can contain a HC ring-0 pointer. */
 typedef RTR0UINTPTR    *PRTR0UINTPTR;
-/** Pointer to unsigned interger which can contain a HC ring-0 pointer. */
+/** Pointer to unsigned integer which can contain a HC ring-0 pointer. */
 typedef const RTR0UINTPTR *PCRTR0UINTPTR;
 
 
@@ -720,10 +720,10 @@ typedef int32_t         RTGCINT;
 #elif GC_ARCH_BITS == 64 /** @todo this isn't right, natural int is 32-bit, see RTHCINT. */
 typedef int64_t         RTGCINT;
 #endif
-/** Pointer to natural signed interger in GC.
+/** Pointer to natural signed integer in GC.
  * @deprecated silly type. */
 typedef RTGCINT        *PRTGCINT;
-/** Pointer to const natural signed interger in GC.
+/** Pointer to const natural signed integer in GC.
  * @deprecated silly type. */
 typedef const RTGCINT  *PCRTGCINT;
 
@@ -747,9 +747,9 @@ typedef int32_t         RTGCINTPTR;
 #elif GC_ARCH_BITS == 64
 typedef int64_t         RTGCINTPTR;
 #endif
-/** Pointer to signed interger which can contain a GC pointer. */
+/** Pointer to signed integer which can contain a GC pointer. */
 typedef RTGCINTPTR     *PRTGCINTPTR;
-/** Pointer to const signed interger which can contain a GC pointer. */
+/** Pointer to const signed integer which can contain a GC pointer. */
 typedef const RTGCINTPTR *PCRTGCINTPTR;
 
 /** Unsigned integer which can contain a GC pointer. */
@@ -760,23 +760,23 @@ typedef uint64_t        RTGCUINTPTR;
 #else
 #  error Unsupported GC_ARCH_BITS value.
 #endif
-/** Pointer to unsigned interger which can contain a GC pointer. */
+/** Pointer to unsigned integer which can contain a GC pointer. */
 typedef RTGCUINTPTR     *PRTGCUINTPTR;
-/** Pointer to unsigned interger which can contain a GC pointer. */
+/** Pointer to unsigned integer which can contain a GC pointer. */
 typedef const RTGCUINTPTR *PCRTGCUINTPTR;
 
 /** Unsigned integer which can contain a 32 bits GC pointer. */
 typedef uint32_t        RTGCUINTPTR32;
-/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+/** Pointer to unsigned integer which can contain a 32 bits GC pointer. */
 typedef RTGCUINTPTR32   *PRTGCUINTPTR32;
-/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+/** Pointer to unsigned integer which can contain a 32 bits GC pointer. */
 typedef const RTGCUINTPTR32 *PCRTGCUINTPTR32;
 
 /** Unsigned integer which can contain a 64 bits GC pointer. */
 typedef uint64_t        RTGCUINTPTR64;
-/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+/** Pointer to unsigned integer which can contain a 32 bits GC pointer. */
 typedef RTGCUINTPTR64   *PRTGCUINTPTR64;
-/** Pointer to unsigned interger which can contain a 32 bits GC pointer. */
+/** Pointer to unsigned integer which can contain a 32 bits GC pointer. */
 typedef const RTGCUINTPTR64 *PCRTGCUINTPTR64;
 
 /** Guest Physical Memory Address.*/

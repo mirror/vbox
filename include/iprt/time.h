@@ -47,7 +47,7 @@ __BEGIN_DECLS
  *
  * The current representation is in nanoseconds relative to the unix epoch
  * (1970-01-01 00:00:00 UTC). This gives us an approximate span from
- * 1678 to 2262 without sacrifying the resolution offered by the various
+ * 1678 to 2262 without sacrificing the resolution offered by the various
  * host OSes (BSD & LINUX 1ns, NT 100ns).
  */
 typedef struct RTTIMESPEC
