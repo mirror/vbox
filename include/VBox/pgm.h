@@ -317,10 +317,10 @@ VMMDECL(RTHCPHYS)   PGMGetInterPaeCR3(PVM pVM);
 VMMDECL(RTHCPHYS)   PGMGetInterAmd64CR3(PVM pVM);
 VMMDECL(int)        PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 VMMDECL(int)        PGMPrefetchPage(PVM pVM, RTGCPTR GCPtrPage);
-VMMDECL(int)        PGMVerifyAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess);
-VMMDECL(int)        PGMIsValidAccess(PVM pVM, RTGCUINTPTR Addr, uint32_t cbSize, uint32_t fAccess);
+VMMDECL(int)        PGMVerifyAccess(PVM pVM, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
+VMMDECL(int)        PGMIsValidAccess(PVM pVM, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
 VMMDECL(int)        PGMInterpretInstruction(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
-VMMDECL(int)        PGMMap(PVM pVM, RTGCUINTPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
+VMMDECL(int)        PGMMap(PVM pVM, RTGCPTR GCPtr, RTHCPHYS HCPhys, uint32_t cbPages, unsigned fFlags);
 VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMMDECL(int)        PGMShwGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
@@ -329,8 +329,8 @@ VMMDECL(int)        PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t
 VMMDECL(int)        PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
 VMMDECL(int)        PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 VMMDECL(int)        PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
-VMMDECL(int)        PGMShwSyncPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
-VMMDECL(int)        PGMShwGetPAEPDPtr(PVM pVM, RTGCUINTPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
+VMMDECL(int)        PGMShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+VMMDECL(int)        PGMShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 VMMDECL(int)        PGMGstGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 VMMDECL(bool)       PGMGstIsPagePresent(PVM pVM, RTGCPTR GCPtr);
 VMMDECL(int)        PGMGstSetPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
@@ -434,7 +434,7 @@ VMMDECL(int)        PGMPhysReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, siz
 VMMDECL(int)        PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleDirtyWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb);
 #endif /* !IN_RC */
-VMMDECL(int)        PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb);
+VMMDECL(int)        PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 #ifdef VBOX_STRICT
 VMMDECL(unsigned)   PGMAssertHandlerAndFlagsInSync(PVM pVM);
 VMMDECL(unsigned)   PGMAssertNoMappingConflicts(PVM pVM);
@@ -569,7 +569,7 @@ VMMR3DECL(int)      PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPh
 VMMR3DECL(int)      PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys);
 VMMR3DECL(int)      PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys);
 VMMR3DECL(int)      PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit);
-VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
+VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
 /** @} */
 #endif /* IN_RING3 */
 

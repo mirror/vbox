@@ -26,14 +26,14 @@
 __BEGIN_DECLS
 PGM_BTH_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3);
-PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta);
+PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta);
 
 PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
-PGM_BTH_DECL(int, SyncPage)(PVM pVM, X86PDE PdeSrc, RTGCUINTPTR GCPtrPage, unsigned cPages, unsigned uError);
-PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCUINTPTR Addr, unsigned fPage, unsigned uError);
+PGM_BTH_DECL(int, SyncPage)(PVM pVM, X86PDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uError);
+PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR Addr, unsigned fPage, unsigned uError);
 PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage);
-PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCUINTPTR GCPtrPage);
+PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage);
 PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
 __END_DECLS
 
@@ -129,7 +129,7 @@ PGM_BTH_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
  * @param   pVM         The VM handle.
  * @param   offDelta    The reloation offset.
  */
-PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta)
+PGM_BTH_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
 {
     /* nothing special to do here - InitData does the job. */
     return VINF_SUCCESS;

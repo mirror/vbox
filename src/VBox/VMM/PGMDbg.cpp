@@ -430,7 +430,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  * @param   cbNeedle        The length of the byte string.
  * @param   pGCPtrHit       Where to store the address of the first occurence on success.
  */
-VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
+VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
 {
     /*
      * Validate and adjust the input a bit.
@@ -454,12 +454,12 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCUINTPTR GCPtr, RTGCUINTPTR cbRan
     /*
      * Search the memory - ignore MMIO, zero and not-present pages.
      */
-    uint8_t             abPrev[MAX_NEEDLE_SIZE];
-    size_t              cbPrev = 0;
-    const RTGCUINTPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
-                                  ? GCPtr + cbRange - 1
-                                  : ~(RTGCPTR)0;
-    RTGCUINTPTR         cPages = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
+    uint8_t         abPrev[MAX_NEEDLE_SIZE];
+    size_t          cbPrev = 0;
+    const RTGCPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
+                              ? GCPtr + cbRange - 1
+                              : ~(RTGCPTR)0;
+    RTGCPTR         cPages = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
     while (cPages-- > 0)
     {
         RTGCPHYS GCPhys;

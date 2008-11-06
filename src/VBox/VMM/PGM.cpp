@@ -2321,7 +2321,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
             return rc;
         RTGCPTR GCPtr;
         SSMR3GetGCPtr(pSSM,     &GCPtr);
-        RTGCUINTPTR cPTs;
+        RTGCPTR cPTs;
         rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
         if (RT_FAILURE(rc))
             return rc;

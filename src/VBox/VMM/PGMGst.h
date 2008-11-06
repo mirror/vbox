@@ -106,7 +106,7 @@ __BEGIN_DECLS
 /* r3 */
 PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0);
 PGM_GST_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3);
-PGM_GST_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta);
+PGM_GST_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta);
 PGM_GST_DECL(int, Exit)(PVM pVM);
 
 static DECLCALLBACK(int) pgmR3Gst32BitWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
@@ -116,9 +116,9 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, voi
 #endif
 
 /* all */
-PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCUINTPTR GCPtr, PX86PDEPAE pPDE);
+PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmapCR3)(PVM pVM);
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
@@ -243,7 +243,7 @@ PGM_GST_DECL(int, Enter)(PVM pVM, RTGCPHYS GCPhysCR3)
  * @param   pVM         The VM handle.
  * @param   offDelta    The reloation offset.
  */
-PGM_GST_DECL(int, Relocate)(PVM pVM, RTGCUINTPTR offDelta)
+PGM_GST_DECL(int, Relocate)(PVM pVM, RTGCPTR offDelta)
 {
     /* nothing special to do here - InitData does the job. */
     return VINF_SUCCESS;
@@ -295,9 +295,9 @@ static DECLCALLBACK(int) pgmR3Gst32BitWriteHandlerCR3(PVM pVM, RTGCPHYS GCPhys, 
         /*
          * Check for conflicts.
          */
-        const RTGCUINTPTR offPD = GCPhys & PAGE_OFFSET_MASK;
-        const unsigned      iPD1 = offPD / sizeof(X86PDE);
-        const unsigned      iPD2 = (offPD + cbBuf - 1) / sizeof(X86PDE);
+        const RTGCPTR   offPD = GCPhys & PAGE_OFFSET_MASK;
+        const unsigned  iPD1  = offPD / sizeof(X86PDE);
+        const unsigned  iPD2  = (offPD + cbBuf - 1) / sizeof(X86PDE);
         Assert(iPD1 - iPD2 <= 1);
         if (    (   pVM->pgm.s.pGuestPDR3->a[iPD1].n.u1Present
                  && pgmGetMapping(pVM, iPD1 << X86_PD_SHIFT) )
@@ -417,10 +417,10 @@ static DECLCALLBACK(int) pgmR3GstPAEWriteHandlerPD(PVM pVM, RTGCPHYS GCPhys, voi
         for (i = 0; i < 4; i++)
             if (pVM->pgm.s.pGstPaePDPTHC->a[i].u == (GCPhys & X86_PTE_PAE_PG_MASK))
             {
-                PX86PDPAE           pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
-                const RTGCUINTPTR   offPD = GCPhys & PAGE_OFFSET_MASK;
-                const unsigned      iPD1 = offPD / sizeof(X86PDEPAE);
-                const unsigned      iPD2 = (offPD + cbBuf - 1) / sizeof(X86PDEPAE);
+                PX86PDPAE       pPDSrc = pgmGstGetPaePD(&pVM->pgm.s, i << X86_PDPT_SHIFT);
+                const RTGCPTR   offPD  = GCPhys & PAGE_OFFSET_MASK;
+                const unsigned  iPD1   = offPD / sizeof(X86PDEPAE);
+                const unsigned  iPD2   = (offPD + cbBuf - 1) / sizeof(X86PDEPAE);
                 Assert(iPD1 - iPD2 <= 1);
                 if (    (   pPDSrc->a[iPD1].n.u1Present
                          && pgmGetMapping(pVM, (i << X86_PDPT_SHIFT) | (iPD1 << X86_PD_PAE_SHIFT)) )

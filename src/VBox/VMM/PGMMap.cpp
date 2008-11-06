@@ -280,7 +280,7 @@ VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
  */
 VMMR3DECL(int) PGMR3MappingsSize(PVM pVM, uint32_t *pcb)
 {
-    RTGCUINTPTR cb = 0;
+    RTGCPTR cb = 0;
     for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
         cb += pCur->cb;
 
@@ -1158,7 +1158,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     PPGMMAPPING pCur = pVM->pgm.s.CTX_SUFF(pMappings);
     while (pCur)
     {
-        RTGCUINTPTR off = GCPtrSrc - pCur->GCPtr;
+        RTGCPTR off = GCPtrSrc - pCur->GCPtr;
         if (off < pCur->cb)
         {
             if (off + cb > pCur->cb)
