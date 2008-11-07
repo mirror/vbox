@@ -440,7 +440,7 @@ DECLASM(int) TRPMGCTrap07Handler(PTRPM pTrpm, PCPUMCTXCORE pRegFrame)
     PVM pVM = TRPM2VM(pTrpm);
 
     LogFlow(("TRPMTrap07HandlerGC: eip=%08RX32\n", pRegFrame->eip));
-    return CPUMHandleLazyFPU(pVM);
+    return CPUMHandleLazyFPU(pVM, VMMGetCpu(pVM));
 }
 
 

@@ -63,7 +63,7 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
      */
     if (uUser & CPUM_HANDLER_CTXCORE_IN_EBP)
     {
-        PCPUMCTXCORE  pGstCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Guest);
+        PCPUMCTXCORE  pGstCtxCore = (PCPUMCTXCORE)CPUMGetGuestCtxCore(pVM);
         PCCPUMCTXCORE pGstCtxCoreSrc = (PCPUMCTXCORE)pRegFrame->ebp;
         *pGstCtxCore = *pGstCtxCoreSrc;
     }
@@ -89,7 +89,7 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
         /* Make sure we restore the guest context from the interrupt stack frame. */
         case CPUM_HANDLER_IRET:
         {
-            PCPUMCTXCORE  pGstCtxCore = CPUMCTX2CORE(&pVM->cpum.s.Guest);
+            PCPUMCTXCORE  pGstCtxCore = (PCPUMCTXCORE)CPUMGetGuestCtxCore(pVM);
             uint32_t     *pEsp = (uint32_t *)pRegFrame->esp;
 
             /* Sync general purpose registers */

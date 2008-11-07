@@ -888,7 +888,7 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVM);
@@ -941,17 +941,17 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
 
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
     /* Note:  It's rather tricky with longjmps done by e.g. Log statements or the page fault handler.
      *        We must restore the host FPU here to make absolutely sure we don't leave the guest FPU state active
      *        or trash somebody else's FPU state.
      */
     /* Save the guest FPU and XMM state if necessary. */
-    if (CPUMIsGuestFPUStateActive(pVM))
+    if (CPUMIsGuestFPUStateActive(pVCpu))
     {
         Log2(("CPUMR0SaveGuestFPU\n"));
-        CPUMR0SaveGuestFPU(pVM, pCtx);
+        CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
 
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
     }
@@ -988,7 +988,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);
 
-    pCtx = CPUMQueryGuestCtxPtr(pVM);
+    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
     return HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
 }

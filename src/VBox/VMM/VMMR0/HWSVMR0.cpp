@@ -607,7 +607,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR0)
     {
         val = pCtx->cr0;
-        if (!CPUMIsGuestFPUStateActive(pVM))
+        if (!CPUMIsGuestFPUStateActive(pVCpu))
         {
             /* Always use #NM exceptions to load the FPU/XMM state on demand. */
             val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
@@ -722,7 +722,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pVMCB->ctrl.u16InterceptWrDRx = 0;
 
             /* Save the host and load the guest debug state. */
-            int rc = CPUMR0LoadGuestDebugState(pVM, pCtx, false /* exclude DR6 */);
+            int rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
             AssertRC(rc);
         }
     }
@@ -1328,10 +1328,10 @@ ResumeExecution:
 
             /** @todo don't intercept #NM exceptions anymore when we've activated the guest FPU state. */
             /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
-            rc = CPUMR0LoadGuestFPU(pVM, pCtx);
+            rc = CPUMR0LoadGuestFPU(pVM, pVCpu, pCtx);
             if (rc == VINF_SUCCESS)
             {
-                Assert(CPUMIsGuestFPUStateActive(pVM));
+                Assert(CPUMIsGuestFPUStateActive(pVCpu));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowNM);
 
                 /* Continue execution. */
@@ -1722,7 +1722,7 @@ ResumeExecution:
             pVMCB->ctrl.u16InterceptWrDRx = 0;
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, false /* exclude DR6 */);
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
             AssertRC(rc);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
@@ -1762,7 +1762,7 @@ ResumeExecution:
             pVMCB->ctrl.u16InterceptWrDRx = 0;
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, false /* exclude DR6 */);
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
             AssertRC(rc);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
@@ -2093,7 +2093,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Save the guest debug state if necessary. */
     if (CPUMIsGuestDebugStateActive(pVM))
     {
-        CPUMR0SaveGuestDebugState(pVM, pCtx, false /* skip DR6 */);
+        CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, false /* skip DR6 */);
 
         /* Intercept all DRx reads and writes again. Changed later on. */
         pVMCB->ctrl.u16InterceptRdDRx = 0xFFFF;

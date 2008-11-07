@@ -106,7 +106,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[4096];      /* multiple of 32 */
+        char                padding[2048];      /* multiple of 32 */
     } cpum;
     /** VMM part. */
     union
@@ -569,7 +569,7 @@ typedef struct VM
     STAMPROFILEADV      StatSwitcherLldt;
     STAMPROFILEADV      StatSwitcherTSS;
 
-/** @todo Realign everything on 64 byte boundraries to better match the
+/** @todo Realign everything on 64 byte boundaries to better match the
  *        cache-line size. */
     /* padding - the unions must be aligned on 32 bytes boundraries. */
     uint32_t            padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
@@ -580,7 +580,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-        char        padding[4416];      /* multiple of 32 */
+        char        padding[4096];      /* multiple of 32 */
     } cpum;
 
     /** VMM part. */

@@ -197,7 +197,7 @@ BITS 64
 ;       - edx       virtual address of CPUM structure (valid in host context)
 ;
 ; USES/DESTROYS:
-;       - eax, ecx, edx
+;       - eax, ecx, edx, r8
 ;
 ; ASSUMPTION:
 ;       - current CS and DS selectors are wide open
@@ -205,65 +205,68 @@ BITS 64
 ; *****************************************************************************
 ALIGNCODE(16)
 BEGINPROC vmmR0HostToGuestAsm
+    ;; Store the offset from CPUM to CPUMCPU in r8
+    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+    
     ;;
     ;; Save CPU host context
     ;;      Skip eax, edx and ecx as these are not preserved over calls.
     ;;
     ; general registers.
-    ; mov     [rdx + CPUM.Host.rax], rax - scratch
-    mov     [rdx + CPUM.Host.rbx], rbx
-    ; mov     [rdx + CPUM.Host.rcx], rcx - scratch
-    ; mov     [rdx + CPUM.Host.rdx], rdx - scratch
-    mov     [rdx + CPUM.Host.rdi], rdi
-    mov     [rdx + CPUM.Host.rsi], rsi
-    mov     [rdx + CPUM.Host.rsp], rsp
-    mov     [rdx + CPUM.Host.rbp], rbp
-    ; mov     [rdx + CPUM.Host.r8 ], r8 - scratch
-    ; mov     [rdx + CPUM.Host.r9 ], r9 - scratch
-    mov     [rdx + CPUM.Host.r10], r10
-    mov     [rdx + CPUM.Host.r11], r11
-    mov     [rdx + CPUM.Host.r12], r12
-    mov     [rdx + CPUM.Host.r13], r13
-    mov     [rdx + CPUM.Host.r14], r14
-    mov     [rdx + CPUM.Host.r15], r15
+    ; mov     [rdx + r8 + CPUMCPU.Host.rax], rax - scratch
+    mov     [rdx + r8 + CPUMCPU.Host.rbx], rbx
+    ; mov     [rdx + r8 + CPUMCPU.Host.rcx], rcx - scratch
+    ; mov     [rdx + r8 + CPUMCPU.Host.rdx], rdx - scratch
+    mov     [rdx + r8 + CPUMCPU.Host.rdi], rdi
+    mov     [rdx + r8 + CPUMCPU.Host.rsi], rsi
+    mov     [rdx + r8 + CPUMCPU.Host.rsp], rsp
+    mov     [rdx + r8 + CPUMCPU.Host.rbp], rbp
+    ; mov     [rdx + r8 + CPUMCPU.Host.r8 ], r8 - scratch
+    ; mov     [rdx + r8 + CPUMCPU.Host.r9 ], r9 - scratch
+    mov     [rdx + r8 + CPUMCPU.Host.r10], r10
+    mov     [rdx + r8 + CPUMCPU.Host.r11], r11
+    mov     [rdx + r8 + CPUMCPU.Host.r12], r12
+    mov     [rdx + r8 + CPUMCPU.Host.r13], r13
+    mov     [rdx + r8 + CPUMCPU.Host.r14], r14
+    mov     [rdx + r8 + CPUMCPU.Host.r15], r15
     ; selectors.
-    mov     [rdx + CPUM.Host.ds], ds
-    mov     [rdx + CPUM.Host.es], es
-    mov     [rdx + CPUM.Host.fs], fs
-    mov     [rdx + CPUM.Host.gs], gs
-    mov     [rdx + CPUM.Host.ss], ss
+    mov     [rdx + r8 + CPUMCPU.Host.ds], ds
+    mov     [rdx + r8 + CPUMCPU.Host.es], es
+    mov     [rdx + r8 + CPUMCPU.Host.fs], fs
+    mov     [rdx + r8 + CPUMCPU.Host.gs], gs
+    mov     [rdx + r8 + CPUMCPU.Host.ss], ss
     ; MSRs
     mov     rbx, rdx
     mov     ecx, MSR_K8_FS_BASE
     rdmsr
-    mov     [rbx + CPUM.Host.FSbase], eax
-    mov     [rbx + CPUM.Host.FSbase + 4], edx
+    mov     [rbx + r8 + CPUMCPU.Host.FSbase], eax
+    mov     [rbx + r8 + CPUMCPU.Host.FSbase + 4], edx
     mov     ecx, MSR_K8_GS_BASE
     rdmsr
-    mov     [rbx + CPUM.Host.GSbase], eax
-    mov     [rbx + CPUM.Host.GSbase + 4], edx
+    mov     [rbx + r8 + CPUMCPU.Host.GSbase], eax
+    mov     [rbx + r8 + CPUMCPU.Host.GSbase + 4], edx
     mov     ecx, MSR_K6_EFER
     rdmsr
-    mov     [rbx + CPUM.Host.efer], eax
-    mov     [rbx + CPUM.Host.efer + 4], edx
+    mov     [rbx + r8 + CPUMCPU.Host.efer], eax
+    mov     [rbx + r8 + CPUMCPU.Host.efer + 4], edx
     mov     ecx, MSR_K6_EFER
     mov     rdx, rbx
     ; special registers.
-    sldt    [rdx + CPUM.Host.ldtr]
-    sidt    [rdx + CPUM.Host.idtr]
-    sgdt    [rdx + CPUM.Host.gdtr]
-    str     [rdx + CPUM.Host.tr]        ; yasm BUG, generates sldt. YASMCHECK!
+    sldt    [rdx + r8 + CPUMCPU.Host.ldtr]
+    sidt    [rdx + r8 + CPUMCPU.Host.idtr]
+    sgdt    [rdx + r8 + CPUMCPU.Host.gdtr]
+    str     [rdx + r8 + CPUMCPU.Host.tr]        ; yasm BUG, generates sldt. YASMCHECK!
     ; flags
     pushf
-    pop     qword [rdx + CPUM.Host.rflags]
+    pop     qword [rdx + r8 + CPUMCPU.Host.rflags]
 
     FIXUP FIX_NO_SYSENTER_JMP, 0, htg_no_sysenter - NAME(Start) ; this will insert a jmp htg_no_sysenter if host doesn't use sysenter.
     ; save MSR_IA32_SYSENTER_CS register.
     mov     ecx, MSR_IA32_SYSENTER_CS
     mov     rbx, rdx                    ; save edx
     rdmsr                               ; edx:eax <- MSR[ecx]
-    mov     [rbx + CPUM.Host.SysEnter.cs], rax
-    mov     [rbx + CPUM.Host.SysEnter.cs + 4], rdx
+    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs], rax
+    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs + 4], rdx
     xor     rax, rax                    ; load 0:0 to cause #GP upon sysenter
     xor     rdx, rdx
     wrmsr
@@ -274,9 +277,9 @@ ALIGNCODE(16)
 htg_no_sysenter:
 
     ;; handle use flags.
-    mov     esi, [rdx + CPUM.fUseFlags] ; esi == use flags.
+    mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
     and     esi, ~CPUM_USED_FPU   ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
-    mov     [rdx + CPUM.fUseFlags], esi
+    mov     [rdx + r8 + CPUMCPU.fUseFlags], esi
 
     ; debug registers.
     test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
@@ -287,13 +290,13 @@ htg_debug_regs_no:
 
     ; control registers.
     mov     rax, cr0
-    mov     [rdx + CPUM.Host.cr0], rax
-    ;mov     rax, cr2                   ; assume host os don't suff things in cr2. (safe)
-    ;mov     [rdx + CPUM.Host.cr2], rax
+    mov     [rdx + r8 + CPUMCPU.Host.cr0], rax
+    ;mov     rax, cr2                   ; assume host os don't stuff things in cr2. (safe)
+    ;mov     [rdx + r8 + CPUMCPU.Host.cr2], rax
     mov     rax, cr3
-    mov     [rdx + CPUM.Host.cr3], rax
+    mov     [rdx + r8 + CPUMCPU.Host.cr3], rax
     mov     rax, cr4
-    mov     [rdx + CPUM.Host.cr4], rax
+    mov     [rdx + r8 + CPUMCPU.Host.cr4], rax
 
     ;;
     ;; Start switching to VMM context.
@@ -305,9 +308,9 @@ htg_debug_regs_no:
     ; Note! X86_CR4_PSE and X86_CR4_PAE are important if the host thinks so :-)
     ;
     and     rax, X86_CR4_MCE | X86_CR4_PSE | X86_CR4_PAE
-    mov     ecx, [rdx + CPUM.Guest.cr4]
+    mov     ecx, [rdx + r8 + CPUMCPU.Guest.cr4]
     DEBUG_CHAR('b')                     ; trashes esi
-    ;; @todo Switcher cleanup: Determin base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
+    ;; @todo Switcher cleanup: Determine base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
     ;                          in CPUM.Hyper.cr4 (which isn't currently being used). That should
     ;                          simplify this operation a bit (and improve locality of the data).
 
@@ -321,7 +324,7 @@ htg_debug_regs_no:
     mov     cr4, rax
     DEBUG_CHAR('c')                     ; trashes esi
 
-    mov     eax, [rdx + CPUM.Guest.cr0]
+    mov     eax, [rdx + r8 + CPUMCPU.Guest.cr0]
     and     eax, X86_CR0_EM
     or      eax, X86_CR0_PE | X86_CR0_PG | X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP
     mov     cr0, rax
@@ -359,23 +362,23 @@ dd  0
 htg_debug_regs_save:
 DEBUG_S_CHAR('s');
     mov     rax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
-    mov     [rdx + CPUM.Host.dr7], rax
+    mov     [rdx + r8 + CPUMCPU.Host.dr7], rax
     xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
     mov     dr7, rax
     mov     rax, dr6                    ; just in case we save the state register too.
-    mov     [rdx + CPUM.Host.dr6], rax
+    mov     [rdx + r8 + CPUMCPU.Host.dr6], rax
     ; save host DR0-3?
     test    esi, CPUM_USE_DEBUG_REGS
     jz near htg_debug_regs_no
 DEBUG_S_CHAR('S');
     mov     rax, dr0
-    mov     [rdx + CPUM.Host.dr0], rax
+    mov     [rdx + r8 + CPUMCPU.Host.dr0], rax
     mov     rbx, dr1
-    mov     [rdx + CPUM.Host.dr1], rbx
+    mov     [rdx + r8 + CPUMCPU.Host.dr1], rbx
     mov     rcx, dr2
-    mov     [rdx + CPUM.Host.dr2], rcx
+    mov     [rdx + r8 + CPUMCPU.Host.dr2], rcx
     mov     rax, dr3
-    mov     [rdx + CPUM.Host.dr3], rax
+    mov     [rdx + r8 + CPUMCPU.Host.dr3], rax
     jmp     htg_debug_regs_no
 
 
@@ -471,7 +474,8 @@ GLOBALNAME JmpGCTarget
     DEBUG_CHAR('7')
 
     ;; use flags.
-    mov     esi, [edx + CPUM.fUseFlags]
+    mov     esi, [edx + CPUM.ulOffCPUMCPU]
+    mov     esi, [edx + esi + CPUMCPU.fUseFlags]
 
     ; debug registers
     test    esi, CPUM_USE_DEBUG_REGS
@@ -631,7 +635,9 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     ;
     FIXUP FIX_GC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
-
+    ; Convert to CPUMCPU pointer
+    add     edx, [edx + CPUM.ulOffCPUMCPU]
+    
     ; Skip return address (assumes called!)
     lea     esp, [esp + 4]
 
@@ -641,42 +647,44 @@ BEGINPROC VMMGCGuestToHostAsmGuestCtx
     ; general purpose registers
     push    eax                         ; save return code.
     mov     eax, [esp + 4 + CPUMCTXCORE.edi]
-    mov     [edx + CPUM.Guest.edi], eax
+    mov     [edx + CPUMCPU.Guest.edi], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.esi]
-    mov     [edx + CPUM.Guest.esi], eax
+    mov     [edx + CPUMCPU.Guest.esi], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ebp]
-    mov     [edx + CPUM.Guest.ebp], eax
+    mov     [edx + CPUMCPU.Guest.ebp], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.eax]
-    mov     [edx + CPUM.Guest.eax], eax
+    mov     [edx + CPUMCPU.Guest.eax], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ebx]
-    mov     [edx + CPUM.Guest.ebx], eax
+    mov     [edx + CPUMCPU.Guest.ebx], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.edx]
-    mov     [edx + CPUM.Guest.edx], eax
+    mov     [edx + CPUMCPU.Guest.edx], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
-    mov     [edx + CPUM.Guest.ecx], eax
+    mov     [edx + CPUMCPU.Guest.ecx], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.esp]
-    mov     [edx + CPUM.Guest.esp], eax
+    mov     [edx + CPUMCPU.Guest.esp], eax
     ; selectors
     mov     eax, [esp + 4 + CPUMCTXCORE.ss]
-    mov     [edx + CPUM.Guest.ss], eax
+    mov     [edx + CPUMCPU.Guest.ss], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.gs]
-    mov     [edx + CPUM.Guest.gs], eax
+    mov     [edx + CPUMCPU.Guest.gs], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.fs]
-    mov     [edx + CPUM.Guest.fs], eax
+    mov     [edx + CPUMCPU.Guest.fs], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.es]
-    mov     [edx + CPUM.Guest.es], eax
+    mov     [edx + CPUMCPU.Guest.es], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.ds]
-    mov     [edx + CPUM.Guest.ds], eax
+    mov     [edx + CPUMCPU.Guest.ds], eax
     mov     eax, [esp + 4 + CPUMCTXCORE.cs]
-    mov     [edx + CPUM.Guest.cs], eax
+    mov     [edx + CPUMCPU.Guest.cs], eax
     ; flags
     mov     eax, [esp + 4 + CPUMCTXCORE.eflags]
-    mov     [edx + CPUM.Guest.eflags], eax
+    mov     [edx + CPUMCPU.Guest.eflags], eax
     ; eip
     mov     eax, [esp + 4 + CPUMCTXCORE.eip]
-    mov     [edx + CPUM.Guest.eip], eax
+    mov     [edx + CPUMCPU.Guest.eip], eax
     ; jump to common worker code.
     pop     eax                         ; restore return code.
+    ; Load CPUM into edx again
+    sub     edx, [edx + CPUMCPU.ulOffCPUM]
 
     add     esp, CPUMCTXCORE_size      ; skip CPUMCTXCORE structure
 
@@ -912,7 +920,7 @@ GLOBALNAME HCExitTarget
     DEBUG_CHAR('9')
 
     ; load final cr3
-    mov     rsi, [rdx + CPUM.Host.cr3]
+    mov     rsi, [rdx + r8 + CPUMCPU.Host.cr3]
     mov     cr3, rsi
     DEBUG_CHAR('@')
 
@@ -921,51 +929,54 @@ GLOBALNAME HCExitTarget
     ;;
     ; Load CPUM pointer into edx
     mov     rdx, [NAME(pCpumHC) wrt rip]
+    ; Load the CPUMCPU offset.
+    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+    
     ; activate host gdt and idt
-    lgdt    [rdx + CPUM.Host.gdtr]
+    lgdt    [rdx + r8 + CPUMCPU.Host.gdtr]
     DEBUG_CHAR('0')
-    lidt    [rdx + CPUM.Host.idtr]
+    lidt    [rdx + r8 + CPUMCPU.Host.idtr]
     DEBUG_CHAR('1')
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
 %if 1 ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
-    movzx   eax, word [rdx + CPUM.Host.tr]          ; eax <- TR
+    movzx   eax, word [rdx + r8 + CPUMCPU.Host.tr]          ; eax <- TR
     and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
-    add     rax, [rdx + CPUM.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
+    add     rax, [rdx + r8 + CPUMCPU.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
     and     dword [rax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
-    ltr     word [rdx + CPUM.Host.tr]
+    ltr     word [rdx + r8 + CPUMCPU.Host.tr]
 %else
-    movzx   eax, word [rdx + CPUM.Host.tr]          ; eax <- TR
+    movzx   eax, word [rdx + r8 + CPUMCPU.Host.tr]          ; eax <- TR
     and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
-    add     rax, [rdx + CPUM.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
+    add     rax, [rdx + r8 + CPUMCPU.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
     mov     ecx, [rax + 4]                          ; ecx <- 2nd descriptor dword
     mov     ebx, ecx                                ; save orginal value
     and     ecx, ~0200h                             ; clear busy flag (2nd type2 bit)
     mov     [rax + 4], ccx                          ; not using xchg here is paranoia..
-    ltr     word [rdx + CPUM.Host.tr]
+    ltr     word [rdx + r8 + CPUMCPU.Host.tr]
     xchg    [rax + 4], ebx                          ; using xchg is paranoia too...
 %endif
     ; activate ldt
     DEBUG_CHAR('2')
-    lldt    [rdx + CPUM.Host.ldtr]
+    lldt    [rdx + r8 + CPUMCPU.Host.ldtr]
     ; Restore segment registers
-    mov     eax, [rdx + CPUM.Host.ds]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.ds]
     mov     ds, eax
-    mov     eax, [rdx + CPUM.Host.es]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.es]
     mov     es, eax
-    mov     eax, [rdx + CPUM.Host.fs]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.fs]
     mov     fs, eax
-    mov     eax, [rdx + CPUM.Host.gs]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.gs]
     mov     gs, eax
     ; restore stack
-    mov     eax, [rdx + CPUM.Host.ss]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.ss]
     mov     ss, eax
-    mov     rsp, [rdx + CPUM.Host.rsp]
+    mov     rsp, [rdx + r8 + CPUMCPU.Host.rsp]
 
     FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
     ; restore MSR_IA32_SYSENTER_CS register.
     mov     ecx, MSR_IA32_SYSENTER_CS
-    mov     eax, [rdx + CPUM.Host.SysEnter.cs]
-    mov     ebx, [rdx + CPUM.Host.SysEnter.cs + 4]
+    mov     eax, [rdx + r8 + CPUMCPU.Host.SysEnter.cs]
+    mov     ebx, [rdx + r8 + CPUMCPU.Host.SysEnter.cs + 4]
     mov     rbx, rdx                    ; save/load edx
     wrmsr                               ; MSR[ecx] <- edx:eax
     mov     rdx, rbx                    ; restore edx
@@ -978,15 +989,15 @@ gth_sysenter_no:
 
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
-    mov     esi, [rdx + CPUM.fUseFlags] ; esi == use flags.
+    mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_USED_FPU
     jz short gth_fpu_no
     mov     rcx, cr0
     and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rcx
 
-    fxsave  [rdx + CPUM.Guest.fpu]
-    fxrstor [rdx + CPUM.Host.fpu]
+    fxsave  [rdx + r8 + CPUMCPU.Guest.fpu]
+    fxrstor [rdx + r8 + CPUMCPU.Host.fpu]
     jmp short gth_fpu_no
 
 ALIGNCODE(16)
@@ -995,11 +1006,11 @@ gth_fpu_no:
     ; Control registers.
     ; Would've liked to have these highere up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
-    mov     rcx, [rdx + CPUM.Host.cr4]
+    mov     rcx, [rdx + r8 + CPUMCPU.Host.cr4]
     mov     cr4, rcx
-    mov     rcx, [rdx + CPUM.Host.cr0]
+    mov     rcx, [rdx + r8 + CPUMCPU.Host.cr0]
     mov     cr0, rcx
-    ;mov     rcx, [rdx + CPUM.Host.cr2] ; assumes this is waste of time.
+    ;mov     rcx, [rdx + r8 + CPUMCPU.Host.cr2] ; assumes this is waste of time.
     ;mov     cr2, rcx
 
     ; restore debug registers (if modified) (esi must still be fUseFlags!)
@@ -1012,41 +1023,41 @@ gth_debug_regs_no:
     ; Restore MSRs
     mov     rbx, rdx
     mov     ecx, MSR_K8_FS_BASE
-    mov     eax, [rbx + CPUM.Host.FSbase]
-    mov     edx, [rbx + CPUM.Host.FSbase + 4]
+    mov     eax, [rbx + r8 + CPUMCPU.Host.FSbase]
+    mov     edx, [rbx + r8 + CPUMCPU.Host.FSbase + 4]
     wrmsr
     mov     ecx, MSR_K8_GS_BASE
-    mov     eax, [rbx + CPUM.Host.GSbase]
-    mov     edx, [rbx + CPUM.Host.GSbase + 4]
+    mov     eax, [rbx + r8 + CPUMCPU.Host.GSbase]
+    mov     edx, [rbx + r8 + CPUMCPU.Host.GSbase + 4]
     wrmsr
     mov     ecx, MSR_K6_EFER
-    mov     eax, [rbx + CPUM.Host.efer]
-    mov     edx, [rbx + CPUM.Host.efer + 4]
+    mov     eax, [rbx + r8 + CPUMCPU.Host.efer]
+    mov     edx, [rbx + r8 + CPUMCPU.Host.efer + 4]
     wrmsr
     mov     rdx, rbx
 
 
     ; restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
-    ; mov     rax, [rdx + CPUM.Host.rax] - scratch + return code
-    mov     rbx, [rdx + CPUM.Host.rbx]
-    ; mov     rcx, [rdx + CPUM.Host.rcx] - scratch
-    ; mov     rdx, [rdx + CPUM.Host.rdx] - scratch
-    mov     rdi, [rdx + CPUM.Host.rdi]
-    mov     rsi, [rdx + CPUM.Host.rsi]
-    mov     rsp, [rdx + CPUM.Host.rsp]
-    mov     rbp, [rdx + CPUM.Host.rbp]
-    ; mov     r8,  [rdx + CPUM.Host.r8 ] - scratch
-    ; mov     r9,  [rdx + CPUM.Host.r9 ] - scratch
-    mov     r10, [rdx + CPUM.Host.r10]
-    mov     r11, [rdx + CPUM.Host.r11]
-    mov     r12, [rdx + CPUM.Host.r12]
-    mov     r13, [rdx + CPUM.Host.r13]
-    mov     r14, [rdx + CPUM.Host.r14]
-    mov     r15, [rdx + CPUM.Host.r15]
+    ; mov     rax, [rdx + r8 + CPUMCPU.Host.rax] - scratch + return code
+    mov     rbx, [rdx + r8 + CPUMCPU.Host.rbx]
+    ; mov     rcx, [rdx + r8 + CPUMCPU.Host.rcx] - scratch
+    ; mov     rdx, [rdx + r8 + CPUMCPU.Host.rdx] - scratch
+    mov     rdi, [rdx + r8 + CPUMCPU.Host.rdi]
+    mov     rsi, [rdx + r8 + CPUMCPU.Host.rsi]
+    mov     rsp, [rdx + r8 + CPUMCPU.Host.rsp]
+    mov     rbp, [rdx + r8 + CPUMCPU.Host.rbp]
+    ; mov     r8,  [rdx + r8 + CPUMCPU.Host.r8 ] - scratch
+    ; mov     r9,  [rdx + r8 + CPUMCPU.Host.r9 ] - scratch
+    mov     r10, [rdx + r8 + CPUMCPU.Host.r10]
+    mov     r11, [rdx + r8 + CPUMCPU.Host.r11]
+    mov     r12, [rdx + r8 + CPUMCPU.Host.r12]
+    mov     r13, [rdx + r8 + CPUMCPU.Host.r13]
+    mov     r14, [rdx + r8 + CPUMCPU.Host.r14]
+    mov     r15, [rdx + r8 + CPUMCPU.Host.r15]
 
     ; finally restore flags. (probably not required)
-    push    qword [rdx + CPUM.Host.rflags]
+    push    qword [rdx + r8 + CPUMCPU.Host.rflags]
     popf
 
 
@@ -1066,18 +1077,18 @@ gth_debug_regs_restore:
     test    esi, CPUM_USE_DEBUG_REGS
     jz short gth_debug_regs_dr7
     DEBUG_S_CHAR('r')
-    mov     rax, [rdx + CPUM.Host.dr0]
+    mov     rax, [rdx + r8 + CPUMCPU.Host.dr0]
     mov     dr0, rax
-    mov     rbx, [rdx + CPUM.Host.dr1]
+    mov     rbx, [rdx + r8 + CPUMCPU.Host.dr1]
     mov     dr1, rbx
-    mov     rcx, [rdx + CPUM.Host.dr2]
+    mov     rcx, [rdx + r8 + CPUMCPU.Host.dr2]
     mov     dr2, rcx
-    mov     rax, [rdx + CPUM.Host.dr3]
+    mov     rax, [rdx + r8 + CPUMCPU.Host.dr3]
     mov     dr3, rax
 gth_debug_regs_dr7:
-    mov     rbx, [rdx + CPUM.Host.dr6]
+    mov     rbx, [rdx + r8 + CPUMCPU.Host.dr6]
     mov     dr6, rbx
-    mov     rcx, [rdx + CPUM.Host.dr7]
+    mov     rcx, [rdx + r8 + CPUMCPU.Host.dr7]
     mov     dr7, rcx
     jmp     gth_debug_regs_no
 

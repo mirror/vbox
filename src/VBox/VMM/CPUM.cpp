@@ -129,6 +129,17 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /* Hidden selector registers are invalid by default. */
     pVM->cpum.s.fValidHiddenSelRegs  = false;
 
+    /* Calculate the offset from CPUM to CPUMCPU for the first CPU. */
+    pVM->cpum.s.ulOffCPUMCPU = RT_OFFSETOF(VM, aCpus[0].cpum) - RT_OFFSETOF(VM, cpum);
+    Assert((uintptr_t)&pVM->cpum + pVM->cpum.s.ulOffCPUMCPU == (uintptr_t)&pVM->aCpus[0].cpum);
+
+    /* Calculate the offset from CPUMCPU to CPUM. */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        pVM->aCpus[i].cpum.s.ulOffCPUM = RT_OFFSETOF(VM, aCpus[i].cpum) - RT_OFFSETOF(VM, cpum);
+        Assert((uintptr_t)&pVM->aCpus[i].cpum - pVM->aCpus[i].cpum.s.ulOffCPUM == (uintptr_t)&pVM->cpum);
+    }
+
     /*
      * Check that the CPU supports the minimum features we require.
      */
@@ -627,24 +638,6 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 
 
 /**
- * Queries the pointer to the internal CPUMCTX structure
- *
- * @returns VBox status code.
- * @param   pVM         Handle to the virtual machine.
- * @param   ppCtx       Receives the CPUMCTX GC pointer when successful.
- */
-VMMR3DECL(int) CPUMR3QueryGuestCtxRCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx)
-{
-    LogFlow(("CPUMR3QueryGuestCtxRCPtr\n"));
-    /*
-     * Store the address. (Later we might check how's calling, thus the RC.)
-     */
-    *ppCtx = VM_RC_ADDR(pVM, &pVM->cpum.s.Guest);
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Terminates the CPUM.
  *
  * Termination means cleaning up and freeing all resources,
@@ -683,79 +676,83 @@ VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
-    PCPUMCTX pCtx = &pVM->cpum.s.Guest;
+    /* @todo anything different for VCPU > 0? */
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, &pVM->aCpus[i]);
 
-    /*
-     * Initialize everything to ZERO first.
-     */
-    uint32_t    fUseFlags =  pVM->cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
-    memset(pCtx, 0, sizeof(*pCtx));
-    pVM->cpum.s.fUseFlags   = fUseFlags;
+        /*
+        * Initialize everything to ZERO first.
+        */
+        uint32_t    fUseFlags =  pVM->aCpus[i].cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
+        memset(pCtx, 0, sizeof(*pCtx));
+        pVM->aCpus[i].cpum.s.fUseFlags  = fUseFlags;
 
-    pCtx->cr0                       = X86_CR0_CD | X86_CR0_NW | X86_CR0_ET;  //0x60000010
-    pCtx->eip                       = 0x0000fff0;
-    pCtx->edx                       = 0x00000600;   /* P6 processor */
-    pCtx->eflags.Bits.u1Reserved0   = 1;
+        pCtx->cr0                       = X86_CR0_CD | X86_CR0_NW | X86_CR0_ET;  //0x60000010
+        pCtx->eip                       = 0x0000fff0;
+        pCtx->edx                       = 0x00000600;   /* P6 processor */
+        pCtx->eflags.Bits.u1Reserved0   = 1;
 
-    pCtx->cs                        = 0xf000;
-    pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
-    pCtx->csHid.u32Limit            = 0x0000ffff;
-    pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->csHid.Attr.n.u1Present    = 1;
-    pCtx->csHid.Attr.n.u4Type       = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
+        pCtx->cs                        = 0xf000;
+        pCtx->csHid.u64Base             = UINT64_C(0xffff0000);
+        pCtx->csHid.u32Limit            = 0x0000ffff;
+        pCtx->csHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->csHid.Attr.n.u1Present    = 1;
+        pCtx->csHid.Attr.n.u4Type       = X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 
-    pCtx->dsHid.u32Limit            = 0x0000ffff;
-    pCtx->dsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->dsHid.Attr.n.u1Present    = 1;
-    pCtx->dsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+        pCtx->dsHid.u32Limit            = 0x0000ffff;
+        pCtx->dsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->dsHid.Attr.n.u1Present    = 1;
+        pCtx->dsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
 
-    pCtx->esHid.u32Limit            = 0x0000ffff;
-    pCtx->esHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->esHid.Attr.n.u1Present    = 1;
-    pCtx->esHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+        pCtx->esHid.u32Limit            = 0x0000ffff;
+        pCtx->esHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->esHid.Attr.n.u1Present    = 1;
+        pCtx->esHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
 
-    pCtx->fsHid.u32Limit            = 0x0000ffff;
-    pCtx->fsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->fsHid.Attr.n.u1Present    = 1;
-    pCtx->fsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+        pCtx->fsHid.u32Limit            = 0x0000ffff;
+        pCtx->fsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->fsHid.Attr.n.u1Present    = 1;
+        pCtx->fsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
 
-    pCtx->gsHid.u32Limit            = 0x0000ffff;
-    pCtx->gsHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->gsHid.Attr.n.u1Present    = 1;
-    pCtx->gsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+        pCtx->gsHid.u32Limit            = 0x0000ffff;
+        pCtx->gsHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->gsHid.Attr.n.u1Present    = 1;
+        pCtx->gsHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
 
-    pCtx->ssHid.u32Limit            = 0x0000ffff;
-    pCtx->ssHid.Attr.n.u1Present    = 1;
-    pCtx->ssHid.Attr.n.u1DescType   = 1; /* code/data segment */
-    pCtx->ssHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
+        pCtx->ssHid.u32Limit            = 0x0000ffff;
+        pCtx->ssHid.Attr.n.u1Present    = 1;
+        pCtx->ssHid.Attr.n.u1DescType   = 1; /* code/data segment */
+        pCtx->ssHid.Attr.n.u4Type       = X86_SEL_TYPE_RW;
 
-    pCtx->idtr.cbIdt                = 0xffff;
-    pCtx->gdtr.cbGdt                = 0xffff;
+        pCtx->idtr.cbIdt                = 0xffff;
+        pCtx->gdtr.cbGdt                = 0xffff;
 
-    pCtx->ldtrHid.u32Limit          = 0xffff;
-    pCtx->ldtrHid.Attr.n.u1Present  = 1;
-    pCtx->ldtrHid.Attr.n.u4Type     = X86_SEL_TYPE_SYS_LDT;
+        pCtx->ldtrHid.u32Limit          = 0xffff;
+        pCtx->ldtrHid.Attr.n.u1Present  = 1;
+        pCtx->ldtrHid.Attr.n.u4Type     = X86_SEL_TYPE_SYS_LDT;
 
-    pCtx->trHid.u32Limit            = 0xffff;
-    pCtx->trHid.Attr.n.u1Present    = 1;
-    pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
+        pCtx->trHid.u32Limit            = 0xffff;
+        pCtx->trHid.Attr.n.u1Present    = 1;
+        pCtx->trHid.Attr.n.u4Type       = X86_SEL_TYPE_SYS_386_TSS_BUSY;
 
-    pCtx->dr[6]                     = X86_DR6_INIT_VAL;
-    pCtx->dr[7]                     = X86_DR7_INIT_VAL;
+        pCtx->dr[6]                     = X86_DR6_INIT_VAL;
+        pCtx->dr[7]                     = X86_DR7_INIT_VAL;
 
-    pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
-    pCtx->fpu.FCW                   = 0x37f;
+        pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
+        pCtx->fpu.FCW                   = 0x37f;
 
-    /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
-    pCtx->fpu.MXCSR                 = 0x1F80;
+        /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
+        pCtx->fpu.MXCSR                 = 0x1F80;
 
-    /* Init PAT MSR */
-    pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
+        /* Init PAT MSR */
+        pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
 
-    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
-     * The Intel docs don't mention it.
-     */
-    pCtx->msrEFER                   = 0;
+        /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
+        * The Intel docs don't mention it.
+        */
+        pCtx->msrEFER                   = 0;
+    }
 }
 
 
@@ -775,9 +772,13 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
      * Save.
      */
     SSMR3PutMem(pSSM, &pVM->cpum.s.Hyper, sizeof(pVM->cpum.s.Hyper));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.Guest, sizeof(pVM->cpum.s.Guest));
-    SSMR3PutU32(pSSM, pVM->cpum.s.fUseFlags);
-    SSMR3PutU32(pSSM, pVM->cpum.s.fChanged);
+
+    for (unsigned i=0;i<pVM->cCPUs;i++)
+    {
+        SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
+        SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fUseFlags);
+        SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fChanged);
+    }
 
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
@@ -808,21 +809,21 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
 static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
 {
 #define CPUMCTX16_LOADREG(RegName) \
-        pVM->cpum.s.Guest.RegName = pCpumctx16->RegName;
+        pVM->aCpus[0].cpum.s.Guest.RegName = pCpumctx16->RegName;
 
 #define CPUMCTX16_LOADDRXREG(RegName) \
-        pVM->cpum.s.Guest.dr[RegName] = pCpumctx16->dr##RegName;
+        pVM->aCpus[0].cpum.s.Guest.dr[RegName] = pCpumctx16->dr##RegName;
 
 #define CPUMCTX16_LOADHIDREG(RegName) \
-        pVM->cpum.s.Guest.RegName##Hid.u64Base  = pCpumctx16->RegName##Hid.u32Base; \
-        pVM->cpum.s.Guest.RegName##Hid.u32Limit = pCpumctx16->RegName##Hid.u32Limit; \
-        pVM->cpum.s.Guest.RegName##Hid.Attr     = pCpumctx16->RegName##Hid.Attr;
+        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.u64Base  = pCpumctx16->RegName##Hid.u32Base; \
+        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.u32Limit = pCpumctx16->RegName##Hid.u32Limit; \
+        pVM->aCpus[0].cpum.s.Guest.RegName##Hid.Attr     = pCpumctx16->RegName##Hid.Attr;
 
 #define CPUMCTX16_LOADSEGREG(RegName) \
-        pVM->cpum.s.Guest.RegName = pCpumctx16->RegName; \
+        pVM->aCpus[0].cpum.s.Guest.RegName = pCpumctx16->RegName; \
         CPUMCTX16_LOADHIDREG(RegName);
 
-    pVM->cpum.s.Guest.fpu = pCpumctx16->fpu;
+    pVM->aCpus[0].cpum.s.Guest.fpu = pCpumctx16->fpu;
 
     CPUMCTX16_LOADREG(rax);
     CPUMCTX16_LOADREG(rbx);
@@ -865,15 +866,15 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
     CPUMCTX16_LOADDRXREG(6);
     CPUMCTX16_LOADDRXREG(7);
 
-    pVM->cpum.s.Guest.gdtr.cbGdt   = pCpumctx16->gdtr.cbGdt;
-    pVM->cpum.s.Guest.gdtr.pGdt    = pCpumctx16->gdtr.pGdt;
-    pVM->cpum.s.Guest.idtr.cbIdt   = pCpumctx16->idtr.cbIdt;
-    pVM->cpum.s.Guest.idtr.pIdt    = pCpumctx16->idtr.pIdt;
+    pVM->aCpus[0].cpum.s.Guest.gdtr.cbGdt   = pCpumctx16->gdtr.cbGdt;
+    pVM->aCpus[0].cpum.s.Guest.gdtr.pGdt    = pCpumctx16->gdtr.pGdt;
+    pVM->aCpus[0].cpum.s.Guest.idtr.cbIdt   = pCpumctx16->idtr.cbIdt;
+    pVM->aCpus[0].cpum.s.Guest.idtr.pIdt    = pCpumctx16->idtr.pIdt;
 
     CPUMCTX16_LOADREG(ldtr);
     CPUMCTX16_LOADREG(tr);
 
-    pVM->cpum.s.Guest.SysEnter     = pCpumctx16->SysEnter;
+    pVM->aCpus[0].cpum.s.Guest.SysEnter     = pCpumctx16->SysEnter;
 
     CPUMCTX16_LOADREG(msrEFER);
     CPUMCTX16_LOADREG(msrSTAR);
@@ -930,17 +931,25 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
     {
         CPUMCTX_VER1_6 cpumctx16;
-        memset(&pVM->cpum.s.Guest, 0, sizeof(pVM->cpum.s.Guest));
+        memset(&pVM->aCpus[0].cpum.s.Guest, 0, sizeof(pVM->aCpus[0].cpum.s.Guest));
         SSMR3GetMem(pSSM, &cpumctx16, sizeof(cpumctx16));
 
         /* Save the old cpumctx state into the new one. */
         cpumR3LoadCPUM1_6(pVM, &cpumctx16);
+
+        SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fUseFlags);
+        SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fChanged);
     }
     else
-        SSMR3GetMem(pSSM, &pVM->cpum.s.Guest, sizeof(pVM->cpum.s.Guest));
+    {
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
+            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
+            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
+        }
+    }
 
-    SSMR3GetU32(pSSM, &pVM->cpum.s.fUseFlags);
-    SSMR3GetU32(pSSM, &pVM->cpum.s.fChanged);
 
     uint32_t cElements;
     int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
@@ -1303,7 +1312,9 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Guest CPUM state: %s\n", pszComment);
-    cpumR3InfoOne(pVM, &pVM->cpum.s.Guest, CPUMCTX2CORE(&pVM->cpum.s.Guest), pHlp, enmType, "");
+    /* @todo SMP */
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVM);
+    cpumR3InfoOne(pVM, pCtx, CPUMCTX2CORE(pCtx), pHlp, enmType, "");
 }
 
 
@@ -1358,7 +1369,8 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     /*
      * Format the EFLAGS.
      */
-    PCPUMHOSTCTX pCtx = &pVM->cpum.s.Host;
+    /* @todo SMP */
+    PCPUMHOSTCTX pCtx = &pVM->aCpus[0].cpum.s.Host;
 #if HC_ARCH_BITS == 32
     uint32_t efl = pCtx->eflags.u32;
 #else
@@ -2332,7 +2344,8 @@ VMMR3DECL(void) CPUMR3DisasmBlock(PVM pVM, PCPUMCTX pCtx, RTGCPTR pc, const char
  */
 VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
-    pVM->cpum.s.GuestEntry = pVM->cpum.s.Guest;
+    /* @todo SMP */
+    pVM->cpum.s.GuestEntry = *CPUMQueryGuestCtxPtr(pVM);
 }
 
 #endif /* DEBUG */
