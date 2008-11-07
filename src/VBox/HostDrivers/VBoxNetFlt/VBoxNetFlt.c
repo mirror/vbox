@@ -402,7 +402,7 @@ NETFLT_DECL_CALLBACK(void) NETFLT_CALLBACK(vboxNetFltPortRelease)(PINTNETTRUNKIF
 NETFLT_DECL_CALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /*
      * Input validation.
