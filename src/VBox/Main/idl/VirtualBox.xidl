@@ -2741,7 +2741,7 @@
 
     <attribute name="Accelerate3DEnabled" type="boolean" default="false">
       <desc>
-        This setting determines whether VirtualBox allows guests make use
+        This setting determines whether VirtualBox allows guests to make use
         of the 3D graphics support available on the host. Currently limited
         to OpenGL only. </desc>
     </attribute>
