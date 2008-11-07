@@ -45,9 +45,6 @@ tcp_fasttimo(PNATState pData)
 {
 	register struct socket *so;
 	register struct tcpcb *tp;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        struct socket *so_next;
-#endif
 
 	DEBUG_CALL("tcp_fasttimo");
 
@@ -55,16 +52,7 @@ tcp_fasttimo(PNATState pData)
 	so = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
 	if (so)
-	for (; so != &tcb; so = so->so_next) {
-#else
-        while(1) {
-            if ( so == &tcb) {
-                VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-                break;
-            }
-            so_next = so->so_next;
-            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-#endif
+	for (; so != &tcb; so = so->so_next)
 		if ((tp = (struct tcpcb *)so->so_tcpcb) &&
 		    (tp->t_flags & TF_DELACK)) {
 			tp->t_flags &= ~TF_DELACK;
@@ -72,12 +60,29 @@ tcp_fasttimo(PNATState pData)
 			tcpstat.tcps_delack++;
 			(void) tcp_output(pData, tp);
 		}
-                VBOX_SLIRP_LOCK(pData->tcb_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                so = so_next;
-#endif
+#else /* VBOX_WITH_SYNC_SLIRP */
+        while(1)
+        {
+            struct socket *so_next;
+            if (so == &tcb || so == NULL)
+            {
+                VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
+                break;
+            }
+            so_next = so->so_next;
+            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
+            if (   (tp = (struct tcpcb *)so->so_tcpcb)
+                && (tp->t_flags & TF_DELACK))
+            {
+                tp->t_flags &= ~TF_DELACK;
+                tp->t_flags |= TF_ACKNOW;
+                tcpstat.tcps_delack++;
+                (void) tcp_output(pData, tp);
+            }
+            VBOX_SLIRP_LOCK(pData->tcb_mutex);
+            so = so_next;
         }
-
+#endif /* VBOX_WITH_SYNC_SLIRP */
 }
 
 /*
@@ -97,29 +102,15 @@ tcp_slowtimo(PNATState pData)
 	/*
 	 * Search through tcb's and update active timers.
 	 */
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
-	ip = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
+	ip = tcb.so_next;
 	if (ip == 0)
 	   return;
 	for (; ip != &tcb; ip = ipnxt) {
-#else
-        if (ip == NULL) {
-            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-            return;
-        }
-        while (1) {
-                if (ip == &tcb) {
-                    VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-                    break;
-                }
-                ipnxt = ip->so_next;
-                VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-#endif
 		ipnxt = ip->so_next;
 		tp = sototcpcb(ip);
 		if (tp == 0)
-                        goto before_loop_ends; /*vvl:the same as continue in original code*/
+                        continue;
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
 				tcp_timers(pData, tp,i);
@@ -132,13 +123,47 @@ tcp_slowtimo(PNATState pData)
 		   tp->t_rtt++;
 tpgone:
 		;
-before_loop_ends:
-                VBOX_SLIRP_LOCK(pData->tcb_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                ip=ipnxt;
-#endif
 	}
-	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
+#else /* VBOX_WITH_SYNC_SLIRP */
+        VBOX_SLIRP_LOCK(pData->tcb_mutex);
+        ip = tcb.so_next;
+        if (ip == NULL)
+        {
+            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
+            return;
+        }
+        while (1)
+        {
+            if (ip == &tcb)
+            {
+                VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
+                break;
+            }
+            ipnxt = ip->so_next;
+            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
+            ipnxt = ip->so_next;
+            tp = sototcpcb(ip);
+            if (tp == 0)
+                goto tpgone;
+            for (i = 0; i < TCPT_NTIMERS; i++)
+            {
+                if (tp->t_timer[i] && --tp->t_timer[i] == 0)
+                {
+                    tcp_timers(pData, tp,i);
+                    if (ipnxt->so_prev != ip)
+                        goto tpgone;
+                }
+            }
+            tp->t_idle++;
+            if (tp->t_rtt)
+                tp->t_rtt++;
+tpgone:
+            VBOX_SLIRP_LOCK(pData->tcb_mutex);
+            ip = ipnxt;
+        }
+#endif /* VBOX_WITH_SYNC_SLIRP */
+
+        tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 #ifdef TCP_COMPAT_42
 	if ((int)tcp_iss < 0)
 		tcp_iss = 0;				/* XXX */
