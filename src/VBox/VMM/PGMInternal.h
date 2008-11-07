@@ -3627,7 +3627,7 @@ DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4e)
  * @param   GCPtr       The address.
  * @param   ppPml4e     Page Map Level-4 Entry (out)
  */
-DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e)
+DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3655,7 +3655,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX
  * @param   ppPml4e     Page Map Level-4 Entry (out)
  * @param   pPdpe       Page directory pointer table entry (out)
  */
-DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
+DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3690,7 +3690,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PM
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
+DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3723,7 +3723,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCUINTPTR64 GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
+DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3759,7 +3759,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr)
  * @param   pPdpe       Page directory pointer table entry (out)
  * @param   piPD        Receives the index into the returned page directory
  */
-DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -3795,7 +3795,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, PX8
  * @param   GCPtr       The address.
  * @param   piPD        Receives the index into the returned page directory
  */
-DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCUINTPTR64 GCPtr, unsigned *piPD)
+DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, unsigned *piPD)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;

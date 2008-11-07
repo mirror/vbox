@@ -901,7 +901,7 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDP
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -1010,7 +1010,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PML4E pGs
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -1053,7 +1053,7 @@ VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PX86PDPT *ppPd
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCUINTPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     const unsigned iPml4e = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
