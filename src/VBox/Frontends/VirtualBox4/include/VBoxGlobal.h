@@ -864,7 +864,7 @@ public:
                                 const char *aClassName = NULL,
                                 bool aRecursive = false);
 
-    static QList< QPair<QString, QString> > HDDBackends();
+    static QList <QPair <QString, QString> > HDDBackends();
 
     /* Qt 4.2.0 support function */
     static inline void setLayoutMargin (QLayout *aLayout, int aMargin)

@@ -84,47 +84,56 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
         /* Walk through all available keys */
         while (pa->pszKey != NULL)
         {
-            Utf8Str defaults ("");
+            Utf8Str defaultValue ("");
             DataType_T dt;
             /* Check for the configure data type */
             switch (pa->enmValueType)
             {
                 case VDCFGVALUETYPE_INTEGER:
-                    {
-                        dt = DataType_Int32Type;
-                        /* If there is a default value get them in the right format */
-                        if (pa->pDefaultValue)
-                            defaults = Utf8StrFmt ("%d", pa->pDefaultValue->Integer.u64);
-                        break;
-                    }
+                {
+                    dt = DataType_Int32;
+                    /* If there is a default value get them in the right format */
+                    if (pa->pDefaultValue)
+                        defaultValue =
+                            Utf8StrFmt ("%d", pa->pDefaultValue->Integer.u64);
+                    break;
+                }
                 case VDCFGVALUETYPE_BYTES:
+                {
+                    dt = DataType_Int8;
+                    /* If there is a default value get them in the right format */
+                    if (pa->pDefaultValue)
                     {
-                        dt = DataType_Int8Type;
-                        /* If there is a default value get them in the right format */
-                        if (pa->pDefaultValue)
-                        {
-                            /* Copy the bytes over */
-                            defaults.alloc (pa->pDefaultValue->Bytes.cb + 1);
-                            memcpy (defaults.mutableRaw(), pa->pDefaultValue->Bytes.pv, pa->pDefaultValue->Bytes.cb);
-                            defaults.mutableRaw() [defaults.length()] = 0;
-                        }
-                        break;
+                        /* Copy the bytes over */
+                        defaultValue.alloc (pa->pDefaultValue->Bytes.cb + 1);
+                        memcpy (defaultValue.mutableRaw(), pa->pDefaultValue->Bytes.pv,
+                                pa->pDefaultValue->Bytes.cb);
+                        defaultValue.mutableRaw() [defaultValue.length()] = 0;
                     }
+                    break;
+                }
                 case VDCFGVALUETYPE_STRING:
-                    {
-                        dt = DataType_StringType;
-                        /* If there is a default value get them in the right format */
-                        if (pa->pDefaultValue)
-                            defaults = pa->pDefaultValue->String.psz;
-                        break;
-                    }
+                {
+                    dt = DataType_String;
+                    /* If there is a default value get them in the right format */
+                    if (pa->pDefaultValue)
+                        defaultValue = pa->pDefaultValue->String.psz;
+                    break;
+                }
             }
+
+            /// @todo add extendedFlags to Property when we reach the 32 bit
+            /// limit (or make the argument ULONG64 after checking that COM is
+            /// capable of defining enums (used to represent bit flags) that
+            /// contain 64-bit values)
+            ComAssertRet (pa->uKeyFlags == ((ULONG) pa->uKeyFlags), E_FAIL);
+
             /* Create one property structure */
             const Property prop = { Utf8Str (pa->pszKey),
                                     Utf8Str (""),
                                     dt,
-                                    static_cast<unsigned int> (pa->uKeyFlags),
-                                    defaults };
+                                    static_cast <ULONG> (pa->uKeyFlags),
+                                    defaultValue };
             unconst (mData.properties).push_back (prop);
             ++ pa;
         }
@@ -250,6 +259,7 @@ STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
     com::SafeArray <ULONG> propertyTypes (mData.properties.size());
     com::SafeArray <ULONG> propertyFlags (mData.properties.size());
     com::SafeArray <BSTR> propertyDefaults (mData.properties.size());
+
     int i = 0;
     for (PropertyList::const_iterator it = mData.properties.begin();
          it != mData.properties.end(); ++ it, ++ i)
@@ -259,8 +269,9 @@ STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
         prop.description.cloneTo (&propertyDescriptions [i]);
         propertyTypes [i] = prop.type;
         propertyFlags [i] = prop.flags;
-        prop.defaults.cloneTo (&propertyDefaults [i]);
+        prop.defaultValue.cloneTo (&propertyDefaults [i]);
     }
+
     propertyNames.detachTo (ComSafeArrayOutArg (aNames));
     propertyDescriptions.detachTo (ComSafeArrayOutArg (aDescriptions));
     propertyTypes.detachTo (ComSafeArrayOutArg (aTypes));
