@@ -285,7 +285,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      */
     int rc;
     PCFGMNODE pMMCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
-    if (pMMCfg)
+    if (!pMMCfg)
     {
         rc = CFGMR3InsertNode(CFGMR3GetRoot(pVM), "MM", &pMMCfg);
         AssertRCReturn(rc, rc);
