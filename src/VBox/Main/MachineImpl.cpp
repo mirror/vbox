@@ -191,6 +191,7 @@ Machine::HWData::HWData()
     mMemoryBalloonSize = 0;
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
+    mAccelerate3DEnabled = false;
     mMonitorCount = 1;
     mHWVirtExEnabled = TSBool_False;
     mHWVirtExNestedPagingEnabled = false;
@@ -221,6 +222,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mMemoryBalloonSize != that.mMemoryBalloonSize ||
         mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
         mVRAMSize != that.mVRAMSize ||
+        mAccelerate3DEnabled != that.mAccelerate3DEnabled ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
         mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
@@ -1081,6 +1083,40 @@ STDMETHODIMP Machine::COMSETTER(StatisticsUpdateInterval) (ULONG statisticsUpdat
 
     mHWData.backup();
     mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
+
+    return S_OK;
+}
+
+
+STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    *enabled = mHWData->mAccelerate3DEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    /** @todo check validity! */
+
+    mHWData.backup();
+    mHWData->mAccelerate3DEnabled = enable;
 
     return S_OK;
 }
@@ -5037,6 +5073,11 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
 
         mHWData->mVRAMSize = displayNode.value <ULONG> ("VRAMSize");
         mHWData->mMonitorCount = displayNode.value <ULONG> ("MonitorCount");
+
+        /* Accelerate3DEnabled (optional, default is false) */
+        Key Accelerate3DNode = displayNode.findKey ("Accelerate3D");
+        if (!Accelerate3DNode.isNull())
+            mHWData->mAccelerate3DEnabled = Accelerate3DNode.value <bool> ("enabled");
     }
 
 #ifdef VBOX_WITH_VRDP
@@ -6404,6 +6445,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         Key displayNode = aNode.createKey ("Display");
         displayNode.setValue <ULONG> ("VRAMSize", mHWData->mVRAMSize);
         displayNode.setValue <ULONG> ("MonitorCount", mHWData->mMonitorCount);
+        displayNode.setValue <bool> ("Accelerate3D", mHWData->mAccelerate3DEnabled);
     }
 
 #ifdef VBOX_WITH_VRDP
