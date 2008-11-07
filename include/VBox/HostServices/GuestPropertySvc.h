@@ -430,14 +430,19 @@ typedef struct _EnumProperties
  * specifying the timestamp of the last notification seen.
  * On success, VINF_SUCCESS will be returned and the buffer will contain
  * details of a property notification.  If no new notification is available,
- * a timestamp of zero will be returned.
+ * the call will block until one is.
  * If the last notification could not be found by timestamp, VWRN_NOT_FOUND
  * will be returned and the oldest available notification will be returned.
- * if no timestamp is specified, the oldest available notification will be
+ * If no timestamp is specified, the oldest available notification will be
  * returned.
  * If the buffer supplied was not large enough to hold the notification,
  * VERR_BUFFER_OVERFLOW will be returned and the size parameter will contain
  * the size of the buffer needed.
+ *
+ * The protocol for a guest to obtain notifications is to call
+ * GET_NOTIFICATION in a loop.  On the first call, the ingoing timestamp
+ * parameter should be set to zero.  On subsequent calls, it should be set to
+ * the outgoing timestamp from the previous call. 
  */
 typedef struct _GetNotification
 {
@@ -451,13 +456,12 @@ typedef struct _GetNotification
      * assume that it has missed a certain number of notifications.
      *
      * The timestamp of the change being notified of (OUT uint64_t)
-     * If this is zero then no new events are available.  Undefined on
-     * failure.
+     * Undefined on failure.
      */
     HGCMFunctionParameter timestamp;
 
     /**
-     * The returned data. if any will be placed here.  (OUT pointer)
+     * The returned data, if any, will be placed here.  (OUT pointer)
      * This call returns three null-terminated strings which will be placed
      * one after another: name, value and flags.  For a delete notification,
      * value and flags will be empty strings.  Undefined on failure.

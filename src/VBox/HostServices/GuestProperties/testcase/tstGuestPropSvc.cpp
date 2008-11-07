@@ -734,18 +734,6 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         }
     }
 
-    /* Test when no new events are available */
-    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                    GET_NOTIFICATION, 3, paParms);
-    if (   RT_FAILURE(callHandle.rc)
-        || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
-        || u64Timestamp != 0
-       )
-    {
-        RTPrintf("Failed to signal properly that no new notifications are available.\n");
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-
     /* Test a query with an unknown timestamp */
     paParms[0].setUInt64 (1);
     paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
@@ -774,27 +762,23 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testNoNotifications(VBOXHGCMSVCFNTABLE *pTable)
+int testNoNotifications(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMCALLHANDLE_TYPEDEF *callHandle,
+                        VBOXHGCMSVCPARM *paParms, char *pchBuffer, size_t cchBuffer)
 {
     int rc = VINF_SUCCESS;
-    VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
 
-    RTPrintf("Testing the GET_NOTIFICATION call when no notifications are available.\n");
+    RTPrintf("Testing the asynchronous GET_NOTIFICATION call with no notifications are available.\n");
     uint64_t u64Timestamp = 0;
     uint32_t u32Size = 0;
-    VBOXHGCMSVCPARM paParms[3];
 
     paParms[0].setUInt64 (u64Timestamp);
-    paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
-    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
+    paParms[1].setPointer ((void *) pchBuffer, cchBuffer);
+    callHandle->rc = VINF_HGCM_ASYNC_EXECUTE;
+    pTable->pfnCall(pTable->pvService, callHandle, 0, NULL,
                     GET_NOTIFICATION, 3, paParms);
-    if (   RT_FAILURE(callHandle.rc)
-        || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
-        || u64Timestamp != 0
-       )
+    if (callHandle->rc != VINF_HGCM_ASYNC_EXECUTE)
     {
-        RTPrintf("Failed to signal properly that no new notifications are available.\n");
+        RTPrintf("GET_NOTIFICATION call completed when new notifications should be available.\n");
         rc = VERR_UNRESOLVED_ERROR;
     }
     return rc;
@@ -804,6 +788,11 @@ int main(int argc, char **argv)
 {
     VBOXHGCMSVCFNTABLE svcTable;
     VBOXHGCMSVCHELPERS svcHelpers;
+    /* Paramters for the asynchronous guest notification call */
+    VBOXHGCMSVCPARM aParm[3];
+    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    VBOXHGCMCALLHANDLE_TYPEDEF callHandleStruct;
+
     initTable(&svcTable, &svcHelpers);
     RTR3Init();
     if (RT_FAILURE(testConvertFlags()))
@@ -818,10 +807,27 @@ int main(int argc, char **argv)
         return 1;
     if (RT_FAILURE(testEnumPropsHost(&svcTable)))
         return 1;
-    if (RT_FAILURE(testNoNotifications(&svcTable)))
+    /* Asynchronous notification call */
+    if (RT_FAILURE(testNoNotifications(&svcTable, &callHandleStruct, aParm,
+                   chBuffer, sizeof(chBuffer))))
         return 1;
     if (RT_FAILURE(testSetProp(&svcTable)))
         return 1;
+    RTPrintf("Checking the data returned by the asynchronous notification call.\n");
+    /* Our previous notification call should have completed by now. */
+    uint64_t u64Timestamp;
+    uint32_t u32Size;
+    if (   callHandleStruct.rc != VINF_SUCCESS
+        || RT_FAILURE(aParm[0].getUInt64 (&u64Timestamp))
+        || RT_FAILURE(aParm[2].getUInt32 (&u32Size))
+        || u32Size != getNotifications[0].cchBuffer
+        || memcmp(chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
+       )
+    {
+        RTPrintf("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc\n",
+                 callHandleStruct.rc);
+        return 1;
+    }
     if (RT_FAILURE(testDelProp(&svcTable)))
         return 1;
     if (RT_FAILURE(testGetProp(&svcTable)))
