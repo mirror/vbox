@@ -540,6 +540,7 @@ tcp_attach(PNATState pData, struct socket *so)
 #ifdef VBOX_WITH_SYNC_SLIRP
         /*we use this field to identify cache socket to lock/unlock*/
         so->so_type = IPPROTO_TCP;
+        slirp_socket_created(pData->pvUser);
 #endif
 
 	return 0;

@@ -384,6 +384,7 @@ udp_attach(PNATState pData, struct socket *so)
   }
 #ifdef VBOX_WITH_SYNC_SLIRP
   so->so_type = IPPROTO_UDP;
+  slirp_socket_created(pData->pvUser);
 #endif
   return(so->s);
 }
@@ -707,6 +708,8 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	   so->so_expire = 0;
 
 	so->so_state = SS_ISFCONNECTED;
-
+#ifdef VBOX_WITH_SYNC_SLIRP
+        slirp_socket_created(pData->pvUser);
+#endif
 	return so;
 }

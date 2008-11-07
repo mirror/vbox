@@ -58,6 +58,7 @@ m_get(PNATState pData)
 	int flags = 0;
 #ifdef VBOX_WITH_SYNC_SLIRP
         int on_free_list = 0;
+        struct mbuf *n;
 #endif
 
 	DEBUG_CALL("m_get");
@@ -79,16 +80,38 @@ m_get(PNATState pData)
 		if (mbuf_alloced > mbuf_max)
 			mbuf_max = mbuf_alloced;
                 VBOX_SLIRP_UNLOCK(pData->mbuf_alloced_mutex);
+                VBOX_SLIRP_LOCK_CREATE(&m->m_mutex);
+                VBOX_SLIRP_LOCK(m->m_mutex);
 	} else {
 		m = m_freelist.m_next;
+                VBOX_SLIRP_LOCK(m->m_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
+                n = m->m_next;
+                if (n != NULL)
+                    VBOX_SLIRP_LOCK(n->m_mutex);
 		remque(pData, m);
+                if (n != NULL)
+                    VBOX_SLIRP_UNLOCK(n->m_mutex);
+#else
+		remque(pData, m);
+#endif
 	}
 
         VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
 
         VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
 	/* Insert it in the used list */
+#ifdef VBOX_WITH_SYNC_SLIRP
+        n = m_usedlist.m_next;
+        if (n != &m_usedlist)
+            VBOX_SLIRP_LOCK(n->m_mutex);
+#endif
 	insque(pData, m,&m_usedlist);
+#ifdef VBOX_WITH_SYNC_SLIRP
+        if (n != &m_usedlist)
+            VBOX_SLIRP_LOCK(n->m_mutex);
+#endif
+        VBOX_SLIRP_UNLOCK(m->m_mutex);
         VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
 
 	m->m_flags = (flags | M_USEDLIST);
@@ -108,6 +131,9 @@ end_error:
 void
 m_free(PNATState pData, struct mbuf *m)
 {
+#ifdef VBOX_WITH_SYNC_SLIRP
+    struct mbuf *p, *n;
+#endif
 
   DEBUG_CALL("m_free");
   DEBUG_ARG("m = %lx", (long )m);
@@ -116,7 +142,22 @@ m_free(PNATState pData, struct mbuf *m)
 	/* Remove from m_usedlist */
 	if (m->m_flags & M_USEDLIST) {
            VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
+#ifdef VBOX_WITH_SYNC_SLIRP
+           p = (m->m_prev);
+           n = (m->m_next);
+                VBOX_SLIRP_LOCK(m->m_mutex);
+           if (n != NULL)
+                VBOX_SLIRP_LOCK(n->m_mutex);
+           if (p != NULL)
+                VBOX_SLIRP_LOCK(p->m_mutex);
+#endif
 	   remque(pData, m);
+#ifdef VBOX_WITH_SYNC_SLIRP
+           if (n != NULL)
+                VBOX_SLIRP_UNLOCK(n->m_mutex);
+           if (p != NULL)
+                VBOX_SLIRP_UNLOCK(p->m_mutex);
+#endif
            VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
         }
 
@@ -129,6 +170,8 @@ m_free(PNATState pData, struct mbuf *m)
 	 */
 	if (m->m_flags & M_DOFREE) {
 		u32ptr_done(pData, ptr_to_u32(pData, m), m);
+                VBOX_SLIRP_UNLOCK(m->m_mutex);
+                VBOX_SLIRP_LOCK_DESTROY(m->m_mutex);
 		free(m);
 #ifdef VBOX_WITH_SYNC_SLIRP
                 m = NULL;

@@ -48,7 +48,16 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
 
-
+#ifdef VBOX_WITH_SYNC_SLIRP
+void slirp_fasttmr(PNATState pData);
+void slirp_slowtmr(PNATState pData);
+/*selects open and ready sockets for write*/
+void slirp_send_fill(PNATState pData, int *pnfds, fd_set *writeds);
+/*triggers socket output */
+void slirp_send_trigger(PNATState pData, int *pnfds, fd_set *writeds);
+/*should be implemented by client*/
+void slirp_socket_created(void* pvUser);
+#endif
 #ifdef __cplusplus
 }
 #endif
