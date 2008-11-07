@@ -386,6 +386,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
 #ifdef DEBUG_ALL_LOGGING
     loglevel = ~0;
+    logfile = fopen("/tmp/vbox-qemu.log", "w");
 #endif
 
     return rc;
