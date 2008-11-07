@@ -43,7 +43,7 @@
 ; Converts the CPUMCPU pointer to CPUM (for the first VMCPU)
 ; @param   %1   register name
 %macro CPUM_FROM_CPUMCPU 1
-    sub     %1, [%1 + CPUM.ulOffCPUMCPU]
+    sub     %1, [%1 + CPUMCPU.ulOffCPUM]
 %endmacro
 
 ;;
