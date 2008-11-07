@@ -33,4 +33,7 @@
 /* #define VBOX_DEBUG_PHYS */
 /* Uncomment to see emulated CPU state changes */
 /* #define VBOX_DUMP_STATE */
-
+/* Uncomment to see QEMU logging, goes to /tmp/vbox-qemu.log */
+/* #define DEBUG_ALL_LOGGING */
+/* Uncomment to see generated code */
+/* #define DEBUG_DISAS */

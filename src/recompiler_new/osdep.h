@@ -8,6 +8,8 @@
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
+#include "config.h"
+
 #ifndef _MSC_VER
 #define qemu_snprintf(pszBuf, cbBuf, ...) RTStrPrintf((pszBuf), (cbBuf), __VA_ARGS__)
 #else
@@ -32,7 +34,10 @@
 
 #define fflush(file)            RTLogFlush(NULL)
 #define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
-#define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+/* If DEBUG_ALL_LOGGING - goes to QEMU log file */
+#ifndef DEBUG_ALL_LOGGING
+ #define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+#endif
 
 #define assert(cond) Assert(cond)
 

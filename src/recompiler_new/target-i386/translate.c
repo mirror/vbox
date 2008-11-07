@@ -827,8 +827,8 @@ static void gen_check_external_event()
     TCGv t0;
 
     skip_label = gen_new_label();
-    /* t0 = tcg_temp_local_new(TCG_TYPE_TL); */
-    t0 = cpu_tmp0;
+    t0 = tcg_temp_local_new(TCG_TYPE_TL);
+    /* t0 = cpu_tmp0; */
 
     tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, interrupt_request));
     /* Keep in sync with helper_check_external_event() */
@@ -839,7 +839,7 @@ static void gen_check_external_event()
                     | CPU_INTERRUPT_EXTERNAL_HARD);
     /** @todo: predict branch as taken */
     tcg_gen_brcondi_i32(TCG_COND_EQ, t0, 0, skip_label);
-    /* tcg_temp_free(t0); */
+    tcg_temp_free(t0);
 
     tcg_gen_helper_0_0(helper_check_external_event);
 
@@ -7848,13 +7848,16 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #endif
         {
             int label1;
-            TCGv t0, t1, t2;
+            TCGv t0, t1, t2, a0;
 
             if (!s->pe || s->vm86)
                 goto illegal_op;
             t0 = tcg_temp_local_new(TCG_TYPE_TL);
             t1 = tcg_temp_local_new(TCG_TYPE_TL);
             t2 = tcg_temp_local_new(TCG_TYPE_TL);
+#ifdef VBOX
+            a0 = tcg_temp_local_new(TCG_TYPE_TL);
+#endif
             ot = OT_WORD;
             modrm = ldub_code(s->pc++);
             reg = (modrm >> 3) & 7;
@@ -7862,6 +7865,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             rm = modrm & 7;
             if (mod != 3) {
                 gen_lea_modrm(s, modrm, &reg_addr, &offset_addr);
+#ifdef VBOX
+                tcg_gen_mov_tl(a0, cpu_A0);
+#endif
                 gen_op_ld_v(ot + s->mem_index, t0, cpu_A0);
             } else {
                 gen_op_mov_v_reg(ot, t0, rm);
@@ -7877,7 +7883,12 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             tcg_gen_movi_tl(t2, CC_Z);
             gen_set_label(label1);
             if (mod != 3) {
+#ifdef VBOX
+                /* cpu_A0 doesn't survive branch */
+                gen_op_st_v(ot + s->mem_index, t0, a0);
+#else
                 gen_op_st_v(ot + s->mem_index, t0, cpu_A0);
+#endif
             } else {
                 gen_op_mov_reg_v(ot, rm, t0);
             }
@@ -7890,6 +7901,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             tcg_temp_free(t0);
             tcg_temp_free(t1);
             tcg_temp_free(t2);
+#ifdef VBOX
+            tcg_temp_free(a0);
+#endif
         }
         break;
     case 0x102: /* lar */
