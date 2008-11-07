@@ -450,7 +450,7 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="Accelerate3D" type="TAccelerate3DType" minOccurs="0"/>
+  <xsd:attribute name="Accelerate3D" type="TAccelerate3DType"/>
 </xsd:complexType>
 
 <xsd:complexType name="TRemoteDisplay">
