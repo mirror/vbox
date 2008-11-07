@@ -335,6 +335,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-nestedpaging on|off]\n"
                  "                            [-vtxvpid on|off]\n"
                  "                            [-monitorcount <number>]\n"
+                 "                            [-accelerate3d <on|off>]\n"
                  "                            [-bioslogofadein on|off]\n"
                  "                            [-bioslogofadeout on|off]\n"
                  "                            [-bioslogodisplaytime <msec>]\n"
@@ -1064,6 +1065,13 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
         RTPrintf("monitorcount=%d\n", numMonitors);
     else
         RTPrintf("Monitor count:   %d\n", numMonitors);
+
+    BOOL accelerate3d;
+    machine->COMGETTER(Accelerate3DEnabled)(&accelerate3d);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("accelerate3d=\"%s\"\n", accelerate3d ? "on" : "off");
+    else
+        RTPrintf("3D Acceleration:       %s\n", accelerate3d ? "on" : "off");
 
     ComPtr<IFloppyDrive> floppyDrive;
     rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
@@ -3841,6 +3849,7 @@ static int handleModifyVM(int argc, char *argv[],
     char *pae = NULL;
     char *ioapic = NULL;
     int monitorcount = -1;
+    char *accelerate3d = NULL;
     char *bioslogofadein = NULL;
     char *bioslogofadeout = NULL;
     uint32_t bioslogodisplaytime = ~0;
@@ -3991,6 +4000,13 @@ static int handleModifyVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             monitorcount = atoi(argv[i]);
+        }
+        else if (strcmp(argv[i], "-accelerate3d") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            accelerate3d = argv[i];
         }
         else if (strcmp(argv[i], "-bioslogofadein") == 0)
         {
@@ -4665,6 +4681,23 @@ static int handleModifyVM(int argc, char *argv[],
         if (monitorcount != -1)
         {
             CHECK_ERROR(machine, COMSETTER(MonitorCount)(monitorcount));
+        }
+        if (accelerate3d)
+        {
+            if (strcmp(accelerate3d, "on") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(true));
+            }
+            else if (strcmp(accelerate3d, "off") == 0)
+            {
+                CHECK_ERROR(machine, COMSETTER(Accelerate3DEnabled)(false));
+            }
+            else
+            {
+                errorArgument("Invalid -accelerate3d argument '%s'", ioapic);
+                rc = E_FAIL;
+                break;
+            }
         }
         if (bioslogofadein)
         {
