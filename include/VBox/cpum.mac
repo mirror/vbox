@@ -31,21 +31,6 @@
 %ifndef __VBox_cpum_mac__
 %define __VBox_cpum_mac__
 
-
-;;
-; Converts the CPUM pointer to CPUMCPU (for the first VMCPU)
-; @param   %1   register name
-%macro CPUMCPU_FROM_CPUM 1
-    add     %1, [%1 + CPUM.ulOffCPUMCPU]
-%endmacro
-
-;;
-; Converts the CPUMCPU pointer to CPUM (for the first VMCPU)
-; @param   %1   register name
-%macro CPUM_FROM_CPUMCPU 1
-    sub     %1, [%1 + CPUMCPU.ulOffCPUM]
-%endmacro
-
 ;;
 ; Registers frame.
 ; This is used internally in TRPM, VMMSwitcher_GuestToHost_GuestCtx
