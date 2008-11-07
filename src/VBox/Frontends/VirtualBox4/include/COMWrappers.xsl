@@ -1778,6 +1778,11 @@
     )
   )"/>
 
+  <xsl:variable name="is_enum" select="(
+    (ancestor::library/enum[@name=current()/@type]) or
+    (ancestor::library/if[@target=$self_target]/enum[@name=current()/@type])
+  )"/>
+
   <xsl:choose>
     <xsl:when test="$when='pre-call'">
       <xsl:choose>
@@ -1792,6 +1797,12 @@
               <xsl:text>    com::SafeIfaceArray &lt;</xsl:text>
               <xsl:value-of select="@type"/>
               <xsl:text>&gt; </xsl:text>
+            </xsl:when>
+            <!-- enums need the _T prefix -->
+            <xsl:when test="$is_enum">
+              <xsl:text>    com::SafeArray &lt;</xsl:text>
+              <xsl:value-of select="@type"/>
+              <xsl:text>_T&gt; </xsl:text>
             </xsl:when>
             <!-- GUID is special too -->
             <xsl:when test="@type='uuid'">

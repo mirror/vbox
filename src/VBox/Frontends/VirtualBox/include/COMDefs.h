@@ -290,7 +290,7 @@ public:
     /* Arrays of enums. Does a cast similar to what ENUMOut does. */
 
     template <typename QE, typename CE>
-    static void ToSafeArray (const QVector <QE> &aVec,
+    static void ToSafeArray (const QValueVector <QE> &aVec,
                              com::SafeIfaceArray <CE> &aArr)
     {
         aArr.reset (static_cast <int> (aVec.size()));
@@ -300,7 +300,7 @@ public:
 
     template <typename CE, typename QE>
     static void FromSafeArray (const com::SafeIfaceArray <CE> &aArr,
-                               QVector <QE> &aVec)
+                               QValueVector <QE> &aVec)
     {
         aVec.resize (static_cast <int> (aArr.size()));
         for (int i = 0; i < aVec.size(); ++i)
