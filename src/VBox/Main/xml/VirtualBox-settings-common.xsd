@@ -430,10 +430,6 @@
   </xsd:sequence>
 </xsd:complexType>
 
-<xsd:complexType name="TAccelerate3DType">
-  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
-</xsd:complexType>
-
 <xsd:complexType name="TDisplay">
   <xsd:attribute name="VRAMSize" use="required">
     <xsd:simpleType>
@@ -450,7 +446,7 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="Accelerate3D" type="TAccelerate3DType"/>
+  <xsd:attribute name="Accelerate3D" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TRemoteDisplay">
