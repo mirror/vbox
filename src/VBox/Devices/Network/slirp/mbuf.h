@@ -75,6 +75,9 @@ struct m_hdr {
 
 	caddr_t	mh_data;		/* Location of data */
 	int	mh_len;			/* Amount of data in this mbuf */
+#ifdef VBOX_WITH_SYNC_SLIRP
+        RTSEMFASTMUTEX  mh_mutex;
+#endif
 };
 
 /*

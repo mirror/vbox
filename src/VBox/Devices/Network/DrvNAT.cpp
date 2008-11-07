@@ -58,7 +58,9 @@
 #endif
 
 #ifdef VBOX_WITH_SYNC_SLIRP
+#include <unistd.h> /* should be in UNix version only*/
 #include <iprt/semaphore.h>
+#include <errno.h>
 #endif
 
 
@@ -95,6 +97,12 @@ typedef struct DRVNAT
     PPDMTHREAD              pThread;
     /*used for wakep of poling thread*/
     RTSEMEVENT               semIOmutex;
+    PTMTIMER                 pNATFastTimer;
+    PTMTIMER                 pNATSlowTimer;
+    /** The write end of the control pipe. */
+    RTFILE                  PipeWrite;
+    /** The read end of the control pipe. */
+    RTFILE                  PipeRead;
 #endif
 } DRVNAT, *PDRVNAT;
 
@@ -167,6 +175,16 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     }
 #ifndef VBOX_WITH_SYNC_SLIRP
     RTCritSectLeave(&pThis->CritSect);
+#else
+    int ndfds = 0;
+    fd_set writefds;
+    FD_ZERO(&writefds);
+    slirp_send_fill(pThis->pNATState, &ndfds, &writefds);
+    struct timeval tv = {0,0}; /* no wait */
+
+    int cWriteFDs = select(ndfds + 1, NULL, &writefds, NULL, &tv);
+    if (cWriteFDs >= 0)
+        slirp_send_trigger(pThis->pNATState, &ndfds, &writefds);
 #endif
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -274,6 +292,21 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 }
 #else
 
+static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    if (pThis->enmLinkState  == PDMNETWORKLINKSTATE_UP)
+        slirp_fasttmr(pThis->pNATState);
+    TMTimerSetMicro(pTimer, 2);
+}
+
+static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    if (pThis->enmLinkState  == PDMNETWORKLINKSTATE_UP)
+        slirp_slowtmr(pThis->pNATState);
+    TMTimerSetMicro(pTimer, 500);
+}
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -300,13 +333,22 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
         slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
-        struct timeval tv = {0, 0}; /* no wait */
+        struct timeval tv = {1, 0}; /* no wait */
 
-        int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
+        FD_SET(pThis->PipeRead, &ReadFDs); /*Linux only*/
+        cFDs = (pThis->PipeRead < cFDs ? cFDs:pThis->PipeRead);
+        int cReadFDs = select(cFDs + 1, &ReadFDs, NULL, &XcptFDs, &tv);
 
-        if (cReadFDs >= 0)
+        if (cReadFDs >= 0) {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 
+            if (FD_ISSET(pThis->PipeRead, &ReadFDs)) {
+                /* drain the pipe */
+                char ch;
+                size_t cbRead;
+                RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
+            }
+        }
 #if 0
         if (cReadFDs == 0) {
             rc = RTSemEventWait(pThis->semIOmutex, RT_INDEFINITE_WAIT);
@@ -334,6 +376,13 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return (VINF_SUCCESS);
 }
 
+/*Callback from slirp to exit from select*/
+void slirp_socket_created(void* pvUser)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+    AssertRC(rc);
+}
 #endif
 
 #ifndef VBOX_NAT_SOURCES
@@ -681,8 +730,29 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #else
                     rc = RTSemEventCreate(&pThis->semIOmutex);
                     AssertReleaseRC(rc);
+
+                    /*
+                     * Create the control pipe.
+                     * XXX: Linux only
+                     */
+                    int fds[2];
+                    if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
+                    {
+                        int rc = RTErrConvertFromErrno(errno);
+                        AssertRC(rc);
+                        return rc;
+                    }
+                    pThis->PipeRead = fds[0];
+                    pThis->PipeWrite = fds[1];
+
                     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
                     AssertReleaseRC(rc);
+                    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvNATFastTimer, "NAT_fast_timer", &pThis->pNATFastTimer);
+                    AssertReleaseRC(rc);
+                    TMTimerSetMicro(pThis->pNATFastTimer, 1);
+                    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvNATSlowTimer, "NAT_slow_timer", &pThis->pNATSlowTimer);
+                    AssertReleaseRC(rc);
+                    TMTimerSetMicro(pThis->pNATSlowTimer, 500);
 #endif
 
                     pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
