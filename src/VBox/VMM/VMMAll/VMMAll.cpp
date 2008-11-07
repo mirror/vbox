@@ -57,6 +57,12 @@ RTRCPTR VMMGetStackRC(PVM pVM)
  */
 VMCPUID VMMGetCpuId(PVM pVM)
 {
+#ifdef IN_RING3
+    /* Only emulation thread(s) allowed to ask for CPU id */
+    if (!VM_IS_EMT(pVM))
+        return 0;
+#endif
+
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
@@ -80,6 +86,11 @@ VMCPUID VMMGetCpuId(PVM pVM)
  */
 PVMCPU VMMGetCpu(PVM pVM)
 {
+#ifdef IN_RING3
+    /* Only emulation thread(s) allowed to ask for CPU id */
+    if (!VM_IS_EMT(pVM))
+        return &pVM->aCpus[0];
+#endif
     /* Only emulation thread(s) allowed to ask for CPU id */
     VM_ASSERT_EMT(pVM);
 
