@@ -2535,7 +2535,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="b5d1baca-da5b-4202-905f-ee53a5f60ae5"
+     uuid="a744b229-3457-422f-8550-649c40346c55"
      wsmap="managed"
      >
     <desc>
@@ -2737,6 +2737,13 @@
 
     <attribute name="VRAMSize" type="unsigned long">
       <desc>Video memory size in megabytes.</desc>
+    </attribute>
+
+    <attribute name="Accelerate3DEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox allows guests make use
+        of the 3D graphics support available on the host. Currently limited
+        to OpenGL only. </desc>
     </attribute>
 
     <attribute name="MonitorCount" type="unsigned long">
