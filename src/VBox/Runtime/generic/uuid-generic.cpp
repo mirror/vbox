@@ -104,6 +104,9 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 
 RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
 {
+    RTUUID Uuid2;
+    int rc;
+
     /* check params */
     AssertPtrReturn(pUuid1, -1);
     AssertPtrReturn(pszString, 1);
@@ -111,8 +114,7 @@ RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
     /*
      * Try convert the string to a UUID and then compare the two.
      */
-    RTUUID Uuid2;
-    int rc = RTUuidFromStr(&Uuid2, pszString);
+    rc = RTUuidFromStr(&Uuid2, pszString);
     AssertRCReturn(rc, 1);
 
     return RTUuidCompare(pUuid1, &Uuid2);
@@ -121,6 +123,10 @@ RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
 
 RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
 {
+    static const char s_achDigits[17] = "0123456789abcdef";
+    uint32_t u32TimeLow;
+    unsigned u;
+
     /* validate parameters */
     AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszString, VERR_INVALID_PARAMETER);
@@ -140,8 +146,7 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
      *             pUuid->Gen.au8Node[4],
      *             pUuid->Gen.au8Node[5]);
      */
-    static const char s_achDigits[17] = "0123456789abcdef";
-    uint32_t u32TimeLow = pUuid->Gen.u32TimeLow;
+    u32TimeLow = pUuid->Gen.u32TimeLow;
     pszString[ 0] = s_achDigits[(u32TimeLow >> 28)/*& 0xf*/];
     pszString[ 1] = s_achDigits[(u32TimeLow >> 24) & 0xf];
     pszString[ 2] = s_achDigits[(u32TimeLow >> 20) & 0xf];
@@ -151,7 +156,7 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
     pszString[ 6] = s_achDigits[(u32TimeLow >>  4) & 0xf];
     pszString[ 7] = s_achDigits[(u32TimeLow/*>>0*/)& 0xf];
     pszString[ 8] = '-';
-    unsigned u = pUuid->Gen.u16TimeMid;
+    u = pUuid->Gen.u16TimeMid;
     pszString[ 9] = s_achDigits[(u >> 12)/*& 0xf*/];
     pszString[10] = s_achDigits[(u >>  8) & 0xf];
     pszString[11] = s_achDigits[(u >>  4) & 0xf];
