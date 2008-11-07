@@ -96,6 +96,18 @@ PVMCPU VMMGetCpu(PVM pVM)
 }
 
 /**
+ * Returns the VMCPU of the specified virtual CPU.
+ *
+ * @returns The VMCPU pointer.
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(PVMCPU) VMMGetCpuEx(PVM pVM, RTCPUID idCpu)
+{
+    AssertReturn(idCpu < pVM->cCPUs, NULL);
+    return &pVM->aCpus[idCpu];
+}
+
+/**
  * Gets the VBOX_SVN_REV.
  *
  * This is just to avoid having to compile a bunch of big files
