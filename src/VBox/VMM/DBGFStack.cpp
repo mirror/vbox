@@ -357,7 +357,7 @@ VMMR3DECL(int) DBGFR3StackWalkBeginGuest(PVM pVM, PDBGFSTACKFRAME pFrame)
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)dbgfR3StackWalkCtxFull, 4,
-                         pVM, pFrame, CPUMGetGuestCtxCore(pVM), true);
+                         pVM, pFrame, CPUMGetGuestCtxCoreEx(pVM, VMMGetCpu(pVM)), true); /* @todo SMP */
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
