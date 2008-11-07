@@ -357,7 +357,9 @@ if_start(PNATState pData)
 #endif
 	/* Remove it from the queue */
 	ifqt = ifm->ifq_prev;
+#ifdef VBOX_WITH_SYNC_SLIRP
         if (ifm->m_prev != ifm && ifm->m_prev != NULL)
+#endif
 	    remque(pData, ifm);
 
 	--if_queued;
@@ -372,7 +374,11 @@ if_start(PNATState pData)
 #endif
 
 	/* If there are more packets for this session, re-queue them */
-	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm && ifm->ifs_next != NULL) {
+	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm
+#ifdef VBOX_WITH_SYNC_SLIRP
+    && ifm->ifs_next != NULL
+#endif
+) {
 		insque(pData, ifm->ifs_next, ifqt);
 		ifs_remque(ifm);
 	}
