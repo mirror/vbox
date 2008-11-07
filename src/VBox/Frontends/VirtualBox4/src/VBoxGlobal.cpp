@@ -4693,12 +4693,12 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 }
 
 /**
- * Automatically figure out which hdd backends are currently support by vbox.
+ * Figures out which hard disk formats are currently supported by VirtualBox.
  * Returned is a list of pairs with the form
- * <"Backend Name", "*.suffix1 *.suffix2 ...">.
+ *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
  */
 /* static */
-QList< QPair<QString, QString> > VBoxGlobal::HDDBackends()
+QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
 {
     CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
     QVector<CHardDiskFormat> hardDiskFormats = systemProperties.GetHardDiskFormats();

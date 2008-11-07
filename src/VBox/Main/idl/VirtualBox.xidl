@@ -793,13 +793,13 @@
         <ul>
         <li><link to="DeviceType::HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getHardDisk"/> call.</li>
+        <link to="IVirtualBox::getHardDisk2()"/> call.</li>
         <li><link to="DeviceType::DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getDVDImage"/> call.</li>
+        <link to="IVirtualBox::getDVDImage()"/> call.</li>
         <li><link to="DeviceType::Floppy"/>: the media is a Floppy image
         that, if registered, can be obtained using the
-        <link to="IVirtualBox::getFloppyImage"/> call.</li>
+        <link to="IVirtualBox::getFloppyImage()"/> call.</li>
         </ul>
 
         Note that if this is a deregistration notification,
@@ -946,7 +946,7 @@
       host, regardless of which frontend started them.
 
       To enumerate all the virtual machines on the host, use the
-      <link to="IVirtualBox::machines"/> attribute.
+      <link to="IVirtualBox::machines2"/> attribute.
     </desc>
 
     <attribute name="version" type="wstring" readonly="yes">
@@ -1375,13 +1375,13 @@
           <li><link to="IHardDisk2::createDiffStorage()"/></li>
         </ul>
 
-        Some hard disk attributes, such as <link to="id"/>, may remain
+        Some hard disk attributes, such as <link to="#id"/>, may remain
         uninitialized until the hard disk storage unit is successfully created
         by one of the above methods.
 
         After the storage unit is successfully created, the hard disk gets
         remembered by this VirtualBox installation and will be accessible
-        trhough <link to="#getHardDisk2"/> and <link to="#findHardDisk2"/>
+        trhough <link to="#getHardDisk2()"/> and <link to="#findHardDisk2()"/>
         methods. Remembered root (base) hard disks are also returned as part of
         the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
 
@@ -1551,7 +1551,7 @@
         to="#openDVDImage()"/>, or mounted to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
-        the <link to="IMedia::location"/> attribute of each known CD/DVD image.
+        the <link to="IMedium::location"/> attribute of each known CD/DVD image.
 
         The requested location can be a path relative to the
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
@@ -1578,7 +1578,7 @@
         remembered by (known to) this VirtualBox installation and will be
         accessible trhough <link to="#getFloppyImage()"/> and
         <link to="#findFloppyImage()"/> methods. Remembered images are also
-        returned as part of the <link to="#FloppyImages"/> array and can be
+        returned as part of the <link to="#floppyImages"/> array and can be
         mounted to virtual machines. See IMedium for more details.
 
         See <link to="IMedium::location"/> to get more details about the format
@@ -1630,7 +1630,7 @@
         to="#openFloppyImage()"/>, or mounted to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
-        the <link to="IMedia::location"/> attribute of each known floppy image.
+        the <link to="IMedium::location"/> attribute of each known floppy image.
 
         The requested location can be a path relative to the
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
@@ -2544,7 +2544,7 @@
 
       This interface is used in two contexts. First of all, a collection of
       objects implementing this interface is stored in the
-      <link to="IVirtualBox::machines"/> attribute which lists all the virtual
+      <link to="IVirtualBox::machines2"/> attribute which lists all the virtual
       machines that are currently registered with this VirtualBox
       installation. Also, once a session has been opened for the given virtual
       machine (e.g. the virtual machine is running), the machine object
@@ -2554,7 +2554,7 @@
       The main role of this interface is to expose the settings of the virtual
       machine and provide methods to change various aspects of the virtual
       machine's configuration. For machine objects stored in the
-      <link to="IVirtualBox::machines"/> collection, all attributes are
+      <link to="IVirtualBox::machines2"/> collection, all attributes are
       read-only unless explicitly stated otherwise in individual attribute
       and method descriptions. In order to change a machine setting, a session
       for this machine must be opened using one of
@@ -4687,7 +4687,7 @@
 
         <note>
           Child hard disks of all normal hard disks of the discarded snapshot
-          must be <link to="IHardDisk::accessible">accessible</link> for this
+          must be accessible (see <link to="IMedium::state"/>) for this
           operation to succeed.  In particular, this means that all virtual
           machines, whose hard disks are directly or indirectly based on the
           hard disks of discarded snapshot, must be powered off.
@@ -5834,7 +5834,7 @@
 
       Snapshots can be chained. Chained snapshots form a branch where
       every next snapshot is based on the previous one. This chaining is
-      mostly related to hard disk branching (see <link to="IHardDisk"/>
+      mostly related to hard disk branching (see <link to="IHardDisk2"/>
       description). This means that every time a new snapshot is created,
       a new differencing hard disk is implicitly created for all normal
       hard disks attached to the given virtual machine. This allows to
@@ -6455,8 +6455,6 @@
         object becomes uninitialized. This means that any attempt to call any of
         its methods or attributes will fail with the <tt>"Object not ready"
         (E_ACCESSDENIED)</tt> error.
-
-        <see>#deleteStorage()</see>
       </desc>
     </method>
 
@@ -6510,7 +6508,7 @@
       controller and a virtual virtual hard disk attached to this slot.
 
       The array of hard disk attachments is returned by
-      <link to="IMachine::hardDiskAttachments"/>.
+      <link to="IMachine::hardDisk2Attachments"/>.
 
       <note>
         With the COM API, this is an interface like all the others. With the
@@ -6605,8 +6603,7 @@
       automatically remove the hard disk from the media registry:
       <ul>
         <li><link to="#deleteStorage()"/></li>
-        <li><link to="#mergeToParent()"/></li>
-        <li><link to="#mergeToAncestor()"/></li>
+        <li><link to="#mergeTo()"/></li>
       </ul>
 
       If the storage unit of the hard disk is a regular file in the host's
@@ -7207,18 +7204,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="DataType"
     uuid="d90ea51e-a3f1-4a01-beb1-c1723c0d3ba7"
   >
-    <const name="Int32Type" value="0"/>
-    <const name="Int8Type" value="1"/>
-    <const name="StringType" value="2"/>
+    <const name="Int32" value="0"/>
+    <const name="Int8" value="1"/>
+    <const name="String" value="2"/>
   </enum>
 
   <enum
     name="DataFlags"
     uuid="86884dcf-1d6b-4f1b-b4bf-f5aa44959d60"
   >
-    <const name="NoneFlag" value="0x00"/>
-    <const name="MandatoryFlag" value="0x01"/>
-    <const name="ExpertFlag" value="0x02"/>
+    <const name="None" value="0x00"/>
+    <const name="Mandatory" value="0x01"/>
+    <const name="Expert" value="0x02"/>
     <const name="FlagMask" value="0x03"/>
   </enum>
 
@@ -7227,60 +7224,62 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="1df1e4aa-d25a-4ba6-b2a2-02f60eb5903b"
   >
     <desc>
-       Harddisk format capability flags.
+       Hard disk format capability flags.
     </desc>
 
-    <const name="UuidCapability" value="0x01">
+    <const name="Uuid" value="0x01">
       <desc>
         Supports UUIDs as expected by VirtualBox code.
       </desc>
     </const>
 
-    <const name="CreateFixedCapability" value="0x02">
+    <const name="CreateFixed" value="0x02">
       <desc>
         Supports creating fixed size images, allocating all space instantly.
       </desc>
     </const>
 
-    <const name="CreateDynamicCapability" value="0x04">
+    <const name="CreateDynamic" value="0x04">
       <desc>
         Supports creating dynamically growing images, allocating space on
         demand.
       </desc>
     </const>
 
-    <const name="CreateSplit2GCapability" value="0x08">
+    <const name="CreateSplit2G" value="0x08">
       <desc>
-        Supports creating images split in chunks of a bit less than 2GBytes.
+        Supports creating images split in chunks of a bit less than 2 GBytes.
       </desc>
     </const>
 
-    <const name="DiffCapability" value="0x10">
+    <const name="Differencing" value="0x10">
       <desc>
-        Supports being used as differencing image format backend.
+        Supports being used as a format for differencing hard disks (see <link
+        to="IHardDisk2::createDiffStorage"/>).
       </desc>
     </const>
 
-    <const name="ASyncCapability" value="0x20">
+    <const name="Asynchronous" value="0x20">
       <desc>
         Supports asynchronous I/O operations for at least some configurations.
       </desc>
     </const>
 
-    <const name="FileCapability" value="0x40">
+    <const name="File" value="0x40">
       <desc>
-        The backend operates on files. The caller needs to know to handle the
-        location appropriately. For a list of supported file extentions see
+        The format backend operates on files. The <link to="IMedium::location"/>
+        attribute of the hard disk specifies a file used to store hard disk
+        data. For a list of supported file extentions see
         <link to="IHardDiskFormat::fileExtensions"/>.
       </desc>
     </const>
 
-    <const name="ConfigCapability" value="0x80">
+    <const name="Properties" value="0x80">
       <desc>
-        The backend uses the config interface. The caller needs to know how to
-        provide the mandatory configuration parts this way.
-
-        <see>IHardDiskFormat::describeProperties</see>
+        The format backend uses the property interface to configure the storage
+        location and properties. The <link to="IHardDiskFormat::describeProperties"/>
+        method is used to get access to poperties supported by the given hard
+        disk format.
       </desc>
     </const>
 
@@ -7345,28 +7344,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="capabilities" type="unsigned long" readonly="yes">
       <desc>
-        The capabilities of the backend as a bitmask. 
-        
-        For the meaning of the different capabilities see 
+        Capabilities of the format as a set of bit flags.
+
+        For the meaning of individual capabilitiy flags see
         <link to="HardDiskFormatCapabilities"/>.
       </desc>
     </attribute>
 
     <method name="describeProperties">
       <desc>
-        Return several lists for the configuration description of this backend.
+        Returns several arrays describing the properties supported by this
+        format.
 
-        This is non empty only if HardDiskFormatCapabilities::ConfigCapability
-        is set.
+        An element with the given index in each array describes one
+        property. Thus, the number of elements in each returned array is the
+        same and corresponds to the number of supported properties.
+
+        The returned arrays are not empty only if the
+        <link to="HardDiskFormatCapabilities::Properties"/> flag is set.
+
         <see>DataType</see>
         <see>DataFlags</see>
       </desc>
 
-      <param name="names" type="wstring" safearray="yes" dir="out"/>
-      <param name="description" type="wstring" safearray="yes" dir="out"/>
-      <param name="types" type="unsigned long" safearray="yes" dir="out"/>
-      <param name="flags" type="unsigned long" safearray="yes" dir="out"/>
-      <param name="defaults" type="wstring" safearray="yes" dir="out"/>
+      <param name="names" type="wstring" safearray="yes" dir="out">
+        <desc>Array of property names.</desc>
+      </param>
+      <param name="description" type="wstring" safearray="yes" dir="out">
+        <desc>Array of property descriptions.</desc>
+      </param>
+      <param name="types" type="unsigned long" safearray="yes" dir="out">
+        <desc>Array of property types.</desc>
+      </param>
+      <param name="flags" type="unsigned long" safearray="yes" dir="out">
+        <desc>Array of property flags.</desc>
+      </param>
+      <param name="defaults" type="wstring" safearray="yes" dir="out">
+        <desc>Array of default property values.</desc>
+      </param>
     </method>
 
   </interface>

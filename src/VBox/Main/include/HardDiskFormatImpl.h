@@ -93,7 +93,7 @@ private:
         Bstr description;
         DataType_T type;
         ULONG flags;
-        Bstr defaults;
+        Bstr defaultValue;
     };
     typedef std::list <Property> PropertyList;
 
