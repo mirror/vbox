@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="ro">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -36,32 +37,26 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move the selected boot device up.</source>
         <translation type="obsolete">Mută dispozitivul de boot în sus.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move the selected boot device down.</source>
         <translation type="obsolete">Mută dispozitivul de boot în jos.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">Mută dispozitivele de boot selectate în sus.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">Mută dispozitivele de boot selectate în jos.</translation>
     </message>
@@ -69,7 +64,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definește ordinea de boot. Folosiți căsuțele de selecție din stânga pentru a activa sau dezactiva dispozitivele de boot, individual. Mutați itemii în sus și în jos pentru a schimba ordinea.</translation>
     </message>
@@ -364,7 +358,7 @@
     <message>
         <location filename="../src/QIMessageBox.cpp" line="244"/>
         <source>Cancel</source>
-        <translation>Revocare</translation>
+        <translation>Renunță</translation>
     </message>
     <message>
         <location filename="../src/QIMessageBox.cpp" line="245"/>
@@ -375,7 +369,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">Copiază în clipboard</translation>
     </message>
@@ -408,7 +401,6 @@
 <context>
     <name>QListBox</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Inaccessible</source>
         <translation type="obsolete">Inaccesibil</translation>
     </message>
@@ -421,7 +413,6 @@
         <translation>Despre VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Interfața grafică VirtualBox versiunea %1&lt;br&gt;
@@ -473,93 +464,76 @@ Versiunea %1</translation>
     <message>
         <location filename="../include/VBoxSettingsUtils.h" line="136"/>
         <source>Cancel</source>
-        <translation>Revocare</translation>
+        <translation>Renunță</translation>
     </message>
 </context>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Share</source>
         <translation type="obsolete">Adaugă partajare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit Share</source>
         <translation type="obsolete">Editează partajare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enter existing path for the shared folder here</source>
         <translation type="obsolete">Introduceți cale existentă pentru directorul partajat aici</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enter name for the shared folder to be created</source>
         <translation type="obsolete">Introduceți nume pentru folderul partajat ce va fi creat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
         <translation type="obsolete">Click pentru a deschide dialogul &lt;deschidere director&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">Selectați un director pentru partajare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Folder Path</source>
         <translation type="obsolete">Cale director</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Folder Name</source>
         <translation type="obsolete">Nume director</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Afișează calea către un director existent pe PC gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Afișează numele directorului partajat (așa cum va fi văzut de SO musafir).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">Deschide dialogul selectare director.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>OK</source>
         <translation type="obsolete">OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">Fă per&amp;manent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">Doa&amp; citire</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Dacă este bifat, SO musafir nu va putea scrie în dosarul specificat.</translation>
     </message>
@@ -582,7 +556,6 @@ Versiunea %1</translation>
         <translation>&amp;Salvați starea curentă a mașinii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+S</source>
         <translation type="obsolete">Alt+S</translation>
     </message>
@@ -592,7 +565,6 @@ Versiunea %1</translation>
         <translation>O&amp;priți mașina</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -602,7 +574,6 @@ Versiunea %1</translation>
         <translation>&amp;Restaurați instantaneu curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
@@ -612,32 +583,26 @@ Versiunea %1</translation>
         <translation>Restaurează mașina la starea salvată în instantaneul curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -651,7 +616,6 @@ Versiunea %1</translation>
         <translation>Trimit&amp;e semnalul de închidere</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -660,7 +624,6 @@ Versiunea %1</translation>
 &lt;p&gt;Dacă mașina nu răspunde la această acțiune atunci sistemul de operare musafir poate fi configurat greșit, sau nu înțelege de loc mesajele buton pornire ACPI. În acest caz trebuie să selectați acțiunea &lt;b&gt;Opriți mașina&lt;/b&gt; pentru a opri execuția mașinii virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Închide mașina virtuală&lt;/p&gt;
@@ -690,19 +653,16 @@ Versiunea %1</translation>
 <context>
     <name>VBoxConsoleWnd</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;attached&amp;nbsp;USB&amp;nbsp;devices&lt;br&gt;%1&lt;/qt&gt;</source>
         <comment>USB device indicator</comment>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;dispozitivele&amp;nbsp;USB&amp;nbsp;atașate&lt;br&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;nu e atașat&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;]&lt;/nobr&gt;</translation>
@@ -713,7 +673,6 @@ Versiunea %1</translation>
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -825,7 +784,6 @@ Versiunea %1</translation>
         <translation>Imagine &amp;dischetă...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Mount a Floppy image file</source>
         <translation type="obsolete">Montează fișier imagine dischetă</translation>
     </message>
@@ -835,7 +793,6 @@ Versiunea %1</translation>
         <translation>Demontează &amp;dischetă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Unmount the currently mounted Floppy media</source>
         <translation type="obsolete">Demontează mediul dischetă montat în prezent</translation>
     </message>
@@ -860,7 +817,6 @@ Versiunea %1</translation>
         <translation>Demontează mediul CD/DVD-ROM montat în prezent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">Remote Desktop (RDP) Server</translation>
@@ -876,7 +832,6 @@ Versiunea %1</translation>
         <translation>Activează sau dezactivează conexiuni remote desktop (RDP) către această mașină</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Open</source>
         <translation type="obsolete">Deschide</translation>
     </message>
@@ -901,12 +856,10 @@ Versiunea %1</translation>
         <translation>Montează imaginea de instalare Guest Additions</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Statistics...</source>
         <translation type="obsolete">&amp;Statistici...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Command line...</source>
         <translation type="obsolete">Linie de &amp;comandă...</translation>
     </message>
@@ -956,7 +909,6 @@ Versiunea %1</translation>
         <translation>Dispozitive &amp;USB</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;VM</source>
         <translation type="obsolete">M&amp;V</translation>
     </message>
@@ -976,17 +928,14 @@ Versiunea %1</translation>
         <translation>&amp;Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Indică dacă funcția de autoredimnsionare a ecranului musafir este Activă (&lt;img src=auto_resize_on_16px.png/&gt;) sau Inactivă (&lt;Img src=auto_resize_off_16px.png/&gt;). Notă: această funcție necesită Guest Addition instalat pe SO musafir.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcția integrare mouse necesită instalarea pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
         <translation type="obsolete">Indică dacă tastatura este capturată de către SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
@@ -996,62 +945,51 @@ Versiunea %1</translation>
         <translation>Arată tasta gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouseului și a tastaturii. Poate fi utilizată în combinație cu alte taste pentru a efectua rapid acțiuni din meniul principal.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Oferă acces rapid la directoarele partajate (printr-un clic dreapta).&lt;br&gt;Notă: funcția directoare partajate necesită instalarea pe SO musafir a Guest Additions.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;dischet?&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">Unitate&amp;nbsp;gazdă&amp;nbsp;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>not&amp;nbsp;mounted</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">nu&amp;nbsp;este&amp;nbsp;montat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;CD/DVD-ROM&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation type="obsolete">Unitatea&amp;nbsp;gazdei</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>not&amp;nbsp;mounted</source>
         <comment>DVD-ROM tooltip</comment>
         <translation type="obsolete">nu&amp;nbsp;este&amp;nbsp;montat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;virtual&amp;nbsp;hard&amp;nbsp;disks</source>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;discurilor&amp;nbsp;hard&amp;nbsp;virtuale</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
         <translation type="obsolete">&lt;br&gt;[&lt;b&gt;nu este atașat&lt;/b&gt;]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;interfețelor&amp;nbsp;de&amp;nbsp;rețea&lt;br&gt;[&lt;b&gt;%1 dispozitiv(e)&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
         <translation type="obsolete">Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
@@ -1106,7 +1044,6 @@ Versiunea %1</translation>
         <translation>Instantaneu %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am găsit imaginea CD a VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
@@ -1126,7 +1063,6 @@ Versiunea %1</translation>
         <translation>Demontează mediul dischetă montat curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;dischetă&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
@@ -1136,31 +1072,26 @@ Versiunea %1</translation>
         <translation>&amp;Mașină</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">&lt;qt&gt;Indică activitatea plăcilor de rețea</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Placa de rețea %1 (%2)&lt;/b&gt;: cablu %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">conectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">deconectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Toate plăcile de rețea sunt dezactivate&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1209,7 +1140,6 @@ Versiunea %1</translation>
         <translation>Schimbă în modul continuu de integrare cu spațiul de lucru</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">Indică dacă tastatura este capturată de SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
@@ -1277,7 +1207,7 @@ Versiunea %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1764"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea mediului interfețelor de rețea:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indică activitatea interfețelor de rețea:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1773"/>
@@ -1322,7 +1252,6 @@ Versiunea %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1344,7 +1273,6 @@ Versiunea %1</translation>
         <translation type="obsolete">&amp;Conținut...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -1449,7 +1377,6 @@ Versiunea %1</translation>
         <translation>Manager discuri virtuale</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">Discuri &amp;hard</translation>
     </message>
@@ -1464,42 +1391,34 @@ Versiunea %1</translation>
         <translation>Imagine &amp;dischetă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">Apelează dialogul ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Accept dialog</source>
         <translation type="obsolete">Acceptă dialog</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">Dialog revocare</translation>
     </message>
@@ -1512,12 +1431,12 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Nou...</translation>
+        <translation>&amp;Nou...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Adaugă...</translation>
+        <translation>&amp;Adaugă...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1535,27 +1454,22 @@ Versiunea %1</translation>
         <translation>Reî&amp;mprospătează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>New</source>
         <translation type="obsolete">Nou</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add</source>
         <translation type="obsolete">Adaugă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove</source>
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Release</source>
         <translation type="obsolete">Eliberează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Refresh</source>
         <translation type="obsolete">Reîmprospătare</translation>
     </message>
@@ -1585,27 +1499,22 @@ Versiunea %1</translation>
         <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Create new VDI file and attach it to media list</source>
         <translation type="obsolete">Creează un fișier VDI nou și îl conectează la lista de medii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add existing media image file to media list</source>
         <translation type="obsolete">Adaugă fișier imagine media existent la lista de medii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove selected media image file from media list</source>
         <translation type="obsolete">Șterge fișierul imagine mediu selectat din lista de medii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Release selected media image file from being using in some VM</source>
         <translation type="obsolete">Eliberează fișierul imagine mediu din uzul unor MV</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Refresh media image list</source>
         <translation type="obsolete">Reîmprospătează lista de imagini de medii</translation>
     </message>
@@ -1615,27 +1524,22 @@ Versiunea %1</translation>
         <translation>&amp;Acțiuni</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Location</source>
         <translation type="obsolete">Amplasare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Disk Type</source>
         <translation type="obsolete">Tip disc</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Storage Type</source>
         <translation type="obsolete">TIp stocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Attached to</source>
         <translation type="obsolete">Conectat la</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Snapshot</source>
         <translation type="obsolete">Instantaneu</translation>
     </message>
@@ -1720,7 +1624,6 @@ Versiunea %1</translation>
         <translation>&amp;Selectare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">Toate imaginile de hard disc (*.vdi; *.vmdk);;Imagini Virtual Disk (*.vdi);;Imagini VMDK (*.vmdk);;Toate fișierele (*)</translation>
     </message>
@@ -1730,7 +1633,6 @@ Versiunea %1</translation>
         <translation>Selectați un fișier imagine hard disc</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>CD/DVD-ROM images (*.iso)</source>
         <translation type="obsolete">Imagine CD/DVD-ROM (*.iso)</translation>
     </message>
@@ -1740,12 +1642,10 @@ Versiunea %1</translation>
         <translation>Selectați un fișier imagine CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Floppy images (*.img)</source>
         <translation type="obsolete">Imagine dischetă (*.img)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select a Floppy disk image file</source>
         <translation type="obsolete">Selectare un fișier imagine dischetă</translation>
     </message>
@@ -1840,7 +1740,7 @@ Versiunea %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
         <source>Cancel</source>
-        <translation>Revocare</translation>
+        <translation>Renunță</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
@@ -1858,17 +1758,14 @@ Versiunea %1</translation>
         <translation>Nu am putut localiza fișierul pe server (răspuns: %1).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Could not determine the file size.</source>
         <translation type="obsolete">Nu am putut determina dimensiunea fișierului.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Could not connect to the server (%1).</source>
         <translation type="obsolete">Nu m-am putut conecta la server (%1).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Could not download the file (%1).</source>
         <translation type="obsolete">Nu am putut descărca fișierul (%1).</translation>
     </message>
@@ -2120,7 +2017,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">Autor(i):</translation>
+        <translation>Autor(i):</translation>
     </message>
 </context>
 <context>
@@ -2280,19 +2177,16 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Dezactivat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Not mounted</source>
         <comment>details report (dischet?)</comment>
         <translation type="obsolete">Nu este montată</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Image</source>
         <comment>details report (dischet?)</comment>
         <translation type="obsolete">Imagine</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host Drive</source>
         <comment>details report (dischet?)</comment>
         <translation type="obsolete">Drive Gazdă</translation>
@@ -2328,7 +2222,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
         <translation type="obsolete">Dispozitiv</translation>
@@ -2382,7 +2275,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Dezactivat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>USB Controller</source>
         <comment>details report</comment>
         <translation type="obsolete">Controlor USB</translation>
@@ -2531,13 +2423,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Rețea</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">Primar</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">Secundar</translation>
@@ -2609,19 +2499,16 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Rezervă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Master</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Slave</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Dispozitiv&amp;nbsp;%1</translation>
@@ -3144,98 +3031,80 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Category</source>
         <translation type="obsolete">Categorie</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[link]</source>
         <translation type="obsolete">[link]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[name]</source>
         <translation type="obsolete">[nume]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Selectați o categorie de setări din lista din stânga și mergeți cu mouseul peste un item din listă pentru a obține informații suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> General </source>
         <translation type="obsolete"> General </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Input </source>
         <translation type="obsolete"> Input </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">Directoare &amp;implicite</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Afișează calea către directorul VDI implicit. Acest director este
 folosit, daca nu este explicit specificat altfel, atunci când creați noi sau adăugați discuri hard virtuale existente.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Machines</source>
         <translation type="obsolete">Mașini</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VDI files</source>
         <translation type="obsolete">Fișiere VDI</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the virtual machine folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul mașinii virtuale la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the VDI folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul VDI la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the default virtual machine
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
@@ -3244,68 +3113,56 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
 mașini virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select</source>
         <translation type="obsolete">Selectare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens a dialog to select the
 default VDI folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul VDI implicit.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens a dialog to select the
 default virtual machine folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul mașinii virtuale implicite.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">&amp;Tastatură</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">Tastă &amp;gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">Capturează &amp;automat tastatura</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+A</source>
         <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">Filtre dispozitive &amp;USB</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all global USB filters.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Listează toate filtrele USB globale.
 Căsuța de selecție din stânga definește dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Adaugă filtru vid (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
@@ -3314,130 +3171,105 @@ toate câmpurile setate inițial la șiruri goale. Notați ca un astfel de filtr
 dispozitiv USB atașat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Adaugă din (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu
 toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Șterge (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Șterge filtrul USB selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Mută filtrul USB în sus.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Mută filtrul USB în jos.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Afișează dialogul ajutor.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Setări nevalide detectate</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Acceptă schimbările și închide acest dialog.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Revocă schimbările și închide acest dialog.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">Preferințe VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">Afișează tasta utilizată ca tastă gazdă în fereastra MV. Activează câmpul de intrare și apasă noua tastă gazdă. Tastele alfanumerice, de mișcare a cursoului și de editare nu pot fi utilizate ca taste gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Filtru nou %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -3446,55 +3278,45 @@ automat de fiecare dată când fereastra MV este activată. Atunci când tastatu
 toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt direcționate către MV.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Language</source>
         <translation type="obsolete">Limbă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Language </source>
         <translation type="obsolete"> Limbă </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">Limbaj &amp;interfață</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Author(s):</source>
         <translation type="obsolete">Autor(i):</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Language:</source>
         <translation type="obsolete">Limbă:</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete"> (implicită)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;indisponibil&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;necunoscut&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3507,108 +3329,88 @@ către cea a sistemului de operare.&lt;/qt&gt;
                                                                                                                </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">Implicită</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Afișează calea către directorul VDI implicit. Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creați noi sau adăugați discuri hard virtuale existente.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul mașinii virtuale la valoarea implicită. Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul VDI la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Afișează calea către directorul mașini virtuale implicit.
 Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creați noi mașini virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul VDI implicit.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta directorul mașinii virtuale implicite.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">Când este selectat, tastatura este capturată
 automat de fiecare dată când fereastra MV este activată. Atunci când tastatura este capturată,
 toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt direcționate către MV.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Listează toate filtrele USB globale. Căsuța de selecție din stânga definește dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu toate câmpurile setate inițial la șiruri goale. Notați ca un astfel de filtru se va potrivi la orice dispozitiv USB atașat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">Bibliotecă autentificare V&amp;RDP</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Afișează calea către biblioteca ce oferă autentificare clienților Remote Display (VRDP).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">Deschide un dialog de selecție a fișierului bibliotecă de autentificare VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Resetează fișierul bibliotecă autentificare la valoarea implicită. Valoarea actuală implicită va fi afișată după acceptarea schimbărilor și redeschiderea acestui dialog.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">Facilități &amp;extinse</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">Activează &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">Definește dacă mașinile virtuale ar trebui să facă uz de extensiile hardware ale procesorului gazdei cum sunt Intel VT-x și AMD-V, implicit sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                                               &lt;qt&gt;Lists all global USB
                                               filters. The checkbox to the left
@@ -3621,17 +3423,14 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">&lt;qt&gt;Listează toate filtrele USB. Căsuța de selecție din stânga definește dacă un filtru este activat sau nu. Folosiți meniul contextual sau butoanele din dreapta pentru a adăuga sau șterge filtre USB.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Adaugă filtru gol</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Adaugă filtru gol</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -3640,17 +3439,14 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">&lt;qt&gt;Adaugă un filtru USB nou cu toate câmpurile stabilite la șiruri goale. Notați faptul că un filtru se va potrivi oricărui dispozitiv USB atașat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Adaugă filtru de la dispozitiv</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">A&amp;daugă filtru de la dispozitiv</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -3658,51 +3454,42 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">&lt;qt&gt;Adaugă un filtru USB nou cu toate câmpurile stabilite la valorile dispozitivului USB selectat atașat la PC-ul gazdă.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Șterge filtru</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">&amp;Șterge filtru</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Șterge filtrul USB evidențiat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Mută filtrul în sus</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">&amp;Mută filtrul în sus</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Mută filtrul USB evidențiat în sus.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Mută filtrul în jos</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">M&amp;ută filtrul în jos</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -3712,32 +3499,26 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Slot</source>
         <translation type="obsolete">Slot</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Hard Disk</source>
         <translation type="obsolete">Disc hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxHardDiskSettings</source>
         <translation type="obsolete">VBoxHardDiskSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">Discuri &amp;hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">Activ&amp;ează controlor SATA</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                           &lt;qt&gt;When checked, enables the virtual SATA
                           controller of this machine. Note that you cannot
@@ -3747,12 +3528,10 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">&lt;qt&gt;Când este bifat, activează controlorul SATA virtual al acestei mașini. Notați faptul că nu puteți atașa discuri hard la porturi SATA când cotrolorul SATA este dezactivat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Hard Disks &amp;Attachments</source>
         <translation type="obsolete">&amp;Atașamente de discuri hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                                   &lt;qt&gt;Lists all hard disks attached to
                                   this machine. Use a mouse double-click or the
@@ -3767,66 +3546,54 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
 Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șterge atașamente de discuri hard.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Attachment</source>
         <translation type="obsolete">Adaugă atașament</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">&amp;Adaugă atașament</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Adaugă un nou atașament de disc dur.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove Attachment</source>
         <translation type="obsolete">Șterge atașament</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">&amp;Șterge atașament</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Delete</source>
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Șterge atașamentul de disc hard evidențiat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">Selectați disc hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">&amp;Selectați disc hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spațiu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
@@ -3834,12 +3601,10 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">&lt;qt&gt;Invocă Managerul de discuri virtuale pentru a selecta un disc hard pentru a-l atașa slotului evidențiat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; folosește discul hard care este deja atașat la &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">Dublu click pentru a adăuga un nou atașament</translation>
     </message>
@@ -3885,7 +3650,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation>&amp;Precedent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -3900,7 +3664,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation>&amp;Următor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
     </message>
@@ -3989,7 +3752,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation>Creează disc hard virtual nou</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -4003,7 +3765,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>Bun venit la asistentul Creează disc virtual nou!</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -4024,7 +3785,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Imagine expandabilă &amp;dinamic</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
@@ -4034,7 +3794,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Imagine de dimensiune &amp;fixă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -4044,7 +3803,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Tip imagine disc virtuală</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Apăsați butonul &lt;b&gt;Selectare&lt;/b&gt; pentru a selecta amplasarea și numele fișierului
@@ -4056,12 +3814,10 @@ pentru a stoca imaginea discului hard virtual sau tastați un nume de fișier î
         <translation>Nume fișier &amp;imagine</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select</source>
         <translation type="obsolete">Selectare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selectați dimensiunea imaginii discului hard virtual (în megaocteți). Această dimensiune va fi raportată SO musafir ca dimensiunea discului hard virtual.&lt;/p&gt;</translation>
@@ -4082,7 +3838,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>Veți crea o nouă imagine de disc hard virtual cu următorii parametrii:</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -4101,7 +3856,6 @@ O dată apăsat, o nouă imagine de disc hard va fi creată.
         <translation>&lt;nobr&gt;%1 Octeți&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Amplasare:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Dimensiune:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Octeți)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -4116,7 +3870,6 @@ O dată apăsat, o nouă imagine de disc hard va fi creată.
         <translation>Selectați un fișier pentru noua imagine de disc hard</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -4181,30 +3934,30 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tip</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Amplasare</translation>
+        <translation>Amplasare</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Dimensiune</translation>
+        <translation>Dimensiune</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Octeți</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Renunță</translation>
     </message>
 </context>
 <context>
@@ -4215,7 +3968,6 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation>Creează o mașină virtuală nouă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -4231,7 +3983,6 @@ unei noi mașini virtuale pentru VirtualBox.&lt;/p&gt;
         <translation>Bun venit la asistentul Mașină virtuală nouă!</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -4267,17 +4018,14 @@ Va fi folosit de către toate produsele VirtualBox pentru a identifica mașina v
         <translation>Dimensiune &amp;memorie RAM</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
@@ -4292,7 +4040,6 @@ Va fi folosit de către toate produsele VirtualBox pentru a identifica mașina v
         <translation>Memorie</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -4328,7 +4075,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Hard disc virtual</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -4342,7 +4088,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
                                                                        &lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -4376,12 +4121,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nume:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tip SO:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memorie:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MO&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disc de boot&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -4454,36 +4197,36 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MO</translation>
+        <translation>MO</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Nume</translation>
+        <translation>Nume</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Tip SO</translation>
+        <translation>Tip SO</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Memorie RAM</translation>
+        <translation>Memorie RAM</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disc de pornire</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Renunță</translation>
     </message>
 </context>
 <context>
@@ -4540,12 +4283,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&lt;p&gt;Nu am putut crea obiectul COM VirtualBox.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut încărca configurația globală GUI.&lt;/p&gt;&lt;p&gt;Aplicația se va închide acum.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut salva configurația GUI globală.&lt;/p&gt;</translation>
     </message>
@@ -4575,12 +4316,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut aplica setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Nu am putut salva setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Nu am putut încărca setările mașinii virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4670,7 +4409,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&lt;p&gt;Fișierul imagine &lt;b&gt;%1&lt;/b&gt; există deja. Nu puteți crea un nou disc hard virtual care să utilizeze acest fișier, pentru că este deja utilizat de către un alt disc virtual.&lt;/p&gt;&lt;p&gt;Vă rugăm alegeți un nume de fișier diferit pentru imagine.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Doriți să ștergeți acest fișier imagine disc &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Nu&lt;/b&gt; discul virtual va fi dezînregistrat și șters din colecție, dar fișierul imagine va rămâne pe discul dvs fizic.&lt;/p&gt;&lt;p&gt;Dacă alegeți &lt;b&gt;Da&lt;/b&gt;a tunci fișierul imagine va fi șters pentru totdeauna după dezînregistrare. Această operație este definitivă.&lt;/p&gt;</translation>
     </message>
@@ -4690,12 +4428,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut crea imaginea discului hard virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation type="obsolete">Nu am putut atașa imaginea discului hard cu UUID %1 la slotul %2 al controlerului %3 mașinii &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Nu am putut detașa imaginea discului hard de la slotul %1 al controlerului %2 mașinii &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
@@ -4710,7 +4446,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Imagine CD/DVD</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Floppy image</source>
         <translation type="obsolete">Imagine dischetă</translation>
     </message>
@@ -4730,7 +4465,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut crea o nouă sesiune.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Nu am putut deschide o sesiune pentru mașina virtuală cu UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4775,17 +4509,14 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut șterge directorul partajat &lt;b&gt;%1&lt;/b&gt; (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) din mașina virtuală &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ați &lt;b&gt;dat clic&lt;/b&gt; în interiorul ecranului mașinii virtuale sau ați apăsat &lt;b&gt;tasta gazdă&lt;/b&gt;. Acest lucru va cauza &lt;b&gt;capturarea&lt;/b&gt; de către mașina virtuală a cursorului mouse (numai dacă integrarea mouse nu este suportată de către SO musafir) și a tastaturi, ceea ce o va face indisponibilă celorlate aplicații rulând pe mașina dvs gazdă.&lt;/p&gt;&lt;p&gt;Puteți oricând apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; pentru a &lt;b&gt;opri capturarea&lt;/b&gt; mouse și tastaturii și a le întoarce la operare normală. Tasta gazdă asociată în prezent este afișată în bara de stare, în partea de jos a ferestrei mașinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse și tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Opțiunea &lt;b&gt;Captură automată tastatură&lt;/b&gt; este pornită. Acest lucru va face ca mașina virtuală să &lt;b&gt;captureze&lt;/b&gt; automat tastatura de fiecare dată când fereastra MV este activată și să facă tastatura indisponibilă celorlate aplicații rulând pe mașina gazđă.&lt;/p&gt;&lt;p&gt;Puteți apăsa &lt;b&gt;tasta gazdă&lt;/b&gt; în orice moment pentru a &lt;b&gt;opri captura&lt;/b&gt; tastaturii și a mouse (dacă este capturat) și a le readuce la modul normal de funcționare. Tasta gazdă asociată în prezent este afișată în bara de stare, în partea de jos a ferestrei mașinii virtuale, lângă iconul&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Acest icon, împreună cu iconul mouse alăturat, indică starea curentă a capturării mouse și tastaturii.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Mașina virtuală a detectat că SO musafir suportă &lt;b&gt;integrare cursor mouse&lt;/b&gt;. Aceasta însemnă că nu trebuie să &lt;i&gt;capturați&lt;/i&gt; cursorul mouse pentru a-l putea folosi în SO musafir -- toate acțiunile cu mouse pe care le faceți când cursorul este deasupra ecranului MV sunt trimise direct către SO musafir. Dacă mouse este capturat, va fi automat eliberat.&lt;/p&gt;&lt;p&gt;Iconul mouse din bara de stare va arăta&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;pentru a vă informa că integrarea mouse este suportată și pornită.,/p&gt;&lt;p&gt;&lt;b&gt;Notă&lt;/b&gt;: Unele aplicații se pot comporta incorect în modul integrare cursor mouse. Puteți oricând să o dezactivați în sesiunea curentă (și să o reactivați) selectând acțiunea corespunzătoare din bara meniu.&lt;/p&gt;</translation>
     </message>
@@ -4800,12 +4531,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&lt;p&gt;Mașina virtuală este în prezent în starea &lt;b&gt;Pauză&lt;/b&gt;, astfel nu acceptă introducere de date de la tastatură sau mouse. Dacă doriți sa reluați lucrul în mașina virtuală, trebuie să restabiliți rularea selectând acțiunea corespunzătoare de pe bara meniu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or dischet? media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veți putea opera mașinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale și a vedea care medii sunt inaccesibile, sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Mașina virtuală va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Puteți oricând să vă întoarceți în modul fereastră, apăsând &lt;b&gt;%1&lt;/b&gt;. Notă: &lt;i&gt;tasta gazdă&lt;/i&gt; este definită în prezent ca &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -4906,7 +4635,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>imagine dischetă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veți putea opera mașinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale și a vedea care medii sunt inaccesibile, sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
@@ -4931,7 +4659,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu am putut schimba dosarul de instantanee al mașinii &lt;b&gt;%1&lt;/b&gt; în &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putu intra în mod continuu din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;</translation>
     </message>
@@ -4962,12 +4689,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&lt;p&gt;Imaginea de CD a VirtualBox Guest Additions a fost descărcată cu succes de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; și salvată local ca &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriți să înregistrați această imagine de CD și să o montați în unitatea de CD/DVD virtuală?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Fereastra mașinii virtuale va trece acum în modul &lt;b&gt;ecran complet&lt;/b&gt;. Vă puteți întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notați că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notați că bara de meniu principală este ascunsă în modul ecran complet. O puteți accesa prin combinația de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Fereastra mașinii virtuale va trece acum în mod &lt;b&gt;Seamless&lt;/b&gt;. Vă puteți întoarce în modul fereastră în orice moment apăsând &lt;b&gt;%1&lt;/b&gt;. Notați că tasta &lt;i&gt;Gazdă&lt;/i&gt; este definită acum ca &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Notați că bara de meniu principală este ascunsă în modul ecran complet. O puteți accesa prin combinația de taste &lt;b&gt;Gazdă+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -5141,7 +4866,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Următoarele fișiere de setări ale VirtualBox au fost convertite automat la noua versiune a formatului de fișier de setări &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Oricum, rezultatele conversiei nu au fost încă salvate pe disc. Vă rugăm apăsați: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salvează&lt;/b&gt; pentru a salva fișierele convertite automat acum (nu va mai fi posibilă utilizarea acestor fișiere de setări cu o versiune mai veche de VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Copie de siguranță&lt;/b&gt; pentru a crea copii de siguranță a fișierelor de setări în vechiul format înainte de a le salve în noul format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Revocare&lt;/b&gt; pentru a nu salva acum fișierele auto-convertite.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Notați faptul că dacă selectați &lt;b&gt;Revocare&lt;/b&gt;, fișierele de setări convertite automat vor fi oricum salvate implicit în noul format o dată ce schimbați o setare sau porniți o mașină virtuală și nu se va face &lt;b&gt;nicio&lt;/b&gt; copie de siguranță.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Următoarele fișiere de setări ale VirtualBox au fost convertite automat la noua versiune a formatului de fișier de setări &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Oricum, rezultatele conversiei nu au fost încă salvate pe disc. Vă rugăm apăsați: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salvează&lt;/b&gt; pentru a salva fișierele convertite automat acum (nu va mai fi posibilă utilizarea acestor fișiere de setări cu o versiune mai veche de VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Copie de siguranță&lt;/b&gt; pentru a crea copii de siguranță a fișierelor de setări în vechiul format înainte de a le salve în noul format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Renunță&lt;/b&gt; pentru a nu salva acum fișierele auto-convertite.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Notați faptul că dacă selectați &lt;b&gt;Renunță&lt;/b&gt;, fișierele de setări convertite automat vor fi oricum salvate implicit în noul format o dată ce schimbați o setare sau porniți o mașină virtuală și nu se va face &lt;b&gt;nicio&lt;/b&gt; copie de siguranță.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
@@ -5159,7 +4884,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Revocare</translation>
+        <translation>Renunță</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1862"/>
@@ -5226,7 +4951,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1041"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putut intra în modul ecran complet din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a trece la modul ecran complet oricum sau apăsați &lt;b&gt;Revocare&lt;/b&gt; pentru a revoca  operațiunea.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut intra în modul ecran complet din cauza memoriei video insuficiente pe musafir.&lt;/p&gt;&lt;p&gt;Ar trebui să configurați MV să aibe cel puțin &lt;b&gt;%1&lt;/b&gt; memorie video.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a trece la modul ecran complet oricum sau apăsați &lt;b&gt;Renunță&lt;/b&gt; pentru a revoca  operațiunea.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
@@ -5271,67 +4996,67 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Conținut...</translation>
+        <translation>&amp;Conținut...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Arată conținutul ajutorului online</translation>
+        <translation>Arată conținutul ajutorului online</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished"></translation>
+        <translation>Site web &amp;VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Deschide browserul și navighează pe site-ul VirtualBox</translation>
+        <translation>Deschide navigatorul web și mergi la site-ul VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">&amp;Resetează toate avertizările</translation>
+        <translation>&amp;Resetează toate avertizările</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Arată din nou toate avertizările și mesajele ascunse</translation>
+        <translation>Face ca toate avertizările și mesajele ascunse să fie afișate din nou</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">Înr&amp;egistrează VirtualBox...</translation>
+        <translation>Înr&amp;egistrează VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">Deschide formularul de înregistrare VirtualBox</translation>
+        <translation>Deschide formularul de înregistrare VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>Veri&amp;fică după actualizări...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished">Caută o versiune mai nouă a VirtualBox</translation>
+        <translation>Caută o versiune mai nouă a VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;Despre VirtualBox...</translation>
+        <translation>&amp;Despre VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished">Arată dialogul cu informații despre produs</translation>
+        <translation>Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5342,7 +5067,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Dialog înregistrare VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere Latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că innotek va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și a vă trimite newsletter. În particular, innotek nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de site-ul web VirtualBox.&lt;/p&gt;</translation>
     </message>
@@ -5372,7 +5096,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Nu folosiți aceste informații &amp;pentru a mă contacta</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Check this box if you do not want to receive mail from innotek at the e-mail address specified above.</source>
         <translation type="obsolete">Bifați această căsuță dacă nu doriți să recepționați mail de la innotek la adresa de e-mail specificată mai sus.</translation>
     </message>
@@ -5382,7 +5105,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Bine ați venit la Formularul de înregistrare al VirtualBox!</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">&amp;Confirmați</translation>
     </message>
@@ -5424,7 +5146,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Renunță</translation>
     </message>
 </context>
 <context>
@@ -5435,22 +5157,18 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Directoare partajate</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>OK</source>
         <translation type="obsolete">OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
@@ -5463,7 +5181,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -5524,7 +5241,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Nouă...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>New</source>
         <translation type="obsolete">Nouă</translation>
     </message>
@@ -5544,7 +5260,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Setări...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Settings</source>
         <translation type="obsolete">Setări</translation>
     </message>
@@ -5564,7 +5279,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Delete</source>
         <translation type="obsolete">Șterge</translation>
     </message>
@@ -5579,7 +5293,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Renun&amp;ță</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Discard</source>
         <translation type="obsolete">Renunță</translation>
     </message>
@@ -5594,7 +5307,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Reîmprospăteză</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Refresh</source>
         <translation type="obsolete">Reîmprospătează</translation>
     </message>
@@ -5614,7 +5326,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&amp;Conținut...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -5659,7 +5370,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Fișier</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;VM</source>
         <translation type="obsolete">M&amp;V</translation>
     </message>
@@ -5689,7 +5399,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>A&amp;rată</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Show</source>
         <translation type="obsolete">Arată</translation>
     </message>
@@ -5704,7 +5413,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>S&amp;tart</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Start</source>
         <translation type="obsolete">Start</translation>
     </message>
@@ -5714,7 +5422,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Pornește mașina virtuală selectată</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;F1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
@@ -5729,7 +5436,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>Afișează &amp;log...</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Show Log...</source>
         <translation type="obsolete">Afișează log...</translation>
     </message>
@@ -5764,7 +5470,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>R&amp;estabilirie</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resume</source>
         <translation type="obsolete">Restabilire</translation>
     </message>
@@ -5784,7 +5489,6 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation>&amp;Pauză</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Pause</source>
         <translation type="obsolete">Pauză</translation>
     </message>
@@ -5830,28 +5534,23 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Name</source>
         <translation type="obsolete">Nume</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Path</source>
         <translation type="obsolete">Cale</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxUSBFilterSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">Directoare &amp;partajate</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
@@ -5866,128 +5565,103 @@ pentru a accesa un director partajat denumit &lt;i&gt;share&lt;/i&gt; dintr-un S
 pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add</source>
         <translation type="obsolete">Adaugă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">Adaugă o definiție nouă de director partajat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit</source>
         <translation type="obsolete">Editează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit selected shared folder definition.</source>
         <translation type="obsolete">Editează definiția de director partajat selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove</source>
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">Șterge definiția de director partajat selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add a new shared folder</source>
         <translation type="obsolete">Adaugă un nou director partajat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit the selected shared folder</source>
         <translation type="obsolete">Editează directorul partajat selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove the selected shared folder</source>
         <translation type="obsolete">Șterge directorul partajat selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Machine Folders</source>
         <translation type="obsolete"> Directoarele mașinii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Transient Folders</source>
         <translation type="obsolete"> Directoare de tranzit</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;Nume:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Cale:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">Editează definiția de director partajat selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxSharedFoldersSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxSharedFoldersSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">Adaugă un nou dosar partajat (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Space</source>
         <translation type="obsolete">Spațiu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit the selected shared folder (Space)</source>
         <translation type="obsolete">Editează dosarul partajat selectat (Spațiu)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">Șterge dosarul partajat selectat (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Access</source>
         <translation type="obsolete">Acces</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spațiu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">Editează dosarul partajat selectat (Ctrl+Spațiu)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Full</source>
         <translation type="obsolete">Complet</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Read-only</source>
         <translation type="obsolete">Doar citire</translation>
     </message>
@@ -6000,7 +5674,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Snapshot Details </source>
         <translation type="obsolete"> Detalii instantaneu </translation>
     </message>
@@ -6020,27 +5693,22 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Detalii &amp;Mașină</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
@@ -6068,12 +5736,10 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>snapshotActionGroup</source>
         <translation type="obsolete">snapshotActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">Renunță la instantaneu</translation>
     </message>
@@ -6083,17 +5749,14 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>&amp;Renunță la instantaneu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+D</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>curStateActionGroup</source>
         <translation type="obsolete">curStateActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">Salvează instantaneu</translation>
     </message>
@@ -6103,27 +5766,22 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>&amp;Salvează instantaneu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Alt+S</source>
         <translation type="obsolete">Ctrl+Alt+S</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Discard Current State</source>
         <translation type="obsolete">Renunță la starea curentă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>D&amp;iscard Current State</source>
         <translation type="obsolete">Re&amp;nunță la starea curentă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Alt+D</source>
         <translation type="obsolete">Ctrl+Alt+D</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">Renunță la instantaneu și stare curente</translation>
     </message>
@@ -6133,12 +5791,10 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Renunță la &amp;instantaneu și starea curentă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Alt+Shift+D</source>
         <translation type="obsolete">Ctrl+Alt+Shift+D</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Show Details</source>
         <translation type="obsolete">Afișează detalii</translation>
     </message>
@@ -6148,7 +5804,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>A&amp;fișează detalii</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Space</source>
         <translation type="obsolete">Spațiu</translation>
     </message>
@@ -6221,7 +5876,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Renunță la instantaneul selectat al mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
@@ -6231,7 +5885,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Salvează un instantaneu al stării curente a mașinii virtuale</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">Restaureză la instantaneul curent</translation>
     </message>
@@ -6241,7 +5894,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>&amp;Restaureză la instantaneul curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
@@ -6251,7 +5903,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Restaurează starea mașinii virtuale din starea salvată în instantaneul curent</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
@@ -6266,7 +5917,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Arată detalii despre instantaneul selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Spațiu</translation>
     </message>
@@ -6284,7 +5934,6 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>Activează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
     </message>
@@ -6307,27 +5956,22 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <translation>&amp;Descriere instantaneu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
@@ -6335,38 +5979,31 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxUSBFilterSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Nume</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">Afișează numele filtrului.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">&amp;Manufacturat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">Pro&amp;dus</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">Nr &amp;serie.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
@@ -6375,7 +6012,6 @@ un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oric�
 valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
@@ -6384,7 +6020,6 @@ un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oric�
 valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
@@ -6393,7 +6028,6 @@ un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oric�
 valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
@@ -6404,17 +6038,14 @@ la un client VRDP al computerului (&lt;i&gt;Da&lt;/i&gt;),
 sau amândurora (&lt;i&gt;Oricare&lt;/i&gt;).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">R&amp;emote</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Action</source>
         <translation type="obsolete">&amp;Acțiune</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
@@ -6426,27 +6057,22 @@ ulterior în mașinile virtuale (&lt;i&gt;Menține&lt;/i&gt;).
 </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">ID &amp;Vânzător</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">ID &amp;Produs</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">&amp;Revizie</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">Por&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6457,7 +6083,6 @@ value.</source>
 oricărei valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6468,7 +6093,6 @@ value.</source>
 oricărei valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
@@ -6481,7 +6105,6 @@ este un caracter zecimal al părții fracționale. Un șir gol se va potrivi
 oricărei valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.</source>
@@ -6490,46 +6113,39 @@ un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oric�
 valori.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">Oricare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">Da</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">Nu</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul &apos;manufacturat de&apos; ca un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul &apos;nume produs&apos; ca un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul &apos;număr serie&apos; ca un șir de &lt;i&gt;potrivire exactă&lt;/i&gt;. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
@@ -6537,7 +6153,6 @@ or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește dacă acest filtru se aplică dispozitivelor USB atașate local computerului gazdă (&lt;i&gt;Nu&lt;/i&gt;), la un client VRDP al computerului (&lt;i&gt;Da&lt;/i&gt;), sau amândurora (&lt;i&gt;Oricare&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
@@ -6545,7 +6160,6 @@ computer when a matching device is attached: give it up to the host OS
         <translation type="obsolete">&lt;qt&gt;Definește acțiunea executată de computerul gazdă atunci când un dispozitiv care respectă condițiile este conectat: îl oferă SO gazdă (&lt;i&gt;Ignoră&lt;/i&gt;) sau îl capturează pentru a fi folosit ulterior în mașinile virtuale (&lt;i&gt;Menține&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6553,7 +6167,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul ID vânzător. Formatul șirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6561,7 +6174,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul ID produs. Formatul șirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;XXXX&lt;/tt&gt; unde &lt;tt&gt;X&lt;/tt&gt; este un caracter hexazecimal. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
@@ -6570,7 +6182,6 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Definește filtrul număr revizie. Formatul șirului de &lt;i&gt;potrivire exactă&lt;/i&gt; este &lt;tt&gt;IIFF&lt;/tt&gt; unde &lt;tt&gt;I&lt;/tt&gt; este un caracter hexazecimal al părții întregi, iar &lt;tt&gt;F&lt;/tt&gt; este un caracter zecimal al părții fracționale. Un șir gol se va potrivi oricărei valori.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6712,44 +6323,46 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Asistent actualizare VirtualBox</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Verifică după actualizări</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Acest asistent se va conecta la site-ul VirtualBox și va verifica dacă o versiune mai nouă este disponibilă.&lt;/p&gt;
+&lt;p&gt;Folosiți butonul &lt;b&gt;Verifică&lt;/b&gt; pentru a verifica aacum dacă există o nouă versiune, sau butonul &lt;b&gt;Renunță&lt;/b&gt; dacă nu doriți să faceți această verificare.&lt;/p&gt;
+&lt;p&gt;Puteți rula acest asistent oricând alegănd din meniul &lt;b&gt;Ajutor&lt;/b&gt; comanda &lt;b&gt;Verifică după actualizări...&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Renunță</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation type="unfinished">Rezumat</translation>
+        <translation>Rezumat</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nu am putut obține informații despre ultima versiune datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished">Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
+        <translation>Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
     </message>
 </context>
 <context>
@@ -6793,7 +6406,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ați pornit pentru prima dată o mașină virtuală proaspăt creată. Acest asistent vă va ajuta să treceți prin pașii necesari instalării unui sistem de operare dorit în această mașină virtuală.&lt;/p&gt;&lt;p&gt;Folosiți butoanele &lt;b&gt;Înainte&lt;/b&gt; și &lt;b&gt;Înapoi&lt;/b&gt; pentru a parcurge paginile acestui asistent. Puteți de asemenea apăsa butonul &lt;b&gt;Revocare&lt;/b&gt; dacă doriți întreruperea execuției acestui asistent.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ați pornit pentru prima dată o mașină virtuală proaspăt creată. Acest asistent vă va ajuta să treceți prin pașii necesari instalării unui sistem de operare dorit în această mașină virtuală.&lt;/p&gt;&lt;p&gt;Folosiți butoanele &lt;b&gt;Înainte&lt;/b&gt; și &lt;b&gt;Înapoi&lt;/b&gt; pentru a parcurge paginile acestui asistent. Puteți de asemenea apăsa butonul &lt;b&gt;Renunță&lt;/b&gt; dacă doriți întreruperea execuției acestui asistent.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
@@ -6816,7 +6429,6 @@ value.&lt;/qt&gt;</source>
         <translation>Dispozitiv &amp;CD/DVD-ROM </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
@@ -6826,7 +6438,6 @@ value.&lt;/qt&gt;</source>
         <translation>Unitate de &amp;dischetă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -6846,7 +6457,6 @@ value.&lt;/qt&gt;</source>
         <translation>Unitate &amp;gazdă </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+H</source>
         <translation type="obsolete">Alt+H</translation>
     </message>
@@ -6856,12 +6466,10 @@ value.&lt;/qt&gt;</source>
         <translation>Fișier &amp;imagine</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -6876,7 +6484,6 @@ value.&lt;/qt&gt;</source>
         <translation>&lt;p&gt;Ați ales să bootați de pe următorul mediu:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Dacă datele de mai jos sunt corecte, apăsați butonul &lt;b&gt;Terminare&lt;/b&gt;. O dată apăsat, mediul selectat va fi montat temporar la mașina virtuală, iar mașina își va începe execuția.&lt;/p&gt;&lt;p&gt;Notați faptul că atunci când închideți mașina virtuală, mediul specificat va fi demontat automat, iar dispozitivul de boot va fi setat înapoi la primul disc hard.&lt;/p&gt;&lt;p&gt;În funcție de tipul programului de instalare, s-ar putea să fie nevoie să demontați manual (eject) mediul după ce programul repornește mașina virtuală, pentru a preveni pornirea din nou a procesului de instalare. Puteți face acest lucru selectând acțiunea &lt;b&gt;Demontare...&lt;/b&gt; corespunzătoare din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -6901,14 +6508,13 @@ value.&lt;/qt&gt;</source>
         <translation>Unitate gazdă %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sursă:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ați pornit o mașină virtuală nouă pentru prima oară. Acest asistent vă va ajuta să efectuați pașii necesari bootării unui sistem de operare ales de dvs pe mașina virtuală.&lt;/p&gt;&lt;p&gt;Notați faptul că nu veți putea instala acum un sistem de operare musafir chiar acum, pentru că nu ați conectat nici un disc dur la ea. Dacă nu asta doriți, puteți revoca execuția acestui asistent, apoi selectați &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări al acestei mașini și schimba configurația discului dur.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare și butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a reveni la pagina anterioară. Puteți apăsa oricând butonul &lt;b&gt;Revocare&lt;/b&gt; pentru a opri execuția acestui asistent.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ați pornit o mașină virtuală nouă pentru prima oară. Acest asistent vă va ajuta să efectuați pașii necesari bootării unui sistem de operare ales de dvs pe mașina virtuală.&lt;/p&gt;&lt;p&gt;Notați faptul că nu veți putea instala acum un sistem de operare musafir chiar acum, pentru că nu ați conectat nici un disc dur la ea. Dacă nu asta doriți, puteți revoca execuția acestui asistent, apoi selectați &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări al acestei mașini și schimba configurația discului dur.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare și butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a reveni la pagina anterioară. Puteți apăsa oricând butonul &lt;b&gt;Renunță&lt;/b&gt; pentru a opri execuția acestui asistent.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
@@ -6958,7 +6564,7 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
@@ -6969,29 +6575,27 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tip</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sursă</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">Revocare</translation>
+        <translation>Renunță</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Dialog informații despre sesiune</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Close</source>
         <translation type="obsolete">În&amp;chide</translation>
     </message>
@@ -7066,7 +6670,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Virtualizare hardware</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>IDE Hard Disk Statistics</source>
         <translation type="obsolete">Statistici disc hard ID</translation>
     </message>
@@ -7091,17 +6694,14 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Placă 2</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adapter 3</source>
         <translation type="obsolete">Placă 3</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adapter 4</source>
         <translation type="obsolete">Placă 4</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Not attached</source>
         <translation type="obsolete">Neconectat</translation>
     </message>
@@ -7151,7 +6751,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="440"/>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="441"/>
@@ -7188,7 +6788,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
@@ -7199,19 +6799,16 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 din %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sesiune %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccesibil din %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Inaccessible</source>
         <translation type="obsolete">Inaccesibil</translation>
     </message>
@@ -7263,7 +6860,6 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Salvează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+S</source>
         <translation type="obsolete">Alt+S</translation>
     </message>
@@ -7273,17 +6869,14 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Reîmprospătează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Close</source>
         <translation type="obsolete">În&amp;chide</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
@@ -7303,12 +6896,10 @@ p, li { white-space: pre-wrap; }
         <translation>Salvează log VirtualBox ca</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -7318,7 +6909,6 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Găsește</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -7331,24 +6921,20 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">Activ&amp;ează placă de rețea</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, plugs this virtual network adapter into
                 the virtual machine.</source>
         <translation type="obsolete">Când este selectat, conectează această placă de rețea
                               la mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">Conect&amp;ată la</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
@@ -7357,12 +6943,10 @@ p, li { white-space: pre-wrap; }
                                                                          rețeaua reală a SO Gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">Adresă &amp;MAC</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the MAC address of
                                         this adapter. It contains exactly 12
                                         characters chosen from
@@ -7372,48 +6956,39 @@ p, li { white-space: pre-wrap; }
                                                                                  caractere alese din {0-9,A-F}.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">&amp;Generează</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+G</source>
         <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Generează o nouă adresă MAC aleatoare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">Ca&amp;blu de rețea conectat la pornire</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+B</source>
         <translation type="obsolete">Alt+B</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
         <translation type="obsolete">Indică dacă cablul rețelei virtuale este conectat sau nu la mașină atunci când aceasta pornește.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Setări interfață gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">Nume &amp;interfață</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the
                                                         name of the host
                                                         interface selected for
@@ -7421,42 +6996,35 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Afișează numele interfeței gazdă selectată pentru această placă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all available
                                                 host interfaces.</source>
         <translation type="obsolete">Listează toate interfețele gazdă disponibile.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Adaugă o nouă interfață Gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes
                                                         the selected host interface.</source>
         <translation type="obsolete">Șterge
                                                                                                                 interfața gazdă selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the
                                                         TAP interface
                                                         name.</source>
         <translation type="obsolete">Afișează numele interfeței TAP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">Descriptor &amp;Fișier</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">Aplicație &amp;setup</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the
                                                         command executed to
                                                         setup the TAP
@@ -7464,24 +7032,20 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Afișează comanda executată pentru a instala interfața TAP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select</source>
         <translation type="obsolete">Selectați</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the
                                                         setup
                                                         application.</source>
         <translation type="obsolete">Selectează aplicația de instalare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">A&amp;plicație de închidere</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the
                                                         command executed to
                                                         terminate the TAP
@@ -7489,123 +7053,99 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Afișează comanda executată pentru a închide interfața TAP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the
                                                         terminate application.</source>
         <translation type="obsolete">Selectează aplicația închisă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;lipsă interfețe potrivite&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add</source>
         <translation type="obsolete">Adaugă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove</source>
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Selectați aplicația de instalare TAP</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">Selectați aplicație de închidere TAP</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">Interfață gazdă VirtualBox %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="obsolete">Când este activat, conectează placa de rețea virtuală la mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Controlează modul în care această placă de rețea virtuală este atașată la rețeaua reală a SO gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
         <translation type="obsolete">Afișează adresa MAC a acestei plăci de rețea. Conține exact 12 caractere alese din {0-9,A-F}.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Indică dacă rețeaua virtuală este conectată la mașină la pornire sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Afișează numele interfeței gazdă selectată pentru această placă de rețea.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Listează toate interfețele gazdă disponibile.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Șterge interfața gazdă selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">Afișează numele TAP al interfeței.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Afișează comanda executată pentru configurarea interfeței TAP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Selectează aplicația de configurare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Afișează comanda executată pentru a închide interfața TAP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Selectează aplicația de închidere.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Afișează adresa MAC a acestei plăci de rețea. Conține exact 12 caractere alese din {0-9,A-F}. Notați faptul că al doile caracter trebuie să fie un număr par.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">&amp;Nume rețea</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">&amp;Tip placă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
         <translation type="obsolete">Selectați tipul plăcii de rețea virtuale. În funcție de această valoare, VirtualBox va oferi mașinii virtuale o configurație hardware de rețea diferită.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Afișează numele rețelei interne selectată pentru această placă de rețea.</translation>
     </message>
@@ -7613,57 +7153,46 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxVMParallelPortSettings</source>
         <translation type="obsolete">VBoxVMParallelPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable Parallel Port</source>
         <translation type="obsolete">&amp;Activează portul paralel</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
         <translation type="obsolete">Când este bifat, activează portul paralel dat al mașinii virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">&amp;Număr port</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Afișează numărul portului paralel. Puteți alege unul dintre porturile standard sau selecta &lt;b&gt;Definit de utilizator&lt;/b&gt; și specifica manual parametrii portului.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Afișează numărul IRQ al acestui port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">Po&amp;rt I/O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Afișează adresa portului I/O de bază pentru acest port paralel. Valori valid sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">&amp;Cale port</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the host parallel device name.</source>
         <translation type="obsolete">Afișează numele dispozitivului paralel de pe gazdă.</translation>
     </message>
@@ -7671,82 +7200,66 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxVMSerialPortSettings</source>
         <translation type="obsolete">VBoxVMSerialPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">&amp;Activează portul serial</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">Când este bifat, activează portul serial dat al mașinii virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">&amp;Număr port</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Afișează numărul portului serial. Puteți alege unul dintre porturile standard sau selecta &lt;b&gt;Definit de utilizator&lt;/b&gt; li specifica manual parametri portului.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">Afișează numărul IRQ al acestui port serial. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;255&lt;/tt&gt;. Valorile mai mari decât &lt;tt&gt;15&lt;/tt&gt; pot fi folosite numai dacă &lt;b&gt;IO ACPI&lt;/b&gt; este activ pentru această mașină virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rt</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Afișează adresa portului I/O de bază pentru acest port serial. Valori valid sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">&amp;Mod port</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation type="obsolete">Controlează modul de lucru al acestui port serial. Dacă selectați &lt;b&gt;Deconectat&lt;/b&gt;, SO musafir va detecta portul serial, dar nu va putea să îl folosească.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">&amp;Crează țeavă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
         <translation type="obsolete">Dacă este bifat, țeava specificată în câmpul &lt;b&gt;Cale port&lt;/b&gt; va fi creată de mașina virtuală, când aceasta pornește. Altfel, mașina virtuală va încerca să folosească țeava existentă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">&amp;Cale port</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Afișează calea către țeava portului serial pe gazdă, când portul lucrează în mod &lt;b&gt;Țeavă gazdă&lt;/b&gt;, sau numele dispozitivul serial de pe gazdă, când portul lucrează în mod &lt;b&gt;Dispozitiv gazdă&lt;/b&gt;.</translation>
     </message>
@@ -7829,7 +7342,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
@@ -7855,243 +7368,196 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="7602291"/>
         <source>Category</source>
         <translation type="obsolete">Categorie</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[link]</source>
         <translation type="obsolete">[link]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>[name]</source>
         <translation type="obsolete">[nume]</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Selectați o categorie de setări din listă și mergeți cu mouseul peste un item din listă pentru a obține informații suplimentare&lt;/i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> General </source>
         <translation type="obsolete"> General </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Hard Disks </source>
         <translation type="obsolete"> Discuri hard </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Floppy </source>
         <translation type="obsolete"> Dischetă </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete"> CD/DVD-ROM </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Audio </source>
         <translation type="obsolete"> Sunet </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>4</source>
         <translation type="obsolete">4</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Network </source>
         <translation type="obsolete"> Rețea </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>5</source>
         <translation type="obsolete">5</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>6</source>
         <translation type="obsolete">6</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Remote Display </source>
         <translation type="obsolete"> Remote display </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>7</source>
         <translation type="obsolete">7</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Shared Folders </source>
         <translation type="obsolete"> Directoare partajate </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>8</source>
         <translation type="obsolete">8</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">&amp;Identificare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Nume</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">Afișează numele mașinii virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">&amp;Tip SO</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Afișează tipul sistemului de operare pe care
 plănuiți să îl isntalați în această mașină virtuală (denumit sistem de operare musafir).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">Dimensiune &amp;memorie RAM</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">Controlează cantitatea de memorie rezervată mașinii virtuale. Dacă alocați prea multă, mașina ar putea să nu pornească.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>MB</source>
         <translation type="obsolete">MO</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">Dimensiune memorie &amp;video</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">Controlează cantitatea de memorie video oferită mașinii virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">De &amp;bază</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Afișează calea unde vor fi stocate instantaneele acestei mașini
 virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe disc.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Select</source>
         <translation type="obsolete">Selectare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">Selectează amplasarea directorului de instantanee.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Reset</source>
         <translation type="obsolete">Resetare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the snapshot folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul de instantanee la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Extended Features</source>
         <translation type="obsolete">Facilități avansate</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">Activează A&amp;CPI</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
@@ -8100,17 +7566,14 @@ ACPI (Advanced Confirguration și Power Management Interface). &lt;b&gt;Notă:&l
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">Activează IO A&amp;CPI</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
@@ -8119,17 +7582,14 @@ IO ACPI (Input Output Advanced Confirguration și Power Management Interface). &
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">Ordine de boo&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">&amp;Avansat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the description of
                                         the virtual machine. The description
                                         field is useful for commenting
@@ -8141,183 +7601,150 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
                                                                         detaliilor de configurare ale SO musafir.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Description</source>
         <translation type="obsolete">&amp;Descriere</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Primary Master</source>
         <translation type="obsolete">&amp;Primar Master</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to create a new
 or select an existing virtual hard disk to attach.</source>
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc
 sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;not selected&gt;</source>
         <translation type="obsolete">&lt;neselectat&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>P&amp;rimary Slave</source>
         <translation type="obsolete">&amp;Primar Slave</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Secondary (IDE 1) Slave</source>
         <translation type="obsolete">&amp;Secundar (IDE 1) Slave</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">&amp;Montare unitate de dischetă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">Unitate &amp;dischetă gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">Montează unitatea de dischetă specificată a gazdei la unitatea de dischetă virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists host Floppy drives available to mount to
 the virtual machine.</source>
         <translation type="obsolete">Listează driveuri dischetă disponibile pentru montare
 la mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">Fișier &amp;imagine</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">Montează imaginea de dischetă specificată la unitatea de dischetă virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to select
 a Floppy image to mount.</source>
         <translation type="obsolete">Invocă dailogul Manager discuri virtuale pentru a selecta
 o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">Montare unitate &amp;CD/DVD</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">&amp;Unitate CD/DVD gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Montează unitatea CD/DVD specificată a gazdei la unitatea virtuală CD/DVD.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists host CD/DVD drives available to mount to
 the virtual machine.</source>
         <translation type="obsolete">Listează driveuri CD/DVD disponibile pentru montare
 la mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">Fișier &amp;imagine ISO</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Montează imaginea CD/DVD specificată la unitatea de CD/DVD virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to select
 a CD/DVD image to mount.</source>
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a selecta
 o imagine CD/DVD pentru montare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">Activ&amp;ează sunet</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">&amp;Driver de sunet gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation type="obsolete">Controlează driverul de ieșire aurio. &lt;b&gt;Null Audio Driver&lt;/b&gt;
 determină musafirul să vadă o placă audio, oricum orice acces la aceasta va fi ignorat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">Activează controlor &amp;USB</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+U</source>
         <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, enables the virtual USB controller
 of this machine.</source>
         <translation type="obsolete">Când este selectat, activează controlorul USB virtual
 al acestei mașini.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">&amp;Filtre dispozitive USB</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all USB filters of this machine.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Listează toate filtrele USB ale acestei mașini.
 Căsuța de selecție din stânga definește dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Adaugă filtru vid (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
@@ -8326,276 +7753,222 @@ toate câmpurile setate inițial la șiruri goale. Notați ca un astfel de filtr
 dispozitiv USB atașat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Adaugă din (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu
 toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Șterge (Del)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Șterge filtrul USB selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Mută în sus (Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Mută filtrul USB în sus.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Mută în jos (Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Mută filtrul USB în jos.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">Activ&amp;ează Server VRDP</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Server port </source>
         <translation type="obsolete">Port server </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Authentication Method </source>
         <translation type="obsolete">Mod autentificare </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Authentication Timeout </source>
         <translation type="obsolete">Timeout autentificare </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the VRDP Server port.</source>
         <translation type="obsolete">Afișează dialogul port server VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">Definește metoda de autentificare VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">Specifică timeoutul pentru autentificarea musafirului, în milisecunde.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Help</source>
         <translation type="obsolete">Ajutor</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Afișează dialogul ajutor.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Setări nevalide detectate</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Acceptă schimbările și închide acest dialog.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancel</source>
         <translation type="obsolete">Revocare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Revocă schimbările și închide acest dialog.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
         <translation type="obsolete">Când este selectat, conectează discul hard virtual selectat la slotul Master al controlorului IDE Primar.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
         <translation type="obsolete">Când este selectat, conectează discul hard virtual selectat la slotul Slave al controlorului IDE Primar.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
         <translation type="obsolete">Când este selectat, conectează discul hard virtual selectat la slotul Slave al controlorului IDE Secundar.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Afișează discul hard virtual de atașat la acest slot IDE și permite selectarea rapidă a unui disc diferit.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">Când este activat, montează mediul specificat la unitatea CD/DVD al mașinii virtuale. Notă: unitatea CD/DVD va fi întotdeauna conectat la controlerul IDE Secundar Master al mașinii.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Afișează fișierul imagine de montat la unitatea CD/DVD virtuală și permite selectarea rapidă a unei imagini diferite.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">Când este selectat, montează mediul specificat la unitatea de dischetă a mașinii virtuale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Afișează fișierul imagine de montat la unitatea de dischetă virtuală și permite selectarea rapidă a unei imagini diferite.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
         <translation type="obsolete">Când este selectat, placa de sunet PCI virtuală este conectată la mașina virtuală care folosește driverul specificat pentru a comunica cu placa de sunet a gazdei.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">Când este activat, MV va acțiuna ca server de RDP (Remote Desktop Protocol), permițând clienților de la distanță să se conecteze și să opereze în MV (atunci când aceasta rulează) folosind un client standard RDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;neconectat&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Master hard disk is not selected.</source>
         <translation type="obsolete">Discul hard Primar Master nu este selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Slave hard disk is not selected.</source>
         <translation type="obsolete">Discul hard Primar Slave nu este selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
         <translation type="obsolete">Discul hard Primar Slave este atașat deja la un slot diferit.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Secondary Slave hard disk is not selected.</source>
         <translation type="obsolete">Discul hard Secundar Slave nu este selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
         <translation type="obsolete">Discul hard Secundar Slave este atașat deja la un slot diferit.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>CD/DVD image file is not selected.</source>
         <translation type="obsolete">Fișierul imagine de CD/DVD nu este selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Floppy image file is not selected.</source>
         <translation type="obsolete">Fișierul imagine dischetă nu este selectat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
         <translation type="obsolete">Interfața rețea gazdă incorectă este selectată pentru placa de rețea %1.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VRDP Port is not set.</source>
         <translation type="obsolete">Nu este setat portul VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VRDP Timeout is not set.</source>
         <translation type="obsolete">Nu este setat Timeout pentru VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> - Settings</source>
         <translation type="obsolete"> - Setări</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Filtru nou %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">Clipboard &amp;partajat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
 Defines the mode of sharing the clipboard between the guest and the host OS. Note
 that this feature requires Guest Additions to be installed in the guest OS.
@@ -8606,17 +7979,14 @@ aceasta funcție necesită instalarea Guest Additions pe SO musafir.
                                                                                </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">Director i&amp;nstantanee</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Afișează tipul sistemului de operare pe care plănuiți să îl instalați în această mașină virtuală (denumit sistem de operare musafir).</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
@@ -8625,7 +7995,6 @@ ACPI (Advanced Configuration and Power Management Interface). &lt;b&gt;Notă:&lt
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
@@ -8634,266 +8003,214 @@ IO ACPI (Input Output Advanced Configuration și Power Management Interface), ca
 această opțiune după ce ați instalat un sistem de operare musafir Microsoft!&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Definește modul partajării clipboard între musafir și SO gazdă. Notă: această funcție necesită instalarea Guest Additions pe SO musafir.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Afișează calea unde vor fi stocate instantaneele acestei mașini virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe disc.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Restează calea către directorul de instantanee la valoarea implicită. Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">Afișează descrierea mașinii virtuale. Descrierea este utilă pentru comentarea detaliilor de configurare ale SO musafir.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Listează unitățile de dischetă de pe gazdă disponibile pentru montarea pe mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a selecta
 o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">Listează unități CD/DVD disponibile pentru montare
 la mașina virtuală.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a selecta o imagine CD/DVD pentru montare.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Controlează driverul de sunet de ieșire. &lt;b&gt;Driver Audio Null&lt;/b&gt; face ca musafirul să vadă o placă de sunet, dar orice acces la aceasta va fi ignorat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">Când este selectat, activează controlorul USB virtual al acestei mașini.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Listează toate filtrele USB ale acestei mașini. Căsuța de selecție din stânga definește dacă filtrele particulare sunt activate sau nu.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu toate câmpurile setate inițial la șiruri goale. Notați ca un astfel de filtru se va potrivi la orice dispozitiv USB atașat.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Adaugă un filtru USB nou cu toate câmpurile setate la valorile dispozitivelor USB selectate conectate la PC gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">Dispozitiv %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">Interfață &amp;gazdă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Listează toate interfețele gazdă disponibile.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Adaugă o nouă interfață gazdă.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Șterge interfața gazdă selectată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;lipsă interfețe potrivite&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add</source>
         <translation type="obsolete">Adaugă</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove</source>
         <translation type="obsolete">Șterge</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">Interfață gazdă VirtualBox %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Doriți să ștergeți interfața de rețea gazdă selectată &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notă:&lt;/b&gt; Această interfață ar putea fi utilizată în prezent de una sau mai multe plăci de rețea ale acestei MV sau ale alteia. Dacă este ștearsă, aceste plăci de rețea nu vor mai funcționa până când nu corectați setările corespunzătoare, alegând un nume de interfață diferit sau un tip diferit de atașare al plăcii de rețea.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>9</source>
         <translation type="obsolete">9</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Serial Ports </source>
         <translation type="obsolete"> Porturi seriale </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>#serialPorts</source>
         <translation type="obsolete">#serialPorts</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">Activează &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">Când este activat, mașina virtuală încerca să folosească extensiile de virtualizare hardware ale CPU-urilor gazdei așa cum sunt Intel VT-x și AMD-V. Starea gri a căsuței de bifare înseamnă că această setare este determinată de valoarea setării globale.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">Alte &amp;setări</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">A&amp;mintește mediul montat în timpul rulării</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="obsolete">Dacă este bifat, orice schimbare la CD/DVD-ul montat sau mediul dischetă efectuată în timpul execuției mașinii va fi salvată în fișierul de setări pentru a păstra configurația mediilor monate de la o rulare la alta.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">Al&amp;tele</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">&amp;Activează trecerea peste</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Alt+E</source>
         <translation type="obsolete">Alt+E</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">Când este bifat, permite musafirului să trimită comenzi ATAPI direct din unitatea gazdei, ceea ce face posibil folosirea unităților CD/DVD writer conectate la gazdă, în interiorul MV. Notați că scriere unui CD audio în interiorul MV nu este încă suportată.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">Port &amp;server </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">&amp;Metodă autentificare </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">&amp;Timeout autentificare</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Afișează numărul de port al serverului VRDP. Puteți specifica &lt;tt&gt;0&lt;/tt&gt; (zero) pentru a reseta portul la valoarea implicită.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Master hard disk is not selected</source>
         <translation type="obsolete">Discul dur Primar master nu este selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Slave hard disk is not selected</source>
         <translation type="obsolete">Discul dur Primar slave nu este selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Primary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">Discul dur primar slave este deja conectat la un slot diferit</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Secondary Slave hard disk is not selected</source>
         <translation type="obsolete">Discul dur secundar slave nu este selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">Discul dur secundar slave este conectat deja la un slot diferit</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">Fișierul imagine CD/DVD nu este selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">Fișierul imagine dischetă nu este selectat</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">Interfață de rețea incorectă de pe gazdă este selectată</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">Număr port duplicat selectat </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">Cale port duplicată a fost introdusă </translation>
     </message>
@@ -8903,83 +8220,67 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>%1 pe pagina &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source> Parallel Ports </source>
         <translation type="obsolete"> Porturi paralele </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>#parallelPorts</source>
         <translation type="obsolete">#parallelPorts</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">Activează PA&amp;E/NX</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;When
                                                           checked, the Physical
                                                           Address Extension
@@ -8991,37 +8292,30 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Când este bifat, opțiunea PAE (Extensie de adresă fizică) a CPU-ului gazdei va fi exposă mașinii virtuale.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">Tip controlor &amp;IDE</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">Definește tipul controlorului virtual IDE. În funcție de această valoare, VirtualBox va oferi mașinii virtuale o configurație hardware IDE diferită.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">&amp;Controlor audio</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="obsolete">Selectează tipul plăcii de sunet virtuală. În funcție de această valoare, VirtualBox va oferi mașinii virtuale o configurație de sunet diferită.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">Activează controlor USB &amp;2.0</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="obsolete">Când este bifat, activează controlorul virtual USB EHCI al acestei mașini. Controlorul USB EHCI oferă suport USB 2.0.</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
                                               &lt;qt&gt;Lists all USB filters of
                                               this machine. The checkbox to the
@@ -9034,17 +8328,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Listează toate filtrele USB. Căsuța de selecție din stânga definește dacă un filtru este activat sau nu. Folosiți meniul contextual sau butoanele din dreapta pentru a adăuga sau șterge filtre USB.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Adaugă filtru gol</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Adaugă filtru gol</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -9053,17 +8344,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Adaugă un filtru USB nou cu toate câmpurile stabilite la șiruri goale. Notați faptul că un filtru se va potrivi oricărui dispozitiv USB atașat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Adaugă filtru de la dispozitiv</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">A&amp;daugă filtru de la dispozitiv</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -9071,68 +8359,56 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;Adaugă un filtru USB nou cu toate câmpurile stabilite la valorile dispozitivului USB selectat atașat la PC-ul gazdă.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Șterge filtru</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">&amp;Șterge filtru</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Șterge filtrul USB evidențiat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Mută filtrul în sus</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">&amp;Mută filtrul în sus</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Mută filtrul USB evidențiat în sus.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Mută filtrul în jos</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">M&amp;ută filtrul în jos</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;Mută filtrul în jos USB evidențiat.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Numele rețelei interne nu este stabilit</translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">Calea câtre port nu este specificată </translation>
     </message>
     <message>
-        <location filename="" line="7602291"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">Port %1</translation>
@@ -9200,7 +8476,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished">Remote Display</translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
@@ -9486,7 +8762,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -9554,7 +8830,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>Listează toate discurile hard atașate la această mașină. Folosiți dublu click sau tasta &lt;tt&gt;Space&lt;/tt&gt; pe itemul selectat pentru a activa lista și pentru a alege valoarea dorită. Folosiți meniul contextual sau butoanele din dreapta pentru a adăuga sau șterge atașamente de discuri hard.</translation>
     </message>
 </context>
 <context>
@@ -9687,7 +8963,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished">Setări interfață gazdă</translation>
+        <translation>Setări interfață gazdă</translation>
     </message>
 </context>
 <context>
@@ -10230,7 +9506,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Detalii filtru USB</translation>
     </message>
 </context>
 <context>

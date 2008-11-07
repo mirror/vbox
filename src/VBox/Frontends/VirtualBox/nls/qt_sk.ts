@@ -736,7 +736,7 @@ Overte cestu a meno súboru.</translation>
     </message>
     <message>
         <source>Gurmukhi</source>
-        <translation type="unfinished"></translation>
+        <translation>gurmukhi</translation>
     </message>
     <message>
         <source>Gujarati</source>
@@ -856,7 +856,7 @@ Overte cestu a meno súboru.</translation>
     </message>
     <message>
         <source>Enclosed and Square</source>
-        <translation type="unfinished"></translation>
+        <translation>uzatvorené a štvorcové</translation>
     </message>
     <message>
         <source>Braille</source>

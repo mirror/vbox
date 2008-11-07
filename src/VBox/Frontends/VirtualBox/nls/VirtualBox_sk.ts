@@ -645,7 +645,7 @@ verzia %1</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;Webstrínka VirtualBox...</translation>
+        <translation>&amp;Webstránka VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
@@ -2524,7 +2524,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
-0    </message>
+    </message>
     <message>
         <source>Double-click to add a new attachment</source>
         <translation type="unfinished"></translation>
@@ -2829,7 +2829,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>E&amp;xisting...</source>
-        <translation>&amp;Existújúci...</translation>
+        <translation>&amp;Existujúci...</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
@@ -2887,7 +2887,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="unfinished">&lt;tr&gt;&lt;td&gt;Bootovací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+        <translation>&lt;tr&gt;&lt;td&gt;Bootovací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
@@ -2895,7 +2895,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
 </context>
 <context>
@@ -3495,31 +3495,31 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Enter your valid e-mail address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadajte vašu platnú e-mailovú adresu.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prosím, nepoužívajte túto informáciu na kontaktovanie mojej osoby</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="unfinished"></translation>
+        <translation>Vitajte v registračnom formulári VirtualBox!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Potvrdiť</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
-        <translation type="unfinished">Čas spojenia vypršal.</translation>
+        <translation>Čas spojenia vypršal.</translation>
     </message>
     <message>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodarilo sa nájsť registračný formulár na serveri (odpoveď: %1).</translation>
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodarilo sa nadviazať spojenie.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -3527,7 +3527,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaškrtnite toto políčko, ak nechcete od spoločnosti Sun Microsystems dostávať poštu na e-mailovú adresu, ktorú ste zadali vyššie.</translation>
     </message>
 </context>
 <context>
@@ -3710,7 +3710,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;File</source>
-        <translation></translation>
+        <translation>&amp;Súbor</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -4368,7 +4368,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude dočasne pripojené k virtuálnemu stroju a stroj bude spustený.&lt;/p&gt;&lt;p&gt;Majte na pamäti, že pri ukončení virtuálneho stroja bude špecifikované médium automaticky odpojené a bootovateľné zariadenie bude znovu nastavené na prvý pevný disk.&lt;/p&gt;&lt;p&gt;V závislosti na type inštalačného programu možno budete chcieť manuálne odpojiť (vybrať) médium predtým, ako inštalácia reštartuje virtuálny stroj, aby ste tak zabránili opätovnému spusteniu inštalácia. Môžete tak učiniť výberom zodpovedajúcej akcie &lt;b&gt;Odpojiť...&lt;/b&gt; z ponuky &lt;b&gt;Zariadenia&lt;/p&gt;.</translation>
+        <translation>&lt;p&gt;Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médiá budú dočasne pripojené k virtuálnemu stroju a stroj bude spustený.&lt;/p&gt;&lt;p&gt;Majte na pamäti, že pri ukončení virtuálneho stroja bude špecifikované médiá automaticky odpojené a bootovateľné zariadenie bude znovu nastavené na prvý pevný disk.&lt;/p&gt;&lt;p&gt;V závislosti na type inštalačného programu možno budete chcieť manuálne odpojiť (vybrať) médiá predtým, ako inštalácia reštartuje virtuálny stroj, aby ste tak zabránili opätovnému spusteniu inštalácie. Môžete tak učiniť výberom zodpovedajúcej akcie &lt;b&gt;Odpojiť...&lt;/b&gt; z ponuky &lt;b&gt;Zariadenia&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -4392,7 +4392,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Prvýkrát ste spustili novo vytvorený virtuálny počítač. Tento sprievodca vám pomôže vykonať kroky potrebné pre nabootovanie vami vybraného operačného systému z virtuálneho počítača.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že práve teraz nebudete schopný nainštalovať operačný systém na virtuálny počítač, pretože k nemu nemáte pripojený žiaden disk. Ak to nechcete, môžete sprievodcu zrušiť, vybrať &lt;b&gt;Nastavenia&lt;/b&gt; z ponuky &lt;b&gt;Počítač&lt;/b&gt; hlavného okna VirtualBoxu pre prístup k dialógovému oknu nastavení tohto počítača a zmeniť nastavenie pevného disku.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalšie&lt;/b&gt; na posunutie na ďalšiu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre návrat na predchádzajúcu stránku. Tiež môžete stlačiť tlačidlo &lt;b&gt;Zrušiť&lt;/b&gt;, ak chcete sprievodcu ukončiť.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -4621,7 +4621,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Setup Application</source>
-        <translation type="unfinished">&amp;Aplikácia pre konfiguráciu</translation>
+        <translation>&amp;Aplikácia pre konfiguráciu</translation>
     </message>
     <message>
         <source>Select</source>
@@ -4645,15 +4645,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovláda spôsob, akým bude virtuálna karta pripojená k realnej sieti hostiteľského OS.</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indikuje, či je virtuálny sieťový kábel pripojený k počítaču pri štarte alebo nie.</translation>
     </message>
     <message>
         <source>Displays the name of the host interface selected for this adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazuje meno hostiteľského rozhrania pripojeného k tomuto adaptéru.</translation>
     </message>
     <message>
         <source>Displays the TAP interface name.</source>
@@ -4771,7 +4771,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje IRQ číslo tohto sériového portu. Platné hodnoty sú celé čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty väčšie ako &lt;tt&gt;15&lt;/tt&gt; môžu byť použité len v prípade, že je povolené &lt;b&gt;IO APIC&lt;/b&gt; pre tento virtuálny počítač.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
@@ -4779,7 +4779,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje základnú adresu I/O portu tohto sériového portu. Platné hodnoty sú celé čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>Port &amp;Mode</source>
@@ -4787,7 +4787,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovláda pracovný režim tohto sériového portu. Ak zvolíte &lt;b&gt;Odpojený&lt;/b&gt;, hosťovský OS nájde sériový port, ale nebude schopný ho ovládať.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -4795,7 +4795,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak je zaškrtnuté, pri spustení virtuálneho počítača bude vytvorená rúra (pipe) uvedená v políčku &lt;b&gt;Cesta k portu&lt;/b&gt;. Ak nie, počítač sa pokúsi použiť existujúcu rúru.</translation>
     </message>
     <message>
         <source>Port &amp;Path</source>
@@ -4803,7 +4803,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje cestu k rúre sériového portu na hostiteľovi, keď port pracuje v režime &lt;b&gt;Rúra hostiteľa&lt;/b&gt; alebo názov sériového zariadenia, keď port pracuje v režime &lt;b&gt;Zariadenie hostiteľa&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4950,7 +4950,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the name of the virtual machine.</source>
-        <translation>Žobrazí názov virtuálneho stroja.</translation>
+        <translation>Zobrazí názov virtuálneho stroja.</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
@@ -5242,7 +5242,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje súbor obrazu pre pripojenie k virtuálnej CD/DVD mechanike a umožňuje rýchlo zvoliť iný obraz.</translation>
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
@@ -5250,15 +5250,15 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukazuje súbor obrazu pre pripojenie k virtuálnej disketovej mechanike a umožňuje rýchlo zvoliť iný obraz.</translation>
     </message>
     <message>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak je zaškrtnuté, je virtuálna PCI zvuková karta pripojená k virtuálnemu počítaču, ktorý používa zvolený ovládač na komunikáciu so zvukovou kartou hostiteľa.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak je zaškrtnuté, virtuálny počítač sa bude správať ako Remote Desktop Protocol (RDP) server a umožní vzdialeným klientom pripojiť sa a pracovať s virtuálnym počítačom (počas jeho beho) použitím štandardného RDP klienta.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -5294,13 +5294,18 @@ value.&lt;/qt&gt;</source>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Ak je zaškrtnuté, virtuálny počítač bude podporovať
+Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Poznámka:&lt;/b&gt; nevypínajte
+túto možnosť po nainštalovaní hosťovského operačného systému Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;Ak je zaškrtnuté, virtuálny počítač bude podporovať
+Input Output APIC (IO APIC), čo môže mierne znížiť výkon virtuálneho počítača. &lt;b&gt;Poznámka:&lt;/b&gt;
+nevypínajte
+túto možnosť po nainštalovaní hosťovského operačného systému Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
@@ -5320,19 +5325,19 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí disketové mechaniky hostiteľa, ktoré je možné pripojiť k virtuálnemu stroju</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spustí Správcu virtuálnych diskov na výber obrazu diskety pre pripojenie.</translation>
     </message>
     <message>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí CD/DVD mechaniky hostiteľa, ktoré je možné pripojiť k virtuálnemu stroju.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spustí Správcu virtuálnych diskov na výber CD/DVD obrazu pre pripojenie.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
@@ -5562,7 +5567,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberá typ virtuálnej zvukovej karty. V závislosti na tejto hodnote poskytne VirtualBox virtuálnemu stroju iný zvukový hardware.</translation>
     </message>
     <message>
         <source>Enable USB &amp;2.0 Controller</source>

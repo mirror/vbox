@@ -57,6 +57,7 @@ FORMS = \
     ui/VBoxGLSettingsLanguage.ui
 
 TRANSLATIONS = \
+	nls/VirtualBox_el.ts \
 	nls/VirtualBox_tr.ts \
 	nls/VirtualBox_id.ts \
 	nls/VirtualBox_ca.ts \
