@@ -361,19 +361,15 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 	/*
 	 * First, TCP sockets
 	 */
-#ifndef VBOX_WITH_SYNC_SLIRP
 	do_slowtimo = 0;
-#endif
 	if (link_up) {
 		/*
 		 * *_slowtimo needs calling if there are IP fragments
 		 * in the fragment queue, or there are TCP connections active
 		 */
                 VBOX_SLIRP_LOCK(pData->tcb_mutex);
-#ifndef VBOX_WITH_SYNC_SLIRP
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
-#endif
 
                 so = tcb.so_next;
 #ifndef VBOX_WITH_SYNC_SLIRP
@@ -392,12 +388,10 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			/*
 			 * See if we need a tcp_fasttimo
 			 */
-#ifndef VBOX_SLIRP_UNLOCK
 			if (time_fasttimo == 0
                             && so->so_tcpcb
                             &&  so->so_tcpcb->t_flags & TF_DELACK)
 			   time_fasttimo = curtime; /* Flag when we want a fasttimo */
-#endif
 
 			/*
 			 * NOFDREF can include still connecting to local-host,
@@ -414,7 +408,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
                                 goto before_loop_ends;
 			}
-#ifndef VBOX_WITH_SYNC_SLIRP
+
 			/*
 			 * Set for writing sockets which are connecting
 			 */
@@ -432,7 +426,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 			}
-#endif
 
 			/*
 			 * Set for reading (and urgent data) if we are connected, can
@@ -471,7 +464,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			/*
 			 * See if it's timed out
 			 */
-#ifndef VBOX_WITH_SYNC_SLIRP
 			if (so->so_expire) {
 				if (so->so_expire <= curtime) {
 					udp_detach(pData, so);
@@ -479,7 +471,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				} else
 					do_slowtimo = 1; /* Let socket expire */
 			}
-#endif
 
 			/*
 			 * When UDP packets are received from over the
@@ -507,7 +498,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 	 * Setup timeout to use minimum CPU usage, especially when idle
 	 */
 
-#ifndef VBOX_WITH_SYNC_SLIRP
 	/*
 	 * First, see the timeout needed by *timo
 	 */
@@ -537,7 +527,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			   timeout.tv_usec = (u_int)tmp_time;
 		}
 	}
-#endif
         *pnfds = nfds;
 }
 
@@ -552,7 +541,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 	/*
 	 * See if anything has timed out
 	 */
-#ifndef VBOX_WITH_SYNC_SLIRP
 	if (link_up) {
 		if (time_fasttimo && ((curtime - time_fasttimo) >= 2)) {
 			tcp_fasttimo(pData);
@@ -564,7 +552,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			last_slowtimo = curtime;
 		}
 	}
-#endif
 
 	/*
 	 * Check sockets
@@ -622,7 +609,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 				   tcp_output(pData, sototcpcb(so));
 			}
 
-#ifndef VBOX_WITH_SYNC_SLIRP
 			/*
 			 * Check sockets for writing
 			 */
@@ -668,7 +654,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			   * a window probe to get things going again
 			   */
 			}
-#endif
 
 			/*
 			 * Probe a still-connecting, non-blocking socket
@@ -928,183 +913,3 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 {
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
 }
-
-#ifdef VBOX_WITH_SYNC_SLIRP
-void slirp_fasttmr(PNATState pData)
-{
-        struct socket *so, *so_next;
-        updtime(pData);
-        time_fasttimo = 0;
-#if 1
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
-        so = tcb.so_next;
-        while(1) {
-            if (so == &tcb) {
-                VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-                break;
-            }
-            so_next = so->so_next;
-            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-		if (time_fasttimo == 0
-                    && so->so_tcpcb
-                    &&  so->so_tcpcb->t_flags & TF_DELACK)
-		   time_fasttimo = curtime; /* Flag when we want a fasttimo */
-            VBOX_SLIRP_LOCK(pData->tcb_mutex);
-            so = so_next;
-        }
-#endif
-        if (time_fasttimo) {
-            tcp_fasttimo(pData);
-            time_fasttimo = 0;
-        }
-}
-
-void slirp_slowtmr(PNATState pData)
-{
-        struct socket *so, *so_next;
-        updtime(pData);
-	do_slowtimo = 0;
-#if 1
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
-	do_slowtimo = ((tcb.so_next != &tcb) ||
-			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
-
-        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-
-        VBOX_SLIRP_LOCK(pData->udb_mutex);
-        so = udb.so_next;
-        while(1) {
-            if (so == &udb) {
-                VBOX_SLIRP_UNLOCK(pData->udb_mutex);
-                break;
-            }
-            so_next = so->so_next;
-            VBOX_SLIRP_UNLOCK(pData->udb_mutex);
-
-            if (so->so_expire) {
-                 if (so->so_expire <= curtime) {
-                    udp_detach(pData, so);
-                    goto before_loop_ends;
-                 }
-                do_slowtimo = 1;
-            }
-            before_loop_ends:
-            VBOX_SLIRP_LOCK(pData->udb_mutex);
-            so = so_next;
-        }
-#endif
-        if (do_slowtimo) {
-            tcp_slowtimo(pData);
-            ip_slowtimo(pData);
-	    last_slowtimo = curtime;
-        }
-}
-
-/*selects open and ready sockets for write*/
-void slirp_send_fill(PNATState pData, int *pnfds, fd_set *writefds)
-{
-    struct socket *so, *so_next;
-    int nfds = *pnfds;
-
-    if (link_up == 0) return;
-
-    VBOX_SLIRP_LOCK(pData->tcb_mutex);
-    so = tcb.so_next;
-    while (1) {
-        if (so == &tcb) {
-            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-            break;
-        }
-        so_next = so->so_next;
-        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-
-	if (so->so_state & SS_NOFDREF || so->s == -1)
-               goto before_loop_ends;
-
-	if (so->so_state & SS_ISFCONNECTING) {
-		FD_SET(so->s, writefds);
-		UPD_NFDS(so->s);
-                goto before_loop_ends;
-	}
-
-	if (CONN_CANFSEND(so) && so->so_rcv.sb_cc) {
-		FD_SET(so->s, writefds);
-		UPD_NFDS(so->s);
-	}
-
-        before_loop_ends:
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
-        so = so_next;
-    }
-    *pnfds = nfds;
-}
-/*triggers socket output */
-void slirp_send_trigger(PNATState pData, int *pnfds, fd_set *writefds)
-{
-    struct socket *so, *so_next;
-    int nfds = *pnfds;
-    int ret;
-
-    if (link_up == 0) return;
-
-    VBOX_SLIRP_LOCK(pData->tcb_mutex);
-    so = tcb.so_next;
-    while (1) {
-        if (so == &tcb) {
-            VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-            break;
-        }
-        so_next = so->so_next;
-        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-	/*
-	 * Check sockets for writing
-	 */
-	if (FD_ISSET(so->s, writefds)) {
-	  /*
-	   * Check for non-blocking, still-connecting sockets
-	   */
-	  if (so->so_state & SS_ISFCONNECTING) {
-	    /* Connected */
-	    so->so_state &= ~SS_ISFCONNECTING;
-
-        /*
-         * This should be probably guarded by PROBE_CONN too. Anyway,
-         * we disable it on OS/2 because the below send call returns
-         * EFAULT which causes the opened TCP socket to close right
-         * after it has been opened and connected.
-         */
-#ifndef RT_OS_OS2
-	ret = send(so->s, (const char *)&ret, 0, 0);
-	if (ret < 0) {
-	  /* XXXXX Must fix, zero bytes is a NOP */
-	  if (errno == EAGAIN || errno == EWOULDBLOCK ||
-	      errno == EINPROGRESS || errno == ENOTCONN)
-                    goto before_loop_ends;
-
-	  /* else failed */
-	  so->so_state = SS_NOFDREF;
-	}
-	/* else so->so_state &= ~SS_ISFCONNECTING; */
-#endif
-
-	  /*
-	   * Continue tcp_input
-	   */
-	  tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-	  /* continue; */
-	} else
-	  ret = sowrite(pData, so);
-	/*
-	 * XXXXX If we wrote something (a lot), there
-	 * could be a need for a window update.
-	 * In the worst case, the remote will send
-	 * a window probe to get things going again
-	 */
-        }
-
-        before_loop_ends:
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
-        so = so_next;
-    }
-}
-#endif
