@@ -7373,7 +7373,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="description" type="wstring" safearray="yes" dir="out">
         <desc>Array of property descriptions.</desc>
       </param>
-      <param name="types" type="unsigned long" safearray="yes" dir="out">
+      <param name="types" type="DataType" safearray="yes" dir="out">
         <desc>Array of property types.</desc>
       </param>
       <param name="flags" type="unsigned long" safearray="yes" dir="out">

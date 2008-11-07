@@ -2824,7 +2824,7 @@ static int handleList(int argc, char *argv[],
             /* Configuration keys */
             com::SafeArray <BSTR> propertyNames;
             com::SafeArray <BSTR> propertyDescriptions;
-            com::SafeArray <ULONG> propertyTypes;
+            com::SafeArray <DataType_T> propertyTypes;
             com::SafeArray <ULONG> propertyFlags;
             com::SafeArray <BSTR> propertyDefaults;
             CHECK_ERROR(hardDiskFormats [i],

@@ -283,6 +283,26 @@ public:
     static void FromSafeArray (const com::SafeGUIDArray &aArr,
                                QVector <QUuid> &aVec);
 
+    /* Arrays of enums. Does a cast similar to what ENUMOut does. */
+
+    template <typename QE, typename CE>
+    static void ToSafeArray (const QVector <QE> &aVec,
+                             com::SafeIfaceArray <CE> &aArr)
+    {
+        aArr.reset (static_cast <int> (aVec.size()));
+        for (int i = 0; i < aVec.size(); ++i)
+            aArr [i] = static_cast <CE> (aVec.at (i));
+    }
+
+    template <typename CE, typename QE>
+    static void FromSafeArray (const com::SafeIfaceArray <CE> &aArr,
+                               QVector <QE> &aVec)
+    {
+        aVec.resize (static_cast <int> (aArr.size()));
+        for (int i = 0; i < aVec.size(); ++i)
+            aVec [i] = static_cast <QE> (aArr [i]);
+    }
+
     /* Arrays of interface pointers. Note: we need a separate pair of names
      * only because the MSVC8 template matching algorithm is poor and tries to
      * instantiate a com::SafeIfaceArray <BSTR> (!!!) template otherwise for

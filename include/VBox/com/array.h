@@ -372,7 +372,7 @@ public:
     // elements of T
     static ULONG VarCount (size_t aSize);
 
-    // Returns the number of elements of T that occupy the given number of
+    // Returns the number of elements of T that fit into the given number of
     // VarType() elements (opposite to VarCount (size_t aSize)).
     static size_t Size (ULONG aVarCount);
 
@@ -382,8 +382,46 @@ public:
 template <typename T>
 struct SafeArrayTraits
 {
-    // Arbitrary types are not supported -- no helpers
+    // Arbitrary types are treated as passed by value and each value is
+    // represented by a number of VT_Ix type elements where VT_Ix has the
+    // biggest possible bitness necessary to represent T w/o a gap. COM enums
+    // fall into this category.
+
+    static VARTYPE VarType()
+    {
+        if (sizeof (T) % 8 == 0) return VT_I8;
+        if (sizeof (T) % 4 == 0) return VT_I4;
+        if (sizeof (T) % 2 == 0) return VT_I2;
+        return VT_I1;
+    }
+
+    static ULONG VarCount (size_t aSize)
+    {
+        if (sizeof (T) % 8 == 0) return (ULONG) (sizeof (T) / 8) * aSize;
+        if (sizeof (T) % 4 == 0) return (ULONG) (sizeof (T) / 4) * aSize;
+        if (sizeof (T) % 2 == 0) return (ULONG) (sizeof (T) / 2) * aSize;
+        return (ULONG) sizeof (T) * aSize;
+    }
+
+    static size_t Size (ULONG aVarCount)
+    {
+        if (sizeof (T) % 8 == 0) return (size_t) (aVarCount * 8) / sizeof (T);
+        if (sizeof (T) % 4 == 0) return (size_t) (aVarCount * 4) / sizeof (T);
+        if (sizeof (T) % 2 == 0) return (size_t) (aVarCount * 2) / sizeof (T);
+        return (size_t) aVarCount / sizeof (T);
+    }
+
+    static void Copy (T aFrom, T &aTo) { aTo = aFrom; }
 };
+
+template <typename T>
+struct SafeArrayTraits <T *>
+{
+    // Arbitrary pointer types are not supported
+};
+
+/* Although the generic SafeArrayTraits template would work for all integers,
+ * we specialize it for some of them in order to use the correct VT_ type */
 
 template<>
 struct SafeArrayTraits <LONG>

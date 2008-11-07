@@ -71,7 +71,7 @@ public:
     // IHardDiskFormat methods
     STDMETHOD(DescribeProperties) (ComSafeArrayOut (BSTR, aNames),
                                    ComSafeArrayOut (BSTR, aDescriptions),
-                                   ComSafeArrayOut (ULONG, aTypes),
+                                   ComSafeArrayOut (DataType_T, aTypes),
                                    ComSafeArrayOut (ULONG, aFlags),
                                    ComSafeArrayOut (BSTR, aDefaults));
 
