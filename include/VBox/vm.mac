@@ -94,9 +94,26 @@ struc VM
     .StatSwitcherTSS      resb STAMPROFILEADV_size
 
     alignb 64
-    .cpum                 resb 4416
+    .cpum                 resb 4096
     .vmm                  resb 1024
 
+endstruc
+
+;;
+; This is part of  the VMCPU structure.
+struc VMCPU
+    .fForcedActions     resd 1
+    .enmState           resd 1
+    .pVMR3              RTR3PTR_RES 1
+    .pVMR0              RTR0PTR_RES 1
+    .pVMRC              RTRCPTR_RES 1
+    .idCpu              resd 1
+
+    .hNativeThread      RTR0PTR_RES 1
+
+    alignb 64
+
+    .cpum               resb 2048
 endstruc
 
 

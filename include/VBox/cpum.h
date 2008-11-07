@@ -890,6 +890,7 @@ VMMDECL(int)            CPUMRecalcHyperDRx(PVM pVM);
 VMMDECL(void)           CPUMPushHyper(PVM pVM, uint32_t u32);
 VMMDECL(void)           CPUMHyperSetCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVM pVM);
+VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtrEx(PVM pVM, PVMCPU pVCpu);
 VMMDECL(int)            CPUMQueryHyperCtxPtr(PVM pVM, PCPUMCTX *ppCtx);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVM pVM);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVM pVM);
@@ -898,8 +899,8 @@ VMMDECL(int)            CPUMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMMDECL(int)            CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMMDECL(void)           CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
-VMMDECL(int)            CPUMHandleLazyFPU(PVM pVM);
-VMMDECL(int)            CPUMRestoreHostFPUState(PVM pVM);
+VMMDECL(int)            CPUMHandleLazyFPU(PVM pVM, PVMCPU pVCpu);
+VMMDECL(int)            CPUMRestoreHostFPUState(PVM pVM, PVMCPU pVCpu);
 
 /** @name Changed flags
  * These flags are used to keep track of which important register that
@@ -927,7 +928,7 @@ VMMDECL(void)           CPUMSetChangedFlags(PVM pVM, uint32_t fChangedFlags);
 VMMDECL(bool)           CPUMSupportsFXSR(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
-VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVM pVM);
+VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCPU);
 VMMDECL(void)           CPUMDeactivateGuestFPUState(PVM pVM);
 VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVM pVM);
 VMMDECL(void)           CPUMDeactivateGuestDebugState(PVM pVM);
@@ -965,7 +966,6 @@ VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(int)          CPUMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
-VMMR3DECL(int)          CPUMR3QueryGuestCtxRCPtr(PVM pVM, RCPTRTYPE(PCPUMCTX) *ppCtx);
 # ifdef DEBUG
 VMMR3DECL(void)         CPUMR3SaveEntryCtx(PVM pVM);
 # endif
@@ -1005,10 +1005,10 @@ VMMRCDECL(void)         CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
  * @{
  */
 VMMR0DECL(int)          CPUMR0Init(PVM pVM);
-VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PCPUMCTX pCtx);
-VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PCPUMCTX pCtx);
-VMMR0DECL(int)          CPUMR0SaveGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
-VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)          CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
 
 /** @} */
 #endif /* IN_RING0 */

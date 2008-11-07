@@ -920,7 +920,7 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 
     /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
-    if (    CPUMIsGuestFPUStateActive(pVM) == true
+    if (    CPUMIsGuestFPUStateActive(pVCpu) == true
         && !(pCtx->cr0 & X86_CR0_NE)
         && !pVCpu->hwaccm.s.fFPUOldStyleOverride)
     {
@@ -1129,7 +1129,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         val = pCtx->cr0;
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_CR0_READ_SHADOW,   val);
         Log2(("Guest CR0-shadow %08x\n", val));
-        if (CPUMIsGuestFPUStateActive(pVM) == false)
+        if (CPUMIsGuestFPUStateActive(pVCpu) == false)
         {
             /* Always use #NM exceptions to load the FPU/XMM state on demand. */
             val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
@@ -1338,7 +1338,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRC(rc);
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, true /* include DR6 */);
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
             AssertRC(rc);
         }
 
@@ -2080,10 +2080,10 @@ ResumeExecution:
 
                 /** @todo don't intercept #NM exceptions anymore when we've activated the guest FPU state. */
                 /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
-                rc = CPUMR0LoadGuestFPU(pVM, pCtx);
+                rc = CPUMR0LoadGuestFPU(pVM, pVCpu, pCtx);
                 if (rc == VINF_SUCCESS)
                 {
-                    Assert(CPUMIsGuestFPUStateActive(pVM));
+                    Assert(CPUMIsGuestFPUStateActive(pVCpu));
 
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowNM);
 
@@ -2591,7 +2591,7 @@ ResumeExecution:
             AssertRC(rc);
 
             /* Save the host and load the guest debug state. */
-            rc = CPUMR0LoadGuestDebugState(pVM, pCtx, true /* include DR6 */);
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
             AssertRC(rc);
 
 #ifdef VBOX_WITH_STATISTICS
@@ -3027,7 +3027,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Save the guest debug state if necessary. */
     if (CPUMIsGuestDebugStateActive(pVM))
     {
-        CPUMR0SaveGuestDebugState(pVM, pCtx, true /* save DR6 */);
+        CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, true /* save DR6 */);
 
         /* Enable drx move intercepts again. */
         pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;

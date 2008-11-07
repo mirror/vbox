@@ -250,22 +250,10 @@ typedef CPUMHOSTCTX *PCPUMHOSTCTX;
 typedef struct CPUM
 {
     /**
-     * Saved host context. Only valid while inside GC.
-     * Aligned on a 64-byte boundrary.
-     */
-    CPUMHOSTCTX             Host;
-
-    /**
      * Hypervisor context.
      * Aligned on a 64-byte boundrary.
      */
     CPUMCTX                 Hyper;
-
-    /**
-     * Guest context.
-     * Aligned on a 64-byte boundrary.
-     */
-    CPUMCTX                 Guest;
 
     /** Pointer to the current hypervisor core context - R3Ptr. */
     R3PTRTYPE(PCPUMCTXCORE) pHyperCoreR3;
@@ -274,17 +262,8 @@ typedef struct CPUM
     /** Pointer to the current hypervisor core context - RCPtr. */
     RCPTRTYPE(PCPUMCTXCORE) pHyperCoreRC;
 
-    /** Use flags.
-     * These flags indicates both what is to be used and what have been used.
-     */
-    uint32_t                fUseFlags;
-
-    /** Changed flags.
-     * These flags indicates to REM (and others) which important guest
-     * registers which has been changed since last time the flags were cleared.
-     * See the CPUM_CHANGED_* defines for what we keep track of.
-     */
-    uint32_t                fChanged;
+    /* Offset from CPUM to CPUMCPU for the first CPU. */
+    uint32_t                ulOffCPUMCPU;
 
     /** Hidden selector registers state.
      *  Valid (hw accelerated raw mode) or not (normal raw mode)
@@ -332,7 +311,7 @@ typedef struct CPUM
     CPUMCPUID               GuestCpuIdDef;
 
     /** Align the next member, and thereby the structure, on a 64-byte boundrary. */
-    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 56 : 44];
+    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 60 : 48];
 
     /**
      * Guest context on raw mode entry.
@@ -349,18 +328,42 @@ typedef CPUM *PCPUM;
 typedef struct CPUMCPU
 {
     /**
+     * Saved host context. Only valid while inside GC.
+     * Aligned on a 64-byte boundrary.
+     */
+    CPUMHOSTCTX             Host;
+
+    /**
      * Guest context.
      * Aligned on a 64-byte boundrary.
      */
     CPUMCTX                 Guest;
-} CPUMCPU;
+
+    /** Use flags.
+     * These flags indicates both what is to be used and what has been used.
+     */
+    uint32_t                fUseFlags;
+
+    /** Changed flags.
+     * These flags indicates to REM (and others) which important guest
+     * registers which has been changed since last time the flags were cleared.
+     * See the CPUM_CHANGED_* defines for what we keep track of.
+     */
+    uint32_t                fChanged;
+
+    /* Offset to CPUM. (subtract from the pointer to get to CPUM) */
+    uint32_t                ulOffCPUM;
+
+    /* Round to 16 byte size. */
+    uint32_t                uPadding;
+} CPUMCPU, *PCPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
 
 __BEGIN_DECLS
 
-DECLASM(int)      CPUMHandleLazyFPUAsm(PCPUM pCPUM);
-DECLASM(int)      CPUMRestoreHostFPUStateAsm(PCPUM pCPUM);
+DECLASM(int)      CPUMHandleLazyFPUAsm(PCPUMCPU pCPUM);
+DECLASM(int)      CPUMRestoreHostFPUStateAsm(PCPUMCPU pCPUM);
 DECLASM(void)     CPUMLoadFPUAsm(PCPUMCTX pCtx);
 DECLASM(void)     CPUMSaveFPUAsm(PCPUMCTX pCtx);
 DECLASM(void)     CPUMLoadXMMAsm(PCPUMCTX pCtx);
