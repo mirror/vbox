@@ -112,6 +112,7 @@ typedef enum VMMCALLHOST
 RTRCPTR             VMMGetStackRC(PVM pVM);
 VMCPUID             VMMGetCpuId(PVM pVM);
 PVMCPU              VMMGetCpu(PVM pVM);
+VMMDECL(PVMCPU)     VMMGetCpuEx(PVM pVM, RTCPUID idCpu);
 VMMDECL(uint32_t)   VMMGetSvnRev(void);
 
 
