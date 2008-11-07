@@ -59,6 +59,7 @@
 #include <memory>  /* for auto_ptr */
 #include <string>
 #include <list>
+#include <vector>
 
 namespace guestProp {
 
@@ -103,6 +104,29 @@ private:
     PropertyList mProperties;
     /** The list of property changes for guest notifications */
     PropertyList mGuestNotifications;
+    /** Structure for holding an uncompleted guest call */
+    struct GuestCall
+    {
+        /** The call handle */
+        VBOXHGCMCALLHANDLE mHandle;
+        /** The function that was requested */
+        uint32_t mFunction;
+        /** The number of parameters */
+        uint32_t mcParms;
+        /** The parameters themselves */
+        VBOXHGCMSVCPARM *mParms;
+
+        /** The standard constructor */
+        GuestCall() : mFunction(0), mcParms(0) {}
+        /** The normal contructor */
+        GuestCall(VBOXHGCMCALLHANDLE aHandle, uint32_t aFunction,
+                  uint32_t acParms, VBOXHGCMSVCPARM aParms[])
+                  : mHandle(aHandle), mFunction(aFunction), mcParms(acParms),
+                  mParms(aParms) {}
+    };
+    typedef std::vector <GuestCall> CallVector;
+    /** The list of outstanding guest notification calls */
+    CallVector mGuestWaiters;
     /** @todo we should have classes for thread and request handler thread */
     /** Queue of outstanding property change notifications */
     RTREQQUEUE *mReqQueue;
@@ -212,7 +236,8 @@ private:
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int getNotification(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
+                        VBOXHGCMSVCPARM paParms[], bool canWait);
     void doNotifications(const char *pszProperty, uint64_t u64Timestamp);
     static DECLCALLBACK(int) reqNotify(PFNHGCMSVCEXT pfnCallback,
                                        void *pvData, char *pszName,
@@ -747,9 +772,12 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  * @returns iprt status value
  * @param   cParms  the number of HGCM parameters supplied
  * @param   paParms the array of HGCM parameters
+ * @param   canWait can this request be enqueued
  * @thread  HGCM
+ * @throws  can throw std::bad_alloc if canWait==true
  */
-int Service::getNotification(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
+                             VBOXHGCMSVCPARM paParms[], bool canWait)
 {
     int rc = VINF_SUCCESS;
     char *pchBuf;
@@ -816,16 +844,31 @@ int Service::getNotification(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     }
 
     /*
-     * Write out the data.
+     * Write out the data or add the caller to the notification list if there
+     * is no notification available.
      */
-    paParms[0].setUInt64(u64Timestamp);
-    paParms[2].setUInt32(buffer.size());
-    if (RT_SUCCESS(rc) && buffer.size() <= cchBuf)
-        buffer.copy(pchBuf, cchBuf);
+    if (RT_SUCCESS(rc) && u64Timestamp != 0)
+    {
+        paParms[0].setUInt64(u64Timestamp);
+        paParms[2].setUInt32(buffer.size());
+        if (RT_SUCCESS(rc) && buffer.size() <= cchBuf)
+            buffer.copy(pchBuf, cchBuf);
+        else if (RT_SUCCESS(rc))
+            rc = VERR_BUFFER_OVERFLOW;
+        if (RT_SUCCESS(rc) && warn)
+            rc = VWRN_NOT_FOUND;
+    }
+    else if (RT_SUCCESS(rc) && canWait)
+    {
+        mGuestWaiters.push_back(GuestCall(callHandle, GET_NOTIFICATION, cParms,
+                                         paParms));
+        rc = VINF_HGCM_ASYNC_EXECUTE;
+    }
     else if (RT_SUCCESS(rc))
-        rc = VERR_BUFFER_OVERFLOW;
-    if (RT_SUCCESS(rc) && warn)
-        rc = VWRN_NOT_FOUND;
+    {
+        AssertFailed();
+        rc = VERR_INTERNAL_ERROR;
+    }
     return rc;
 }
 
@@ -846,6 +889,14 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     int rc = VINF_SUCCESS;
 
     AssertPtrReturnVoid(pszProperty);
+    /* Ensure that our timestamp is different to the last one. */
+    if (   !mGuestNotifications.empty()
+        && u64Timestamp == mGuestNotifications.back().mTimestamp)
+        ++u64Timestamp;
+
+    /*
+     * Try to find the property.
+     */
     PropertyList::const_iterator it;
     bool found = false;
     if (RT_SUCCESS(rc))
@@ -855,6 +906,7 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
                 found = true;
                 break;
             }
+
     /*
      * First case: if the property exists then send its current value
      */
@@ -873,18 +925,27 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
                              mpvHostData, pszName, pszValue,
-                             (uint32_t) RT_HIDWORD(it->mTimestamp),
-                             (uint32_t) RT_LODWORD(it->mTimestamp), pszFlags);
+                             (uint32_t) RT_HIDWORD(u64Timestamp),
+                             (uint32_t) RT_LODWORD(u64Timestamp), pszFlags);
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
     }
     if (found)
     {
-        /* Add the change to the queue for guest notifications */
+        /* Add the change to the queue for guest notifications and release
+         * waiters */
         if (RT_SUCCESS(rc))
         {
             try
             {
                 mGuestNotifications.push_back(*it);
+                while (mGuestWaiters.size() > 0)
+                {
+                    GuestCall call = mGuestWaiters.back();
+                    int rc2 = getNotification(call.mHandle, call.mcParms,
+                                              call.mParms, false);
+                    mpHelpers->pfnCallComplete (call.mHandle, rc2);
+                    mGuestWaiters.pop_back();
+                }
             }
             catch (std::bad_alloc)
             {
@@ -979,8 +1040,6 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    bool fCallSync = true;
-
     LogFlowFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
                  u32ClientID, eFunction, cParms, paParms));
 
@@ -1021,7 +1080,7 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest wishes to get the next property notification */
             case GET_NOTIFICATION:
                 LogFlowFunc(("GET_NOTIFICATION\n"));
-                rc = getNotification(cParms, paParms);
+                rc = getNotification(callHandle, cParms, paParms, true);
                 break;
 
             default:
@@ -1032,9 +1091,9 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     {
         rc = VERR_NO_MEMORY;
     }
-    if (fCallSync)
+    LogFlowFunc(("rc = %Rrc\n", rc));
+    if (rc != VINF_HGCM_ASYNC_EXECUTE)
     {
-        LogFlowFunc(("rc = %Rrc\n", rc));
         mpHelpers->pfnCallComplete (callHandle, rc);
     }
 }
@@ -1175,8 +1234,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
                 ptable->pfnDisconnect         = Service::svcConnectDisconnect;
                 ptable->pfnCall               = Service::svcCall;
                 ptable->pfnHostCall           = Service::svcHostCall;
-                ptable->pfnSaveState          = NULL;  /* The service is stateless by definition, so the */
-                ptable->pfnLoadState          = NULL;  /* normal construction done before restoring suffices */
+                ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
+                ptable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
                 ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
 
                 /* Service specific initialization. */
