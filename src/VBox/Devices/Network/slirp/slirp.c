@@ -392,7 +392,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			/*
 			 * See if we need a tcp_fasttimo
 			 */
-#ifndef VBOX_SLIRP_UNLOCK
+#ifndef VBOX_WITH_SYNC_SLIRP
 			if (time_fasttimo == 0
                             && so->so_tcpcb
                             &&  so->so_tcpcb->t_flags & TF_DELACK)
