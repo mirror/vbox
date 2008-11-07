@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="zh_CN">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -36,32 +37,26 @@
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move the selected boot device up.</source>
         <translation type="obsolete">向上移动所选启动设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move the selected boot device down.</source>
         <translation type="obsolete">向下移动所选启动设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">向上移动 (Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">向下移动 (Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">向上移动所选启动设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">向下移动所选启动设备.</translation>
     </message>
@@ -69,7 +64,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">设置启动顺序。用选择框来启用或禁用需要支持的启动设备。使用上下键改变设备启动顺序.</translation>
     </message>
@@ -79,17 +73,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">双击添加一个新连接</translation>
+        <translation>双击分配一个新的虚拟硬盘</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟硬盘</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation type="unfinished">插槽</translation>
+        <translation>插槽</translation>
     </message>
 </context>
 <context>
@@ -110,7 +104,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">帮助(&amp;H)</translation>
+        <translation>帮助(&amp;H)</translation>
     </message>
 </context>
 <context>
@@ -341,7 +335,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>复制(&amp;C)</translation>
     </message>
 </context>
 <context>
@@ -375,7 +369,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">复制到粘贴板</translation>
     </message>
@@ -408,7 +401,6 @@
 <context>
     <name>QListBox</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Inaccessible</source>
         <translation type="obsolete">不可使用</translation>
     </message>
@@ -421,7 +413,6 @@
         <translation>VirtualBox - About</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
@@ -430,7 +421,7 @@
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -479,87 +470,70 @@ Version %1</translation>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Share</source>
         <translation type="obsolete">添加数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit Share</source>
         <translation type="obsolete">编辑数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enter existing path for the shared folder here</source>
         <translation type="obsolete">在这里输入用于网络共享的文件夹</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enter name for the shared folder to be created</source>
         <translation type="obsolete">为即将建立的网络共享指定一个名称</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Click to invoke &lt;open folder&gt; dialog</source>
         <translation type="obsolete">单击此处打开文件浏览对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">指定一个数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Folder Path</source>
         <translation type="obsolete">数据空间位置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Folder Name</source>
         <translation type="obsolete">数据空间名称</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">显示数据空间所在位置.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">显示数据空间名称(虚拟电脑内的系统需通过该名称来访问本数据空间).</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">打开用于选择数据空间的对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>OK</source>
         <translation type="obsolete">确定</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">固定分配(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">只读分配(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">选中，该数据空间在虚拟电脑内就变为只读.</translation>
     </message>
@@ -582,7 +556,6 @@ Version %1</translation>
         <translation>快速休眠(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+S</source>
         <translation type="obsolete">Als+S</translation>
     </message>
@@ -592,7 +565,6 @@ Version %1</translation>
         <translation>强制退出(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -602,7 +574,6 @@ Version %1</translation>
         <translation>恢复最近备份(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
@@ -612,32 +583,26 @@ Version %1</translation>
         <translation>强制退出并恢复最近备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;
 &lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -651,7 +616,6 @@ Version %1</translation>
         <translation>正常关闭(&amp;e)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
@@ -660,7 +624,6 @@ Version %1</translation>
 &lt;p&gt;如果虚拟电脑内的操作系统对这个信号没有反应，那可能是设置有误或不支持该功能. 碰到这种情况你就应该选择 &lt;b&gt;强制退出&lt;/b&gt; 操作来停止该虚拟电脑.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;
 &lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;强制退出.&lt;/p&gt;
@@ -674,29 +637,27 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;将虚拟电脑的当前运行状态保存到主机硬盘上.&lt;/p&gt;&lt;p&gt;下次该虚拟电脑启动时，将直接进到当前保存时的状态，也就是说你能立即继续未完的工作.&lt;/p&gt;&lt;p&gt;提示：快速休眠所需要的时间取决于虚拟电脑内所装的操作系统类型及你为它分配的内存大小.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;发送关闭信号到虚拟电脑.&lt;/p&gt;&lt;p&gt;通常情况下，运行在虚拟电脑内的操作系统会检测到这个信号并执行正常的关闭流程. 这是我们推荐的关闭虚拟电脑的最佳方式，因为这样运行在虚拟电脑内的程序都有机会来保存它的数据和状态.&lt;/p&gt;&lt;p&gt;如果虚拟电脑内的操作系统对这个信号没有反应，那可能是设置有误或不支持该功能. 碰到这种情况你就应该选择 &lt;b&gt;强制退出&lt;/b&gt; 操作来停止该虚拟电脑.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;强制退出.&lt;/p&gt;&lt;p&gt;提示：该操作会马上终止该虚拟电脑的运行，因此运行在里面的操作系统将没有机会来执行一次正常的关闭操作，这样可能会导致该虚拟电脑内发生 &lt;i&gt;数据丢失&lt;/i&gt;. 建议只有在虚拟电脑内的操作系统对 &lt;b&gt;正常关闭&lt;/b&gt; 没有反应时才执行此操作.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxConsoleWnd</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;nobr&gt;[&lt;b&gt;not attached&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;没有分配&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;nobr&gt;[&lt;b&gt;USB Controller is disabled&lt;/b&gt;]&lt;/nobr&gt;</source>
         <comment>USB device indicator</comment>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;USB 控制器未启用&lt;/b&gt;]&lt;/nobr&gt;</translation>
@@ -707,7 +668,6 @@ Version %1</translation>
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -854,7 +814,6 @@ Version %1</translation>
         <translation>释放当前分配的光驱</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">启用 (RDP) 远程桌面服务</translation>
@@ -870,7 +829,6 @@ Version %1</translation>
         <translation>启用或禁用到当前虚拟电脑的远程桌面连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Open</source>
         <translation type="obsolete">打开</translation>
     </message>
@@ -895,12 +853,10 @@ Version %1</translation>
         <translation>打开增强功能包所在虚拟光盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Statistics...</source>
         <translation type="obsolete">统计信息(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Command line...</source>
         <translation type="obsolete">命令行(&amp;C)...</translation>
     </message>
@@ -950,7 +906,6 @@ Version %1</translation>
         <translation>分配USB设备(&amp;U)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;VM</source>
         <translation type="obsolete">电脑(&amp;V)</translation>
     </message>
@@ -970,17 +925,14 @@ Version %1</translation>
         <translation>帮助(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">指示自动调整显示尺寸功能已 启用 (&lt;img src=auto_resize_on_16px.png/&gt;) 或禁用 (&lt;img src=auto_resize_off_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">指示当前鼠标状态:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成已开启&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标自动捕获已关闭，鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标自动捕获已关闭，鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
         <translation type="obsolete">指示键盘已被虚拟电脑捕获 (&lt;img src=hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=hostkey_16px.png/&gt;)</translation>
     </message>
@@ -990,18 +942,15 @@ Version %1</translation>
         <translation>当前组合键.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">用鼠标右键单击此处可访问数据空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
         <translation type="obsolete">&lt;br&gt;[&lt;b&gt;没有分配&lt;/b&gt;]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
         <translation type="obsolete">指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
@@ -1018,7 +967,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1898"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>将正在运行的虚拟电脑休眠</translation>
+        <translation>将正在运行的虚拟电脑暂停</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1902"/>
@@ -1033,12 +982,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1912"/>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>禁止自动捕获鼠标(&amp;M)</translation>
+        <translation>禁止自动独占鼠标(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1915"/>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>临时禁止自动捕获鼠标</translation>
+        <translation>临时禁止自动独占鼠标</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1919"/>
@@ -1048,7 +997,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1922"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>可临时禁止自动捕获鼠标</translation>
+        <translation>可临时禁止自动独占鼠标</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2461"/>
@@ -1056,7 +1005,6 @@ Version %1</translation>
         <translation>备份 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;不能发现虚拟电脑增强功能包虚拟光盘 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或者 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
@@ -1071,19 +1019,16 @@ Version %1</translation>
         <translation>控制(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>connected</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>disconnected</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">未连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters indicator</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;禁用所有网络连接&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1132,7 +1077,6 @@ Version %1</translation>
         <translation>切换到无缝模式</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">指示键盘可用 (&lt;img src=hostkey_captured_16px.png/&gt;) 或键盘无效 (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
@@ -1245,7 +1189,6 @@ Version %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB控制器已被禁用&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">指示远程桌面 (VRDP Server) 已启用 (&lt;img src=vrdp_16px.png/&gt;) 或未启用 (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1267,7 +1210,6 @@ Version %1</translation>
         <translation type="obsolete">内容(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -1314,7 +1256,6 @@ Version %1</translation>
         <translation>命令行(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation type="obsolete">记录日志(&amp;L)...</translation>
@@ -1322,22 +1263,22 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>指示自动调整显示尺寸功能是否已 启用 (&lt;img src=:/auto_resize_on_16px.png/&gt;) 或 禁用 (&lt;img src=:/auto_resize_off_16px.png/&gt;).请注意该功能需要在虚拟电脑的操作系统内安装增强功能包.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>指示鼠标被操作系统捕获的情况:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已启用&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;请注意要使用鼠标集成功能必须在虚拟电脑的操作系统内安装增强功能包.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>指示键盘已被虚拟电脑捕获 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=:/hostkey_16px.png/&gt;)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1839"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=:/vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;)</translation>
     </message>
 </context>
 <context>
@@ -1368,7 +1309,6 @@ Version %1</translation>
         <translation>虚拟介质管理器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">虚拟硬盘(&amp;H)</translation>
     </message>
@@ -1383,42 +1323,34 @@ Version %1</translation>
         <translation>虚拟软盘(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">打开帮助对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Accept dialog</source>
         <translation type="obsolete">接受对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">取消对话框</translation>
     </message>
@@ -1431,12 +1363,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">新建(&amp;N)...</translation>
+        <translation>新建(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">注册(&amp;A)...</translation>
+        <translation>注册(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
@@ -1454,27 +1386,22 @@ Version %1</translation>
         <translation>刷新(&amp;f)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>New</source>
         <translation type="obsolete">新建</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add</source>
         <translation type="obsolete">注册</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Release</source>
         <translation type="obsolete">释放</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Refresh</source>
         <translation type="obsolete">刷新</translation>
     </message>
@@ -1504,27 +1431,22 @@ Version %1</translation>
         <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Create new VDI file and attach it to media list</source>
         <translation type="obsolete">创建并注册新的虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add existing media image file to media list</source>
         <translation type="obsolete">注册已存在的虚拟存储设备</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove selected media image file from media list</source>
         <translation type="obsolete">从注册表中删除选中的虚拟存储设备</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Release selected media image file from being using in some VM</source>
         <translation type="obsolete">释放被某虚拟电脑使用的虚拟存储设备</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Refresh media image list</source>
         <translation type="obsolete">刷新注册表</translation>
     </message>
@@ -1534,27 +1456,22 @@ Version %1</translation>
         <translation>动作(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Location</source>
         <translation type="obsolete">位置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Disk Type</source>
         <translation type="obsolete">虚拟存储类型</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Storage Type</source>
         <translation type="obsolete">存储设备类型</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Attached to</source>
         <translation type="obsolete">注册到</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Snapshot</source>
         <translation type="obsolete">备份</translation>
     </message>
@@ -1639,17 +1556,15 @@ Version %1</translation>
         <translation>选择(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">所有虚拟硬盘映像 (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
         <source>Select a hard disk image file</source>
-        <translation>选择一个虚拟硬盘映像</translation>
+        <translation>选择一个虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>CD/DVD-ROM images (*.iso)</source>
         <translation type="obsolete">虚拟光盘 (*.iso)</translation>
     </message>
@@ -1659,7 +1574,6 @@ Version %1</translation>
         <translation>选择一个虚拟光盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Floppy images (*.img)</source>
         <translation type="obsolete">虚拟软盘 (*.img)</translation>
     </message>
@@ -1706,37 +1620,37 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>所有虚拟硬盘类型 (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟硬盘(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;位置:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;硬盘类型:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;介质类型:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;分配到:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;备份:&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1762,17 +1676,14 @@ Version %1</translation>
         <translation>无法在服务器上找到该文件 (回应: %1).</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Could not determine the file size.</source>
         <translation type="obsolete">无法检测到文件大小.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Could not connect to the server (%1).</source>
         <translation type="obsolete">无法连接到服务器 (%1).</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Could not download the file (%1).</source>
         <translation type="obsolete">无法下载该文件 (%1).</translation>
     </message>
@@ -1802,67 +1713,67 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="210"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;恢复为默认值&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>当保存变化后再打开本对话框时，新的默认路径将被显示.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;没有选择&gt;</translation>
+        <translation>&lt;未指定&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>请在下拉列表中点击 &lt;b&gt;其它...&lt;/b&gt;  来指定一个目标路径.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>其它...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="234"/>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开对话框选择另一文件夹.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>重置为默认文件夹.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开对话框选择另一文件.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>重置为默认文件.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>复制(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="410"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>请在此输入目标文件夹路径.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="411"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>请在此输入目标文件路径.</translation>
     </message>
 </context>
 <context>
@@ -1870,32 +1781,32 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">常规</translation>
+        <translation>常规</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation>输入</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>更新</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">语言</translation>
+        <translation>语言</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB设备</translation>
+        <translation>USB设备</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1903,32 +1814,32 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished">显示存放虚拟硬盘文件的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟硬盘或注册已存在的虚拟硬盘时将默认使用此文件夹.</translation>
+        <translation>显示存放虚拟硬盘的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟硬盘或注册已存在的虚拟硬盘时将默认使用此文件夹.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">显示存放虚拟电脑的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟电脑时将默认使用此文件夹.</translation>
+        <translation>显示存放虚拟电脑的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟电脑时将默认使用此文件夹.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">显示用于提供远程桌面(VRDP)认证的库的所在路径.</translation>
+        <translation>显示用于提供远程桌面(VRDP)认证的库文件路径.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>默认虚拟硬盘位置(&amp;H):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>默认虚拟电脑位置(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>VRDP认证库(&amp;R):</translation>
     </message>
 </context>
 <context>
@@ -1936,22 +1847,22 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>热键(&amp;K):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">显示当前虚拟电脑窗口所用热键。你可以激活该输入框并定义一个新的热键。需要注意的是：数字键、光标键和编辑键不能用作热键.</translation>
+        <translation>显示当前虚拟电脑窗口所用热键。你可以激活该输入框并定义一个新的热键。需要注意的是数字键、光标键和编辑键不能用作热键.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
+        <translation>选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>自动独占键盘(&amp;A)</translation>
     </message>
 </context>
 <context>
@@ -1960,65 +1871,65 @@ Version %1</translation>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (内嵌)</translation>
+        <translation> (内嵌)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;无效&gt;</translation>
+        <translation>&lt;无效&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;未知&gt;</translation>
+        <translation>&lt;未知&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">默认</translation>
+        <translation>默认</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">语言:</translation>
+        <translation>语言:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>界面语言(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有可用的用户界面语言。&lt;b&gt;加黑&lt;/b&gt;的为当前正在使用的语言。选择&lt;i&gt;默认&lt;/i&gt;将使用系统默认的语言.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation>Id</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">语言</translation>
+        <translation>语言</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>作者</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">作者:</translation>
+        <translation>作者:</translation>
     </message>
 </context>
 <context>
@@ -2026,27 +1937,27 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Check for updates</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Once per:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Next Check:</translation>
     </message>
 </context>
 <context>
@@ -2223,10 +2134,9 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1709"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>光驱</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
         <translation type="obsolete">声卡类型</translation>
@@ -2280,7 +2190,6 @@ Version %1</translation>
         <translation>禁用</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>USB Controller</source>
         <comment>details report</comment>
         <translation type="obsolete">USB 控制器</translation>
@@ -2414,7 +2323,7 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="2550"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation>光驱</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2551"/>
@@ -2429,13 +2338,11 @@ Version %1</translation>
         <translation>网络</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">第一IDE控制器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">第二IDE控制器</translation>
@@ -2462,7 +2369,7 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="2581"/>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation>虚拟硬盘映像</translation>
+        <translation>虚拟硬盘</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2583"/>
@@ -2507,19 +2414,16 @@ Version %1</translation>
         <translation>Hold</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">主通道</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">从通道</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">设备&amp;nbsp;%1</translation>
@@ -2688,7 +2592,7 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1925"/>
         <source>USB</source>
         <comment>details report</comment>
-        <translation>USB设备</translation>
+        <translation>USB 设备</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1935"/>
@@ -2940,67 +2844,67 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1413"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1418"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1423"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1428"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1433"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1438"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1450"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;State: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1789"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>host interface, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1792"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>internal network, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adapter %1</translation>
     </message>
 </context>
 <context>
@@ -3024,168 +2928,137 @@ Version %1</translation>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Category</source>
         <translation type="obsolete">目录</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[id]</source>
         <translation type="obsolete">[标识]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[link]</source>
         <translation type="obsolete">[链接]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[name]</source>
         <translation type="obsolete">[名称]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;从左边的设置列表中选择一个类别，然后移动鼠标到一个具体的设置项目将获取更多信息&lt;i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> General </source>
         <translation type="obsolete">常规</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Input </source>
         <translation type="obsolete"> 输入 </translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> USB </source>
         <translation type="obsolete">USB</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">默认文件夹(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the default VDI folder. This folder is
 used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">显示用于存放虚拟硬盘的默认文件夹。如果没有在此明确指定其它文件夹，当新建或注册虚拟硬盘时将使用此文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Machines</source>
         <translation type="obsolete">虚拟电脑</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VDI files</source>
         <translation type="obsolete">虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the virtual machine folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">将存放虚拟电脑的文件夹重新设置为默认值。接受更改后，再次打开本对话框时将显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the VDI folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">将存放虚拟硬盘的文件夹重新设置为默认值。接受更改后，再次打开本对话框时将显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the default virtual machine
 folder. This folder is used, if not explicitly specified otherwise, when creating new
 virtual machines.</source>
         <translation type="obsolete">显示用于存放虚拟电脑的默认文件夹。如果没有特别指定，当新建虚拟电脑时将使用此文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select</source>
         <translation type="obsolete">选择</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens a dialog to select the
 default VDI folder.</source>
         <translation type="obsolete">打开对话框选择用于存放虚拟硬盘的默认文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens a dialog to select the
 default virtual machine folder.</source>
         <translation type="obsolete">打开对话框选择用于存放虚拟电脑的默认文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">键盘(&amp;K)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">热键(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">自动捕获键盘(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+A</source>
         <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the keyboard is automatically
 captured every time the VM window is activated. When the keyboard is captured,
 all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">USB设备筛选器(&amp;U)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all global USB filters.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">显示所有全局USB筛选器.
 左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">添加空筛选器 (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
@@ -3193,177 +3066,143 @@ USB device.</source>
 需要注意的是：这样的筛选器将会匹配所有连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">从当前设备中添加 (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Del</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">删除 (Del)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">删除所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">向上移动 (Ctrl+Up)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">向上移动所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">向下移动 (Ctrl+Down)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">向下移动所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">显示帮助对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">发现无效设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">保存设置变动并关闭对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">放弃更改并关闭对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">全局设定</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">显示当前虚拟电脑窗口所用热键。你可以激活该输入框并定义一个新的热键。需要注意的是：数字键、光标键和编辑键不能用作热键.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">新筛选器 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Language</source>
         <translation type="obsolete">语言</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Language </source>
         <translation type="obsolete"> 语言 </translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">界面语言(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Author(s):</source>
         <translation type="obsolete">作者:</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Language:</source>
         <translation type="obsolete">语言:</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete"> (内嵌)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;无效&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;未知&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3375,104 +3214,84 @@ to the system default language.&lt;/qt&gt;
 选择&lt;i&gt;默认&lt;/i&gt;将使用系统默认的语言.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">默认</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">显示存放虚拟硬盘文件的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟硬盘或注册已存在的虚拟硬盘时将默认使用此文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">重设存放虚拟电脑的文件夹为默认值。当改变被接受后，再次打开这个对话框时将显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">重设存放虚拟硬盘的文件夹为默认值。当改变被接受后，再次打开这个对话框时将显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">显示存放虚拟电脑的默认文件夹。如果没有明确指定其它文件夹，当创建新的虚拟电脑时将默认使用此文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">打开对话框选择用于存放虚拟硬盘的默认文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">打开对话框选择用于存放电脑的默认文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">选中后，当虚拟电脑窗口处于活动状态时将自动捕获键盘输入。当键盘被捕获时，所有的键盘输入(包括系统切换键如 Alt-Tab) 都将被发送到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">显示所有全局USB筛选器.左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">添加一个各个域的值都为空的USB筛选器。
 需要注意的是：这样的筛选器将会匹配所有连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">VRDP 认证库(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">显示用于提供远程桌面(VRDP)认证的库的所在路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">打开用于选择VRDP认证库的对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">重置认证库为默认值.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">扩展特性(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">启用 VT-x/AMD-V(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">指定虚拟电脑是否利用主机CPU内的虚拟扩展指令.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                                               &lt;qt&gt;Lists all global USB
                                               filters. The checkbox to the left
@@ -3485,17 +3304,14 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;显示所有全局USB筛选器。左边的选择框用来确定是否要启用或禁用该筛选器。添加或删除筛选器可通过右边的按钮或右键菜单.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">添加一个空的筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">添加一个空的筛选器(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -3504,17 +3320,14 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;添加一个所有域值都为空的USB筛选器，提示：这样的筛选器将会匹配所有的USB设备.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">从设备列表中添加筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">从设备列表中添加筛选器(&amp;d)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -3522,51 +3335,42 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;添加一个与所选设备所对应的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove Filter</source>
         <translation type="obsolete">删除筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">删除筛选器(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;删除选中的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">向上移动筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">向上移动筛选器(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;向上移动所选的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">向下移动筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">向下移动筛选器(&amp;o)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
@@ -3576,32 +3380,26 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Slot</source>
         <translation type="obsolete">插槽</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Hard Disk</source>
         <translation type="obsolete">虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxHardDiskSettings</source>
         <translation type="obsolete">虚拟硬盘设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">虚拟硬盘(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">启用SATA控制器(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                           &lt;qt&gt;When checked, enables the virtual SATA
                           controller of this machine. Note that you cannot
@@ -3611,12 +3409,10 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;选中，启用该虚拟电脑内的SATA控制器。提示：当未启用SATA控制器时你不能把虚拟硬盘连接到SATA端口.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Hard Disks &amp;Attachments</source>
         <translation type="obsolete">虚拟硬盘连接(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                                   &lt;qt&gt;Lists all hard disks attached to
                                   this machine. Use a mouse double-click or the
@@ -3630,66 +3426,54 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;列出所有连接到这个虚拟电脑的虚拟硬盘。在突出显示的项目上双击鼠标或按&lt;tt&gt;F2&lt;/tt&gt;&lt;tt&gt;Space&lt;/tt&gt;键调出下拉列表并选择所要的值。用上下文菜单或右边的按钮添加或删除虚拟硬盘连接.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Attachment</source>
         <translation type="obsolete">添加连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">添加连接(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Adds a new hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;添加一个新的虚拟硬盘连接.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove Attachment</source>
         <translation type="obsolete">删除连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">删除连接(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Delete</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Removes the highlighted hard disk attachment.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;删除高亮显示的虚拟硬盘连接.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">选择虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">选择虚拟硬盘(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Invokes the Virtual Disk Manager to select a hard disk
               to attach to the currently highlighted slot.&lt;/qt&gt;
@@ -3697,17 +3481,14 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;qt&gt;调用虚拟介质管理器选择一个虚拟硬盘用于连接到当前高亮显示的插槽.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; 使用的虚拟硬盘已经连接到 &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">双击添加一个新连接</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">没有为 &lt;i&gt;%1&lt;/i&gt;指定硬盘</translation>
     </message>
@@ -3717,17 +3498,17 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="unfinished">我同意(&amp;A)</translation>
+        <translation>我同意(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished">我不同意(&amp;D)</translation>
+        <translation>我不同意(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox License</translation>
     </message>
 </context>
 <context>
@@ -3753,7 +3534,6 @@ to the system default language.&lt;/qt&gt;
         <translation>向前(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -3768,7 +3548,6 @@ to the system default language.&lt;/qt&gt;
         <translation>向后(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
     </message>
@@ -3811,42 +3590,42 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="561"/>
         <source>VirtualBox Host Interface %1</source>
-        <translation type="unfinished">VirtualBox Host Interface %1</translation>
+        <translation>VirtualBox Host Interface %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;你是否要删除所选的Host Interface&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意:&lt;/b&gt;该界面可能被这个或其它个虚拟电脑的一个或多个网络连接所使用。 删除该界面后，这些网络连接将不能正常工作，直到你通过选择其它网络界面或使用一个不同的适配器接入类型来修正它们.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
         <source>Host &amp;Interfaces</source>
-        <translation type="unfinished">Host &amp;Interfaces</translation>
+        <translation>Host &amp;Interfaces</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Lists all available host interfaces.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有的可用host interfaces 名称.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="659"/>
         <source>A&amp;dd New Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个新的Host Interface(&amp;d)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
         <source>&amp;Remove Selected Host Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>删除所选的Host Interface(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>Adds a new host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个新的host interface.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>Removes the selected host interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>删除所选的host interface.</translation>
     </message>
 </context>
 <context>
@@ -3857,7 +3636,6 @@ to the system default language.&lt;/qt&gt;
         <translation>创建新的虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -3871,7 +3649,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>欢迎使用新建虚拟硬盘向导!</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3886,25 +3663,23 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Image Type</source>
-        <translation>映像类型</translation>
+        <translation>硬盘类型</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding image</source>
-        <translation>动态扩展映像(&amp;D)</translation>
+        <translation>动态扩展(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size image</source>
-        <translation>固定大小映像(&amp;F)</translation>
+        <translation>固定大小(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -3914,7 +3689,6 @@ the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>虚拟硬盘类型</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮指定虚拟硬盘所在映像文件名及其存储位置或者直接在输入框中输入一个映像文件名.&lt;/p&gt;</translation>
@@ -3922,15 +3696,13 @@ to store the virtual hard disk image or type a file name in the entry field.&lt;
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Image File Name</source>
-        <translation>映像文件名(&amp;I)</translation>
+        <translation>虚拟硬盘文件名(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select</source>
         <translation type="obsolete">选择</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;设定所需创建的虚拟硬盘的大小. &lt;/p&gt;</translation>
@@ -3951,7 +3723,6 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -3969,22 +3740,20 @@ as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation>&lt;nobr&gt;%1 字节&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="265"/>
         <source>Hard disk images (*.vdi)</source>
-        <translation>虚拟硬盘映像 (*.vdi)</translation>
+        <translation>虚拟硬盘文件 (*.vdi)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="263"/>
         <source>Select a file for the new hard disk image file</source>
-        <translation>选择一个文件作为新的虚拟硬盘映像</translation>
+        <translation>选择一个文件作为新的虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3999,71 +3768,71 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘。&lt;/p&gt;&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面，单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 返回(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>下一步(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;选择你要新建的虚拟硬盘类型.&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;动态扩展&lt;/b&gt; 类型最初只需占用非常小的物理硬盘空间。然后不断增加(最大到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配。&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;固定大小&lt;/b&gt; 类型一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势。建立这种类型的虚拟硬盘需花费较多的时间.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮用来指定保存虚拟硬盘的文件名及其位置，或者也可直接在输入框中输入.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;以兆(M)为单位指定要新建的虚拟硬盘大小. &lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果上面的设置正确，单击&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟硬盘将会被建立.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完成(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>类型</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">位置</translation>
+        <translation>位置</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>字节</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -4074,7 +3843,6 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation>新建虚拟电脑</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -4089,7 +3857,6 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
         <translation>欢迎使用新建虚拟电脑向导!</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -4123,17 +3890,14 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>内存大小(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
@@ -4148,7 +3912,6 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
         <translation>内存</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -4182,7 +3945,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>虚拟硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -4193,7 +3955,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
                          </translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -4220,12 +3981,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;指定名称:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;系统类型:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;内存大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;引导盘:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -4242,77 +4001,77 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;本向导将一步步引导你建立一个新的虚拟电脑.&lt;/p&gt;&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，使用&lt;b&gt;返回&lt;/b&gt;按钮返回向导的上一个操作页面.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 返回(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>下一步(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;现在将根据下面所列参数创建一个新的虚拟电脑:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;如果上面的设置没有问题，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。 一个新的虚拟电脑将被建立。&lt;/p&gt;&lt;p&gt;请注意：你可以通过虚拟电脑的 &lt;b&gt;设置&lt;/b&gt; 对话框来更改上面的有关该虚拟电脑的各种设置.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完成(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">系统类型</translation>
+        <translation>系统类型</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">内存大小</translation>
+        <translation>内存大小</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>主硬盘</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -4369,12 +4128,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;创建 COM 对象失败.&lt;/p&gt;&lt;p&gt;应用程序将被中断.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;加载全局 GUI 配置失败.&lt;/p&gt;&lt;p&gt;应用程序将被中断.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
         <translation type="obsolete">&lt;p&gt;保存全局 GUI 配置失败.&lt;p&gt;</translation>
     </message>
@@ -4404,12 +4161,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>应用设置到虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">保存虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 设置失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">加载虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 设置失败.</translation>
     </message>
@@ -4499,14 +4254,13 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;映像文件 &lt;b&gt;%1&lt;/b&gt;已经存在. 你不能用这个文件建立一个新的虚拟硬盘, 因为它可能已被其它的虚拟硬盘所使用.&lt;/p&gt;&lt;p&gt;请指定一个其它映像文件名.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;你真的要删除虚拟硬盘映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;吗?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;如果你选择 &lt;b&gt;No&lt;/b&gt; 将取消该虚拟硬盘的注册并把它从下面列表中删除, 但该虚拟硬盘还会保留在你的硬盘上.&lt;/p&gt;&lt;p&gt;如果你选择 &lt;b&gt;Yes&lt;/b&gt; 不但会取消该虚拟硬盘的注册，而且会将它永久性删除. 请注意这个操作是不可撤销的.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1145"/>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>删除虚拟硬盘映像 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
+        <translation>删除虚拟硬盘 &lt;b&gt;%1&lt;/b&gt; 失败.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
@@ -4516,15 +4270,13 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1195"/>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>创建虚拟硬盘映像 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失败.&lt;/nobr&gt;</translation>
+        <translation>创建虚拟硬盘 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失败.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation type="obsolete">分配 UUID 号为 %1 的虚拟硬盘映像到虚拟电脑 &lt;b&gt;%4&lt;/b&gt; 的第 %3 控制器的第 %2 个通道失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">不能将虚拟硬盘映像从虚拟电脑 &lt;b&gt;%3&lt;/b&gt; 的第 %2 控制器的第 %1 个通道分离.</translation>
     </message>
@@ -4559,7 +4311,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>创建一个新任务失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">不能为 UUID 为 &lt;b&gt;%1&lt;/b&gt; 的虚拟电脑打开一个新任务.</translation>
     </message>
@@ -4604,17 +4355,14 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>从虚拟电脑 &lt;b&gt;%3&lt;/b&gt; 删除数据空间 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;鼠标和键盘已被本虚拟电脑捕获，按&lt;b&gt;host key&lt;/b&gt;可释放它们，该键显示在&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;图标边上.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;鼠标和键盘已被本虚拟电脑捕获，按&lt;b&gt;host key&lt;/b&gt;可释放它们，该键显示在&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;图标边上.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;鼠标和键盘已被本虚拟电脑捕获，按&lt;b&gt;host key&lt;/b&gt;可释放它们，该键显示在&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;图标边上.&lt;/p&gt;</translation>
     </message>
@@ -4629,12 +4377,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;虚拟电脑当前正处于 &lt;b&gt;暂停&lt;/b&gt; 状态，因此不接受任何鼠标或键盘输入. 如果想继续在虚拟电脑内工作, 你需要通过选择菜单栏内的相应项目来重新激活它.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;一个或多个注册的虚拟硬盘、光盘或软盘当前不可访问. 因此使用了它们的虚拟电脑当前已不能工作，只有等到它们能再次访问时才能继续工作.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;确定&lt;/b&gt; 打开虚拟介质管理器看看是哪些虚拟介质不能访问, 或者按 &lt;b&gt;忽略&lt;/b&gt; 忽略这个信息.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;虚拟电脑窗口将会被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 在任何时候按 &lt;b&gt;%1&lt;/b&gt; 都能返回窗口模式. 注意：当前 &lt;i&gt;热键&lt;/i&gt; 已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
@@ -4749,7 +4495,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>更改虚拟电脑 &lt;b&gt;%1&lt;b&gt; 的备份位置到 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;失败.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;无法进入桌面集成模式，因为没有足够的显存.&lt;/p&gt;&lt;p&gt;您应该至少为虚拟电脑分配 &lt;b&gt;%1&lt;/b&gt;的显存.&lt;/p&gt;</translation>
     </message>
@@ -4779,12 +4524,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;增强功能包虚拟光盘已从 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;成功下载并保存在 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您是否要注册该虚拟光盘并把它立即挂载到该虚拟电脑上?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在全屏模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;无缝&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在无缝模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt;</translation>
     </message>
@@ -5048,102 +4791,102 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;无法获取新版本信息，因为如下的网络错误:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>当前版本即为最新版，请以后再来检查.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1667"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;你已在虚拟电脑窗口内 &lt;b&gt;点击了鼠标&lt;/b&gt; 或按了 &lt;b&gt;热键&lt;/b&gt;. 这将导致该虚拟电脑 &lt;b&gt;独占&lt;/b&gt; 鼠标和键盘，即鼠标无法移出当前虚拟电脑所在窗口，去操作其它程序。这往往是因为在该虚拟电脑的操作系统内尚未启用鼠标集成功能引起的。&lt;/p&gt;&lt;p&gt;你可以随时按 &lt;b&gt;热键&lt;/b&gt; 来取消这种 &lt;b&gt;独占状态&lt;/b&gt; 让鼠标和键盘返回正常操作状态。当前所分配的热键显示在虚拟电脑窗口的底部的最右边，靠近&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;图标. 该图标和边上的鼠标图标表示当前键盘和鼠标的独占状态.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1700"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;你已打开了 &lt;b&gt;自动独占键盘&lt;/b&gt; 的选项。现在当该虚拟电脑窗口处于活动状态时就将 &lt;b&gt;完全独占&lt;/b&gt; 键盘，这时处于该虚拟电脑外的其它程序将无法使用键盘。当键盘被某个虚拟电脑独占时，所有的键盘操作（包括象系统按键Alt-Tab等）都将被直接发送到该虚拟电脑。&lt;/p&gt;&lt;p&gt;你可以随时按 &lt;b&gt;热键&lt;/b&gt; 来取消这种 &lt;b&gt;独占状态&lt;/b&gt; 让鼠标和键盘返回正常操作状态。当前所分配的热键显示在虚拟电脑窗口的底部的最右边，靠近&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;图标. 该图标和边上的鼠标图标表示当前键盘和鼠标的独占状态.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;虚拟电脑报告其内所安装的操作系统支持 &lt;b&gt;鼠标自动切换&lt;/b&gt;. 这意味着鼠标不需要为该虚拟电脑 &lt;i&gt;独占&lt;/i&gt; 使用，当鼠标在虚拟电脑所在窗口时，在该鼠标上的所有操作将自动被发送到该虚拟电脑内的操作系统。&lt;/p&gt;&lt;p&gt;当状态栏的鼠标图标看起来象&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;时表示该虚拟电脑内的操作系统支持鼠标自动切换，并且该功能已启用。&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 有些程序在鼠标自动切换模式下无法正常工作。你可以通过控制菜单的相应条目来禁用（或启用）该功能.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在全屏模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;虚拟电脑窗口现在将被切换到 &lt;b&gt;全屏&lt;/b&gt; 模式。在任何时候都可以通过按 &lt;b&gt;%1&lt;/b&gt;来退出该模式。请注意：当前的 &lt;i&gt;热键&lt;/i&gt; 已被定义为  &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;请注意：在全屏模式下控制菜单将自动被隐藏起来，可以通过按 &lt;b&gt;热键+Home&lt;/b&gt;来显示它.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1881"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;虚拟电脑将被切换到 &lt;b&gt;无缝&lt;/b&gt; 模式. 通过按 &lt;b&gt;%1&lt;/b&gt;您能随时返回到窗口模式. 请注意 &lt;i&gt;组合&lt;/i&gt; 键当前已被定义为 &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;请注意在无缝模式下虚拟电脑的主控菜单将被隐藏起来，您可以通过按 &lt;b&gt;组合键+Home&lt;/b&gt;键来激活它.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+        <translation>&lt;p&gt;虚拟电脑窗口现在将被切换到 &lt;b&gt;无缝&lt;/b&gt; 模式。在任何时候都可以通过按 &lt;b&gt;%1&lt;/b&gt;来退出该模式。请注意：当前的 &lt;i&gt;热键&lt;/i&gt; 已被定义为  &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;请注意：在无缝模式下控制菜单将自动被隐藏起来，可以通过按 &lt;b&gt;热键+Home&lt;/b&gt;来显示它.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">内容(&amp;C)...</translation>
+        <translation>内容(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">Show the online help contents</translation>
+        <translation>Show the online help contents</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">&amp;VirtualBox Web Site...</translation>
+        <translation>&amp;VirtualBox Web Site...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Open the browser and go to the VirtualBox product web site</translation>
+        <translation>Open the browser and go to the VirtualBox product web site</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">&amp;Reset All Warnings</translation>
+        <translation>&amp;Reset All Warnings</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">Cause all suppressed warnings and messages to be shown again</translation>
+        <translation>Cause all suppressed warnings and messages to be shown again</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">R&amp;egister VirtualBox...</translation>
+        <translation>R&amp;egister VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">Open VirtualBox registration form</translation>
+        <translation>Open VirtualBox registration form</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>C&amp;heck for Updates...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">&amp;About VirtualBox...</translation>
+        <translation>&amp;About VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished">Show a dialog with product information</translation>
+        <translation>Show a dialog with product information</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5184,7 +4927,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>Welcome to the VirtualBox Registration Form!</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">&amp;Confirm</translation>
     </message>
@@ -5216,12 +4958,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
         <source>C&amp;onfirm</source>
-        <translation type="unfinished"></translation>
+        <translation>C&amp;onfirm</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -5232,22 +4974,18 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>OK</source>
         <translation type="obsolete">确定</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
@@ -5260,7 +4998,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -5321,7 +5058,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>新建(&amp;N)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>New</source>
         <translation type="obsolete">新建</translation>
     </message>
@@ -5341,7 +5077,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>设置(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Settings</source>
         <translation type="obsolete">设置</translation>
     </message>
@@ -5361,7 +5096,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>删除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Delete</source>
         <translation type="obsolete">删除</translation>
     </message>
@@ -5376,7 +5110,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>清除(&amp;i)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Discard</source>
         <translation type="obsolete">清除</translation>
     </message>
@@ -5391,7 +5124,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>刷新(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Refresh</source>
         <translation type="obsolete">刷新</translation>
     </message>
@@ -5411,7 +5143,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">内容(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -5456,7 +5187,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>管理(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;VM</source>
         <translation type="obsolete">电脑(&amp;V)</translation>
     </message>
@@ -5486,7 +5216,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>显示(&amp;h)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Show</source>
         <translation type="obsolete">显示</translation>
     </message>
@@ -5501,7 +5230,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>开始(&amp;t)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Start</source>
         <translation type="obsolete">启动</translation>
     </message>
@@ -5511,7 +5239,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>启动所选的虚拟电脑</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按 &lt;b&gt;新建&lt;/b&gt; 按钮， 它位于窗口顶部的主工具栏.&lt;/p&gt;</translation>
     </message>
@@ -5526,7 +5253,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>日志(&amp;L)...</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Show Log...</source>
         <translation type="obsolete">日志...</translation>
     </message>
@@ -5561,7 +5287,6 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>唤醒(&amp;e)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resume</source>
         <translation type="obsolete">唤醒</translation>
     </message>
@@ -5581,19 +5306,18 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>暂停(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Pause</source>
         <translation type="obsolete">暂停</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1286"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>将正在运行的虚拟电脑休眠</translation>
+        <translation>将正在运行的虚拟电脑暂停</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。.&lt;/p&gt;&lt;p&gt;你可以按 &lt;b&gt;F1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5601,38 +5325,34 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;从左边的设置列表中选择一个类别，然后移动鼠标到一个具体的设置项目以获取更多信息&lt;i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="132"/>
         <source>Invalid settings detected</source>
-        <translation type="unfinished">发现无效设置</translation>
+        <translation>发现无效设置</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="204"/>
         <source>Settings</source>
-        <translation type="unfinished">设置</translation>
+        <translation>设置</translation>
     </message>
 </context>
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Name</source>
         <translation type="obsolete">名称</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Path</source>
         <translation type="obsolete">路径</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">数据空间(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
 Use
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
@@ -5647,128 +5367,103 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 从Linux类的操作系统中访问该文件夹。该功能需要在虚拟电脑中安装增强功能包.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add</source>
         <translation type="obsolete">添加</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">添加一个新的数据空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit</source>
         <translation type="obsolete">编辑</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit selected shared folder definition.</source>
         <translation type="obsolete">编辑所选数据空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">删除所选数据空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add a new shared folder</source>
         <translation type="obsolete">添加一个新的数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit the selected shared folder</source>
         <translation type="obsolete">编辑所选数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove the selected shared folder</source>
         <translation type="obsolete">删除所选数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Machine Folders</source>
         <translation type="obsolete">固定分配</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Transient Folders</source>
         <translation type="obsolete">临时分配</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;nobr&gt;Name:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Path:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;名称:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;路径:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">编辑所选数据空间的设置.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxSharedFoldersSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">数据空间设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">添加一个新的数据空间 (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Space</source>
         <translation type="obsolete">Space</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit the selected shared folder (Space)</source>
         <translation type="obsolete">编辑所选数据空间 (Space)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">删除所选数据空间(Del)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Access</source>
         <translation type="obsolete">访问权限</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">编辑所选的数据空间 (Ctrl+Space)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Full</source>
         <translation type="obsolete">完全</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Read-only</source>
         <translation type="obsolete">只读</translation>
     </message>
@@ -5781,7 +5476,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>备份明细对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Snapshot Details </source>
         <translation type="obsolete">备份明细</translation>
     </message>
@@ -5801,27 +5495,22 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>配置明细(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
@@ -5833,7 +5522,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <location filename="../ui/VBoxSnapshotDetailsDlg.ui" line="39"/>
         <source>Snapshot Details</source>
-        <translation type="unfinished"></translation>
+        <translation>备份明细</translation>
     </message>
 </context>
 <context>
@@ -5849,72 +5538,62 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>备份对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>snapshotActionGroup</source>
         <translation type="obsolete">备份活动组</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">删除备份</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
         <source>&amp;Discard Snapshot</source>
-        <translation type="unfinished">删除备份(&amp;D)</translation>
+        <translation>删除备份(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+D</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>curStateActionGroup</source>
         <translation type="obsolete">当前活动组状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">生成备份</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
         <source>Take &amp;Snapshot</source>
-        <translation type="unfinished">生成备份(&amp;S)</translation>
+        <translation>生成备份(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Discard Current State</source>
         <translation type="obsolete">清除当前状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>D&amp;iscard Current State</source>
         <translation type="obsolete">清除当前状态(&amp;i)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">删除最近备份和状态</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation type="unfinished">删除最近备份和状态(&amp;i)</translation>
+        <translation>删除最近备份和状态(&amp;i)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Show Details</source>
         <translation type="obsolete">显示明细</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
         <source>S&amp;how Details</source>
-        <translation type="unfinished">显示明细(&amp;h)</translation>
+        <translation>显示明细(&amp;h)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Space</source>
         <translation type="obsolete">空间</translation>
     </message>
@@ -5984,55 +5663,50 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
         <source>Discard the selected snapshot of the virtual machine</source>
-        <translation type="unfinished">删除所选备份</translation>
+        <translation>删除所选备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">为虚拟电脑的当前状态生成一个备份</translation>
+        <translation>为虚拟电脑的当前状态生成一个备份</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">恢复最近备份</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
         <source>&amp;Revert to Current Snapshot</source>
-        <translation type="unfinished">恢复最近备份(&amp;R)</translation>
+        <translation>恢复最近备份(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
-        <translation type="unfinished">将虚拟电脑恢复到最近备份中保存的状态</translation>
+        <translation>将虚拟电脑恢复到最近备份中保存的状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
-        <translation type="unfinished">删除最近备份并让虚拟电脑回到生成最近备份前的状态</translation>
+        <translation>删除最近备份并让虚拟电脑回到生成最近备份前的状态</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>Show details of the selected snapshot</source>
-        <translation type="unfinished">显示所选备份明细</translation>
+        <translation>显示所选备份明细</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
@@ -6050,7 +5724,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
     </message>
@@ -6073,27 +5746,22 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <translation>备份描述(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
@@ -6101,107 +5769,88 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">USB筛选器设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名称(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">显示筛选器名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">&amp;Manufacturer</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">Pro&amp;duct</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">&amp;Serial No.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">R&amp;emote</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Action</source>
         <translation type="obsolete">&amp;Action</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">&amp;Vendor ID</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">&amp;Product ID</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">&amp;Revision</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">Por&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">Any</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">是</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">否</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the manufacturer filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;定义 manufacturer 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the product name filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;定义 product 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the serial number filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;定义 serial number 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines whether this filter applies
 to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;),
 to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;),
@@ -6212,7 +5861,6 @@ or both (&lt;i&gt;Any&lt;/i&gt;).&lt;/qt&gt;</source>
 或两者 (&lt;i&gt;任何&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines an action performed by the host
 computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines
@@ -6222,7 +5870,6 @@ computer when a matching device is attached: give it up to the host OS
 (&lt;i&gt;Hold&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the vendor ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6231,7 +5878,6 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;X&lt;/tt&gt; 为十六进制字符. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the product ID filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where
 &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any
@@ -6240,7 +5886,6 @@ value.&lt;/qt&gt;</source>
 &lt;tt&gt;X&lt;/tt&gt; 为十六进制字符. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the revision number filter. The
 &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where
 &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt;
@@ -6251,7 +5896,6 @@ value.&lt;/qt&gt;</source>
 为小数部分的十进制字符. 空字符串会匹配所有值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Defines the host USB port filter as an
 &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any
 value.&lt;/qt&gt;</source>
@@ -6278,119 +5922,121 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>1 day</source>
-        <translation type="unfinished"></translation>
+        <translation>1 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>2 days</source>
-        <translation type="unfinished"></translation>
+        <translation>2 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
         <source>3 days</source>
-        <translation type="unfinished"></translation>
+        <translation>3 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
         <source>4 days</source>
-        <translation type="unfinished"></translation>
+        <translation>4 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>5 days</source>
-        <translation type="unfinished"></translation>
+        <translation>5 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>6 days</source>
-        <translation type="unfinished"></translation>
+        <translation>6 天</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
         <source>1 week</source>
-        <translation type="unfinished"></translation>
+        <translation>1 星期</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>2 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>2 星期</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
         <source>3 weeks</source>
-        <translation type="unfinished"></translation>
+        <translation>3 星期</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
         <source>1 month</source>
-        <translation type="unfinished"></translation>
+        <translation>1 个月</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
         <source>Never</source>
-        <translation type="unfinished"></translation>
+        <translation>从不</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
         <source>Connection timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>连接超时.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="unfinished"></translation>
+        <translation>无法在服务器上找到最新的版本列表 (回复: %1).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
         <source>Chec&amp;k</source>
-        <translation type="unfinished"></translation>
+        <translation>检测(&amp;k)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
         <source>&amp;Close</source>
-        <translation type="unfinished">关闭(&amp;C)</translation>
+        <translation>关闭(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 升级向导</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>查找升级信息</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;该向导将连接到VirtualBox服务器，以检测是否有新版本。&lt;/p&gt;
+&lt;p&gt;按 &lt;b&gt;检测&lt;/b&gt; 按钮以查看现在是否有新的版本，或者按 &lt;b&gt;取消&lt;/b&gt; 按钮，如果你现在不想执行该检测。&lt;/p&gt;
+&lt;p&gt;在任何时候你都可以通过按 &lt;b&gt;帮助&lt;/b&gt; 菜单中的 &lt;b&gt;检测更新...&lt;/b&gt; 来运行本向导.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
         <source>Summary</source>
-        <translation type="unfinished">摘要</translation>
+        <translation>摘要</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;一个新版的VirtualBox已发布! 版本 &lt;b&gt;%1&lt;/b&gt; 位于 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;你可以从这个连位置直接下载:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;无法获取有关新版本的信息，因为如下网络错误:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished"></translation>
+        <translation>当前版本即为最新版，请以后再来检查.</translation>
     </message>
 </context>
 <context>
@@ -6434,7 +6080,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑. 本向导将协助您一步步把操作系统安装到该虚拟电脑上.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一页 按&lt;b&gt;返回&lt;/b&gt; 按钮返回上一页. 你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页，你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
@@ -6457,7 +6103,6 @@ value.&lt;/qt&gt;</source>
         <translation>光驱(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
@@ -6467,14 +6112,13 @@ value.&lt;/qt&gt;</source>
         <translation>软驱(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择含有您所要安装的操作系统的安装程序的介质. 该介质必须是可引导的，否则安装程序无法启动.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;选择含有您所要安装的操作系统的安装程序的介质。该介质必须是可引导的，否则安装程序无法启动.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="439"/>
@@ -6484,10 +6128,9 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="450"/>
         <source>&amp;Host Drive</source>
-        <translation>&amp;Host Drive</translation>
+        <translation>物理介质(&amp;H)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+H</source>
         <translation type="obsolete">Alt+H</translation>
     </message>
@@ -6497,12 +6140,10 @@ value.&lt;/qt&gt;</source>
         <translation>虚拟介质(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -6517,7 +6158,6 @@ value.&lt;/qt&gt;</source>
         <translation>&lt;p&gt;您已经选择如下介质用于引导:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮. 一旦您按下它，所选择的安装介质将被临时挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;&lt;p&gt;请注意，当您关闭虚拟电脑后，该安装介质将被自动卸载，而启动设备将被设置为第一个虚拟硬盘.&lt;/p&gt;&lt;p&gt;根据安装程序的类型, 在安装程序重启电脑后，您可能需要手动卸载该安装介质, 为了防止安装程序重新执行一遍. 您可以在 &lt;b&gt;设备&lt;/b&gt; 菜单 中选择 &lt;b&gt;卸载...&lt;/b&gt; 该介质.&lt;/p&gt;</translation>
     </message>
@@ -6542,14 +6182,13 @@ value.&lt;/qt&gt;</source>
         <translation>物理设备 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑. 本向导将协助您一步步把操作系统安装到该虚拟电脑上.&lt;/p&gt;&lt;p&gt;请注意您现在还不能把一个操作系统安装到该虚拟电脑上，因为您还没有给它分配一个硬盘. 因此您应先取消本向导, 然后到该虚拟电脑的设置对话框中为该虚拟电脑分配一个硬盘.&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一页 按&lt;b&gt;返回&lt;/b&gt; 按钮返回上一页. 你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;请注意您现在还不能把一个操作系统安装到该虚拟电脑上，因为您还没有给它分配一个硬盘。因此您应先取消本向导，然后到该虚拟电脑的设置对话框中为该虚拟电脑分配一个硬盘。&lt;/p&gt;&lt;p&gt;按  &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页。你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
@@ -6559,7 +6198,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="423"/>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择含有您要使用的操作系统的介质. 该介质必须是可引导的，否则操作系统将无法被启动.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;选择含有您要使用的操作系统的介质。该介质必须是可引导的，否则操作系统将无法被启动.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="676"/>
@@ -6569,17 +6208,17 @@ value.&lt;/qt&gt;</source>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮. 一旦您按下它，所选择的安装介质将被挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。一旦您按下它，所选择的安装介质将被挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt; 返回(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>下一步(&amp;N) &gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -6589,40 +6228,43 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;如果以上设置没有问题请按 &lt;span style=&quot; font-weight:600;&quot;&gt;完成&lt;/span&gt; 按钮。 刚刚指定的介质将被临时分配给该虚拟电脑，并开始启动该虚拟电脑&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;请注意：当该虚拟电脑关闭后，该介质将自动从该虚拟电脑上释放，以便该虚拟电脑能从原来的虚拟硬盘上启动.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;根据操作系统安装程序的不同，可能需要在安装程序重启后手动释放（或弹出）该介质，以避免安装程序再次启动，这只需在 &lt;span style=&quot; font-weight:600;&quot;&gt;设备&lt;/span&gt; 菜单中执行相应的 &lt;span style=&quot; font-weight:600;&quot;&gt;释放...&lt;/span&gt; 操作即可&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="812"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished"></translation>
+        <translation>完成(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>类型</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>位置</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">运行状态</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Close</source>
         <translation type="obsolete">关闭(&amp;C)</translation>
     </message>
@@ -6697,7 +6339,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">硬件虚拟</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>IDE Hard Disk Statistics</source>
         <translation type="obsolete">IDE 硬盘统计信息</translation>
     </message>
@@ -6722,17 +6363,14 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">网络连接 2</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adapter 3</source>
         <translation type="obsolete">网络连接 3</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adapter 4</source>
         <translation type="obsolete">网络连接 4</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Not attached</source>
         <translation type="obsolete">未分配</translation>
     </message>
@@ -6808,41 +6446,38 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">启用</translation>
+        <translation>启用</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">禁用</translation>
+        <translation>禁用</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>嵌套页</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="30"/>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑信息</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自从 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;任务 %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不能正常访问自从 %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Inaccessible</source>
         <translation type="obsolete">无法访问</translation>
     </message>
@@ -6852,19 +6487,19 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="151"/>
         <source>Inaccessible</source>
-        <translation type="unfinished"></translation>
+        <translation>不可使用</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="171"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自从 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;任务 %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 自从 %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;任务 %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="182"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不能正常访问自从 %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不能正常访问自从 %2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6880,7 +6515,6 @@ p, li { white-space: pre-wrap; }
         <translation>保存(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+S</source>
         <translation type="obsolete">Als+S</translation>
     </message>
@@ -6890,12 +6524,10 @@ p, li { white-space: pre-wrap; }
         <translation>刷新(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
@@ -6915,12 +6547,10 @@ p, li { white-space: pre-wrap; }
         <translation>保存虚拟电脑控制台日志为</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -6930,7 +6560,6 @@ p, li { white-space: pre-wrap; }
         <translation>查找(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -6943,40 +6572,33 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxVMNetworkSettings</source>
         <translation type="obsolete">网络设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">启用网络连接(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, plugs this virtual network adapter into
                 the virtual machine.</source>
         <translation type="obsolete">选中，将在虚拟电脑内启用该网络连接.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">网络连接方式(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the way how this
                                         virtual adapter is attached to the
                                         real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">MAC 地址(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the MAC address of
                                         this adapter. It contains exactly 12
                                         characters chosen from
@@ -6984,48 +6606,39 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">显示网络连接的MAC地址。它可包含处于{0-9,A-F}中的12位字符.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">随机生成(&amp;G)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+G</source>
         <translation type="obsolete">Alt+G</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">生成一个新的随机MAC 地址.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">接入网线(&amp;b)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+B</source>
         <translation type="obsolete">Alt+B</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the virtual network cable is plugged
                         in on machine startup or not.</source>
         <translation type="obsolete">指示虚拟网线在启动时是否与主机连接.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Host Interface Settings</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">&amp;Interface Name</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the
                                                         name of the host
                                                         interface selected for
@@ -7033,41 +6646,34 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">显示为该适配器选择的host interface名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all available
                                                 host interfaces.</source>
         <translation type="obsolete">显示所有的可用host interface名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">添加一个新的host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes
                                                         the selected host interface.</source>
         <translation type="obsolete">删除所选的host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the
                                                         TAP interface
                                                         name.</source>
         <translation type="obsolete">显示主机上的TAP网络界面名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">文件描述符(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">&amp;Setup Application</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the
                                                         command executed to
                                                         set up the TAP
@@ -7075,24 +6681,20 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">显示用于设置TAP host interface 的命令.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select</source>
         <translation type="obsolete">选择</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the
                                                         setup
                                                         application.</source>
         <translation type="obsolete">选择设置程序.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">&amp;Terminate Application</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the
                                                         command executed to
                                                         terminate the TAP
@@ -7100,128 +6702,103 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">显示用于中断TAP host interface 的命令.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the
                                                         terminate application.</source>
         <translation type="obsolete">选择中断程序.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;没有合适的网络界面&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add</source>
         <translation type="obsolete">添加</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Select TAP setup application</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">Select TAP terminate application</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox Host Interface %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;你是否要删除所选的Host Interface&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt;该界面可能被这个或其它个虚拟电脑的一个或多个网络连接所使用。 删除该界面后，这些网络连接将不能正常工作，直到你通过选择其它网络界面或使用一个不同的适配器接入类型来修正它们.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="obsolete">选中，将在虚拟电脑内启用该网络连接.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
         <translation type="obsolete">显示网络连接的MAC地址。它可包含处于{0-9,A-F}中的12位字符.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">指示虚拟网线在启动时是否与主机连接.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Displays the name of the host interface selected for this adapter.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">显示所有的可用host interfaces 名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">删除所选的host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">Displays the TAP interface name.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Displays the command executed to set up the TAP interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Selects the setup application.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Displays the command executed to terminate the TAP interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Selects the terminate application.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">显示这块网卡的 MAC 地址。它包含12位的字符信息，每位字符取自 {0-9,A-F} 。请注意：第二位字符必须为偶数.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">网络名称(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">网络连接芯片(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
         <translation type="obsolete">选择网络连接芯片。根据该值 VirtualBox 将为该虚拟电脑提供不同的网络硬件.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">显示为该网络连接选择的内部网络名称.</translation>
     </message>
@@ -7229,57 +6806,46 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxVMParallelPortSettings</source>
         <translation type="obsolete">并口设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable Parallel Port</source>
         <translation type="obsolete">启用并口(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
         <translation type="obsolete">选中，分配指定的并口给该虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">端口号(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">显示并口的端口号，你可以从标准并口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口号.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">显示该并口的 IRQ号，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O端口(&amp;r)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">显示该并口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">端口路径(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the host parallel device name.</source>
         <translation type="obsolete">显示主机并口设备名称.</translation>
     </message>
@@ -7287,82 +6853,66 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxVMSerialPortSettings</source>
         <translation type="obsolete">串口设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">启用串口(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">选中后，将在这个虚拟电脑中启用串口.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">端口号(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">显示串口号，您可以从标准串口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口号.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">显示该串口的 IRQ号码，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O端口(&amp;r)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">显示该串口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">端口模式(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation type="obsolete">控制该串口的工作模式，如果您选择 &lt;b&gt;断开&lt;/b&gt;, 虚拟电脑中的系统将检测到该串口，但无法进行操作.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">创建通道(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
         <translation type="obsolete">如果选中，在 &lt;b&gt;端口路径&lt;/b&gt;域中指定的通道将在虚拟电脑启动时被创建。否则虚拟电脑将尝试使用已存在的通道.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">端口路径(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">当端口工作在 &lt;b&gt;Host Pipe&lt;/b&gt; 模式时将显示该串口通道在主机上的路径，或者当端口工作在 &lt;b&gt;Host Device&lt;/b&gt; 模式时将显示主机上的串口设备名.</translation>
     </message>
@@ -7372,32 +6922,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="33"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
-        <translation type="unfinished">选中，将在该虚拟电脑内启用声音功能，并使用指定的声卡类型和主机上的声卡通讯.</translation>
+        <translation>选中，将在该虚拟电脑内启用声音功能，并使用指定的声卡类型和主机上的声卡通讯.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="36"/>
         <source>Enable &amp;Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>启用声音(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="77"/>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished"></translation>
+        <translation>声卡类型(&amp;D):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="90"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>选择声卡类型。选项  &lt;b&gt;Null Audio Driver&lt;/b&gt; 让虚拟电脑拥有一张声卡，但其输出的声音将被忽略.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="97"/>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>控制芯片(&amp;C):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsAudio.ui" line="110"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">指定声卡类型。根据这个值， VirtualBox 将为该虚拟电脑提供不同的声卡.</translation>
+        <translation>指定声卡类型。根据这个值， VirtualBox 将为该虚拟电脑提供不同的声卡.</translation>
     </message>
 </context>
 <context>
@@ -7405,328 +6955,277 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="174"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>没有分配物理光驱</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="176"/>
         <source>CD/DVD image file is not selected</source>
-        <translation type="unfinished">没有分配虚拟光盘</translation>
+        <translation>没有分配虚拟光盘</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="unfinished">选中，将分配指定光驱到虚拟电脑上。该光驱将固定地被分配到虚拟电脑第二IDE控制器的主通道.</translation>
+        <translation>选中，将分配指定光驱到虚拟电脑上。该光驱将固定地被分配到虚拟电脑第二IDE控制器的主通道.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="unfinished">分配光驱(&amp;M)</translation>
+        <translation>分配光驱(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">分配物理光驱到虚拟电脑.</translation>
+        <translation>分配物理光驱到虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation type="unfinished">物理光驱(&amp;D)</translation>
+        <translation>物理光驱(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">显示可以分配到虚拟电脑上的物理光驱.</translation>
+        <translation>显示可以分配到虚拟电脑上的物理光驱.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">选中后，就可在该虚拟电脑中进行光盘的刻录. 请注意目前尚未提供对音乐CD的写入支持.</translation>
+        <translation>选中后，就可在该虚拟电脑中进行光盘的刻录. 请注意目前尚未提供对音乐CD的写入支持.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
         <source>Enable &amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable &amp;Passthrough</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation type="unfinished">分配指定的虚拟光盘到虚拟电脑.</translation>
+        <translation>分配指定的虚拟光盘到虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
         <source>&amp;ISO Image File</source>
-        <translation type="unfinished">虚拟光盘(&amp;I)</translation>
+        <translation>虚拟光盘(&amp;I)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">显示分配给该虚拟电脑的虚拟光盘，同时还允许快速选择一个其它虚拟光盘.</translation>
+        <translation>显示分配给该虚拟电脑的虚拟光盘，同时还允许快速选择一个其它虚拟光盘.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished">打开虚拟介质管理器选择一个用于分配的虚拟光盘.</translation>
+        <translation>打开虚拟介质管理器选择一个用于分配的虚拟光盘.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Category</source>
         <translation type="obsolete">目录</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[id]</source>
         <translation type="obsolete">[标识]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[link]</source>
         <translation type="obsolete">[链接]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>[name]</source>
         <translation type="obsolete">[名称]</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">虚拟电脑设置对话框</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;从左边的设置列表中选择一个类别，然后移动鼠标到一个具体的设置项目将获取更多信息&lt;i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> General </source>
         <translation type="obsolete">常规</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Hard Disks </source>
         <translation type="obsolete">硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Floppy </source>
         <translation type="obsolete">软驱</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete">光驱</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Audio </source>
         <translation type="obsolete">声音</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>4</source>
         <translation type="obsolete">4</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Network </source>
         <translation type="obsolete">网络</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>5</source>
         <translation type="obsolete">5</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> USB </source>
         <translation type="obsolete">USB设备</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>6</source>
         <translation type="obsolete">6</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Remote Display </source>
         <translation type="obsolete">远程桌面</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>7</source>
         <translation type="obsolete">7</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Shared Folders </source>
         <translation type="obsolete">数据空间</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>8</source>
         <translation type="obsolete">8</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">标识信息(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名称(&amp;N)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">显示虚拟电脑名称.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">系统类型(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the operating system type that you
 plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">显示你要安装到虚拟电脑的系统类型.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">内存大小(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">分配给虚拟电脑的内存要控制在合理范围，分配太多会导致虚拟电脑不能正常启动.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">显存大小(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">指定可以分配给虚拟电脑的显存大小.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">基本(&amp;B)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Snapshot Folder</source>
         <translation type="obsolete">备份位置(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path where snapshots of this virtual machine
 will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">指定用于存放虚拟电脑备份的文件夹。需要注意的是备份会占用很多磁盘空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Select</source>
         <translation type="obsolete">选择</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">选择用于存放备份的文件夹.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Reset</source>
         <translation type="obsolete">重设</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the snapshot folder path to the default value.
 The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">将存放备份的文件夹重新设定为默认值。改变被接受后，下次打开本对话框时将会显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Extended Features</source>
         <translation type="obsolete">扩展特性</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">启用 A&amp;CPI</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete"> &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项!</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">启用 IO A&amp;PIC</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!</source>
@@ -7734,17 +7233,14 @@ this feature after having installed a Windows guest operating system!</source>
 &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项!</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">启动顺序(&amp;t)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">高级(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the description of
                                         the virtual machine. The description
                                         field is useful for commenting
@@ -7753,177 +7249,144 @@ this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">显示有关虚拟电脑的描述信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Description</source>
         <translation type="obsolete">说明(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Primary Master</source>
         <translation type="obsolete">第一IDE控制器主盘(&amp;P)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to create a new
 or select an existing virtual hard disk to attach.</source>
         <translation type="obsolete">打开虚拟介质管理器新建或选择一个已经存在的虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;not selected&gt;</source>
         <translation type="obsolete">&lt;没有选择&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>P&amp;rimary Slave</source>
         <translation type="obsolete">第一IDE控制器从盘(&amp;r)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Secondary (IDE 1) Slave</source>
         <translation type="obsolete">第二IDE控制器从盘(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">分配软驱(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">物理软驱(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">将物理软驱分配到虚拟电脑上.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists host Floppy drives available to mount to
 the virtual machine.</source>
         <translation type="obsolete">显示可以分配到虚拟电脑上的物理软驱.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">虚拟软盘(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">分配指定的虚拟软盘到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to select
 a Floppy image to mount.</source>
         <translation type="obsolete">打开虚拟介质管理器选择一个你要分配的虚拟软盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">分配光驱(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">物理光驱(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">分配物理光驱到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists host CD/DVD drives available to mount to
 the virtual machine.</source>
         <translation type="obsolete">显示可以分配到虚拟电脑上的物理光驱.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">虚拟光盘(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">分配指定的虚拟光盘到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to select
 a CD/DVD image to mount.</source>
         <translation type="obsolete">打开虚拟介质管理器选择一个你要分配的虚拟光盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">启用声音(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">声卡类型(&amp;D)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation type="obsolete">选择声卡类型。选项  &lt;b&gt;Null Audio Driver&lt;/b&gt;
 让虚拟电脑拥有一张声卡，但其输出的声音将被忽略.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">启用&amp;USB控制器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+U</source>
         <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, enables the virtual USB controller
 of this machine.</source>
         <translation type="obsolete">选中后，将在这个虚拟电脑中启用USB控制器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">USB设备筛选器(&amp;F)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all USB filters of this machine.
 The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">显示该虚拟电脑上的所有USB筛选器.
 左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">添加空筛选器 (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with
 all fields initially set to empty strings. Note that such a filter will match any attached
 USB device.</source>
@@ -7931,552 +7394,444 @@ USB device.</source>
 需要注意的是：这样的筛选器将会匹配所有的连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">从当前设备中添加 (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter
 with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">删除 (Del)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">删除所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">向上移动 (Ctrl+Up)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">向上移动所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">向下移动 (Ctrl+Down)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">向下移动所选的USB筛选器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">启用 VRDP 服务器(&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Server port </source>
         <translation type="obsolete">服务端口</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Authentication Method </source>
         <translation type="obsolete">认证方式</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Authentication Timeout </source>
         <translation type="obsolete">认证超时</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the VRDP Server port.</source>
         <translation type="obsolete">显示 VRDP 服务端口.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">定义 VRDP 认证方式.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">指定客户认证超时时间，以毫秒为单位.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Help</source>
         <translation type="obsolete">帮助</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">显示帮助对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">发现无效设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;OK</source>
         <translation type="obsolete">确定(&amp;O)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">保存设置变动并关闭对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">放弃更改并关闭对话框.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
         <translation type="obsolete">选中，将分配下面指定的虚拟硬盘到该虚拟电脑第一IDE控制器的主通道.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
         <translation type="obsolete">选中，将分配下面指定的虚拟硬盘到该虚拟电脑第一IDE控制器的从通道.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
         <translation type="obsolete">选中，将分配下面指定的虚拟硬盘到该虚拟电脑第二IDE控制器的从通道.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">显示分配到该IDE通道的虚拟硬盘，同时还允许快速选择一个其它虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">选中，将分配指定光驱到虚拟电脑上。该光驱将固定地被分配到虚拟电脑第二IDE控制器的主通道.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">显示分配给该虚拟电脑的虚拟光盘，同时还允许快速选择一个其它虚拟光盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">选中，将分配指定软驱到虚拟电脑.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">显示分配到虚拟电脑的虚拟软盘，同时还允许快速选择一个其它虚拟软盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the virtual PCI audio card is plugged into the virtual machine that uses the specified driver to communicate to the host audio card.</source>
         <translation type="obsolete">选中，将在该虚拟电脑内启用声音功能，并使用指定的声卡类型和主机上的声卡通讯.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">选中，该虚拟电脑将被作为一个 RDP 服务器，允许远程客户在它运行时通过标准 RDP 客户端登录到它上面来操作.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;没有连接&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Master hard disk is not selected.</source>
         <translation type="obsolete">没有指定第一IDE控制器主通道上使用的虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Slave hard disk is not selected.</source>
         <translation type="obsolete">没有指定第一IDE控制器从通道上使用的虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Slave hard disk is already attached to a different slot.</source>
         <translation type="obsolete">第一IDE控制器从通道上使用的硬盘已经连接到其它接口.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Secondary Slave hard disk is not selected.</source>
         <translation type="obsolete">没有指定第二IDE控制器从通道上使用的虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Secondary Slave hard disk is already attached to a different slot.</source>
         <translation type="obsolete">第二IDE控制器从通道上使用的硬盘已经连接到其它接口.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>CD/DVD image file is not selected.</source>
         <translation type="obsolete">没有指定虚拟电脑上使用的虚拟光盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Floppy image file is not selected.</source>
         <translation type="obsolete">没有指定虚拟电脑上使用的虚拟软盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Incorrect host network interface is selected for Adapter %1.</source>
         <translation type="obsolete">为网络连接 %1 选择了不正确的 host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VRDP Port is not set.</source>
         <translation type="obsolete">没有设定 VRDP 端口.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VRDP Timeout is not set.</source>
         <translation type="obsolete">没有设定 VRDP 超时时间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> - Settings</source>
         <translation type="obsolete">设置</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">新筛选器 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">共享粘贴板(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">备份位置(&amp;n)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">显示你要安装到虚拟电脑的系统类型.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;选中，虚拟电脑将启用对高级电源管理界面(ACPI)的支持. &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项! &lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;选中，虚拟电脑将启用对输入输出 APIC (IO APIC)的支持. &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项! &lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">设定主系统和子系统间共享粘贴板的模式。注意，要使用该功能需要在虚拟电脑内安装增强功能包.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">指定用于存放备份的文件夹。需要注意的是备份会占用一定的磁盘空间.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">将存放备份的文件夹重新设定为默认值。改变被接受后，下次打开本对话框时将会显示默认路径.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">显示有关虚拟电脑的描述信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to create a new or select an existing virtual hard disk to attach.</source>
         <translation type="obsolete">打开虚拟介质管理器新建或选择一个已经存在的虚拟硬盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">显示可以分配到虚拟电脑上的物理软驱.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">打开虚拟介质管理器选择一个用于分配的虚拟软盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">显示可以分配到虚拟电脑上的物理光驱.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">打开虚拟介质管理器选择一个用于分配的虚拟光盘.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt; 选择声卡类型。选项  &lt;b&gt;Null Audio Driver&lt;/b&gt;
 让虚拟电脑拥有一张声卡，但其输出的声音将被忽略. &lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">选中后，将在这个虚拟电脑中启用USB控制器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">显示该虚拟电脑上的所有USB筛选器.左边的选择框决定该筛选器是否必启用.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">添加一个各个域的值都为空的USB筛选器。需要注意的是：这样的筛选器将会匹配所有的连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">网络连接 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">Host &amp;Interfaces</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">显示所有的可用 host interfaces.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">添加一个新的 host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">删除所选的 host interface.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;没有合适的网络界面&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add</source>
         <translation type="obsolete">添加</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove</source>
         <translation type="obsolete">删除</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox Host Interface %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;你是否要删除所选的 host interface&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt;该界面可能被这个或其它个虚拟电脑的一个或多个网络连接所使用。 删除该界面后，这些网络连接将不能正常工作，直到你通过选择其它网络界面或使用一个不同的适配器接入类型来修正它们.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>9</source>
         <translation type="obsolete">9</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Serial Ports </source>
         <translation type="obsolete">串口</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">启用 VT-x/AMD-V(&amp;V)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">选中后，虚拟电脑将尝试利用主机CPU的硬件虚拟扩展，如 Intel VT-x 或 AMD-V. 灰色的选择框表示该设置由全局设定决定.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">其它设置(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">记住在运行状态中分配的介质(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="obsolete">选中后，在虚拟电脑运行过程中对任何介质的分配变动都将被保存在配置文件中.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">其它(&amp;t)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">启用 Passthrough (&amp;E)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Alt+E</source>
         <translation type="obsolete">Alt+E</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">选中后，就可在该虚拟电脑中进行光盘的刻录. 请注意目前尚未提供对音乐CD的写入支持.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">服务器端口(&amp;S)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">认证方法(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">认证超时时间(&amp;T)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;显示 VRDP 服务器端口号. 您可以指定 &lt;tt&gt;0&lt;/tt&gt; (零) 来将端口号重设为默认值.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Master hard disk is not selected</source>
         <translation type="obsolete">没有指定第一IDE控制器主通道上的硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Slave hard disk is not selected</source>
         <translation type="obsolete">没有指定第一IDE控制器从通道上的硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Primary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">第一IDE控制器从通道上的硬盘已分配给一个不同的端口</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Secondary Slave hard disk is not selected</source>
         <translation type="obsolete">没有指定第二IDE控制器从通道上的硬盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Secondary Slave hard disk is already attached to a different slot</source>
         <translation type="obsolete">第二IDE控制器从通道上的硬盘已分配给一个不同的端口</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">没有分配虚拟光盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">没有分配虚拟软盘</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">错误的 host network interface 被选中</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">重复的端口号被选中</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">重复的端口路径被输入</translation>
     </message>
@@ -8486,78 +7841,63 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation>%1 在 &lt;b&gt;%2&lt;/b&gt; 页.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">端口 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">并口</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">启用 PA&amp;E/NX</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;When
                                                           checked, the Physical
                                                           Address Extension
@@ -8569,37 +7909,30 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;选中，该虚拟电脑内将能使用主机上的物理地址扩展(PAE)特性.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">IDE 控制器类型(&amp;I)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">指定 IDE 控制器类型。根据这个值，VirtualBox 将为该虚拟电脑提供不同的 IDE 控制器.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">控制芯片(&amp;C)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="obsolete">指定声卡类型。根据这个值， VirtualBox 将为该虚拟电脑提供不同的声卡.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">启用 USB 2.0 控制器(&amp;2)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="obsolete">选中，在该虚拟电脑上启用 USB EHCI 控制器。该控制器将提供 USB 2.0支持.</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
                                               &lt;qt&gt;Lists all USB filters of
                                               this machine. The checkbox to the
@@ -8612,17 +7945,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;显示这个虚拟电脑上的所有USB筛选器。左边的选择框用来确定是否要启用或禁用该筛选器。添加或删除筛选器可通过右边的按钮或右键菜单.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">添加一个空的筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">添加一个空的筛选器(&amp;A)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -8631,17 +7961,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;添加一个所有域值都为空的USB筛选器，提示：这样的筛选器将会匹配所有的USB设备.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">从设备列表中添加筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">从设备列表中添加筛选器(&amp;d)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -8649,146 +7976,133 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;添加一个与所选设备所对应的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Remove Filter</source>
         <translation type="obsolete">删除筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">删除筛选器(&amp;R)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;删除高亮显示的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">向上移动筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">向上移动筛选器(&amp;M)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;向上移动高亮显示的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">向下移动筛选器</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">向下移动筛选器(&amp;o)</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;向下移动高亮显示的USB筛选器.&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Internal network 名称未设定</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">未指定端口路径</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">端口 %1</translation>
     </message>
     <message>
-        <location filename="" line="1702129257"/>
         <source>USBActionGroup</source>
         <translation type="obsolete">USBActionGroup</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
         <source>General</source>
-        <translation type="unfinished">常规</translation>
+        <translation>常规</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="414"/>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>介质</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="417"/>
         <source>Hard Disks</source>
-        <translation type="unfinished">硬盘</translation>
+        <translation>硬盘</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="420"/>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished">光驱</translation>
+        <translation>光驱</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="423"/>
         <source>Floppy</source>
-        <translation type="unfinished">软驱</translation>
+        <translation>软驱</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="426"/>
         <source>Audio</source>
-        <translation type="unfinished">声音</translation>
+        <translation>声音</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
         <source>Network</source>
-        <translation type="unfinished">网络</translation>
+        <translation>网络</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="434"/>
         <source>Ports</source>
-        <translation type="unfinished"></translation>
+        <translation>端口</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
         <source>Serial Ports</source>
-        <translation type="unfinished">串口</translation>
+        <translation>串口</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
         <source>Parallel Ports</source>
-        <translation type="unfinished">并口</translation>
+        <translation>并口</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="447"/>
         <source>USB</source>
-        <translation type="unfinished">USB设备</translation>
+        <translation>USB 设备</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="450"/>
         <source>Shared Folders</source>
-        <translation type="unfinished">数据空间</translation>
+        <translation>数据空间</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
         <source>Remote Display</source>
-        <translation type="unfinished">远程桌面</translation>
+        <translation>远程桌面</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2</translation>
     </message>
 </context>
 <context>
@@ -8796,57 +8110,57 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="172"/>
         <source>Host floppy drive is not selected</source>
-        <translation type="unfinished"></translation>
+        <translation>没有分配物理软驱</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="174"/>
         <source>Floppy image file is not selected</source>
-        <translation type="unfinished">没有分配虚拟软盘</translation>
+        <translation>没有分配虚拟软盘</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="unfinished">选中，将分配指定软驱到虚拟电脑.</translation>
+        <translation>选中，将分配指定软驱到虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="36"/>
         <source>&amp;Mount Floppy Drive</source>
-        <translation type="unfinished">分配软驱(&amp;M)</translation>
+        <translation>分配软驱(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="83"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
-        <translation type="unfinished">将物理软驱分配到虚拟电脑上.</translation>
+        <translation>将物理软驱分配到虚拟电脑上.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="86"/>
         <source>Host Floppy &amp;Drive</source>
-        <translation type="unfinished">物理软驱(&amp;D)</translation>
+        <translation>物理软驱(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="112"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
-        <translation type="unfinished">显示可以分配到虚拟电脑上的物理软驱.</translation>
+        <translation>显示可以分配到虚拟电脑上的物理软驱.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="119"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
-        <translation type="unfinished">分配指定的虚拟软盘到虚拟电脑.</translation>
+        <translation>分配指定的虚拟软盘到虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="122"/>
         <source>&amp;Image File</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟软盘(&amp;I)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="132"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
-        <translation type="unfinished">显示分配到虚拟电脑的虚拟软盘，同时还允许快速选择一个其它虚拟软盘.</translation>
+        <translation>显示分配到虚拟电脑的虚拟软盘，同时还允许快速选择一个其它虚拟软盘.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished">打开虚拟介质管理器选择一个用于分配的虚拟软盘.</translation>
+        <translation>打开虚拟介质管理器选择一个用于分配的虚拟软盘.</translation>
     </message>
 </context>
 <context>
@@ -8854,217 +8168,217 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="351"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation type="unfinished">指定用于存放备份的文件夹。需要注意的是备份会占用一定的磁盘空间.</translation>
+        <translation>指定用于存放备份的文件夹。需要注意的是备份会占用一定的磁盘空间.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
         <source>&amp;Basic</source>
-        <translation type="unfinished">基本(&amp;B)</translation>
+        <translation>基本(&amp;B)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="49"/>
         <source>Identification</source>
-        <translation type="unfinished"></translation>
+        <translation>标识信息</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名称(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
         <source>Displays the name of the virtual machine.</source>
-        <translation type="unfinished">显示虚拟电脑名称.</translation>
+        <translation>显示虚拟电脑名称.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>系统(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">显示你要安装到虚拟电脑的系统类型.</translation>
+        <translation>显示你要安装到虚拟电脑的系统类型.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">内存大小(&amp;M)</translation>
+        <translation>内存大小(&amp;M)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="251"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">分配给虚拟电脑的内存要控制在合理范围，分配太多会导致虚拟电脑不能正常启动.</translation>
+        <translation>分配给虚拟电脑的内存要控制在合理范围，分配太多会导致虚拟电脑不能正常启动.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
         <source>&lt;</source>
-        <translation type="unfinished">&lt;</translation>
+        <translation>&lt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="396"/>
         <source>&gt;</source>
-        <translation type="unfinished">&gt;</translation>
+        <translation>&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="439"/>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="300"/>
         <source>&amp;Video Memory Size</source>
-        <translation type="unfinished">显存大小(&amp;V)</translation>
+        <translation>显存大小(&amp;V)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="426"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">指定可以分配给虚拟电脑的显存大小.</translation>
+        <translation>指定可以分配给虚拟电脑的显存大小.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="483"/>
         <source>&amp;Advanced</source>
-        <translation type="unfinished">高级(&amp;A)</translation>
+        <translation>高级(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
         <source>Boo&amp;t Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>启动顺序(&amp;t):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">设置启动顺序。用选择框来启用或禁用需要支持的启动设备。使用上下键改变设备启动顺序.</translation>
+        <translation>设置启动顺序。用选择框来启用或禁用需要支持的启动设备。使用上下键改变设备启动顺序.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
         <source>[device]</source>
-        <translation type="unfinished"></translation>
+        <translation>[device]</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="583"/>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">向上移动 (Ctrl-Up)</translation>
+        <translation>向上移动 (Ctrl-Up)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="586"/>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">向上移动所选启动设备.</translation>
+        <translation>向上移动所选启动设备.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="605"/>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">向下移动 (Ctrl-Down)</translation>
+        <translation>向下移动 (Ctrl-Down)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="608"/>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">向下移动所选启动设备.</translation>
+        <translation>向下移动所选启动设备.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>Extended Features:</source>
-        <translation type="unfinished"></translation>
+        <translation>扩展特性(e):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，虚拟电脑将启用对高级电源管理界面(ACPI)的支持. &lt;b&gt;请注意:&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项! </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="669"/>
         <source>Enable A&amp;CPI</source>
-        <translation type="unfinished">启用 A&amp;CPI</translation>
+        <translation>启用 A&amp;CPI</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="682"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，虚拟电脑将启用对输入输出 APIC (IO APIC)的支持。这会轻微地降低虚拟电脑的性能。&lt;b&gt;请注意：&lt;/b&gt; 一旦在虚拟电脑中安装完Windows操作系统，就不应再禁用本选项! </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="685"/>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="unfinished">启用 IO A&amp;PIC</translation>
+        <translation>启用 IO A&amp;PIC</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="698"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，虚拟电脑将尝试使用CPU上的硬件加速扩展.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="701"/>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">启用 VT-x/AMD-V(&amp;V)</translation>
+        <translation>启用 VT-x/AMD-V(&amp;V)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="714"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，电脑上的物理地址扩展（PAE）特性将会传递给虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="717"/>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">启用 PA&amp;E/NX</translation>
+        <translation>启用 PA&amp;E/NX</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation type="unfinished"></translation>
+        <translation>共享粘贴板(&amp;S):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">设定主系统和子系统间共享粘贴板的模式。注意，要使用该功能需要在虚拟电脑内安装增强功能包.</translation>
+        <translation>设定主系统和子系统间共享粘贴板的模式。注意，要使用该功能需要在虚拟电脑内安装增强功能包.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="762"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">指定 IDE 控制器类型。根据这个值，VirtualBox 将为该虚拟电脑提供不同的 IDE 控制器.</translation>
+        <translation>指定 IDE 控制器类型。根据这个值，VirtualBox 将为该虚拟电脑提供不同的 IDE 控制器.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
         <source>&amp;IDE Controller Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>硬盘控制器(&amp;I):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
         <source>S&amp;napshot Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>备份的位置(&amp;n):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
         <source>&amp;Description</source>
-        <translation type="unfinished"></translation>
+        <translation>说明(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="845"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation type="unfinished">显示有关虚拟电脑的描述信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
+        <translation>显示有关虚拟电脑的说明信息。这可用于对虚拟电脑上所装操作系统进行补充说明.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="856"/>
         <source>&amp;Other</source>
-        <translation type="unfinished"></translation>
+        <translation>其它(&amp;O)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="unfinished">选中后，在虚拟电脑运行过程中对任何介质的分配变动都将被保存在配置文件中.</translation>
+        <translation>选中后，在虚拟电脑运行过程中对任何介质的分配变动都将被保存在配置文件中.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="894"/>
         <source>&amp;Remember Mounted Media</source>
-        <translation type="unfinished"></translation>
+        <translation>记住在运行过程中分配的介质(&amp;R)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>运行时:</translation>
     </message>
 </context>
 <context>
@@ -9072,62 +8386,62 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="608"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
-        <translation type="unfinished">没有为 &lt;i&gt;%1&lt;/i&gt;指定硬盘</translation>
+        <translation>没有为 &lt;i&gt;%1&lt;/i&gt;指定虚拟硬盘</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;%1&lt;/i&gt; 使用的虚拟硬盘已经连接到 &lt;i&gt;%2&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; 使用的虚拟硬盘已经连接到 &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="640"/>
         <source>&amp;Add Attachment</source>
-        <translation type="unfinished">添加连接(&amp;A)</translation>
+        <translation>分配虚拟硬盘(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="641"/>
         <source>&amp;Remove Attachment</source>
-        <translation type="unfinished">删除连接(&amp;R)</translation>
+        <translation>删除虚拟硬盘(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="642"/>
         <source>&amp;Select Hard Disk</source>
-        <translation type="unfinished">选择虚拟硬盘(&amp;S)</translation>
+        <translation>选择虚拟硬盘(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="651"/>
         <source>Adds a new hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>分配一个新的虚拟硬盘.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="652"/>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>删除选中的虚拟硬盘.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="655"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>打开虚拟介质管理器，为当前插槽分配一个虚拟硬盘.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，将在该虚拟电脑内启用SATA控制器。注意：当该选项禁用时，是不能把一个虚拟硬盘分配到SATA端口的.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="36"/>
         <source>&amp;Enable SATA Controller</source>
-        <translation type="unfinished">启用SATA控制器(&amp;E)</translation>
+        <translation>启用SATA控制器(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="49"/>
         <source>&amp;Attachments</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟硬盘列表(&amp;A)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示分配到本虚拟电脑的虚拟硬盘列表。在选中的项目上用鼠标或 &lt;tt&gt;空格&lt;/tt&gt;键激活下拉列表选择相应的值。使用右侧的按钮分配或删除一个虚拟硬盘.</translation>
     </message>
 </context>
 <context>
@@ -9135,127 +8449,127 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="289"/>
         <source>Select TAP setup application</source>
-        <translation type="unfinished">Select TAP setup application</translation>
+        <translation>Select TAP setup application</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="298"/>
         <source>Select TAP terminate application</source>
-        <translation type="unfinished">Select TAP terminate application</translation>
+        <translation>Select TAP terminate application</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="33"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">选中，将在虚拟电脑内启用该网络连接.</translation>
+        <translation>选中，将在虚拟电脑内启用该网络连接.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="36"/>
         <source>&amp;Enable Network Adapter</source>
-        <translation type="unfinished">启用网络连接(&amp;E)</translation>
+        <translation>启用网络连接(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="77"/>
         <source>A&amp;dapter Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>控制芯片(&amp;d):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished">选择网络连接芯片。根据该值 VirtualBox 将为该虚拟电脑提供不同的网络硬件.</translation>
+        <translation>选择网络连接芯片。根据该值为该虚拟电脑提供不同的网络硬件.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
         <source>&amp;Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>连接方式(&amp;A):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished">设置网络连接以何种方式接入到主机上的真实网络.</translation>
+        <translation>设置网络连接以何种方式接入到主机上的真实网络.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>&amp;Network Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>网络名称(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="130"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
-        <translation type="unfinished">显示为该网络连接选择的内部网络名称.</translation>
+        <translation>显示为该网络连接选择的内部网络名称.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>&amp;MAC Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>MAC 地址(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="159"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
-        <translation type="unfinished">显示这块网卡的 MAC 地址。它包含12位的字符信息，每位字符取自 {0-9,A-F} 。请注意：第二位字符必须为偶数.</translation>
+        <translation>显示这块网卡的 MAC 地址。它包含12位的字符信息，每位字符取自 {0-9,A-F} 。请注意：第二位字符必须为偶数.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="166"/>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">生成一个新的随机MAC 地址.</translation>
+        <translation>生成一个新的随机MAC 地址.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="169"/>
         <source>&amp;Generate</source>
-        <translation type="unfinished">随机生成(&amp;G)</translation>
+        <translation>随机生成(&amp;G)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
-        <translation type="unfinished">指示虚拟网线在启动时是否与主机连接.</translation>
+        <translation>指示虚拟网线在启动时是否与主机连接.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
-        <translation type="unfinished">接入网线(&amp;b)</translation>
+        <translation>接入网线(&amp;b)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
         <source>&amp;Interface Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Interface Name:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="215"/>
         <source>Displays the TAP interface name.</source>
-        <translation type="unfinished">Displays the TAP interface name.</translation>
+        <translation>Displays the TAP interface name.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="222"/>
         <source>&amp;Setup Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Setup Application:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="241"/>
         <source>Displays the command executed to set up the TAP interface.</source>
-        <translation type="unfinished">Displays the command executed to set up the TAP interface.</translation>
+        <translation>Displays the command executed to set up the TAP interface.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="248"/>
         <source>Selects the setup application.</source>
-        <translation type="unfinished">Selects the setup application.</translation>
+        <translation>Selects the setup application.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="258"/>
         <source>&amp;Terminate Application:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Terminate Application:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="277"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
-        <translation type="unfinished">Displays the command executed to terminate the TAP interface.</translation>
+        <translation>Displays the command executed to terminate the TAP interface.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="284"/>
         <source>Selects the terminate application.</source>
-        <translation type="unfinished">Selects the terminate application.</translation>
+        <translation>Selects the terminate application.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished">Host Interface Settings</translation>
+        <translation>Host Interface Settings</translation>
     </message>
 </context>
 <context>
@@ -9263,12 +8577,12 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
         <source>No host network interface is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>未指定host network interface</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
         <source>Internal network name is not set</source>
-        <translation type="unfinished">Internal network 名称未设定</translation>
+        <translation>Internal network 名称未设定</translation>
     </message>
 </context>
 <context>
@@ -9277,57 +8591,57 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">端口 %1</translation>
+        <translation>端口 %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="33"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished">选中，分配指定的并口给该虚拟电脑.</translation>
+        <translation>选中，分配指定的并口给该虚拟电脑.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="36"/>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished">启用并口(&amp;E)</translation>
+        <translation>启用并口(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>端口编号(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="90"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">显示并口的端口号，你可以从标准并口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口号.</translation>
+        <translation>显示并口的端口编号，你可以从标准并口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口编号.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="113"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">显示该并口的 IRQ号，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
+        <translation>显示该并口的 IRQ号，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O端口(&amp;r):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="136"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">显示该并口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
+        <translation>显示该并口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="143"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>端口路径(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsParallel.ui" line="156"/>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished">显示主机并口设备名称.</translation>
+        <translation>显示主机并口设备名称.</translation>
     </message>
 </context>
 <context>
@@ -9335,17 +8649,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="223"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">重复的端口号被选中</translation>
+        <translation>重复的端口编号被选中</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="239"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">未指定端口路径</translation>
+        <translation>未指定端口路径</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="240"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">重复的端口路径被输入</translation>
+        <translation>重复的端口路径被输入</translation>
     </message>
 </context>
 <context>
@@ -9353,72 +8667,72 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="183"/>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个新的数据空间(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="184"/>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑所选数据空间(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="185"/>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>删除所选数据空间(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="198"/>
         <source>Adds a new shared folder definition.</source>
-        <translation type="unfinished">添加一个新的数据空间.</translation>
+        <translation>添加一个新的数据空间.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="199"/>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="unfinished">编辑所选数据空间的设置.</translation>
+        <translation>编辑所选数据空间的设置.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="200"/>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="unfinished">删除所选数据空间.</translation>
+        <translation>删除所选数据空间.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation type="unfinished">固定分配</translation>
+        <translation>固定分配</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation type="unfinished">临时分配</translation>
+        <translation>临时分配</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
         <source>Full</source>
-        <translation type="unfinished">完全</translation>
+        <translation>完全</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="360"/>
         <source>Read-only</source>
-        <translation type="unfinished">只读</translation>
+        <translation>只读</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation type="unfinished"></translation>
+        <translation>列出本虚拟电脑可访问的所有数据空间。使用 &apos;net use x: \\vboxsvr\share&apos; 从DOS或Windows中访问名为: &lt;i&gt;share&lt;/i&gt; 的数据空间，或使用 &apos;mount -t vboxsf share mount_point&apos; 从Linux类的操作系统中访问该文件夹。该功能需要在虚拟电脑中安装增强功能包.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="78"/>
         <source>Path</source>
-        <translation type="unfinished">路径</translation>
+        <translation>路径</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="83"/>
         <source>Access</source>
-        <translation type="unfinished">访问权限</translation>
+        <translation>访问权限</translation>
     </message>
 </context>
 <context>
@@ -9426,47 +8740,47 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation type="unfinished">添加数据空间</translation>
+        <translation>添加数据空间</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
         <source>Edit Share</source>
-        <translation type="unfinished">编辑数据空间</translation>
+        <translation>编辑数据空间</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="30"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>对话框</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="36"/>
         <source>Folder Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>数据空间位置:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="49"/>
         <source>Folder Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>数据空间名称:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="59"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation type="unfinished">显示数据空间名称(虚拟电脑内的系统需通过该名称来访问本数据空间).</translation>
+        <translation>显示数据空间名称(虚拟电脑内的系统需通过该名称来访问本数据空间).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="66"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">选中，该数据空间在虚拟电脑内就变为只读.</translation>
+        <translation>选中，该数据空间在虚拟电脑内就变为只读.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="69"/>
         <source>&amp;Read-only</source>
-        <translation type="unfinished">只读分配(&amp;R)</translation>
+        <translation>只读分配(&amp;R)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSFDetails.ui" line="76"/>
         <source>&amp;Make Permanent</source>
-        <translation type="unfinished">固定分配(&amp;M)</translation>
+        <translation>固定分配(&amp;M)</translation>
     </message>
 </context>
 <context>
@@ -9475,77 +8789,77 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished">端口 %1</translation>
+        <translation>端口 %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="33"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished">选中后，将在这个虚拟电脑中启用串口.</translation>
+        <translation>选中后，将在这个虚拟电脑中启用串口.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="36"/>
         <source>&amp;Enable Serial Port</source>
-        <translation type="unfinished">启用串口(&amp;E)</translation>
+        <translation>启用串口(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="77"/>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>端口编号(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="90"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">显示串口号，您可以从标准串口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口号.</translation>
+        <translation>显示串口编号，您可以从标准串口中选择一个或选择 &lt;b&gt;User-defined&lt;/b&gt; 然后手动指定一个端口编号.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="97"/>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="113"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may be used only if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="unfinished">显示该串口的 IRQ号码，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
+        <translation>显示该串口的 IRQ号码，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;255&lt;/tt&gt;的整数. 只有当虚拟电脑中启用 &lt;b&gt;IO APIC&lt;/b&gt; 时才能使用大于 &lt;tt&gt;15&lt;/tt&gt; 的值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="120"/>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished"></translation>
+        <translation>I/O端口(&amp;r):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="136"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation type="unfinished">显示该串口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
+        <translation>显示该串口的 I/O 端口地址，正确的数值为从 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt;的整数.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="143"/>
         <source>Port &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>端口模式(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="156"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">控制该串口的工作模式，如果您选择 &lt;b&gt;断开&lt;/b&gt;, 虚拟电脑中的系统将检测到该串口，但无法进行操作.</translation>
+        <translation>控制该串口的工作模式，如果您选择 &lt;b&gt;断开&lt;/b&gt;, 虚拟电脑中的系统将检测到该串口，但无法进行操作.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="176"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will try to use the existing pipe.</source>
-        <translation type="unfinished">如果选中，在 &lt;b&gt;端口路径&lt;/b&gt;域中指定的通道将在虚拟电脑启动时被创建。否则虚拟电脑将尝试使用已存在的通道.</translation>
+        <translation>如果选中，在 &lt;b&gt;端口路径&lt;/b&gt;域中指定的通道将在虚拟电脑启动时被创建。否则虚拟电脑将尝试使用已存在的通道.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="179"/>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished">创建通道(&amp;C)</translation>
+        <translation>创建通道(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="186"/>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>端口路径(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSerial.ui" line="199"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port works in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port works in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation type="unfinished">当端口工作在 &lt;b&gt;Host Pipe&lt;/b&gt; 模式时将显示该串口通道在主机上的路径，或者当端口工作在 &lt;b&gt;Host Device&lt;/b&gt; 模式时将显示主机上的串口设备名.</translation>
+        <translation>当端口工作在 &lt;b&gt;Host Pipe&lt;/b&gt; 模式时将显示该串口通道在主机上的路径，或者当端口工作在 &lt;b&gt;Host Device&lt;/b&gt; 模式时将显示主机上的串口设备名.</translation>
     </message>
 </context>
 <context>
@@ -9553,17 +8867,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="258"/>
         <source>Duplicate port number is selected </source>
-        <translation type="unfinished">重复的端口号被选中</translation>
+        <translation>重复的端口编号被选中</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="276"/>
         <source>Port path is not specified </source>
-        <translation type="unfinished">未指定端口路径</translation>
+        <translation>未指定端口路径</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="277"/>
         <source>Duplicate port path is entered </source>
-        <translation type="unfinished">重复的端口路径被输入</translation>
+        <translation>重复的端口路径被输入</translation>
     </message>
 </context>
 <context>
@@ -9571,103 +8885,103 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
         <source>&amp;Add Empty Filter</source>
-        <translation type="unfinished">添加一个空的筛选器(&amp;A)</translation>
+        <translation>添加一个空的筛选器(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
         <source>A&amp;dd Filter From Device</source>
-        <translation type="unfinished">从设备列表中添加筛选器(&amp;d)</translation>
+        <translation>从设备列表中添加筛选器(&amp;d)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
         <source>&amp;Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑筛选器(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
         <source>&amp;Remove Filter</source>
-        <translation type="unfinished">删除筛选器(&amp;R)</translation>
+        <translation>删除筛选器(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Move Filter Up</source>
-        <translation type="unfinished">向上移动筛选器(&amp;M)</translation>
+        <translation>向上移动筛选器(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>M&amp;ove Filter Down</source>
-        <translation type="unfinished">向下移动筛选器(&amp;o)</translation>
+        <translation>向下移动筛选器(&amp;o)</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加一个各个域的值都为空的USB筛选器。需要注意的是：这样的筛选器将会匹配所有连接到主机上的USB设备.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished">添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
+        <translation>添加一个USB筛选器，并把其各个域的值设置为当前选中的已连接到主机上的USB设备.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Edits the selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>编辑所选的USB筛选器.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
         <source>Removes the selected USB filter.</source>
-        <translation type="unfinished">删除所选的USB筛选器.</translation>
+        <translation>删除所选的USB筛选器.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
         <source>Moves the selected USB filter up.</source>
-        <translation type="unfinished">向上移动所选的USB筛选器.</translation>
+        <translation>向上移动所选的USB筛选器.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
         <source>Moves the selected USB filter down.</source>
-        <translation type="unfinished">向下移动所选的USB筛选器.</translation>
+        <translation>向下移动所选的USB筛选器.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="unfinished">新筛选器 %1</translation>
+        <translation>新筛选器 %1</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">选中后，将在这个虚拟电脑中启用USB控制器.</translation>
+        <translation>选中后，将在这个虚拟电脑中启用USB控制器.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
         <source>Enable &amp;USB Controller</source>
-        <translation type="unfinished">启用&amp;USB控制器</translation>
+        <translation>启用&amp;USB控制器</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>选中，在该虚拟电脑上启用 USB EHCI 控制器。该控制器将提供 USB 2.0支持.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>启用 USB 2.0 (E&amp;HCI) 控制器</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="87"/>
         <source>USB Device &amp;Filters</source>
-        <translation type="unfinished">USB设备筛选器(&amp;F)</translation>
+        <translation>USB设备筛选器(&amp;F)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示本虚拟电脑上的全部USB筛选器。左边的选择框用来指定是否启用该筛选器。使用上下文菜单或右边的按钮来添加或删除USB筛选器.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
         <source>[filter]</source>
-        <translation type="unfinished"></translation>
+        <translation>[筛选器]</translation>
     </message>
 </context>
 <context>
@@ -9676,124 +8990,124 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="62"/>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="unfinished">Any</translation>
+        <translation>任何</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="63"/>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="unfinished">是</translation>
+        <translation>是</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSBFilterDetails.cpp" line="64"/>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="unfinished">否</translation>
+        <translation>否</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名称(&amp;N):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="55"/>
         <source>Displays the filter name.</source>
-        <translation type="unfinished">显示筛选器名称.</translation>
+        <translation>显示筛选器名称.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Vendor ID:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 vendor ID 筛选器。其中&lt;i&gt;精确匹配&lt;/i&gt; 字符串的格式为 &lt;tt&gt;XXXX&lt;/tt&gt; 其中&lt;tt&gt;X&lt;/tt&gt; 为十六进制字符， 空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Product ID:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 produce ID 筛选器。其中&lt;i&gt;精确匹配&lt;/i&gt; 字符串的格式为 &lt;tt&gt;XXXX&lt;/tt&gt; 其中&lt;tt&gt;X&lt;/tt&gt; 为十六进制字符.，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Revision:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 revision number 筛选器。其中&lt;i&gt;精确匹配&lt;/i&gt; 字符串的格式为  &lt;tt&gt;IIFF&lt;/tt&gt; 其中&lt;tt&gt;I&lt;/tt&gt; 为整数部分的十进制字符，而 &lt;tt&gt;F&lt;/tt&gt;为小数部分的十进制字符.，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
         <source>&amp;Manufacturer:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Manufacturer:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="135"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 manufacturer 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="142"/>
         <source>Pro&amp;duct:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pro&amp;duct:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="155"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 product 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="162"/>
         <source>&amp;Serial No.:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Serial No.:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="175"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 serial number 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="182"/>
         <source>Por&amp;t:</source>
-        <translation type="unfinished"></translation>
+        <translation>Por&amp;t:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="195"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>定义 host USB port 筛选器为一 &lt;i&gt;精确匹配&lt;/i&gt; 字符串，空字符串会匹配所有值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="202"/>
         <source>R&amp;emote:</source>
-        <translation type="unfinished"></translation>
+        <translation>R&amp;emote:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>指定是否将该筛选器应用到连接在本地电脑的USB设备 (&lt;i&gt;否&lt;/i&gt;)，连接在VRDP客户端的USB设备 (&lt;i&gt;是&lt;/i&gt;)，或两者的任何一个 (&lt;i&gt;任何&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
         <source>&amp;Action:</source>
-        <translation type="unfinished"></translation>
+        <translation>动作(&amp;A):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>定义当一个匹配的设备连接到电脑时: 是将它分配给主控系统(&lt;i&gt;Ignore&lt;/i&gt;) 还是直接分配给该虚拟电脑(&lt;i&gt;Hold&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 筛选器明细</translation>
     </message>
 </context>
 <context>
@@ -9801,42 +9115,42 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="33"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">选中，该虚拟电脑将被作为一个 RDP 服务器，允许远程客户在它运行时通过标准 RDP 客户端登录到它上面来操作.</translation>
+        <translation>选中，该虚拟电脑将被作为一个远程桌面协议 (RDP) 服务器，允许远程客户在它运行时通过标准 RDP 客户端登录到它上面来操作.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="36"/>
         <source>&amp;Enable VRDP Server</source>
-        <translation type="unfinished">启用 VRDP 服务器(&amp;E)</translation>
+        <translation>启用 VRDP 服务器(&amp;E)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="77"/>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>服务器端口号(&amp;P):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="96"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>显示 VRDP 服务器端口号. 可以指定 &lt;tt&gt;0&lt;/tt&gt; (零) 来将端口号重设为默认值.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="103"/>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished"></translation>
+        <translation>服务认证方式(&amp;M):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="116"/>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">定义 VRDP 认证方式.</translation>
+        <translation>定义 VRDP 认证方式.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="123"/>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished"></translation>
+        <translation>认证超时时间(&amp;T):</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsVRDP.ui" line="142"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">指定客户认证超时时间，以毫秒为单位.</translation>
+        <translation>指定客户认证超时时间，以毫秒为单位.</translation>
     </message>
 </context>
 </TS>
