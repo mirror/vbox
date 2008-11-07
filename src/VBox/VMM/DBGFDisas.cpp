@@ -311,7 +311,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
     if (fFlags & (DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER))
     {
         if (fFlags & DBGF_DISAS_FLAGS_CURRENT_GUEST)
-            pCtxCore = CPUMGetGuestCtxCore(pVM);
+            pCtxCore = CPUMGetGuestCtxCoreEx(pVM, VMMGetCpu(pVM));    /* @todo SMP */
         else
             pCtxCore = CPUMGetHyperCtxCore(pVM);
         Sel        = pCtxCore->cs;
@@ -360,7 +360,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, RTSEL Sel, RTGCPTR GCPtr, unsigned fF
 
         if (CPUMAreHiddenSelRegsValid(pVM))
         {   /* Assume the current CS defines the execution mode. */
-            pCtxCore   = CPUMGetGuestCtxCore(pVM);
+            pCtxCore   = CPUMGetGuestCtxCoreEx(pVM, VMMGetCpu(pVM));  /* @todo SMP */
             pHiddenSel = (CPUMSELREGHID *)&pCtxCore->csHid;
 
             SelInfo.Raw.Gen.u1Present       = pHiddenSel->Attr.n.u1Present;

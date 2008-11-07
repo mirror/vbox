@@ -409,6 +409,17 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVM pVM)
     return CPUMCTX2CORE(&pVM->aCpus[VMMGetCpuId(pVM)].cpum.s.Guest);
 }
 
+/**
+ * Gets the pointer to the internal CPUMCTXCORE structure.
+ * This is only for reading in order to save a few calls.
+ *
+ * @param   pVM         Handle to the virtual machine.
+ */
+VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCoreEx(PVM pVM, PVMCPU pVCpu)
+{
+    return CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
+}
+
 
 /**
  * Sets the guest context core registers.
