@@ -51,8 +51,8 @@
     <exec_method
         type='method'
         name='start'
-        exec='/opt/VirtualBox/zoneaccess.sh'
-        timeout_seconds='30' >
+        exec='/opt/VirtualBox/VBoxZoneAccess'
+        timeout_seconds='10' >
         <method_context>
             <method_credential user='root' group='root' />
         </method_context>
@@ -62,7 +62,7 @@
         type='method'
         name='stop'
         exec=':kill'
-        timeout_seconds='30' >
+        timeout_seconds='10' >
         <method_context>
             <method_credential user='root' group='root' />
         </method_context>
