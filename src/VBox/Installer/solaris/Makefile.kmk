@@ -54,6 +54,7 @@ VBIPKG_FILENAME = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 #
 # Targets
 #
+PROGRAMS += VBoxZoneAccess
 INSTALLS        += solaris-doc
 PACKING         += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 OTHER_CLEAN     += $(addprefix $(SOLARIS_INST_DIR)/,\
@@ -61,6 +62,16 @@ OTHER_CLEAN     += $(addprefix $(SOLARIS_INST_DIR)/,\
         makepackage.sh prototype postinstall.sh preremove.sh)
 
 #
+# VBoxZoneAccess
+#
+VBoxZoneAccess_TEMPLATE = VBOXR3EXE
+VBoxZoneAccess_DEPS     = $(VBOX_SVN_REV_KMK)
+VBoxZoneAccess_SOURCES  = \
+	VBoxZoneAccess.c
+VBoxZoneAccess_LIBS     = \
+	$(LIB_RUNTIME)
+
+
 # Solaris installs.
 #
 solaris-doc_INST = bin/
@@ -101,6 +112,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxSettings.so \
+	VBoxZoneAccess \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so \
@@ -155,7 +167,6 @@ SOLARIS_EXTRAS = \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
 	virtualbox-webservice.xml \
 	virtualbox-zoneaccess.xml \
-	zoneaccess.sh \
 	smf-vboxwebsrv.sh \
 	vbox.copyright \
 	ReadMe.txt
@@ -298,6 +309,7 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARIS_INST_DIR)/VBoxDbg.so,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxPython.so                           $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARIS_INST_DIR)/VBoxSettings.so
+	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxZoneAccess                                                   $(SOLARIS_INST_DIR)/VBoxZoneAccess
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARIS_INST_DIR)/components/VBoxC.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxSVCM.so                                           $(SOLARIS_INST_DIR)/components/VBoxSVCM.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                      $(SOLARIS_INST_DIR)/components/VBoxXPCOMIPCC.so
@@ -349,6 +361,7 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_PYTHON),strip $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSettings.so,)
+	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxZoneAccess,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxC.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxSVCM.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxXPCOMIPCC.so,)
@@ -391,7 +404,6 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_INST_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_INST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                          $(SOLARIS_INST_DIR)/virtualbox-zoneaccess.xml
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/zoneaccess.sh                                      $(SOLARIS_INST_DIR)/zoneaccess.sh
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_INST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_INST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
@@ -496,6 +508,7 @@ ifdef VBOX_WITH_HARDENING
 endif
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxPython.so                             $(SOLARIS_DBG_DIR)/VBoxPython.so,)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so
+	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxZoneAccess                                                     $(SOLARIS_DBG_DIR)/VBoxZoneAccess
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARIS_DBG_DIR)/components/VBoxC.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxSVCM.so                                             $(SOLARIS_DBG_DIR)/components/VBoxSVCM.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                        $(SOLARIS_DBG_DIR)/components/VBoxXPCOMIPCC.so
