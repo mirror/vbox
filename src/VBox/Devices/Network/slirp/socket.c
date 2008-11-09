@@ -13,10 +13,6 @@
 #include <sys/filio.h>
 #endif
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-#include <iprt/semaphore.h>
-#endif
-
 void
 so_init()
 {
@@ -73,7 +69,6 @@ socreate()
 void
 sofree(PNATState pData, struct socket *so)
 {
-#ifndef VBOX_WITH_SYNC_SLIRP
   if (so->so_emu==EMU_RSH && so->extra) {
 	sofree(pData, so->extra);
 	so->extra=NULL;
@@ -87,53 +82,8 @@ sofree(PNATState pData, struct socket *so)
 
   if(so->so_next && so->so_prev)
     remque(pData, so);  /* crashes if so is not in a queue */
-#else
-    /*Take global mutexes of udb and tcb, because we dont know which is mutex */
-    /*XXX: don't forget to set correct so_type in corresponded attach operation */
-    if (so->so_emu==EMU_RSH && so->extra) {
-          sofree(pData, so->extra);
-          so->extra=NULL;
-    }
 
-    if (so->so_type == IPPROTO_UDP) {
-        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
-    }
-    else if (so->so_type == IPPROTO_TCP) {
-        VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
-    }
-    else {
-        Assert(!"unknown type");
-    }
-
-    if (so == tcp_last_so)
-      tcp_last_so = &tcb;
-    else if (so == udp_last_so)
-      udp_last_so = &udb;
-
-    if(so->so_next && so->so_prev) {
-      remque(pData, so);  /* crashes if so is not in a queue */
-    }
-
-    if (so->so_type == IPPROTO_UDP) {
-        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
-    }
-    else if (so->so_type == IPPROTO_TCP) {
-        VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
-    }
-    else {
-        Assert(!"unknown type");
-    }
-    /* socket's mutex could be released because socket none accessible via queue anymore*/
-
-    m_free(pData, so->so_m);
-    free(so);
-
-
-#endif
-
-#ifndef VBOX_WITH_SYNC_SLIRP
   free(so);
-#endif
 }
 
 /*
@@ -145,13 +95,10 @@ int
 soread(PNATState pData, struct socket *so)
 {
 	int n, nn, lss, total;
-	struct sbuf *sb;
-        int len;
+	struct sbuf *sb = &so->so_snd;
+	int len = sb->sb_datalen - sb->sb_cc;
 	struct iovec iov[2];
-	int mss;
-	sb = &so->so_snd;
-        len = sb->sb_datalen - sb->sb_cc;
-	mss = so->so_tcpcb->t_maxseg;
+	int mss = so->so_tcpcb->t_maxseg;
 
 	DEBUG_CALL("soread");
 	DEBUG_ARG("so = %lx", (long )so);
@@ -211,9 +158,8 @@ soread(PNATState pData, struct socket *so)
 	nn = recv(so->s, iov[0].iov_base, iov[0].iov_len,0);
 #endif
 	if (nn <= 0) {
-		if (nn < 0 && (errno == EINTR || errno == EAGAIN)) {
+		if (nn < 0 && (errno == EINTR || errno == EAGAIN))
 			return 0;
-                }
 		else {
 			DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
 			sofcantrcvmore(so);
@@ -260,8 +206,7 @@ soread(PNATState pData, struct socket *so)
 void
 sorecvoob(PNATState pData, struct socket *so)
 {
-	struct tcpcb *tp;
-        tp = sototcpcb(so);
+	struct tcpcb *tp = sototcpcb(so);
 
 	DEBUG_CALL("sorecvoob");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -289,12 +234,10 @@ int
 sosendoob(so)
 	struct socket *so;
 {
-	struct sbuf *sb;
+	struct sbuf *sb = &so->so_rcv;
 	char buff[2048]; /* XXX Shouldn't be sending more oob data than this */
 
 	int n, len;
-
-        sb = &so->so_rcv;
 
 	DEBUG_CALL("sosendoob");
 	DEBUG_ARG("so = %lx", (long)so);
@@ -350,20 +293,17 @@ int
 sowrite(PNATState pData, struct socket *so)
 {
 	int  n,nn;
-	struct sbuf *sb;
-	int len;
+	struct sbuf *sb = &so->so_rcv;
+	int len = sb->sb_cc;
 	struct iovec iov[2];
-        sb = &so->so_rcv;
-        len = sb->sb_cc;
 
 	DEBUG_CALL("sowrite");
 	DEBUG_ARG("so = %lx", (long)so);
 
 	if (so->so_urgc) {
 		sosendoob(so);
-		if (sb->sb_cc == 0) {
+		if (sb->sb_cc == 0)
 			return 0;
-                }
 	}
 
 	/*
@@ -403,9 +343,8 @@ sowrite(PNATState pData, struct socket *so)
 	nn = send(so->s, iov[0].iov_base, iov[0].iov_len,0);
 #endif
 	/* This should never happen, but people tell me it does *shrug* */
-	if (nn < 0 && (errno == EAGAIN || errno == EINTR)) {
+	if (nn < 0 && (errno == EAGAIN || errno == EINTR))
 		return 0;
-        }
 
 	if (nn <= 0) {
 		DEBUG_MISC((dfd, " --- sowrite disconnected, so->so_state = %x, errno = %d\n",
@@ -452,7 +391,6 @@ sorecvfrom(PNATState pData, struct socket *so)
 
 	DEBUG_CALL("sorecvfrom");
 	DEBUG_ARG("so = %lx", (long)so);
-
 
 	if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
 	  char buff[256];
@@ -603,9 +541,8 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 	/* Don't care what port we get */
 	ret = sendto(so->s, m->m_data, m->m_len, 0,
 		     (struct sockaddr *)&addr, sizeof (struct sockaddr));
-	if (ret < 0) {
+	if (ret < 0)
 		return -1;
-        }
 
 	/*
 	 * Kill the socket if there's no reply in 4 minutes,
@@ -642,15 +579,9 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	/* Don't tcp_attach... we don't need so_snd nor so_rcv */
 	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL) {
 		free(so);
-#ifdef VBOX_SLIRP_UNLOCK
-                so = NULL;
-#endif
 		return NULL;
 	}
-
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
 	insque(pData, so,&tcb);
-        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
 
 	/*
 	 * SS_FACCEPTONCE sockets must time out.
@@ -695,7 +626,6 @@ solisten(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	   so->so_faddr = addr.sin_addr;
 
 	so->s = s;
-
 	return so;
 }
 

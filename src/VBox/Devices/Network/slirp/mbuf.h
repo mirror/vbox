@@ -36,9 +36,6 @@
 
 #ifndef _MBUF_H_
 #define _MBUF_H_
-#ifdef VBOX_WITH_SYNC_SLIRP
-#include <iprt/semaphore.h>
-#endif
 
 #define m_freem m_free
 
@@ -75,9 +72,6 @@ struct m_hdr {
 
 	caddr_t	mh_data;		/* Location of data */
 	int	mh_len;			/* Amount of data in this mbuf */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        RTSEMFASTMUTEX  mh_mutex;
-#endif
 };
 
 /*
@@ -113,9 +107,6 @@ struct mbuf {
 #define m_dat		M_dat.m_dat_
 #define m_ext		M_dat.m_ext_
 #define m_so		m_hdr.mh_so
-#ifdef VBOX_WITH_SYNC_SLIRP
-#define m_mutex		m_hdr.mh_mutex
-#endif
 
 #define ifq_prev m_prev
 #define ifq_next m_next

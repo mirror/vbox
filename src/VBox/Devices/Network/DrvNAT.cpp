@@ -27,7 +27,23 @@
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
+#ifndef VBOX_NAT_SOURCES
 #include "Network/slirp/libslirp.h"
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
+#include <errno.h>
+
+#include <unistd.h>
+
+#include <fcntl.h>
+
+#include <string.h>
+
+#endif
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -37,10 +53,13 @@
 
 #include "Builtins.h"
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-#include <unistd.h> /* should be in UNix version only*/
-#include <iprt/semaphore.h>
+#ifdef VBOX_NAT_SOURCES
+#include "Network/nat/nat.h"
+#endif
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#include <unistd.h>
 #include <errno.h>
+#include<iprt/semaphore.h>
 #endif
 
 
@@ -60,27 +79,35 @@ typedef struct DRVNAT
     PPDMINETWORKCONFIG      pConfig;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     /** Slirp critical section. */
     RTCRITSECT              CritSect;
+#endif
     /** Link state */
     PDMNETWORKLINKSTATE     enmLinkState;
     /** NAT state for this instance. */
+#ifndef VBOX_NAT_SOURCES
     PNATState               pNATState;
+#endif
     /** TFTP directory prefix. */
     char                    *pszTFTPPrefix;
     /** Boot file name to provide in the DHCP server response. */
     char                    *pszBootFile;
-#ifdef VBOX_WITH_SYNC_SLIRP
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     /*polling thread*/
     PPDMTHREAD              pThread;
     /*used for wakep of poling thread*/
-    RTSEMEVENT              semIOmutex;
-    PTMTIMER                pNATFastTimer;
-    PTMTIMER                pNATSlowTimer;
+    RTSEMEVENT               semIOmutex;
+    RTSEMEVENT           semSndMutex;
+#ifndef RT_OS_WINDOWS
     /** The write end of the control pipe. */
     RTFILE                  PipeWrite;
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
+#else
+#endif
+    char                   cBuffer[1600];
+    size_t                  sBufferSize;
 #endif
 } DRVNAT, *PDRVNAT;
 
@@ -104,6 +131,22 @@ static RTTHREAD         g_ThreadSelect;
 *******************************************************************************/
 
 
+#ifdef VBOX_NAT_SOURCES
+/*
+ * Sends data to guest called from NAT glue code
+ */
+static DECLCALLBACK(void) drvNATOutput(const void * data, const uint8_t *msg, int size)
+{
+        PDRVNAT pThis = (PDRVNAT)(void *)data;
+        LogFlow(("output: pvBuf=%p cb=%#x\n", msg, size));
+        int rc =  pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+        if (RT_SUCCESS(rc))
+                pThis->pPort->pfnReceive(pThis->pPort, msg, size);
+        LogFlow(("output: exit\n"));
+}
+
+#endif
+
 /**
  * Send data to the network.
  *
@@ -119,30 +162,31 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n"
-          "%.*Rhxd\n",
+          "%.*Vhxd\n",
           pvBuf, cb, cb, pvBuf));
 
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
+#else
+    /*notify select to wakeup*/
+    memcpy(pThis->cBuffer,pvBuf, cb);
+    pThis->sBufferSize = cb;
+    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+    AssertRC(rc);
+    RTSemEventWait(pThis->semSndMutex, RT_INDEFINITE_WAIT);
 #endif
 
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP) {
+#ifndef VBOX_NAT_SOURCES
         slirp_input(pThis->pNATState, (uint8_t *)pvBuf, cb);
-    }
-#ifndef VBOX_WITH_SYNC_SLIRP
-    RTCritSectLeave(&pThis->CritSect);
 #else
-    int ndfds = 0;
-    fd_set writefds;
-    FD_ZERO(&writefds);
-    slirp_send_fill(pThis->pNATState, &ndfds, &writefds);
-    struct timeval tv = {0,0}; /* no wait */
-
-    int cWriteFDs = select(ndfds + 1, NULL, &writefds, NULL, &tv);
-    if (cWriteFDs >= 0)
-        slirp_send_trigger(pThis->pNATState, &ndfds, &writefds);
+        ether_chk(pThis, pvBuf, cb);
+#endif
+    }
+    RTCritSectLeave(&pThis->CritSect);
 #endif
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -179,7 +223,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
 #endif
@@ -189,28 +233,32 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
     {
         case PDMNETWORKLINKSTATE_UP:
             LogRel(("NAT: link up\n"));
+#ifndef VBOX_NAT_SOURCES
             slirp_link_up(pThis->pNATState);
+#endif
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             LogRel(("NAT: link down\n"));
+#ifndef VBOX_NAT_SOURCES
             slirp_link_down(pThis->pNATState);
+#endif
             break;
 
         default:
             AssertMsgFailed(("drvNATNotifyLinkChanged: unexpected link state %d\n", enmLinkState));
     }
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     RTCritSectLeave(&pThis->CritSect);
 #endif
 }
 
 
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
 /**
  * Poller callback.
  */
-#ifndef VBOX_WITH_SYNC_SLIRP
 static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -225,32 +273,26 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
 
+#ifndef VBOX_NAT_SOURCES
     slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+#else
+    nat_select_fill(NULL, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+#endif
 
     struct timeval tv = {0, 0}; /* no wait */
     int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
+#ifndef VBOX_NAT_SOURCES
     if (cReadFDs >= 0)
         slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
+#else
+    if (cReadFDs >= 0) {
+        nat_select_poll(pThis, &ReadFDs, &WriteFDs, &XcptFDs);
+    }
+#endif
 
     RTCritSectLeave(&pThis->CritSect);
 }
 #else
-
-static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    if (pThis->enmLinkState  == PDMNETWORKLINKSTATE_UP)
-        slirp_fasttmr(pThis->pNATState);
-    TMTimerSetMicro(pTimer, 2);
-}
-
-static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    if (pThis->enmLinkState  == PDMNETWORKLINKSTATE_UP)
-        slirp_slowtmr(pThis->pNATState);
-    TMTimerSetMicro(pTimer, 500);
-}
 
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -262,6 +304,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     int     rc;
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
+
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -275,13 +318,16 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         FD_ZERO(&XcptFDs);
         cFDs = -1;
 
+        /*
+         * To prevent concurent execution of sending/receving threads
+         */
         slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
-        struct timeval tv = {1, 0}; /* no wait */
+        struct timeval tv = {0, 200}; /* 2 millis wait */
 
         FD_SET(pThis->PipeRead, &ReadFDs); /*Linux only*/
         cFDs = (pThis->PipeRead < cFDs ? cFDs:pThis->PipeRead);
-        int cReadFDs = select(cFDs + 1, &ReadFDs, NULL, &XcptFDs, &tv);
+        int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
 
         if (cReadFDs >= 0) {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
@@ -291,6 +337,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 char ch;
                 size_t cbRead;
                 RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
+                slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
+                RTSemEventSignal(pThis->semSndMutex);
             }
         }
 #if 0
@@ -303,6 +351,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     return VINF_SUCCESS;
 }
+
  /**
  *  Unblock the send thread so it can respond to a state change.
  *
@@ -320,15 +369,9 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return (VINF_SUCCESS);
 }
 
-/*Callback from slirp to exit from select*/
-void slirp_socket_created(void* pvUser)
-{
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
-    AssertRC(rc);
-}
 #endif
 
+#ifndef VBOX_NAT_SOURCES
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
  * @returns 1 if possible.
@@ -340,7 +383,7 @@ int slirp_can_output(void *pvUser)
 
     Assert(pThis);
 
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     /** Happens during termination */
     if (!RTCritSectIsOwner(&pThis->CritSect))
         return 0;
@@ -360,13 +403,13 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n"
-          "%.*Rhxd\n",
+          "%.*Vhxd\n",
           pu8Buf, cb, pThis,
           cb, pu8Buf));
 
     Assert(pThis);
 
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     /** Happens during termination */
     if (!RTCritSectIsOwner(&pThis->CritSect))
         return;
@@ -376,6 +419,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
     AssertRC(rc);
     LogFlow(("slirp_output END %x %d\n", pu8Buf, cb));
 }
+#endif
 
 /**
  * Queries an interface to the driver.
@@ -416,13 +460,21 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("drvNATDestruct:\n"));
 
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
+#endif
+#ifndef VBOX_NAT_SOURCES
     slirp_term(pThis->pNATState);
     pThis->pNATState = NULL;
+#endif
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     RTCritSectLeave(&pThis->CritSect);
 
     RTCritSectDelete(&pThis->CritSect);
+#else
+    RTSemEventDestroy(pThis->semSndMutex);
+#endif
 }
 
 
@@ -434,6 +486,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfgHandle, RTIPV4ADDR Network)
 {
+#ifndef VBOX_NAT_SOURCES
     /*
      * Enumerate redirections.
      */
@@ -500,6 +553,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
         if (slirp_redir(pThis->pNATState, fUDP, iHostPort, GuestIP, iGuestPort) < 0)
             return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS, N_("NAT#%d: configuration error: failed to set up redirection of %d to %s:%d. Probably a conflict with existing services or other rules"), iInstance, iHostPort, szGuestIP, iGuestPort);
     } /* for each redir rule */
+#endif
 
     return VINF_SUCCESS;
 }
@@ -509,12 +563,14 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
  */
 static void drvNATSetMac(PDRVNAT pThis)
 {
+#ifndef VBOX_NAT_SOURCES
     if (pThis->pConfig)
     {
         RTMAC Mac;
         pThis->pConfig->pfnGetMac(pThis->pConfig, &Mac);
         slirp_set_ethaddr(pThis->pNATState, Mac.au8);
     }
+#endif
 }
 
 
@@ -568,7 +624,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Init the static parts.
      */
     pThis->pDrvIns                      = pDrvIns;
+#ifndef VBOX_NAT_SOURCES
     pThis->pNATState                    = NULL;
+#endif
     pThis->pszTFTPPrefix                = NULL;
     pThis->pszBootFile                  = NULL;
     /* IBase */
@@ -626,9 +684,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * The slirp lock..
      */
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     rc = RTCritSectInit(&pThis->CritSect);
     if (RT_FAILURE(rc))
         return rc;
+#endif
 #if 0
     rc = RTSemEventCreate(&g_EventSem);
     if (RT_SUCCESS(rc))
@@ -641,6 +701,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         if (RT_SUCCESS(rc))
         {
 #endif
+#ifndef VBOX_NAT_SOURCES
             /*
              * Initialize slirp.
              */
@@ -658,10 +719,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                                pDrvIns->iInstance, 0, 0,
                                                NULL, NULL, NULL, NULL, NULL, drvNATLoadDone);
                     AssertRC(rc2);
-#ifndef VBOX_WITH_SYNC_SLIRP
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
                     pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 #else
+
                     rc = RTSemEventCreate(&pThis->semIOmutex);
+                    AssertReleaseRC(rc);
+                    rc = RTSemEventCreate(&pThis->semSndMutex);
                     AssertReleaseRC(rc);
 
                     /*
@@ -680,12 +744,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
                     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
                     AssertReleaseRC(rc);
-                    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvNATFastTimer, "NAT_fast_timer", &pThis->pNATFastTimer);
-                    AssertReleaseRC(rc);
-                    TMTimerSetMicro(pThis->pNATFastTimer, 1);
-                    rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_REAL, drvNATSlowTimer, "NAT_slow_timer", &pThis->pNATSlowTimer);
-                    AssertReleaseRC(rc);
-                    TMTimerSetMicro(pThis->pNATSlowTimer, 500);
 #endif
 
                     pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
@@ -706,6 +764,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
               PDMDRV_SET_ERROR(pDrvIns, rc, N_("Unknown error during NAT networking setup: "));
               AssertMsgFailed(("Add error message for rc=%d (%Rrc)\n", rc, rc));
             }
+#else
+        pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
+        pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
+        struct nat_output_callbacks cb;
+        cb.noc_guest_out = drvNATOutput;
+        nat_init(&cb, pDrvIns);
+#endif
 #if 0
             g_fThreadTerm = true;
             RTSemEventSignal(g_EventSem);
@@ -715,7 +780,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         g_EventSem = NULL;
     }
 #endif
+#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     RTCritSectDelete(&pThis->CritSect);
+#endif
     return rc;
 }
 

@@ -9,9 +9,6 @@
 
 #ifndef _SLIRP_SOCKET_H_
 #define _SLIRP_SOCKET_H_
-#ifdef VBOX_WITH_SYNC_SLIRP
-#include <iprt/semaphore.h>
-#endif
 
 #define SO_EXPIRE 240000
 #define SO_EXPIREFAST 10000
