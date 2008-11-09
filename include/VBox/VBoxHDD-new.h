@@ -450,7 +450,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The storage handle to use.
      * @param   uOffset         The offset to start from.
-     * @þaram   cbWrite         How many bytes to write.
+     * @param   cbWrite         How many bytes to write.
      * @param   pvBuf           Pointer to the bits need to be written.
      * @param   pcbWritten      Where to store how many bytes where actually written.
      */
@@ -464,7 +464,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The storage handle to use.
      * @param   uOffset         The offset to start from.
-     * @þaram   cbRead          How many bytes to read.
+     * @param   cbRead          How many bytes to read.
      * @param   pvBuf           Where to store the read bits.
      * @param   pcbRead         Where to store how many bytes where actually read.
      */
