@@ -204,7 +204,7 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     fd_set  ReadFDs;
     fd_set  WriteFDs;
     fd_set  XcptFDs;
-    int     cFDs = -1;
+    int     nFDs = -1;
     FD_ZERO(&ReadFDs);
     FD_ZERO(&WriteFDs);
     FD_ZERO(&XcptFDs);
@@ -212,11 +212,11 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
 
-    slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+    slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 
     struct timeval tv = {0, 0}; /* no wait */
-    int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
-    if (cReadFDs >= 0)
+    int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
+    if (cChangedFDs >= 0)
         slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 
     RTCritSectLeave(&pThis->CritSect);
@@ -229,8 +229,10 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     fd_set  ReadFDs;
     fd_set  WriteFDs;
     fd_set  XcptFDs;
-    int     cFDs = -1;
+    int     nFDs = -1;
     int     rc;
+    const struct timeval TimeWait   = { 0, 2000 }; /* 2ms for the fast timer */
+    const struct timeval TimeNoWait = { 0,    0 }; /* return immediately */
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
 
@@ -242,25 +244,24 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
      */
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
+        bool fWait = true;
+
         FD_ZERO(&ReadFDs);
         FD_ZERO(&WriteFDs);
         FD_ZERO(&XcptFDs);
-        cFDs = -1;
+        nFDs = -1;
 
         /*
          * To prevent concurent execution of sending/receving threads
          */
-        slirp_select_fill(pThis->pNATState, &cFDs, &ReadFDs, &WriteFDs, &XcptFDs);
-
-        struct timeval tv = {0, 2000}; /* 2ms for the fast timer */
-
+        slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+        struct timeval tv = fWait ? TimeWait : TimeNoWait;
         FD_SET(pThis->PipeRead, &ReadFDs); /* Linux only */
-        cFDs = ((int)pThis->PipeRead < cFDs ? cFDs:pThis->PipeRead);
-        int cReadFDs = select(cFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
-        if (cReadFDs >= 0)
+        nFDs = ((int)pThis->PipeRead < nFDs ? nFDs : pThis->PipeRead);
+        int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
+        if (cChangedFDs >= 0)
         {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
-
             if (FD_ISSET(pThis->PipeRead, &ReadFDs))
             {
                 /* drain the pipe */
@@ -272,6 +273,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                     case '1':
                         slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
                         RTSemEventSignal(pThis->semSndMutex);
+                        fWait = 1;
                         break;
                     case '2':
                         break;
