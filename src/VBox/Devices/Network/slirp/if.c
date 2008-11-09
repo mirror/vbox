@@ -47,13 +47,7 @@ if_init(PNATState pData)
 	if_mru = 1500;
 	if_comp = IF_AUTOCOMP;
 	if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
-
-        VBOX_SLIRP_LOCK_CREATE(&pData->if_fastq_mutex);
-
 	if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
-
-        VBOX_SLIRP_LOCK_CREATE(&pData->if_batchq_mutex);
-
         /*	sl_compress_init(&comp_s); */
 	next_m = &if_batchq;
 }
@@ -154,28 +148,21 @@ void
 if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 {
 	struct mbuf *ifq;
-#ifdef VBOX_WITH_SYNC_SLIRP
-	struct mbuf *ifqprev;
-#endif
 	int on_fastq = 1;
 
 	DEBUG_CALL("if_output");
 	DEBUG_ARG("so = %lx", (long)so);
 	DEBUG_ARG("ifm = %lx", (long)ifm);
 
-
 	/*
 	 * First remove the mbuf from m_usedlist,
 	 * since we're gonna use m_next and m_prev ourselves
 	 * XXX Shouldn't need this, gotta change dtom() etc.
 	 */
-        VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
-
 	if (ifm->m_flags & M_USEDLIST) {
 		remque(pData, ifm);
 		ifm->m_flags &= ~M_USEDLIST;
 	}
-        VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
 
 	/*
 	 * See if there's already a batchq list for this session.
@@ -184,36 +171,18 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	 * We mustn't put this packet back on the fastq (or we'll send it out of order)
 	 * XXX add cache here?
 	 */
-        VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
-#ifndef VBOX_WITH_SYNC_SLIRP
 	for (ifq = if_batchq.ifq_prev; ifq != &if_batchq; ifq = ifq->ifq_prev) {
-#else
-        ifq = if_batchq.ifq_prev;
-        while(1){
-            if (ifq == &if_batchq) {
-                VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
-                break;
-            }
-            ifqprev = ifq->ifq_prev;
-#endif
-            VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
-	    if (so == ifq->ifq_so) {
+		if (so == ifq->ifq_so) {
 			/* A match! */
 			ifm->ifq_so = so;
 			ifs_insque(ifm, ifq->ifs_prev);
 			goto diddit;
-    	    }
-            VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-            ifq = ifqprev;
-#endif
+		}
 	}
 
 	/* No match, check which queue to put it on */
 	if (so && (so->so_iptos & IPTOS_LOWDELAY)) {
-                VBOX_SLIRP_LOCK(pData->if_fastq_mutex);
 		ifq = if_fastq.ifq_prev;
-                VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
 		on_fastq = 1;
 		/*
 		 * Check if this packet is a part of the last
@@ -224,12 +193,8 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 			ifs_insque(ifm, ifq->ifs_prev);
 			goto diddit;
 		}
-	}
-        else {
-                VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
+	} else
 		ifq = if_batchq.ifq_prev;
-                VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
-        }
 
 	/* Create a new doubly linked list for this session */
 	ifm->ifq_so = so;
@@ -237,11 +202,7 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 	insque(pData, ifm, ifq);
 
 diddit:
-        VBOX_SLIRP_LOCK(pData->if_queued_mutex);
-
 	++if_queued;
-
-        VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
 
 	if (so) {
 		/* Update *_queued */
@@ -257,16 +218,11 @@ diddit:
 		if (on_fastq && ((so->so_nqueued >= 6) &&
 				 (so->so_nqueued - so->so_queued) >= 3)) {
 
-                        VBOX_SLIRP_LOCK(pData->if_fastq_mutex);
 			/* Remove from current queue... */
 			remque(pData, ifm->ifs_next);
 
-                        VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
-                        VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
-
 			/* ...And insert in the new.  That'll teach ya! */
 			insque(pData, ifm->ifs_next, &if_batchq);
-                        VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
 		}
 	}
 
@@ -297,22 +253,13 @@ void
 if_start(PNATState pData)
 {
 	struct mbuf *ifm, *ifqt;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int on_fast = 0; /*required for correctness */
-	struct mbuf *ifm_prev;
-#endif
 
 	DEBUG_CALL("if_start");
 
-        VBOX_SLIRP_LOCK(pData->if_queued_mutex);
-	if (if_queued <= 0) {
-           VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
+	if (if_queued == 0)
 	   return; /* Nothing to do */
-        }
 
  again:
-        VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
-
         /* check if we can really output */
         if (!slirp_can_output(pData->pvUser))
             return;
@@ -321,18 +268,9 @@ if_start(PNATState pData)
 	 * See which queue to get next packet from
 	 * If there's something in the fastq, select it immediately
 	 */
-        VBOX_SLIRP_LOCK(pData->if_fastq_mutex);
 	if (if_fastq.ifq_next != &if_fastq) {
 		ifm = if_fastq.ifq_next;
-#ifdef VBOX_WITH_SYNC_SLIRP
-                on_fast = 1;
-#endif
-            VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
 	} else {
-            VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
-
-            VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
-            VBOX_SLIRP_LOCK(pData->next_m_mutex);
 		/* Nothing on fastq, see if next_m is valid */
 		if (next_m != &if_batchq)
 		   ifm = next_m;
@@ -341,44 +279,14 @@ if_start(PNATState pData)
 
 		/* Set which packet to send on next iteration */
 		next_m = ifm->ifq_next;
-                VBOX_SLIRP_UNLOCK(pData->next_m_mutex);
-                VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
 	}
-        VBOX_SLIRP_LOCK(pData->if_queued_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (if_queued == 0) {
-            if (on_fast) {
-                VBOX_SLIRP_LOCK(pData->if_fastq_mutex);
-            }else {
-                VBOX_SLIRP_LOCK(pData->if_batchq_mutex);
-            }
-            goto done;
-        }
-#endif
 	/* Remove it from the queue */
 	ifqt = ifm->ifq_prev;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (ifm->m_prev != ifm && ifm->m_prev != NULL)
-#endif
-	    remque(pData, ifm);
-
+	remque(pData, ifm);
 	--if_queued;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
-        if (on_fast == 1) {
-            VBOX_SLIRP_UNLOCK(pData->if_fastq_mutex);
-        }
-        else {
-            VBOX_SLIRP_UNLOCK(pData->if_batchq_mutex);
-        }
-#endif
 
 	/* If there are more packets for this session, re-queue them */
-	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm
-#ifdef VBOX_WITH_SYNC_SLIRP
-    && ifm->ifs_next != NULL
-#endif
-) {
+	if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm) {
 		insque(pData, ifm->ifs_next, ifqt);
 		ifs_remque(ifm);
 	}
@@ -395,11 +303,6 @@ if_start(PNATState pData)
 
         m_free(pData, ifm);
 
-        VBOX_SLIRP_LOCK(pData->if_queued_mutex);
-        /*We release if_queued_mutex after again label and before return*/
-
-	if (if_queued > 0)
+	if (if_queued)
 	   goto again;
-        done:
-        VBOX_SLIRP_UNLOCK(pData->if_queued_mutex);
 }

@@ -68,14 +68,10 @@ ip_input(PNATState pData, struct mbuf *m)
 {
 	register struct ip *ip;
 	int hlen;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int rc;
-#endif
 
 	DEBUG_CALL("ip_input");
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("m_len = %d", m->m_len);
-
 
 	ipstat.ips_total++;
 
@@ -193,9 +189,8 @@ ip_input(PNATState pData, struct mbuf *m)
 		if (((struct ipasfrag *)ip)->ipf_mff & 1 || ip->ip_off) {
 			ipstat.ips_fragments++;
 			ip = ip_reass(pData, (struct ipasfrag *)ip, fp);
-			if (ip == 0) {
-                            return;
-                        }
+			if (ip == 0)
+				return;
 			ipstat.ips_reassembled++;
 			m = dtom(pData, ip);
 		} else

@@ -383,41 +383,4 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 #define errno (WSAGetLastError())
 #endif
 
-#ifdef VBOX_WITH_SYNC_SLIRP
-#define VBOX_SLIRP_LOCK_SUFFIX _mutex
-
-#define VBOX_SLIRP_LOCK(x)                                                  \
-do{                                                                         \
-    int rc;                                                                 \
-    rc = RTSemFastMutexRequest((x));                                        \
-    AssertReleaseRC(rc);                                                    \
-}while (0)
-
-#define VBOX_SLIRP_UNLOCK(x)                                                \
-do{                                                                         \
-    int rc;                                                                 \
-    rc = RTSemFastMutexRelease((x));                                        \
-    AssertReleaseRC(rc);                                                    \
-}while (0)
-
-#define VBOX_SLIRP_LOCK_CREATE(x)                                           \
-do{                                                                         \
-    int rc;                                                                 \
-    rc = RTSemFastMutexCreate((x));                                         \
-    AssertReleaseRC(rc);                                                    \
-}while (0)
-
-#define VBOX_SLIRP_LOCK_DESTROY(x)                                          \
-do{                                                                         \
-    int rc;                                                                 \
-    rc = RTSemFastMutexDestroy((x));                                        \
-    AssertReleaseRC(rc);                                                    \
-}while (0)
-#else
-#define VBOX_SLIRP_LOCK(x)              do {} while (0)
-#define VBOX_SLIRP_UNLOCK(x)            do {} while (0)
-#define VBOX_SLIRP_LOCK_DESTROY(x)      do {} while (0)
-#define VBOX_SLIRP_LOCK_CREATE(x)       do {} while (0)
-#endif
-
 #endif

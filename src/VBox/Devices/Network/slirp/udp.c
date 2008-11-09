@@ -77,7 +77,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	DEBUG_ARG("m = %lx", (long)m);
 	DEBUG_ARG("iphlen = %d", iphlen);
 
-
 	udpstat.udps_ipackets++;
 
 	/*
@@ -156,55 +155,27 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	/*
 	 * Locate pcb for datagram.
 	 */
-        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
-        so = udp_last_so;
-
-        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
-
+	so = udp_last_so;
 	if (so->so_lport != uh->uh_sport ||
 	    so->so_laddr.s_addr != ip->ip_src.s_addr) {
 		struct socket *tmp;
-#ifndef VBOX_WITH_SYNC_SLIRP
+
 		for (tmp = udb.so_next; tmp != &udb; tmp = tmp->so_next) {
-#else
-
-		struct socket *tmp_next;
-                VBOX_SLIRP_LOCK(pData->udb_mutex);
-                tmp = udb.so_next;
-
-                while (1) {
-                    if (tmp == &udb) {
-                        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
-                        break; /* end of loop*/
-                    }
-                    VBOX_SLIRP_UNLOCK(pData->udb_mutex);
-                    tmp_next = tmp->so_next;
-#endif
 			if (tmp->so_lport == uh->uh_sport &&
 			    tmp->so_laddr.s_addr == ip->ip_src.s_addr) {
 				so = tmp;
 				break;
 			}
-                        VBOX_SLIRP_LOCK(pData->udb_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                        tmp = tmp_next;
-#endif
 		}
 		if (tmp == &udb) {
 		  so = NULL;
 		} else {
 		  udpstat.udpps_pcbcachemiss++;
-                  VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
 		  udp_last_so = so;
-                  VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 		}
 	}
 
-#ifndef VBOX_WITH_SYNC_SLIRP
 	if (so == NULL) {
-#else
-	if (so == NULL || so == &udb) {
-#endif
 	  /*
 	   * If there's no socket for this packet,
 	   * create one
@@ -320,6 +291,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 	udpstat.udps_opackets++;
 
 	error = ip_output(pData, so, m);
+
 	return (error);
 }
 
@@ -327,7 +299,6 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {
     struct sockaddr_in saddr, daddr;
-    int status;
 
     saddr = *addr;
     if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
@@ -344,8 +315,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     daddr.sin_addr = so->so_laddr;
     daddr.sin_port = so->so_lport;
 
-    status = udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
-    return status;
+    return udp_output2(pData, so, m, &saddr, &daddr, so->so_iptos);
 }
 
 int
@@ -377,15 +347,9 @@ udp_attach(PNATState pData, struct socket *so)
       so->so_expire = curtime + SO_EXPIRE;
       /* enable broadcast for later use */
       setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
-      VBOX_SLIRP_LOCK(pData->udb_mutex);
       insque(pData, so,&udb);
-      VBOX_SLIRP_UNLOCK(pData->udb_mutex);
     }
   }
-#ifdef VBOX_WITH_SYNC_SLIRP
-  so->so_type = IPPROTO_UDP;
-  slirp_socket_created(pData->pvUser);
-#endif
   return(so->s);
 }
 
@@ -393,14 +357,11 @@ void
 udp_detach(PNATState pData, struct socket *so)
 {
 	/* Correctly update list if detaching last socket in list. */
-        VBOX_SLIRP_LOCK(pData->udp_last_so_mutex);
 	if (so == udp_last_so) udp_last_so = &udb;
-        VBOX_SLIRP_UNLOCK(pData->udp_last_so_mutex);
 	closesocket(so->s);
 	/* if (so->so_m) m_free(so->so_m);    done by sofree */
 
 	sofree(pData, so);
-
 }
 
 static const struct tos_t udptos[] = {
@@ -469,7 +430,6 @@ struct cu_header {
 	uint16_t	data_type;		/* data type */
 	uint16_t	pkt_len;		/* packet length */
 } *cu_head;
-
 
 	switch(so->so_emu) {
 
@@ -677,9 +637,7 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	}
 	so->s = socket(AF_INET,SOCK_DGRAM,0);
 	so->so_expire = curtime + SO_EXPIRE;
-        VBOX_SLIRP_LOCK(pData->udb_mutex);
 	insque(pData, so,&udb);
-        VBOX_SLIRP_UNLOCK(pData->udb_mutex);
 
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
@@ -708,8 +666,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 	   so->so_expire = 0;
 
 	so->so_state = SS_ISFCONNECTED;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        slirp_socket_created(pData->pvUser);
-#endif
+
 	return so;
 }

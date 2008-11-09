@@ -275,16 +275,13 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
-
 	u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
 	free(tp);
 	so->so_tcpcb = 0;
 	soisfdisconnected(so);
-        VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
 	/* clobber input socket cache if we're closing the cached connection */
 	if (so == tcp_last_so)
 		tcp_last_so = &tcb;
-        VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
 	closesocket(so->s);
 	sbfree(&so->so_rcv);
 	sbfree(&so->so_snd);
@@ -528,20 +525,10 @@ tcp_connect(PNATState pData, struct socket *inso)
 int
 tcp_attach(PNATState pData, struct socket *so)
 {
-	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL){
+	if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
 	   return -1;
-        }
 
-
-        VBOX_SLIRP_LOCK(pData->tcb_mutex);
 	insque(pData, so, &tcb);
-        VBOX_SLIRP_UNLOCK(pData->tcb_mutex);
-
-#ifdef VBOX_WITH_SYNC_SLIRP
-        /*we use this field to identify cache socket to lock/unlock*/
-        so->so_type = IPPROTO_TCP;
-        slirp_socket_created(pData->pvUser);
-#endif
 
 	return 0;
 }

@@ -245,15 +245,6 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 	DEBUG_CALL("tcp_input");
 	DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
 		    (long )m, iphlen, (long )inso ));
-#ifdef VBOX_WITH_SYNC_SLIRP
-#if 0
-#define return                                      \
-do {                                                \
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__); \
-    return;                                         \
-}while(0)
-#endif
-#endif
 
 	/*
 	 * If called with m == 0, then we're continuing the connect
@@ -364,23 +355,15 @@ do {                                                \
 	 * Locate pcb for segment.
 	 */
 findso:
-        VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
 	so = tcp_last_so;
-        /* this checking for making sure that we're not trying to hold mutex on head list*/
-        VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
-
 	if (so->so_fport != ti->ti_dport ||
 	    so->so_lport != ti->ti_sport ||
 	    so->so_laddr.s_addr != ti->ti_src.s_addr ||
 	    so->so_faddr.s_addr != ti->ti_dst.s_addr) {
-                /*To make sure that we don't try to release mutex on head of the socket queue*/
 		so = solookup(&tcb, ti->ti_src, ti->ti_sport,
 			       ti->ti_dst, ti->ti_dport);
-		if (so) {
-                        VBOX_SLIRP_LOCK(pData->tcp_last_so_mutex);
+		if (so)
 			tcp_last_so = so;
-                        VBOX_SLIRP_UNLOCK(pData->tcp_last_so_mutex);
-                }
 		++tcpstat.tcps_socachemiss;
 	}
 
@@ -403,12 +386,8 @@ findso:
 
 	  if ((so = socreate()) == NULL)
 	    goto dropwithreset;
-
 	  if (tcp_attach(pData, so) < 0) {
 	    free(so); /* Not sofree (if it failed, it's not insqued) */
-#ifdef VBOX_WITH_SYNC_SLIRP
-            so = NULL;
-#endif
 	    goto dropwithreset;
 	  }
 
@@ -555,6 +534,7 @@ findso:
 				 */
 				if (so->so_snd.sb_cc)
 					(void) tcp_output(pData, tp);
+
 				return;
 			}
 		} else if (ti->ti_ack == tp->snd_una &&
@@ -1463,7 +1443,6 @@ dodata:
 	if (needoutput || (tp->t_flags & TF_ACKNOW)) {
 		(void) tcp_output(pData, tp);
 	}
-
 	return;
 
 dropafterack:
@@ -1495,10 +1474,8 @@ drop:
 	 * Drop space held by incoming segment and return.
 	 */
 	m_free(pData, m);
+
 	return;
-#ifdef VBOX_WITH_SYNC_SLIRP
-#undef return
-#endif
 }
 
  /* , ts_present, ts_val, ts_ecr) */

@@ -24,11 +24,6 @@ m_init(PNATState pData)
 	m_freelist.m_next = m_freelist.m_prev = &m_freelist;
 	m_usedlist.m_next = m_usedlist.m_prev = &m_usedlist;
         mbuf_alloced = 0;
-
-        VBOX_SLIRP_LOCK_CREATE(&pData->m_usedlist_mutex);
-        VBOX_SLIRP_LOCK_CREATE(&pData->m_freelist_mutex);
-        VBOX_SLIRP_LOCK_CREATE(&pData->mbuf_alloced_mutex);
-
 	msize_init(pData);
 }
 
@@ -56,64 +51,24 @@ m_get(PNATState pData)
 {
 	register struct mbuf *m;
 	int flags = 0;
-#ifdef VBOX_WITH_SYNC_SLIRP
-        int on_free_list = 0;
-        struct mbuf *n;
-#endif
 
 	DEBUG_CALL("m_get");
 
-        VBOX_SLIRP_LOCK(pData->m_freelist_mutex);
-
 	if (m_freelist.m_next == &m_freelist) {
 		m = (struct mbuf *)malloc(msize);
-		if (m == NULL) {
-                    VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
-                    goto end_error;
-                }
-
-                VBOX_SLIRP_LOCK(pData->mbuf_alloced_mutex);
-
+		if (m == NULL) goto end_error;
 		mbuf_alloced++;
 		if (mbuf_alloced > mbuf_thresh)
 			flags = M_DOFREE;
 		if (mbuf_alloced > mbuf_max)
 			mbuf_max = mbuf_alloced;
-                VBOX_SLIRP_UNLOCK(pData->mbuf_alloced_mutex);
-                VBOX_SLIRP_LOCK_CREATE(&m->m_mutex);
-                VBOX_SLIRP_LOCK(m->m_mutex);
 	} else {
 		m = m_freelist.m_next;
-                VBOX_SLIRP_LOCK(m->m_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                n = m->m_next;
-                if (n != NULL)
-                    VBOX_SLIRP_LOCK(n->m_mutex);
 		remque(pData, m);
-                if (n != NULL)
-                    VBOX_SLIRP_UNLOCK(n->m_mutex);
-#else
-		remque(pData, m);
-#endif
 	}
 
-        VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
-
-        VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
 	/* Insert it in the used list */
-#ifdef VBOX_WITH_SYNC_SLIRP
-        n = m_usedlist.m_next;
-        if (n != &m_usedlist)
-            VBOX_SLIRP_LOCK(n->m_mutex);
-#endif
 	insque(pData, m,&m_usedlist);
-#ifdef VBOX_WITH_SYNC_SLIRP
-        if (n != &m_usedlist)
-            VBOX_SLIRP_LOCK(n->m_mutex);
-#endif
-        VBOX_SLIRP_UNLOCK(m->m_mutex);
-        VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
-
 	m->m_flags = (flags | M_USEDLIST);
 
 	/* Initialise it */
@@ -122,7 +77,6 @@ m_get(PNATState pData)
 	m->m_len = 0;
 	m->m_nextpkt = 0;
 	m->m_prevpkt = 0;
-
 end_error:
 	DEBUG_ARG("m = %lx", (long )m);
 	return m;
@@ -131,35 +85,14 @@ end_error:
 void
 m_free(PNATState pData, struct mbuf *m)
 {
-#ifdef VBOX_WITH_SYNC_SLIRP
-    struct mbuf *p, *n;
-#endif
 
   DEBUG_CALL("m_free");
   DEBUG_ARG("m = %lx", (long )m);
 
   if(m) {
 	/* Remove from m_usedlist */
-	if (m->m_flags & M_USEDLIST) {
-           VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
-#ifdef VBOX_WITH_SYNC_SLIRP
-           p = (m->m_prev);
-           n = (m->m_next);
-                VBOX_SLIRP_LOCK(m->m_mutex);
-           if (n != NULL)
-                VBOX_SLIRP_LOCK(n->m_mutex);
-           if (p != NULL)
-                VBOX_SLIRP_LOCK(p->m_mutex);
-#endif
+	if (m->m_flags & M_USEDLIST)
 	   remque(pData, m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-           if (n != NULL)
-                VBOX_SLIRP_UNLOCK(n->m_mutex);
-           if (p != NULL)
-                VBOX_SLIRP_UNLOCK(p->m_mutex);
-#endif
-           VBOX_SLIRP_UNLOCK(pData->m_usedlist_mutex);
-        }
 
 	/* If it's M_EXT, free() it */
 	if (m->m_flags & M_EXT)
@@ -170,20 +103,11 @@ m_free(PNATState pData, struct mbuf *m)
 	 */
 	if (m->m_flags & M_DOFREE) {
 		u32ptr_done(pData, ptr_to_u32(pData, m), m);
-                VBOX_SLIRP_UNLOCK(m->m_mutex);
-                VBOX_SLIRP_LOCK_DESTROY(m->m_mutex);
 		free(m);
-#ifdef VBOX_WITH_SYNC_SLIRP
-                m = NULL;
-#endif
-                VBOX_SLIRP_LOCK(pData->mbuf_alloced_mutex);
 		mbuf_alloced--;
-                VBOX_SLIRP_UNLOCK(pData->mbuf_alloced_mutex);
 	} else if ((m->m_flags & M_FREELIST) == 0) {
-                VBOX_SLIRP_LOCK(pData->m_freelist_mutex);
 		insque(pData, m,&m_freelist);
 		m->m_flags = M_FREELIST; /* Clobber other flags */
-                VBOX_SLIRP_UNLOCK(pData->m_freelist_mutex);
 	}
   } /* if(m) */
 }
@@ -199,7 +123,6 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	/*
 	 * If there's no room, realloc
 	 */
-
 	if (M_FREEROOM(m) < n->m_len)
 		m_inc(m,m->m_size+MINCSIZE);
 
@@ -207,7 +130,6 @@ m_cat(PNATState pData, register struct mbuf *m, register struct mbuf *n)
 	m->m_len += n->m_len;
 
 	m_free(pData, n);
-
 }
 
 
@@ -220,9 +142,7 @@ m_inc(m, size)
 	int datasize;
 
 	/* some compiles throw up on gotos.  This one we can fake. */
-        if(m->m_size>size) {
-            return;
-        }
+        if(m->m_size>size) return;
 
         if (m->m_flags & M_EXT) {
 	  datasize = m->m_data - m->m_ext;
@@ -246,6 +166,7 @@ m_inc(m, size)
         }
 
         m->m_size = size;
+
 }
 
 
@@ -277,9 +198,8 @@ m_copy(n, m, off, len)
 	struct mbuf *n, *m;
 	int off, len;
 {
-	if (len > M_FREEROOM(n)) {
+	if (len > M_FREEROOM(n))
 		return -1;
-        }
 
 	memcpy((n->m_data + n->m_len), (m->m_data + off), len);
 	n->m_len += len;
@@ -301,27 +221,14 @@ dtom(PNATState pData, void *dat)
 	DEBUG_ARG("dat = %lx", (long )dat);
 
 	/* bug corrected for M_EXT buffers */
-#ifndef VBOX_WITH_SYNC_SLIRP
 	for (m = m_usedlist.m_next; m != &m_usedlist; m = m->m_next) {
-#else
-	struct mbuf *mnext;
-        VBOX_SLIRP_LOCK(pData->m_usedlist_mutex);
-        m = m_usedlist.m_next;
-        while(1) {
-            mnext = m->m_next;
-#endif
 	  if (m->m_flags & M_EXT) {
-	    if( (char *)dat>=m->m_ext && (char *)dat<(m->m_ext + m->m_size) ) {
+	    if( (char *)dat>=m->m_ext && (char *)dat<(m->m_ext + m->m_size) )
 	      return m;
-            }
 	  } else {
-	    if( (char *)dat >= m->m_dat && (char *)dat<(m->m_dat + m->m_size) ) {
+	    if( (char *)dat >= m->m_dat && (char *)dat<(m->m_dat + m->m_size) )
 	      return m;
-            }
 	  }
-#ifdef VBOX_WITH_SYNC_SLIRP
-          m = mnext;
-#endif
 	}
 
 	DEBUG_ERROR((dfd, "dtom failed"));
