@@ -349,8 +349,6 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
                   img.width(), img.height()));
 #endif
 
-    FRAMEBUF_DEBUG_START (xxx);
-
     QPainter painter (mView->viewport());
 
     if (r.width() < mWdt * 2 / 3)
@@ -370,8 +368,6 @@ void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
         painter.drawPixmap (r.x(), r.y(), mPM,
                             r.x() + mView->contentsX(), 0, 0, 0);
     }
-
-    FRAMEBUF_DEBUG_STOP (xxx, r.width(), r.height());
 }
 
 void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
