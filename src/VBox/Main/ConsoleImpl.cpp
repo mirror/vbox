@@ -61,8 +61,6 @@
 
 #include <VBox/com/array.h>
 
-#include <iprt/types.h> /* for stdint.h constants */
-
 #include <iprt/string.h>
 #include <iprt/asm.h>
 #include <iprt/file.h>
