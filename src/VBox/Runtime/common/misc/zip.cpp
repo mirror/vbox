@@ -872,7 +872,7 @@ static int rtZipLZFCompressBuffer(PRTZIPCOMP pZip, const uint8_t *pbBuf, size_t 
         /*
          * Flush output buffer?
          */
-        unsigned cbFree = sizeof(pZip->abBuffer) - (pZip->u.LZF.pbOutput - &pZip->abBuffer[0]);
+        unsigned cbFree = (unsigned)(sizeof(pZip->abBuffer) - (pZip->u.LZF.pbOutput - &pZip->abBuffer[0]));
         if (    fForceFlush
             ||  cbFree < RTZIPLZF_MAX_DATA_SIZE + sizeof(RTZIPLZFHDR))
         {
@@ -902,8 +902,8 @@ static int rtZipLZFCompressBuffer(PRTZIPCOMP pZip, const uint8_t *pbBuf, size_t 
          * reduce the size of data we try compress till it fits the
          * output space.
          */
-        cbFree  = RT_MIN(cbFree, RTZIPLZF_MAX_DATA_SIZE);
-        unsigned cbInput = RT_MIN(RTZIPLZF_MAX_UNCOMPRESSED_DATA_SIZE, cbBuf);
+        cbFree = RT_MIN(cbFree, RTZIPLZF_MAX_DATA_SIZE);
+        unsigned cbInput = (unsigned)RT_MIN(RTZIPLZF_MAX_UNCOMPRESSED_DATA_SIZE, cbBuf);
         unsigned cbOutput = lzf_compress(pbBuf, cbInput, pZip->u.LZF.pbOutput, cbFree);
         if (!cbOutput)
         {
@@ -1080,7 +1080,7 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
          */
         if (pZip->u.LZF.cbSpill > 0)
         {
-            size_t cb = RT_MIN(pZip->u.LZF.cbSpill, cbBuf);
+            unsigned cb = (unsigned)RT_MIN(pZip->u.LZF.cbSpill, cbBuf);
             memcpy(pvBuf, pZip->u.LZF.pbSpill, cb);
             pZip->u.LZF.pbSpill += cb;
             pZip->u.LZF.cbSpill -= cb;
