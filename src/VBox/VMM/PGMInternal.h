@@ -2094,12 +2094,10 @@ typedef struct PGM
 #endif
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                        HCPhysPaePML4;
-    /** The pgm pool page descriptor for the current active CR3. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PPGMPOOLPAGE)         pHCShwAmd64CR3;
-#else
-    R3R0PTRTYPE(PPGMPOOLPAGE)       pHCShwAmd64CR3;
-#endif
+    /** The pgm pool page descriptor for the current active CR3 - R3 Ptr. */
+    R3PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R3;
+    /** The pgm pool page descriptor for the current active CR3 - R0 Ptr. */
+    R0PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R0;
     /** @}*/
 
     /** @name Nested Shadow Paging
@@ -3799,7 +3797,7 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pShwPml4;
     Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return pShwPml4;
 #else
@@ -3822,7 +3820,7 @@ DECLINLINE(X86PGPAEUINT) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PML4       pShwPml4;
     Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return pShwPml4->a[iPml4].u;
 # else
@@ -3844,7 +3842,7 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4        pShwPml4;
     Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return &pShwPml4->a[iPml4];
 # else
