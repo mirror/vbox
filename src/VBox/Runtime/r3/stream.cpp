@@ -203,8 +203,8 @@ RTR3DECL(int) RTStrmOpenfV(const char *pszMode, PRTSTREAM *ppStream, const char 
 {
     int     rc;
     char    szFilename[RTPATH_MAX];
-    int     cch = RTStrPrintf(szFilename, sizeof(szFilename), pszFilenameFmt, args);
-    if (cch < (int)sizeof(szFilename))
+    size_t  cch = RTStrPrintf(szFilename, sizeof(szFilename), pszFilenameFmt, args);
+    if (cch < sizeof(szFilename))
         rc = RTStrmOpen(szFilename, pszMode, ppStream);
     else
     {
@@ -625,11 +625,12 @@ RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list ar
             /** @todo consider making this thread safe... */
             #ifdef HAVE_FWRITE_UNLOCKED
             flockfile(pStream->pFile);
-            rc = RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
+            rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
             funlockfile(pStream->pFile);
             #else
-            rc = RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
+            rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
             #endif
+            Assert(rc >= 0);
         }
         else
             rc = -1;
