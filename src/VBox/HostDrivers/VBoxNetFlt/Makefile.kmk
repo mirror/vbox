@@ -135,7 +135,7 @@ vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENA
 vboxnetflt_DEFS          = IN_RT_R0
 vboxnetflt_DEFS.solaris  += VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxnetflt_DEPS.solaris  += $(VBOX_SVN_REV_KMK)
-vboxnetflt_NOINST        = true
+vboxnetflt_NOINST.linux  = true
 vboxnetflt_INCS.linux   := \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxnetflt_INCS         := \
