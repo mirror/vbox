@@ -86,6 +86,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
         {
             Utf8Str defaultValue ("");
             DataType_T dt;
+            ULONG flags = static_cast <ULONG> (pa->uKeyFlags);
             /* Check for the configure data type */
             switch (pa->enmValueType)
             {
@@ -109,6 +110,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                         memcpy (defaultValue.mutableRaw(), pa->pDefaultValue->Bytes.pv,
                                 pa->pDefaultValue->Bytes.cb);
                         defaultValue.mutableRaw() [defaultValue.length()] = 0;
+                        flags |= DataFlags_Array;
                     }
                     break;
                 }
@@ -132,7 +134,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
             const Property prop = { Utf8Str (pa->pszKey),
                                     Utf8Str (""),
                                     dt,
-                                    static_cast <ULONG> (pa->uKeyFlags),
+                                    flags,
                                     defaultValue };
             unconst (mData.properties).push_back (prop);
             ++ pa;

@@ -7223,7 +7223,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="None" value="0x00"/>
     <const name="Mandatory" value="0x01"/>
     <const name="Expert" value="0x02"/>
-    <const name="FlagMask" value="0x03"/>
+    <const name="Array" value="0x04"/>
+    <const name="FlagMask" value="0x07"/>
   </enum>
 
   <enum
