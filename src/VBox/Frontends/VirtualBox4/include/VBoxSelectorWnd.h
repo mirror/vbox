@@ -35,7 +35,6 @@
 #ifdef VBOX_GUI_WITH_SYSTRAY
     #include <QSystemTrayIcon>
 #endif
-#include <QUuid>
 
 class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
@@ -69,34 +68,35 @@ signals:
 public slots:
 
     void fileMediaMgr();
-    VBoxVMItem* getSelectedItem();
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    void iconActivated (QSystemTrayIcon::ActivationReason aReason);
-    void showWindow();
-#endif
     void fileSettings();
     void fileExit();
 
     void vmNew();
     void vmSettings (const QString &aCategory = QString::null,
                      const QString &aControl = QString::null,
-                     const QUuid &aMachineId = QUuid());
-    void vmDelete (const QUuid &aMachineId = QUuid());
-    void vmStart (const QUuid &aMachineId = QUuid());
-    void vmDiscard (const QUuid &aMachineId = QUuid());
-    void vmPause (bool, const QUuid &aMachineId = QUuid());
-    void vmRefresh (const QUuid &aMachineId = QUuid());
-    void vmShowLogs (const QUuid &aMachineId = QUuid());
+                     const QUuid & = QUuid_null);
+    void vmDelete (const QUuid & = QUuid_null);
+    void vmStart (const QUuid & = QUuid_null);
+    void vmDiscard (const QUuid & = QUuid_null);
+    void vmPause (bool, const QUuid & = QUuid_null);
+    void vmRefresh (const QUuid & = QUuid_null);
+    void vmShowLogs (const QUuid & = QUuid_null);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void refreshSysTray(bool a_bRetranslate = false);
+    void refreshSysTray (bool aRetranslate = false);
 #endif
+
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
                                           bool aSnapshots,
                                           bool aDescription);
 
     void showContextMenu (const QPoint &aPoint);
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    void trayIconActivated (QSystemTrayIcon::ActivationReason aReason);
+    void showWindow();
+#endif
 
 protected:
 
@@ -141,10 +141,6 @@ private:
     QAction *fileSettingsAction;
     QAction *fileExitAction;
     QAction *vmNewAction;
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    QAction *trayShowWindowAction;
-    QAction *trayExitAction;
-#endif
     QAction *vmConfigAction;
     QAction *vmDeleteAction;
     QAction *vmStartAction;
@@ -153,12 +149,17 @@ private:
     QAction *vmRefreshAction;
     QAction *vmShowLogsAction;
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    QAction *mTrayShowWindowAction;
+    QAction *mTrayExitAction;
+#endif
+
     VBoxHelpActions mHelpActions;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* The systray icon */
-    QSystemTrayIcon *trayIcon;
-    QMenu *trayIconMenu;
+    QSystemTrayIcon *mTrayIcon;
+    QMenu *mTrayIconMenu;
 #endif
 
     /* The vm list view/model */

@@ -23,7 +23,9 @@
 #ifndef __VBoxDefs_h__
 #define __VBoxDefs_h__
 
+/* Qt includes */
 #include <qevent.h>
+#include <QUuid>
 
 #define LOG_GROUP LOG_GROUP_GUI
 #include <VBox/log.h>
@@ -64,10 +66,10 @@
 
 #if defined (VBOX_GUI_DEBUG)
 
-#include <VBox/types.h> // for uint64_t type
+#include <QThread>
+#include <QDateTime>
 
-#include <qthread.h>
-#include <qdatetime.h>
+#include <VBox/types.h> // for uint64_t type
 
 /**
  * A class to measure intervals using rdtsc instruction.
@@ -103,7 +105,10 @@ private:
 
 #endif // VBOX_GUI_DEBUG
 
-/* A common namespace for all enums */
+/** Null UUID constant to be used as a default value for reference parameters */
+extern const QUuid QUuid_null;
+
+/** Common namespace for all enums */
 struct VBoxDefs
 {
     /** Media type. */
