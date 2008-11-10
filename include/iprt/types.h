@@ -104,7 +104,7 @@
 # endif
 
 #else /* no crt */
-# include <iprt/nocrt/compiler/gcc.h>
+# include <iprt/nocrt/compiler/compiler.h>
 #endif /* no crt */
 
 
