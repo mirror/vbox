@@ -38,10 +38,10 @@ NOLSB=%NOLSB%
 
 if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
-    BUILDINTMP="$INSTALL_DIR/src/build_in_tmp"
+    BUILDINTMP="$INSTALL_DIR/src/vboxdrv/build_in_tmp"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
-    BUILDINTMP="/usr/share/%PACKAGE%/src/build_in_tmp"
+    BUILDINTMP="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
 fi
 
 if [ -n "$NOLSB" ]; then
