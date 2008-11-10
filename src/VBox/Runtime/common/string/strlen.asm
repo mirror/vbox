@@ -34,7 +34,7 @@ BEGINCODE
 
 ;;
 ; @param    psz     gcc: rdi  msc: rcx  x86: [esp+4]
-BEGINPROC RT_NOCRT(strlen)
+RT_NOCRT_BEGINPROC strlen
         cld
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
