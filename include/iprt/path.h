@@ -413,7 +413,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath);
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathAppDocs(char *pszPath, unsigned cchPath);
+RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath);
 
 /**
  * Query information about a file system object.
