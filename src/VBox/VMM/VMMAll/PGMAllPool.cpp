@@ -122,7 +122,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PAE_PD_3:
             return pVM->pgm.s.apGCPaePDs[3];
         case PGMPOOL_IDX_PDPT:
-            return pVM->pgm.s.pGCPaePDPT;
+            return pVM->pgm.s.pShwPaePdptRC;
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;

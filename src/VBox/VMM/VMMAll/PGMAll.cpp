@@ -825,7 +825,7 @@ DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT  pPdpt = pVM->pgm.s.CTXMID(p,PaePDPT);
+    PX86PDPT  pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
     PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
 
     /* Allocate page directory if not present. */
@@ -878,7 +878,7 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
     Assert(!HWACCMIsNestedPagingActive(pVM));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    PX86PDPT  pPdpt = pVM->pgm.s.CTXMID(p,PaePDPT);
+    PX86PDPT  pPdpt = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
     PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
 
     *ppPdpt = pPdpt;

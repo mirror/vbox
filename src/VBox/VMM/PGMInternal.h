@@ -2072,20 +2072,22 @@ typedef struct PGM
     /** The Physical Address (HC) of the four PDs for the low 4GB.
      * These are *NOT* 4 contiguous pages. */
     RTHCPHYS                        aHCPhysPaePDs[4];
-    /** The PAE PDP - HC Ptr. */
-    R3R0PTRTYPE(PX86PDPT)           pHCPaePDPT;
     /** The Physical Address (HC) of the PAE PDPT. */
     RTHCPHYS                        HCPhysPaePDPT;
-    /** The PAE PDPT - GC Ptr. */
-    RCPTRTYPE(PX86PDPT)             pGCPaePDPT;
+    /** The PAE PDPT - R3 Ptr. */
+    R3PTRTYPE(PX86PDPT)             pShwPaePdptR3;
+    /** The PAE PDPT - R0 Ptr. */
+    R0PTRTYPE(PX86PDPT)             pShwPaePdptR0;
+    /** The PAE PDPT - RC Ptr. */
+    RCPTRTYPE(PX86PDPT)             pShwPaePdptRC;
     /** @} */
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         alignment5; /**< structure size alignment. */
+#endif
 
     /** @name AMD64 Shadow Paging
      * Extends PAE Paging.
      * @{ */
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         alignment5; /**< structure size alignment. */
-#endif
     /** The Page Map Level 4 table - R3 Ptr. */
     R3PTRTYPE(PX86PML4)             pShwPaePml4R3;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -3783,8 +3785,28 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     return 0;
 }
 
-#ifndef IN_RC
+#endif /* !IN_RC */
 
+/**
+ * Gets the shadow page pointer table, PAE.
+ *
+ * @returns Pointer to the shadow PAE PDPT.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PDPT pShwPdpt;
+    Assert(pPGM->HCPhysPaePDPT != 0 && pPGM->HCPhysPaePDPT != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePTPD, &pShwPdpt);
+    AssertRCReturn(rc, 0);
+    return pShwPdpt;
+#else
+    return pPGM->CTX_SUFF(pShwPaePdpt);
+#endif
+}
+
+#ifndef IN_RC
 
 /**
  * Gets the shadow page map level-4 pointer.
@@ -3851,7 +3873,6 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 # endif
 }
 
-#endif /* IN_RC */
 
 /**
  * Gets the GUEST page directory pointer for the specified address.
