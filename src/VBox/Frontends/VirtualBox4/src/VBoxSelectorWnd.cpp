@@ -1122,7 +1122,7 @@ void VBoxSelectorWnd::vmShowLogs (const QUuid& aUuid)
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-void VBoxSelectorWnd::refreshSysTray()
+void VBoxSelectorWnd::refreshSysTray(bool a_bRetranslate)
 {
     if (false == QSystemTrayIcon::isSystemTrayAvailable())
         return;
@@ -1130,10 +1130,13 @@ void VBoxSelectorWnd::refreshSysTray()
     Assert(trayIcon);
     Assert(trayIconMenu);
 
-    trayIcon->setVisible (true);
-    trayIconMenu->clear();
-    trayIconMenu->addAction (trayExitAction);
-    trayIconMenu->addSeparator();
+    if (!a_bRetranslate)
+    {
+        trayIcon->setVisible (true);
+        trayIconMenu->clear();
+        trayIconMenu->addAction (trayExitAction);
+        trayIconMenu->addSeparator();
+    }
 
     VBoxVMItem* pItem = NULL;
     QMenu* pCurMenu = trayIconMenu;
@@ -1144,49 +1147,59 @@ void VBoxSelectorWnd::refreshSysTray()
 
     for (int i = 0; i < mVMModel->rowCount(); i++, iCurItemCount++)
     {
-        if (iCurItemCount > 14)     /* 15 machines per sub menu. */
-        {
-            pSubMenu = new QMenu (tr("Next 15 machines ..."));
-            Assert(pSubMenu);
-            pCurMenu->addMenu (pSubMenu);
-            pCurMenu = pSubMenu;
-            iCurItemCount = 0;
-        }
-
         pItem = mVMModel->itemByRow(i);
         Assert(pItem);
 
-        pSubMenu = new QMenu (pItem->name());
-        Assert(pSubMenu);
-        pSubMenu->setIcon (pItem->osIcon());
-        if(pItem->accessible())
+        if (a_bRetranslate)
         {
-            pSubMenu->addAction (pItem->vmActionConfig());
-            pSubMenu->addAction (pItem->vmActionDelete());
-            pSubMenu->addSeparator();
-            pSubMenu->addAction (pItem->vmActionStart());
-            pSubMenu->addAction (pItem->vmActionDiscard());
-            if (pItem->running())
-            {
-                pSubMenu->addSeparator();
-                pSubMenu->addAction (pItem->vmActionPause());
-            }
-            pSubMenu->addSeparator();
-            pSubMenu->addAction (pItem->vmActionShowLogs());
+            pItem->retranslateUi();
+            continue;
         }
         else
         {
-            pSubMenu->addAction (pItem->vmActionDelete());
-            pSubMenu->addAction (pItem->vmActionRefresh());
-        }
+            if (iCurItemCount > 14)     /* 15 machines per sub menu. */
+            {
+                pSubMenu = new QMenu (tr("Next 15 machines ..."));
+                Assert(pSubMenu);
+                pCurMenu->addMenu (pSubMenu);
+                pCurMenu = pSubMenu;
+                iCurItemCount = 0;
+            }
 
-        pCurMenu->addMenu (pSubMenu);
+            pSubMenu = new QMenu (pItem->name());
+            Assert(pSubMenu);
+            pSubMenu->setIcon (pItem->osIcon());
+            if(pItem->accessible())
+            {
+                pSubMenu->addAction (pItem->vmActionConfig());
+                pSubMenu->addAction (pItem->vmActionDelete());
+                pSubMenu->addSeparator();
+                pSubMenu->addAction (pItem->vmActionStart());
+                pSubMenu->addAction (pItem->vmActionDiscard());
+                if (pItem->running())
+                {
+                    pSubMenu->addSeparator();
+                    pSubMenu->addAction (pItem->vmActionPause());
+                }
+                pSubMenu->addSeparator();
+                pSubMenu->addAction (pItem->vmActionShowLogs());
+            }
+            else
+            {
+                pSubMenu->addAction (pItem->vmActionDelete());
+                pSubMenu->addAction (pItem->vmActionRefresh());
+            }
+
+            pCurMenu->addMenu (pSubMenu);
+        }
     }
 
-    trayIconMenu->addSeparator();
-    trayIconMenu->addAction (fileExitAction);
+    if (!a_bRetranslate)
+    {
+        trayIconMenu->addSeparator();
+        trayIconMenu->addAction (fileExitAction);
+    }
 
-    trayIconMenu->setVisible (true);
 }
 #endif
 
@@ -1394,6 +1407,10 @@ void VBoxSelectorWnd::retranslateUi()
     mFileMenu->setTitle (tr("&File"));
     mVMMenu->setTitle (tr ("&Machine"));
     mHelpMenu->setTitle (tr ("&Help"));
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    refreshSysTray (true);   /* true = re-translate the UI. */
+#endif
 }
 
 

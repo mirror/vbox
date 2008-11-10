@@ -185,6 +185,7 @@ VBoxVMItem::VBoxVMItem (const CMachine &aMachine, VBoxSelectorWnd *pParent)
     connect (vmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
 
     updateActions();
+    retranslateUi();
 }
 
 VBoxVMItem::~VBoxVMItem()
@@ -489,17 +490,17 @@ void VBoxVMItem::updateActions()
         /* change the Start button text accordingly */
         if (s >= KMachineState_Running)
         {
-            vmStartAction->setText (tr ("S&how"));
+            vmStartAction->setText (VBoxVMListView::tr ("S&how"));
             vmStartAction->setStatusTip (
-                tr ("Switch to the window of the selected virtual machine"));
+                VBoxVMListView::tr ("Switch to the window of the selected virtual machine"));
 
             vmStartAction->setEnabled (canSwitchTo());
         }
         else
         {
-            vmStartAction->setText (tr ("S&tart"));
+            vmStartAction->setText (VBoxVMListView::tr ("S&tart"));
             vmStartAction->setStatusTip (
-                tr ("Start the selected virtual machine"));
+                VBoxVMListView::tr ("Start the selected virtual machine"));
 
             vmStartAction->setEnabled (!run);
         }
@@ -507,18 +508,18 @@ void VBoxVMItem::updateActions()
         /* change the Pause/Resume button text accordingly */
         if (s == KMachineState_Paused)
         {
-            vmPauseAction->setText (tr ("R&esume"));
+            vmPauseAction->setText (VBoxVMListView::tr ("R&esume"));
             vmPauseAction->setStatusTip (
-                tr ("Resume the execution of the virtual machine"));
+                VBoxVMListView::tr ("Resume the execution of the virtual machine"));
             vmPauseAction->blockSignals (true);
             vmPauseAction->setChecked (true);
             vmPauseAction->blockSignals (false);
         }
         else
         {
-            vmPauseAction->setText (tr ("&Pause"));
+            vmPauseAction->setText (VBoxVMListView::tr ("&Pause"));
             vmPauseAction->setStatusTip (
-                tr ("Suspend the execution of the virtual machine"));
+                VBoxVMListView::tr ("Suspend the execution of the virtual machine"));
             vmPauseAction->blockSignals (true);
             vmPauseAction->setChecked (false);
             vmPauseAction->blockSignals (false);
@@ -541,33 +542,39 @@ void VBoxVMItem::updateActions()
         vmPauseAction->setEnabled (false);
 
         /* change the Start button text accordingly */
-        vmStartAction->setText (tr ("S&tart"));
+        vmStartAction->setText (VBoxVMListView::tr ("S&tart"));
         vmStartAction->setStatusTip (
-            tr ("Start the selected virtual machine"));
+            VBoxVMListView::tr ("Start the selected virtual machine"));
         vmStartAction->setEnabled (false);
 
         /* disable the show log item for the selected vm */
         vmShowLogsAction->setEnabled (false);
     }
+}
 
-    vmConfigAction->setText (tr ("&Settings..."));
-    vmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
+void VBoxVMItem::retranslateUi ()
+{
+    vmConfigAction->setText (VBoxVMListView::tr ("&Settings..."));
+    vmConfigAction->setStatusTip (VBoxVMListView::tr ("Configure the selected virtual machine"));
 
-    vmDeleteAction->setText (tr ("&Delete"));
-    vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
+    vmDeleteAction->setText (VBoxVMListView::tr ("&Delete"));
+    vmDeleteAction->setStatusTip (VBoxVMListView::tr ("Delete the selected virtual machine"));
 
-    vmDiscardAction->setText (tr ("D&iscard"));
+    vmDiscardAction->setText (VBoxVMListView::tr ("D&iscard"));
     vmDiscardAction->setStatusTip (
-        tr ("Discard the saved state of the selected virtual machine"));
+        VBoxVMListView::tr ("Discard the saved state of the selected virtual machine"));
 
-    vmRefreshAction->setText (tr ("&Refresh"));
+    vmRefreshAction->setText (VBoxVMListView::tr ("&Refresh"));
     vmRefreshAction->setStatusTip (
-        tr ("Refresh the accessibility state of the selected virtual machine"));
+        VBoxVMListView::tr ("Refresh the accessibility state of the selected virtual machine"));
 
-    vmShowLogsAction->setText (tr ("Show &Log..."));
-    vmShowLogsAction->setIconText (tr ("Log", "icon text"));
+    vmShowLogsAction->setText (VBoxVMListView::tr ("Show &Log..."));
+    vmShowLogsAction->setIconText (VBoxVMListView::tr ("Log", "icon text"));
     vmShowLogsAction->setStatusTip (
-        tr ("Show the log files of the selected virtual machine"));
+        VBoxVMListView::tr ("Show the log files of the selected virtual machine"));
+
+    /* Update other actions which changes behavior depending the machine's state. */
+    updateActions();
 }
 
 /* VBoxVMModel class */

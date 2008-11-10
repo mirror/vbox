@@ -87,7 +87,9 @@ public:
     bool canSwitchTo() const;
     bool switchTo();
 
+    /* Updates all internal actions depending on the VM's state. */
     void updateActions();
+    void retranslateUi();
 
 private:
 
