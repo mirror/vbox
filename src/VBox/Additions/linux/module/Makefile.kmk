@@ -22,10 +22,7 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-INSTALLS += vboxadd-mod
-OTHERS.linux += \
-	$(VBOX_PATH_ADDITIONS)/src/vboxadd/build_in_tmp \
-	$(if $(VBOX_OSE),,$(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf)
+INSTALLS += vboxadd-mod vboxadd-sh
 ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS += vboxadd
 endif
@@ -35,23 +32,18 @@ endif
 #
 include $(PATH_SUB_CURRENT)/files_vboxadd
 
-$(VBOX_PATH_ADDITIONS)/src/vboxadd/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $(call DIRDEP,$(VBOX_PATH_ADDITIONS)/src/vboxadd)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxadd;g" < $< > $@
-	$(QUIET)chmod 0755 $@
+vboxadd-mod_INST     = $(INST_ADDITIONS)src/vboxadd/
+vboxadd-mod_MODE     = a+r,u+w
+vboxadd-mod_SOURCES  = $(subst ",,$(FILES_VBOXADD_NOBIN))
+vboxadd-mod_SOURCES += $(if $(VBOX_OSE),,$(PATH_vboxadd-mod)/dkms.conf)
+vboxadd-mod_CLEAN    = $(PATH_vboxadd-mod)/dkms.conf
 
-$(VBOX_PATH_ADDITIONS)/src/vboxadd/dkms.conf: \
-		$(PATH_SUB_CURRENT)/dkms.conf \
-		$(VBOX_VERSION_STAMP)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
+vboxadd-sh_INST      = $(INST_ADDITIONS)src/vboxadd/
+vboxadd-sh_MODE      = a+rx,u+w
+vboxadd-sh_SOURCES   = $(subst ",,$(FILES_VBOXADD_BIN))
+vboxadd-sh_SOURCES  += $(PATH_vboxadd-sh)/build_in_tmp
+vboxadd-sh_CLEAN    += $(PATH_vboxadd-sh)/build_in_tmp
 
-vboxadd-mod_INST    = $(INST_ADDITIONS)src/vboxadd/
-vboxadd-mod_MODE    = a+r,u+w
-vboxadd-mod_SOURCES = $(subst ",,$(FILES_VBOXADD_NOBIN))
 
 #
 # The module (for syntax checking).
@@ -70,6 +62,22 @@ vboxadd_SOURCES  = \
 vboxadd_LIBS     = \
 	$(VBOX_LIB_VBGL_R0BASE) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
+
+
+$$(PATH_vboxadd-sh)/build_in_tmp: \
+		$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxadd;g" < $< > $@
+	$(QUIET)chmod 0755 $@
+
+$$(PATH_vboxadd-mod)/dkms.conf: \
+		$(PATH_SUB_CURRENT)/dkms.conf \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" < $< > $@
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

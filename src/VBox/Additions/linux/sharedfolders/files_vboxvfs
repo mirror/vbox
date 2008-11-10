@@ -83,5 +83,4 @@ FILES_VBOXVFS_NOBIN=" \
 "
 
 FILES_VBOXVFS_BIN=" \
-    ${PATH_ROOT}/src/VBox/HostDrivers/Support/linux/build_in_tmp=>build_in_tmp \
 "

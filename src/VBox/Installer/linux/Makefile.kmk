@@ -230,7 +230,11 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
-		$(VBOX_LNX_INST_OUT_DIR)/install.sh
+		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
+		$(wildcard $(PATH_BIN)/src/*) \
+		$(wildcard $(PATH_BIN)/src/*/*) \
+		$(wildcard $(PATH_BIN)/src/*/*/*) \
+		$(wildcard $(PATH_BIN)/src/*/*/*/*)
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*.run)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
