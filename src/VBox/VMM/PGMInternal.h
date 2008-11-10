@@ -2094,19 +2094,10 @@ typedef struct PGM
 #endif
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                        HCPhysPaePML4;
-#if 0
     /** The pgm pool page descriptor for the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R3;
     /** The pgm pool page descriptor for the current active CR3 - R0 Ptr. */
     R0PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R0;
-#else
-    /** The pgm pool page descriptor for the current active CR3. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PPGMPOOLPAGE)         pHCShwAmd64CR3;
-#else
-    R3R0PTRTYPE(PPGMPOOLPAGE)       pHCShwAmd64CR3;
-#endif
-#endif
     /** @}*/
 
     /** @name Nested Shadow Paging

@@ -930,11 +930,11 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
             /** @todo why are we looking up the guest PML4E here?  Isn't pGstPml4e
              *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
              *        are fine.) */
-            Assert(pVM->pgm.s.pHCShwAmd64CR3);
+            Assert(pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
             Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
 
             rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4, &pShwPage);
+                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->idx, iPml4, &pShwPage);
         }
         else
             rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(63) /* hack: make the address unique */,
