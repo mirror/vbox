@@ -46,8 +46,6 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 
 /**
