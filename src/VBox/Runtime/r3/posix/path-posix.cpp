@@ -501,7 +501,7 @@ static int rtPathUserHomeByEnv(char *pszPath, size_t cchPath)
 }
 
 
-RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 {
     int rc;
 #ifndef RT_OS_L4

@@ -129,7 +129,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathUserHome(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 {
     RTUTF16 wszPath[RTPATH_MAX];
     DWORD   dwAttr;
