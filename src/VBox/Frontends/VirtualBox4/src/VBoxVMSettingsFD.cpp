@@ -252,7 +252,7 @@ void VBoxVMSettingsFD::showMediaManager()
     VBoxMediaManagerDlg dlg (this);
 
     dlg.setup (VBoxDefs::MediaType_Floppy, true /* aDoSelect */,
-               true /* aRefresh */, mMachine, mCbIsoFD->id());
+               false /* aRefresh */, mMachine, mCbIsoFD->id());
 
     QUuid newId = dlg.exec() == QDialog::Accepted ?
                   dlg.selectedId() : mCbIsoFD->id();

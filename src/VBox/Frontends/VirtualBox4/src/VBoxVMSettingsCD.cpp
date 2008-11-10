@@ -256,7 +256,7 @@ void VBoxVMSettingsCD::showMediaManager()
     VBoxMediaManagerDlg dlg (this);
 
     dlg.setup (VBoxDefs::MediaType_DVD, true /* aDoSelect */,
-               true /* aRefresh */, mMachine, mCbIsoCD->id());
+               false /* aRefresh */, mMachine, mCbIsoCD->id());
 
     QUuid newId = dlg.exec() == QDialog::Accepted ?
                   dlg.selectedId() : mCbIsoCD->id();
