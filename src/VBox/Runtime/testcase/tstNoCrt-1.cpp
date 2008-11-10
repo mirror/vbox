@@ -183,6 +183,7 @@ int main()
     /*
      * memcpy.
      */
+#if 0
     RTPrintf("tstNoCrt-1: memcpy\n");
     TstBufInit(&Buf1, 1);
     TstBufInit(&Buf2, 2);
@@ -398,6 +399,32 @@ int main()
         my_memcheck(&Buf1.abBuf[off * 2], 0, TSTBUF_SIZE - off * 2, sz);
         TstBufCheck(&Buf1, sz);
     }
+#endif /* tmp, remove */
+
+    /*
+     * strcpy (quick smoke testing).
+     */
+    RTPrintf("tstNoCrt-1: strcpy\n");
+    TstBufInit(&Buf1, 1);
+    const char *pszSrc = s_szTest1;
+    char *pszDst = (char *)&Buf1.abBuf[0];
+    pv = RT_NOCRT(strcpy)(pszDst, pszSrc);
+    CHECK_PV(pszDst);
+    TstBufCheck(&Buf1, "strcpy 1");
+    iDiff = RT_NOCRT(strcmp)(pszDst, pszSrc); CHECK_DIFF( == );
+
+    pszSrc = s_szTest1;
+    for (unsigned i = 0; i < sizeof(s_szTest1) / 2; i++)
+    {
+        pszSrc++;
+        TstBufInit(&Buf1, 2);
+        pszDst = (char *)&Buf1.abBuf[sizeof(Buf1.abBuf) - strlen(pszSrc) - 1];
+        pv = RT_NOCRT(strcpy)(pszDst, pszSrc);
+        CHECK_PV(pszDst);
+        TstBufCheck(&Buf1, "strcpy 3");
+        iDiff = RT_NOCRT(strcmp)(pszDst, pszSrc); CHECK_DIFF( == );
+    }
+
 
     /*
      * memchr & strchr.
