@@ -69,8 +69,6 @@ BEGINPROC RT_NOCRT(strcmp)
         jne     .not_equal
         test    al, al
         jz      .equal
-        inc     psz1
-        inc     psz2
 
         mov     al, [psz1 + 2]
         mov     ah, [psz2 + 2]
@@ -78,8 +76,6 @@ BEGINPROC RT_NOCRT(strcmp)
         jne     .not_equal
         test    al, al
         jz      .equal
-        inc     psz1
-        inc     psz2
 
         mov     al, [psz1 + 3]
         mov     ah, [psz2 + 3]
