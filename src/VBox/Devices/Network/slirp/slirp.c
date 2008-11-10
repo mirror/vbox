@@ -346,6 +346,11 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     struct timeval timeout;
     int nfds;
     int tmp_time;
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+    int rc;
+    int chEvents = 1; /*store for send see DrvNAT*/
+    int cchEvents = 0; /*counter*/
+#endif
 
     nfds = *pnfds;
 	/*
@@ -360,6 +365,13 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
 
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+		for (so = tcb.so_next; so != &tcb; so = so_next, chEvents++); 
+		for (so = udb.so_next; so != &udb; so = so_next, chEvents++); 
+		if (pData->phEvents != NULL) free(pData->phEvents);
+		pData->phEvents = malloc(sizeof(HANDLE) * chEvents);
+#endif
+			
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
 
@@ -380,8 +392,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * Set for reading sockets which are accepting
 			 */
 			if (so->so_state & SS_FACCEPTCONN) {
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
                                 FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
+#else
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				AssertRelease(rc != SOCKET_ERROR);
+				pData->phEvents[cchEvents] = so->hNetworkEvent;
+#endif
 				continue;
 			}
 
@@ -389,8 +407,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * Set for writing sockets which are connecting
 			 */
 			if (so->so_state & SS_ISFCONNECTING) {
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
+#else
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				AssertRelease(rc != SOCKET_ERROR);
+				pData->phEvents[cchEvents] = so->hNetworkEvent;
+#endif
 				continue;
 			}
 
@@ -399,8 +423,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * we have something to send
 			 */
 			if (CONN_CANFSEND(so) && so->so_rcv.sb_cc) {
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
+#else
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_WRITE);
+				AssertRelease(rc != SOCKET_ERROR);
+				pData->phEvents[cchEvents] = so->hNetworkEvent;
+#endif
 			}
 
 			/*
@@ -408,10 +438,19 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * receive more, and we have room for it XXX /2 ?
 			 */
 			if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2))) {
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 				FD_SET(so->s, readfds);
 				FD_SET(so->s, xfds);
 				UPD_NFDS(so->s);
+#else
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_OOB|FD_READ);
+				AssertRelease(rc != SOCKET_ERROR);
+				pData->phEvents[cchEvents] = so->hNetworkEvent;
+#endif
 			}
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+			cchEvents++;
+#endif
 		}
 
 		/*
@@ -442,9 +481,18 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * (XXX <= 4 ?)
 			 */
 			if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4) {
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
+#else
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				AssertRelease(rc != SOCKET_ERROR);
+				pData->phEvents[cchEvents] = so->hNetworkEvent;
+#endif
 			}
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+			cchEvents++;
+#endif
 		}
 	}
 
@@ -481,13 +529,21 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			   timeout.tv_usec = (u_int)tmp_time;
 		}
 	}
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
         *pnfds = nfds;
+#else
+        *pnfds = chEvents;
+#endif
 }
 
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
 {
     struct socket *so, *so_next;
     int ret;
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+	WSANETWORKEVENTS NetworkEvents;			
+	int rc;
+#endif
 
 	/* Update time */
 	updtime(pData);
@@ -516,6 +572,10 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		 */
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
+			AssertRelease(rc != SOCKET_ERROR);
+#endif
 
 			/*
 			 * FD_ISSET is meaningless on these sockets
@@ -529,17 +589,28 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			 * This will soread as well, so no need to
 			 * test for readfds below if this succeeds
 			 */
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 			if (FD_ISSET(so->s, xfds))
+#else
+			if ((NetworkEvents.lNetworkEvents & FD_OOB) && NetworkEvents.iErrorCode[FD_OOB_BIT] == 0)
+#endif
 			   sorecvoob(pData, so);
 			/*
 			 * Check sockets for reading
 			 */
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 			else if (FD_ISSET(so->s, readfds)) {
+#else
+			else if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
+#endif
 				/*
 				 * Check for incoming connections
 				 */
 				if (so->so_state & SS_FACCEPTCONN) {
 					tcp_connect(pData, so);
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+					WSAResetEvent(so->hNetworkEvent);
+#endif
 					continue;
 				} /* else */
 				ret = soread(pData, so);
@@ -552,7 +623,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			/*
 			 * Check sockets for writing
 			 */
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 			if (FD_ISSET(so->s, writefds)) {
+#else
+			if ((NetworkEvents.lNetworkEvents & FD_WRITE) && (NetworkEvents.iErrorCode[FD_WRITE_BIT] == 0)) {
+#endif
 			  /*
 			   * Check for non-blocking, still-connecting sockets
 			   */
@@ -571,8 +646,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			    if (ret < 0) {
 			      /* XXXXX Must fix, zero bytes is a NOP */
 			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				  errno == EINPROGRESS || errno == ENOTCONN)
+				  errno == EINPROGRESS || errno == ENOTCONN) {
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+					WSAResetEvent(so->hNetworkEvent);
+#endif
 				continue;
+			      }
 
 			      /* else failed */
 			      so->so_state = SS_NOFDREF;
@@ -606,8 +685,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			  if (ret < 0) {
 			    /* XXX */
 			    if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				errno == EINPROGRESS || errno == ENOTCONN)
+				errno == EINPROGRESS || errno == ENOTCONN) {
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+	      		      WSAResetEvent(so->hNetworkEvent);
+#endif
 			      continue; /* Still connecting, continue */
+			    }
 
 			    /* else failed */
 			    so->so_state = SS_NOFDREF;
@@ -618,8 +701,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			    if (ret < 0) {
 			      /* XXX */
 			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				  errno == EINPROGRESS || errno == ENOTCONN)
+				  errno == EINPROGRESS || errno == ENOTCONN) {
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+	      		      	WSAResetEvent(so->hNetworkEvent);
+#endif
 				continue;
+				}
 			      /* else failed */
 			      so->so_state = SS_NOFDREF;
 			    } else
@@ -639,8 +726,19 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		for (so = udb.so_next; so != &udb; so = so_next) {
 			so_next = so->so_next;
 
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
+			AssertRelease(rc != SOCKET_ERROR);
+#endif
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS) 
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
+#else
+			if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
+#endif
                             sorecvfrom(pData, so);
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+	      		      	WSAResetEvent(so->hNetworkEvent);
+#endif
                         }
 		}
 	}
@@ -818,3 +916,10 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 {
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
 }
+
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+HANDLE *slirp_get_events(PNATState pData)
+{
+	return (pData->phEvents);
+}
+#endif
