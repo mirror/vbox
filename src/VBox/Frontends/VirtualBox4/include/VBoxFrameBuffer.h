@@ -46,24 +46,6 @@
 
 class VBoxConsoleView;
 
-//#define VBOX_GUI_FRAMEBUF_STAT
-
-#if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
-#define FRAMEBUF_DEBUG_START(prefix) \
-    uint64_t prefix##elapsed = VMCPUTimer::ticks();
-#define FRAMEBUF_DEBUG_STOP(prefix,w,h) { \
-        prefix##elapsed = VMCPUTimer::ticks() - prefix##elapsed; \
-        V_DEBUG(( "Last update: %04d x %04d px, %03.3f ms, %.0f ticks", \
-            (w), (h), \
-            (double) prefix##elapsed / (double) VMCPUTimer::ticksPerMsec(), \
-            (double) prefix##elapsed \
-        )); \
-    }
-#else
-#define FRAMEBUF_DEBUG_START(prefix) {}
-#define FRAMEBUF_DEBUG_STOP(prefix,w,h) {}
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 
 /**

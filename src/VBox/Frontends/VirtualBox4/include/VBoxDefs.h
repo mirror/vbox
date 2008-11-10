@@ -32,19 +32,19 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 
-#ifdef VBOX_GUI_DEBUG
+#ifdef DEBUG
 
 #define AssertWrapperOk(w)      \
     AssertMsg (w.isOk(), (#w " is not okay (RC=0x%08X)", w.lastRC()))
 #define AssertWrapperOkMsg(w, m)      \
     AssertMsg (w.isOk(), (#w ": " m " (RC=0x%08X)", w.lastRC()))
 
-#else // !VBOX_GUI_DEBUG
+#else /* #ifdef DEBUG */
 
 #define AssertWrapperOk(w)          do {} while (0)
 #define AssertWrapperOkMsg(w, m)    do {} while (0)
 
-#endif // !VBOX_GUI_DEBUG
+#endif /* #ifdef DEBUG */
 
 #ifndef SIZEOF_ARRAY
 #define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
@@ -61,49 +61,6 @@
     #undef VBOX_GUI_USE_EXT_FRAMEBUFFER
   #endif
 #endif
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if defined (VBOX_GUI_DEBUG)
-
-#include <QThread>
-#include <QDateTime>
-
-#include <VBox/types.h> // for uint64_t type
-
-/**
- * A class to measure intervals using rdtsc instruction.
- */
-class VMCPUTimer : public QThread // for crossplatform msleep()
-{
-public:
-    /* don't inline this function to not depend on iprt/asm.h here */
-    static uint64_t ticks();
-    inline static uint64_t msecs( uint64_t tcks ) {
-        return tcks / ticks_per_msec;
-    }
-    inline static uint64_t msecsSince( uint64_t tcks ) {
-        tcks = ticks() - tcks;
-        return tcks / ticks_per_msec;
-    }
-    inline static void calibrate( int ms )
-    {
-        QTime t;
-        uint64_t tcks = ticks();
-        t.start();
-        msleep( ms );
-        tcks = ticks() - tcks;
-        int msecs = t.elapsed();
-        ticks_per_msec = tcks / msecs;
-    }
-    inline static uint64_t ticksPerMsec() {
-        return ticks_per_msec;
-    }
-private:
-    static uint64_t ticks_per_msec;
-};
-
-#endif // VBOX_GUI_DEBUG
 
 /** Null UUID constant to be used as a default value for reference parameters */
 extern const QUuid QUuid_null;

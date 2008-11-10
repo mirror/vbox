@@ -813,10 +813,6 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     connect (QApplication::desktop(), SIGNAL (resized (int)),
              this, SLOT (doResizeDesktop (int)));
 
-#if defined (VBOX_GUI_DEBUG) && defined (VBOX_GUI_FRAMEBUF_STAT)
-    VMCPUTimer::calibrate (200);
-#endif
-
 #if defined (Q_WS_WIN)
     gView = this;
 #endif
