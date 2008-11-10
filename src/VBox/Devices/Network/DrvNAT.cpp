@@ -287,11 +287,13 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 switch (ch[0])
                 {
                     case '1':
+                        /* called from drvNATSend */
                         slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
                         RTSemEventSignal(pThis->semSndMutex);
                         fWait = 1;
                         break;
                     case '2':
+                        /* wakeup only */
                         break;
                 }
             }
@@ -299,7 +301,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # else /* RT_OS_WINDOWS */
         phEvents = slirp_get_events(pThis->pNATState);
         phEvents[0] = pThis->hNetworkEvent[0];
-        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2, FALSE);
+        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
         AssertRelease(event != WSA_WAIT_FAILED);
 
         /*
@@ -310,6 +312,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
         if ((event - WSA_WAIT_EVENT_0) == 0)
         {
+            /** XXX distinguish between drvNATSend and wakeup only */
             slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
             WSAResetEvent(pThis->hNetworkEvent[0]);
             RTSemEventSignal(pThis->semSndMutex);
@@ -434,7 +437,6 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     pThis->pNATState = NULL;
 #ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     RTCritSectLeave(&pThis->CritSect);
-
     RTCritSectDelete(&pThis->CritSect);
 #else
     RTSemEventDestroy(pThis->semSndMutex);
