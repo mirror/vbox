@@ -22,6 +22,8 @@
 
 #include <VBoxDefs.h>
 
+const QUuid QUuid_null;
+
 const char* VBoxDefs::GUI_LastWindowPosition = "GUI/LastWindowPostion";
 const char* VBoxDefs::GUI_LastWindowPosition_Max = "max";
 const char* VBoxDefs::GUI_Fullscreen = "GUI/Fullscreen";
