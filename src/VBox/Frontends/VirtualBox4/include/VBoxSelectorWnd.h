@@ -89,7 +89,7 @@ public slots:
     void vmShowLogs (const QUuid &aMachineId = QUuid());
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void refreshSysTray();
+    void refreshSysTray(bool a_bRetranslate = false);
 #endif
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
