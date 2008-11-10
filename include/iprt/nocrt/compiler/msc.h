@@ -32,7 +32,9 @@
 
 
 /* stddef.h */
-#define errno msvcrt_errno
+#if !defined(_MT) && !defined(_DLL) && _MSC_VER < 1400
+# define errno msvcrt_errno
+#endif
 #include <../include/stddef.h>
 #undef errno
 
