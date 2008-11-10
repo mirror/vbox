@@ -183,7 +183,6 @@ int main()
     /*
      * memcpy.
      */
-#if 0
     RTPrintf("tstNoCrt-1: memcpy\n");
     TstBufInit(&Buf1, 1);
     TstBufInit(&Buf2, 2);
@@ -399,7 +398,6 @@ int main()
         my_memcheck(&Buf1.abBuf[off * 2], 0, TSTBUF_SIZE - off * 2, sz);
         TstBufCheck(&Buf1, sz);
     }
-#endif /* tmp, remove */
 
     /*
      * strcpy (quick smoke testing).
