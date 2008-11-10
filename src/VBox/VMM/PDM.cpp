@@ -1169,7 +1169,7 @@ VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
     /*
      * Iterate registered devices looking for the device.
      */
-    RTUINT cchDevice = strlen(pszDevice);
+    size_t cchDevice = strlen(pszDevice);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice

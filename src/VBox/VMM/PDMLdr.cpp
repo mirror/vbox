@@ -906,9 +906,9 @@ static char *pdmR3FileConstruct(const char *pszDir, const char *pszFile, const c
     /*
      * Allocate temp memory for return buffer.
      */
-    unsigned cchDir  = strlen(pszDir);
-    unsigned cchFile = strlen(pszFile);
-    unsigned cchDefaultExt;
+    size_t cchDir  = strlen(pszDir);
+    size_t cchFile = strlen(pszFile);
+    size_t cchDefaultExt;
 
     /*
      * Default extention?
@@ -918,19 +918,11 @@ static char *pdmR3FileConstruct(const char *pszDir, const char *pszFile, const c
     else
         cchDefaultExt = strlen(pszDefaultExt);
 
-    unsigned cchPath = cchDir + 1 + cchFile + cchDefaultExt + 1;
-    if (cchPath > RTPATH_MAX)
-    {
-        AssertMsgFailed(("Path too long!\n"));
-        return NULL;
-    }
+    size_t cchPath = cchDir + 1 + cchFile + cchDefaultExt + 1;
+    AssertMsgReturn(cchPath <= RTPATH_MAX, ("Path too long!\n"), NULL);
 
     char *pszRet = (char *)RTMemTmpAlloc(cchDir + 1 + cchFile + cchDefaultExt + 1);
-    if (!pszRet)
-    {
-        AssertMsgFailed(("Out of temporary memory!\n"));
-        return NULL;
-    }
+    AssertMsgReturn(!pszRet, ("Out of temporary memory!\n"), NULL);
 
     /*
      * Construct the filename.
@@ -982,11 +974,11 @@ typedef struct QMFEIPARG
     RTRCUINTPTR uPC;
 
     char       *pszNearSym1;
-    unsigned    cchNearSym1;
+    size_t     cchNearSym1;
     RTRCINTPTR  offNearSym1;
 
     char       *pszNearSym2;
-    unsigned    cchNearSym2;
+    size_t      cchNearSym2;
     RTRCINTPTR  offNearSym2;
 } QMFEIPARG, *PQMFEIPARG;
 
