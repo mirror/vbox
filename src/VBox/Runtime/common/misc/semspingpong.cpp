@@ -51,7 +51,8 @@
 #define RTSEMPP_VALIDATE_RETURN(pPP) \
     do { \
         AssertPtrReturn(pPP, VERR_INVALID_PARAMETER); \
-        ASMAtomicUoReadSize(&pPP->enmSpeaker, &enmSpeaker); \
+        AssertCompileSize(pPP->enmSpeaker, 4); \
+        enmSpeaker = (RTPINGPONGSPEAKER)ASMAtomicUoReadU32((volatile uint32_t *)&pPP->enmSpeaker); \
         AssertMsgReturn(    enmSpeaker == RTPINGPONGSPEAKER_PING \
                         ||  enmSpeaker == RTPINGPONGSPEAKER_PONG \
                         ||  enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED \
