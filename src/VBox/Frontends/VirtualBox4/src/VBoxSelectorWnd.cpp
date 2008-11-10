@@ -1141,9 +1141,23 @@ void VBoxSelectorWnd::refreshSysTray()
     trayIconMenu->addSeparator();
 
     VBoxVMItem* pItem = NULL;
+    QMenu* pCurMenu = trayIconMenu;
     QMenu* pSubMenu = NULL;
-    for (int i = 0; i < mVMModel->rowCount(); i++)
+    Assert(pCurMenu);
+
+    int iCurItemCount = 0;
+
+    for (int i = 0; i < mVMModel->rowCount(); i++, iCurItemCount++)
     {
+        if (iCurItemCount > 14)     /* 15 machines per sub menu. */
+        {
+            pSubMenu = new QMenu (tr("Next 20 machines ..."));
+            Assert(pSubMenu);
+            pCurMenu->addMenu (pSubMenu);
+            pCurMenu = pSubMenu;
+            iCurItemCount = 0;
+        }
+
         pItem = mVMModel->itemByRow(i);
         Assert(pItem);
 
@@ -1171,7 +1185,7 @@ void VBoxSelectorWnd::refreshSysTray()
             pSubMenu->addAction (pItem->vmActionRefresh());
         }
 
-        trayIconMenu->addMenu (pSubMenu);
+        pCurMenu->addMenu (pSubMenu);
     }
 
     trayIconMenu->addSeparator();
