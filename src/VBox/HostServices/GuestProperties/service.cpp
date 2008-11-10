@@ -967,8 +967,8 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
                              mpvHostData, pszName, NULL,
-                             RT_HIDWORD(u64Timestamp),
-                             RT_LODWORD(u64Timestamp), NULL);
+                             (uint32_t) RT_HIDWORD(u64Timestamp),
+                             (uint32_t) RT_LODWORD(u64Timestamp), NULL);
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
     }
     if (!found)
