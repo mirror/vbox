@@ -505,10 +505,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     vmNewAction->addTo (vmTools);
-    vmTools->addSeparator();
     vmConfigAction->addTo (vmTools);
+#if 0 /* delete action is really rare */
     vmDeleteAction->addTo (vmTools);
-    vmTools->addSeparator();
+#endif
     vmStartAction->addTo (vmTools);
     vmDiscardAction->addTo (vmTools);
 #ifdef Q_WS_MAC
@@ -528,17 +528,14 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
 
     QPopupMenu *vmMenu = new QPopupMenu (this, "vmMenu");
     vmNewAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
     vmConfigAction->addTo (vmMenu);
     vmDeleteAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmStartAction->addTo (vmMenu);
     vmDiscardAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
     vmPauseAction->addTo (vmMenu);
     vmMenu->insertSeparator();
     vmRefreshAction->addTo (vmMenu);
-    vmMenu->insertSeparator();
     vmShowLogsAction->addTo (vmMenu);
 
     menuBar()->insertItem (QString::null, vmMenu, 2);
@@ -549,11 +546,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent, const char* aName,
     mVMCtxtMenu->insertSeparator();
     vmStartAction->addTo (mVMCtxtMenu);
     vmDiscardAction->addTo (mVMCtxtMenu);
-    mVMCtxtMenu->insertSeparator();
     vmPauseAction->addTo (mVMCtxtMenu);
     mVMCtxtMenu->insertSeparator();
     vmRefreshAction->addTo (mVMCtxtMenu);
-    mVMCtxtMenu->insertSeparator();
     vmShowLogsAction->addTo (mVMCtxtMenu);
 
     QPopupMenu *helpMenu = new QPopupMenu( this, "helpMenu" );

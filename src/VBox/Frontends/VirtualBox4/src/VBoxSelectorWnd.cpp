@@ -547,10 +547,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     vmTools->addAction (vmNewAction);
-    vmTools->addSeparator();
     vmTools->addAction (vmConfigAction);
+#if 0 /* delete action is really rare */
     vmTools->addAction (vmDeleteAction);
-    vmTools->addSeparator();
+#endif
     vmTools->addAction (vmStartAction);
     vmTools->addAction (vmDiscardAction);
 
@@ -565,17 +565,14 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mVMMenu = menuBar()->addMenu (QString::null);
     mVMMenu->addAction (vmNewAction);
-    mVMMenu->addSeparator();
     mVMMenu->addAction (vmConfigAction);
     mVMMenu->addAction (vmDeleteAction);
     mVMMenu->addSeparator();
     mVMMenu->addAction (vmStartAction);
     mVMMenu->addAction (vmDiscardAction);
-    mVMMenu->addSeparator();
     mVMMenu->addAction (vmPauseAction);
     mVMMenu->addSeparator();
     mVMMenu->addAction (vmRefreshAction);
-    mVMMenu->addSeparator();
     mVMMenu->addAction (vmShowLogsAction);
 
     mVMCtxtMenu = new QMenu (this);
@@ -584,11 +581,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmStartAction);
     mVMCtxtMenu->addAction (vmDiscardAction);
-    mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmPauseAction);
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmRefreshAction);
-    mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction (vmShowLogsAction);
 
     mHelpMenu = menuBar()->addMenu (QString::null);
