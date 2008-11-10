@@ -39,7 +39,9 @@
 #include "Builtins.h"
 
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-# include <unistd.h>
+# ifndef RT_OS_WINDOWS
+#  include <unistd.h>
+# endif
 # include <errno.h>
 # include<iprt/semaphore.h>
 #endif
@@ -84,6 +86,8 @@ typedef struct DRVNAT
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
 #else
+    /* 1 - for Outher network events, and 0 for sending routine notification*/
+    HANDLE                  hNetworkEvent[2];
 #endif
     /** Send buffer */
     char                    cBuffer[1600];
@@ -112,25 +116,32 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-    int rc = RTCritSectEnter(&pThis->CritSect);
-    AssertReleaseRC(rc);
-#else
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+
     /*notify select to wakeup*/
     memcpy(pThis->cBuffer,pvBuf, cb);
     pThis->sBufferSize = cb;
+# ifndef RT_OS_WINDOWS
     int rc = RTFileWrite(pThis->PipeWrite, "1", 2, NULL);
     AssertRC(rc);
+# else
+    WSASetEvent(pThis->hNetworkEvent[0]);
+# endif
     RTSemEventWait(pThis->semSndMutex, RT_INDEFINITE_WAIT);
-#endif
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#else /* ! VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertReleaseRC(rc);
+
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
-    if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP) {
+    if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
         slirp_input(pThis->pNATState, (uint8_t *)pvBuf, cb);
-    }
+
     RTCritSectLeave(&pThis->CritSect);
-#endif
+
+#endif /* !VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
 }
@@ -231,6 +242,10 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     fd_set  XcptFDs;
     int     nFDs = -1;
     int     rc;
+# ifdef RT_OS_WINDOWS
+    DWORD   event;
+    HANDLE  *phEvents;
+# endif
     const struct timeval TimeWait   = { 0, 2000 }; /* 2ms for the fast timer */
     const struct timeval TimeNoWait = { 0,    0 }; /* return immediately */
 
@@ -255,6 +270,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * To prevent concurent execution of sending/receving threads
          */
         slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+# ifndef RT_OS_WINDOWS
         struct timeval tv = fWait ? TimeWait : TimeNoWait;
         FD_SET(pThis->PipeRead, &ReadFDs); /* Linux only */
         nFDs = ((int)pThis->PipeRead < nFDs ? nFDs : pThis->PipeRead);
@@ -280,6 +296,26 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 }
             }
         }
+# else /* RT_OS_WINDOWS */
+        phEvents = slirp_get_events(pThis->pNATState);
+        phEvents[0] = pThis->hNetworkEvent[0];
+        event = WSAWaitForMultipleEvents(cFDs, phEvents, FALSE, 2, FALSE);
+        AssertRelease(event != WSA_WAIT_FAILED);
+
+        /*
+         * see WSAWaitForMultipleEvents documentation: return value is a minimal index in array
+         */
+        if ((event - WSA_WAIT_EVENT_0) > 1)
+            slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
+
+        if ((event - WSA_WAIT_EVENT_0) == 0)
+        {
+            slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
+            WSAResetEvent(pThis->hNetworkEvent[0]);
+            RTSemEventSignal(pThis->semSndMutex);
+        }
+        WSAResetEvent(pThis->hNetworkEvent[0]);
+# endif /* RT_OS_WINDOWS */
     }
 
     return VINF_SUCCESS;
@@ -634,9 +670,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             rc = RTSemEventCreate(&pThis->semSndMutex);
             AssertReleaseRC(rc);
 
+# ifndef RT_OS_WINDOWS
             /*
              * Create the control pipe.
-             * XXX: Linux only
              */
             int fds[2];
             if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
@@ -647,6 +683,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             }
             pThis->PipeRead = fds[0];
             pThis->PipeWrite = fds[1];
+# else
+            pThis->hNetworkEvent[0] = WSACreateEvent();
+            pThis->hNetworkEvent[1] = WSACreateEvent();
+# endif
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
             AssertReleaseRC(rc);
