@@ -86,7 +86,7 @@ static unsigned _strnlen(const char *psz, unsigned cchMax)
     while (cchMax-- > 0 &&  *psz != '\0')
         psz++;
 
-    return psz - pszC;
+    return (unsigned)(psz - pszC);
 }
 
 
@@ -116,7 +116,7 @@ static unsigned _strnlenUtf16(PCRTUTF16 pwsz, unsigned cchMax)
     while (cchMax-- > 0 &&  *pwsz != '\0')
         pwsz++;
 
-    return pwsz - pwszC;
+    return (unsigned)(pwsz - pwszC);
 #endif  /* !IN_RING3 */
 }
 
@@ -134,7 +134,7 @@ static unsigned _strnlenUni(PCRTUNICP pusz, unsigned cchMax)
     while (cchMax-- > 0 && *pusz != '\0')
         pusz++;
 
-    return pusz - puszC;
+    return (unsigned)(pusz - puszC);
 }
 
 
@@ -305,7 +305,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
             *psz++ = ' ';
 
     *psz = '\0';
-    return psz - pszStart;
+    return (unsigned)(psz - pszStart);
 }
 
 
