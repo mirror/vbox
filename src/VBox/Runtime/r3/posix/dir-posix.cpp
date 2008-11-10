@@ -273,7 +273,7 @@ static RTDIRENTRYTYPE rtDirType(int iType)
 #endif /*HAVE_DIRENT_D_TYPE */
 
 
-RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
+RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 {
     /*
      * Validate and digest input.
@@ -282,12 +282,12 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
         return VERR_INVALID_PARAMETER;
     AssertMsgReturn(VALID_PTR(pDirEntry), ("%p\n", pDirEntry), VERR_INVALID_POINTER);
 
-    unsigned cbDirEntry = sizeof(*pDirEntry);
+    size_t cbDirEntry = sizeof(*pDirEntry);
     if (pcbDirEntry)
     {
         AssertMsgReturn(VALID_PTR(pcbDirEntry), ("%p\n", pcbDirEntry), VERR_INVALID_POINTER);
         cbDirEntry = *pcbDirEntry;
-        AssertMsgReturn(cbDirEntry >= (unsigned)RT_OFFSETOF(RTDIRENTRY, szName[2]),
+        AssertMsgReturn(cbDirEntry >= RT_UOFFSETOF(RTDIRENTRY, szName[2]),
                         ("Invalid *pcbDirEntry=%d (min %d)\n", *pcbDirEntry, RT_OFFSETOF(RTDIRENTRYEX, szName[2])),
                         VERR_INVALID_PARAMETER);
     }
@@ -377,7 +377,7 @@ static void rtDirSetDummyInfo(PRTFSOBJINFO pInfo, RTDIRENTRYTYPE enmType)
 }
 
 
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs)
+RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs)
 {
     /*
      * Validate and digest input.
@@ -389,7 +389,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEn
                     &&  enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
                     ("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs),
                     VERR_INVALID_PARAMETER);
-    unsigned cbDirEntry = sizeof(*pDirEntry);
+    size_t cbDirEntry = sizeof(*pDirEntry);
     if (pcbDirEntry)
     {
         AssertMsgReturn(VALID_PTR(pcbDirEntry), ("%p\n", pcbDirEntry), VERR_INVALID_POINTER);

@@ -125,7 +125,7 @@ int rtDirClose(PRTDIR pDir)
     return VINF_SUCCESS;
 }
 
-int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs)
+int rtDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs)
 {
     switch(iDirList)
     {
@@ -225,7 +225,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 
     for(;;)
     {
-        uint32_t cbDirEntrySize = cbDirEntry;
+        size_t cbDirEntrySize = cbDirEntry;
 
         rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
         if (rc == VERR_NO_MORE_FILES)
