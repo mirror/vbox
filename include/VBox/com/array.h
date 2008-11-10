@@ -397,9 +397,9 @@ struct SafeArrayTraits
 
     static ULONG VarCount (size_t aSize)
     {
-        if (sizeof (T) % 8 == 0) return (ULONG) (sizeof (T) / 8) * aSize;
-        if (sizeof (T) % 4 == 0) return (ULONG) (sizeof (T) / 4) * aSize;
-        if (sizeof (T) % 2 == 0) return (ULONG) (sizeof (T) / 2) * aSize;
+        if (sizeof (T) % 8 == 0) return (ULONG) ((sizeof (T) / 8) * aSize);
+        if (sizeof (T) % 4 == 0) return (ULONG) ((sizeof (T) / 4) * aSize);
+        if (sizeof (T) % 2 == 0) return (ULONG) ((sizeof (T) / 2) * aSize);
         return (ULONG) sizeof (T) * aSize;
     }
 
