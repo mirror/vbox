@@ -1066,7 +1066,7 @@ DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysNestedRoot, &pPml4);
-    AssertRCReturn(rc);
+    AssertRCReturn(rc, rc);
 # else
     pPml4 = (PEPTPML4)pPGM->CTX_SUFF(pShwNestedRoot);
 # endif
