@@ -658,23 +658,25 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, unsigned cMillies)
     /*
      * Insert it.
      */
+    PRTREQQUEUE pQueue = ((RTREQ volatile *)pReq)->pQueue;                 /* volatile paranoia */
+    unsigned fFlags = ((RTREQ volatile *)pReq)->fFlags;                    /* volatile paranoia */
     pReq->enmState = RTREQSTATE_QUEUED;
     PRTREQ pNext;
     do
     {
-        pNext = pReq->pQueue->pReqs;
+        pNext = pQueue->pReqs;
         pReq->pNext = pNext;
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pReq->pQueue->pReqs, (void *)pReq, (void *)pNext));
+    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->pReqs, (void *)pReq, (void *)pNext));
 
     /*
      * Notify queue thread.
      */
-    RTSemEventSignal(pReq->pQueue->EventSem);
+    RTSemEventSignal(pQueue->EventSem);
 
     /*
      * Wait and return.
      */
-    if (!(pReq->fFlags & RTREQFLAGS_NO_WAIT))
+    if (!(fFlags & RTREQFLAGS_NO_WAIT))
         rc = RTReqWait(pReq, cMillies);
     LogFlow(("RTReqQueue: returns %Rrc\n", rc));
     return rc;
