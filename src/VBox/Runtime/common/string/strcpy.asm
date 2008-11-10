@@ -33,53 +33,53 @@
 BEGINCODE
 
 ;;
-; @param    psz1   gcc: rdi  msc: rcx  x86:[esp+4]
-; @param    psz2   gcc: rsi  msc: rdx  x86:[esp+8]
+; @param    pszDst   gcc: rdi  msc: rcx  x86:[esp+4]
+; @param    pszSrc   gcc: rsi  msc: rdx  x86:[esp+8]
 RT_NOCRT_BEGINPROC strcpy
         ; input
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
-  %define psz1 rcx
-  %define psz2 rdx
+  %define pszDst rcx
+  %define pszSrc rdx
  %else
-  %define psz1 rdi
-  %define psz2 rsi
+  %define pszDst rdi
+  %define pszSrc rsi
  %endif
-        mov     r8, psz1
+        mov     r8, pszDst
 %else
         mov     ecx, [esp + 4]
         mov     edx, [esp + 8]
-  %define psz1 ecx
-  %define psz2 edx
-        push    psz1
+  %define pszDst ecx
+  %define pszSrc edx
+        push    pszDst
 %endif
 
         ;
         ; The loop.
         ;
 .next:
-        mov     al, [psz1]
-        mov     [psz2], al
+        mov     al, [pszSrc]
+        mov     [pszDst], al
         test    al, al
         jz      .done
 
-        mov     al, [psz1 + 1]
-        mov     [psz2 + 1], al
+        mov     al, [pszSrc + 1]
+        mov     [pszDst + 1], al
         test    al, al
         jz      .done
 
-        mov     al, [psz1 + 2]
-        mov     [psz2 + 2], al
+        mov     al, [pszSrc + 2]
+        mov     [pszDst + 2], al
         test    al, al
         jz      .done
 
-        mov     al, [psz1 + 3]
-        mov     [psz2 + 3], al
+        mov     al, [pszSrc + 3]
+        mov     [pszDst + 3], al
         test    al, al
         jz      .done
 
-        add     psz1, 4
-        add     psz2, 4
+        add     pszDst, 4
+        add     pszSrc, 4
         jmp     .next
 
 .done:
