@@ -669,10 +669,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     connect (mVMListView, SIGNAL (currentChanged()),
              this, SLOT (vmListViewCurrentChanged()));
-    connect (mVMListView, SIGNAL (activated ()),
+    connect (mVMListView, SIGNAL (activated()),
              this, SLOT (vmStart()));
-    connect (mVMListView, SIGNAL (contextMenuRequested (VBoxVMItem *, const QPoint &)),
-             this, SLOT (showContextMenu (VBoxVMItem *, const QPoint &)));
+    connect (mVMListView, SIGNAL (customContextMenuRequested (const QPoint &)),
+             this, SLOT (showContextMenu (const QPoint &)));
 
     connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
@@ -835,7 +835,7 @@ void VBoxSelectorWnd::vmNew()
 /**
  *  Opens the VM settings dialog.
  */
-void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl, const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl, const QUuid& aUuid)
 {
     if (!aCategory.isEmpty() && aCategory [0] != '#')
     {
@@ -844,7 +844,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         return;
     }
 
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -887,9 +887,9 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     session.Close();
 }
 
-void VBoxSelectorWnd::vmDelete(const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmDelete (const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -949,9 +949,9 @@ void VBoxSelectorWnd::vmDelete(const QUuid& a_Uuid)
     }
 }
 
-void VBoxSelectorWnd::vmStart(const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmStart (const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -1028,9 +1028,9 @@ void VBoxSelectorWnd::vmStart(const QUuid& a_Uuid)
 #endif
 }
 
-void VBoxSelectorWnd::vmDiscard(const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmDiscard (const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -1064,9 +1064,9 @@ void VBoxSelectorWnd::vmDiscard(const QUuid& a_Uuid)
     session.Close();
 }
 
-void VBoxSelectorWnd::vmPause (bool aPause, const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmPause (bool aPause, const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -1097,9 +1097,9 @@ void VBoxSelectorWnd::vmPause (bool aPause, const QUuid& a_Uuid)
     session.Close();
 }
 
-void VBoxSelectorWnd::vmRefresh(const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmRefresh (const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -1111,9 +1111,9 @@ void VBoxSelectorWnd::vmRefresh(const QUuid& a_Uuid)
                    true /* aDescription */);
 }
 
-void VBoxSelectorWnd::vmShowLogs(const QUuid& a_Uuid)
+void VBoxSelectorWnd::vmShowLogs (const QUuid& aUuid)
 {
-    VBoxVMItem *item = mVMModel->itemById (a_Uuid);
+    VBoxVMItem *item = mVMModel->itemById (aUuid);
     if (NULL == item)
         item = getSelectedItem();
 
@@ -1219,10 +1219,14 @@ void VBoxSelectorWnd::refreshVMItem (const QUuid &aID, bool aDetails,
     }
 }
 
-void VBoxSelectorWnd::showContextMenu (VBoxVMItem *aItem, const QPoint &aPoint)
+void VBoxSelectorWnd::showContextMenu (const QPoint &aPoint)
 {
-    if (aItem)
-        mVMCtxtMenu->exec (aPoint);
+    /* Send a context menu request */
+    const QModelIndex &index = mVMListView->indexAt (aPoint);
+    if (index.isValid())
+        if (VBoxVMItem *item = mVMListView->model()->data (index,
+            VBoxVMModel::VBoxVMItemPtrRole).value <VBoxVMItem*>())
+                mVMCtxtMenu->exec (mVMListView->mapToGlobal (aPoint));
 }
 
 // Protected members

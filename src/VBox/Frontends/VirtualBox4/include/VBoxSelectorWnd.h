@@ -49,7 +49,7 @@ class QTabWidget;
 class QListView;
 class QEvent;
 
-class VBoxSelectorWnd: public QIWithRetranslateUI2<QMainWindow>
+class VBoxSelectorWnd: public QIWithRetranslateUI2 <QMainWindow>
 {
     Q_OBJECT;
 
@@ -71,7 +71,7 @@ public slots:
     void fileMediaMgr();
     VBoxVMItem* getSelectedItem();
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void iconActivated(QSystemTrayIcon::ActivationReason aReason);
+    void iconActivated (QSystemTrayIcon::ActivationReason aReason);
     void showWindow();
 #endif
     void fileSettings();
@@ -80,13 +80,13 @@ public slots:
     void vmNew();
     void vmSettings (const QString &aCategory = QString::null,
                      const QString &aControl = QString::null,
-                     const QUuid& = "");
-    void vmDelete(const QUuid& = "");
-    void vmStart (const QUuid& = "");
-    void vmDiscard(const QUuid& = "");
-    void vmPause (bool, const QUuid& = "");
-    void vmRefresh(const QUuid& = "");
-    void vmShowLogs(const QUuid& = "");
+                     const QUuid &aMachineId = QUuid());
+    void vmDelete (const QUuid &aMachineId = QUuid());
+    void vmStart (const QUuid &aMachineId = QUuid());
+    void vmDiscard (const QUuid &aMachineId = QUuid());
+    void vmPause (bool, const QUuid &aMachineId = QUuid());
+    void vmRefresh (const QUuid &aMachineId = QUuid());
+    void vmShowLogs (const QUuid &aMachineId = QUuid());
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void refreshSysTray();
@@ -96,7 +96,7 @@ public slots:
                                           bool aSnapshots,
                                           bool aDescription);
 
-    void showContextMenu (VBoxVMItem *aItem, const QPoint &aPoint);
+    void showContextMenu (const QPoint &aPoint);
 
 protected:
 

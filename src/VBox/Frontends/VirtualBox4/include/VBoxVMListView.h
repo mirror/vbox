@@ -30,6 +30,8 @@
 #include <QAbstractListModel>
 #include <QDateTime>
 
+class VBoxSelectorWnd;
+
 class VBoxVMItem : public QObject
 {
     Q_OBJECT;
@@ -49,7 +51,7 @@ public:
 
 public:
 
-    VBoxVMItem (const CMachine &aM, QObject* pParent);
+    VBoxVMItem (const CMachine &aMachine, VBoxSelectorWnd *pParent);
     virtual ~VBoxVMItem();
 
     CMachine machine() const { return mMachine; }
@@ -84,13 +86,13 @@ public:
 
     bool canSwitchTo() const;
     bool switchTo();
-    
+
     void updateActions();
 
 private:
 
     /* Private member vars */
-    QObject* mParent;
+    VBoxSelectorWnd *mParent;
     CMachine mMachine;
 
     QAction *vmConfigAction;
@@ -199,7 +201,6 @@ public:
 signals:
     void currentChanged();
     void activated();
-    void contextMenuRequested (VBoxVMItem *aItem, const QPoint &aPoint);
 
 protected slots:
     void selectionChanged (const QItemSelection &aSelected, const QItemSelection &aDeselected);
@@ -207,7 +208,6 @@ protected slots:
     void dataChanged (const QModelIndex &aTopLeft, const QModelIndex &aBottomRight);
 
 protected:
-    void mousePressEvent (QMouseEvent *aEvent);
     bool selectCurrent();
 };
 
