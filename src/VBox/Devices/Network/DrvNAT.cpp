@@ -299,7 +299,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # else /* RT_OS_WINDOWS */
         phEvents = slirp_get_events(pThis->pNATState);
         phEvents[0] = pThis->hNetworkEvent[0];
-        event = WSAWaitForMultipleEvents(cFDs, phEvents, FALSE, 2, FALSE);
+        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2, FALSE);
         AssertRelease(event != WSA_WAIT_FAILED);
 
         /*
@@ -332,9 +332,11 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
+# ifndef RT_OS_WINDOWS
     int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
     AssertRC(rc);
     RTSemEventSignal(pThis->semSndMutex);
+#endif
     return VINF_SUCCESS;
 }
 
