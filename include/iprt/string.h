@@ -314,14 +314,16 @@ RTDECL(int) RTStrGetCpExInternal(const char **ppsz, PRTUNICP pCp);
  * given length.
  *
  * @returns iprt status code
- * @returns VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
+ * @retval  VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
+ * @retval  VERR_END_OF_STRING if *pcch is 0. *pCp is set to RTUNICP_INVALID.
+ *
  * @param   ppsz        The string.
- * @param   pCp         Where to store the unicode code point.
- *                      Stores RTUNICP_INVALID if the encoding is invalid.
  * @param   pcch        Pointer to the length of the string.  This will be
  *                      decremented by the size of the code point.
+ * @param   pCp         Where to store the unicode code point.
+ *                      Stores RTUNICP_INVALID if the encoding is invalid.
  */
-RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, PRTUNICP pCp, size_t *pcch);
+RTDECL(int) RTStrGetCpNExInternal(const char **ppsz, size_t *pcch, PRTUNICP pCp);
 
 /**
  * Put the unicode code point at the given string position
@@ -391,28 +393,34 @@ DECLINLINE(int) RTStrGetCpEx(const char **ppsz, PRTUNICP pCp)
  * given maximum length.
  *
  * @returns iprt status code.
+ * @retval  VERR_INVALID_UTF8_ENCODING if the encoding is invalid.
+ * @retval  VERR_END_OF_STRING if *pcch is 0. *pCp is set to RTUNICP_INVALID.
+ *
  * @param   ppsz        Pointer to the string pointer. This will be updated to
  *                      point to the char following the current code point.
- * @param   pCp         Where to store the code point.
- *                      RTUNICP_INVALID is stored here on failure.
  * @param   pcch        Pointer to the maximum string length.  This will be
  *                      decremented by the size of the code point found.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
  *
  * @remark  We optimize this operation by using an inline function for
  *          the most frequent and simplest sequence, the rest is
  *          handled by RTStrGetCpNExInternal().
  */
-DECLINLINE(int) RTStrGetCpNEx(const char **ppsz, PRTUNICP pCp, size_t *pcch)
+DECLINLINE(int) RTStrGetCpNEx(const char **ppsz, size_t *pcch, PRTUNICP pCp)
 {
-    const unsigned char uch = **(const unsigned char **)ppsz;
-    if (*pcch != 0 && !(uch & RT_BIT(7)))
+    if (RT_LIKELY(*pcch != 0))
     {
-        (*ppsz)++;
-        (*pcch)--;
-        *pCp = uch;
-        return VINF_SUCCESS;
+        const unsigned char uch = **(const unsigned char **)ppsz;
+        if (!(uch & RT_BIT(7)))
+        {
+            (*ppsz)++;
+            (*pcch)--;
+            *pCp = uch;
+            return VINF_SUCCESS;
+        }
     }
-    return RTStrGetCpNExInternal(ppsz, pCp, pcch);
+    return RTStrGetCpNExInternal(ppsz, pcch, pCp);
 }
 
 /**
