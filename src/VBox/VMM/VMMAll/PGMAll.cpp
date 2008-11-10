@@ -1064,7 +1064,7 @@ DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
 
     Assert(HWACCMIsNestedPagingActive(pVM));
 
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_R0
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysNestedRoot, &pPml4);
     AssertRCReturn(rc);
 # else
