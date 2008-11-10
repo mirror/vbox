@@ -22,19 +22,64 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include <errno.h>
 
 typedef unsigned char uint8_t;
 
 static uint8_t abBios[64*1024];
+static FILE *g_pIn = NULL;
+static FILE *g_pOut = NULL;
+static const char *g_pszOutFile = NULL;
+static const char *g_argv0;
+
+/**
+ * Find where the filename starts in the given path.
+ */
+static const char *name(const char *pszPath)
+{
+    const char *psz = strrchr(pszPath, '/');
+#if defined(_MSC_VER) || defined(__OS2__)
+    const char *psz2 = strrchr(pszPath, '\\');
+    if (!psz2)
+        psz2 = strrchr(pszPath, ':');
+    if (psz2 && (!psz || psz2 > psz))
+        psz = psz2;
+#endif
+    return psz ? psz + 1 : pszPath;
+}
+
+/**
+ * Report an error.
+ */
+static int fatal(const char *pszFormat, ...)
+{
+    va_list va;
+
+    fprintf(stderr, "%s: ", name(g_argv0));
+
+    va_start(va, pszFormat);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+
+    /* clean up */
+    if (g_pIn)
+        fclose(g_pIn);
+    if (g_pOut)
+        fclose(g_pOut);
+    if (g_pszOutFile)
+        unlink(g_pszOutFile);
+
+    return 1;
+}
 
 /**
  * Calculate the checksum.
  */
-static uint8_t calculateChecksum(uint8_t *pb, size_t cb, unsigned int iChecksum)
+static uint8_t calculateChecksum(uint8_t *pb, size_t cb, size_t iChecksum)
 {
-    uint8_t       u8Sum = 0;
-    unsigned int  i;
+    uint8_t u8Sum = 0;
+    size_t  i;
 
     for (i = 0; i < cb; i++)
         if (i != iChecksum)
@@ -44,6 +89,8 @@ static uint8_t calculateChecksum(uint8_t *pb, size_t cb, unsigned int iChecksum)
 }
 
 /**
+ * Find a header in the binary.
+ *
  * @param   pb        Where to search for the signature
  * @param   cb        Size of the search area
  * @param   pbHeader  Pointer to the start of the signature
@@ -72,36 +119,27 @@ int main(int argc, char **argv)
     size_t  cbIn, cbOut;
     int     fAdapterBios = 0;
 
+    g_argv0 = argv[0];
+
     if (argc != 3)
-    {
-        printf("Input file name and output file name required.\n");
-        exit(-1);
-    }
+        return fatal("Input file name and output file name required.\n");
 
-    pIn = fopen(argv[1], "rb");
+    pIn = g_pIn = fopen(argv[1], "rb");
     if (!pIn)
-    {
-        printf("Error opening '%s' for reading (%s).\n", argv[1], strerror(errno));
-        exit(-1);
-    }
-    
-    pOut = fopen(argv[2], "wb");
-    if (!pOut)
-    {
-        printf("Error opening '%s' for writing (%s).\n", argv[2], strerror(errno));
-        exit(-1);
-    }
+        return fatal("Error opening '%s' for reading (%s).\n", argv[1], strerror(errno));
 
-    /* safety precaution */
+    pOut = g_pOut = fopen(argv[2], "wb");
+    if (!pOut)
+        return fatal("Error opening '%s' for writing (%s).\n", argv[2], strerror(errno));
+    g_pszOutFile = argv[2];
+
+    /* safety precaution (aka. complete paranoia :-) */
     memset(abBios, 0, sizeof(abBios));
 
     cbIn = fread(abBios, 1, sizeof(abBios), pIn);
     if (ferror(pIn))
-    {
-        printf("Error reading from '%s' (%s).\n", argv[1], strerror(errno));
-        fclose(pIn);
-        exit(-1);
-    }
+        return fatal("Error reading from '%s' (%s).\n", argv[1], strerror(errno));
+    g_pIn = NULL;
     fclose(pIn);
 
     fAdapterBios = abBios[0] == 0x55 && abBios[1] == 0xaa;
@@ -111,16 +149,12 @@ int main(int argc, char **argv)
         cbIn = (cbIn + 4095) & ~4095;
 
     if (!fAdapterBios && cbIn != 64*1024)
-    {
-        printf("Size of system BIOS is not 64KB!\n");
-        fclose(pOut);
-        exit(-1);
-    }
+        return fatal("Size of system BIOS is not 64KB!\n");
 
     if (fAdapterBios)
     {
         /* adapter BIOS */
-        
+
         /* set the length indicator */
         abBios[2] = (uint8_t)(cbIn / 512);
     }
@@ -135,11 +169,9 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "_32_", &pbHeader))
         {
             case 0:
-                printf("No BIOS32 header not found!\n");
-                exit(-1);
+                return fatal("No BIOS32 header not found!\n");
             case 2:
-                printf("More than one BIOS32 header found!\n");
-                exit(-1);
+                return fatal("More than one BIOS32 header found!\n");
             case 1:
                 cbChecksum = (size_t)pbHeader[9] * 16;
                 u8Checksum = calculateChecksum(pbHeader, cbChecksum, 10);
@@ -152,11 +184,9 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "$PIR", &pbHeader))
         {
             case 0:
-                printf("No PCI IRQ routing table found!\n");
-                exit(-1);
+                return fatal("No PCI IRQ routing table found!\n");
             case 2:
-                printf("More than one PCI IRQ routing table found!\n");
-                exit(-1);
+                return fatal("More than one PCI IRQ routing table found!\n");
             case 1:
                 cbChecksum = (size_t)pbHeader[6] + (size_t)pbHeader[7] * 256;
                 u8Checksum = calculateChecksum(pbHeader, cbChecksum, 31);
@@ -169,11 +199,9 @@ int main(int argc, char **argv)
         switch (searchHeader(abBios, cbIn, "_SM_", &pbHeader))
         {
             case 0:
-                printf("No SMBIOS header found!\n");
-                exit(-1);
+                return fatal("No SMBIOS header found!\n");
             case 2:
-                printf("More than one SMBIOS header found!\n");
-                exit(-1);
+                return fatal("More than one SMBIOS header found!\n");
             case 1:
                 /* at first fix the DMI header starting at SMBIOS header offset 16 */
                 u8Checksum = calculateChecksum(pbHeader+16, 15, 5);
@@ -192,13 +220,11 @@ int main(int argc, char **argv)
 
     cbOut = fwrite(abBios, 1, cbIn, pOut);
     if (ferror(pOut))
-    {
-        printf("Error writing to '%s' (%s).\n", argv[2], strerror(errno));
-        fclose(pOut);
-        exit(-1);
-    }
-
-    fclose(pOut);
+        return fatal("Error writing to '%s' (%s).\n", g_pszOutFile, strerror(errno));
+    g_pOut = NULL;
+    if (fclose(pOut))
+        return fatal("Error closing '%s' (%s).\n", g_pszOutFile, strerror(errno));
 
     return 0;
 }
+
