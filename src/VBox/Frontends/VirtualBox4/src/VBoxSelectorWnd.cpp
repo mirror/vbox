@@ -1416,7 +1416,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         CMachine m = item->machine();
 
         KMachineState state = item->state();
-        bool running = item->sessionState() != KSessionState_Closed;
+        bool running = item->running();
         bool modifyEnabled = !running && state != KMachineState_Saved;
 
         if (aRefreshDetails)
@@ -1449,59 +1449,6 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             /* ensure the tab is enabled */
             vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmDescriptionPage), true);
         }
-
-        /* enable/disable modify actions */
-        vmConfigAction->setEnabled (modifyEnabled);
-        vmDeleteAction->setEnabled (modifyEnabled);
-        vmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
-        vmPauseAction->setEnabled (state == KMachineState_Running ||
-                                   state == KMachineState_Paused);
-
-        /* change the Start button text accordingly */
-        if (state >= KMachineState_Running)
-        {
-            vmStartAction->setText (tr ("S&how"));
-            vmStartAction->setStatusTip (
-                tr ("Switch to the window of the selected virtual machine"));
-
-            vmStartAction->setEnabled (item->canSwitchTo());
-        }
-        else
-        {
-            vmStartAction->setText (tr ("S&tart"));
-            vmStartAction->setStatusTip (
-                tr ("Start the selected virtual machine"));
-
-            vmStartAction->setEnabled (!running);
-        }
-
-        /* change the Pause/Resume button text accordingly */
-        if (state == KMachineState_Paused)
-        {
-            vmPauseAction->setText (tr ("R&esume"));
-            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            vmPauseAction->setStatusTip (
-                tr ("Resume the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (true);
-            vmPauseAction->blockSignals (false);
-        }
-        else
-        {
-            vmPauseAction->setText (tr ("&Pause"));
-            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            vmPauseAction->setStatusTip (
-                tr ("Suspend the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (false);
-            vmPauseAction->blockSignals (false);
-        }
-
-        /* disable Refresh for accessible machines */
-        vmRefreshAction->setEnabled (false);
-
-        /* enable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (true);
     }
     else
     {
@@ -1514,7 +1461,6 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             /* the VM is inaccessible */
             vmDetailsView->setErrorText (
                 VBoxProblemReporter::formatErrorInfo (item->accessError()));
-            vmRefreshAction->setEnabled (true);
         }
         else
         {
@@ -1547,21 +1493,31 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         vmDescriptionPage->setMachineItem (NULL);
         vmTabWidget->setTabText (vmTabWidget->indexOf (vmDescriptionPage), tr ("D&escription"));
         vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmDescriptionPage), false);
+    }
 
-        /* disable modify actions */
-        vmConfigAction->setEnabled (false);
-        vmDeleteAction->setEnabled (item != NULL);
-        vmDiscardAction->setEnabled (false);
-        vmPauseAction->setEnabled (false);
+    if (item)
+    {
+        item->updateActions();
 
-        /* change the Start button text accordingly */
-        vmStartAction->setText (tr ("S&tart"));
-        vmStartAction->setStatusTip (
-            tr ("Start the selected virtual machine"));
-        vmStartAction->setEnabled (false);
+        /* enable/disable modify actions */
+        vmConfigAction->setEnabled (item->vmActionConfig()->isEnabled());
+        vmDeleteAction->setEnabled (item->vmActionDelete()->isEnabled());
+        vmDiscardAction->setEnabled (item->vmActionDiscard()->isEnabled());
 
-        /* disable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (false);
+        vmStartAction->setEnabled (item->vmActionStart()->isEnabled());
+        vmStartAction->setText (item->vmActionStart()->text());
+        vmStartAction->setStatusTip (item->vmActionStart()->statusTip());
+
+        vmPauseAction->setEnabled (item->vmActionPause()->isEnabled());
+        vmPauseAction->setText (item->vmActionPause()->text());
+        vmPauseAction->setStatusTip (item->vmActionPause()->statusTip());
+        vmPauseAction->blockSignals (true);
+        vmPauseAction->setChecked (item->vmActionPause()->isChecked());
+        vmPauseAction->blockSignals (false);
+
+        vmRefreshAction->setEnabled (item->vmActionRefresh()->isEnabled());
+
+        vmShowLogsAction->setEnabled (item->vmActionShowLogs()->isEnabled());
     }
 }
 
