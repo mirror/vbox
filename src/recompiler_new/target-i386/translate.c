@@ -630,6 +630,50 @@ DECLINLINE(void) gen_op_addl_A0_reg_sN(int shift, int reg)
     tcg_gen_andi_tl(cpu_A0, cpu_A0, 0xffffffff);
 #endif
 }
+#ifdef VBOX
+DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
+{
+    /* It seems segments doesn't get out of sync - if they do in fact - enable below code. */
+#if 0
+    /* Our segments could be outdated, thus check for newselector field to see if update really needed */
+    int skip_label;
+    TCGv t0, a0;
+
+    /* For other segments this check is waste of time, and also TCG is unable to cope with this code,
+       for data segments, as expects alive temps */
+    if (reg != R_GS)
+        return;
+
+    if (keepA0)
+    {
+        /* we need to store old cpu_A0 */
+        a0 = tcg_temp_local_new(TCG_TYPE_TL);
+        tcg_gen_mov_tl(a0, cpu_A0);
+    }
+
+    skip_label = gen_new_label();
+    t0 = tcg_temp_local_new(TCG_TYPE_TL);
+
+    tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, segs[reg].newselector) + REG_L_OFFSET);
+    tcg_gen_brcondi_i32(TCG_COND_EQ, t0, 0, skip_label);
+    tcg_gen_ld32u_tl(t0, cpu_env, offsetof(CPUState, eflags) + REG_L_OFFSET);
+    tcg_gen_andi_tl(t0, t0, VM_MASK);
+    tcg_gen_brcondi_i32(TCG_COND_NE, t0, 0, skip_label);    
+    tcg_gen_movi_tl(t0, reg);
+    
+    tcg_gen_helper_0_1(helper_sync_seg, t0);
+
+    tcg_temp_free(t0);
+
+   gen_set_label(skip_label);
+    if (keepA0)
+    {
+        tcg_gen_mov_tl(cpu_A0, a0);
+        tcg_temp_free(a0);
+    }
+#endif /* 0 */
+}
+#endif
 
 #ifndef VBOX
 static inline void gen_op_movl_A0_seg(int reg)
@@ -637,6 +681,9 @@ static inline void gen_op_movl_A0_seg(int reg)
 DECLINLINE(void) gen_op_movl_A0_seg(int reg)
 #endif /* VBOX */
 {
+#ifdef VBOX
+    gen_op_seg_check(reg, false);
+#endif
     tcg_gen_ld32u_tl(cpu_A0, cpu_env, offsetof(CPUState, segs[reg].base) + REG_L_OFFSET);
 }
 
@@ -646,6 +693,9 @@ static inline void gen_op_addl_A0_seg(int reg)
 DECLINLINE(void) gen_op_addl_A0_seg(int reg)
 #endif /* VBOX */
 {
+#ifdef VBOX
+    gen_op_seg_check(reg, true);
+#endif
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, segs[reg].base));
     tcg_gen_add_tl(cpu_A0, cpu_A0, cpu_tmp0);
 #ifdef TARGET_X86_64
@@ -660,6 +710,9 @@ static inline void gen_op_movq_A0_seg(int reg)
 DECLINLINE(void) gen_op_movq_A0_seg(int reg)
 #endif /* VBOX */
 {
+#ifdef VBOX
+    gen_op_seg_check(reg, false);
+#endif
     tcg_gen_ld_tl(cpu_A0, cpu_env, offsetof(CPUState, segs[reg].base));
 }
 
@@ -669,6 +722,9 @@ static inline void gen_op_addq_A0_seg(int reg)
 DECLINLINE(void) gen_op_addq_A0_seg(int reg)
 #endif /* VBOX */
 {
+#ifdef VBOX
+    gen_op_seg_check(reg, true);
+#endif
     tcg_gen_ld_tl(cpu_tmp0, cpu_env, offsetof(CPUState, segs[reg].base));
     tcg_gen_add_tl(cpu_A0, cpu_A0, cpu_tmp0);
 }
@@ -7852,6 +7908,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 
             if (!s->pe || s->vm86)
                 goto illegal_op;
+
             t0 = tcg_temp_local_new(TCG_TYPE_TL);
             t1 = tcg_temp_local_new(TCG_TYPE_TL);
             t2 = tcg_temp_local_new(TCG_TYPE_TL);
