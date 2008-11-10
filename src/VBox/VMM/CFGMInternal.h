@@ -48,7 +48,7 @@ typedef union CFGMVALUE
     struct CFGMVALUE_STRING
     {
         /** Length of string. (In bytes, including the terminator.) */
-        RTUINT          cch;
+        size_t          cch;
         /** Pointer to the string. */
         char           *psz;
     } String;
@@ -57,7 +57,7 @@ typedef union CFGMVALUE
     struct CFGMVALUE_BYTES
     {
         /** Length of byte string. (in bytes) */
-        RTUINT          cb;
+        size_t          cb;
         /** Pointer to the byte string. */
         uint8_t        *pau8;
     } Bytes;
@@ -82,7 +82,7 @@ typedef struct CFGMLEAF
     CFGMVALUE       Value;
 
     /** Name length. (exclusive) */
-    RTUINT          cchName;
+    size_t          cchName;
     /** Name. */
     char            szName[1];
 } CFGMLEAF;
@@ -113,7 +113,7 @@ typedef struct CFGMNODE
     bool            fRestrictedRoot;
 
     /** Name length. (exclusive) */
-    RTUINT          cchName;
+    size_t          cchName;
     /** Name. */
     char            szName[1];
 } CFGMNODE;

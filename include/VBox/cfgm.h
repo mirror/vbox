@@ -170,12 +170,12 @@ VMMR3DECL(PCFGMNODE)    CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathFor
 VMMR3DECL(PCFGMNODE)    CFGMR3GetFirstChild(PCFGMNODE pNode);
 VMMR3DECL(PCFGMNODE)    CFGMR3GetNextChild(PCFGMNODE pCur);
 VMMR3DECL(int)          CFGMR3GetName(PCFGMNODE pCur, char *pszName, size_t cchName);
-VMMR3DECL(int)          CFGMR3GetNameLen(PCFGMNODE pCur);
+VMMR3DECL(size_t)       CFGMR3GetNameLen(PCFGMNODE pCur);
 VMMR3DECL(bool)         CFGMR3AreChildrenValid(PCFGMNODE pNode, const char *pszzValid);
 VMMR3DECL(PCFGMLEAF)    CFGMR3GetFirstValue(PCFGMNODE pCur);
 VMMR3DECL(PCFGMLEAF)    CFGMR3GetNextValue(PCFGMLEAF pCur);
 VMMR3DECL(int)          CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t cchName);
-VMMR3DECL(int)          CFGMR3GetValueNameLen(PCFGMLEAF pCur);
+VMMR3DECL(size_t)       CFGMR3GetValueNameLen(PCFGMLEAF pCur);
 VMMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur);
 VMMR3DECL(bool)         CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid);
 /** @} */

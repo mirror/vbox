@@ -338,7 +338,7 @@ VMMR3DECL(int) CFGMR3GetName(PCFGMNODE pCur, char *pszName, size_t cchName)
  * @param   pCur            Node to returned by a call to CFGMR3GetFirstChild()
  *                          or successive calls to CFGMR3GetNextChild().
  */
-VMMR3DECL(int) CFGMR3GetNameLen(PCFGMNODE pCur)
+VMMR3DECL(size_t) CFGMR3GetNameLen(PCFGMNODE pCur)
 {
     return pCur ? pCur->cchName + 1 : 0;
 }
@@ -447,10 +447,11 @@ VMMR3DECL(int) CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t cchName)
  * @param   pCur            Value returned by a call to CFGMR3GetFirstValue()
  *                          or successive calls to CFGMR3GetNextValue().
  */
-VMMR3DECL(int) CFGMR3GetValueNameLen(PCFGMLEAF pCur)
+VMMR3DECL(size_t) CFGMR3GetValueNameLen(PCFGMLEAF pCur)
 {
     return pCur ? pCur->cchName + 1 : 0;
 }
+
 
 /**
  * Gets the value type.
@@ -1072,7 +1073,7 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
     int rc;
     if (pNode)
     {
-        RTUINT      cchName = strlen(pszName);
+        size_t      cchName = strlen(pszName);
         PCFGMLEAF   pLeaf = pNode->pFirstLeaf;
         while (pLeaf)
         {
@@ -2515,7 +2516,7 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
      * Values.
      */
     PCFGMLEAF pLeaf;
-    unsigned cchMax = 0;
+    size_t cchMax = 0;
     for (pLeaf = CFGMR3GetFirstValue(pRoot); pLeaf; pLeaf = CFGMR3GetNextValue(pLeaf))
         cchMax = RT_MAX(cchMax, pLeaf->cchName);
     for (pLeaf = CFGMR3GetFirstValue(pRoot); pLeaf; pLeaf = CFGMR3GetNextValue(pLeaf))
@@ -2523,15 +2524,15 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
         switch (CFGMR3GetValueType(pLeaf))
         {
             case CFGMVALUETYPE_INTEGER:
-                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%lld)\n", cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
+                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%lld)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
                 break;
 
             case CFGMVALUETYPE_STRING:
-                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cch=%d)\n", cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
+                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cch=%d)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
                 break;
 
             case CFGMVALUETYPE_BYTES:
-                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%d)\n", cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
+                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%d)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
                 break;
 
             default:
