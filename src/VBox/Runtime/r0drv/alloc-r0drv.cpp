@@ -124,7 +124,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
-        pHdr->cbReq = cb;
+        pHdr->cbReq = (uint32_t)cb; Assert(pHdr->cbReq == cb);
         memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
 #endif
         return pHdr + 1;
@@ -150,7 +150,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
-        pHdr->cbReq = cb;
+        pHdr->cbReq = (uint32_t)cb; Assert(pHdr->cbReq == cb);
         memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
         return memset(pHdr + 1, 0, cb);
 #else
@@ -189,7 +189,7 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
                 size_t cbCopy = RT_MIN(pHdrOld->cb, pHdrNew->cb);
                 memcpy(pHdrNew + 1, pvOld, cbCopy);
 #ifdef RTR0MEM_STRICT
-                pHdrNew->cbReq = cbNew;
+                pHdrNew->cbReq = (uint32_t)cbNew; Assert(pHdrNew->cbReq == cbNew);
                 memcpy((uint8_t *)(pHdrNew + 1) + cbNew, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
                 AssertReleaseMsg(!memcmp((uint8_t *)(pHdrOld + 1) + pHdrOld->cbReq, &g_abFence[0], RTR0MEM_FENCE_EXTRA),
                                  ("pHdr=%p pvOld=%p cb=%zu cbNew=%zu\n"
@@ -254,7 +254,7 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
-        pHdr->cbReq = cb;
+        pHdr->cbReq = (uint32_t)cb; Assert(pHdr->cbReq == cb);
         memcpy((uint8_t *)(pHdr + 1) + cb, &g_abFence[0], RTR0MEM_FENCE_EXTRA);
 #endif
         return pHdr + 1;
