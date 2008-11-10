@@ -570,7 +570,7 @@ size_t rtPathVolumeSpecLen(const char *pszPath)
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
  */
-RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, unsigned cchAbsPath)
+RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 {
     if (pszBase && pszPath && !rtPathVolumeSpecLen(pszPath))
     {

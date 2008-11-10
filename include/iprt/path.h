@@ -152,7 +152,7 @@ RTDECL(int)  RTPathGetCurrent(char *pszPath, size_t cchPath);
  * @param   pszRealPath     Where to store the real path.
  * @param   cchRealPath     Size of the buffer.
  */
-RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealPath);
+RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPath);
 
 /**
  * Same as RTPathReal only the result is RTStrDup()'ed.
@@ -171,7 +171,7 @@ RTDECL(char *) RTPathRealDup(const char *pszPath);
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
  */
-RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath);
+RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
 
 /**
  * Same as RTPathAbs only the result is RTStrDup()'ed.
@@ -195,7 +195,7 @@ RTDECL(char *) RTPathAbsDup(const char *pszPath);
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
  */
-RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, unsigned cchAbsPath);
+RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
 
 /**
  * Same as RTPathAbsEx only the result is RTStrDup()'ed.

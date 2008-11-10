@@ -55,7 +55,7 @@
  * @param   pszRealPath     Where to store the real path.
  * @param   cchRealPath     Size of the buffer.
  */
-RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealPath)
+RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPath)
 {
     /*
      * Convert to UTF-16, call Win32 APIs, convert back.
@@ -96,7 +96,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, unsigned cchRealP
  * @param   pszAbsPath      Where to store the absolute path.
  * @param   cchAbsPath      Size of the buffer.
  */
-RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, unsigned cchAbsPath)
+RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
 {
     /*
      * Convert to UTF-16, call Win32 API, convert back.
