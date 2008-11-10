@@ -706,7 +706,7 @@ int mmR3LockMem(PVM pVM, void *pv, size_t cb, MMLOCKEDTYPE eType, PMMLOCKEDMEM *
     /*
      * Allocate locked mem structure.
      */
-    unsigned        cPages = cb >> PAGE_SHIFT;
+    unsigned        cPages = (unsigned)(cb >> PAGE_SHIFT);
     AssertReturn(cPages == (cb >> PAGE_SHIFT), VERR_OUT_OF_RANGE);
     PMMLOCKEDMEM    pLockedMem = (PMMLOCKEDMEM)MMR3HeapAlloc(pVM, MM_TAG_MM, RT_OFFSETOF(MMLOCKEDMEM, aPhysPages[cPages]));
     if (!pLockedMem)
