@@ -63,4 +63,11 @@ EXPORTS
     RTTimeNanoTSLFenceSync
     RTTimeNanoTSLFenceAsync
     ASMMultU64ByU32DivByU32             ; not-os2
+    nocrt_memchr
+    nocrt_memcmp
+    nocrt_memcpy
+    nocrt_memset
+    nocrt_strcpy
+    nocrt_strcmp
+    nocrt_strchr
 
