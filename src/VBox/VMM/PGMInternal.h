@@ -3798,7 +3798,7 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pShwPdpt;
     Assert(pPGM->HCPhysPaePDPT != 0 && pPGM->HCPhysPaePDPT != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePTPD, &pShwPdpt);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePDPT, &pShwPdpt);
     AssertRCReturn(rc, 0);
     return pShwPdpt;
 #else
