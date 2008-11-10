@@ -189,14 +189,14 @@
         of the machine has been saved to an external file when it
         was running.
         <note>
-          No any machine settings can be altered when the machine
+          Only a few machine settings can be altered when the machine
           is in this state.
         </note>
       </desc>
     </const>
     <const name="Aborted"               value="3">
       <desc>
-        A process that run the machine has abnormally terminated.
+        A process running the machine has terminated abnormally.
         Other than that, this value is equivalent to #PoweredOff.
       </desc>
     </const>
@@ -204,8 +204,8 @@
       <desc>
         The machine is currently being executed.
         <note>
-          This value can be used in comparison expressions:
-          all state values below it describe a virtual machine that is
+          This value can be used in relational expressions:
+          all state values less than Running describe a virtual machine that is
           not currently being executed (i.e., it is completely out of
           action).
         </note>
@@ -220,8 +220,8 @@
       <desc>
         Execution of the machine has been paused.
         <note>
-          This value can be used in comparison expressions: all state values
-          above it represent unstable states of the running virtual
+          This value can be used in relational expressions: all state values
+          greater than Paused represent unstable states of the running virtual
           machine. Unless explicitly stated otherwise, no machine settings can
           be altered when it is in one of the unstable states.
         </note>
@@ -234,7 +234,7 @@
     </const>
     <const name="Stuck"                 value="6">
       <desc>
-        Execution of the machine has reached the "Guru Meditaion"
+        Execution of the machine has reached the "Guru Meditation"
         condition. This condition indicates an internal VMM failure which may
         happen as a result of either an unhandled low-level virtual hardware
         exception or one of the recompiler exceptions (such as
