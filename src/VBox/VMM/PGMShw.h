@@ -140,9 +140,12 @@ PGM_SHW_DECL(int, Enter)(PVM pVM)
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
 
-    Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pHCNestedRoot, pVM->pgm.s.HCPhysNestedRoot));
+    Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVM->pgm.s.pShwNestedRootR3, pVM->pgm.s.HCPhysNestedRoot));
     /* In non-nested mode we allocate the PML4 page on-demand; in nested mode we just use our fixed nested paging root. */
-    pVM->pgm.s.pHCPaePML4    = (PX86PML4)pVM->pgm.s.pHCNestedRoot;
+    pVM->pgm.s.pShwPaePml4R3 = (R3PTRTYPE(PX86PML4))pVM->pgm.s.pShwNestedRootR3;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))pVM->pgm.s.pShwNestedRootR0;
+# endif
     pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.HCPhysNestedRoot;
 #endif
     return VINF_SUCCESS;
@@ -173,7 +176,10 @@ PGM_SHW_DECL(int, Exit)(PVM pVM)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED
     Assert(HWACCMIsNestedPagingActive(pVM));
-    pVM->pgm.s.pHCPaePML4    = 0;
+    pVM->pgm.s.pShwPaePml4R3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwPaePml4R0 = 0;
+# endif
     pVM->pgm.s.HCPhysPaePML4 = 0;
     Log(("Leave nested shadow paging mode\n"));
 #endif

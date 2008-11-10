@@ -1419,8 +1419,14 @@ static int pgmR3InitPaging(PVM pVM)
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.pHCPaePDPT    = (PX86PDPT)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.pHCNestedRoot = MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pHCPaePDPT = (PX86PDPT)MMR3PageAllocLow(pVM);
+//#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+//    pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
+//#endif
+    pVM->pgm.s.pShwNestedRootR3 = MMR3PageAllocLow(pVM);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwNestedRootR0 = (uintptr_t)pVM->pgm.s.pShwNestedRootR3;
+#endif
 
     if (    !pVM->pgm.s.pHC32BitPD
         ||  !pVM->pgm.s.apHCPaePDs[0]
@@ -1428,7 +1434,7 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
         ||  !pVM->pgm.s.pHCPaePDPT
-        ||  !pVM->pgm.s.pHCNestedRoot)
+        ||  !pVM->pgm.s.pShwNestedRootR3)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
         return VERR_NO_PAGE_MEMORY;
@@ -1442,14 +1448,14 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
     pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
-    pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pHCNestedRoot);
+    pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
      */
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.pHCNestedRoot, PAGE_SIZE);
+    ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);

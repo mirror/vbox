@@ -2086,11 +2086,11 @@ typedef struct PGM
 #if HC_ARCH_BITS == 64
     RTRCPTR                         alignment5; /**< structure size alignment. */
 #endif
-    /** The Page Map Level 4 table - HC Ptr. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PML4)             pHCPaePML4;
-#else
-    R3R0PTRTYPE(PX86PML4)           pHCPaePML4;
+    /** The Page Map Level 4 table - R3 Ptr. */
+    R3PTRTYPE(PX86PML4)             pShwPaePml4R3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** The Page Map Level 4 table - R0 Ptr. */
+    R0PTRTYPE(PX86PML4)             pShwPaePml4R0;
 #endif
     /** The Physical Address (HC) of the Page Map Level 4 table. */
     RTHCPHYS                        HCPhysPaePML4;
@@ -2100,19 +2100,19 @@ typedef struct PGM
 #else
     R3R0PTRTYPE(PPGMPOOLPAGE)       pHCShwAmd64CR3;
 #endif
-
     /** @}*/
 
     /** @name Nested Shadow Paging
      * @{ */
-    /** Root table; format depends on the host paging mode (AMD-V) or EPT */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(void *)               pHCNestedRoot;
-#else
-    R3R0PTRTYPE(void *)             pHCNestedRoot;
+    /** Root table; format depends on the host paging mode (AMD-V) or EPT - R3 pointer. */
+    RTR3PTR                         pShwNestedRootR3;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    /** Root table; format depends on the host paging mode (AMD-V) or EPT - R0 pointer. */
+    RTR0PTR                         pShwNestedRootR0;
 #endif
     /** The Physical Address (HC) of the nested paging root. */
     RTHCPHYS                        HCPhysNestedRoot;
+    /** @}  */
 
     /** @name Function pointers for Shadow paging.
      * @{
@@ -3581,18 +3581,18 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
  *
  * @returns Pointer to the PML4 entry.
  * @param   pPGM        Pointer to the PGM instance data.
- * @param   iPml4e      The index.
+ * @param   iPml4       The index.
  */
-DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4e)
+DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
     int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
     AssertRCReturn(rc, NULL);
-    return &pGuestPml4->a[iPml4e];
+    return &pGuestPml4->a[iPml4];
 #else
     Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return &pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4e];
+    return &pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4];
 #endif
 }
 
@@ -3602,18 +3602,18 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4e)
  *
  * @returns The PML4 entry.
  * @param   pPGM        Pointer to the PGM instance data.
- * @param   iPml4e      The index.
+ * @param   iPml4       The index.
  */
-DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4e)
+DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
     int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
     AssertRCReturn(rc, 0);
-    return pGuestPml4->a[iPml4e].u;
+    return pGuestPml4->a[iPml4].u;
 #else
     Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4e].u;
+    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4].u;
 #endif
 }
 
@@ -3630,8 +3630,8 @@ DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4e)
 DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4];
     if (pPml4e->n.u1Present)
     {
         PX86PDPT pPdpt;
@@ -3658,8 +3658,8 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PM
 DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4];
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
@@ -3693,11 +3693,11 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E 
 DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    if (pGuestPml4->a[iPml4e].n.u1Present)
+    const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, 0);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3726,11 +3726,11 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
 DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    if (pGuestPml4->a[iPml4e].n.u1Present)
+    const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3762,8 +3762,8 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
 DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe, unsigned *piPD)
 {
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4e];
+    const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4];
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
@@ -3785,6 +3785,75 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     return 0;
 }
 
+#ifndef IN_RC
+
+
+/**
+ * Gets the shadow page map level-4 pointer.
+ *
+ * @returns Pointer to the shadow PML4.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_R0
+    PX86PML4 pShwPml4;
+    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    AssertRCReturn(rc, 0);
+    return pShwPml4;
+#else
+    Assert(pPGM->CTX_SUFF(pShwPaePml4));
+    return pPGM->CTX_SUFF(pShwPaePml4);
+#endif
+}
+
+
+/**
+ * Gets the shadow page map level-4 entry for the specified address.
+ *
+ * @returns The entry.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(X86PGPAEUINT) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
+{
+    const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_R0
+    PCX86PML4       pShwPml4;
+    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    AssertRCReturn(rc, 0);
+    return pShwPml4->a[iPml4].u;
+# else
+    Assert(pPGM->CTX_SUFF(pShwPaePml4));
+    return pPGM->CTX_SUFF(pShwPaePml4)->a[iPml4].u;
+# endif
+}
+
+
+/**
+ * Gets the pointer to the specified shadow page map level-4 entry.
+ *
+ * @returns The entry.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   iPml4       The PML4 index.
+ */
+DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
+{
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_R0
+    PX86PML4        pShwPml4;
+    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysPaePML4, &pShwPml4);
+    AssertRCReturn(rc, 0);
+    return &pShwPml4->a[iPml4];
+# else
+    Assert(pPGM->CTX_SUFF(pShwPaePml4));
+    return &pPGM->CTX_SUFF(pShwPaePml4)->a[iPml4];
+# endif
+}
+
+#endif /* IN_RC */
 
 /**
  * Gets the GUEST page directory pointer for the specified address.
@@ -3798,11 +3867,11 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
 DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, unsigned *piPD)
 {
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
-    const unsigned  iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    if (pGuestPml4->a[iPml4e].n.u1Present)
+    const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4e].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;

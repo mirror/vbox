@@ -148,8 +148,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     X86PDEPAE Pde;
 
     /* PML4 */
-    const unsigned  iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    X86PML4E Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+    X86PML4E        Pml4e;
+    Pml4e.u = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
     if (!Pml4e.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -188,7 +188,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     PEPTPD          pPDDst;
     EPTPDE          Pde;
 
-    int rc = PGMShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
+    int rc = pgmShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -295,8 +295,8 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
         X86PDEPAE       Pde;
         /* PML4 */
-        const unsigned  iPml4  = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-        X86PML4E        Pml4e = CTXMID(pVM->pgm.s.p,PaePML4)->a[iPml4];
+        X86PML4E        Pml4e;
+        Pml4e.u = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
         if (!Pml4e.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -328,7 +328,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         PEPTPD          pPDDst;
         EPTPDE          Pde;
 
-        rc = PGMShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
+        rc = pgmShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
             AssertRC(rc);

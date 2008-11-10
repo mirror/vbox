@@ -169,7 +169,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A;
 #   endif
 
-    rc = PGMShwSyncLongModePDPtr(pVM, pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
+    rc = pgmShwSyncLongModePDPtr(pVM, pvFault, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -181,7 +181,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
     PEPTPD          pPDDst;
 
-    rc = PGMShwGetEPTPDPtr(pVM, pvFault, NULL, &pPDDst);
+    rc = pgmShwGetEPTPDPtr(pVM, pvFault, NULL, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -909,15 +909,15 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
-    AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
+    AssertReturn(pVM->pgm.s.pShwPaePml4R3, VERR_INTERNAL_ERROR);
 
-    const unsigned  iPml4e    = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    const unsigned  iPml4     = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
     const unsigned  iPdpte    = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
-    PX86PML4E       pPml4eDst = &pVM->pgm.s.pHCPaePML4->a[iPml4e];
-    rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    PX86PML4E       pPml4eDst;
+    rc = pgmShwGetLongModePDPtr(pVM, GCPtrPage, &pPml4eDst, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
@@ -1020,7 +1020,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
     {
         LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
         PGM_INVL_GUEST_TLBS();
@@ -1034,7 +1034,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
          */
         LogFlow(("InvalidatePage: Out-of-sync PML4E at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
         PGM_INVL_GUEST_TLBS();
@@ -1046,7 +1046,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
          */
         LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
                  GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
+        pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4);
         pPml4eDst->u = 0;
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
         PGM_INVL_GUEST_TLBS();
@@ -1601,7 +1601,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     X86PDEPAE       PdeDst;
     PX86PDPT        pPdptDst;
 
-    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    int rc = pgmShwGetLongModePDPtr(pVM, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
@@ -1866,7 +1866,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     X86PDEPAE       PdeDst;
     PX86PDPT        pPdptDst;
 
-    int rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    int rc = pgmShwGetLongModePDPtr(pVM, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst && pPdptDst);
     PdeDst = pPDDst->a[iPDDst];
@@ -1875,7 +1875,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     PEPTPD          pPDDst;
     EPTPDE          PdeDst;
 
-    int rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, NULL, &pPDDst);
+    int rc = pgmShwGetEPTPDPtr(pVM, GCPtrPage, NULL, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -2322,7 +2322,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     const unsigned  iPDDst   = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
-    rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    rc = pgmShwGetLongModePDPtr(pVM, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
 # endif
@@ -2707,7 +2707,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     const unsigned  iPDDst = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
     PX86PDPT        pPdptDst;
-    rc = PGMShwGetLongModePDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    rc = pgmShwGetLongModePDPtr(pVM, GCPtrPage, NULL, &pPdptDst, &pPDDst);
     AssertRCSuccessReturn(rc, rc);
     Assert(pPDDst);
 
@@ -2720,7 +2720,7 @@ PGM_BTH_DECL(int, SyncPT)(PVM pVM, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtr
     PEPTPD          pPDDst;
     PEPTPDPT        pPdptDst;
 
-    rc = PGMShwGetEPTPDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
+    rc = pgmShwGetEPTPDPtr(pVM, GCPtrPage, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -2862,7 +2862,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
         PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
 #  endif
 
-        int rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
+        int rc = pgmShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
         if (rc != VINF_SUCCESS)
         {
             AssertRC(rc);
@@ -2982,7 +2982,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
     PdpeSrc.u  = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_NX | X86_PDPE_A;
 #  endif
 
-    rc = PGMShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
+    rc = pgmShwSyncLongModePDPtr(pVM, GCPtrPage, pPml4eSrc, &PdpeSrc, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
         AssertRC(rc);
@@ -3188,14 +3188,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         iPdNoMapping  = ~0U;
     }
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-    for (uint64_t iPml4e = 0; iPml4e < X86_PG_PAE_ENTRIES; iPml4e++)
+    for (uint64_t iPml4 = 0; iPml4 < X86_PG_PAE_ENTRIES; iPml4++)
     {
         PPGMPOOLPAGE pShwPdpt = NULL;
         PX86PML4E    pPml4eSrc, pPml4eDst;
         RTGCPHYS     GCPhysPdptSrc;
 
-        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4e];
-        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
+        pPml4eSrc     = &pVM->pgm.s.CTXSUFF(pGstPaePML4)->a[iPml4];
+        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4];
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
         if (!pPml4eDst->n.u1Present)
@@ -3210,8 +3210,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         {
             /* Free it. */
             LogFlow(("SyncCR3: Out-of-sync PML4E (GCPhys) GCPtr=%RX64 %RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                     (uint64_t)iPml4e << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-            pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e);
+                     (uint64_t)iPml4 << X86_PML4_SHIFT, pShwPdpt->GCPhys, GCPhysPdptSrc, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
+            pgmPoolFreeByPage(pPool, pShwPdpt, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4);
             pPml4eDst->u = 0;
             continue;
         }
@@ -3264,10 +3264,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             PX86PDPT        pPdptDst;
             PX86PDPAE       pPDDst;
             PX86PDEPAE      pPDEDst;
-            RTGCPTR         GCPtr   = (iPml4e << X86_PML4_SHIFT) || (iPdpte << X86_PDPT_SHIFT);
+            RTGCPTR         GCPtr   = (iPml4 << X86_PML4_SHIFT) || (iPdpte << X86_PDPT_SHIFT);
             PGSTPD          pPDSrc  = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtr, &pPml4eSrc, &PdpeSrc, &iPDSrc);
 
-            int rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
+            int rc = pgmShwGetLongModePDPtr(pVM, GCPtr, NULL, &pPdptDst, &pPDDst);
             if (rc != VINF_SUCCESS)
             {
                 if (rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)
@@ -3295,7 +3295,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             {
                 /* Free it. */
                 LogFlow(("SyncCR3: Out-of-sync PDPE (GCPhys) GCPtr=%RX64 %RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                        ((uint64_t)iPml4e << X86_PML4_SHIFT) + ((uint64_t)iPdpte << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
+                        ((uint64_t)iPml4 << X86_PML4_SHIFT) + ((uint64_t)iPdpte << X86_PDPT_SHIFT), pShwPde->GCPhys, GCPhysPdeSrc, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
 
                 /* Mark it as not present if there's no hypervisor mapping present. (bit flipped at the top of Trap0eHandler) */
                 Assert(!(pPdpeDst->u & PGM_PLXFLAGS_MAPPING));
@@ -3699,17 +3699,17 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
 # endif
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
-    unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    unsigned iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 
-    for (; iPml4e < X86_PG_PAE_ENTRIES; iPml4e++)
+    for (; iPml4 < X86_PG_PAE_ENTRIES; iPml4++)
     {
         PPGMPOOLPAGE    pShwPdpt = NULL;
         PX86PML4E       pPml4eSrc;
         PX86PML4E       pPml4eDst;
         RTGCPHYS        GCPhysPdptSrc;
 
-        pPml4eSrc     = pgmGstGetLongModePML4EPtr(&pVM->pgm.s, iPml4e);
-        pPml4eDst     = &pVM->pgm.s.CTXMID(p,PaePML4)->a[iPml4e];
+        pPml4eSrc     = pgmGstGetLongModePML4EPtr(&pVM->pgm.s, iPml4);
+        pPml4eDst     = pgmShwGetLongModePML4EPtr(&pVM->pgm.s, iPml4);
 
         /* Fetch the pgm pool shadow descriptor if the shadow pml4e is present. */
         if (!pPml4eDst->n.u1Present)
@@ -3735,7 +3735,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
 
         if (GCPhysPdptSrc != pShwPdpt->GCPhys)
         {
-            AssertMsgFailed(("Physical address doesn't match! iPml4e %d pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPml4e, pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
+            AssertMsgFailed(("Physical address doesn't match! iPml4 %d pPml4eDst.u=%#RX64 pPml4eSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPml4, pPml4eDst->u, pPml4eSrc->u, pShwPdpt->GCPhys, GCPhysPdptSrc));
             GCPtr += _2M * UINT64_C(512) * UINT64_C(512);
             cErrors++;
             continue;
@@ -3778,7 +3778,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             PX86PDPAE       pPDDst;
             PGSTPD          pPDSrc    = pgmGstGetLongModePDPtr(&pVM->pgm.s, GCPtr, &pPml4eSrc, &PdpeSrc, &iPDSrc);
 
-            rc = PGMShwGetLongModePDPtr(pVM, GCPtr, &pPdptDst, &pPDDst);
+            rc = pgmShwGetLongModePDPtr(pVM, GCPtr, NULL, &pPdptDst, &pPDDst);
             if (rc != VINF_SUCCESS)
             {
                 AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
@@ -3811,7 +3811,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             if (GCPhysPdeSrc != pShwPde->GCPhys)
             {
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                AssertMsgFailed(("Physical address doesn't match! iPml4e %d iPdpte %d pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPml4e, iPdpte, pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
+                AssertMsgFailed(("Physical address doesn't match! iPml4 %d iPdpte %d pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPml4, iPdpte, pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
 #  else
                 AssertMsgFailed(("Physical address doesn't match! iPdpte %d pPdpeDst.u=%#RX64 pPdpeSrc.u=%RX64 Phys %RX64 vs %RX64\n", iPdpte, pPdpeDst->u, PdpeSrc.u, pShwPde->GCPhys, GCPhysPdeSrc));
 #  endif

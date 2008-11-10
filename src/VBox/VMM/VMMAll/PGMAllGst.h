@@ -519,7 +519,10 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
                     if (pVM->pgm.s.pHCShwAmd64CR3->enmKind != PGMPOOLKIND_FREE)
                         pgmPoolFreeByPage(pPool, pVM->pgm.s.pHCShwAmd64CR3, PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.pHCShwAmd64CR3->GCPhys >> PAGE_SHIFT);
                     pVM->pgm.s.pHCShwAmd64CR3 = 0;
-                    pVM->pgm.s.pHCPaePML4     = 0;
+                    pVM->pgm.s.pShwPaePml4R3  = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                    pVM->pgm.s.pShwPaePml4R0  = 0;
+#  endif
                     pVM->pgm.s.HCPhysPaePML4  = 0;
                 }
 
@@ -534,7 +537,10 @@ l_try_again:
                     AssertRC(rc);
                     goto l_try_again;
                 }
-                pVM->pgm.s.pHCPaePML4    = (PX86PML4)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
+                pVM->pgm.s.pShwPaePml4R3 = (R3PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+                pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.pHCShwAmd64CR3);
+#  endif
                 pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.pHCShwAmd64CR3->Core.Key;
             }
 # endif
@@ -594,7 +600,10 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 # endif
     if (!HWACCMIsNestedPagingActive(pVM))
     {
-        pVM->pgm.s.pHCPaePML4    = 0;
+        pVM->pgm.s.pShwPaePml4R3 = 0;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVM->pgm.s.pShwPaePml4R0 = 0;
+# endif
         pVM->pgm.s.HCPhysPaePML4 = 0;
         if (pVM->pgm.s.pHCShwAmd64CR3)
         {
