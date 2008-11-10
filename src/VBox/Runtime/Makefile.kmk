@@ -1120,9 +1120,9 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/memset.asm \
 	common/string/strchr.asm \
 	common/string/strcmp.asm \
+	common/string/strcpy.asm \
 	common/string/strlen.asm \
 	\
-	common/string/strcpy.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	\
@@ -1357,7 +1357,6 @@ RuntimeGC_SOURCES       = \
 	common/misc/assert.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
-	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
@@ -1417,15 +1416,6 @@ RuntimeGC_SOURCES += \
 	common/math/gcc/umoddi3.c \
 	common/math/gcc/xordi3.c
 endif
-
-# Only used in GC...
-common/string/memchr.cpp_CXXFLAGS.win = -Oi-
-common/string/memcmp.cpp_CXXFLAGS.win = -Oi-
-common/string/memcpy.cpp_CXXFLAGS.win = -Oi-
-common/string/memset.cpp_CXXFLAGS.win = -Oi-
-common/string/strcpy.cpp_CXXFLAGS.win = -Oi-
-common/string/strlen.cpp_CXXFLAGS.win = -Oi-
-
 
 
 #
