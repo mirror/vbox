@@ -44,8 +44,6 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <iprt/string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <iprt/asm.h>
 
 /**
