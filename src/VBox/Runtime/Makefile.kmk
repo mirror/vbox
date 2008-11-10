@@ -140,6 +140,23 @@ RuntimeWin32ASM_SOURCES = \
 	common/asm/ASMMultU64ByU32DivByU32.asm
 
 #
+# NoCRT sources (minus math stuff).
+#
+RuntimeNoCrt_SOURCES = \
+	common/misc/setjmp.asm \
+	common/string/memchr.asm \
+	common/string/memcmp.asm \
+	common/string/memcpy.asm \
+	common/string/mempcpy.asm \
+	common/string/memmove.asm \
+	common/string/memset.asm \
+	common/string/strchr.asm \
+	common/string/strcpy.asm \
+	common/string/strcmp.asm \
+	common/string/strlen.asm
+
+
+#
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE      = VBOXR3EXE
@@ -771,6 +788,7 @@ endif # linux
 # RuntimeR3NoCRTGCC - CRT replacement lib for VBoxREM.
 # This is used together with VBoxRT.
 #
+## @todo the *_alias.c stuff is busted, remove and use RT_WITH_NOCRT_ALIASES instead.
 RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
 RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
 RuntimeR3NoCRTGCC_INCS  = include
@@ -803,24 +821,15 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/math/truncf.asm \
 	common/math/truncl.asm \
 	\
-	common/misc/setjmp.asm \
+	$(RuntimeNoCrt_SOURCES) \
 	\
-	common/string/memchr.asm \
 	common/string/memchr_alias.c \
-	common/string/memcmp.asm \
 	common/string/memcmp_alias.c \
-	common/string/memcpy.asm \
 	common/string/memcpy_alias.c \
-	common/string/mempcpy.asm \
-	common/string/memmove.asm \
 	common/string/memmove_alias.c \
-	common/string/memset.asm \
 	common/string/memset_alias.c \
-	common/string/strchr.asm \
 	common/string/strchr_alias.c \
-	common/string/strcmp.asm \
 	common/string/strcmp_alias.c \
-	common/string/strlen.asm \
 	common/string/strlen_alias.c
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
@@ -852,7 +861,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 # RuntimeR0 - Ring0 library for VMMR0.
 #
 RuntimeR0_TEMPLATE      = VBOXR0
-RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITH_NOCRT_ALIASES
+RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES       = \
 	common/checksum/crc32.cpp \
@@ -890,20 +899,9 @@ RuntimeR0_SOURCES       = \
 	common/table/avlu32.cpp \
 	common/time/timesup.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
-	VBox/strformat-vbox.cpp
-
-RuntimeR0_SOURCES += \
-	common/misc/setjmp.asm \
-	common/string/memchr.asm \
-	common/string/memcmp.asm \
-	common/string/memcpy.asm \
-	common/string/mempcpy.asm \
-	common/string/memmove.asm \
-	common/string/memset.asm \
-	common/string/strchr.asm \
-	common/string/strcpy.asm \
-	common/string/strcmp.asm \
-	common/string/strlen.asm
+	VBox/strformat-vbox.cpp \
+	\
+	$(RuntimeNoCrt_SOURCES)
 
 if1of ($(KBUILD_TARGET), darwin solaris freebsd)
 RuntimeR0_SOURCES += \
@@ -1347,7 +1345,7 @@ RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
 # RuntimeGC - Guest context library.
 #
 RuntimeGC_TEMPLATE      = VBOXGC
-RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
+RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
 RuntimeGC_INCS          = include
 RuntimeGC_SOURCES       = \
 	common/log/log.cpp \
@@ -1359,16 +1357,10 @@ RuntimeGC_SOURCES       = \
 	common/misc/assert.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
-	common/string/memchr.cpp \
-	common/string/memcmp.cpp \
-	common/string/memcpy.cpp \
-	common/string/memset.cpp \
-	common/string/memmove.asm \
 	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
-	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
@@ -1388,6 +1380,8 @@ RuntimeGC_SOURCES       = \
 	gc/initterm-gc.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	VBox/strformat-vbox.cpp \
+	\
+	$(RuntimeNoCrt_SOURCES)
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeGC_SOURCES += common/time/timesupA.asm

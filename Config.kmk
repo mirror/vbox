@@ -1862,7 +1862,8 @@ endif
 TEMPLATE_VBOXGC = VBox GC
 TEMPLATE_VBOXGC_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXGC_ASFLAGS             = $(VBOX_ASFLAGS32)
-TEMPLATE_VBOXGC_DEFS                = IN_RC $(ARCH_BITS_DEFS)
+TEMPLATE_VBOXGC_DEFS                = IN_RC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
+TEMPLATE_VBOXGC_INCS                = $(PATH_ROOT)/include/iprt/nocrt
 TEMPLATE_VBOXGC_SYSSUFF             = .gc
 TEMPLATE_VBOXGC_BLD_TRG_ARCH        = x86
 
@@ -1876,25 +1877,20 @@ else
 endif
 TEMPLATE_VBOXGC_CFLAGS              = $(TEMPLATE_VBOXGC_CXXFLAGS)
 TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
-ifdef VBOX_USE_VCC80
- include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
- TEMPLATE_VBOXGC_LIBS                = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
-else
- TEMPLATE_VBOXGC_LIBS                = \
-	$(PATH_TOOL_VCC70_LIB)/libcmt.lib  # for 64-bit int
-endif
-endif
+include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+TEMPLATE_VBOXGC_LIBS                = \
+        $(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+endif # pe
 
 ifeq ($(VBOX_LDR_FMT32),elf)
 TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
-TEMPLATE_VBOXGC_CXXFLAGS            = -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
-TEMPLATE_VBOXGC_CFLAGS              = -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
+TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
+TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
 ifeq ($(KBUILD_TARGET),solaris)
- TEMPLATE_VBOXGC_LDFLAGS            = -r
+ TEMPLATE_VBOXGC_LDFLAGS            = -nostdlib -r
 else
  TEMPLATE_VBOXGC_LDFLAGS            = -nostdlib -Bsymbolic
- # temporarily, must fix the loader.
+ # "temporarily", must fix the loader.
  TEMPLATE_VBOXGC_LDFLAGS           += $(if $(VBOX_DO_STRIP_MODULES),-S,)
  TEMPLATE_VBOXGC_LDFLAGS.release    = $(if $(VBOX_DO_STRIP_MODULES),-S,)
 endif
@@ -1907,16 +1903,16 @@ endif
 ifeq ($(VBOX_LDR_FMT32),macho)
 TEMPLATE_VBOXGC_TOOL                = GXX4MACHO
 TEMPLATE_VBOXGC_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
-TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXGC_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -nostdlib
 #TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
 endif
 
 ifeq ($(VBOX_LDR_FMT32),lx)
 TEMPLATE_VBOXGC_TOOL                = GXX3OMF
-TEMPLATE_VBOXGC_CXXFLAGS            = -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_CFLAGS              = -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
 TEMPLATE_VBOXGC_LDFLAGS             = -Zdll -nostdlib
 TEMPLATE_VBOXGC_LIBS                = \
 	$(VBOX_GCC32_LIBGCC) \
@@ -1930,6 +1926,8 @@ endif
 #
 TEMPLATE_VBOXGCEXE = VBox GC as ring-3 testcase
 TEMPLATE_VBOXGCEXE_EXTENDS = VBOXGC
+TEMPLATE_VBOXGCEXE_DEFS = $(filter-out IPRT_NO_CRT RT_WITH_NOCRT_ALIASES,$(TEMPLATE_VBOXGC_DEFS))
+TEMPLATE_VBOXGCEXE_INCS = $(NO_SUCH_VARIABLE)
 
 ifeq ($(VBOX_LDR_FMT32),pe)
  TEMPLATE_VBOXGCEXE_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
@@ -1946,19 +1944,23 @@ ifeq ($(VBOX_LDR_FMT32),pe)
 endif
 
 ifeq ($(VBOX_LDR_FMT32),elf)
- TEMPLATE_VBOXGCEXE_LDFLAGS = -g
+ TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+ TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
+ TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
  TEMPLATE_VBOXGCEXE_LDFLAGS.release = -g
 endif
 
 ifeq ($(VBOX_LDR_FMT32),macho)
- TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -static,$(TEMPLATE_VBOXGC_CFLAGS))
- TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -static,$(TEMPLATE_VBOXGC_CXXFLAGS))
+ TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+ TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
  TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
 endif
 
 ifeq ($(VBOX_LDR_FMT32),lx)
- TEMPLATE_VBOXGCEXE_LDFLAGS = -g
- TEMPLATE_VBOXGCEXE_LIBS    = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+ TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
+ TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
+ TEMPLATE_VBOXGCEXE_LIBS     = $(NO_SUCH_VARIABLE)
 endif
 
 
@@ -1968,7 +1970,7 @@ endif
 TEMPLATE_VBOXR0 = VBox Ring 0
 TEMPLATE_VBOXR0_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXR0_ASFLAGS             = $(VBOX_ASFLAGS)
-TEMPLATE_VBOXR0_DEFS                = IN_RING0 IN_RING0_AGNOSTIC IPRT_NO_CRT $(ARCH_BITS_DEFS)
+TEMPLATE_VBOXR0_DEFS                = IN_RING0 IN_RING0_AGNOSTIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR0_INCS                = $(PATH_ROOT)/include/iprt/nocrt
 
 ifeq ($(VBOX_LDR_FMT),pe)
