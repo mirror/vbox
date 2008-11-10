@@ -252,7 +252,7 @@ RTDECL(int) RTDirClose(PRTDIR pDir);
  *
  *                      The value is unchanged in all other cases.
  */
-RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry);
+RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry);
 
 /**
  * Reads the next entry in the directory returning extended information.
@@ -282,7 +282,7 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, unsigned *pcbDirEntry)
  *                      Which set of additional attributes to request.
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
  */
-RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, unsigned *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs);
+RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAdditionalAttribs);
 
 
 /**
