@@ -348,7 +348,7 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath);
+RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath);
 
 /**
  * Gets the user home directory.
