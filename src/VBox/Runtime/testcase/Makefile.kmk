@@ -270,6 +270,7 @@ tstNoCrt-1_SOURCES = \
 	../common/string/memcmp.asm \
 	../common/string/strchr.asm \
 	../common/string/strcmp.asm \
+	../common/string/strcpy.asm \
 	../common/string/strlen.asm
 
 tstOnce_SOURCES = tstOnce.cpp
