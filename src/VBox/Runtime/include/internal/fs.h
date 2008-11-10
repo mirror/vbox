@@ -38,9 +38,9 @@
 
 __BEGIN_DECLS
 
-RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, unsigned cbName);
-RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, unsigned cbName);
-RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, unsigned cbName);
+RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName);
+RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName);
+RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, size_t cbName);
 bool    rtFsModeIsValid(RTFMODE fMode);
 bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 
