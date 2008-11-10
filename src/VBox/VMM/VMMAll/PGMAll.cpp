@@ -68,6 +68,12 @@ typedef struct PGMHVUSTATE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+DECLINLINE(int) pgmShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
+DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD);
+DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
+
 
 /*
  * Shadow - 32-bit mode
@@ -807,8 +813,9 @@ VMMDECL(int) PGMShwModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
  * @param   GCPtr       The address.
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
+ * @remarks Unused.
  */
-VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+DECLINLINE(int) pgmShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
@@ -844,8 +851,8 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86P
         AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
     }
     /* The PD was cached or created; hook it up now. */
-    pPdpe->u |=    pShwPage->Core.Key
-                | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
+    pPdpe->u |= pShwPage->Core.Key
+             |  (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
     return VINF_SUCCESS;
@@ -860,8 +867,9 @@ VMMDECL(int) PGMShwSyncPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86P
  * @param   GCPtr       The address.
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
+ * @remarks Unused.
  */
-VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
     PPGM           pPGM   = &pVM->pgm.s;
     PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
@@ -901,40 +909,36 @@ VMMDECL(int) PGMShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86PDP
  * @param   pGstPdpe    Guest PDPT entry
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
+DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, PX86PDPE pGstPdpe, PX86PDPAE *ppPD)
 {
-    PPGM           pPGM   = &pVM->pgm.s;
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
-    PX86PML4E      pPml4e;
+    PPGM           pPGM          = &pVM->pgm.s;
+    PPGMPOOL       pPool         = pPGM->CTX_SUFF(pPool);
+    const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
+    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
     PPGMPOOLPAGE   pShwPage;
     X86PML4E       Pml4eGst;
     int            rc;
-    bool           fNestedPaging = HWACCMIsNestedPagingActive(pVM);
-
-    Assert(pVM->pgm.s.pHCPaePML4);
 
     /* Allocate page directory pointer table if not present. */
-    pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & X86_PML4E_PG_MASK))
     {
         Assert(!(pPml4e->u & X86_PML4E_PG_MASK));
-
         if (!fNestedPaging)
         {
             /** @todo why are we looking up the guest PML4E here?  Isn't pGstPml4e
              *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
              *        are fine.) */
             Assert(pVM->pgm.s.pHCShwAmd64CR3);
-            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4e);
+            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
 
             rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4e, &pShwPage);
+                              PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.pHCShwAmd64CR3->idx, iPml4, &pShwPage);
         }
         else
             rc = pgmPoolAlloc(pVM, GCPtr + RT_BIT_64(63) /* hack: make the address unique */,
-                              PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
+                              PGMPOOLKIND_64BIT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
 
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
@@ -966,7 +970,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml
         {
             /** @todo why are we looking up the guest PDPTE here?  Isn't pGstPdpe
              *        trustworthy? */
-            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4e);
+            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
             PX86PDPT pPdptGst;
             rc = PGM_GCPHYS_2_PTR(pVM, Pml4eGst.u & X86_PML4E_PG_MASK, &pPdptGst);
             AssertRCReturn(rc, rc);
@@ -1002,7 +1006,7 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml
 
 
 /**
- * Gets the SHADOW page directory pointer for the specified address.
+ * Gets the SHADOW page directory pointer for the specified address (long mode).
  *
  * @returns VBox status.
  * @param   pVM         VM handle.
@@ -1010,32 +1014,27 @@ VMMDECL(int) PGMShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGstPml
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+DECLINLINE(int) pgmShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
-    PPGM           pPGM   = &pVM->pgm.s;
-    const unsigned iPml4e = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
-    PX86PML4E      pPml4e;
-    PPGMPOOLPAGE   pShwPage;
-
-    AssertReturn(pVM->pgm.s.pHCPaePML4, VERR_INTERNAL_ERROR);
-
-    pPml4e = &pPGM->pHCPaePML4->a[iPml4e];
+    PPGM            pPGM = &pVM->pgm.s;
+    const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pPGM, iPml4);
+    AssertReturn(pPml4e, VERR_INTERNAL_ERROR);
+    if (ppPml4e)
+        *ppPml4e = (PX86PML4E)pPml4e;
     if (!pPml4e->n.u1Present)
         return VERR_PAGE_MAP_LEVEL4_NOT_PRESENT;
 
-    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
+    PPGMPOOL        pPool = pPGM->CTX_SUFF(pPool);
+    PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
-    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
-    PX86PDPT  pPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
-    PX86PDPE  pPdpe = &pPdpt->a[iPdPt];
-
-    *ppPdpt = pPdpt;
-    if (!pPdpe->n.u1Present)
+    const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
+    PCX86PDPT       pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+    if (!pPdpt->a[iPdPt].n.u1Present)
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
-    pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
+    pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
@@ -1053,27 +1052,34 @@ VMMDECL(int) PGMShwGetLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PDPT *ppPdpt, 
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-VMMDECL(int) PGMShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
-    PPGM           pPGM   = &pVM->pgm.s;
-    const unsigned iPml4e = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
-    PPGMPOOL       pPool  = pPGM->CTX_SUFF(pPool);
-    PEPTPML4       pPml4  = (PEPTPML4)pPGM->pHCNestedRoot;
+    PPGM           pPGM  = &pVM->pgm.s;
+    const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
+    PPGMPOOL       pPool = pPGM->CTX_SUFF(pPool);
+    PEPTPML4       pPml4;
     PEPTPML4E      pPml4e;
     PPGMPOOLPAGE   pShwPage;
     int            rc;
 
     Assert(HWACCMIsNestedPagingActive(pVM));
+
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_R0
+    rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysNestedRoot, &pPml4);
+    AssertRCReturn(rc);
+# else
+    pPml4 = (PEPTPML4)pPGM->CTX_SUFF(pShwNestedRoot);
+# endif
     Assert(pPml4);
 
     /* Allocate page directory pointer table if not present. */
-    pPml4e = &pPml4->a[iPml4e];
+    pPml4e = &pPml4->a[iPml4];
     if (    !pPml4e->n.u1Present
         &&  !(pPml4e->u & EPT_PML4E_PG_MASK))
     {
         Assert(!(pPml4e->u & EPT_PML4E_PG_MASK));
 
-        rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PML4E_PG_MASK) + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4e, &pShwPage);
+        rc = pgmPoolAlloc(pVM, (GCPtr & EPT_PML4E_PG_MASK) + RT_BIT_64(63) /* hack: make the address unique */, PGMPOOLKIND_EPT_PDPT_FOR_PHYS, PGMPOOL_IDX_NESTED_ROOT, iPml4, &pShwPage);
         if (rc == VERR_PGM_POOL_FLUSHED)
         {
             Log(("PGMShwSyncEPTPDPtr: PGM pool flushed (1) -> signal sync cr3\n"));
