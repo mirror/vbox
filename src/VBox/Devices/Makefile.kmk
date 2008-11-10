@@ -409,7 +409,7 @@ endif
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
-ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
+if1of ($(VBOX_LDR_FMT32), pe lx)
 VBoxDDGC_LIBS           = \
 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
@@ -472,12 +472,8 @@ endif
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDR0_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
-ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
+if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDDR0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
-endif
-VBoxDDR0_LIBS          += $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-ifeq ($(VBOX_LDR_FMT32),elf) # this is template stuff!
-VBoxDDR0_LIBS          += $(VBOX_GCC_LIBGCC)
 endif
 
 
@@ -494,7 +490,7 @@ VBoxDD2GC_SOURCES        = \
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDD2GC_LDFLAGS        = -Entry:apicMMIOWrite
 endif
-ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
+if1of ($(VBOX_LDR_FMT32), pe lx)
 VBoxDD2GC_LIBS           = \
 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
@@ -514,12 +510,8 @@ VBoxDD2R0_SOURCES        = \
 ifeq ($(VBOX_LDR_FMT),pe)
 VBoxDD2R0_LDFLAGS        = -Entry:apicMMIOWrite
 endif
-ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
+if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDD2R0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
-endif
-VBoxDD2R0_LIBS          += $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
-ifeq ($(VBOX_LDR_FMT),elf)
-VBoxDD2R0_LIBS          += $(VBOX_GCC_LIBGCC)
 endif
 
 
