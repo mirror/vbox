@@ -1151,7 +1151,7 @@ void VBoxSelectorWnd::refreshSysTray()
     {
         if (iCurItemCount > 14)     /* 15 machines per sub menu. */
         {
-            pSubMenu = new QMenu (tr("Next 20 machines ..."));
+            pSubMenu = new QMenu (tr("Next 15 machines ..."));
             Assert(pSubMenu);
             pCurMenu->addMenu (pSubMenu);
             pCurMenu = pSubMenu;
