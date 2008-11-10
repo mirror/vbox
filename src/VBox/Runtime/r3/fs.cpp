@@ -54,7 +54,7 @@
  * @param   pszName     The filename which this applies to (exe check).
  * @param   cbName      The length of that filename. (optional, set 0)
  */
-RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, unsigned cbName)
+RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName)
 {
     fMode &= ~((1 << RTFS_DOS_SHIFT) - 1);
 
@@ -101,7 +101,7 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, unsigned cbName)
  * @param   pszName     The filename which this applies to (hidden check).
  * @param   cbName      The length of that filename. (optional, set 0)
  */
-RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, unsigned cbName)
+RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName)
 {
     fMode &= RTFS_UNIX_MASK;
 
@@ -133,7 +133,7 @@ RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, unsigned cbName)
  * @param   pszName     The filename which this applies to (exe check).
  * @param   cbName      The length of that filename. (optional, set 0)
  */
-RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, unsigned cbName)
+RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, size_t cbName)
 {
     if (!(fMode & RTFS_UNIX_MASK))
         fMode = rtFsModeFromDos(fMode, pszName, cbName);

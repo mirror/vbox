@@ -800,7 +800,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
     pLogger->File         = NIL_RTFILE;
     pLogger->pszFilename  = NULL;
     pLogger->papszGroups  = NULL;
-    pLogger->cMaxGroups   = (cbLogger - RT_OFFSETOF(RTLOGGER, afGroups[0])) / sizeof(pLogger->afGroups[0]);
+    pLogger->cMaxGroups   = (RTUINT)((cbLogger - RT_OFFSETOF(RTLOGGER, afGroups[0])) / sizeof(pLogger->afGroups[0]));
     pLogger->cGroups      = 1;
     pLogger->afGroups[0]  = 0;
     return VINF_SUCCESS;
@@ -1689,7 +1689,7 @@ static DECLCALLBACK(size_t) rtR0LogLoggerExFallbackOutput(void *pv, const char *
             /* how much */
             uint32_t cb = sizeof(pThis->achScratch) - pThis->offScratch - 1; /* minus 1 - for the string terminator. */
             if (cb > cbChars)
-                cb = cbChars;
+                cb = (RTUINT)cbChars;
 
             /* copy */
             memcpy(&pThis->achScratch[pThis->offScratch], pachChars, cb);
@@ -1833,7 +1833,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
             memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
 
             /* advance */
-            pLogger->offScratch += cb;
+            pLogger->offScratch += (RTUINT)cb;
             cbRet += cb;
             cbChars -= cb;
 
@@ -2183,7 +2183,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  */
                 cb = psz - &pLogger->achScratch[pLogger->offScratch];
                 Assert(cb <= 198);
-                pLogger->offScratch += cb;
+                pLogger->offScratch += (RTUINT)cb;
                 cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
             }
             else if (cb <= 0)
@@ -2223,7 +2223,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
 
             /* advance */
-            pLogger->offScratch += cb;
+            pLogger->offScratch += (RTUINT)cb;
             cbRet += cb;
             cbChars -= cb;
 
