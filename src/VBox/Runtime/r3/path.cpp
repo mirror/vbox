@@ -122,12 +122,12 @@ RTDECL(void) RTPathStripExt(char *pszPath)
 
 /**
  * Parses a path.
- * 
- * It figures the length of the directory component, the offset of 
+ *
+ * It figures the length of the directory component, the offset of
  * the file name and the location of the suffix dot.
  *
  * @returns The path length.
- * 
+ *
  * @param   pszPath     Path to find filename in.
  * @param   pcbDir      Where to put the length of the directory component.
  *                      If no directory, this will be 0. Optional.
@@ -137,7 +137,7 @@ RTDECL(void) RTPathStripExt(char *pszPath)
  * @param   poffSuff    Where to store the suffix offset (the last dot).
  *                      If empty string or if it's ending with a slash this
  *                      will be set to -1. Optional.
- * @param   pfFlags     Where to set flags returning more information about 
+ * @param   pfFlags     Where to set flags returning more information about
  *                      the path. For the future. Optional.
  */
 RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff)
@@ -168,7 +168,7 @@ RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffNa
                 pszLastDot = psz;
                 break;
 
-            /* 
+            /*
              * The end. Complete the results.
              */
             case '\0':
@@ -647,7 +647,7 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
 
 #ifndef RT_MINI
 
-RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathProgram(char *pszPath, size_t cchPath)
 {
     AssertReturn(g_szrtProcExePath[0], VERR_WRONG_ORDER);
 
@@ -676,7 +676,7 @@ RTDECL(int) RTPathProgram(char *pszPath, unsigned cchPath)
  * Old path: same as RTPathProgram()
  *
  */
-RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
     char *pszUtf8Path;
@@ -710,7 +710,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, unsigned cchPath)
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
     char *pszUtf8Path;
@@ -745,7 +745,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, unsigned cchPath)
  * @param   pszPath     Buffer where to store the path.
  * @param   cchPath     Buffer size in bytes.
  */
-RTDECL(int) RTPathSharedLibs(char *pszPath, unsigned cchPath)
+RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
     char *pszUtf8Path;
