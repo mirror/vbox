@@ -804,7 +804,7 @@ void test3(void)
  */
 void TstRTStrXCmp(void)
 {
-    RTPrintf("tstUtf8: TESTING RTStr*Cmp\n");
+    RTPrintf("tstUtf8: TEST 4 - RTStr*Cmp\n");
 #define CHECK_DIFF(expr, op) \
     do \
     { \
@@ -858,7 +858,7 @@ void TstRTStrXCmp(void)
     CHECK_DIFF(RTStrICmp("abcdeg", "abcdef"), > );
     CHECK_DIFF(RTStrICmp("abcdef", "abcdeg"), < );
 
-    CHECK_DIFF(RTStrICmp("abcdeF", "abcdef"), == );
+    CHECK_DIFF(RTStrICmp("abcdeF", "abcdef"), ==);
     CHECK_DIFF(RTStrICmp("abcdef", "abcdeF"), ==);
     CHECK_DIFF(RTStrICmp("ABCDEF", "abcdef"), ==);
     CHECK_DIFF(RTStrICmp("abcdef", "ABCDEF"), ==);
@@ -872,13 +872,17 @@ void TstRTStrXCmp(void)
     CHECK_DIFF(RTStrNICmp(NULL, "", RTSTR_MAX), < );
     CHECK_DIFF(RTStrNICmp("", NULL, RTSTR_MAX), > );
     CHECK_DIFF(RTStrNICmp("", "", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp(NULL, NULL, 0), == );
+    CHECK_DIFF(RTStrNICmp(NULL, "", 0), == );
+    CHECK_DIFF(RTStrNICmp("", NULL, 0), == );
+    CHECK_DIFF(RTStrNICmp("", "", 0), == );
     CHECK_DIFF(RTStrNICmp("abcdef", "abcdef", RTSTR_MAX), == );
     CHECK_DIFF(RTStrNICmp("abcdef", "abcde", RTSTR_MAX), > );
     CHECK_DIFF(RTStrNICmp("abcde", "abcdef", RTSTR_MAX), < );
     CHECK_DIFF(RTStrNICmp("abcdeg", "abcdef", RTSTR_MAX), > );
     CHECK_DIFF(RTStrNICmp("abcdef", "abcdeg", RTSTR_MAX), < );
 
-    CHECK_DIFF(RTStrNICmp("abcdeF", "abcdef", RTSTR_MAX), == );
+    CHECK_DIFF(RTStrNICmp("abcdeF", "abcdef", RTSTR_MAX), ==);
     CHECK_DIFF(RTStrNICmp("abcdef", "abcdeF", RTSTR_MAX), ==);
     CHECK_DIFF(RTStrNICmp("ABCDEF", "abcdef", RTSTR_MAX), ==);
     CHECK_DIFF(RTStrNICmp("abcdef", "ABCDEF", RTSTR_MAX), ==);
@@ -888,6 +892,10 @@ void TstRTStrXCmp(void)
 
     CHECK_DIFF(RTStrNICmp("ABCDEF", "fedcba", 0), ==);
     CHECK_DIFF(RTStrNICmp("AbCdEg", "aBcDeF", 5), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEf", "aBcDeF", 5), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdE",  "aBcDe", 5), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdE",  "aBcDeF", 5), ==);
+    CHECK_DIFF(RTStrNICmp("AbCdEf", "aBcDe", 5), ==);
     CHECK_DIFF(RTStrNICmp("AbCdEg", "aBcDeF", 6), > );
     CHECK_DIFF(RTStrNICmp("AbCdEG", "aBcDef", 6), > ); /* diff performed on the lower case cp. */
     /* We should continue using byte comparison when we hit the invalid CP.  Will assert in debug builds. */
