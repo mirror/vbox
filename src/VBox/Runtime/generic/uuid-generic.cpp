@@ -53,7 +53,7 @@ RTDECL(int)  RTUuidClear(PRTUUID pUuid)
 
 RTDECL(bool)  RTUuidIsNull(PCRTUUID pUuid)
 {
-    AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pUuid, true);
     return !pUuid->au64[0]
         && !pUuid->au64[1];
 }
