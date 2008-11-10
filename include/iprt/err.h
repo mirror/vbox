@@ -486,6 +486,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** Preemption is disabled.
  * The requested operation can only be performed when preemption is enabled. */
 #define VERR_PREEMPT_DISABLED               (-82)
+/** End of string. */
+#define VERR_END_OF_STRING                  (-83)
+/** End of string. */
+#define VINF_END_OF_STRING                  83
 /** @} */
 
 
