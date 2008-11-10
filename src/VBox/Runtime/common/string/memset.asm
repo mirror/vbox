@@ -36,7 +36,7 @@ BEGINCODE
 ; @param    pvDst   gcc: rdi  msc: ecx  x86:[esp+4]
 ; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
-BEGINPROC RT_NOCRT(memset)
+RT_NOCRT_BEGINPROC memset
         cld
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC

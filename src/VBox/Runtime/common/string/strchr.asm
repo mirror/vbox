@@ -35,7 +35,7 @@ BEGINCODE
 ;;
 ; @param    psz     gcc: rdi  msc: rcx  x86:[esp+4]
 ; @param    ch      gcc: esi  msc: edx  x86:[esp+8]
-BEGINPROC RT_NOCRT(strchr)
+RT_NOCRT_BEGINPROC strchr
         cld
 
         ; check for ch == 0 and setup normal strchr.

@@ -602,6 +602,33 @@ GLOBALNAME %1_EndProc
  %define RT_NOCRT(name) name
 %endif
 
+;; @def RT_NOCRT_BEGINPROC
+; Starts a NOCRT procedure, taking care of name wrapping and aliasing.
+;
+; Aliasing (weak ones, if supported) will be created when RT_WITH_NOCRT_ALIASES
+; is defined and RT_WITHOUT_NOCRT_WRAPPERS isn't.
+;
+%macro RT_NOCRT_BEGINPROC 1
+%ifdef RT_WITH_NOCRT_ALIASES
+BEGINPROC RT_NOCRT(%1)
+%ifdef ASM_FORMAT_ELF
+global NAME(%1)
+weak NAME(%1)
+NAME(%1):
+%else
+GLOBALNAME %1
+%endif
+%else  ; !RT_WITH_NOCRT_ALIASES
+BEGINPROC RT_NOCRT(%1)
+%endif ; !RT_WITH_NOCRT_ALIASES
+%endmacro ; RT_NOCRT_BEGINPROC
+
+%ifdef RT_WITH_NOCRT_ALIASES
+ %ifdef RT_WITHOUT_NOCRT_WRAPPERS
+  %error "RT_WITH_NOCRT_ALIASES and RT_WITHOUT_NOCRT_WRAPPERS doesn't mix."
+ %endif
+%endif
+
 
 
 ;; @def xS

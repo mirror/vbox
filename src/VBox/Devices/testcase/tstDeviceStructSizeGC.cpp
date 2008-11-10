@@ -63,8 +63,8 @@
 # include "../USB/DevOHCI.cpp"
 # include "../USB/DevEHCI.cpp"
 #endif
-#undef LOG_GROUP
-#include "../VMMDev/VBoxDev.cpp"
+/*#undef LOG_GROUP
+#include "../VMMDev/VBoxDev.cpp"*/
 #undef LOG_GROUP
 #include "../Parallel/DevParallel.cpp"
 #undef LOG_GROUP

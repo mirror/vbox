@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - No-CRT strcmp - AMD64 & X86.
+; IPRT - No-CRT strcpy - AMD64 & X86.
 ;
 
 ;
@@ -35,7 +35,7 @@ BEGINCODE
 ;;
 ; @param    psz1   gcc: rdi  msc: rcx  x86:[esp+4]
 ; @param    psz2   gcc: rsi  msc: rdx  x86:[esp+8]
-RT_NOCRT_BEGINPROC strcmp
+RT_NOCRT_BEGINPROC strcpy
         ; input
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
@@ -45,11 +45,13 @@ RT_NOCRT_BEGINPROC strcmp
   %define psz1 rdi
   %define psz2 rsi
  %endif
+        mov     r8, psz1
 %else
         mov     ecx, [esp + 4]
         mov     edx, [esp + 8]
   %define psz1 ecx
   %define psz2 edx
+        push    psz1
 %endif
 
         ;
@@ -57,45 +59,35 @@ RT_NOCRT_BEGINPROC strcmp
         ;
 .next:
         mov     al, [psz1]
-        mov     ah, [psz2]
-        cmp     al, ah
-        jne     .not_equal
+        mov     [psz2], al
         test    al, al
-        jz      .equal
+        jz      .done
 
         mov     al, [psz1 + 1]
-        mov     ah, [psz2 + 1]
-        cmp     al, ah
-        jne     .not_equal
+        mov     [psz2 + 1], al
         test    al, al
-        jz      .equal
+        jz      .done
 
         mov     al, [psz1 + 2]
-        mov     ah, [psz2 + 2]
-        cmp     al, ah
-        jne     .not_equal
+        mov     [psz2 + 2], al
         test    al, al
-        jz      .equal
+        jz      .done
 
         mov     al, [psz1 + 3]
-        mov     ah, [psz2 + 3]
-        cmp     al, ah
-        jne     .not_equal
+        mov     [psz2 + 3], al
         test    al, al
-        jz      .equal
+        jz      .done
 
         add     psz1, 4
         add     psz2, 4
         jmp     .next
 
-.equal:
-        xor     eax, eax
+.done:
+%ifdef RT_ARCH_AMD64
+        mov     rax, r8
+%else
+        pop     eax
+%endif
         ret
-
-.not_equal:
-        movzx   ecx, ah
-        and     eax, 0ffh
-        sub     eax, ecx
-        ret
-ENDPROC RT_NOCRT(strcmp)
+ENDPROC RT_NOCRT(strcpy)
 

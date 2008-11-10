@@ -36,7 +36,7 @@ BEGINCODE
 ; @param    pv1     gcc: rdi  msc: rcx  x86:[esp+4]
 ; @param    pv2     gcc: rsi  msc: rdx  x86:[esp+8]
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch]
-BEGINPROC RT_NOCRT(memcmp)
+RT_NOCRT_BEGINPROC memcmp
         cld
         xor     eax, eax
 

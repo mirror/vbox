@@ -852,7 +852,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 # RuntimeR0 - Ring0 library for VMMR0.
 #
 RuntimeR0_TEMPLATE      = VBOXR0
-RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS
+RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX RT_WITH_NOCRT_ALIASES
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES       = \
 	common/checksum/crc32.cpp \
@@ -869,17 +869,9 @@ RuntimeR0_SOURCES       = \
 	common/misc/handletablesimple.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
-	common/string/memchr.cpp \
-	common/string/memcmp.cpp \
-	common/string/memcpy.cpp \
-	common/string/memmove.asm \
-	common/string/memset.cpp \
-	common/string/strcmp.asm \
-	common/string/strcpy.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
-	common/string/strlen.asm \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/strprintf.cpp \
@@ -900,20 +892,20 @@ RuntimeR0_SOURCES       = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	VBox/strformat-vbox.cpp
 
-#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
-# RuntimeR0_SOURCES += common/time/timesupA.asm
-#else
- RuntimeR0_SOURCES += common/time/timesupref.cpp
-#endif
+RuntimeR0_SOURCES += \
+	common/misc/setjmp.asm \
+	common/string/memchr.asm \
+	common/string/memcmp.asm \
+	common/string/memcpy.asm \
+	common/string/mempcpy.asm \
+	common/string/memmove.asm \
+	common/string/memset.asm \
+	common/string/strchr.asm \
+	common/string/strcpy.asm \
+	common/string/strcmp.asm \
+	common/string/strlen.asm
 
-RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
-RuntimeR0_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
-
-RuntimeR0_SOURCES.os2 = \
-	os2/RTErrConvertFromOS2.cpp \
-	os2/sys0.asm
-
-ifeq ($(filter-out darwin solaris freebsd,$(KBUILD_TARGET)),)
+if1of ($(KBUILD_TARGET), darwin solaris freebsd)
 RuntimeR0_SOURCES += \
 	common/math/gcc/adddi3.c \
 	common/math/gcc/anddi3.c \
@@ -936,13 +928,19 @@ RuntimeR0_SOURCES += \
 	common/math/gcc/xordi3.c
 endif
 
+#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
+# RuntimeR0_SOURCES += common/time/timesupA.asm
+#else
+ RuntimeR0_SOURCES += common/time/timesupref.cpp
+#endif
 
-common/string/memchr.cpp_CXXFLAGS.win = -Oi-
-common/string/memcmp.cpp_CXXFLAGS.win = -Oi-
-common/string/memcpy.cpp_CXXFLAGS.win = -Oi-
-common/string/memset.cpp_CXXFLAGS.win = -Oi-
-common/string/strcpy.cpp_CXXFLAGS.win = -Oi-
-common/string/strlen.cpp_CXXFLAGS.win = -Oi-
+RuntimeR0_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
+RuntimeR0_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
+
+RuntimeR0_SOURCES.os2 = \
+	os2/RTErrConvertFromOS2.cpp \
+	os2/sys0.asm
+
 
 #
 # RuntimeR0Drv - Ring0 library for host drivers.
@@ -1425,6 +1423,15 @@ RuntimeGC_SOURCES += \
 	common/math/gcc/umoddi3.c \
 	common/math/gcc/xordi3.c
 endif
+
+# Only used in GC...
+common/string/memchr.cpp_CXXFLAGS.win = -Oi-
+common/string/memcmp.cpp_CXXFLAGS.win = -Oi-
+common/string/memcpy.cpp_CXXFLAGS.win = -Oi-
+common/string/memset.cpp_CXXFLAGS.win = -Oi-
+common/string/strcpy.cpp_CXXFLAGS.win = -Oi-
+common/string/strlen.cpp_CXXFLAGS.win = -Oi-
+
 
 
 #

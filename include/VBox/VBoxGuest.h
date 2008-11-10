@@ -1030,8 +1030,8 @@ typedef struct
 /** @} */
 
 
-/**
- * VBoxGuest IOCTL codes and structures.
+#if !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT)
+/** @name VBoxGuest IOCTL codes and structures.
  *
  * The range 0..15 is for basic driver communication.
  * The range 16..31 is for HGCM communcation.
@@ -1171,8 +1171,7 @@ typedef struct _VBoxGuestPortInfo
  * @see VBOXGUEST_IOCTL_WAITEVENT */
 #define VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS       VBOXGUEST_IOCTL_CODE(5, 0)
 
-/**
- * Result codes for VBoxGuestWaitEventInfo::u32Result
+/** @name Result codes for VBoxGuestWaitEventInfo::u32Result
  * @{
  */
 /** Successful completion, an event occured. */
@@ -1477,6 +1476,7 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 #endif /* RT_OS_OS2 */
 
 /** @} */
+#endif /* !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT) */
 
 
 #ifdef IN_RING3
