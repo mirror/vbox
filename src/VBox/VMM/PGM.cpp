@@ -1419,10 +1419,10 @@ static int pgmR3InitPaging(PVM pVM)
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.pHCPaePDPT = (PX86PDPT)MMR3PageAllocLow(pVM);
-//#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-//    pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
-//#endif
+    pVM->pgm.s.pShwPaePdptR3 = (PX86PDPT)MMR3PageAllocLow(pVM);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
+#endif
     pVM->pgm.s.pShwNestedRootR3 = MMR3PageAllocLow(pVM);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwNestedRootR0 = (uintptr_t)pVM->pgm.s.pShwNestedRootR3;
@@ -1433,7 +1433,7 @@ static int pgmR3InitPaging(PVM pVM)
         ||  !pVM->pgm.s.apHCPaePDs[1]
         ||  !pVM->pgm.s.apHCPaePDs[2]
         ||  !pVM->pgm.s.apHCPaePDs[3]
-        ||  !pVM->pgm.s.pHCPaePDPT
+        ||  !pVM->pgm.s.pShwPaePdptR3
         ||  !pVM->pgm.s.pShwNestedRootR3)
     {
         AssertMsgFailed(("Failed to allocate pages for the intermediate context!\n"));
@@ -1447,19 +1447,19 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[1]);
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
-    pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pHCPaePDPT);
+    pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
     pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
      */
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
-    ASMMemZero32(pVM->pgm.s.pHCPaePDPT, PAGE_SIZE);
+    ASMMemZero32(pVM->pgm.s.pShwPaePdptR3, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
     {
         ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
-        pVM->pgm.s.pHCPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
+        pVM->pgm.s.pShwPaePdptR3->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
         /* The flags will be corrected when entering and leaving long mode. */
     }
 
@@ -1827,7 +1827,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 
     rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPT, PAGE_SIZE, 0);
     AssertRCReturn(rc, rc);
-    pVM->pgm.s.pGCPaePDPT = GCPtr;
+    pVM->pgm.s.pShwPaePdptRC = GCPtr;
     GCPtr += PAGE_SIZE;
     GCPtr += PAGE_SIZE; /* reserved page */
 
@@ -1903,7 +1903,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pgm.s.apGstPaePDsRC[i] += offDelta;
     }
     pVM->pgm.s.pGstPaePDPTRC += offDelta;
-    pVM->pgm.s.pGCPaePDPT    += offDelta;
+    pVM->pgm.s.pShwPaePdptRC += offDelta;
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
     pgmR3ModeDataSwitch(pVM, pVM->pgm.s.enmShadowMode, pVM->pgm.s.enmGuestMode);

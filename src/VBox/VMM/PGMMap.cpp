@@ -718,7 +718,7 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE)
         pPGM->apHCPaePDs[iPD]->a[iPDE].u    = 0;
 
         /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
-        pPGM->pHCPaePDPT->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
+        pPGM->pShwPaePdptR3->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
     }
 }
 
@@ -781,7 +781,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         pPGM->apHCPaePDs[iPD]->a[iPDE]    = PdePae1;
 
         /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
-        pPGM->pHCPaePDPT->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
+        pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
     }
 }
 
