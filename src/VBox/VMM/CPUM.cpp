@@ -67,7 +67,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION            8
+#define CPUM_SAVED_STATE_VERSION            9
+/** The saved state version of 2.0, used for backwards compatibility. */
+#define CPUM_SAVED_STATE_VERSION_VER2_0     8
 /** The saved state version of 1.6, used for backwards compatability. */
 #define CPUM_SAVED_STATE_VERSION_VER1_6     6
 
@@ -773,6 +775,7 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     SSMR3PutMem(pSSM, &pVM->cpum.s.Hyper, sizeof(pVM->cpum.s.Hyper));
 
+    SSMR3PutU32(pSSM, pVM->cCPUs);
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
         SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
@@ -908,6 +911,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      * Validate version.
      */
     if (    u32Version != CPUM_SAVED_STATE_VERSION
+        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER2_0
         &&  u32Version != CPUM_SAVED_STATE_VERSION_VER1_6)
     {
         AssertMsgFailed(("cpuR3Load: Invalid version u32Version=%d!\n", u32Version));
@@ -942,6 +946,21 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     }
     else
     {
+        if (u32Version == CPUM_SAVED_STATE_VERSION)
+        {
+            int rc = SSMR3GetU32(pSSM, &pVM->cCPUs);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (    !pVM->cCPUs
+            ||  pVM->cCPUs > VMCPU_MAX_CPU_COUNT
+            ||  (   u32Version == CPUM_SAVED_STATE_VERSION_VER2_0
+                 && pVM->cCPUs != 1))
+        {
+            AssertMsgFailed(("Unexpected number of VMCPUs (%d)\n", pVM->cCPUs));
+            return VERR_SSM_UNEXPECTED_DATA;
+        }
+        
         for (unsigned i=0;i<pVM->cCPUs;i++)
         {
             SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
