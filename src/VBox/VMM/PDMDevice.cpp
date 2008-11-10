@@ -422,7 +422,7 @@ int pdmR3DevInit(PVM pVM)
  */
 PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
 {
-    RTUINT cchName = strlen(pszName);
+    size_t cchName = strlen(pszName);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
         if (    pDev->cchName == cchName
             &&  !strcmp(pDev->pDevReg->szDeviceName, pszName))
@@ -692,7 +692,7 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         pDev->cInstances = 0;
         pDev->pInstances = NULL;
         pDev->pDevReg = pDevReg;
-        pDev->cchName = strlen(pDevReg->szDeviceName);
+        pDev->cchName = (uint32_t)strlen(pDevReg->szDeviceName);
 
         if (pDevPrev)
             pDevPrev->pNext = pDev;
@@ -740,7 +740,7 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
     /*
      * Iterate registered devices looking for the device.
      */
-    RTUINT cchDevice = strlen(pszDevice);
+    size_t cchDevice = strlen(pszDevice);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice

@@ -588,7 +588,7 @@ typedef DBGFLINE *PDBGFLINE;
 typedef const DBGFLINE *PCDBGFLINE;
 
 VMMR3DECL(int)          DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
-VMMR3DECL(void)         DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, unsigned cbImage,
+VMMR3DECL(void)         DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
                                              const char *pszFilename, const char *pszName);
 VMMR3DECL(int)          DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
 VMMR3DECL(int)          DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
