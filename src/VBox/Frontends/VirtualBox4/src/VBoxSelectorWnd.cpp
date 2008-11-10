@@ -1115,7 +1115,8 @@ void VBoxSelectorWnd::refreshSysTray (bool aRetranslate)
                 iCurItemCount = 0;
             }
 
-            pSubMenu = new QMenu (pItem->name());
+            pSubMenu = new QMenu (QString ("&%1. %2")
+                                  .arg ((iCurItemCount + 1) % 10).arg (pItem->name()));
             Assert(pSubMenu);
             pSubMenu->setIcon (pItem->osIcon());
             if(pItem->accessible())
