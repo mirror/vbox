@@ -149,7 +149,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
             if (!GetEnvironmentVariableW(L"HOMEDRIVE", &wszPath[0], RTPATH_MAX))
                 return VERR_PATH_NOT_FOUND;
             size_t const cwc = RTUtf16Len(&wszPath[0]);
-            if (    !GetEnvironmentVariableW(L"HOMEPATH", &wszPath[cwc], RTPATH_MAX - cwc)
+            if (    !GetEnvironmentVariableW(L"HOMEPATH", &wszPath[cwc], RTPATH_MAX - (DWORD)cwc)
                 ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
                 ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
                 return VERR_PATH_NOT_FOUND;
