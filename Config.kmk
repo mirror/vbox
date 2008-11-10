@@ -1269,6 +1269,9 @@ ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
  # if updating, also update xpidl_INST var in src/libs/xpcom18a4/Makefile.kmk
  VBOX_XPIDL          ?= $(PATH_BIN)/xpidl$(HOSTSUFF_EXE)
+ ifeq ($(KBUILD_TARGET),os2)
+  VBOX_XPIDL_ENV      = BEGINLIBPATH="$(dir $(VBOX_XPIDL));$$BEGINLIBPATH"$(SP)
+ endif
  VBOX_PATH_XPCOM_IDL ?= $(VBOX_PATH_SDK)/bindings/xpcom/idl
  VBOX_XPCOM_INCS     ?= 				\
 	$(VBOX_PATH_SDK)/bindings/xpcom/include 	\
@@ -1284,12 +1287,6 @@ ifneq ($(KBUILD_TARGET),win)
   endif
  endif
 endif
-
-ifeq ($(KBUILD_TARGET),os2)
- # search DLLs in the EXE directory first
- VBOX_XPIDL    := BEGINLIBPATH="$(dir $(VBOX_XPIDL));$$BEGINLIBPATH" $(VBOX_XPIDL)
-endif
-#$(error $(VBOX_XPIDL))
 
 # The X11 LIBPATH. (The amd64 hack is for RHEL4.)
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
