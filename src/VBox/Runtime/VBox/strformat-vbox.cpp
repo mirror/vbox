@@ -172,8 +172,8 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                                  */
                                 case 'd':
                                 {
-                                    int cch = 0;
-                                    int off = 0;
+                                    size_t  cch = 0;
+                                    int     off = 0;
 
                                     if (cchPrecision <= 0)
                                         cchPrecision = 16;
@@ -210,7 +210,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                                 {
                                     if (cchWidth-- > 0)
                                     {
-                                        int cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
+                                        size_t cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
                                         for (; cchWidth > 0; cchWidth--, pu8++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " %02x", *pu8);
                                         return cch;
