@@ -206,7 +206,7 @@ DECLINLINE(int) writeFlags(uint32_t fFlags, char *pszFlags)
     return rc;
 }
 
-/*
+/**
  * The service functions which are callable by host.
  */
 enum eHostFn
@@ -317,7 +317,6 @@ typedef struct _GetProperty
     /**
      * The property timestamp.  (OUT uint64_t)
      */
-
     HGCMFunctionParameter timestamp;
 
     /**
@@ -346,7 +345,7 @@ typedef struct _SetProperty
     /**
      * The value of the property (IN pointer)
      * Criteria as for the name parameter, but with length less than or equal to
-     * MAX_VALUE_LEN.  
+     * MAX_VALUE_LEN.
      */
     HGCMFunctionParameter value;
 
@@ -376,7 +375,7 @@ typedef struct _SetPropertyValue
     /**
      * The value of the property (IN pointer)
      * Criteria as for the name parameter, but with length less than or equal to
-     * MAX_VALUE_LEN.  
+     * MAX_VALUE_LEN.
      */
     HGCMFunctionParameter value;
 } SetPropertyValue;
@@ -442,7 +441,7 @@ typedef struct _EnumProperties
  * The protocol for a guest to obtain notifications is to call
  * GET_NOTIFICATION in a loop.  On the first call, the ingoing timestamp
  * parameter should be set to zero.  On subsequent calls, it should be set to
- * the outgoing timestamp from the previous call. 
+ * the outgoing timestamp from the previous call.
  */
 typedef struct _GetNotification
 {
