@@ -460,19 +460,8 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediaType aType, bool aDoSelect,
     mDoSelect = aDoSelect;
 
     mSessionMachine = aSessionMachine;
-    if (aSessionMachine.isNull())
-    {
-        mSessionMachineId = QUuid();
-        mShowDiffs = true;
-    }
-    else
-    {
-        mSessionMachineId = aSessionMachine.GetId();
-        mShowDiffs = aShowDiffs;
-        /* Suppress refresh when called from the settings UI which has just
-         * initiated a refresh on its own when opening the dialog */
-        aRefresh = false;
-    }
+    mSessionMachineId = mSessionMachine.isNull() ? QUuid() : mSessionMachine.GetId();
+    mShowDiffs = mSessionMachine.isNull() ? true : aShowDiffs;
 
     switch (aType)
     {
