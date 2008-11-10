@@ -1625,6 +1625,22 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
                     QTimer::singleShot (300, this, SLOT (doResizeHint()));
                 break;
             }
+            case QEvent::WindowStateChange:
+            {
+                /* During minimizing and state restoring mMainWnd gets the focus
+                 * which belongs to console view window, so returning it properly. */
+                QWindowStateChangeEvent *ev = static_cast <QWindowStateChangeEvent*> (e);
+                if (ev->oldState() & Qt::WindowMinimized)
+                {
+                    if (QApplication::focusWidget())
+                    {
+                        QApplication::focusWidget()->clearFocus();
+                        qApp->processEvents();
+                    }
+                    QTimer::singleShot (0, this, SLOT (setFocus()));
+                }
+                break;
+            }
 
             default:
                 break;
