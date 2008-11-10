@@ -690,7 +690,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
             break;
 
         PRTDIRENTRYEX pPluginDirEntry = NULL;
-        unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
+        size_t cbPluginDirEntry = sizeof(RTDIRENTRY);
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
         if (!pPluginDirEntry)
         {
@@ -984,7 +984,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
         }
 
         PRTDIRENTRYEX pPluginDirEntry = NULL;
-        unsigned cbPluginDirEntry = sizeof(RTDIRENTRY);
+        size_t cbPluginDirEntry = sizeof(RTDIRENTRY);
         pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
         if (!pPluginDirEntry)
         {

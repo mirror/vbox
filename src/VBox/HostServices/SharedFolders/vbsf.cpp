@@ -134,7 +134,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 
     for(;;)
     {
-        uint32_t cbDirEntrySize = cbDirEntry;
+        size_t cbDirEntrySize = cbDirEntry;
 
         rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING);
         if (rc == VERR_NO_MORE_FILES)
@@ -1317,7 +1317,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
     while(cbBufferOrg)
     {
-        uint32_t cbDirEntrySize = cbDirEntry;
+        size_t cbDirEntrySize = cbDirEntry;
         uint32_t cbNeeded;
 
         /* Do we still have a valid last entry for the active search? If so, then return it here */
