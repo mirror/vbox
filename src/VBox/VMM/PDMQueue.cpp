@@ -78,7 +78,7 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
      * Align the item size and calculate the structure size.
      */
     cbItem = RT_ALIGN(cbItem, sizeof(RTUINTPTR));
-    unsigned cb = cbItem * cItems + RT_ALIGN_Z(RT_OFFSETOF(PDMQUEUE, aFreeItems[cItems + PDMQUEUE_FREE_SLACK]), 16);
+    size_t cb = cbItem * cItems + RT_ALIGN_Z(RT_OFFSETOF(PDMQUEUE, aFreeItems[cItems + PDMQUEUE_FREE_SLACK]), 16);
     PPDMQUEUE pQueue;
     int rc;
     if (fRZEnabled)
@@ -645,10 +645,8 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
      * Get the lists.
      */
     PPDMQUEUEITEMCORE pItems = (PPDMQUEUEITEMCORE)ASMAtomicXchgPtr((void * volatile *)&pQueue->pPendingR3, NULL);
-    RTRCPTR           pItemsRC;
-    ASMAtomicXchgSizeCorrect(&pQueue->pPendingRC, NIL_RTRCPTR, &pItemsRC);
-    RTR0PTR           pItemsR0;
-    ASMAtomicXchgSizeCorrect(&pQueue->pPendingR0, NIL_RTR0PTR, &pItemsR0);
+    RTRCPTR           pItemsRC = ASMAtomicXchgRCPtr(&pQueue->pPendingRC, NIL_RTRCPTR);
+    RTR0PTR           pItemsR0 = ASMAtomicXchgR0Ptr(&pQueue->pPendingR0, NIL_RTR0PTR);
 
     AssertMsg(pItems || pItemsRC || pItemsR0, ("ERROR: can't all be NULL now!\n"));
 
