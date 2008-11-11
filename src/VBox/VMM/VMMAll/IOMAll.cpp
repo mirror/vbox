@@ -251,7 +251,7 @@ VMMDECL(int) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value, size_t c
         if (pStats)
             STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfIn), a);
 #endif
-        int rc = pRange->pfnInCallback(pRange->pDevIns, pRange->pvUser, Port, pu32Value, cbValue);
+        int rc = pRange->pfnInCallback(pRange->pDevIns, pRange->pvUser, Port, pu32Value, (unsigned)cbValue);
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)
             STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
@@ -515,7 +515,7 @@ VMMDECL(int) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, size_t cb
         if (pStats)
             STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfOut), a);
 #endif
-        int rc = pRange->pfnOutCallback(pRange->pDevIns, pRange->pvUser, Port, u32Value, cbValue);
+        int rc = pRange->pfnOutCallback(pRange->pDevIns, pRange->pvUser, Port, u32Value, (unsigned)cbValue);
 
 #ifdef VBOX_WITH_STATISTICS
         if (pStats)

@@ -1221,9 +1221,9 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
     Assert(pRange == iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
 
     if (enmAccessType == PGMACCESSTYPE_READ)
-        rc = iomMMIODoRead(pVM, pRange, GCPhysFault, pvBuf, cbBuf);
+        rc = iomMMIODoRead(pVM, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
     else
-        rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, pvBuf, cbBuf);
+        rc = iomMMIODoWrite(pVM, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
 
     AssertRC(rc);
     return rc;
@@ -1267,7 +1267,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
 #ifdef VBOX_WITH_STATISTICS
         STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfRead), a);
 #endif
-        int rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, cbValue);
+        int rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, (unsigned)cbValue);
 #ifdef VBOX_WITH_STATISTICS
         STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
         if (rc != VINF_IOM_HC_MMIO_READ)
@@ -1371,7 +1371,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
 #ifdef VBOX_WITH_STATISTICS
         STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #endif
-        int rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, cbValue);
+        int rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, (unsigned)cbValue);
 #ifdef VBOX_WITH_STATISTICS
         STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
         if (rc != VINF_IOM_HC_MMIO_WRITE)

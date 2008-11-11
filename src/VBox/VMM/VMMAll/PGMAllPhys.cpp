@@ -1434,10 +1434,10 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
             /*
              * Must work our way thru this page by page.
              */
-            unsigned off = GCPhys - pRam->GCPhys;
+            RTGCPTR off = GCPhys - pRam->GCPhys;
             while (off < pRam->cb)
             {
-                unsigned iPage = off >> PAGE_SHIFT;
+                RTGCPTR iPage = off >> PAGE_SHIFT;
                 PPGMPAGE pPage = &pRam->aPages[iPage];
 
                 /* Physical chunk in dynamically allocated range not present? */
@@ -1692,8 +1692,8 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                 }
 
                 cbWrite -= cb;
-                off    += cb;
-                pvBuf   = (const char *)pvBuf + cb;
+                off     += cb;
+                pvBuf    = (const char *)pvBuf + cb;
             }
 
             GCPhys = pRam->GCPhysLast + 1;
@@ -2316,7 +2316,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVM pVM, PCPUMCTXCORE pCtxCore, void *pvDst,
         /*
          * Crosses pages.
          */
-        unsigned cb2 = cb - cb1;
+        size_t cb2 = cb - cb1;
         uint64_t fFlags1;
         RTGCPHYS GCPhys1;
         uint64_t fFlags2;
