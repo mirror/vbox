@@ -35,6 +35,7 @@ VBoxNetFlt_SOURCES.win = \
 ifdef VBOX_NETFLT_ONDEMAND_BIND
  VBoxNetFlt_DEFS.win += VBOX_NETFLT_ONDEMAND_BIND
 else
+ VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
  VBoxNetFlt_SOURCES.win += win/VBoxNetFltMp-win.c
 endif
 VBoxNetFlt_SOURCES = VBoxNetFlt.c
