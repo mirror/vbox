@@ -446,6 +446,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            pause|resume|reset|poweroff|savestate|\n"
                  "                            acpipowerbutton|acpisleepbutton|\n"
                  "                            keyboardputscancode <hex> [<hex> ...]|\n"
+                 "                            injectnmi|\n"
                  "                            setlinkstate<1-4> on|off |\n"
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
@@ -5806,6 +5807,13 @@ static int handleControlVM(int argc, char *argv[],
         else if (strcmp(argv[1], "acpisleepbutton") == 0)
         {
             CHECK_ERROR_BREAK (console, SleepButton());
+        }
+        else if (strcmp(argv[1], "injectnmi") == 0)
+        {
+            /* get the machine debugger. */
+            ComPtr <IMachineDebugger> debugger;
+            CHECK_ERROR_BREAK(console, COMGETTER(Debugger)(debugger.asOutParam()));
+            CHECK_ERROR_BREAK(debugger, InjectNMI());
         }
         else if (strcmp(argv[1], "keyboardputscancode") == 0)
         {
