@@ -36,7 +36,7 @@ include $(PATH_SUB_CURRENT)/files_vboxvfs
 vboxvfs-mod_INST        = $(INST_ADDITIONS)src/vboxvfs/
 vboxvfs-mod_MODE        = a+r,u+w
 vboxvfs-mod_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
-vboxvfs-mod_SOURCES    += $(PATH_vboxvfs-mod)/dkms.conf
+vboxvfs-mod_SOURCES    += $(if $(VBOX_OSE),,$(PATH_vboxvfs-mod)/dkms.conf)
 vboxvfs-mod_CLEAN      += $(PATH_vboxvfs-mod)/dkms.conf
 
 vboxvfs-sh_INST        = $(INST_ADDITIONS)src/vboxvfs/
