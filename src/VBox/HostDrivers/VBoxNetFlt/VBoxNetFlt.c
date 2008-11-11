@@ -219,11 +219,6 @@
 #include <iprt/time.h>
 #include <iprt/uuid.h>
 
-#ifdef VBOXNETFLT_STATIC_CONFIG
-# error "The static setup needs a full check up wrt assumptions and incomplete code."
-#endif
-
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -593,6 +588,12 @@ NETFLT_DECL_CALLBACK(void) vboxNetFltPortDisconnectAndRelease(PINTNETTRUNKIFPORT
     vboxNetFltOsDisconnectIt(pThis);
     pThis->pSwitchPort = NULL;
 
+#ifdef VBOXNETFLT_STATIC_CONFIG
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    vboxNetFltSetState(pThis, kVBoxNetFltInsState_Unconnected);
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+#endif
+
     vboxNetFltRelease(pThis, false /* fBusy */);
 }
 
@@ -800,7 +801,12 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     pThis->pSwitchPort = pSwitchPort;
     rc = vboxNetFltOsConnectIt(pThis);
     if (RT_SUCCESS(rc))
+    {
         vboxNetFltSetState(pThis, kVBoxNetFltInsState_Connected);
+#ifdef VBOXNETFLT_STATIC_CONFIG
+        *ppIfPort = &pThis->MyPort;
+#endif
+    }
     else
         pThis->pSwitchPort = NULL;
 
@@ -823,7 +829,11 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
  * @param   pSwitchPort         The port on the switch that we're connected with (dynamic only).
  * @param   ppIfPort            Where to store the pointer to our port interface (dynamic only).
  */
-static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort)
+static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PINTNETTRUNKSWPORT pSwitchPort, PINTNETTRUNKIFPORT *ppIfPort
+#ifdef VBOXNETFLT_STATIC_CONFIG
+        , void * pContext
+#endif
+        )
 {
     /*
      * Allocate and initialize a new instance before requesting the mutex.
@@ -883,13 +893,18 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
                         /*
                          * Call the OS specific initialization code.
                          */
-                        rc = vboxNetFltOsInitInstance(pNew);
+                        rc = vboxNetFltOsInitInstance(pNew
+#ifdef VBOXNETFLT_STATIC_CONFIG
+                                , pContext
+#endif
+                                );
                         RTSemFastMutexRequest(pGlobals->hFastMtx);
                         if (RT_SUCCESS(rc))
                         {
 #ifdef VBOXNETFLT_STATIC_CONFIG
-                            pNew->enmState = kVBoxNetFltInsState_Inactive;
-                            Assert(!pSwitchPort); Assert(!ppIfPort);
+                            pNew->enmState = kVBoxNetFltInsState_Unconnected;
+                            Assert(!pSwitchPort);
+                            *ppIfPort = &pNew->MyPort;
                             RTSemFastMutexRelease(pGlobals->hFastMtx);
                             return rc;
 
@@ -926,6 +941,46 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     return rc;
 }
 
+#ifdef VBOXNETFLT_STATIC_CONFIG
+
+/**
+ * searches for the NetFlt instance by its name and creates the new one if not found
+ *
+ * @return VINF_SUCCESS if new instance was created, VINF_ALREADY_INITIALIZED if an instanmce already exists,
+ * VERR_xxx in case of a failure
+ */
+DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PVBOXNETFLTINS *ppInstance, void * pContext)
+{
+    int rc;
+
+    rc = RTSemFastMutexRequest(pGlobals->hFastMtx);
+    AssertRCReturn(rc, rc);
+
+    *ppInstance = vboxNetFltFindInstanceLocked(pGlobals, pszName);
+    if(!(*ppInstance))
+    {
+        PINTNETTRUNKIFPORT pIfPort;
+
+        RTSemFastMutexRelease(pGlobals->hFastMtx);
+
+        rc = vboxNetFltNewInstance(pGlobals, pszName, NULL, &pIfPort, pContext);
+        if(RT_SUCCESS(rc))
+            *ppInstance =  IFPORT_2_VBOXNETFLTINS(pIfPort);
+        else
+            *ppInstance = NULL;
+    }
+    else
+    {
+        RTSemFastMutexRelease(pGlobals->hFastMtx);
+        rc = VINF_ALREADY_INITIALIZED;
+    }
+
+
+
+    return rc;
+}
+
+#endif
 
 /**
  * @copydoc INTNETTRUNKFACTORY::pfnCreateAndConnect
@@ -950,10 +1005,26 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
     pCur = vboxNetFltFindInstanceLocked(pGlobals, pszName);
     if (pCur)
     {
-        rc = VERR_INTNET_FLT_IF_BUSY;
 #ifdef VBOXNETFLT_STATIC_CONFIG
-        if (vboxNetFltGetState(pCur) == kVBoxNetFltInsState_Unconnected)
+        switch(vboxNetFltGetState(pCur))
+        {
+        case kVBoxNetFltInsState_Unconnected:
+            /* instance can be destroyed when it is neither used by the IntNet nor by the ndis filter driver mechanism
+             * (i.e. the driver is not bound to the specified adapter)*/
+            vboxNetFltRetain(pCur, false /* fBusy */);
             rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
+            break;
+        case kVBoxNetFltInsState_Connected:
+            rc = VINF_SUCCESS;
+            break;
+        case kVBoxNetFltInsState_Disconnecting:
+            Assert(0);
+            rc = VERR_INTNET_FLT_IF_BUSY;
+            break;
+        default:
+            /** @todo: */
+            rc = VERR_INTNET_FLT_IF_BUSY;
+        }
 #endif
         RTSemFastMutexRelease(pGlobals->hFastMtx);
         LogFlow(("vboxNetFltFactoryCreateAndConnect: returns %Rrc\n", rc));
@@ -1047,17 +1118,10 @@ DECLHIDDEN(bool) vboxNetFltCanUnload(PVBOXNETFLTGLOBALS pGlobals)
     return fRc;
 }
 
-
-/**
- * Called by the native part when the OS wants the driver to unload.
- *
- * @returns VINF_SUCCESS on succes, VERR_WRONG_ORDER if we're busy.
- *
- * @param   pGlobals        Pointer to the globals.
- */
-DECLHIDDEN(int) vboxNetFltTryDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals)
+DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals)
 {
     int rc;
+
     Assert(pGlobals->hFastMtx != NIL_RTSEMFASTMUTEX);
 
     /*
@@ -1081,15 +1145,96 @@ DECLHIDDEN(int) vboxNetFltTryDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals)
 
     SUPR0IdcClose(&pGlobals->SupDrvIDC);
 
+    return rc;
+}
+
+DECLHIDDEN(void) vboxNetFltDeleteGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
+{
     /*
      * Release resources.
      */
     RTSemFastMutexDestroy(pGlobals->hFastMtx);
     pGlobals->hFastMtx = NIL_RTSEMFASTMUTEX;
-
-    return VINF_SUCCESS;
 }
 
+/**
+ * Called by the native part when the OS wants the driver to unload.
+ *
+ * @returns VINF_SUCCESS on succes, VERR_WRONG_ORDER if we're busy.
+ *
+ * @param   pGlobals        Pointer to the globals.
+ */
+DECLHIDDEN(int) vboxNetFltTryDeleteGlobals(PVBOXNETFLTGLOBALS pGlobals)
+{
+    int rc = vboxNetFltTryDeleteIdc(pGlobals);
+    if(RT_SUCCESS(rc))
+    {
+        vboxNetFltDeleteGlobalsBase(pGlobals);
+    }
+    return rc;
+}
+
+/**
+ * performs the "base" globals initialization
+ * we separate the globals initialization to globals "base" initialization which is actually
+ * "general" globals initialization except for Idc not being initialized, and idc initialization.
+ * This is needed for windows filter driver, which gets loaded prior to VBoxDrv,
+ * thus it's not possible to make idc initialization from the driver startup routine for it.
+ *
+ * @returns VBox status code.
+ * @param   pGlobals    Pointer to the globals. */
+DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
+{
+    /*
+     * Initialize the common portions of the structure.
+     */
+    int rc = RTSemFastMutexCreate(&pGlobals->hFastMtx);
+    if (RT_SUCCESS(rc))
+    {
+        pGlobals->pInstanceHead = NULL;
+
+        pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
+        pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
+
+        strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
+        pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
+    }
+
+    return rc;
+}
+
+/**
+ * performs the Idc initialization
+ * we separate the globals initialization to globals "base" initialization which is actually
+ * "general" globals initialization except for Idc not being initialized, and idc initialization.
+ * This is needed for windows filter driver, which gets loaded prior to VBoxDrv,
+ * thus it's not possible to make idc initialization from the driver startup routine for it.
+ *
+ * @returns VBox status code.
+ * @param   pGlobals    Pointer to the globals. */
+DECLHIDDEN(int) vboxNetFltInitIdc(PVBOXNETFLTGLOBALS pGlobals)
+{
+    int rc;
+    /*
+     * Establish a connection to SUPDRV and register our component factory.
+     */
+    rc = SUPR0IdcOpen(&pGlobals->SupDrvIDC, 0 /* iReqVersion = default */, 0 /* iMinVersion = default */, NULL, NULL, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = SUPR0IdcComponentRegisterFactory(&pGlobals->SupDrvIDC, &pGlobals->SupDrvFactory);
+        if (RT_SUCCESS(rc))
+        {
+            Log(("VBoxNetFlt: pSession=%p\n", SUPR0IdcGetSession(&pGlobals->SupDrvIDC)));
+            return rc;
+        }
+
+        /* bail out. */
+        LogRel(("VBoxNetFlt: Failed to register component factory, rc=%Rrc\n", rc));
+        SUPR0IdcClose(&pGlobals->SupDrvIDC);
+    }
+
+    return rc;
+}
 
 /**
  * Called by the native driver/kext module initialization routine.
@@ -1105,36 +1250,17 @@ DECLHIDDEN(int) vboxNetFltInitGlobals(PVBOXNETFLTGLOBALS pGlobals)
     /*
      * Initialize the common portions of the structure.
      */
-    int rc = RTSemFastMutexCreate(&pGlobals->hFastMtx);
+    int rc = vboxNetFltInitGlobalsBase(pGlobals);
     if (RT_SUCCESS(rc))
     {
-        pGlobals->pInstanceHead = NULL;
-
-        pGlobals->TrunkFactory.pfnRelease = vboxNetFltFactoryRelease;
-        pGlobals->TrunkFactory.pfnCreateAndConnect = vboxNetFltFactoryCreateAndConnect;
-
-        strcpy(pGlobals->SupDrvFactory.szName, "VBoxNetFlt");
-        pGlobals->SupDrvFactory.pfnQueryFactoryInterface = vboxNetFltQueryFactoryInterface;
-
-        /*
-         * Establish a connection to SUPDRV and register our component factory.
-         */
-        rc = SUPR0IdcOpen(&pGlobals->SupDrvIDC, 0 /* iReqVersion = default */, 0 /* iMinVersion = default */, NULL, NULL, NULL);
+        rc = vboxNetFltInitIdc(pGlobals);
         if (RT_SUCCESS(rc))
         {
-            rc = SUPR0IdcComponentRegisterFactory(&pGlobals->SupDrvIDC, &pGlobals->SupDrvFactory);
-            if (RT_SUCCESS(rc))
-            {
-                Log(("VBoxNetFlt: pSession=%p\n", SUPR0IdcGetSession(&pGlobals->SupDrvIDC)));
-                return rc;
-            }
-
-            /* bail out. */
-            LogRel(("VBoxNetFlt: Failed to register component factory, rc=%Rrc\n", rc));
-            SUPR0IdcClose(&pGlobals->SupDrvIDC);
+            return rc;
         }
-        RTSemFastMutexDestroy(pGlobals->hFastMtx);
-        pGlobals->hFastMtx = NIL_RTSEMFASTMUTEX;
+
+        /* bail out. */
+        vboxNetFltDeleteGlobalsBase(pGlobals);
     }
 
     return rc;

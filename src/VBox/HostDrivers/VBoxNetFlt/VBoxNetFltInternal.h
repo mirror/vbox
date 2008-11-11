@@ -181,13 +181,13 @@ typedef struct VBOXNETFLTINS
 # elif defined(RT_OS_WINDOWS)
             /** @name Windows instance data.
              * @{ */
-#  ifdef VBOX_NETFLT_ONDEMAND_BIND
+//#  ifdef VBOX_NETFLT_ONDEMAND_BIND
             /** Filter driver device context. */
             ADAPT IfAdaptor;
-#  else
-            /** Pointer to the filter driver device context. */
-            PADAPT volatile pIfAdaptor;
-#  endif
+//#  else
+//            /** Pointer to the filter driver device context. */
+//            PADAPT volatile pIfAdaptor;
+//#  endif
             /** The MAC address of the interface. Caching MAC for performance reasons. */
             RTMAC Mac;
             /** @}  */
@@ -197,8 +197,12 @@ typedef struct VBOXNETFLTINS
         } s;
 #endif
         /** Padding. */
-#if defined(RT_OS_WINDOWS) && defined(VBOX_NETFLT_ONDEMAND_BIND)
+#if defined(RT_OS_WINDOWS)
+# if defined(VBOX_NETFLT_ONDEMAND_BIND)
         uint8_t abPadding[192];
+# else
+        uint8_t abPadding[512];
+# endif
 #elif defined(RT_OS_LINUX)
         uint8_t abPadding[128];
 #else
@@ -250,6 +254,14 @@ DECLHIDDEN(PVBOXNETFLTINS) vboxNetFltFindInstance(PVBOXNETFLTGLOBALS pGlobals, c
 
 DECLHIDDEN(void) vboxNetFltRetain(PVBOXNETFLTINS pThis, bool fBusy);
 DECLHIDDEN(void) vboxNetFltRelease(PVBOXNETFLTINS pThis, bool fBusy);
+
+#ifdef VBOXNETFLT_STATIC_CONFIG
+DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszName, PVBOXNETFLTINS *ppInstance, void * pContext);
+DECLHIDDEN(int) vboxNetFltInitGlobalsBase(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(int) vboxNetFltInitIdc(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(void) vboxNetFltDeleteGlobalsBase(PVBOXNETFLTGLOBALS pGlobals);
+DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals);
+#endif
 
 
 /** @name The OS specific interface.
@@ -374,7 +386,11 @@ DECLHIDDEN(void) vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis);
  *
  * @remarks Owns no locks.
  */
-DECLHIDDEN(int) vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis);
+DECLHIDDEN(int) vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis
+#ifdef VBOXNETFLT_STATIC_CONFIG
+        , void * pContext
+#endif
+        );
 
 /**
  * This is called to perform structure initializations.
