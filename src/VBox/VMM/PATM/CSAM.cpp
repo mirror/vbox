@@ -1915,7 +1915,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
  */
 static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t cbBuf)
 {
-    int rc = PATMR3PatchWrite(pVM, GCPtr, cbBuf);
+    int rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     AssertRC(rc);
 }
 
@@ -1944,7 +1944,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 
     if (VM_IS_EMT(pVM))
     {
-        rc = PATMR3PatchWrite(pVM, GCPtr, cbBuf);
+        rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     }
     else
     {

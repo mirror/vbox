@@ -723,7 +723,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
         SUPPageFreeLocked(pvPages, cPages);
     }
     RTMemTmpFree(paPages);
-    MMR3AdjustFixedReservation(pVM, -cPages, pszDesc);
+    MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pszDesc);
     return rc;
 }
 
@@ -789,7 +789,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
 
-            rc2 = MMR3AdjustFixedReservation(pVM, -(pCur->RamRange.cb >> PAGE_SHIFT), pCur->RamRange.pszDesc);
+            rc2 = MMR3AdjustFixedReservation(pVM, -(int32_t)(pCur->RamRange.cb >> PAGE_SHIFT), pCur->RamRange.pszDesc);
             AssertRC(rc2);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
@@ -1773,7 +1773,7 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         pNew->fFlags        = fFlags;
         pNew->paChunkR3Ptrs = NULL;
 
-        unsigned iPage = cb >> PAGE_SHIFT;
+        unsigned iPage = (unsigned)(cb >> PAGE_SHIFT);
         if (paPages)
         {
             while (iPage-- > 0)
@@ -1894,7 +1894,7 @@ VMMR3DECL(int) PGMR3PhysRegisterChunk(PVM pVM, void *pvRam, RTGCPHYS GCPhys, siz
     AssertReturn(pRam, VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS);
 
     unsigned off = (GCPhys - pRam->GCPhys) >> PAGE_SHIFT;
-    unsigned iPage = cb >> PAGE_SHIFT;
+    unsigned iPage = (unsigned)(cb >> PAGE_SHIFT);
     if (paPages)
     {
         while (iPage-- > 0)

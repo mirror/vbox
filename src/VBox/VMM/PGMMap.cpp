@@ -1139,7 +1139,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
     {
         for (;;)
         {
-            unsigned cbRead = RT_MIN(cb, PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK));
+            size_t cbRead = RT_MIN(cb, PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK));
             int rc = PGMR3MapRead(pVM, pvDst, GCPtrSrc, cbRead);
             if (RT_FAILURE(rc))
                 return rc;
