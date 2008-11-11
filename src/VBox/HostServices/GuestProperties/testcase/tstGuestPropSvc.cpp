@@ -240,7 +240,7 @@ static const char *pcchEnumResult0[] =
 };
 
 /** Result string sizes for zeroth enumeration test */
-static const size_t cchEnumResult0[] =
+static const uint32_t cchEnumResult0[] =
 {
     sizeof("test/name/\0test/value/\0""0\0"),
     sizeof("test name\0test value\0""999\0TRANSIENT, READONLY"),
@@ -253,7 +253,7 @@ static const size_t cchEnumResult0[] =
  * The size of the buffer returned by the zeroth enumeration test -
  * the - 1 at the end is because of the hidden zero terminator
  */
-static const size_t cchEnumBuffer0 =
+static const uint32_t cchEnumBuffer0 =
 sizeof("test/name/\0test/value/\0""0\0\0"
 "test name\0test value\0""999\0TRANSIENT, READONLY\0"
 "TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
@@ -268,7 +268,7 @@ static const char *pcchEnumResult1[] =
 };
 
 /** Result string sizes for first and second enumeration test */
-static const size_t cchEnumResult1[] =
+static const uint32_t cchEnumResult1[] =
 {
     sizeof("TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST"),
     sizeof("/test/name\0/test/value\0""999999999999\0RDONLYGUEST"),
@@ -279,7 +279,7 @@ static const size_t cchEnumResult1[] =
  * The size of the buffer returned by the first enumeration test -
  * the - 1 at the end is because of the hidden zero terminator
  */
-static const size_t cchEnumBuffer1 =
+static const uint32_t cchEnumBuffer1 =
 sizeof("TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
 "/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
 
@@ -288,13 +288,13 @@ static const struct enumStringStruct
     /** The enumeration pattern to test */
     const char *pcszPatterns;
     /** The size of the pattern string */
-    const size_t cchPatterns;
+    const uint32_t cchPatterns;
     /** The expected enumeration output strings */
     const char **ppcchResult;
     /** The size of the output strings */
-    const size_t *pcchResult;
+    const uint32_t *pcchResult;
     /** The size of the buffer needed for the enumeration */
-    const size_t cchBuffer;
+    const uint32_t cchBuffer;
 }
 enumStrings[] =
 {
@@ -692,19 +692,22 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     int rc = VINF_SUCCESS;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    static char szPattern[] = "";
 
     RTPrintf("Testing the GET_NOTIFICATION call.\n");
-    uint64_t u64Timestamp = 0;
+    uint64_t u64Timestamp;
     uint32_t u32Size = 0;
-    VBOXHGCMSVCPARM paParms[3];
+    VBOXHGCMSVCPARM paParms[4];
 
     /* Test "buffer too small" */
-    paParms[0].setUInt64 (u64Timestamp);
-    paParms[1].setPointer ((void *) chBuffer, getNotifications[0].cchBuffer - 1);
+    u64Timestamp = 1;
+    paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
+    paParms[1].setUInt64 (u64Timestamp);
+    paParms[2].setPointer ((void *) chBuffer, getNotifications[0].cchBuffer - 1);
     pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                    GET_NOTIFICATION, 3, paParms);
+                    GET_NOTIFICATION, 4, paParms);
     if (   callHandle.rc != VERR_BUFFER_OVERFLOW
-        || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
+        || RT_FAILURE(paParms[3].getUInt32 (&u32Size))
         || u32Size != getNotifications[0].cchBuffer
        )
     {
@@ -713,17 +716,21 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         rc = VERR_UNRESOLVED_ERROR;
     }
 
-    /* Test successful notification queries */
+    /* Test successful notification queries.  Start with an unknown timestamp
+     * to get the oldest available notification. */
+    u64Timestamp = 1;
     for (unsigned i = 0; RT_SUCCESS(rc) && (getNotifications[i].pchBuffer != NULL);
          ++i)
     {
-        paParms[0].setUInt64 (u64Timestamp);
-        paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
+        paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
+        paParms[1].setUInt64 (u64Timestamp);
+        paParms[2].setPointer ((void *) chBuffer, sizeof(chBuffer));
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                        GET_NOTIFICATION, 3, paParms);
+                        GET_NOTIFICATION, 4, paParms);
         if (   RT_FAILURE(callHandle.rc)
-            || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
-            || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
+            || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
+            || RT_FAILURE(paParms[1].getUInt64 (&u64Timestamp))
+            || RT_FAILURE(paParms[3].getUInt32 (&u32Size))
             || u32Size != getNotifications[i].cchBuffer
             || memcmp(chBuffer, getNotifications[i].pchBuffer, u32Size) != 0
            )
@@ -733,52 +740,73 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
             rc = VERR_UNRESOLVED_ERROR;
         }
     }
-
-    /* Test a query with an unknown timestamp */
-    paParms[0].setUInt64 (1);
-    paParms[1].setPointer ((void *) chBuffer, sizeof(chBuffer));
-    if (RT_SUCCESS(rc))
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                        GET_NOTIFICATION, 3, paParms);
-    if (   RT_SUCCESS(rc)
-        && (   callHandle.rc != VWRN_NOT_FOUND
-            || RT_FAILURE(callHandle.rc)
-            || RT_FAILURE(paParms[0].getUInt64 (&u64Timestamp))
-            || RT_FAILURE(paParms[2].getUInt32 (&u32Size))
-            || u32Size != getNotifications[0].cchBuffer
-            || memcmp(chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
-           )
-       )
-    {
-        RTPrintf("Problem getting notification for property '%s' with unknown timestamp, rc=%Rrc.\n",
-                 getNotifications[0].pchBuffer, callHandle.rc);
-        rc = VERR_UNRESOLVED_ERROR;
-    }
     return rc;
 }
 
+/** Paramters for the asynchronous guest notification call */
+struct asyncNotification_
+{
+    /** Call parameters */
+    VBOXHGCMSVCPARM aParms[4];
+    /** Result buffer */
+    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    /** Return value */
+    VBOXHGCMCALLHANDLE_TYPEDEF callHandle;
+} asyncNotification;
+
 /**
- * Test the GET_NOTIFICATION function when no notifications are available.
+ * Set up the test for the asynchronous GET_NOTIFICATION function.
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testNoNotifications(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMCALLHANDLE_TYPEDEF *callHandle,
-                        VBOXHGCMSVCPARM *paParms, char *pchBuffer, size_t cchBuffer)
+int setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
     int rc = VINF_SUCCESS;
 
     RTPrintf("Testing the asynchronous GET_NOTIFICATION call with no notifications are available.\n");
     uint64_t u64Timestamp = 0;
     uint32_t u32Size = 0;
+    static char szPattern[] = "";
 
-    paParms[0].setUInt64 (u64Timestamp);
-    paParms[1].setPointer ((void *) pchBuffer, cchBuffer);
-    callHandle->rc = VINF_HGCM_ASYNC_EXECUTE;
-    pTable->pfnCall(pTable->pvService, callHandle, 0, NULL,
-                    GET_NOTIFICATION, 3, paParms);
-    if (callHandle->rc != VINF_HGCM_ASYNC_EXECUTE)
+    asyncNotification.aParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
+    asyncNotification.aParms[1].setUInt64 (u64Timestamp);
+    asyncNotification.aParms[2].setPointer ((void *) asyncNotification.chBuffer,
+                                            sizeof(asyncNotification.chBuffer));
+    asyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
+    pTable->pfnCall(pTable->pvService, &asyncNotification.callHandle, 0, NULL,
+                    GET_NOTIFICATION, 4, asyncNotification.aParms);
+    if (RT_FAILURE(asyncNotification.callHandle.rc))
     {
-        RTPrintf("GET_NOTIFICATION call completed when new notifications should be available.\n");
+        RTPrintf("GET_NOTIFICATION call failed, rc=%Rrc.\n", asyncNotification.callHandle.rc);
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+    else if (asyncNotification.callHandle.rc != VINF_HGCM_ASYNC_EXECUTE)
+    {
+        RTPrintf("GET_NOTIFICATION call completed when no new notifications should be available.\n");
+        rc = VERR_UNRESOLVED_ERROR;
+    }
+    return rc;
+}
+
+/**
+ * Test the asynchronous GET_NOTIFICATION function.
+ * @returns iprt status value to indicate whether the test went as expected.
+ * @note    prints its own diagnostic information to stdout.
+ */
+int testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t u64Timestamp;
+    uint32_t u32Size;
+    if (   asyncNotification.callHandle.rc != VINF_SUCCESS
+        || RT_FAILURE(asyncNotification.aParms[1].getUInt64 (&u64Timestamp))
+        || RT_FAILURE(asyncNotification.aParms[3].getUInt32 (&u32Size))
+        || u32Size != getNotifications[0].cchBuffer
+        || memcmp(asyncNotification.chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
+       )
+    {
+        RTPrintf("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc\n",
+                 asyncNotification.callHandle.rc);
         rc = VERR_UNRESOLVED_ERROR;
     }
     return rc;
@@ -788,10 +816,6 @@ int main(int argc, char **argv)
 {
     VBOXHGCMSVCFNTABLE svcTable;
     VBOXHGCMSVCHELPERS svcHelpers;
-    /* Paramters for the asynchronous guest notification call */
-    VBOXHGCMSVCPARM aParm[3];
-    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
-    VBOXHGCMCALLHANDLE_TYPEDEF callHandleStruct;
 
     initTable(&svcTable, &svcHelpers);
     RTR3Init();
@@ -807,27 +831,15 @@ int main(int argc, char **argv)
         return 1;
     if (RT_FAILURE(testEnumPropsHost(&svcTable)))
         return 1;
-    /* Asynchronous notification call */
-    if (RT_FAILURE(testNoNotifications(&svcTable, &callHandleStruct, aParm,
-                   chBuffer, sizeof(chBuffer))))
+    /* Set up the asynchronous notification test */
+    if (RT_FAILURE(setupAsyncNotification(&svcTable)))
         return 1;
     if (RT_FAILURE(testSetProp(&svcTable)))
         return 1;
     RTPrintf("Checking the data returned by the asynchronous notification call.\n");
     /* Our previous notification call should have completed by now. */
-    uint64_t u64Timestamp;
-    uint32_t u32Size;
-    if (   callHandleStruct.rc != VINF_SUCCESS
-        || RT_FAILURE(aParm[0].getUInt64 (&u64Timestamp))
-        || RT_FAILURE(aParm[2].getUInt32 (&u32Size))
-        || u32Size != getNotifications[0].cchBuffer
-        || memcmp(chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
-       )
-    {
-        RTPrintf("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc\n",
-                 callHandleStruct.rc);
+    if (RT_FAILURE(testAsyncNotification(&svcTable)))
         return 1;
-    }
     if (RT_FAILURE(testDelProp(&svcTable)))
         return 1;
     if (RT_FAILURE(testGetProp(&svcTable)))
