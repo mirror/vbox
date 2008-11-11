@@ -1084,6 +1084,7 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
  */
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
 {
+    pVM->hwaccm.s.fInjectNMI = true;
     return VINF_SUCCESS;
 }
 

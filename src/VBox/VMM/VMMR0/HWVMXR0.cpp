@@ -664,6 +664,21 @@ static int VMXR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         return VINF_SUCCESS;
     }
 
+    if (pVM->hwaccm.s.fInjectNMI)
+    {
+        RTGCUINTPTR intInfo;
+
+        intInfo  = X86_XCPT_NMI;
+        intInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+        intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+        rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, intInfo, 0, errCode);
+        AssertRC(rc);
+
+        pVM->hwaccm.s.fInjectNMI = false;
+        return VINF_SUCCESS;
+    }
+
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     if (    !TRPMHasTrap(pVM)
         &&  VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)))
