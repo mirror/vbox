@@ -137,8 +137,11 @@ VBOX_SOL_PYTHON_INST =
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  VBOX_SOL_PYTHON_INST = 64/
  SOL64_PKG = 1
+ifndef VBOX_WITH_NEW_RECOMPILER
  SOLARIS_STRIP_OBJS += \
  	VBoxREM2.rel
+ NEED_REL = 1
+endif
 endif
 
 # Do not strip anything of these files
@@ -280,7 +283,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARIS_INST_DIR)/VBoxDDU.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxManage                                                       $(SOLARIS_INST_DIR)/VBoxManage
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxREM.so                                                       $(SOLARIS_INST_DIR)/VBoxREM.so
-	$(QUIET)$(if $(SOL64_PKG),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxREM2.rel                                   $(SOLARIS_INST_DIR)/VBoxREM2.rel,)
+	$(QUIET)$(if $(NEED_REL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxREM2.rel                                    $(SOLARIS_INST_DIR)/VBoxREM2.rel,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVMM.so                                                       $(SOLARIS_INST_DIR)/VBoxVMM.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxXPCOM.so                                                     $(SOLARIS_INST_DIR)/VBoxXPCOM.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxXPCOMIPCD                                                    $(SOLARIS_INST_DIR)/VBoxXPCOMIPCD
@@ -335,7 +338,7 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxDDU.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxManage,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxREM.so,)
-	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(SOL64_PKG),strip $(SOLARIS_INST_DIR)/VBoxREM2.rel,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(NEED_REL),strip $(SOLARIS_INST_DIR)/VBoxREM2.rel,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxVMM.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxXPCOM.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxXPCOMIPCD,)
