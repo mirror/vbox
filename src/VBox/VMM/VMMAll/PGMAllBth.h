@@ -3175,7 +3175,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PX86PDE     pPDEDst = &pVM->pgm.s.CTXMID(p,32BitPD)->a[0];
 #  else /* PGM_SHW_TYPE == PGM_TYPE_PAE */
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT
-    PX86PDEPAE  pPDEDst = &pVM->pgm.s.CTXMID(ap,PaePDs)[0]->a[0];
+    PX86PDEPAE  pPDEDst = NULL;
 #   endif
 #  endif
 
@@ -3214,7 +3214,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         X86PDPE         PdpeSrc;
         PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT, &iPDSrc, &PdpeSrc);
         PX86PDPAE       pPDPAE    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
-        PX86PDEPAE      pPDEDst   = &pPDPAE->a[iPdpt * X86_PG_PAE_ENTRIES];
+        PX86PDEPAE      pPDEDst   = pgmShwGetPaePDEPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT);
         PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
 
         if (pPDSrc == NULL)
@@ -3243,6 +3243,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  endif /* PGM_GST_TYPE != PGM_TYPE_PAE */
         for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
         {
+#  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
+            if (!(iPD & (X86_PG_PAE_ENTRIES - 1))) /* Start of new PD. */
+                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)iPD << GST_PD_SHIFT);
+#  endif
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             Assert(&pVM->pgm.s.CTXMID(p,32BitPD)->a[iPD] == pPDEDst);
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
@@ -3276,7 +3280,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         /* It's fixed, just skip the mapping. */
                         const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
                         iPD += cPTs - 1;
-                        pPDEDst += cPTs + (PGM_GST_TYPE != PGM_SHW_TYPE) * cPTs;    /* Only applies to the pae shadow and 32 bits guest case */
+#   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
+                        pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
+#   else
+                        pPDEDst += cPTs;
+                        /** @todo Assert on / deal with  cross PD mappings in PAE/PAE mode! */
+#   endif
                         pMapping = pMapping->CTX_SUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                         continue;
@@ -3482,7 +3491,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
                 /* advance. */
                 iPD += cPTs - 1;
-                pPDEDst += cPTs + (PGM_GST_TYPE != PGM_SHW_TYPE) * cPTs;    /* Only applies to the pae shadow and 32 bits guest case */
+#   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
+                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
+#   else
+                pPDEDst += cPTs;
+                /** @todo Assert on / deal with  cross PD mappings in PAE/PAE mode! */
+#   endif
 #   if PGM_GST_TYPE != PGM_SHW_TYPE
                 AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);
 #   endif
