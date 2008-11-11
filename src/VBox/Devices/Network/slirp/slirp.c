@@ -398,6 +398,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 
+#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
+			WSAResetEvent(so->hNetworkEvent);
+#endif
 			/*
 			 * Set for reading sockets which are accepting
 			 */
@@ -406,7 +409,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                                 FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
@@ -422,7 +425,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
@@ -439,7 +442,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_WRITE);
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
@@ -456,7 +459,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, xfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_OOB|FD_READ);
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
