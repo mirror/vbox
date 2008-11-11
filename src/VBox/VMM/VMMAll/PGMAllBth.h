@@ -3158,6 +3158,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 # if PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
     bool fBigPagesSupported = true;
+    # error "We should not be here!"
 #  else
     bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
 #  endif
@@ -3201,6 +3202,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         iPdNoMapping  = ~0U;
     }
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
+    # error "We should not be here!"
     for (uint64_t iPml4 = 0; iPml4 < X86_PG_PAE_ENTRIES; iPml4++)
     {
         PPGMPOOLPAGE pShwPdpt = NULL;
@@ -3430,6 +3432,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
                                             || (   (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
+    # error "We should not be here!"
                                                 && (cr4 & X86_CR4_PGE)) /* global 2/4MB page. */
 #   else
                                                 && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE)) /* global 2/4MB page. */
@@ -3451,6 +3454,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 if (   !fGlobal
                                     && (PdeSrc.u & (X86_PDE4M_PS | X86_PDE4M_G)) == (X86_PDE4M_PS | X86_PDE4M_G)
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
+    # error "We should not be here!"
                                     && (cr4 & X86_CR4_PGE)) /* global 2/4MB page. */
 #   else
                                     && (cr4 & (X86_CR4_PGE | X86_CR4_PSE)) == (X86_CR4_PGE | X86_CR4_PSE))
@@ -3470,6 +3474,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                             else
                             {
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
+    # error "We should not be here!"
                                 pgmPoolFreeByPage(pPool, pShwPage, pShwPde->idx, iPdShw);
 #  else
                                 pgmPoolFreeByPage(pPool, pShwPage, SHW_POOL_ROOT_IDX, iPdShw);
@@ -3503,6 +3508,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         if (pPDEDst->n.u1Present)
                         {
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
+    # error "We should not be here!"
                             pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), pShwPde->idx, iPdShw);
 #  else
                             pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdShw);
