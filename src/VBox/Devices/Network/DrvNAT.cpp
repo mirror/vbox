@@ -86,8 +86,8 @@ typedef struct DRVNAT
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
 #else
-    /* 1 - for Outher network events, and 0 for sending routine notification*/
-    HANDLE                  hNetworkEvent[2];
+    /*for send event from guest*/
+    HANDLE                  hSendEvent;
 #endif
     /** Send buffer */
     char                    cBuffer[1600];
@@ -118,14 +118,16 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
 
+    int rc;
     /*notify select to wakeup*/
     memcpy(pThis->cBuffer,pvBuf, cb);
     pThis->sBufferSize = cb;
 # ifndef RT_OS_WINDOWS
-    int rc = RTFileWrite(pThis->PipeWrite, "1", 2, NULL);
+    rc = RTFileWrite(pThis->PipeWrite, "1", 2, NULL);
     AssertRC(rc);
 # else
-    WSASetEvent(pThis->hNetworkEvent[0]);
+    rc = WSASetEvent(pThis->hSendEvent);
+    AssertRelease(rc == TRUE);
 # endif
     RTSemEventWait(pThis->semSndMutex, RT_INDEFINITE_WAIT);
 
@@ -300,24 +302,28 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 # else /* RT_OS_WINDOWS */
         phEvents = slirp_get_events(pThis->pNATState);
-        phEvents[0] = pThis->hNetworkEvent[0];
+        phEvents[0] = pThis->hSendEvent;
         event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
         AssertRelease(event != WSA_WAIT_FAILED);
+
+	if (event == WSA_WAIT_TIMEOUT) {
+		continue;
+	}
 
         /*
          * see WSAWaitForMultipleEvents documentation: return value is a minimal index in array
          */
-        if ((event - WSA_WAIT_EVENT_0) > 1)
+        if ((event - WSA_WAIT_EVENT_0) > 0) {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
+	}
 
         if ((event - WSA_WAIT_EVENT_0) == 0)
         {
             /** XXX distinguish between drvNATSend and wakeup only */
-            slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
-            WSAResetEvent(pThis->hNetworkEvent[0]);
+            slirp_input(pThis->pNATState, (uint8_t *)&pThis->cBuffer[0], pThis->sBufferSize);
+            WSAResetEvent(pThis->hSendEvent);
             RTSemEventSignal(pThis->semSndMutex);
         }
-        WSAResetEvent(pThis->hNetworkEvent[0]);
 # endif /* RT_OS_WINDOWS */
     }
 
@@ -688,8 +694,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pThis->PipeRead = fds[0];
             pThis->PipeWrite = fds[1];
 # else
-            pThis->hNetworkEvent[0] = WSACreateEvent();
-            pThis->hNetworkEvent[1] = WSACreateEvent();
+            pThis->hSendEvent = WSACreateEvent();
 # endif
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
