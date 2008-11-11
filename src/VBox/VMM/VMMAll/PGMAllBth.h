@@ -3731,10 +3731,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             continue;
         }
 
-# if PGM_GST_TYPE == PGM_TYPE_PAE
-        /* not correct to call pgmPoolGetPage */
-        AssertFailed();
-# endif
         pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
         GCPhysPdptSrc = pPml4eSrc->u & X86_PML4E_PG_MASK_FULL;
 
@@ -3763,9 +3759,9 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             cErrors++;
             continue;
         }
-# else
+# else  /* PGM_GST_TYPE != PGM_TYPE_AMD64 */
     {
-# endif
+# endif /* PGM_GST_TYPE != PGM_TYPE_AMD64 */
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
         /*
@@ -3782,7 +3778,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
             X86PDPE         PdpeSrc;
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtr, &iPDSrc, &PdpeSrc);
-            PX86PDPAE       pPDDst    = pVM->pgm.s.CTXMID(ap,PaePDs)[0];
             PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
 #   else
             PX86PML4E       pPml4eSrc;
@@ -3852,8 +3847,6 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             GSTPD const    *pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             PCX86PD         pPDDst = pPGM->CTXMID(p,32BitPD);
-#  else
-            PCX86PDPAE      pPDDst = pVM->pgm.s.CTXMID(ap,PaePDs)[0]; /* We treat this as a PD with 2048 entries, so no need to and with SHW_PD_MASK to get iPDDst */
 #  endif
 # endif
             /*
@@ -3866,7 +3859,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                 iPDDst < cPDEs;
                 iPDDst++, GCPtr += cIncrement)
             {
+#  if PGM_SHW_TYPE == PGM_TYPE_PAE
+                const SHWPDE PdeDst = *pgmShwGetPaePDEPtr(pPGM, GCPtr);
+#  else
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
+#  endif
                 if (PdeDst.u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
