@@ -3185,10 +3185,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #   ifndef IN_RC
     Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #   endif
-#  endif
+#  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
 
     /*
-     * Iterate the page directory.
+     * Iterate the the CR3 page.
      */
     PPGMMAPPING pMapping;
     unsigned    iPdNoMapping;
@@ -3206,6 +3206,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pMapping      = 0;
         iPdNoMapping  = ~0U;
     }
+
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
     for (uint64_t iPdpt = 0; iPdpt < GST_PDPE_ENTRIES; iPdpt++)
     {
@@ -3244,8 +3245,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         {
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             Assert(&pVM->pgm.s.CTXMID(p,32BitPD)->a[iPD] == pPDEDst);
-#  elif PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-            AssertMsg(&pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512] == pPDEDst, ("%p vs %p\n", &pVM->pgm.s.CTXMID(ap,PaePDs)[iPD * 2 / 512]->a[iPD * 2 % 512], pPDEDst));
+#  elif PGM_SHW_TYPE == PGM_TYPE_PAE
+#   ifdef VBOX_STRICT
+            RTGCPTR GCPtrStrict = (uint32_t)iPD << GST_PD_SHIFT;
+#    if PGM_GST_TYPE == PGM_TYPE_PAE
+            GCPtrStrict |= iPdpt << X86_PDPT_SHIFT;
+#    endif
+            AssertMsg(pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrStrict) == pPDEDst, ("%p vs %p (%RGv)\n", pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtrStrict), pPDEDst, GCPtrStrict));
+#   endif /* VBOX_STRICT */
 #  endif
             GSTPDE PdeSrc = pPDSrc->a[iPD];
             if (    PdeSrc.n.u1Present
@@ -3290,10 +3297,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
                         pMapping = pMapping->pNextR3;
                     iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
-#   else
+#   else  /* !IN_RING3 */
                     LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                     return VINF_PGM_SYNC_CR3;
-#   endif
+#   endif /* !IN_RING3 */
                 }
 #  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
                 Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
@@ -3309,7 +3316,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
-                    const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
+                const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
 #  else
                 const unsigned iPdShw = iPD; NOREF(iPdShw);
 #  endif
@@ -3383,8 +3390,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     }
                     else
                         MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstNotPresent));
+
+                    /* advance */
                     pPDEDst++;
-                }
+                } /* foreach 2MB PAE PDE in 4MB guest PDE */
             }
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
             else if (iPD + iPdpt * X86_PG_PAE_ENTRIES != iPdNoMapping)
@@ -3398,9 +3407,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                 for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
 #  elif PGM_GST_TYPE == PGM_TYPE_PAE
-                    const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES; NOREF(iPdShw);
+                const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES;
 #  else
-                const unsigned iPdShw = iPD; NOREF(iPdShw);
+                const unsigned iPdShw = iPD;
 #  endif
                 {
                     if (pPDEDst->n.u1Present)
@@ -3430,9 +3439,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 else
                 {
                     /*
-                    * Check for conflicts for subsequent pagetables
-                    * and advance to the next mapping.
-                    */
+                     * Check for conflicts for subsequent pagetables
+                     * and advance to the next mapping.
+                     */
                     iPdNoMapping = ~0U;
                     unsigned iPT = cPTs;
                     while (iPT-- > 1)
@@ -3450,8 +3459,8 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 return rc;
 
                             /*
-                            * Update iPdNoMapping and pMapping.
-                            */
+                             * Update iPdNoMapping and pMapping.
+                             */
                             pMapping = pVM->pgm.s.CTX_SUFF(pMappings);
                             while (pMapping && pMapping->GCPtr < (iPD << GST_PD_SHIFT))
                                 pMapping = pMapping->CTX_SUFF(pNext);
@@ -3546,11 +3555,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
     || PGM_GST_TYPE == PGM_TYPE_PAE \
     || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
     bool            fBigPagesSupported = true;
-#  else
+# else
     bool            fBigPagesSupported = !!(CPUMGetGuestCR4(pVM) & X86_CR4_PSE);
-#  endif
+# endif
     PPGM            pPGM = &pVM->pgm.s;
     RTGCPHYS        GCPhysGst;              /* page address derived from the guest page tables. */
     RTHCPHYS        HCPhysShw;              /* page address derived from the shadow page tables. */
@@ -3581,7 +3590,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #  endif
-#endif /* !IN_RING0 */
+# endif /* !IN_RING0 */
 
     /*
      * Get and check the Shadow CR3.
@@ -3673,11 +3682,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             PPGMPOOLPAGE    pShwPde = NULL;
             PX86PDPE        pPdpeDst;
             RTGCPHYS        GCPhysPdeSrc;
-#   if PGM_GST_TYPE == PGM_TYPE_PAE
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
             X86PDPE         PdpeSrc;
             PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, GCPtr, &iPDSrc, &PdpeSrc);
             PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
-#   else
+#  else
             PX86PML4E       pPml4eSrc;
             X86PDPE         PdpeSrc;
             PX86PDPT        pPdptDst;
@@ -3692,7 +3701,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                 continue;   /* next PDPTE */
             }
             Assert(pPDDst);
-#   endif
+#  endif
             Assert(iPDSrc == 0);
 
             pPdpeDst = &pPdptDst->a[iPdpt];
@@ -3738,15 +3747,15 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
             }
 #  endif
 
-# else
+# else  /* PGM_GST_TYPE != PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_PAE */
         {
-# endif
+# endif /* PGM_GST_TYPE != PGM_TYPE_AMD64 && PGM_GST_TYPE != PGM_TYPE_PAE */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
             GSTPD const    *pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             PCX86PD         pPDDst = pPGM->CTXMID(p,32BitPD);
 #  endif
-# endif
+# endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
             /*
             * Iterate the shadow page directory.
             */
@@ -3757,11 +3766,11 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                 iPDDst < cPDEs;
                 iPDDst++, GCPtr += cIncrement)
             {
-#  if PGM_SHW_TYPE == PGM_TYPE_PAE
+# if PGM_SHW_TYPE == PGM_TYPE_PAE
                 const SHWPDE PdeDst = *pgmShwGetPaePDEPtr(pPGM, GCPtr);
-#  else
+# else
                 const SHWPDE PdeDst = pPDDst->a[iPDDst];
-#  endif
+# endif
                 if (PdeDst.u & PGM_PDFLAGS_MAPPING)
                 {
                     Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
@@ -4267,7 +4276,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
         LogFlow(("AssertCR3: cErrors=%d\n", cErrors));
 # endif
 
-#endif
+#endif /* GST == 32BIT, PAE or AMD64 */
     return cErrors;
 
 #endif /* PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT */
