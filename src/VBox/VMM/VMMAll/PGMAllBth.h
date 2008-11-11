@@ -1114,7 +1114,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
      	    if (   pPDDst->a[iPD].n.u1Present
      	        && !(pPDDst->a[iPD].u & PGM_PDFLAGS_MAPPING))
      	    {
-                pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDDst->a[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
+                pgmPoolFree(pVM, pPDDst->a[iPD].u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
                 pPDDst->a[iPD].u = 0;
      	    }
     	}
@@ -3228,7 +3228,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     if (   pPDEDst[iPD].n.u1Present
                         && !(pPDEDst[iPD].u & PGM_PDFLAGS_MAPPING))
                     {
-                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst[iPD].u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
+                        pgmPoolFree(pVM, pPDEDst[iPD].u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdpt * X86_PG_PAE_ENTRIES + iPD);
                         pPDEDst[iPD].u = 0;
                     }
                 }
@@ -3405,7 +3405,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 {
                     if (pPDEDst->n.u1Present)
                     {
-                        pgmPoolFreeByPage(pPool, pgmPoolGetPage(pPool, pPDEDst->u & SHW_PDE_PG_MASK), SHW_POOL_ROOT_IDX, iPdShw);
+                        pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdShw);
                         pPDEDst->u = 0;
                         MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
                     }
