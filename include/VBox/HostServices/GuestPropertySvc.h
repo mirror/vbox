@@ -425,15 +425,17 @@ typedef struct _EnumProperties
 } EnumProperties;
 
 /**
- * The guest is polling for notifications on changes to properties, optionally
- * specifying the timestamp of the last notification seen.
+ * The guest is polling for notifications on changes to properties, specifying
+ * a set of patterns to match the names of changed properties against and
+ * optionally the timestamp of the last notification seen.
  * On success, VINF_SUCCESS will be returned and the buffer will contain
- * details of a property notification.  If no new notification is available,
- * the call will block until one is.
+ * details of a property notification.  If no new notification is available
+ * which matches one of the specified patterns, the call will block until one
+ * is.
  * If the last notification could not be found by timestamp, VWRN_NOT_FOUND
  * will be returned and the oldest available notification will be returned.
- * If no timestamp is specified, the oldest available notification will be
- * returned.
+ * If a zero timestamp is specified, the call will always wait for a new
+ * notification to arrive.
  * If the buffer supplied was not large enough to hold the notification,
  * VERR_BUFFER_OVERFLOW will be returned and the size parameter will contain
  * the size of the buffer needed.
@@ -445,8 +447,14 @@ typedef struct _EnumProperties
  */
 typedef struct _GetNotification
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBoxGuestHGCMCallInfoTimeout hdr;
 
+    /**
+     * A list of patterns to match the guest event name against, separated by
+     * vertical bars (|) (IN pointer)
+     * An empty string means match all.
+     */
+    HGCMFunctionParameter patterns;
     /**
      * The timestamp of the last change seen (IN uint64_t)
      * This may be zero, in which case the oldest available change will be
