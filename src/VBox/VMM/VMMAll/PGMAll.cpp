@@ -1893,6 +1893,7 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 }
 
 
+# ifdef IN_RC
 /**
  * Temporarily maps one host page specified by HC physical address.
  *
@@ -1910,7 +1911,6 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
-# ifdef IN_RC
 
     /*
      * Check the cache.
@@ -1960,17 +1960,8 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     ASMInvalidatePage(pv);
     Log4(("PGMGCDynMapHCPage: HCPhys=%RHp pv=%p iPage=%d\n", HCPhys, pv, iPage));
     return VINF_SUCCESS;
-
-#else  /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
-    /** @todo @bugref{3202}: Implement ring-0 mapping cache similar to the one in
-     *        RC. To begin with, a simple but expensive one based on
-     *        RTR0MemObjEnterPhys can be used to get things started. Later a
-     *        global cache with mappings per CPU (to avoid shootdown) should be
-     *        employed. */
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }
+# endif /* IN_RC */
 
 
 /**
