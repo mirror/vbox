@@ -684,8 +684,8 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
         PCPUMCTX pCtx = CPUMQueryGuestCtxPtrEx(pVM, &pVM->aCpus[i]);
 
         /*
-        * Initialize everything to ZERO first.
-        */
+         * Initialize everything to ZERO first.
+         */
         uint32_t    fUseFlags =  pVM->aCpus[i].cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
         memset(pCtx, 0, sizeof(*pCtx));
         pVM->aCpus[i].cpum.s.fUseFlags  = fUseFlags;

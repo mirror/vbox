@@ -1099,6 +1099,12 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
         case VERR_VMX_UNABLE_TO_START_VM:
             LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulInstrError));
             LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulExitReason));
+#if 0 /* @todo dump the current control fields to the release log */
+            if (pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulInstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
+            {
+
+            }
+#endif
             break;
 
         case VERR_VMX_UNABLE_TO_RESUME_VM:
