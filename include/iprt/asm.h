@@ -2653,6 +2653,57 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, const void *pv)
 }
 
 
+/**
+ * Atomically Exchange a raw-mode context pointer value, ordered.
+ *
+ * @returns Current *ppv value
+ * @param   ppvRC   Pointer to the pointer variable to update.
+ * @param   pvRC    The pointer value to assign to *ppv.
+ */
+DECLINLINE(RTRCPTR) ASMAtomicXchgRCPtr(RTRCPTR volatile *ppvRC, RTRCPTR pvRC)
+{
+    return (RTRCPTR)ASMAtomicXchgU32((uint32_t volatile *)(void *)ppvRC, (uint32_t)pvRC);
+}
+
+
+/**
+ * Atomically Exchange a ring-0 pointer value, ordered.
+ *
+ * @returns Current *ppv value
+ * @param   ppvR0  Pointer to the pointer variable to update.
+ * @param   pvR0   The pointer value to assign to *ppv.
+ */
+DECLINLINE(RTR0PTR) ASMAtomicXchgR0Ptr(RTR0PTR volatile *ppvR0, RTR0PTR pvR0)
+{
+#if R0_ARCH_BITS == 32
+    return (RTR0PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR0, (uint32_t)pvR0);
+#elif R0_ARCH_BITS == 64
+    return (RTR0PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR0, (uint64_t)pvR0);
+#else
+# error "R0_ARCH_BITS is bogus"
+#endif
+}
+
+
+/**
+ * Atomically Exchange a ring-3 pointer value, ordered.
+ *
+ * @returns Current *ppv value
+ * @param   ppvR3  Pointer to the pointer variable to update.
+ * @param   pvR3   The pointer value to assign to *ppv.
+ */
+DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
+{
+#if R3_ARCH_BITS == 32
+    return (RTR3PTR)ASMAtomicXchgU32((volatile uint32_t *)(void *)ppvR3, (uint32_t)pvR3);
+#elif R3_ARCH_BITS == 64
+    return (RTR3PTR)ASMAtomicXchgU64((volatile uint64_t *)(void *)ppvR3, (uint64_t)pvR3);
+#else
+# error "R3_ARCH_BITS is bogus"
+#endif
+}
+
+
 /** @def ASMAtomicXchgHandle
  * Atomically Exchange a typical IPRT handle value, ordered.
  *
