@@ -1075,6 +1075,18 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVM pVM)
     return HWACCMIsEnabled(pVM) && pVM->aCpus[0].hwaccm.s.Event.fPending;
 }
 
+
+/**
+ * Inject an NMI into a running VM
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
 /**
  * Check fatal VT-x/AMD-V error and produce some meaningful
  * log release message.
