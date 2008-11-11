@@ -72,6 +72,7 @@ public:
     STDMETHOD(COMGETTER(VirtualTimeRate))(ULONG *pct);
     STDMETHOD(COMSETTER(VirtualTimeRate))(ULONG pct);
     STDMETHOD(COMGETTER(VM))(ULONG64 *vm);
+    STDMETHOD(InjectNMI)();
 
     // IMachineDebugger methods
     STDMETHOD(ResetStats(INPTR BSTR aPattern));

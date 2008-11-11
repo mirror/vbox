@@ -8661,7 +8661,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IMachineDebugger" extends="$unknown"
-     uuid="0de52346-938b-4020-a33b-471be542f3ff"
+     uuid="b0b2a2dd-0627-4502-91c2-ddc5e77609e0"
      wsmap="suppress"
      >
     <method name="resetStats">
@@ -8695,6 +8695,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="stats" type="wstring" dir="out">
         <desc>The XML document containing the statistics.</desc>
       </param>
+    </method>
+
+    <method name="injectNMI">
+      <desc>
+        Inject an NMI into a running VT-x/AMD-V VM.
+      </desc>
     </method>
 
     <attribute name="singlestep" type="boolean">

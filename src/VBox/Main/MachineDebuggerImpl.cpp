@@ -379,7 +379,26 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled)(BOOL enable)
     CheckComRCReturnRC (pVM.rc());
 
     PATMR3AllowPatching(pVM, enable);
-    return E_NOTIMPL;
+    return S_OK;
+}
+
+/**
+ * Set the new patch manager enabled flag.
+ *
+ * @returns COM status code
+ * @param   new patch manager enabled flag
+ */
+STDMETHODIMP MachineDebugger::InjectNMI()
+{
+    AutoWriteLock alock (this);
+    CHECK_READY();
+    LogFlowThisFunc ((""));
+
+    Console::SafeVMPtr pVM (mParent);
+    CheckComRCReturnRC (pVM.rc());
+
+    HWACCMR3InjectNMI(pVM);
+    return S_OK;
 }
 
 /**
