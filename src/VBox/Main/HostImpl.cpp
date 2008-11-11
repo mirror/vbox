@@ -1016,7 +1016,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         ifConf.ifc_buf = pBuffer;
         if (ioctl(sock, SIOCGIFCONF, &ifConf) >= 0)
         {
-            for (struct ifreq *pReq = ifConf.ifc_req; pReq < pBuffer + ifConf.ifc_len; pReq++)
+            for (struct ifreq *pReq = ifConf.ifc_req; (char*)pReq < pBuffer + ifConf.ifc_len; pReq++)
             {
                 RTUUID uuid;
                 Assert(sizeof(uuid) <= sizeof(*pReq));
