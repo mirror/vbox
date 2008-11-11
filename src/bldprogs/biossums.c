@@ -24,6 +24,9 @@
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
+#ifndef RT_OS_WINDOWS
+# include <unistd.h> /* unlink */
+#endif
 
 typedef unsigned char uint8_t;
 
