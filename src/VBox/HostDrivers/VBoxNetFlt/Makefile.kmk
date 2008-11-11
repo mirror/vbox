@@ -203,7 +203,7 @@ $$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
 	$(QUIET)chmod 0755 $@
 
 $$(PATH_VBoxNetFlt-src)/dkms.conf: \
-		$(PATH_SUB_CURRENT)/dkms.conf \
+		$(PATH_SUB_CURRENT)/linux/dkms.conf \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
