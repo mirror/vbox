@@ -398,7 +398,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 
-#if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 			WSAResetEvent(so->hNetworkEvent);
 #endif
 			/*
