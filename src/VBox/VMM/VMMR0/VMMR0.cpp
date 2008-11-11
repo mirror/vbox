@@ -27,6 +27,7 @@
 #include <VBox/sup.h>
 #include <VBox/trpm.h>
 #include <VBox/cpum.h>
+#include <VBox/pgm.h>
 #include <VBox/stam.h>
 #include <VBox/tm.h>
 #include "VMMInternal.h"
@@ -80,7 +81,7 @@ VMMR0DECL(int) ModuleInit(void)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize the GVMM, GMM.& HWACCM
+     * Initialize the GVMM, GMM, HWACCM, PGM (Darwin) and INTNET.
      */
     int rc = GVMMR0Init();
     if (RT_SUCCESS(rc))
@@ -91,19 +92,33 @@ VMMR0DECL(int) ModuleInit(void)
             rc = HWACCMR0Init();
             if (RT_SUCCESS(rc))
             {
-                LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-                g_pIntNet = NULL;
-                LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-                rc = INTNETR0Create(&g_pIntNet);
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                rc = PGMR0DynMapInit();
+#endif
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
-                    return VINF_SUCCESS;
+                    LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
+                    g_pIntNet = NULL;
+                    LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
+                    rc = INTNETR0Create(&g_pIntNet);
+                    if (RT_SUCCESS(rc))
+                    {
+                        LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+                        return VINF_SUCCESS;
+                    }
+
+                    /* bail out */
+                    g_pIntNet = NULL;
+                    LogFlow(("ModuleTerm: returns %Rrc\n", rc));
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                    PGMR0DynMapTerm();
+#endif
                 }
-                g_pIntNet = NULL;
-                LogFlow(("ModuleTerm: returns %Rrc\n", rc));
+                HWACCMR0Term();
             }
+            GMMR0Term();
         }
+       GVMMR0Term();
     }
 
     LogFlow(("ModuleInit: failed %Rrc\n", rc));
@@ -128,12 +143,15 @@ VMMR0DECL(void) ModuleTerm(void)
         g_pIntNet = NULL;
     }
 
-    /* Global HWACCM cleanup */
-    HWACCMR0Term();
-
     /*
+     * PGM (Darwin) and HWACCM global cleanup.
      * Destroy the GMM and GVMM instances.
      */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    PGMR0DynMapTerm();
+#endif
+    HWACCMR0Term();
+
     GMMR0Term();
     GVMMR0Term();
 
@@ -150,7 +168,7 @@ VMMR0DECL(void) ModuleTerm(void)
  * @param   uSvnRev     The SVN revision of the ring-3 part.
  * @thread  EMT.
  */
-static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
+static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 {
     /*
      * Match the SVN revisions.
@@ -168,34 +186,34 @@ static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
     if (pR0Logger)
     {
 #if 0 /* testing of the logger. */
-        LogCom(("VMMR0Init: before %p\n", RTLogDefaultInstance()));
-        LogCom(("VMMR0Init: pfnFlush=%p actual=%p\n", pR0Logger->Logger.pfnFlush, vmmR0LoggerFlush));
-        LogCom(("VMMR0Init: pfnLogger=%p actual=%p\n", pR0Logger->Logger.pfnLogger, vmmR0LoggerWrapper));
-        LogCom(("VMMR0Init: offScratch=%d fFlags=%#x fDestFlags=%#x\n", pR0Logger->Logger.offScratch, pR0Logger->Logger.fFlags, pR0Logger->Logger.fDestFlags));
+        LogCom(("vmmR0InitVM: before %p\n", RTLogDefaultInstance()));
+        LogCom(("vmmR0InitVM: pfnFlush=%p actual=%p\n", pR0Logger->Logger.pfnFlush, vmmR0LoggerFlush));
+        LogCom(("vmmR0InitVM: pfnLogger=%p actual=%p\n", pR0Logger->Logger.pfnLogger, vmmR0LoggerWrapper));
+        LogCom(("vmmR0InitVM: offScratch=%d fFlags=%#x fDestFlags=%#x\n", pR0Logger->Logger.offScratch, pR0Logger->Logger.fFlags, pR0Logger->Logger.fDestFlags));
 
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
-        LogCom(("VMMR0Init: after %p reg\n", RTLogDefaultInstance()));
+        LogCom(("vmmR0InitVM: after %p reg\n", RTLogDefaultInstance()));
         RTLogSetDefaultInstanceThread(NULL, 0);
-        LogCom(("VMMR0Init: after %p dereg\n", RTLogDefaultInstance()));
+        LogCom(("vmmR0InitVM: after %p dereg\n", RTLogDefaultInstance()));
 
         pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
-        LogCom(("VMMR0Init: returned succesfully from direct logger call.\n"));
+        LogCom(("vmmR0InitVM: returned succesfully from direct logger call.\n"));
         pR0Logger->Logger.pfnFlush(&pR0Logger->Logger);
-        LogCom(("VMMR0Init: returned succesfully from direct flush call.\n"));
+        LogCom(("vmmR0InitVM: returned succesfully from direct flush call.\n"));
 
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
-        LogCom(("VMMR0Init: after %p reg2\n", RTLogDefaultInstance()));
+        LogCom(("vmmR0InitVM: after %p reg2\n", RTLogDefaultInstance()));
         pR0Logger->Logger.pfnLogger("hello ring-0 logger\n");
-        LogCom(("VMMR0Init: returned succesfully from direct logger call (2). offScratch=%d\n", pR0Logger->Logger.offScratch));
+        LogCom(("vmmR0InitVM: returned succesfully from direct logger call (2). offScratch=%d\n", pR0Logger->Logger.offScratch));
         RTLogSetDefaultInstanceThread(NULL, 0);
-        LogCom(("VMMR0Init: after %p dereg2\n", RTLogDefaultInstance()));
+        LogCom(("vmmR0InitVM: after %p dereg2\n", RTLogDefaultInstance()));
 
         RTLogLoggerEx(&pR0Logger->Logger, 0, ~0U, "hello ring-0 logger (RTLogLoggerEx)\n");
-        LogCom(("VMMR0Init: RTLogLoggerEx returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
+        LogCom(("vmmR0InitVM: RTLogLoggerEx returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
 
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
         RTLogPrintf("hello ring-0 logger (RTLogPrintf)\n");
-        LogCom(("VMMR0Init: RTLogPrintf returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
+        LogCom(("vmmR0InitVM: RTLogPrintf returned fine offScratch=%d\n", pR0Logger->Logger.offScratch));
 #endif
         Log(("Switching to per-thread logging instance %p (key=%p)\n", &pR0Logger->Logger, pVM->pSession));
         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
@@ -210,21 +228,25 @@ static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Init HWACCM.
+         * Init HWACCM, CPUM and PGM (Darwin only).
          */
         rc = HWACCMR0InitVM(pVM);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Init CPUM.
-             */
-            rc = CPUMR0Init(pVM);
+            rc = CPUMR0Init(pVM); /** @todo rename to CPUMR0InitVM */
             if (RT_SUCCESS(rc))
-                return rc;
+            {
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                rc = PGMR0DynMapInitVM(pVM);
+#endif
+                if (RT_SUCCESS(rc))
+                    return rc;
+
+                /* bail out */
+            }
+            HWACCMR0TermVM(pVM);
         }
     }
-
-    /* failed */
     RTLogSetDefaultInstanceThread(NULL, 0);
     return rc;
 }
@@ -238,8 +260,11 @@ static int VMMR0Init(PVM pVM, uint32_t uSvnRev)
  * @param   pVM         The VM instance in question.
  * @thread  EMT.
  */
-static int VMMR0Term(PVM pVM)
+static int vmmR0TermVM(PVM pVM)
 {
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    PGMR0DynMapTermVM(pVM);
+#endif
     HWACCMR0TermVM(pVM);
 
     /*
@@ -778,13 +803,13 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-            return VMMR0Init(pVM, (uint32_t)u64Arg);
+            return vmmR0InitVM(pVM, (uint32_t)u64Arg);
 
         /*
          * Terminate the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_TERM:
-            return VMMR0Term(pVM);
+            return vmmR0TermVM(pVM);
 
         /*
          * Attempt to enable hwacc mode and check the current setting.

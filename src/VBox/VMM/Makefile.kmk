@@ -454,6 +454,8 @@ VMMR0_SOURCES   = \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
 	VMMAll/VMMAll.cpp \
+VMMR0_SOURCES.darwin = \
+	VMMR0/PGMR0DynMap.cpp
 
 
 ifeq ($(VBOX_LDR_FMT),pe)
