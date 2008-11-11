@@ -179,9 +179,8 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
-    const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-    const unsigned  iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-    X86PDEPAE       Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+    X86PDEPAE       Pde;
+    Pde.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -189,7 +188,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     EPTPDE          Pde;
 
     int rc = pgmShwGetEPTPDPtr(pVM, GCPtr, NULL, &pPDDst);
-    if (rc != VINF_SUCCESS)
+    if (rc != VINF_SUCCESS) /** @todo this function isn't expected to return informational status codes. Check callers / fix. */
     {
         AssertRC(rc);
         return rc;
@@ -319,9 +318,8 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         Pde = pPd->a[iPd];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-        const unsigned  iPDPT = (GCPtr >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
-        const unsigned  iPd = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-        X86PDEPAE Pde = CTXMID(pVM->pgm.s.ap,PaePDs)[iPDPT]->a[iPd];
+        X86PDEPAE       Pde;
+        Pde.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
         const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
