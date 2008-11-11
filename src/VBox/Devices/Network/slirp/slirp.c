@@ -373,10 +373,10 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                  * 1st event for drvNATSend()
                  */
                 cElements = 1;
-		for (so = tcb.so_next; so != &tcb; so = so_next, cElements++)
-                    ;
+		for (so = tcb.so_next; so != &tcb; so = so_next, cElements++) 
+			so_next = so->so_next;
 		for (so = udb.so_next; so != &udb; so = so_next, cElements++)
-                    ;
+			so_next = so->so_next;
 		if (pData->phEvents != NULL)
                     free(pData->phEvents);
 		pData->phEvents = malloc(sizeof(HANDLE) * cElements);
@@ -496,7 +496,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ);
+				WSAResetEvent(so->hNetworkEvent);
+				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
@@ -581,10 +582,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 		 */
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
-			AssertRelease(rc != SOCKET_ERROR);
-#endif
 
 			/*
 			 * FD_ISSET is meaningless on these sockets
@@ -592,6 +589,10 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			 */
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
+			AssertRelease(rc != SOCKET_ERROR);
+#endif
 
 			/*
 			 * Check for URG data

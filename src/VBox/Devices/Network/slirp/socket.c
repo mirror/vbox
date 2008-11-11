@@ -60,7 +60,8 @@ socreate()
     so->so_state = SS_NOFDREF;
     so->s = -1;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-    WSACreateEvent(so->hNetworkEvent); /*XXX: NOT correct place*/
+    so->hNetworkEvent = WSACreateEvent(); /*XXX: NOT correct place*/
+    AssertRelease(so->hNetworkEvent != WSA_INVALID_EVENT);
 #endif
   }
   return(so);
