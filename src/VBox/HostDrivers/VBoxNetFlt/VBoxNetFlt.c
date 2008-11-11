@@ -1118,6 +1118,16 @@ DECLHIDDEN(bool) vboxNetFltCanUnload(PVBOXNETFLTGLOBALS pGlobals)
     return fRc;
 }
 
+/**
+ * tries to deinitialize Idc
+ * we separate the globals settings "base" which is actually
+ * "general" globals settings except for Idc, and idc.
+ * This is needed for windows filter driver, which gets loaded prior to VBoxDrv,
+ * thus it's not possible to make idc initialization from the driver startup routine for it,
+ * though the "base is still needed for the driver to functions".
+ * @param pGlobals
+ * @return VINF_SUCCESS on succes, VERR_WRONG_ORDER if we're busy.
+ */
 DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals)
 {
     int rc;
@@ -1148,6 +1158,16 @@ DECLHIDDEN(int) vboxNetFltTryDeleteIdc(PVBOXNETFLTGLOBALS pGlobals)
     return rc;
 }
 
+/**
+ * performs "base" globals deinitialization
+ * we separate the globals settings "base" which is actually
+ * "general" globals settings except for Idc, and idc.
+ * This is needed for windows filter driver, which gets loaded prior to VBoxDrv,
+ * thus it's not possible to make idc initialization from the driver startup routine for it,
+ * though the "base is still needed for the driver to functions".
+ * @param pGlobals
+ * @return none
+ */
 DECLHIDDEN(void) vboxNetFltDeleteGlobalsBase(PVBOXNETFLTGLOBALS pGlobals)
 {
     /*
