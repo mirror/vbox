@@ -75,7 +75,7 @@
 <if target="xpidl">
   <!-- NS_IMPL_THREADSAFE_ISUPPORTSxx_CI macros are placed here, for convenience -->
   <cpp>
-/* currenty, nsISupportsImpl.h lacks the below-like macros */
+/* currently, nsISupportsImpl.h lacks the below-like macros */
 
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI  NS_IMPL_QUERY_INTERFACE1_CI
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI  NS_IMPL_QUERY_INTERFACE2_CI
@@ -212,7 +212,7 @@
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
           aforementioned comparisons valid, this state must immediately
-          preceed the Paused state.
+          precede the Paused state.
         </note>
       </desc>
     </const>
@@ -530,7 +530,7 @@
     </const>
     <const name="MemKernelNonpaged"    value="13">
       <desc>
-        Total amount of nonpaged memory used by the guest OS's kernel in megabytes.
+        Total amount of non-paged memory used by the guest OS's kernel in megabytes.
       </desc>
     </const>
     <const name="MemSystemCache"       value="14">
@@ -1367,7 +1367,7 @@
 
         Note that the actual storage unit is not created by this method. In
         order to do it, and before you are able to attach the created hard disk
-        to virtual machiens, you must call one of the following methods to
+        to virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
           <li><link to="IHardDisk2::createDynamicStorage()"/></li>
@@ -1381,7 +1381,7 @@
 
         After the storage unit is successfully created, the hard disk gets
         remembered by this VirtualBox installation and will be accessible
-        trhough <link to="#getHardDisk2()"/> and <link to="#findHardDisk2()"/>
+        through <link to="#getHardDisk2()"/> and <link to="#findHardDisk2()"/>
         methods. Remembered root (base) hard disks are also returned as part of
         the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
 
@@ -1414,7 +1414,7 @@
 
         After the hard disk is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible trhough <link to="#getHardDisk2()"/> and
+        accessible through <link to="#getHardDisk2()"/> and
         <link to="#findHardDisk2()"/> methods. Remembered root (base) hard disks
         are also returned as part of the <link to="#hardDisks2"/> array and can
         be attached to virtual machines. See IHardDisk2 for more details.
@@ -1473,13 +1473,13 @@
         the <link to="IHardDisk2::location"/> attribute of each known hard
         disk.
 
-        For locations repesented by file names in the host's filesystem, the
+        For locations represented by file names in the host's file system, the
         requested location can be a path relative to the
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
         only a file name without any path is given, the
         <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-        folder</link> will be prepended to the file name before seacrhing. Note
-        that on case sensitive filesystems, a case sensitive comparison is
+        folder</link> will be prepended to the file name before searching. Note
+        that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
       </desc>
       <param name="location" type="wstring" dir="in">
@@ -1497,7 +1497,7 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible trhough <link to="#getDVDImage()"/> and
+        accessible through <link to="#getDVDImage()"/> and
         <link to="#findDVDImage()"/> methods. Remembered images are also
         returned as part of the <link to="#DVDImages"/> array and can be mounted
         to virtual machines. See IMedium for more details.
@@ -1557,8 +1557,8 @@
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
         only a file name without any path is given, the
         <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-        folder</link> will be prepended to the file name before seacrhing. Note
-        that on case sensitive filesystems, a case sensitive comparison is
+        folder</link> will be prepended to the file name before searching. Note
+        that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
       </desc>
       <param name="location" type="wstring" dir="in">
@@ -1576,7 +1576,7 @@
 
         After the image is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
-        accessible trhough <link to="#getFloppyImage()"/> and
+        accessible through <link to="#getFloppyImage()"/> and
         <link to="#findFloppyImage()"/> methods. Remembered images are also
         returned as part of the <link to="#floppyImages"/> array and can be
         mounted to virtual machines. See IMedium for more details.
@@ -1590,7 +1590,7 @@
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>
-          Full path to the file that contains a valid floopy image.
+          Full path to the file that contains a valid floppy image.
         </desc>
       </param>
       <param name="id" type="uuid" dir="in">
@@ -1636,8 +1636,8 @@
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
         only a file name without any path is given, the
         <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-        folder</link> will be prepended to the file name before seacrhing. Note
-        that on case sensitive filesystems, a case sensitive comparison is
+        folder</link> will be prepended to the file name before searching. Note
+        that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
       </desc>
       <param name="location" type="wstring" dir="in">
@@ -2240,7 +2240,7 @@
       <param name="progress" type="IProgress" dir="return">
         <desc>
           Used to wait until the corresponding machine is actually
-          deassociated from the given session on the server.
+          dissociated from the given session on the server.
           Returned only when this session is a direct one.
         </desc>
       </param>
@@ -2381,7 +2381,7 @@
     <method name="pullGuestProperties">
       <desc>
         Get the list of the guest properties matching a set of patterns along
-        with their values, timestamps and flags and give responsibility for
+        with their values, time stamps and flags and give responsibility for
         managing properties to the console.
       </desc>
       <param name="name" type="wstring" dir="out" safearray="yes">
@@ -2397,7 +2397,7 @@
       </param>
       <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
         <desc>
-          The timestamps of the properties returned.  The array entries match
+          The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
@@ -2412,7 +2412,7 @@
     <method name="pushGuestProperties">
       <desc>
         Set the list of the guest properties matching a set of patterns along
-        with their values, timestamps and flags and return responsibility for
+        with their values, time stamps and flags and return responsibility for
         managing properties to IMachine.
       </desc>
       <param name="name" type="wstring" dir="in" safearray="yes">
@@ -2428,7 +2428,7 @@
       </param>
       <param name="timestamp" type="unsigned long long" dir="in" safearray="yes">
         <desc>
-          The timestamps of the properties.  The array entries match
+          The time stamps of the properties.  The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
@@ -2577,7 +2577,7 @@
     </desc>
 
     <attribute name="parent" type="IVirtualBox" readonly="yes">
-      <desc>Associated parent obect.</desc>
+      <desc>Associated parent object.</desc>
     </attribute>
 
     <attribute name="accessible" type="boolean" readonly="yes">
@@ -2990,7 +2990,7 @@
         Full path to the folder that stores a set of rotated log files
         recorded during machine execution. The most recent log file is
         named <tt>VBox.log</tt>, the previous log file is
-        named <tt>VBox.log.1</tt> and so on (upto <tt>VBox.log.3</tt>
+        named <tt>VBox.log.1</tt> and so on (up to <tt>VBox.log.3</tt>
         in the current version).
       </desc>
     </attribute>
@@ -3140,7 +3140,7 @@
 
         For the primary controller of the IDE bus, the @a device number can be
         either @c 0 or @c 1, to specify the master or the slave device,
-        respectively. For the scondary IDE controller, the device number is
+        respectively. For the secondary IDE controller, the device number is
         always @c 1 because the master device is reserved for the CD-ROM drive.
 
         For the SATA bus, the @a device parameter is not currently used and
@@ -3160,9 +3160,9 @@
         <note>
           If the hard disk is being attached indirectly, a new differencing hard
           disk will be implicitly created for it and attached instead. If the
-          changes made to the machine settings (icluding this indirect
+          changes made to the machine settings (including this indirect
           attachment) are later cancelled using <link to="#discardSettings()"/>,
-          this implicitly created diffrerencing hard disk will be implicitly
+          this implicitly created differencing hard disk will be implicitly
           deleted.
         </note>
       </desc>
@@ -3213,7 +3213,7 @@
         specified bus.
 
         Detaching the hard disk from the virtual machine is deferred. This means
-        that the hard disk remains associated with the machine when this methor
+        that the hard disk remains associated with the machine when this method
         returns and gets actually de-associated only after a successful
         <link to="#saveSettings()"/> call. See <link to="IHardDisk2"/>
         for more detailed information about attaching hard disks.
@@ -3687,7 +3687,7 @@
     <method name="enumerateGuestProperties">
       <desc>
         Return a list of the guest properties matching a set of patterns along
-        with their values, timestamps and flags.
+        with their values, time stamps and flags.
       </desc>
       <param name="patterns" type="wstring" dir="in">
         <desc>
@@ -3708,7 +3708,7 @@
       </param>
       <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
         <desc>
-          The timestamps of the properties returned.  The array entries match
+          The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
@@ -3955,7 +3955,7 @@
         changed.
       </desc>
       <param name="scope" type="Scope" dir="in">
-        <desc>Sope of the notification.</desc>
+        <desc>Scope of the notification.</desc>
       </param>
     </method>
 
@@ -4002,7 +4002,7 @@
         do is to post a message to another thread that will then talk
         to the user and take the corresponding action.
 
-        Currently, the following error identificators are known:
+        Currently, the following error identifiers are known:
         <ul>
           <li><tt>"HostMemoryLow"</tt></li>
           <li><tt>"HostAudioNotResponding"</tt></li>
@@ -4023,7 +4023,7 @@
         <desc>Whether the error is fatal or not</desc>
       </param>
       <param name="id" type="wstring" dir="in">
-        <desc>Error identificator</desc>
+        <desc>Error identifier</desc>
       </param>
       <param name="message" type="wstring" dir="in">
         <desc>Optional error message</desc>
@@ -4551,10 +4551,10 @@
         Detaches an USB device with the given UUID from the USB controller
         of the virtual machine.
 
-        After this method succeeds, the VirtualBox server reinitiates
+        After this method succeeds, the VirtualBox server re-initiates
         all USB filters as if the device were just physically attached
         to the host, but filters of this machine are ignored to avoid
-        a possible automatic reattachment.
+        a possible automatic re-attachment.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
       </desc>
@@ -5281,7 +5281,7 @@
     </desc>
 
     <attribute name="minGuestRAM" type="unsigned long" readonly="yes">
-      <desc>Minium guest system memory in Megabytes.</desc>
+      <desc>Minimum guest system memory in Megabytes.</desc>
     </attribute>
 
     <attribute name="maxGuestRAM" type="unsigned long" readonly="yes">
@@ -5370,7 +5370,7 @@
         virtual disks.
 
         This path is used when the storage unit of a hard disk is a regular file
-        in the host's filesystem and only a file name that contains no path is
+        in the host's file system and only a file name that contains no path is
         given.
 
         The initial value of this property is
@@ -5459,7 +5459,7 @@
         meaning that the webservice will use the same authentication
         library that is used by default for VBoxVRDP (again, see
         <link to="ISystemProperties::remoteDisplayAuthLibrary" />).
-        The format and calling convetion of authentication libraries
+        The format and calling convention of authentication libraries
         is the same for the webservice as it is for VBoxVRDP.
 
       </desc>
@@ -5615,7 +5615,7 @@
         <desc>Password string, can be empty</desc>
       </param>
       <param name="domain" type="wstring" dir="in">
-        <desc>Domain name (guest logon scheme specific), can be emtpy</desc>
+        <desc>Domain name (guest logon scheme specific), can be empty</desc>
       </param>
       <param name="allowInteractiveLogon" type="boolean" dir="in">
         <desc>
@@ -5853,7 +5853,7 @@
       and <link to="IConsole::takeSnapshot()"/> operation adds a new
       snapshot to the top of that branch.
 
-      Existings snapshots can be discarded using
+      Existing snapshots can be discarded using
       <link to="IConsole::discardSnapshot()"/>.
 
       <h3>Current snapshot</h3>
@@ -6111,7 +6111,7 @@
       When an existing medium gets opened for the first time, it gets
       automatically remembered by the given VirtualBox installation or, in other
       words, becomes a <i>known medium</i>. Known media are stored in the media
-      registry transparently maintaned by VirtualBox and stored in settings
+      registry transparently maintained by VirtualBox and stored in settings
       files so that this registry is preserved when VirtualBox is not running.
 
       Newly created virtual hard disks get remembered only when the associated
@@ -6138,13 +6138,13 @@
       Accessible media are indicated by the <link to="MediaState::Created"/>
       value of the <link to="#state"/> attribute. When the storage unit cannot
       be read (for example, because it is located on a disconnected network
-      resource, or was accidentially deleted outside VirtualBox), the medium is
+      resource, or was accidentally deleted outside VirtualBox), the medium is
       considered to be <i>inaccessible</i> which is indicated by the
       <link to="MediaState::Inaccessible"/> state. The details about the reason
       of being inaccessible can be obtained using the
       <link to="#lastAccessError"/> attribute.
 
-      A new accessiblity check is performed each time the <link to="#state"/>
+      A new accessibility check is performed each time the <link to="#state"/>
       attribute is read. Please note that this check may take long time (several
       seconds or even minutes, depending on the storage unit location and
       format), and will block the calling thread until finished. For this
@@ -6201,7 +6201,7 @@
         operation expires.
 
         If the last known state of the medium is <link to="MediaState::Created"/>
-        and the accessibility check fails then the state wull be set to
+        and the accessibility check fails then the state would be set to
         <link to="MediaState::Inaccessible"/> and <link to="#lastAccessError"/>
         may be used to get more details about the failure. If the state of the
         medium is <link to="MediaState::LockedRead"/> or
@@ -6221,7 +6221,7 @@
       <desc>
         Location of the storage unit holding media data.
 
-        The format of the loocation string is media type specific. For media
+        The format of the location string is media type specific. For media
         types that use regular files in a host's file system, the location
         string is just a full file name.
 
@@ -6274,12 +6274,12 @@
 
     <attribute name="lastAccessError" type="wstring" readonly="yes">
       <desc>
-        Text message that represents the result of the last acccessibility
+        Text message that represents the result of the last accessibility
         check.
 
         Accessibility checks are performed each time the <link to="#state"/>
         attribute is read. A @c null string is returned if the last
-        accessibility check was succeessful. A non-null string indicates a
+        accessibility check was successful. A non-null string indicates a
         failure and should normally describe a reason of the failure (for
         example, a file read error).
       </desc>
@@ -6309,7 +6309,7 @@
         If the medium is attached to the machine in the current state, then the
         first element in the array will always be the ID of the queried machine
         (i.e. the value equal to the @c machineId argument), followed by
-        snapshit IDs (if any).
+        snapshot IDs (if any).
 
         If the medium is not attached to the machine in the current state, then
         the array will contain only snapshot IDs.
@@ -6354,10 +6354,10 @@
         <link to="#unlockRead()"/> calls.
 
         This method sets the media state to <link to="MediaState::LockedRead"/>
-        on success. The state proir to this call must be
+        on success. The state prior to this call must be
         <link to="MediaState::Created"/>,
         <link to="MediaState::Inaccessible"/> or
-        <link to="MediaState::LockedRead"/>. As you can see, inacessible media
+        <link to="MediaState::LockedRead"/>. As you can see, inaccessible media
         can be locked too. This is not an error; this method performs a logical
         lock that prevents modifications of this media through the VirtualBox
         API, not a physical lock of the underlying storage unit.
@@ -6413,9 +6413,9 @@
         <link to="#unlockWrite()"/> call.
 
         This method sets the media state to <link to="MediaState::LockedWrite"/>
-        on success. The state proir to this call must be
+        on success. The state prior to this call must be
         <link to="MediaState::Created"/> or
-        <link to="MediaState::Inaccessible"/>. As you can see, inacessible media
+        <link to="MediaState::Inaccessible"/>. As you can see, inaccessible media
         can be locked too. This is not an error; this method performs a logical
         lock that prevents modifications of this media through the VirtualBox
         API, not a physical lock of the underlying storage unit.
@@ -6450,7 +6450,7 @@
       <desc>
         Closes this media.
 
-        The hard disk must not be attahced to any known virtual machine and must
+        The hard disk must not be attached to any known virtual machine and must
         not have any known child hard disks, otherwise the operation will fail.
 
         When the hard disk is successfully closed, it gets removed from the list
@@ -6614,7 +6614,7 @@
       </ul>
 
       If the storage unit of the hard disk is a regular file in the host's
-      filesystem then the rules stated in the description of the
+      file system then the rules stated in the description of the
       <link to="IMedium::location"/> attribute apply when setting its value. In
       addition, a plain file name without any path may be given, in which case
       the <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
@@ -6630,7 +6630,7 @@
       value of the <link to="IMedium::location"/> attribute to a location
       specification which only contains the path specification but not the file
       name part and ends with either a forward slash or a backslash character.
-      In response, VirtualBox will genereate a new UUID for the hard disk and
+      In response, VirtualBox will generate a new UUID for the hard disk and
       compose the file name using the following pattern:
       <pre>
         &lt;path&gt;/{&lt;uuid&gt;}.&lt;ext&gt;
@@ -6638,7 +6638,7 @@
       where <tt>&lt;path&gt;</tt> is the supplied path specification,
       <tt>&lt;uuid&gt;</tt> is the newly generated UUID and <tt>&lt;ext&gt;</tt>
       is the default extension for the storage format of this hard disk. After
-      that, you may call any of the metods that create a new hard disk storage
+      that, you may call any of the methods that create a new hard disk storage
       unit and they will use the generated UUID and file name.
 
       <h3>Attaching Hard Disks</h3>
@@ -6697,7 +6697,7 @@
         <tr>
           <td>Immutable</td>
           <td>
-            Immutabe hard disks are always attached <b>indirectly</b> because
+            Immutable hard disks are always attached <b>indirectly</b> because
             they are designed to be non-writable. If an immutable hard disk is
             attached to a virtual machine with snapshots then a special
             procedure called smart attachment is performed (see below).
@@ -6751,7 +6751,7 @@
       <h3>Smart Attachment</h3>
 
       When normal base or immutable hard disks are indirectly attached to a
-      virtual machine then some additionals steps are performed to make sure the
+      virtual machine then some additional steps are performed to make sure the
       virtual machine will have the most recent "view" of the hard disk being
       attached. These steps include walking through the machine's snapshots
       starting from the current one and going through ancestors up to the first
@@ -6808,11 +6808,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       is not related to snapshots at all. Before walking through the snapshots
       as described above, the backup copy of the current list of hard disk
       attachment is searched for descendants. This backup copy is created when
-      the hard disk configuartion is changed for the first time after the last
+      the hard disk configuration is changed for the first time after the last
       <link to="IMachine::saveSettings()"/> call and used by
       <link to="IMachine::discardSettings()"/> to undo the recent hard disk
       changes. When such a descendant is found in this backup copy, it will be
-      simply reattached back, without creating a new differencing hard disk for
+      simply re-attached back, without creating a new differencing hard disk for
       it. This optimization is necessary to make it possible to re-attach the
       base or immutable hard disk to a different bus, channel or device slot
       without losing the contents of the differencing hard disk actually
@@ -6893,7 +6893,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         otherwise.
 
         A hard disk is considered to be read-only when its contents cannot be
-        modified without breaking the integrity of other parties that depednd on
+        modified without breaking the integrity of other parties that depend on
         this hard disk such as its child hard disks or snapshots of virtual
         machines where this hard disk is attached to these machines. If there
         are no children and no such snapshots then there is no dependency and
@@ -6923,7 +6923,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="logicalSize" type="unsigned long long" readonly="yes">
       <desc>
         Logical size of this hard disk (in megabytes), as reported to the
-        guest OS running inside the vurtual machine this disk is
+        guest OS running inside the virtual machine this disk is
         attached to. The logical size is defined when the hard disk is created
         and cannot be changed later.
 
@@ -6944,7 +6944,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="createDynamicStorage">
       <desc>
-        Starts creating a dymically expanding hard disk storage unit in the
+        Starts creating a dynamically expanding hard disk storage unit in the
         background. The previous storage unit created for this this object, if
         any, must be first deleted using <link to="#deleteStorage"/>, otherwise
         the operation will fail.
@@ -6996,7 +6996,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Starts deleting the storage unit of this hard disk.
 
-        The hard disk must not be attahced to any known virtual machine and must
+        The hard disk must not be attached to any known virtual machine and must
         not have any known child hard disks, otherwise the operation will fail.
         It will also fail if there is no storage unit to delete or if deletion
         is already in progress, or if the hard disk is being in use (locked for
@@ -7089,7 +7089,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         disks. Note that <tt>Diff_2</tt> in this case will become a base hard
         disk itself since it will no longer be based on any other hard disk.
 
-        Considering the above, all of the following condtions must be met in
+        Considering the above, all of the following conditions must be met in
         order for the merge operation to succeed:
         <ul>
           <li>
@@ -7277,7 +7277,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         The format backend operates on files. The <link to="IMedium::location"/>
         attribute of the hard disk specifies a file used to store hard disk
-        data. For a list of supported file extentions see
+        data. For a list of supported file extensions see
         <link to="IHardDiskFormat::fileExtensions"/>.
       </desc>
     </const>
@@ -7286,7 +7286,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         The format backend uses the property interface to configure the storage
         location and properties. The <link to="IHardDiskFormat::describeProperties"/>
-        method is used to get access to poperties supported by the given hard
+        method is used to get access to properties supported by the given hard
         disk format.
       </desc>
     </const>
@@ -7340,7 +7340,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Array of strings containing the supported file extensions.
 
         The first extension in the array is the extension preferred by the
-        backend. It is recommended to use this extension when specifyng a
+        backend. It is recommended to use this extension when specifying a
         location of the storage unit for a new hard disk.
 
         Note that some backends do not work on files, so this array may be
@@ -7354,7 +7354,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Capabilities of the format as a set of bit flags.
 
-        For the meaning of individual capabilitiy flags see
+        For the meaning of individual capability flags see
         <link to="HardDiskFormatCapabilities"/>.
       </desc>
     </attribute>
@@ -7633,13 +7633,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="dx" type="long" dir="in">
         <desc>
-          Amout of pixels the mouse should move to the right.
+          Amount of pixels the mouse should move to the right.
           Negative values move the mouse to the left.
         </desc>
       </param>
       <param name="dy" type="long" dir="in">
         <desc>
-          Amout of pixels the mouse should move downwards.
+          Amount of pixels the mouse should move downwards.
           Negative values move the mouse upwards.
         </desc>
       </param>
@@ -7692,7 +7692,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="dz" type="long" dir="in">
         <desc>
-          Amout of mouse wheel moves.
+          Amount of mouse wheel moves.
           Positive values describe clockwise wheel rotations,
           negative values describe counterclockwise rotations.
         </desc>
@@ -7724,7 +7724,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="f0e5ebbe-dc8e-4e2d-916e-53baa3844df8"
   >
     <desc>
-      Framebuffer acceleration operation.
+      Frame buffer acceleration operation.
     </desc>
 
     <const name="SolidFillAcceleration"   value="1"/>
@@ -7764,15 +7764,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      wsmap="suppress"
      >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
-      <desc>Address of the start byte of the framebuffer.</desc>
+      <desc>Address of the start byte of the frame buffer.</desc>
     </attribute>
 
     <attribute name="width" type="unsigned long" readonly="yes">
-      <desc>Framebuffer width, in pixels.</desc>
+      <desc>Frame buffer width, in pixels.</desc>
     </attribute>
 
     <attribute name="height" type="unsigned long" readonly="yes">
-      <desc>Framebuffer height, in pixels.</desc>
+      <desc>Frame buffer height, in pixels.</desc>
     </attribute>
 
     <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
@@ -7793,7 +7793,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="pixelFormat" type="unsigned long" readonly="yes">
       <desc>
-        Framebuffer pixel format. It's either one of the values defined by <link
+        Frame buffer pixel format. It's either one of the values defined by <link
         to="FramebufferPixelFormat"/> or a raw FOURCC code.
         <note>
           This attribute must never return <link
@@ -7805,7 +7805,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="usesGuestVRAM" type="boolean" readonly="yes">
       <desc>
-        Defines whether this framebuffer uses the virtual video card's memory
+        Defines whether this frame buffer uses the virtual video card's memory
         buffer (guest VRAM) directly or not. See <link
         to="IFramebuffer::requestResize()"/> for more information.
       </desc>
@@ -7813,7 +7813,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="heightReduction" type="unsigned long" readonly="yes">
       <desc>
-        Hint from the framebuffer about how much of the standard
+        Hint from the frame buffer about how much of the standard
         screen height it wants to use for itself. This information is
         exposed to the guest through the VESA BIOS and VMMDev interface
         so that it can use it for determining its video mode table. It
@@ -7823,7 +7823,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="overlay" type="IFramebufferOverlay" readonly="yes">
       <desc>
-        An alpha-blended overlay which is superposed over the framebuffer.
+        An alpha-blended overlay which is superposed over the frame buffer.
         The initial purpose is to allow the display of icons providing
         information about the VM state, including disk activity, in front
         ends which do not have other means of doing that.  The overlay is
@@ -7839,22 +7839,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="winId" type="unsigned long long" readonly="yes">
       <desc>
         Platform-dependent identifier of the window where context of this
-        framebuffer is drawn, or zero if there's no such window.
+        frame buffer is drawn, or zero if there's no such window.
       </desc>
     </attribute>
 
     <method name="lock">
       <desc>
-        Locks the framebuffer.
-        Gets called by the IDisplay object where this framebuffer is
+        Locks the frame buffer.
+        Gets called by the IDisplay object where this frame buffer is
         bound to.
       </desc>
     </method>
 
     <method name="unlock">
       <desc>
-        Unlocks the framebuffer.
-        Gets called by the IDisplay object where this framebuffer is
+        Unlocks the frame buffer.
+        Gets called by the IDisplay object where this frame buffer is
         bound to.
       </desc>
     </method>
@@ -7911,7 +7911,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         supported formats). In all other cases, @a pixelFormat together with @a
         bitsPerPixel and @a bytesPerLine define the format of the video memory
         buffer pointed to by the @a VRAM parameter and the implementation is
-        free to choose which mode to use. To indicate that this framebuffer uses
+        free to choose which mode to use. To indicate that this frame buffer uses
         the direct mode, the implementation of the <link to="#usesGuestVRAM"/>
         attribute must return <tt>true</tt> and <link to="#address"/> must
         return exactly the same address that is passed in the @a VRAM parameter
@@ -7923,22 +7923,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         provided memory buffer should be big enough to store data of the given
         display mode. In case of direct mode, it is guaranteed that the given @a
         VRAM buffer contains enough space to represent the display mode of the
-        given size. Note that this framebuffer's <link to="#width"/> and <link
+        given size. Note that this frame buffer's <link to="#width"/> and <link
         to="#height"/> attributes must return exactly the same values as
         passed to this method after the resize is completed (see below).
 
         The @a finished output parameter determines if the implementation has
-        finished resizing the framebuffer or not. If, for some reason, the
+        finished resizing the frame buffer or not. If, for some reason, the
         resize cannot be finished immediately during this call, @a finished
         must be set to @c false, and the implementation must call
         <link to="IDisplay::resizeCompleted()"/> after it has returned from
         this method as soon as possible. If @a finished is @c false, the
-        machine will not call any framebuffer methods until
+        machine will not call any frame buffer methods until
         <link to="IDisplay::resizeCompleted()"/> is called.
 
         Note that if the direct mode is chosen, the <link to="#bitsPerPixel"/>,
         <link to="#bytesPerLine"/> and <link to="#pixelFormat"/> attributes of
-        this framebuffer must return exactly the same values as specified in the
+        this frame buffer must return exactly the same values as specified in the
         parameters of this method, after the resize is completed. If the
         indirect mode is chosen, these attributes must return values describing
         the format of the implementation's own memory buffer <link
@@ -7984,7 +7984,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="finished" type="boolean" dir="return">
         <desc>
-          Can the VM start using the new framebuffer immediately
+          Can the VM start using the new frame buffer immediately
           after this method returns or it should wait for
           <link to="IDisplay::resizeCompleted()"/>.
         </desc>
@@ -8009,7 +8009,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="videoModeSupported">
       <desc>
-        Returns whether the framebuffer implementation is willing to
+        Returns whether the frame buffer implementation is willing to
         support a given video mode. In case it is not able to render
         the video mode (or for some reason not willing), it should
         return false. Usually this method is called when the guest
@@ -8050,7 +8050,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getVisibleRegion">
       <desc>
-        Returns the visible region of this framebuffer.
+        Returns the visible region of this frame buffer.
 
         If the @a rectangles parameter is <tt>NULL</tt> then the value of the
         @a count parameter is ignored and the number of elements necessary to
@@ -8080,7 +8080,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setVisibleRegion">
       <desc>
-        Suggests a new visible region to this framebuffer.  This region
+        Suggests a new visible region to this frame buffer.  This region
         represents the area of the VM display which is a union of regions of
         all top-level windows of the guest operating system running inside the
         VM (if the Guest Additions for this system support this
@@ -8122,11 +8122,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       make it more suitable for the front end.
     </desc>
     <attribute name="x" type="unsigned long" readonly="yes">
-      <desc>X position of the overlay, relative to the framebuffer.</desc>
+      <desc>X position of the overlay, relative to the frame buffer.</desc>
     </attribute>
 
     <attribute name="y" type="unsigned long" readonly="yes">
-      <desc>Y position of the overlay, relative to the framebuffer.</desc>
+      <desc>Y position of the overlay, relative to the frame buffer.</desc>
     </attribute>
 
     <attribute name="visible" type="boolean" readonly="no">
@@ -8185,27 +8185,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setupInternalFramebuffer">
       <desc>
-        Prepares an internally managed framebuffer.
+        Prepares an internally managed frame buffer.
       </desc>
       <param name="depth" type="unsigned long" dir="in"/>
     </method>
 
     <method name="lockFramebuffer">
       <desc>
-        Requests access to the internal framebuffer.
+        Requests access to the internal frame buffer.
       </desc>
       <param name="address" type="octet" mod="ptr" dir="return"/>
     </method>
 
     <method name="unlockFramebuffer">
       <desc>
-        Releases access to the internal framebuffer.
+        Releases access to the internal frame buffer.
       </desc>
     </method>
 
     <method name="registerExternalFramebuffer">
       <desc>
-        Registers an external framebuffer.
+        Registers an external frame buffer.
       </desc>
       <param name="framebuffer" type="IFramebuffer" dir="in"/>
     </method>
@@ -9009,7 +9009,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="port" type="unsigned short" readonly="yes">
       <desc>
         Host USB port number the device is physically
-        coonected to.
+        connected to.
       </desc>
     </attribute>
 
@@ -9102,7 +9102,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         </li>
         <li><i>Exact match</i>. Used to specify a single value for the given
-          device attribute. Any string that does't start with <tt>int:</tt>
+          device attribute. Any string that doesn't start with <tt>int:</tt>
           represents the exact match. String device attributes are compared to
           this string including case of symbols. Integer attributes are first
           converted to a string (see individual filter attributes) and then
@@ -9209,7 +9209,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="maskedInterfaces" type="unsigned long">
       <desc>
        This is an advanced option for hiding one or more USB interfaces
-       from the guest. The value is a bitmask where the bits that are set
+       from the guest. The value is a bit mask where the bits that are set
        means the corresponding USB interface should be hidden, masked off
        if you like.
        This feature only works on Linux hosts.
@@ -9236,7 +9236,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Once a supported USB device is attached to the host, global USB
       filters (<link to="IHost::USBDeviceFilters"/>) are activated. They can
-      either ignore the device, or put ot to #Held state, or do nothing. Unless
+      either ignore the device, or put it to #Held state, or do nothing. Unless
       the device is ignored by global filters, filters of all currently running
       guests (<link to="IUSBController::deviceFilters"/>) are activated that can
       put it to #Captured state.
@@ -9783,7 +9783,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="onSerialPortChange">
       <desc>
-        Triggered when settions of a serial port of the
+        Triggered when settings of a serial port of the
         associated virtual machine have changed.
       </desc>
       <param name="serialPort" type="ISerialPort" dir="in"/>
@@ -9880,7 +9880,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="enumerateGuestProperties">
       <desc>
         Return a list of the guest properties matching a set of patterns along
-        with their values, timestamps and flags.
+        with their values, time stamps and flags.
       </desc>
       <param name="patterns" type="wstring" dir="in">
         <desc>
@@ -9902,7 +9902,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="timestamp" type="unsigned long long" dir="out" safearray="yes">
         <desc>
-          The timestamps of the properties returned.  The array entries match
+          The time stamps of the properties returned.  The array entries match
           the corresponding entries in the @a key array.
         </desc>
       </param>
@@ -10314,7 +10314,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       The general sequence for collecting and retrieving the metrics is:
       <ul>
         <li>
-          Obtain an instance of IPerfromanceCollector with
+          Obtain an instance of IPerformanceCollector with
           <link to="IVirtualBox::performanceCollector" />
         </li>
         <li>
