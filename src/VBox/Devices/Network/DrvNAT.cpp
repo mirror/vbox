@@ -306,7 +306,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         AssertRelease(event != WSA_WAIT_FAILED);
 
 	if (event == WSA_WAIT_TIMEOUT) {
-		continue;
+            slirp_select_poll(pThis->pNATState, NULL, NULL, NULL);
+	    continue;
 	}
 
         /*
