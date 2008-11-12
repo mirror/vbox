@@ -25,6 +25,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
 else ifdef VBOX_ONLY_DOCS
@@ -46,6 +47,7 @@ else
  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostServices/Makefile.kmk
  ifdef VBOX_WITH_DEBUGGER
   include $(PATH_SUB_CURRENT)/Debugger/Makefile.kmk
@@ -71,6 +73,7 @@ include $(KBUILD_PATH)/header.kmk
 ifdef VBOX_ONLY_ADDITIONS
  SUBDIRS = \
 	Runtime \
+	GuestHost \
 	Additions
 
 else ifdef VBOX_ONLY_DOCS
@@ -94,6 +97,7 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 	VMM \
 	Devices \
 	Disassembler \
+	GuestHost \
 	HostServices
 
  ifdef VBOX_WITH_DEBUGGER
