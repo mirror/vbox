@@ -558,6 +558,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 	WSANETWORKEVENTS NetworkEvents;			
 	int rc;
+	int timer_update = (readfds == NULL && writefds == NULL && xfds == NULL);
 #endif
 
 	/* Update time */
@@ -577,6 +578,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			last_slowtimo = curtime;
 		}
 	}
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+	if (timer_update) return;
+#endif
 
 	/*
 	 * Check sockets
