@@ -223,6 +223,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     }
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     /*XXX:probably should be configurable*/
+    pData->cMaxEvent = 256;
     pData->phEvents = malloc(sizeof(HANDLE) * pData->cMaxEvent);
 #endif
 #endif
@@ -399,7 +400,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			   continue;
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			AssertRelease(cEvents >= pData->cMaxEvent);
+			AssertRelease(cEvents < pData->cMaxEvent);
 			WSAResetEvent(so->hNetworkEvent);
 #endif
 			/*
@@ -501,7 +502,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				WSAResetEvent(so->hNetworkEvent);
-				AssertRelease(cEvents >= pData->cMaxEvent);
+				AssertRelease(cEvents < pData->cMaxEvent);
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
