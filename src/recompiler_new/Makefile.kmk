@@ -27,7 +27,6 @@ REM_MOD              += VBoxREM
 #DLLS                 += VBoxREM
 IMPORT_LIBS          += VBoxREM
 
-DEFS                 += VBOX_WITH_NEW_RECOMPILER
 $(REM_MOD)_TEMPLATE  = VBOXR3NP
 
 OTHER_CLEAN          += 
