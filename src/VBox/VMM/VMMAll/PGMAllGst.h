@@ -515,7 +515,7 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                     pVM->pgm.s.pShwPaePml4R0          = 0;
 #  endif
-                    pVM->pgm.s.HCPhysPaePML4          = 0;
+                    pVM->pgm.s.HCPhysShwPaePml4       = 0;
                 }
 
                 Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
@@ -538,7 +538,7 @@ l_try_again:
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                 pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
 #  endif
-                pVM->pgm.s.HCPhysPaePML4 = pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->Core.Key;
+                pVM->pgm.s.HCPhysShwPaePml4 = pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->Core.Key;
             }
 # endif
         }
@@ -601,7 +601,7 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVM->pgm.s.pShwPaePml4R0 = 0;
 # endif
-        pVM->pgm.s.HCPhysPaePML4 = 0;
+        pVM->pgm.s.HCPhysShwPaePml4 = 0;
         if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3))
         {
             PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);

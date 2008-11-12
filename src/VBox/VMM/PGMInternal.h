@@ -2094,7 +2094,7 @@ typedef struct PGM
     R0PTRTYPE(PX86PML4)             pShwPaePml4R0;
 #endif
     /** The Physical Address (HC) of the Page Map Level 4 table. */
-    RTHCPHYS                        HCPhysPaePML4;
+    RTHCPHYS                        HCPhysShwPaePml4;
     /** The pgm pool page descriptor for the current active CR3 - R3 Ptr. */
     R3PTRTYPE(PPGMPOOLPAGE)         pShwAmd64CR3R3;
     /** The pgm pool page descriptor for the current active CR3 - R0 Ptr. */
@@ -3973,8 +3973,8 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pShwPml4;
-    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
+    Assert(pPGM->HCPhysShwPaePml4 != 0 && pPGM->HCPhysShwPaePml4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePml4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return pShwPml4;
 #else
@@ -3996,8 +3996,8 @@ DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
     const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PML4       pShwPml4;
-    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
+    Assert(pPGM->HCPhysShwPaePml4 != 0 && pPGM->HCPhysShwPaePml4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePml4, &pShwPml4);
     if (RT_FAILURE(rc))
     {
         X86PML4E ZeroPml4e = {0};
@@ -4022,8 +4022,8 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 {
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4        pShwPml4;
-    Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
+    Assert(pPGM->HCPhysShwPaePml4 != 0 && pPGM->HCPhysShwPaePml4 != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePml4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return &pShwPml4->a[iPml4];
 # else
