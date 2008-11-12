@@ -373,7 +373,7 @@
 /** External or virtual interrupt. */
 #define SVM_EVENT_EXTERNAL_IRQ                  0
 /** Non-maskable interrupt. */
-#define SVM_EVENT_NMI                           1
+#define SVM_EVENT_NMI                           2
 /** Exception; fault or trap. */
 #define SVM_EVENT_EXCEPTION                     3
 /** Software interrupt. */
