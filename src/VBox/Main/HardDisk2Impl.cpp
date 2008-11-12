@@ -2706,7 +2706,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
             /* these parameters we need after creation */
             RTUUID uuid;
-            uint64_t size, logicalSize;
+            uint64_t size = 0, logicalSize = 0;
 
             try
             {
@@ -2804,7 +2804,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
              * RTThreadCreate()) that we can start the job*/
             AutoMultiWriteLock2 thatLock (that, target);
 
-            uint64_t size, logicalSize;
+            uint64_t size = 0, logicalSize = 0;
 
             try
             {
