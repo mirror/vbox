@@ -453,7 +453,7 @@ VMMR0_SOURCES   = \
 	VMMAll/TMAllVirtual.cpp \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
-	VMMAll/VMMAll.cpp \
+	VMMAll/VMMAll.cpp
 VMMR0_SOURCES.darwin = \
 	VMMR0/PGMR0DynMap.cpp
 
