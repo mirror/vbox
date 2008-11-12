@@ -931,7 +931,7 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
              *        trustworthy? (Remove pgmGstGetLongModePML4E if pGstPml4e and pGstPdpe
              *        are fine.) */
             Assert(pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
-            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
+            Pml4eGst = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
 
             rc = pgmPoolAlloc(pVM, Pml4eGst.u & X86_PML4E_PG_MASK,
                               PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->idx, iPml4, &pShwPage);
@@ -970,7 +970,7 @@ DECLINLINE(int) pgmShwSyncLongModePDPtr(PVM pVM, RTGCPTR64 GCPtr, PX86PML4E pGst
         {
             /** @todo why are we looking up the guest PDPTE here?  Isn't pGstPdpe
              *        trustworthy? */
-            Pml4eGst.u = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
+            Pml4eGst = pgmGstGetLongModePML4E(&pVM->pgm.s, iPml4);
             PX86PDPT pPdptGst;
             rc = PGM_GCPHYS_2_PTR(pVM, Pml4eGst.u & X86_PML4E_PG_MASK, &pPdptGst);
             AssertRCReturn(rc, rc);
