@@ -60,7 +60,7 @@ static void pgmR3MapIntermediateDoOne(PVM pVM, uintptr_t uAddress, RTHCPHYS HCPh
 VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc)
 {
     LogFlow(("PGMR3MapPT: GCPtr=%#x cb=%d pfnRelocate=%p pvUser=%p pszDesc=%s\n", GCPtr, cb, pfnRelocate, pvUser, pszDesc));
-    AssertMsg(pVM->pgm.s.pInterPD && pVM->pgm.s.pHC32BitPD, ("Paging isn't initialized, init order problems!\n"));
+    AssertMsg(pVM->pgm.s.pInterPD && pVM->pgm.s.pShw32BitPdR3, ("Paging isn't initialized, init order problems!\n"));
 
     /*
      * Validate input.
@@ -721,8 +721,8 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE)
         /*
          * 32-bit.
          */
-        pPGM->pInterPD->a[iOldPDE].u   = 0;
-        pPGM->pHC32BitPD->a[iOldPDE].u = 0;
+        pPGM->pInterPD->a[iOldPDE].u        = 0;
+        pPGM->pShw32BitPdR3->a[iOldPDE].u   = 0;
 
         /*
          * PAE.
@@ -770,13 +770,13 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         /*
          * 32-bit.
          */
-        if (pPGM->pHC32BitPD->a[iNewPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->pHC32BitPD->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
+        if (pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
+            pgmPoolFree(pVM, pPGM->pShw32BitPdR3->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
         X86PDE Pde;
         /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
         Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
-        pPGM->pInterPD->a[iNewPDE]   = Pde;
-        pPGM->pHC32BitPD->a[iNewPDE] = Pde;
+        pPGM->pInterPD->a[iNewPDE]        = Pde;
+        pPGM->pShw32BitPdR3->a[iNewPDE]   = Pde;
 
         /*
          * PAE.

@@ -254,7 +254,7 @@ int pgmR3PoolInit(PVM pVM)
     /* The Shadow 32-bit PD. (32 bits guest paging) */
     pPool->aPages[PGMPOOL_IDX_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PD].GCPhys    = NIL_RTGCPHYS;
-    pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = pVM->pgm.s.pHC32BitPD;
+    pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = pVM->pgm.s.pShw32BitPdR3;
     pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_ROOT_32BIT_PD;
     pPool->aPages[PGMPOOL_IDX_PD].idx       = PGMPOOL_IDX_PD;
 

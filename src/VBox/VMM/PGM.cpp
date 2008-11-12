@@ -1411,7 +1411,10 @@ static int pgmR3InitPaging(PVM pVM)
      * of the first 4GB down to PD level.
      * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
      */
-    pVM->pgm.s.pHC32BitPD    = (PX86PD)MMR3PageAllocLow(pVM);
+    pVM->pgm.s.pShw32BitPdR3    = (PX86PD)MMR3PageAllocLow(pVM);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.pShw32BitPdR0    = (uintptr_t)pVM->pgm.s.pShw32BitPdR3;
+#endif
     pVM->pgm.s.apShwPaePDsR3[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
     pVM->pgm.s.apShwPaePDsR3[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
     AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[0] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[1]);
@@ -1434,7 +1437,7 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.pShwNestedRootR0 = (uintptr_t)pVM->pgm.s.pShwNestedRootR3;
 #endif
 
-    if (    !pVM->pgm.s.pHC32BitPD
+    if (    !pVM->pgm.s.pShw32BitPdR3
         ||  !pVM->pgm.s.apShwPaePDsR3[0]
         ||  !pVM->pgm.s.apShwPaePDsR3[1]
         ||  !pVM->pgm.s.apShwPaePDsR3[2]
@@ -1447,8 +1450,8 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     /* get physical addresses. */
-    pVM->pgm.s.HCPhys32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pHC32BitPD);
-    Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhys32BitPD) == pVM->pgm.s.pHC32BitPD);
+    pVM->pgm.s.HCPhys32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
+    Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhys32BitPD) == pVM->pgm.s.pShw32BitPdR3);
     pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[0]);
     pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[1]);
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
@@ -1459,7 +1462,7 @@ static int pgmR3InitPaging(PVM pVM)
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.
      */
-    ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
+    ASMMemZero32(pVM->pgm.s.pShw32BitPdR3, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwPaePdptR3, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
@@ -1772,7 +1775,7 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
      */
     int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3) + 1 + 2 + 2), "Paging", &GCPtr);
     AssertRCReturn(rc, rc);
-    pVM->pgm.s.pGC32BitPD = GCPtr;
+    pVM->pgm.s.pShw32BitPdRC = GCPtr;
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
 
     /*
@@ -1809,12 +1812,12 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     /*
      * Map the paging pages into the guest context.
      */
-    RTGCPTR GCPtr = pVM->pgm.s.pGC32BitPD;
+    RTGCPTR GCPtr = pVM->pgm.s.pShw32BitPdRC;
     AssertReleaseReturn(GCPtr, VERR_INTERNAL_ERROR);
 
     int rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhys32BitPD, PAGE_SIZE, 0);
     AssertRCReturn(rc, rc);
-    pVM->pgm.s.pGC32BitPD = GCPtr;
+    pVM->pgm.s.pShw32BitPdRC = GCPtr;
     GCPtr += PAGE_SIZE;
     GCPtr += PAGE_SIZE; /* reserved page */
 
@@ -1899,8 +1902,8 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     pVM->pgm.s.GCPtrCR3Mapping += offDelta;
     /** @todo move this into shadow and guest specific relocation functions. */
-    AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
-    pVM->pgm.s.pGC32BitPD    += offDelta;
+    AssertMsg(pVM->pgm.s.pShw32BitPdR3, ("Init order, no relocation before paging is initialized!\n"));
+    pVM->pgm.s.pShw32BitPdRC += offDelta;
     pVM->pgm.s.pGuestPDRC    += offDelta;
     AssertCompile(RT_ELEMENTS(pVM->pgm.s.apShwPaePDsRC) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC));
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsRC); i++)

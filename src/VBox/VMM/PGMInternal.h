@@ -2041,14 +2041,12 @@ typedef struct PGM
 
     /** @name 32-bit Shadow Paging
      * @{ */
-    /** The 32-Bit PD - HC Ptr. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PD)               pHC32BitPD;
-#else
-    R3R0PTRTYPE(PX86PD)             pHC32BitPD;
-#endif
-    /** The 32-Bit PD - GC Ptr. */
-    RCPTRTYPE(PX86PD)               pGC32BitPD;
+    /** The 32-Bit PD - R3 Ptr. */
+    R3PTRTYPE(PX86PD)               pShw32BitPdR3;
+    /** The 32-Bit PD - R0 Ptr. */
+    R0PTRTYPE(PX86PD)               pShw32BitPdR0;
+    /** The 32-Bit PD - RC Ptr. */
+    RCPTRTYPE(PX86PD)               pShw32BitPdRC;
 #if HC_ARCH_BITS == 64
     uint32_t                        u32Padding1; /**< alignment padding. */
 #endif
@@ -3801,6 +3799,76 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
 }
 
 #endif /* !IN_RC */
+
+
+/**
+ * Gets the shadow page directory, 32-bit.
+ *
+ * @returns Pointer to the shadow 32-bit PD.
+ * @param   pPGM        Pointer to the PGM instance data.
+ */
+DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
+{
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PD          pShwPd;
+    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    AssertRCReturn(rc, NULL);
+    return pShwPd;
+#else
+    return pPGM->CTX_SUFF(pShw32BitPd);
+#endif
+}
+
+
+/**
+ * Gets the shadow page directory entry for the specified address, 32-bit.
+ *
+ * @returns Shadow 32-bit PDE.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGM pPGM, RTGCPTR GCPtr)
+{
+    const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PCX86PD         pShwPd;
+    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    if (RT_FAILURE(rc))
+    {
+        X86PDE ZeroPde = {0};
+        AssertMsgFailedReturn(("%Rrc\n", rc), ZeroPde);
+    }
+    return pShwPd->a[iPd];
+#else
+    return pPGM->CTX_SUFF(pShw32BitPd)->a[iPd];
+#endif
+}
+
+
+/**
+ * Gets the pointer to the shadow page directory entry for the specified
+ * address, 32-bit.
+ *
+ * @returns Pointer to the shadow 32-bit PDE.
+ * @param   pPGM        Pointer to the PGM instance data.
+ * @param   GCPtr       The address.
+ */
+DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
+{
+    const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PX86PD          pShwPd;
+    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    AssertRCReturn(rc, NULL);
+    return &pShwPd->a[iPd];
+#else
+    return &pPGM->CTX_SUFF(pShw32BitPd)->a[iPd];
+#endif
+}
+
 
 /**
  * Gets the shadow page pointer table, PAE.
