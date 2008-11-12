@@ -302,7 +302,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 # else /* RT_OS_WINDOWS */
         phEvents = slirp_get_events(pThis->pNATState);
-        phEvents[0] = pThis->hSendEvent;
         event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
         AssertRelease(event != WSA_WAIT_FAILED);
 
@@ -695,6 +694,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pThis->PipeWrite = fds[1];
 # else
             pThis->hSendEvent = WSACreateEvent();
+	    slirp_register_external_event(pThis->pNATState, pThis->hSendEvent);
 # endif
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
