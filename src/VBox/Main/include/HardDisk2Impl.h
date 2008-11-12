@@ -106,7 +106,7 @@ public:
     // public methods for internal purposes only
 
     /**
-     * Shortcut to VirtualBoxBaseWithChildrenNEXT::dependentChildren().
+     * Shortcut to VirtualBoxBaseWithTypedChildrenNEXT::dependentChildren().
      */
     const List &children() const { return dependentChildren(); }
 
@@ -200,7 +200,23 @@ protected:
                      ComObjPtr <Progress> *aProgress,
                      bool aWait);
 
-    LockHandle *treeLock() { return mVirtualBox->hardDiskTreeHandle(); }
+    /**
+     * Returns VirtualBox::hardDiskTreeHandle(), for convenience. Don't forget
+     * to follow these locking rules:
+     *
+     * 1. The write lock on this handle must be either held alone on the thread
+     *    or requested *after* the VirtualBox object lock. Mixing with other
+     *    locks is prohibited.
+     *
+     * 2. The read lock on this handle may be intermixed with any other lock
+     *    with the exception that it must be requested *after* the VirtualBox
+     *    object lock.
+     */
+    RWLockHandle *treeLock() { return mVirtualBox->hardDiskTreeHandle(); }
+
+    /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
+     *  treeLock(). */
+    RWLockHandle *childrenLock() { return treeLock(); }
 
 private:
 
