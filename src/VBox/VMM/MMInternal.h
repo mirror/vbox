@@ -351,27 +351,43 @@ typedef MMHYPERHEAP *PMMHYPERHEAP;
 typedef struct MMPAGESUBPOOL
 {
     /** Pointer to next sub pool. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(struct MMPAGESUBPOOL *)   pNext;
+#else
     R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNext;
+#endif
     /** Pointer to next sub pool in the free chain.
      * This is NULL if we're not in the free chain or at the end of it. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(struct MMPAGESUBPOOL *)   pNextFree;
+#else
     R3R0PTRTYPE(struct MMPAGESUBPOOL *) pNextFree;
+#endif
     /** Pointer to array of lock ranges.
      * This is allocated together with the MMPAGESUBPOOL and thus needs no freeing.
      * It follows immediately after the bitmap.
      * The reserved field is a pointer to this structure.
      */
-    R3R0PTRTYPE(PSUPPAGE)   paPhysPages;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PSUPPAGE)                 paPhysPages;
+#else
+    R3R0PTRTYPE(PSUPPAGE)               paPhysPages;
+#endif
     /** Pointer to the first page. */
-    R3R0PTRTYPE(void *)     pvPages;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(void *)                   pvPages;
+#else
+    R3R0PTRTYPE(void *)                 pvPages;
+#endif
     /** Size of the subpool. */
-    unsigned                cPages;
+    uint32_t                            cPages;
     /** Number of free pages. */
-    unsigned                cPagesFree;
+    uint32_t                            cPagesFree;
     /** The allocation bitmap.
      * This may extend beyond the end of the defined array size.
      */
-    unsigned                auBitmap[1];
-    /* ... SUPPAGE          aRanges[1]; */
+    uint32_t                            auBitmap[1];
+    /* ... SUPPAGE                      aRanges[1]; */
 } MMPAGESUBPOOL;
 /** Pointer to page sub pool. */
 typedef MMPAGESUBPOOL *PMMPAGESUBPOOL;
@@ -382,40 +398,60 @@ typedef MMPAGESUBPOOL *PMMPAGESUBPOOL;
 typedef struct MMPAGEPOOL
 {
     /** List of subpools. */
-    R3R0PTRTYPE(PMMPAGESUBPOOL) pHead;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PMMPAGESUBPOOL)           pHead;
+#else
+    R3R0PTRTYPE(PMMPAGESUBPOOL)         pHead;
+#endif
     /** Head of subpools with free pages. */
-    R3R0PTRTYPE(PMMPAGESUBPOOL) pHeadFree;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PMMPAGESUBPOOL)           pHeadFree;
+#else
+    R3R0PTRTYPE(PMMPAGESUBPOOL)         pHeadFree;
+#endif
     /** AVLPV tree for looking up HC virtual addresses.
      * The tree contains MMLOOKUPVIRTPP records.
      */
-    R3R0PTRTYPE(PAVLPVNODECORE) pLookupVirt;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(PAVLPVNODECORE)           pLookupVirt;
+#else
+    R3R0PTRTYPE(PAVLPVNODECORE)         pLookupVirt;
+#endif
     /** Tree for looking up HC physical addresses.
      * The tree contains MMLOOKUPPHYSHC records.
      */
-    R3R0PTRTYPE(AVLHCPHYSTREE)  pLookupPhys;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    R3PTRTYPE(AVLHCPHYSTREE)            pLookupPhys;
+#else
+    R3R0PTRTYPE(AVLHCPHYSTREE)          pLookupPhys;
+#endif
     /** Pointer to the VM this pool belongs. */
-    R3R0PTRTYPE(PVM)        pVM;
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    PVMR3                               pVM;
+#else
+    R3R0PTRTYPE(PVM)                    pVM;
+#endif
     /** Flag indicating the allocation method.
      * Set: SUPLowAlloc().
      * Clear: SUPPageAlloc() + SUPPageLock(). */
-    bool                    fLow;
+    bool                                fLow;
     /** Number of subpools. */
-    uint32_t                cSubPools;
+    uint32_t                            cSubPools;
     /** Number of pages in pool. */
-    uint32_t                cPages;
+    uint32_t                            cPages;
 #ifdef VBOX_WITH_STATISTICS
     /** Number of free pages in pool. */
-    uint32_t                cFreePages;
+    uint32_t                            cFreePages;
     /** Number of alloc calls. */
-    STAMCOUNTER             cAllocCalls;
+    STAMCOUNTER                         cAllocCalls;
     /** Number of free calls. */
-    STAMCOUNTER             cFreeCalls;
+    STAMCOUNTER                         cFreeCalls;
     /** Number of to phys conversions. */
-    STAMCOUNTER             cToPhysCalls;
+    STAMCOUNTER                         cToPhysCalls;
     /** Number of to virtual conversions. */
-    STAMCOUNTER             cToVirtCalls;
+    STAMCOUNTER                         cToVirtCalls;
     /** Number of real errors. */
-    STAMCOUNTER             cErrors;
+    STAMCOUNTER                         cErrors;
 #endif
 } MMPAGEPOOL;
 /** Pointer to page pool. */
@@ -687,10 +723,12 @@ typedef struct MM
 
     /** The hypervisor heap (R0 Ptr). */
     R0PTRTYPE(PMMHYPERHEAP)     pHyperHeapR0;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** Page pool - R0 Ptr. */
     R0PTRTYPE(PMMPAGEPOOL)      pPagePoolR0;
     /** Page pool pages in low memory R0 Ptr. */
     R0PTRTYPE(PMMPAGEPOOL)      pPagePoolLowR0;
+#endif /* !VBOX_WITH_2X_4GB_ADDR_SPACE */
 
     /** The hypervisor heap (R3 Ptr). */
     R3PTRTYPE(PMMHYPERHEAP)     pHyperHeapR3;
@@ -770,7 +808,7 @@ void mmR3PhysRomReset(PVM pVM);
  * @param   pv      The address to convert.
  * @thread  The Emulation Thread.
  */
-VMMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv);
+RTHCPHYS mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv);
 
 /**
  * Converts a pool physical address to a linear address.
@@ -782,7 +820,7 @@ VMMDECL(RTHCPHYS) mmPagePoolPtr2Phys(PMMPAGEPOOL pPool, void *pv);
  * @param   HCPhys      The address to convert.
  * @thread  The Emulation Thread.
  */
-VMMDECL(void *) mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys);
+void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys);
 
 __END_DECLS
 

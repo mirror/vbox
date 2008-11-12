@@ -93,9 +93,10 @@ int mmR3PagePoolInit(PVM pVM)
     STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cToVirtCalls,STAMTYPE_COUNTER, "/MM/Page/Low/cToVirtCalls",  STAMUNIT_CALLS, "Number of MMR3PagePhys2Page()+MMR3PageFreeByPhys() calls for the <4GB pool.");
     STAM_REG(pVM, &pVM->mm.s.pPagePoolLowR3->cErrors,     STAMTYPE_COUNTER, "/MM/Page/Low/cErrors",       STAMUNIT_ERRORS,"Number of errors for the <4GB pool.");
 
-    /** @todo @bufref{1865},@bufref{3202}: more */
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->mm.s.pPagePoolR0 = (uintptr_t)pVM->mm.s.pPagePoolR3;
     pVM->mm.s.pPagePoolLowR0 = (uintptr_t)pVM->mm.s.pPagePoolLowR3;
+#endif
 
     /** @todo init a mutex? */
     return VINF_SUCCESS;
@@ -150,7 +151,9 @@ void mmR3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
         pVM->mm.s.pPagePoolLowR3 = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVM->mm.s.pPagePoolLowR0 = NIL_RTR0PTR;
+#endif
     }
 }
 
