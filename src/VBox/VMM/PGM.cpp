@@ -1412,13 +1412,19 @@ static int pgmR3InitPaging(PVM pVM)
      * As with the intermediate context, AMD64 uses the PAE PDPT and PDs.
      */
     pVM->pgm.s.pHC32BitPD    = (PX86PD)MMR3PageAllocLow(pVM);
-    pVM->pgm.s.apHCPaePDs[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    pVM->pgm.s.apHCPaePDs[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[0] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[1]);
-    pVM->pgm.s.apHCPaePDs[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[2]);
-    pVM->pgm.s.apHCPaePDs[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
-    AssertRelease((uintptr_t)pVM->pgm.s.apHCPaePDs[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apHCPaePDs[3]);
+    pVM->pgm.s.apShwPaePDsR3[0] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    pVM->pgm.s.apShwPaePDsR3[1] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[0] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[1]);
+    pVM->pgm.s.apShwPaePDsR3[2] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[1] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[2]);
+    pVM->pgm.s.apShwPaePDsR3[3] = (PX86PDPAE)MMR3PageAlloc(pVM);
+    AssertRelease((uintptr_t)pVM->pgm.s.apShwPaePDsR3[2] + PAGE_SIZE == (uintptr_t)pVM->pgm.s.apShwPaePDsR3[3]);
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+    pVM->pgm.s.apShwPaePDsR0[0] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[0];
+    pVM->pgm.s.apShwPaePDsR0[1] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[1];
+    pVM->pgm.s.apShwPaePDsR0[2] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[2];
+    pVM->pgm.s.apShwPaePDsR0[3] = (uintptr_t)pVM->pgm.s.apShwPaePDsR3[3];
+#endif
     pVM->pgm.s.pShwPaePdptR3 = (PX86PDPT)MMR3PageAllocLow(pVM);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVM->pgm.s.pShwPaePdptR0 = (uintptr_t)pVM->pgm.s.pShwPaePdptR3;
@@ -1429,10 +1435,10 @@ static int pgmR3InitPaging(PVM pVM)
 #endif
 
     if (    !pVM->pgm.s.pHC32BitPD
-        ||  !pVM->pgm.s.apHCPaePDs[0]
-        ||  !pVM->pgm.s.apHCPaePDs[1]
-        ||  !pVM->pgm.s.apHCPaePDs[2]
-        ||  !pVM->pgm.s.apHCPaePDs[3]
+        ||  !pVM->pgm.s.apShwPaePDsR3[0]
+        ||  !pVM->pgm.s.apShwPaePDsR3[1]
+        ||  !pVM->pgm.s.apShwPaePDsR3[2]
+        ||  !pVM->pgm.s.apShwPaePDsR3[3]
         ||  !pVM->pgm.s.pShwPaePdptR3
         ||  !pVM->pgm.s.pShwNestedRootR3)
     {
@@ -1443,10 +1449,10 @@ static int pgmR3InitPaging(PVM pVM)
     /* get physical addresses. */
     pVM->pgm.s.HCPhys32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pHC32BitPD);
     Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhys32BitPD) == pVM->pgm.s.pHC32BitPD);
-    pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[0]);
-    pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[1]);
-    pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[2]);
-    pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apHCPaePDs[3]);
+    pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[0]);
+    pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[1]);
+    pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
+    pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[3]);
     pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
     pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
 
@@ -1456,9 +1462,9 @@ static int pgmR3InitPaging(PVM pVM)
     ASMMemZero32(pVM->pgm.s.pHC32BitPD, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwPaePdptR3, PAGE_SIZE);
     ASMMemZero32(pVM->pgm.s.pShwNestedRootR3, PAGE_SIZE);
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
     {
-        ASMMemZero32(pVM->pgm.s.apHCPaePDs[i], PAGE_SIZE);
+        ASMMemZero32(pVM->pgm.s.apShwPaePDsR3[i], PAGE_SIZE);
         pVM->pgm.s.pShwPaePdptR3->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT | pVM->pgm.s.aHCPhysPaePDs[i];
         /* The flags will be corrected when entering and leaving long mode. */
     }
@@ -1764,7 +1770,7 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     /*
      * Reserve space for mapping the paging pages into guest context.
      */
-    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + RT_ELEMENTS(pVM->pgm.s.apHCPaePDs) + 1 + 2 + 2), "Paging", &GCPtr);
+    int rc = MMR3HyperReserve(pVM, PAGE_SIZE * (2 + RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3) + 1 + 2 + 2), "Paging", &GCPtr);
     AssertRCReturn(rc, rc);
     pVM->pgm.s.pGC32BitPD = GCPtr;
     MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
@@ -1812,17 +1818,17 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     GCPtr += PAGE_SIZE;
     GCPtr += PAGE_SIZE; /* reserved page */
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apHCPaePDs); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsR3); i++)
     {
         rc = PGMMap(pVM, GCPtr, pVM->pgm.s.aHCPhysPaePDs[i], PAGE_SIZE, 0);
         AssertRCReturn(rc, rc);
-        pVM->pgm.s.apGCPaePDs[i] = GCPtr;
+        pVM->pgm.s.apShwPaePDsRC[i] = GCPtr;
         GCPtr += PAGE_SIZE;
     }
     /* A bit of paranoia is justified. */
-    AssertRelease(pVM->pgm.s.apGCPaePDs[0] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[1]);
-    AssertRelease(pVM->pgm.s.apGCPaePDs[1] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[2]);
-    AssertRelease(pVM->pgm.s.apGCPaePDs[2] + PAGE_SIZE == pVM->pgm.s.apGCPaePDs[3]);
+    AssertRelease(pVM->pgm.s.apShwPaePDsRC[0] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[1]);
+    AssertRelease(pVM->pgm.s.apShwPaePDsRC[1] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[2]);
+    AssertRelease(pVM->pgm.s.apShwPaePDsRC[2] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[3]);
     GCPtr += PAGE_SIZE; /* reserved page */
 
     rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPT, PAGE_SIZE, 0);
@@ -1896,10 +1902,10 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertMsg(pVM->pgm.s.pGC32BitPD, ("Init order, no relocation before paging is initialized!\n"));
     pVM->pgm.s.pGC32BitPD    += offDelta;
     pVM->pgm.s.pGuestPDRC    += offDelta;
-    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apGCPaePDs) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC));
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGCPaePDs); i++)
+    AssertCompile(RT_ELEMENTS(pVM->pgm.s.apShwPaePDsRC) == RT_ELEMENTS(pVM->pgm.s.apGstPaePDsRC));
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apShwPaePDsRC); i++)
     {
-        pVM->pgm.s.apGCPaePDs[i]    += offDelta;
+        pVM->pgm.s.apShwPaePDsRC[i] += offDelta;
         pVM->pgm.s.apGstPaePDsRC[i] += offDelta;
     }
     pVM->pgm.s.pGstPaePDPTRC += offDelta;

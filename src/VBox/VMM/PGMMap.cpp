@@ -730,10 +730,10 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE)
         const unsigned iPD = iOldPDE / 256;
         unsigned iPDE = iOldPDE * 2 % 512;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
-        pPGM->apHCPaePDs[iPD]->a[iPDE].u    = 0;
+        pPGM->apShwPaePDsR3[iPD]->a[iPDE].u = 0;
         iPDE++;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
-        pPGM->apHCPaePDs[iPD]->a[iPDE].u    = 0;
+        pPGM->apShwPaePDsR3[iPD]->a[iPDE].u = 0;
 
         /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
         pPGM->pShwPaePdptR3->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
@@ -783,20 +783,20 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
          */
         const unsigned iPD = iNewPDE / 256;
         unsigned iPDE = iNewPDE * 2 % 512;
-        if (pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
+        if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
+            pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
         X86PDEPAE PdePae0;
         PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae0;
-        pPGM->apHCPaePDs[iPD]->a[iPDE]    = PdePae0;
+        pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae0;
 
         iPDE++;
-        if (pPGM->apHCPaePDs[iPD]->a[iPDE].n.u1Present)
-            pgmPoolFree(pVM, pPGM->apHCPaePDs[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
+        if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
+            pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
         X86PDEPAE PdePae1;
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
-        pPGM->apHCPaePDs[iPD]->a[iPDE]    = PdePae1;
+        pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae1;
 
         /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
         pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
