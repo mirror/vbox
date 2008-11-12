@@ -2002,12 +2002,12 @@ typedef struct PGM
     /** @name PAE Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, static GC mapping. */
-    RCPTRTYPE(PX86PDPT)             pGstPaePDPTRC;
+    RCPTRTYPE(PX86PDPT)             pGstPaePdptRC;
     /** The guest's page directory pointer table, R3 pointer. */
-    R3PTRTYPE(PX86PDPT)             pGstPaePDPTR3;
+    R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory pointer table, R0 pointer. */
-    R0PTRTYPE(PX86PDPT)             pGstPaePDPTR0;
+    R0PTRTYPE(PX86PDPT)             pGstPaePdptR0;
 #endif
 
     /** The guest's page directories, R3 pointers.
@@ -3365,7 +3365,7 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
     AssertRCReturn(rc, 0);
     return pGuestPDPT;
 #else
-    return pPGM->CTX_SUFF(pGstPaePDPT);
+    return pPGM->CTX_SUFF(pGstPaePdpt);
 #endif
 }
 
@@ -3388,7 +3388,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
     return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
 #else
-    return &pPGM->CTX_SUFF(pGstPaePDPT)->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
+    return &pPGM->CTX_SUFF(pGstPaePdpt)->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
 #endif
 }
 
@@ -3409,7 +3409,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCPTR GCPtr)
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
     AssertReturn(pGuestPDPT, 0);
 #else
-    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
 #endif
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     if (pGuestPDPT->a[iPdPt].n.u1Present)
@@ -3447,7 +3447,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
     AssertReturn(pGuestPDPT, 0);
 #else
-    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
 #endif
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     if (pGuestPDPT->a[iPdPt].n.u1Present)
@@ -3486,7 +3486,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
     if (RT_LIKELY(pGuestPDPT))
 #else
-    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
 #endif
     {
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
@@ -3530,7 +3530,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr, unsigned *piPD
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
     AssertReturn(pGuestPDPT, 0);
 #else
-    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
+    PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePdpt);
 #endif
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     if (pPdpe)

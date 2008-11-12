@@ -1141,11 +1141,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.GCPhysGstCR3Monitored = NIL_RTGCPHYS;
     pVM->pgm.s.fA20Enabled      = true;
     pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(32) - 1; /* default; checked later */
-    pVM->pgm.s.pGstPaePDPTR3    = NULL;
+    pVM->pgm.s.pGstPaePdptR3    = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pGstPaePDPTR0    = NIL_RTR0PTR;
+    pVM->pgm.s.pGstPaePdptR0    = NIL_RTR0PTR;
 #endif
-    pVM->pgm.s.pGstPaePDPTRC    = NIL_RTRCPTR;
+    pVM->pgm.s.pGstPaePdptRC    = NIL_RTRCPTR;
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apGstPaePDsR3); i++)
     {
         pVM->pgm.s.apGstPaePDsR3[i]             = NULL;
@@ -1911,7 +1911,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->pgm.s.apShwPaePDsRC[i] += offDelta;
         pVM->pgm.s.apGstPaePDsRC[i] += offDelta;
     }
-    pVM->pgm.s.pGstPaePDPTRC += offDelta;
+    pVM->pgm.s.pGstPaePdptRC += offDelta;
     pVM->pgm.s.pShwPaePdptRC += offDelta;
 
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
