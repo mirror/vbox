@@ -3279,12 +3279,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     {
                         /* It's fixed, just skip the mapping. */
                         const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
+                        Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
                         iPD += cPTs - 1;
 #   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
                         pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
 #   else
                         pPDEDst += cPTs;
-                        /** @todo Assert on / deal with  cross PD mappings in PAE/PAE mode! */
 #   endif
                         pMapping = pMapping->CTX_SUFF(pNext);
                         iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
@@ -3490,12 +3490,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 }
 
                 /* advance. */
+                Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
                 iPD += cPTs - 1;
 #   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
                 pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
 #   else
                 pPDEDst += cPTs;
-                /** @todo Assert on / deal with  cross PD mappings in PAE/PAE mode! */
 #   endif
 #   if PGM_GST_TYPE != PGM_SHW_TYPE
                 AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);

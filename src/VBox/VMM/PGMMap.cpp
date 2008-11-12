@@ -355,6 +355,24 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     }
 
     /*
+     * In PAE / PAE mode, make sure we don't cross page directories.
+     */
+    if (    (   pVM->pgm.s.enmGuestMode  == PGMMODE_PAE
+             || pVM->pgm.s.enmGuestMode  == PGMMODE_PAE_NX)
+        &&  (   pVM->pgm.s.enmShadowMode == PGMMODE_PAE
+             || pVM->pgm.s.enmShadowMode == PGMMODE_PAE_NX))
+    {
+        unsigned iPdptBase = GCPtrBase >> X86_PDPT_SHIFT;
+        unsigned iPdptLast = (GCPtrBase + cb - 1) >> X86_PDPT_SHIFT;
+        if (iPdptBase != iPdptLast)
+        {
+            LogRel(("PGMR3MappingsFix: Crosses PD boundrary; iPdptBase=%#x iPdptLast=%#x (GCPtrBase=%RGv cb=%#zx). The guest should retry.\n",
+                    iPdptBase, iPdptLast, GCPtrBase, cb));
+            return VERR_PGM_MAPPINGS_FIX_CONFLICT;
+        }
+    }
+
+    /*
      * Loop the mappings and check that they all agree on their new locations.
      */
     RTGCPTR     GCPtrCur = GCPtrBase;
@@ -976,6 +994,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
          *
          * Note that we do not support mappings at the very end of the
          * address space since that will break our GCPtrEnd assumptions.
+         * Nor do we support mappings crossing page directories.
          */
         const unsigned  cPTs = pMapping->cb >> X86_PD_PAE_SHIFT;
         unsigned        iPDNew = RT_ELEMENTS(pPDSrc->a) - cPTs; /* (+ 1 - 1) */
