@@ -443,11 +443,11 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
         {
             PGM_INVL_PG(pVM->pgm.s.GCPtrCR3Mapping);
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            pVM->pgm.s.pGuestPDR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+            pVM->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVM->pgm.s.pGuestPDR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+            pVM->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  endif
-            pVM->pgm.s.pGuestPDRC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
+            pVM->pgm.s.pGst32BitPdRC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
             unsigned off = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
@@ -568,11 +568,11 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     int rc = VINF_SUCCESS;
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
-    pVM->pgm.s.pGuestPDR3 = 0;
+    pVM->pgm.s.pGst32BitPdR3 = 0;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pGuestPDR0 = 0;
+    pVM->pgm.s.pGst32BitPdR0 = 0;
 #endif
-    pVM->pgm.s.pGuestPDRC = 0;
+    pVM->pgm.s.pGst32BitPdRC = 0;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
     pVM->pgm.s.pGstPaePdptR3 = 0;

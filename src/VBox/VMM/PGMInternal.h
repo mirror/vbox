@@ -1990,18 +1990,18 @@ typedef struct PGM
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, R3 pointer. */
-    R3PTRTYPE(PX86PD)               pGuestPDR3;
+    R3PTRTYPE(PX86PD)               pGst32BitPdR3;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory, R0 pointer. */
-    R0PTRTYPE(PX86PD)               pGuestPDR0;
+    R0PTRTYPE(PX86PD)               pGst32BitPdR0;
 #endif
     /** The guest's page directory, static RC mapping. */
-    RCPTRTYPE(PX86PD)               pGuestPDRC;
+    RCPTRTYPE(PX86PD)               pGst32BitPdRC;
     /** @} */
 
     /** @name PAE Guest Paging.
      * @{ */
-    /** The guest's page directory pointer table, static GC mapping. */
+    /** The guest's page directory pointer table, static RC mapping. */
     RCPTRTYPE(PX86PDPT)             pGstPaePdptRC;
     /** The guest's page directory pointer table, R3 pointer. */
     R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
@@ -3306,7 +3306,7 @@ DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
     }
     return pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 #else
-    return pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
+    return pPGM->CTX_SUFF(pGst32BitPd)->a[GCPtr >> X86_PD_SHIFT];
 #endif
 }
 
@@ -3326,7 +3326,7 @@ DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
     return &pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 #else
-    return &pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
+    return &pPGM->CTX_SUFF(pGst32BitPd)->a[GCPtr >> X86_PD_SHIFT];
 #endif
 }
 
@@ -3345,7 +3345,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
     AssertRCReturn(rc, 0);
     return pGuestPD;
 #else
-    return pPGM->CTX_SUFF(pGuestPD);
+    return pPGM->CTX_SUFF(pGst32BitPd);
 #endif
 }
 

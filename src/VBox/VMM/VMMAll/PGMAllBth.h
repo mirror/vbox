@@ -3574,7 +3574,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
                     false);
 # if !defined(IN_RING0) && PGM_GST_TYPE != PGM_TYPE_AMD64
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
-    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGuestPDRC, NULL, &HCPhysShw);
+    rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGst32BitPdRC, NULL, &HCPhysShw);
 #  else
     rc = PGMShwGetPage(pVM, (RTGCPTR)pPGM->pGstPaePdptRC, NULL, &HCPhysShw);
 #  endif
@@ -3584,7 +3584,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPTR G
     AssertMsgReturn(HCPhys == HCPhysShw, ("HCPhys=%RHp HCPhyswShw=%RHp (cr3)\n", HCPhys, HCPhysShw), false);
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT && defined(IN_RING3)
     RTGCPHYS GCPhys;
-    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGuestPDR3, &GCPhys);
+    rc = PGMR3DbgR3Ptr2GCPhys(pVM, pPGM->pGst32BitPdR3, &GCPhys);
     AssertRCReturn(rc, 1);
     AssertMsgReturn((cr3 & GST_CR3_PAGE_MASK) == GCPhys, ("GCPhys=%RGp cr3=%RGp\n", GCPhys, (RTGCPHYS)cr3), false);
 #  endif
