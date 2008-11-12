@@ -1908,7 +1908,7 @@ REMR3DECL(int)  REMR3State(PVM pVM)
     else
     {
         /* In 'normal' raw mode we don't have access to the hidden selector registers. */
-        if (pVM->rem.s.Env.segs[R_SS].selector != (uint16_t)pCtx->ss)
+        if (pVM->rem.s.Env.segs[R_SS].selector != pCtx->ss)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
 

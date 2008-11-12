@@ -34,9 +34,10 @@
 %define VMMSWITCHER_PAE_TO_AMD64        6
 %define VMMSWITCHER_AMD64_TO_PAE        7
 %define VMMSWITCHER_AMD64_TO_AMD64      8
+%define VMMSWITCHER_AMD64_TO_32         11
 %define VMMSWITCHER_HOST_TO_VMX         9
 %define VMMSWITCHER_HOST_TO_SVM         10
-%define VMMSWITCHER_MAX                 11
+%define VMMSWITCHER_MAX                 12
 ; }
 
 
