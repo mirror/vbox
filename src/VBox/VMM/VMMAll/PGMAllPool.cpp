@@ -111,7 +111,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
-            return pVM->pgm.s.pGC32BitPD;
+            return pVM->pgm.s.pShw32BitPdRC;
         case PGMPOOL_IDX_PAE_PD:
         case PGMPOOL_IDX_PAE_PD_0:
             return pVM->pgm.s.apShwPaePDsRC[0];
