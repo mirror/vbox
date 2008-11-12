@@ -1861,8 +1861,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     const unsigned  iPDDst = GCPtrPage >> SHW_PD_SHIFT;
     X86PDE          PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[iPDDst];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    X86PDEPAE       PdeDst;
-    PdeDst.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
+    X86PDEPAE       PdeDst = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst   = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -2857,8 +2856,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVM pVM, RTGCPTR GCPtrPage)
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
         const X86PDE    PdeDst = pVM->pgm.s.CTXMID(p,32BitPD)->a[GCPtrPage >> SHW_PD_SHIFT];
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-        X86PDEPAE       PdeDst;
-        PdeDst.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
+        const X86PDEPAE PdeDst = pgmShwGetPaePDE(&pVM->pgm.s, GCPtrPage);
 # elif PGM_SHW_TYPE == PGM_TYPE_AMD64
         const unsigned  iPDDst = ((GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK);
         PX86PDPAE       pPDDst;

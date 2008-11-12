@@ -3838,17 +3838,21 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       Address.
  */
-DECLINLINE(X86PGPAEUINT) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT)   & X86_PDPT_MASK_PAE;
     const unsigned  iPd   = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PDPAE      pPD;
     int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->aHCPhysPaePDs[iPdpt], &pPD);
-    AssertRCReturn(rc, 0);
-    return pPD->a[iPd].u;
+    if (RT_FAILURE(rc))
+    {
+        X86PDEPAE ZeroPDE = {0};
+        return ZeroPDE;
+    }
+    return pPD->a[iPd];
 #else
-    return pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd].u;
+    return pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd];
 #endif
 }
 

@@ -852,6 +852,16 @@ DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 
 
 /**
+ * Relocator for the 32-Bit to AMD64 world switcher.
+ */
+DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+{
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
+                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
+}
+
+
+/**
  * Relocator for the PAE to 32-Bit world switcher.
  */
 DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
