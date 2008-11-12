@@ -1457,7 +1457,7 @@ static int pgmR3InitPaging(PVM pVM)
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[3]);
     pVM->pgm.s.HCPhysShwPaePdpt = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
-    pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
+    pVM->pgm.s.HCPhysShwNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
 
     /*
      * Initialize the pages, setting up the PML4 and PDPT for action below 4GB.

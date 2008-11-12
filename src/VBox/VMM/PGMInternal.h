@@ -2110,7 +2110,7 @@ typedef struct PGM
     RTR0PTR                         pShwNestedRootR0;
 #endif
     /** The Physical Address (HC) of the nested paging root. */
-    RTHCPHYS                        HCPhysNestedRoot;
+    RTHCPHYS                        HCPhysShwNestedRoot;
     /** @}  */
 
     /** @name Function pointers for Shadow paging.

@@ -1065,7 +1065,7 @@ DECLINLINE(int) pgmShwGetEPTPDPtr(PVM pVM, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     Assert(HWACCMIsNestedPagingActive(pVM));
 
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysNestedRoot, &pPml4);
+    rc = PGM_HCPHYS_2_PTR(pVM, pPGM->HCPhysShwNestedRoot, &pPml4);
     AssertRCReturn(rc, rc);
 # else
     pPml4 = (PEPTPML4)pPGM->CTX_SUFF(pShwNestedRoot);
@@ -1267,7 +1267,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
             return pVM->pgm.s.HCPhysPaePML4;
 
         case PGMMODE_EPT:
-            return pVM->pgm.s.HCPhysNestedRoot;
+            return pVM->pgm.s.HCPhysShwNestedRoot;
 
         case PGMMODE_NESTED:
             return PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
@@ -1313,7 +1313,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
  */
 VMMDECL(RTHCPHYS) PGMGetEPTCR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysNestedRoot;
+    return pVM->pgm.s.HCPhysShwNestedRoot;
 }
 
 
