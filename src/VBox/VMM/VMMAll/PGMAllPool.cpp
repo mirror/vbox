@@ -133,7 +133,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
-            HCPhys = pVM->pgm.s.HCPhys32BitPD;
+            HCPhys = pVM->pgm.s.HCPhysShw32BitPD;
             break;
         case PGMPOOL_IDX_PAE_PD:
         case PGMPOOL_IDX_PAE_PD_0:

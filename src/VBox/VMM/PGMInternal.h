@@ -2051,7 +2051,7 @@ typedef struct PGM
     uint32_t                        u32Padding1; /**< alignment padding. */
 #endif
     /** The Physical Address (HC) of the 32-Bit PD. */
-    RTHCPHYS                        HCPhys32BitPD;
+    RTHCPHYS                        HCPhysShw32BitPD;
     /** @} */
 
     /** @name PAE Shadow Paging
@@ -3811,8 +3811,8 @@ DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD          pShwPd;
-    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    Assert(pPGM->HCPhysShw32BitPD != 0 && pPGM->HCPhysShw32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShw32BitPD, &pShwPd);
     AssertRCReturn(rc, NULL);
     return pShwPd;
 #else
@@ -3833,8 +3833,8 @@ DECLINLINE(X86PDE) pgmShwGet32BitPDE(PPGM pPGM, RTGCPTR GCPtr)
     const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PD         pShwPd;
-    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    Assert(pPGM->HCPhysShw32BitPD != 0 && pPGM->HCPhysShw32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShw32BitPD, &pShwPd);
     if (RT_FAILURE(rc))
     {
         X86PDE ZeroPde = {0};
@@ -3860,8 +3860,8 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
     const unsigned  iPd = (GCPtr >> X86_PD_SHIFT) & X86_PD_MASK;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD          pShwPd;
-    Assert(pPGM->HCPhys32BitPD != 0 && pPGM->HCPhys32BitPD != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhys32BitPD, &pShwPd);
+    Assert(pPGM->HCPhysShw32BitPD != 0 && pPGM->HCPhysShw32BitPD != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShw32BitPD, &pShwPd);
     AssertRCReturn(rc, NULL);
     return &pShwPd->a[iPd];
 #else
