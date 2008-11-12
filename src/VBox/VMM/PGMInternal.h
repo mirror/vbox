@@ -2058,17 +2058,18 @@ typedef struct PGM
 
     /** @name PAE Shadow Paging
      * @{ */
-    /** The four PDs for the low 4GB - HC Ptr.
+    /** The four PDs for the low 4GB - R3 Ptr.
      * Even though these are 4 pointers, what they point at is a single table.
      * Thus, it's possible to walk the 2048 entries starting where apHCPaePDs[0] points. */
-#if 0///@todo def VBOX_WITH_2X_4GB_ADDR_SPACE
-    R3PTRTYPE(PX86PDPAE)            apHCPaePDs[4];
-#else
-    R3R0PTRTYPE(PX86PDPAE)          apHCPaePDs[4];
-#endif
-    /** The four PDs for the low 4GB - GC Ptr.
+    R3PTRTYPE(PX86PDPAE)            apShwPaePDsR3[4];
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /** The four PDs for the low 4GB - R0 Ptr.
      * Same kind of mapping as apHCPaePDs. */
-    RCPTRTYPE(PX86PDPAE)            apGCPaePDs[4];
+    R0PTRTYPE(PX86PDPAE)            apShwPaePDsR0[4];
+#endif
+    /** The four PDs for the low 4GB - RC Ptr.
+     * Same kind of mapping as apHCPaePDs. */
+    RCPTRTYPE(PX86PDPAE)            apShwPaePDsRC[4];
     /** The Physical Address (HC) of the four PDs for the low 4GB.
      * These are *NOT* 4 contiguous pages. */
     RTHCPHYS                        aHCPhysPaePDs[4];
@@ -3823,8 +3824,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
     return pPD;
 #else
-    //PX86PDPAE       pPD = pPGM->CTX_SUFF(apShwPaePDs)[iPdpt];
-    PX86PDPAE       pPD = pPGM->CTXMID(ap,PaePDs)[iPdpt];
+    PX86PDPAE       pPD = pPGM->CTX_SUFF(apShwPaePDs)[iPdpt];
     Assert(pPD);
     return pPD;
 #endif
@@ -3848,8 +3848,7 @@ DECLINLINE(X86PGPAEUINT) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
     return pPD->a[iPd].u;
 #else
-    //return pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd].u;
-    return pPGM->CTXMID(ap,PaePDs)[iPdpt]->a[iPd].u;
+    return pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd].u;
 #endif
 }
 
@@ -3871,9 +3870,8 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
     AssertRCReturn(rc, 0);
     return &pPD->a[iPd];
 #else
-    //Assert(pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]);
-    //return &pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd];
-    return &pPGM->CTXMID(ap,PaePDs)[iPdpt]->a[iPd];
+    Assert(pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]);
+    return &pPGM->CTX_SUFF(apShwPaePDs)[iPdpt]->a[iPd];
 #endif
 }
 
