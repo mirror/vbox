@@ -107,6 +107,8 @@ typedef const X86EFLAGSBITS *PCX86EFLAGSBITS;
  */
 typedef union X86EFLAGS
 {
+    /** The plain unsigned view. */
+    uint32_t        u;
     /** The bitfield view. */
     X86EFLAGSBITS   Bits;
     /** The 8-bit view. */
@@ -117,8 +119,6 @@ typedef union X86EFLAGS
     uint32_t        au32[1];
     /** The 32-bit view. */
     uint32_t        u32;
-    /** The plain unsigned view. */
-    uint32_t        u;
 } X86EFLAGS;
 /** Pointer to EFLAGS. */
 typedef X86EFLAGS *PX86EFLAGS;
@@ -130,6 +130,8 @@ typedef const X86EFLAGS *PCX86EFLAGS;
  */
 typedef union X86RFLAGS
 {
+    /** The plain unsigned view. */
+    uint64_t        u;
     /** The bitfield view. */
     X86EFLAGSBITS   Bits;
     /** The 8-bit view. */
@@ -142,8 +144,6 @@ typedef union X86RFLAGS
     uint64_t        au64[1];
     /** The 64-bit view. */
     uint64_t        u64;
-    /** The plain unsigned view. */
-    uint64_t        u;
 } X86RFLAGS;
 /** Pointer to RFLAGS. */
 typedef X86RFLAGS *PX86RFLAGS;
@@ -1043,10 +1043,10 @@ typedef const X86PTEBITS *PCX86PTEBITS;
  */
 typedef union X86PTE
 {
-    /** Bit field view. */
-    X86PTEBITS      n;
     /** Unsigned integer view */
     X86PGUINT       u;
+    /** Bit field view. */
+    X86PTEBITS      n;
     /** 32-bit view. */
     uint32_t        au32[1];
     /** 16-bit view. */
@@ -1106,10 +1106,10 @@ typedef const X86PTEPAEBITS *PCX86PTEPAEBITS;
  */
 typedef union X86PTEPAE
 {
-    /** Bit field view. */
-    X86PTEPAEBITS   n;
     /** Unsigned integer view */
     X86PGPAEUINT    u;
+    /** Bit field view. */
+    X86PTEPAEBITS   n;
     /** 32-bit view. */
     uint32_t        au32[2];
     /** 16-bit view. */
@@ -1411,12 +1411,12 @@ typedef const X86PDE2MPAEBITS *PCX86PDE2MPAEBITS;
  */
 typedef union X86PDE
 {
+    /** Unsigned integer view. */
+    X86PGUINT       u;
     /** Normal view. */
     X86PDEBITS      n;
     /** 4MB view (big). */
     X86PDE4MBITS    b;
-    /** Unsigned integer view. */
-    X86PGUINT       u;
     /** 8 bit unsigned integer view. */
     uint8_t         au8[4];
     /** 16 bit unsigned integer view. */
@@ -1434,12 +1434,12 @@ typedef const X86PDE *PCX86PDE;
  */
 typedef union X86PDEPAE
 {
+    /** Unsigned integer view. */
+    X86PGPAEUINT    u;
     /** Normal view. */
     X86PDEPAEBITS   n;
     /** 2MB page view (big). */
     X86PDE2MPAEBITS b;
-    /** Unsigned integer view. */
-    X86PGPAEUINT    u;
     /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
     /** 16 bit unsigned integer view. */
@@ -1588,12 +1588,12 @@ typedef const X86PDPEBITS *PCX86PDPEAMD64BITS;
  */
 typedef union X86PDPE
 {
+    /** Unsigned integer view. */
+    X86PGPAEUINT    u;
     /** Normal view. */
     X86PDPEBITS     n;
     /** AMD64 view. */
     X86PDPEAMD64BITS lm;
-    /** Unsigned integer view. */
-    X86PGPAEUINT    u;
     /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
     /** 16 bit unsigned integer view. */
@@ -1698,10 +1698,10 @@ typedef const X86PML4EBITS *PCX86PML4EBITS;
  */
 typedef union X86PML4E
 {
-    /** Normal view. */
-    X86PML4EBITS    n;
     /** Unsigned integer view. */
     X86PGPAEUINT    u;
+    /** Normal view. */
+    X86PML4EBITS    n;
     /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
     /** 16 bit unsigned integer view. */
@@ -1938,10 +1938,10 @@ typedef struct X86DESCATTRBITS
 #pragma pack(1)
 typedef union X86DESCATTR
 {
-    /** Normal view. */
-    X86DESCATTRBITS    n;
     /** Unsigned integer view. */
     uint32_t           u;
+    /** Normal view. */
+    X86DESCATTRBITS    n;
 } X86DESCATTR;
 #pragma pack()
 
