@@ -441,6 +441,9 @@ VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
+VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
 #endif
 
 
@@ -460,6 +463,12 @@ VMMDECL(int)        PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
  */
 VMMR0DECL(int)      PGMR0PhysAllocateHandyPages(PVM pVM);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+VMMR0DECL(int)      PGMR0DynMapInit(void);
+VMMR0DECL(void)     PGMR0DynMapTerm(void);
+VMMR0DECL(int)      PGMR0DynMapInitVM(PVM pVM);
+VMMR0DECL(void)     PGMR0DynMapTermVM(PVM pVM);
+# endif
 /** @} */
 #endif /* IN_RING0 */
 
