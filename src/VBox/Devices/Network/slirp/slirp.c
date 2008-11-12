@@ -944,7 +944,7 @@ HANDLE *slirp_get_events(PNATState pData)
 {
 	return (pData->phEvents);
 }
-HANDLE *slirp_register_external_event(PNATState pData, HANDLE hEvent)
+void slirp_register_external_event(PNATState pData, HANDLE hEvent)
 {
 	pData->phEvents[0] = hEvent;
 }
