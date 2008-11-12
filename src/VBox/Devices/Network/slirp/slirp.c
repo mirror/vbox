@@ -221,6 +221,10 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSADATA Data;
         WSAStartup(MAKEWORD(2,0), &Data);
     }
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+    /*XXX:probably should be configurable*/
+    pData->phEvents = malloc(sizeof(HANDLE) * pData->cMaxEvent);
+#endif
 #endif
 
     Assert(sizeof(struct ip) == 20);
@@ -306,6 +310,9 @@ void slirp_term(PNATState pData)
          "\n"
          "\n"));
 #endif
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+    free(pData->phEvents);
+#endif
     free(pData);
 }
 
@@ -373,13 +380,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                  * 1st event for drvNATSend()
                  */
                 cElements = 1;
-		for (so = tcb.so_next; so != &tcb; so = so_next, cElements++) 
-			so_next = so->so_next;
-		for (so = udb.so_next; so != &udb; so = so_next, cElements++)
-			so_next = so->so_next;
-		if (pData->phEvents != NULL)
-                    free(pData->phEvents);
-		pData->phEvents = malloc(sizeof(HANDLE) * cElements);
 #endif
 
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
@@ -399,6 +399,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			   continue;
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+			AssertRelease(cEvents >= pData->cMaxEvent);
 			WSAResetEvent(so->hNetworkEvent);
 #endif
 			/*
@@ -500,6 +501,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				WSAResetEvent(so->hNetworkEvent);
+				AssertRelease(cEvents >= pData->cMaxEvent);
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
@@ -934,5 +936,9 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 HANDLE *slirp_get_events(PNATState pData)
 {
 	return (pData->phEvents);
+}
+HANDLE *slirp_register_external_event(PNATState pData, HANDLE hEvent)
+{
+	pData->phEvents[0] = hEvent;
 }
 #endif

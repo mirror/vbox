@@ -116,6 +116,7 @@ typedef struct NATState
     struct socket udb;
     struct socket *udp_last_so;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+    int cMaxEvent;
     HANDLE *phEvents;
 #endif
 } NATState;
