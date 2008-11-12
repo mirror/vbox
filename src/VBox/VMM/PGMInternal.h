@@ -3480,33 +3480,36 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(uint64_t) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
 {
     AssertGCPtr32(GCPtr);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
-    AssertReturn(pGuestPDPT, 0);
+    if (LIKELY(pGuestPDPT))
 #else
     PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
 #endif
-    const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
-    if (pGuestPDPT->a[iPdPt].n.u1Present)
     {
-        const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
+        const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+        if (pGuestPDPT->a[iPdPt].n.u1Present)
+        {
+            const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
-            return pPGM->CTX_SUFF(apGstPaePDs)[iPdPt]->a[iPD].u;
+            if ((pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK) == pPGM->aGCPhysGstPaePDs[iPdPt])
+                return pPGM->CTX_SUFF(apGstPaePDs)[iPdPt]->a[iPD];
 #endif
 
-        /* cache is out-of-sync. */
-        PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-        if (RT_SUCCESS(rc))
-            return pPD->a[iPD].u;
-        AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt].u));
+            /* cache is out-of-sync. */
+            PX86PDPAE pPD;
+            int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            if (RT_SUCCESS(rc))
+                return pPD->a[iPD];
+            AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt]));
+        }
     }
-    return 0;
+    X86PDEPAE ZeroPde = {0};
+    return ZeroPde;
 }
 
 
@@ -3664,8 +3667,9 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PM
  * @param   ppPml4e     Page Map Level-4 Entry (out)
  * @param   pPdpe       Page directory pointer table entry (out)
  */
-DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
+DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPE pPdpe)
 {
+    X86PDEPAE       ZeroPde = {0};
     PX86PML4        pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4  = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PCX86PML4E      pPml4e = *ppPml4e = &pGuestPml4->a[iPml4];
@@ -3673,7 +3677,7 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E 
     {
         PCX86PDPT   pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
-        AssertRCReturn(rc, 0);
+        AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         *pPdpe = pPdptTemp->a[iPdPt];
@@ -3681,13 +3685,14 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E 
         {
             PCX86PDPAE pPD;
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            AssertRCReturn(rc, 0);
+            AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-            return pPD->a[iPD].u;
+            return pPD->a[iPD];
         }
     }
-    return 0;
+
+    return ZeroPde;
 }
 
 
@@ -3699,28 +3704,29 @@ DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML4E 
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(uint64_t) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
+DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
 {
+    X86PDEPAE       ZeroPde = {0};
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pPGM);
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
         int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
-        AssertRCReturn(rc, 0);
+        AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PCX86PDPAE pPD;
             rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
-            AssertRCReturn(rc, 0);
+            AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
-            return pPD->a[iPD].u;
+            return pPD->a[iPD];
         }
     }
-    return 0;
+    return ZeroPde;
 }
 
 
