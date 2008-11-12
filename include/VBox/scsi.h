@@ -222,7 +222,7 @@ typedef const SCSIINQUIRYDATA *PCSCSIINQUIRYDATA;
 
 /** @} */
 
-#if defined(DEBUG) && defined(IN_RING3)
+#if defined(IN_RING3) && (defined(LOG_ENABLED) || defined(RT_STRICT))
 const char * SCSICmdText(uint8_t uCmd);
 const char * SCSISenseText(uint8_t uSense);
 const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ);
