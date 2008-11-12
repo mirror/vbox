@@ -498,9 +498,9 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
             }
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-            pVM->pgm.s.pGstAmd64PML4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+            pVM->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVM->pgm.s.pGstAmd64PML4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+            pVM->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
 #  endif
             if (!HWACCMIsNestedPagingActive(pVM))
             {
@@ -591,9 +591,9 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     }
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    pVM->pgm.s.pGstAmd64PML4R3 = 0;
+    pVM->pgm.s.pGstAmd64Pml4R3 = 0;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pGstAmd64PML4R0 = 0;
+    pVM->pgm.s.pGstAmd64Pml4R0 = 0;
 # endif
     if (!HWACCMIsNestedPagingActive(pVM))
     {

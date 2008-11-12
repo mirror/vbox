@@ -2032,10 +2032,10 @@ typedef struct PGM
     /** @name AMD64 Guest Paging.
      * @{ */
     /** The guest's page directory pointer table, R3 pointer. */
-    R3PTRTYPE(PX86PML4)             pGstAmd64PML4R3;
+    R3PTRTYPE(PX86PML4)             pGstAmd64Pml4R3;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The guest's page directory pointer table, R0 pointer. */
-    R0PTRTYPE(PX86PML4)             pGstAmd64PML4R0;
+    R0PTRTYPE(PX86PML4)             pGstAmd64Pml4R0;
 #endif
     /** @} */
 
@@ -3576,8 +3576,8 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
     AssertRCReturn(rc, NULL);
     return pGuestPml4;
 #else
-    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return pPGM->CTX_SUFF(pGstAmd64PML4);
+    Assert(pPGM->CTX_SUFF(pGstAmd64Pml4));
+    return pPGM->CTX_SUFF(pGstAmd64Pml4);
 #endif
 }
 
@@ -3597,8 +3597,8 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
     AssertRCReturn(rc, NULL);
     return &pGuestPml4->a[iPml4];
 #else
-    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return &pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4];
+    Assert(pPGM->CTX_SUFF(pGstAmd64Pml4));
+    return &pPGM->CTX_SUFF(pGstAmd64Pml4)->a[iPml4];
 #endif
 }
 
@@ -3622,8 +3622,8 @@ DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
     }
     return pGuestPml4->a[iPml4];
 #else
-    Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4];
+    Assert(pPGM->CTX_SUFF(pGstAmd64Pml4));
+    return pPGM->CTX_SUFF(pGstAmd64Pml4)->a[iPml4];
 #endif
 }
 
