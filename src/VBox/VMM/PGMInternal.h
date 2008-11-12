@@ -3486,7 +3486,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pPGM);
-    if (LIKELY(pGuestPDPT))
+    if (RT_LIKELY(pGuestPDPT))
 #else
     PX86PDPT pGuestPDPT = pPGM->CTX_SUFF(pGstPaePDPT);
 #endif
