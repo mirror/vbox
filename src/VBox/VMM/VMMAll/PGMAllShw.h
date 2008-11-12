@@ -148,8 +148,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
     X86PDEPAE Pde;
 
     /* PML4 */
-    X86PML4E        Pml4e;
-    Pml4e.u = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
+    X86PML4E        Pml4e = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
     if (!Pml4e.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
@@ -293,8 +292,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
 # if PGM_SHW_TYPE == PGM_TYPE_AMD64
         X86PDEPAE       Pde;
         /* PML4 */
-        X86PML4E        Pml4e;
-        Pml4e.u = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
+        X86PML4E        Pml4e = pgmShwGetLongModePML4E(&pVM->pgm.s, GCPtr);
         if (!Pml4e.n.u1Present)
             return VERR_PAGE_TABLE_NOT_PRESENT;
 

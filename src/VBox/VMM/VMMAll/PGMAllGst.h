@@ -178,12 +178,11 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
      * Get the PDE.
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    X86PDE Pde;
-    Pde.u = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
+    X86PDE      Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-    X86PDEPAE    Pde;
-    bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    X86PDEPAE   Pde;
+    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
 
     /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present
      * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
@@ -191,10 +190,10 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    PX86PML4E    pPml4e;
-    X86PDPE      Pdpe;
-    X86PDEPAE    Pde;
-    bool         fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
+    PX86PML4E   pPml4e;
+    X86PDPE     Pdpe;
+    X86PDEPAE   Pde;
+    bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
 
     Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr, &pPml4e, &Pdpe);
     Assert(pPml4e);
@@ -400,8 +399,7 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-    X86PDE    Pde;
-    Pde.u = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
+    X86PDE    Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
     X86PDEPAE Pde;
     Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);

@@ -3296,15 +3296,19 @@ DECLINLINE(RTGCPHYS) pgmGstGet4MBPhysPage(PPGM pPGM, X86PDE Pde)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PGUINT) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PD pGuestPD = 0;
     int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
-    AssertRCReturn(rc, 0);
-    return pGuestPD->a[GCPtr >> X86_PD_SHIFT].u;
+    if (RT_FAILURE(rc))
+    {
+        X86PDE ZeroPde = {0};
+        AssertMsgFailedReturn(("%Rrc\n", rc), ZeroPde);
+    }
+    return pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 #else
-    return pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT].u;
+    return pPGM->CTX_SUFF(pGuestPD)->a[GCPtr >> X86_PD_SHIFT];
 #endif
 }
 
@@ -3605,16 +3609,20 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   iPml4       The index.
  */
-DECLINLINE(X86PGPAEUINT) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
+DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
     int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
-    AssertRCReturn(rc, 0);
-    return pGuestPml4->a[iPml4].u;
+    if (RT_FAILURE(rc))
+    {
+        X86PML4E ZeroPml4e = {0};
+        AssertMsgFailedReturn(("%Rrc\n", rc), ZeroPml4e);
+    }
+    return pGuestPml4->a[iPml4];
 #else
     Assert(pPGM->CTX_SUFF(pGstAmd64PML4));
-    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4].u;
+    return pPGM->CTX_SUFF(pGstAmd64PML4)->a[iPml4];
 #endif
 }
 
@@ -3847,8 +3855,8 @@ DECLINLINE(X86PDEPAE) pgmShwGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
     int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->aHCPhysPaePDs[iPdpt], &pPD);
     if (RT_FAILURE(rc))
     {
-        X86PDEPAE ZeroPDE = {0};
-        return ZeroPDE;
+        X86PDEPAE ZeroPde = {0};
+        AssertMsgFailedReturn(("%Rrc\n", rc), ZeroPde);
     }
     return pPD->a[iPd];
 #else
@@ -3909,18 +3917,22 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
  * @param   pPGM        Pointer to the PGM instance data.
  * @param   GCPtr       The address.
  */
-DECLINLINE(X86PGPAEUINT) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
+DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
 {
     const unsigned  iPml4 = ((RTGCUINTPTR64)GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PML4       pShwPml4;
     Assert(pPGM->HCPhysPaePML4 != 0 && pPGM->HCPhysPaePML4 != NIL_RTHCPHYS);
     int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePML4, &pShwPml4);
-    AssertRCReturn(rc, 0);
-    return pShwPml4->a[iPml4].u;
+    if (RT_FAILURE(rc))
+    {
+        X86PML4E ZeroPml4e = {0};
+        AssertMsgFailedReturn(("%Rrc\n", rc), ZeroPml4e);
+    }
+    return pShwPml4->a[iPml4];
 # else
     Assert(pPGM->CTX_SUFF(pShwPaePml4));
-    return pPGM->CTX_SUFF(pShwPaePml4)->a[iPml4].u;
+    return pPGM->CTX_SUFF(pShwPaePml4)->a[iPml4];
 # endif
 }
 
