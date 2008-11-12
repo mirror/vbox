@@ -448,6 +448,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
+				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
 
@@ -465,6 +466,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				AssertRelease(rc != SOCKET_ERROR);
 				pData->phEvents[cEvents] = so->hNetworkEvent;
                                 cEvents++;
+				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
 		}
