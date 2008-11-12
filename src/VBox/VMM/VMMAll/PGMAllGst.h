@@ -451,12 +451,12 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
             unsigned off = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
-            pVM->pgm.s.pGstPaePDPTR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+            pVM->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVM->pgm.s.pGstPaePDPTR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+            pVM->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  endif
-            pVM->pgm.s.pGstPaePDPTRC = (RCPTRTYPE(PX86PDPT))((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + off);
-            Log(("Cached mapping %RGv\n", pVM->pgm.s.pGstPaePDPTRC));
+            pVM->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + off);
+            Log(("Cached mapping %RGv\n", pVM->pgm.s.pGstPaePdptRC));
 
             /*
              * Map the 4 PDs too.
@@ -575,11 +575,11 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
     pVM->pgm.s.pGuestPDRC = 0;
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-    pVM->pgm.s.pGstPaePDPTR3 = 0;
+    pVM->pgm.s.pGstPaePdptR3 = 0;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    pVM->pgm.s.pGstPaePDPTR0 = 0;
+    pVM->pgm.s.pGstPaePdptR0 = 0;
 # endif
-    pVM->pgm.s.pGstPaePDPTRC = 0;
+    pVM->pgm.s.pGstPaePdptRC = 0;
     for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
     {
         pVM->pgm.s.apGstPaePDsR3[i]    = 0;

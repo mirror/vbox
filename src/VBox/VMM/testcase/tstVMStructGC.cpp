@@ -400,11 +400,11 @@ int main()
     GEN_CHECK_OFF(PGM, pGuestPDR0);
 #endif
     GEN_CHECK_OFF(PGM, pGuestPDRC);
-    GEN_CHECK_OFF(PGM, pGstPaePDPTR3);
+    GEN_CHECK_OFF(PGM, pGstPaePdptR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pGstPaePDPTR0);
+    GEN_CHECK_OFF(PGM, pGstPaePdptR0);
 #endif
-    GEN_CHECK_OFF(PGM, pGstPaePDPTRC);
+    GEN_CHECK_OFF(PGM, pGstPaePdptRC);
     GEN_CHECK_OFF(PGM, apGstPaePDsR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, apGstPaePDsR0);
