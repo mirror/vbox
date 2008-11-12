@@ -579,7 +579,7 @@ static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, voi
 /**
  * Stream module open entry point, initializes the queue and allows streams processing.
  *
- * @param   pQueue          Pointer to the queue (cannot be NULL).
+ * @param   pQueue          Pointer to the read queue (cannot be NULL).
  * @param   pDev            Pointer to the dev_t associated with the driver at the end of the stream.
  * @param   fOpenMode       Open mode (always 0 for streams driver, thus ignored).
  * @param   fStreamMode     Stream open mode.
@@ -758,7 +758,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 /**
  * Stream module close entry point, undoes the work done on open and closes the stream.
  *
- * @param   pQueue          Pointer to the queue (cannot be NULL).
+ * @param   pQueue          Pointer to the read queue (cannot be NULL).
  * @param   fOpenMode       Open mode (always 0 for streams driver, thus ignored).
  * @param   pCred           Pointer to user credentials.
  *
@@ -855,7 +855,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
  * Read side put procedure for processing messages in the read queue.
  * All streams, bound and unbound share this read procedure.
  *
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  * @param   pMsg        Pointer to the message.
  *
  * @returns corresponding solaris error code.
@@ -1086,7 +1086,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
  * Write side put procedure for processing messages in the write queue.
  * All streams, bound and unbound share this write procedure.
  *
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the write queue.
  * @param   pMsg        Pointer to the message.
  *
  * @returns corresponding solaris error code.
@@ -1104,7 +1104,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
  * Put the stream in raw mode.
  *
  * @returns VBox status code.
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  */
 static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStream)
 {
@@ -1133,7 +1133,7 @@ static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStre
  * Put the stream back in fast path mode.
  *
  * @returns VBox status code.
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  */
 static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
 {
@@ -1178,7 +1178,7 @@ static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
 /**
  * Send fake promiscous mode requests downstream.
  *
- * @param   pQueue          Pointer to the queue.
+ * @param   pQueue          Pointer to the read queue.
  * @param   fPromisc        Whether to enable promiscous mode or not.
  * @param   PromiscLevel    Promiscous level; DL_PROMISC_PHYS/SAP/MULTI.
  *
@@ -1234,7 +1234,7 @@ static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
  * Send a fake physical address request downstream.
  *
  * @returns VBox status code.
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  * @param   pMsg        Pointer to the request message.
  */
 static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue)
@@ -1287,7 +1287,7 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
  * Prepare DLPI bind request to a SAP.
  *
  * @returns VBox status code.
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  * @param   SAP         The SAP to bind the stream to.
  */
 static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
@@ -1314,7 +1314,7 @@ static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
  * Prepare DLPI notifications request.
  *
  * @returns VBox status code.
- * @param   pQueue          Pointer to the queue.
+ * @param   pQueue          Pointer to the read queue.
  */
 static int vboxNetFltSolarisNotifyReq(queue_t *pQueue)
 {
@@ -1625,7 +1625,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     ldi_ident_release(DevId);
     if (rc)
     {
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream Failed to open '%s' rc=%d\n", szDev, rc));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream Failed to open '%s' rc=%d pszName='%s'\n", szDev, rc, pThis->szName));
         return VERR_INTNET_FLT_IF_FAILED;
     }
 
@@ -2674,7 +2674,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
  * @returns VBox status code.
  * @param   pThis       The instance.
  * @param   pStream     Pointer to the stream.
- * @param   pQueue      Pointer to the queue.
+ * @param   pQueue      Pointer to the read queue.
  * @param   pOrigMsg    Pointer to the message.
  */
 static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg)
@@ -3038,6 +3038,8 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis)
         RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
         pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
     }
+    else
+        LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create mutex. rc=%Rrc\n", rc));
 
     return rc;
 }
