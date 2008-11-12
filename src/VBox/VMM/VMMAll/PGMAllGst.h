@@ -181,21 +181,17 @@ PGM_GST_DECL(int, GetPage)(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS 
     X86PDE      Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
 
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-    X86PDEPAE   Pde;
+    /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present.
+     * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx). */
+    X86PDEPAE   Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
     bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
-
-    /* pgmGstGetPaePDE will return 0 if the PDPTE is marked as not present
-     * All the other bits in the PDPTE are only valid in long mode (r/w, u/s, nx)
-     */
-    Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
 
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
     PX86PML4E   pPml4e;
     X86PDPE     Pdpe;
-    X86PDEPAE   Pde;
+    X86PDEPAE   Pde = pgmGstGetLongModePDEEx(&pVM->pgm.s, GCPtr, &pPml4e, &Pdpe);
     bool        fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
 
-    Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr, &pPml4e, &Pdpe);
     Assert(pPml4e);
     if (!(pPml4e->n.u1Present & Pdpe.n.u1Present))
         return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -401,11 +397,9 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     X86PDE    Pde = pgmGstGet32bitPDE(&pVM->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
-    X86PDEPAE Pde;
-    Pde.u = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
+    X86PDEPAE Pde = pgmGstGetPaePDE(&pVM->pgm.s, GCPtr);
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
-    X86PDEPAE Pde;
-    Pde.u = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
+    X86PDEPAE Pde = pgmGstGetLongModePDE(&pVM->pgm.s, GCPtr);
 # endif
 
     pPDE->u = (X86PGPAEUINT)Pde.u;
@@ -839,11 +833,9 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT
         X86PDE      Pde = pPDSrc->a[GCPtr >> X86_PD_SHIFT];
 #elif PGM_GST_TYPE == PGM_TYPE_PAE
-        X86PDEPAE   Pde;
-        Pde.u = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
+        X86PDEPAE   Pde = pgmGstGetPaePDE(&pState->pVM->pgm.s, GCPtr);
 #elif PGM_GST_TYPE == PGM_TYPE_AMD64
-        X86PDEPAE   Pde;
-        Pde.u = pgmGstGetLongModePDE(&pState->pVM->pgm.s, GCPtr);
+        X86PDEPAE   Pde = pgmGstGetLongModePDE(&pState->pVM->pgm.s, GCPtr);
 #endif
         if (Pde.n.u1Present)
         {
