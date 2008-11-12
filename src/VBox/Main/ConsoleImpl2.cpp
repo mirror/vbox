@@ -61,6 +61,14 @@
 # include <zone.h>
 #endif
 
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_NETFLT)
+# include <sys/ioctl.h>
+# include <sys/socket.h>
+# include <linux/types.h>
+# include <linux/if.h>
+# include <linux/wireless.h>
+#endif
+
 
 /*
  * VC++ 8 / amd64 has some serious trouble with this function.
@@ -268,7 +276,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pLunL2 = NULL;        /* /Devices/Dev/0/LUN#0/AttachedDriver/Config/ */
     PCFGMNODE pIdeInst = NULL;      /* /Devices/piix3ide/0/ */
     PCFGMNODE pSataInst = NULL;     /* /Devices/ahci/0/ */
-	PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
+    PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
 
     rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
 
@@ -1232,6 +1240,29 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         ||  strstr(pszHifName, "AirPort" ))
                     {
                         rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
+                    }
+# elif defined(RT_OS_LINUX)
+                    int iSock = socket(AF_INET, SOCK_DGRAM, 0);
+                    if (iSock >= 0)
+                    {
+                        struct iwreq WRq;
+
+                        memset(&WRq, 0, sizeof(WRq));
+                        strncpy(WRq.ifr_name, pszHifName, IFNAMSIZ);
+                        if (ioctl(iSock, SIOCGIWNAME, &WRq) >= 0)
+                        {
+                            rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
+                            Log(("Set SharedMacOnWire\n"));
+                        }
+                        else
+                        {
+                            Log(("Failed to get wireless name\n"));
+                        }
+                        close(iSock);
+                    }
+                    else
+                    {
+                        Log(("Failed to open wireless socket\n"));
                     }
 # else
                     /** @todo PORTME: wireless detection */
