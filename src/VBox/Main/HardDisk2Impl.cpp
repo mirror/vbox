@@ -175,6 +175,9 @@ HRESULT HardDisk2::Task::runNow()
 
 /**
  * Helper class for merge operations.
+ *
+ * @note It is assumed that when modifying methods of this class are called,
+ *       HardDisk2::treeLock() is held in read mode.
  */
 class HardDisk2::MergeChain : public HardDisk2::List,
                               public com::SupportErrorInfoBase
@@ -570,6 +573,8 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aLocation)
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent hard disk or NULL for a root hard disk.
  * @param aNode         <HardDisk> settings node.
+ *
+ * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
 HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
                          const settings::Key &aNode)
@@ -586,14 +591,19 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
 
     /* share VirtualBox and parent weakly */
     unconst (mVirtualBox) = aVirtualBox;
-    mParent = aParent;
 
     /* register with VirtualBox/parent early, since uninit() will
      * unconditionally unregister on failure */
-    if (!aParent)
+    if (aParent == NULL)
         aVirtualBox->addDependentChild (this);
-    else
+
+    {
+        /* we set mParent */
+        AutoWriteLock treeLock (this->treeLock());
+
+        mParent = aParent;
         aParent->addDependentChild (this);
+    }
 
     /* see below why we don't call queryInfo() (and therefore treat the medium
      * as inaccessible for now */
@@ -669,6 +679,8 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
  *
  * @note All children of this hard disk get uninitialized by calling their
  *       uninit() methods.
+ *
+ * @note Locks treeLock() for writing, VirtualBox for writing.
  */
 void HardDisk2::uninit()
 {
@@ -682,18 +694,26 @@ void HardDisk2::uninit()
         /* we are being uninitialized after've been deleted by merge.
          * Reparenting has already been done so don't touch it here (we are
          * now orphans and remoeDependentChild() will assert) */
+
+        Assert (mParent.isNull());
     }
     else
     {
+        /* we uninit children and reset mParent
+         * and VirtualBox::removeDependentChild() needs a write lock */
+        AutoMultiWriteLock2 alock (mVirtualBox->lockHandle(), this->treeLock());
+
         uninitDependentChildren();
 
-        if (mParent)
+        if (!mParent.isNull())
+        {
             mParent->removeDependentChild (this);
+            mParent.setNull();
+        }
         else
             mVirtualBox->removeDependentChild (this);
     }
 
-    mParent.setNull();
     unconst (mVirtualBox).setNull();
 }
 
@@ -752,6 +772,9 @@ STDMETHODIMP HardDisk2::COMSETTER(Type) (HardDiskType_T aType)
         return S_OK;
     }
 
+    /* we access mParent & children() */
+    AutoReadLock treeLock (this->treeLock());
+
     /* cannot change the type of a differencing hard disk */
     if (!mParent.isNull())
         return setError (E_FAIL,
@@ -802,7 +825,8 @@ STDMETHODIMP HardDisk2::COMGETTER(Parent) (IHardDisk2 **aParent)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReadLock alock (this);
+    /* we access mParent */
+    AutoReadLock treeLock (this->treeLock());
 
     mParent.queryInterfaceTo (aParent);
 
@@ -817,7 +841,8 @@ STDMETHODIMP HardDisk2::COMGETTER(Children) (ComSafeArrayOut (IHardDisk2 *, aChi
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReadLock alock (this);
+    /* we access children */
+    AutoReadLock treeLock (this->treeLock());
 
     SafeIfaceArray <IHardDisk2> children (this->children());
     children.detachTo (ComSafeArrayOutArg (aChildren));
@@ -862,6 +887,9 @@ STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
         CheckComRCReturnRC (autoCaller.rc());
 
         AutoReadLock alock (this);
+
+        /* we access mParent */
+        AutoReadLock treeLock (this->treeLock());
 
         if (mParent.isNull())
         {
@@ -1080,7 +1108,7 @@ STDMETHODIMP HardDisk2::FlattenTo (IHardDisk2 *aTarget, IProgress **aProgress)
  * @param aOldPath  Old path (full).
  * @param aNewPath  New path (full).
  *
- * @note Locks this object and all children for writing.
+ * @note Locks treeLock() for reading, this object and all children for writing.
  */
 void HardDisk2::updatePaths (const char *aOldPath, const char *aNewPath)
 {
@@ -1091,6 +1119,9 @@ void HardDisk2::updatePaths (const char *aOldPath, const char *aNewPath)
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock (this);
+
+    /* we access children() */
+    AutoReadLock treeLock (this->treeLock());
 
     updatePath (aOldPath, aNewPath);
 
@@ -1113,53 +1144,28 @@ void HardDisk2::updatePaths (const char *aOldPath, const char *aNewPath)
  * @param aLevel    Where to store the number of ancestors of this hard disk
  *                  (zero for the root), may be @c NULL.
  *
- * @note This method may return an uninitialized object if it happens in
- *       parallel with such an operation as the VirtualBox shutdown or hard disk
- *       merge.
- *
- * @note Locks this object and ancestors for reading. Neither this object nor
- *       its ancestors may be locked or have active callers on the current
- *       thread otherwise a deadlock or an endless loop will occur.
+ * @note Locks treeLock() for reading.
  */
 ComObjPtr <HardDisk2> HardDisk2::root (uint32_t *aLevel /*= NULL*/)
 {
-    /* Note: This method locks hard disks sequentially to avoid breaking the
-     * {parent,child} lock order which is impossible to follow here. As a
-     * result, any hard disk in the chain may become uninitialized before this
-     * method finishes walking (for example, as a result of the merge operation
-     * which removes hard disks from the chain). For this reason, we retry the
-     * walk from the beginnig each time it happens (because we must always
-     * return a non-null object).
-     *
-     * As the worst case, we end up having ourselves uninitialized (either
-     * because VirtualBox has initiated the shutdown procedure, or because we
-     * were closed/deleted/etc). In this case, we just return ourselves to avoid
-     * the endless loop.
-     */
-
     ComObjPtr <HardDisk2> root;
     uint32_t level;
 
-    do
+    AutoCaller autoCaller (this);
+    AssertReturn (autoCaller.isOk(), root);
+
+    /* we access mParent */
+    AutoReadLock treeLock (this->treeLock());
+
+    root = this;
+    level = 0;
+
+    if (!mParent.isNull())
     {
-        root = this;
-        level = 0;
-
-        do
+        for (;;)
         {
-            AutoCaller autoCaller (root);
-            if (!autoCaller.isOk())
-            {
-                /* break the endless loop, see above */
-                if (root == this)
-                    break;
-
-                /* cause to start over with this object */
-                root.setNull();
-                break;
-            }
-
-            AutoReadLock alock (root);
+            AutoCaller rootCaller (root);
+            AssertReturn (rootCaller.isOk(), root);
 
             if (root->mParent.isNull())
                 break;
@@ -1167,9 +1173,7 @@ ComObjPtr <HardDisk2> HardDisk2::root (uint32_t *aLevel /*= NULL*/)
             root = root->mParent;
             ++ level;
         }
-        while (true);
     }
-    while (root.isNull());
 
     if (aLevel != NULL)
         *aLevel = level;
@@ -1182,7 +1186,7 @@ ComObjPtr <HardDisk2> HardDisk2::root (uint32_t *aLevel /*= NULL*/)
  * dependants (children) or is part of the snapshot. Related to the hard disk
  * type and posterity, not to the current media state.
  *
- * @note Locks this object for reading.
+ * @note Locks this object and treeLock() for reading.
  */
 bool HardDisk2::isReadOnly()
 {
@@ -1190,6 +1194,9 @@ bool HardDisk2::isReadOnly()
     AssertComRCReturn (autoCaller.rc(), false);
 
     AutoReadLock alock (this);
+
+    /* we access children */
+    AutoReadLock treeLock (this->treeLock());
 
     switch (mm.type)
     {
@@ -1226,7 +1233,7 @@ bool HardDisk2::isReadOnly()
  *
  * @param aaParentNode  Parent <HardDisks> or <HardDisk> node.
  *
- * @note Locks this object for reading.
+ * @note Locks this object, treeLock() and children for reading.
  */
 HRESULT HardDisk2::saveSettings (settings::Key &aParentNode)
 {
@@ -1238,6 +1245,9 @@ HRESULT HardDisk2::saveSettings (settings::Key &aParentNode)
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
+
+    /* we access mParent */
+    AutoReadLock treeLock (this->treeLock());
 
     Key diskNode = aParentNode.appendKey ("HardDisk");
     /* required */
@@ -1401,7 +1411,7 @@ bool HardDisk2::isFileLocation (const char *aLocation)
  * @param aChain        Where to store the created merge chain (may return NULL
  *                      if no real merge is necessary).
  *
- * @note Locks the branch lock for reading. Locks this object, aTarget and all
+ * @note Locks treeLock() for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
 HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
@@ -1412,6 +1422,9 @@ HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
     aChain = NULL;
 
     AutoWriteLock alock (this);
+
+    /* we access mParent & children() */
+    AutoReadLock treeLock (this->treeLock());
 
     AssertReturn (mm.type == HardDiskType_Normal, E_FAIL);
 
@@ -1527,9 +1540,9 @@ HRESULT HardDisk2::prepareDiscard (MergeChain * &aChain)
  * @param aChain        Merge chain created by #prepareDiscard() (may be NULL if
  *                      no real merge takes place).
  *
- * @note Locks the branch lock for writing. Locks the hard disks from the chain
- *       for writing. Locks the machine object when the backward merge takes
- *       place.
+ * @note Locks the hard disks from the chain for writing. Locks the machine
+ *       object when the backward merge takes place. Locks treeLock() lock for
+ *       reading or writing.
  */
 HRESULT HardDisk2::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
 {
@@ -1549,6 +1562,9 @@ HRESULT HardDisk2::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
         if (aChain == NULL)
         {
             AutoWriteLock alock (this);
+
+            /* we access mParent & children() */
+            AutoReadLock treeLock (this->treeLock());
 
             Assert (children().size() == 0);
 
@@ -1598,7 +1614,8 @@ HRESULT HardDisk2::discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain)
  * @param aChain        Merge chain created by #prepareDiscard() (may be NULL if
  *                      no real merge takes place).
  *
- * @note Locks the hard disks from the chain for writing.
+ * @note Locks the hard disks from the chain for writing. Locks treeLock() for
+ *       reading.
  */
 void HardDisk2::cancelDiscard (MergeChain *aChain)
 {
@@ -1608,6 +1625,9 @@ void HardDisk2::cancelDiscard (MergeChain *aChain)
     if (aChain == NULL)
     {
         AutoWriteLock alock (this);
+
+        /* we access mParent & children() */
+        AutoReadLock treeLock (this->treeLock());
 
         Assert (children().size() == 0);
 
@@ -1655,24 +1675,22 @@ void HardDisk2::cancelDiscard (MergeChain *aChain)
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
  *
- * @note Locks mVirtualBox, mParent and this object for writing.
+ * @note Locks mVirtualBox and this object for writing. Locks treeLock() for
+ *       writing.
  */
 HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
 {
     AssertReturn (aProgress != NULL || aWait == true, E_FAIL);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
     /* unregisterWithVirtualBox() needs a write lock. We want to unregister
      * ourselves atomically after detecting that deletion is possible to make
      * sure that we don't do that after another thread has done
      * VirtualBox::findHardDisk2() but before it starts using us (provided that
-     * it holds a mVirtualBox lock too of course).
-     *
-     * mParent->removeDependentChild() needs a write lock too. */
+     * it holds a mVirtualBox lock too of course). */
 
-    AutoMultiWriteLock3 alock (mVirtualBox, mParent, this);
+    AutoWriteLock vboxLock (mVirtualBox);
+
+    AutoWriteLock alock (this);
 
     switch (m.state)
     {
@@ -1690,12 +1708,25 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
     HRESULT rc = canClose();
     CheckComRCReturnRC (rc);
 
+    /* go to Deleting state before leaving the lock */
+    m.state = MediaState_Deleting;
+
+    /* we need to leave this object's write lock now because of
+     * unregisterWithVirtualBox() that locks treeLock() for writing */
+    alock.leave();
+
     /* try to remove from the list of known hard disks before performing actual
      * deletion (we favor the consistency of the media registry in the first
      * place which would have been broken if unregisterWithVirtualBox() failed
      * after we successfully deleted the storage) */
 
     rc = unregisterWithVirtualBox();
+
+    alock.enter();
+
+    /* restore the state because we may fail below; we will set it later again*/
+    m.state = MediaState_Created;
+
     CheckComRCReturnRC (rc);
 
     ComObjPtr <Progress> progress;
@@ -1915,7 +1946,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
  * @param aIgnoreAttachments    Don't check if the source or any intermediate
  *                              hard disk is attached to any VM.
  *
- * @note Locks the branch lock for reading. Locks this object, aTarget and all
+ * @note Locks treeLock() for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
 HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
@@ -1927,12 +1958,12 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
 
-    AutoCaller targetCaller (this);
+    AutoCaller targetCaller (aTarget);
     AssertComRCReturnRC (targetCaller.rc());
 
     aChain = NULL;
 
-    /* tree lock is always the first */
+    /* we walk the tree */
     AutoReadLock treeLock (this->treeLock());
 
     HRESULT rc = S_OK;
@@ -1955,8 +1986,10 @@ HRESULT HardDisk2::prepareMergeTo (HardDisk2 *aTarget,
             else
             {
                 Bstr tgtLoc;
-                rc = aTarget->COMGETTER(Location) (tgtLoc.asOutParam());
-                CheckComRCThrowRC (rc);
+                {
+                    AutoReadLock alock (this);
+                    tgtLoc = aTarget->locationFull();
+                }
 
                 AutoReadLock alock (this);
                 return setError (E_FAIL,
@@ -2247,7 +2280,9 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
  * @note This method may block during a system I/O call that checks storage
  *       accessibility.
  *
- * @note Locks this object for writing.
+ * @note Locks treeLock() for reading and writing (for new diff media checked
+ *       for the first time). Locks mParent for reading. Locks this object for
+ *       writing.
  */
 HRESULT HardDisk2::queryInfo()
 {
@@ -2412,14 +2447,22 @@ HRESULT HardDisk2::queryInfo()
                         throw S_OK;
                     }
 
-                    /* associate with parent, deassociate from VirtualBox */
+                    /* deassociate from VirtualBox, associate with parent */
+
+                    mVirtualBox->removeDependentChild (this);
+
+                    /* we set mParent & children() */
+                    AutoWriteLock treeLock (this->treeLock());
+
                     Assert (mParent.isNull());
                     mParent = parent;
                     mParent->addDependentChild (this);
-                    mVirtualBox->removeDependentChild (this);
                 }
                 else
                 {
+                    /* we access mParent */
+                    AutoReadLock treeLock (this->treeLock());
+
                     /* check that parent UUIDs match. Note that there's no need
                      * for the parent's AutoCaller (our lifetime is bound to
                      * it) */
@@ -2513,9 +2556,14 @@ HRESULT HardDisk2::queryInfo()
 /**
  * @note Called from this object's AutoMayUninitSpan and from under mVirtualBox
  *       write lock.
+ *
+ * @note Locks treeLock() for reading.
  */
 HRESULT HardDisk2::canClose()
 {
+    /* we access children */
+    AutoReadLock treeLock (this->treeLock());
+
     if (children().size() != 0)
         return setError (E_FAIL,
             tr ("Hard disk '%ls' has %d child hard disks"),
@@ -2543,17 +2591,17 @@ HRESULT HardDisk2::canAttach (const Guid &aMachineId,
  * @note Called from within this object's AutoMayUninitSpan (or AutoCaller) and
  *       from under mVirtualBox write lock.
  *
- * @note Locks mParent for writing.
+ * @note Locks treeLock() for writing.
  */
 HRESULT HardDisk2::unregisterWithVirtualBox()
 {
     /* Note that we need to de-associate ourselves from the parent to let
      * unregisterHardDisk2() properly save the registry */
 
-    const ComObjPtr <HardDisk2, ComWeakRef> parent = mParent;
+    /* we modify mParent and access children */
+    AutoWriteLock treeLock (this->treeLock());
 
-    /* Lock parent to make the try atomic WRT to mParent->COMGETTER(Children) */
-    AutoWriteLock parentLock (parent);
+    const ComObjPtr <HardDisk2, ComWeakRef> parent = mParent;
 
     AssertReturn (children().size() == 0, E_FAIL);
 
@@ -2879,12 +2927,10 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
             if (SUCCEEDED (rc))
             {
-                /* mVirtualBox->registerHardDisk2() needs a write lock */
-                AutoWriteLock vboxLock (that->mVirtualBox);
-                thatLock.enter();
-
-                target->m.size = size;
-                target->mm.logicalSize = logicalSize;
+                /* we set mParent & children() (note that thatLock is released
+                 * here), but lock VirtualBox first to follow the rule */
+                AutoMultiWriteLock2 alock (that->mVirtualBox->lockHandle(),
+                                           that->treeLock());
 
                 Assert (target->mParent.isNull());
 
@@ -2899,11 +2945,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                  * better than breaking media registry consistency) */
                 rc = that->mVirtualBox->registerHardDisk2 (target);
 
-                if (SUCCEEDED (rc))
-                {
-                    target->m.state = MediaState_Created;
-                }
-                else
+                if (FAILED (rc))
                 {
                     /* break the parent association on failure to register */
                     target->mVirtualBox->addDependentChild (target);
@@ -2912,10 +2954,17 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 }
             }
 
-            if (FAILED (rc))
-            {
-                thatLock.maybeEnter();
+            thatLock.maybeEnter();
 
+            if (SUCCEEDED (rc))
+            {
+                target->m.state = MediaState_Created;
+
+                target->m.size = size;
+                target->mm.logicalSize = logicalSize;
+            }
+            else
+            {
                 /* back to NotCreated on failiure */
                 target->m.state = MediaState_NotCreated;
             }
@@ -2979,15 +3028,15 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                     {
                         /* complex sanity (sane complexity) */
                         Assert ((chain->isForward() &&
-                                 (*it != chain->back() &&
-                                  (*it)->m.state == MediaState_Deleting) ||
-                                 (*it == chain->back() &&
-                                  (*it)->m.state == MediaState_LockedWrite)) ||
+                                 ((*it != chain->back() &&
+                                   (*it)->m.state == MediaState_Deleting) ||
+                                  (*it == chain->back() &&
+                                   (*it)->m.state == MediaState_LockedWrite))) ||
                                 (!chain->isForward() &&
-                                 (*it != chain->front() &&
-                                  (*it)->m.state == MediaState_Deleting) ||
-                                 (*it == chain->front() &&
-                                  (*it)->m.state == MediaState_LockedWrite)));
+                                 ((*it != chain->front() &&
+                                   (*it)->m.state == MediaState_Deleting) ||
+                                  (*it == chain->front() &&
+                                   (*it)->m.state == MediaState_LockedWrite))));
 
                         Assert (*it == chain->target() ||
                                 (*it)->m.backRefs.size() == 0);
@@ -3087,11 +3136,10 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 /* all hard disks but the target were successfully deleted by
                  * VDMerge; reparent the last one and uninitialize deleted */
 
-                /* mVirtualBox->(un)registerHardDisk2() needs a write lock */
-                AutoWriteLock vboxLock (that->mVirtualBox);
-
-                /* we will reparent */
-                AutoWriteLock treeLock (that->mVirtualBox->hardDiskTreeHandle());
+                /* we set mParent & children() (note that thatLock is released
+                 * here), but lock VirtualBox first to follow the rule */
+                AutoMultiWriteLock2 alock (that->mVirtualBox->lockHandle(),
+                                           that->treeLock());
 
                 HardDisk2 *source = chain->source();
                 HardDisk2 *target = chain->target();
@@ -3103,12 +3151,6 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                     rc2 = target->mVirtualBox->
                         unregisterHardDisk2 (target, false /* aSaveSettings */);
                     AssertComRC (rc2);
-
-                    /* obey {parent,child} lock order (add/remove methods below
-                     * do locking) */
-                    AutoWriteLock parentLock (chain->parent());
-                    AutoWriteLock sourceLock (source);
-                    AutoWriteLock targetLock (target);
 
                     /* then, reparent it and disconnect the deleted branch at
                      * both ends (chain->parent() is source's parent) */
@@ -3133,14 +3175,8 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 }
                 else
                 {
-                    /* obey {parent,child} lock order (add/remove methods below
-                     * do locking) */
-                    AutoWriteLock targetLock (target);
-
                     Assert (target->children().size() == 1);
                     HardDisk2 *targetChild = target->children().front();
-
-                    AutoWriteLock targetChildLock (target);
 
                     /* disconnect the deleted branch at the elder end */
                     target->removeDependentChild (targetChild);

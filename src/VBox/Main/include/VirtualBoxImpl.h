@@ -349,7 +349,17 @@ public:
 
     /**
      * Returns a lock handle used to protect changes to the hard disk hierarchy
-     * (e.g. changing HardDisk2::mParent fields and adding/removing children).
+     * (e.g. serialize access to the HardDisk2::mParent fields and methods
+     * adding/removing children). When using this lock, the following rules must
+     * be obeyed:
+     *
+     * 1. The write lock on this handle must be either held alone on the thread
+     *    or requested *after* the VirtualBox object lock. Mixing with other
+     *    locks is prohibited.
+     *
+     * 2. The read lock on this handle may be intermixed with any other lock
+     *    with the exception that it must be requested *after* the VirtualBox
+     *    object lock.
      */
     RWLockHandle *hardDiskTreeHandle() { return &mHardDiskTreeHandle; }
 
