@@ -2072,7 +2072,7 @@ typedef struct PGM
      * These are *NOT* 4 contiguous pages. */
     RTHCPHYS                        aHCPhysPaePDs[4];
     /** The Physical Address (HC) of the PAE PDPT. */
-    RTHCPHYS                        HCPhysPaePDPT;
+    RTHCPHYS                        HCPhysShwPaePdpt;
     /** The PAE PDPT - R3 Ptr. */
     R3PTRTYPE(PX86PDPT)             pShwPaePdptR3;
     /** The PAE PDPT - R0 Ptr. */
@@ -3880,8 +3880,8 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pShwPdpt;
-    Assert(pPGM->HCPhysPaePDPT != 0 && pPGM->HCPhysPaePDPT != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysPaePDPT, &pShwPdpt);
+    Assert(pPGM->HCPhysShwPaePdpt != 0 && pPGM->HCPhysShwPaePdpt != NIL_RTHCPHYS);
+    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePdpt, &pShwPdpt);
     AssertRCReturn(rc, 0);
     return pShwPdpt;
 #else

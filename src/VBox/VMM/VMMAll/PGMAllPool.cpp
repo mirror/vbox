@@ -149,7 +149,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             HCPhys = pVM->pgm.s.aHCPhysPaePDs[3];
             break;
         case PGMPOOL_IDX_PDPT:
-            HCPhys = pVM->pgm.s.HCPhysPaePDPT;
+            HCPhys = pVM->pgm.s.HCPhysShwPaePdpt;
             break;
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));

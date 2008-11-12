@@ -427,7 +427,7 @@ int main()
     GEN_CHECK_OFF(PGM, pShwPaePdptR3);
     GEN_CHECK_OFF(PGM, pShwPaePdptR0);
     GEN_CHECK_OFF(PGM, pShwPaePdptRC);
-    GEN_CHECK_OFF(PGM, HCPhysPaePDPT);
+    GEN_CHECK_OFF(PGM, HCPhysShwPaePdpt);
     GEN_CHECK_OFF(PGM, pShwPaePml4R3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pShwPaePml4R0);
