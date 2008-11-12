@@ -1260,7 +1260,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysPaePDPT;
+            return pVM->pgm.s.HCPhysShwPaePdpt;
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
@@ -1293,7 +1293,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysPaePDPT;
+            return pVM->pgm.s.HCPhysShwPaePdpt;
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
@@ -1335,7 +1335,7 @@ VMMDECL(RTHCPHYS) PGMGetHyper32BitCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysPaePDPT;
+    return pVM->pgm.s.HCPhysShwPaePdpt;
 }
 
 

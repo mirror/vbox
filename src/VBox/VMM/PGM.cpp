@@ -1450,13 +1450,13 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     /* get physical addresses. */
-    pVM->pgm.s.HCPhysShw32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
+    pVM->pgm.s.HCPhysShw32BitPD = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
     Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhysShw32BitPD) == pVM->pgm.s.pShw32BitPdR3);
     pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[0]);
     pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[1]);
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
     pVM->pgm.s.aHCPhysPaePDs[3] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[3]);
-    pVM->pgm.s.HCPhysPaePDPT    = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
+    pVM->pgm.s.HCPhysShwPaePdpt = MMPage2Phys(pVM, pVM->pgm.s.pShwPaePdptR3);
     pVM->pgm.s.HCPhysNestedRoot = MMPage2Phys(pVM, pVM->pgm.s.pShwNestedRootR3);
 
     /*
@@ -1513,10 +1513,10 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
+        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysShwPaePdpt=%RHp HCPhysPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysShw32BitPD,
                 pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
-                pVM->pgm.s.HCPhysPaePDPT,
+                pVM->pgm.s.HCPhysShwPaePdpt,
                 pVM->pgm.s.HCPhysPaePML4));
         LogRel(("Debug: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
@@ -1834,7 +1834,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     AssertRelease(pVM->pgm.s.apShwPaePDsRC[2] + PAGE_SIZE == pVM->pgm.s.apShwPaePDsRC[3]);
     GCPtr += PAGE_SIZE; /* reserved page */
 
-    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysPaePDPT, PAGE_SIZE, 0);
+    rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysShwPaePdpt, PAGE_SIZE, 0);
     AssertRCReturn(rc, rc);
     pVM->pgm.s.pShwPaePdptRC = GCPtr;
     GCPtr += PAGE_SIZE;
