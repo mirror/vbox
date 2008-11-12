@@ -179,8 +179,7 @@ PGM_SHW_DECL(int, GetPage)(PVM pVM, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCP
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     bool            fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVM) & MSR_K6_EFER_NXE);
-    X86PDEPAE       Pde;
-    Pde.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
+    X86PDEPAE       Pde = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
     const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -318,8 +317,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVM pVM, RTGCUINTPTR GCPtr, size_t cb, uint64_t fF
         Pde = pPd->a[iPd];
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-        X86PDEPAE       Pde;
-        Pde.u = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
+        X86PDEPAE       Pde = pgmShwGetPaePDE(&pVM->pgm.s, GCPtr);
 
 # elif PGM_SHW_TYPE == PGM_TYPE_EPT
         const unsigned  iPd = ((GCPtr >> SHW_PD_SHIFT) & SHW_PD_MASK);
