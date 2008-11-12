@@ -254,11 +254,9 @@ DevicesR3_SOURCES       = \
 	Audio/DevSB16.cpp \
 	PC/DevDMA.cpp \
 	Storage/fdc.c \
+	Storage/Debug.cpp \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
-
-DevicesR3_SOURCES.debug = \
-	Storage/Debug.cpp
 
 ifdef VBOX_WITH_E1000
  DevicesR3_DEFS        += VBOX_WITH_E1000

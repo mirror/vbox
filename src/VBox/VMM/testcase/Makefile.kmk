@@ -151,9 +151,7 @@ tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstInstrEmul_TEMPLATE   = VBOXR3TSTEXE
-tstInstrEmul_SOURCES    = tstInstrEmul.cpp \
-                          ../VMMAll/EMAllA.asm
-
+tstInstrEmul_SOURCES    = tstInstrEmul.cpp ../VMMAll/EMAllA.asm
 tstInstrEmul_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 tstCFGM_TEMPLATE        = VBOXR3TSTEXE
