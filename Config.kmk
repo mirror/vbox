@@ -3390,8 +3390,10 @@ endif
 #
 TEMPLATE_VBOXGUESTR3NPEXE          = VBox Guest Program Non-pedantic
 TEMPLATE_VBOXGUESTR3NPEXE_EXTENDS  = VBOXGUESTR3EXE
+ifneq ($(KBUILD_TARGET),win) # gcc only
 TEMPLATE_VBOXGUESTR3NPEXE_CXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)) -Wno-sign-compare
 TEMPLATE_VBOXGUESTR3NPEXE_CFLAGS   = $(filter-out -pedantic -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXGUESTR3EXE_CFLAGS)) -Wno-sign-compare
+endif
 
 #
 # Template for building R3 (dynamic) libraries for the guest additions (no -pedantic)
@@ -3404,6 +3406,18 @@ ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_VBOXGUESTR3NPDLL_CFLAGS   = $(TEMPLATE_VBOXGUESTR3NPEXE_CFLAGS) -fPIC
  TEMPLATE_VBOXGUESTR3NPDLL_CXXFLAGS = $(TEMPLATE_VBOXGUESTR3NPEXE_CXXFLAGS) -fPIC -fno-exceptions
  TEMPLATE_VBOXGUESTR3NPDLL_LDFLAGS  = $(TEMPLATE_VBOXGUESTR3NPEXE_LDFLAGS) -fPIC
+endif
+
+#
+# Template for building R3 (static) libraries for the guest additions (no -pedantic)
+#
+TEMPLATE_VBOXGUESTR3NPLIB           = VBox Guest User Libraries Non-pedantic
+TEMPLATE_VBOXGUESTR3NPLIB_EXTENDS   = VBOXGUESTR3NPEXE
+TEMPLATE_VBOXGUESTR3NPLIB_INST      = $(INST_ADDITIONS_LIB)
+if1of ($(KBUILD_TARGET), solaris) ## @todo r=bird: Fix the *R3Mini template to VBOXGUESTR3DLL and remove this hack.
+ TEMPLATE_VBOXGUESTR3NPLIB_DEFS     = $(TEMPLATE_VBOXGUESTR3NPEXE_DEFS) PIC
+ TEMPLATE_VBOXGUESTR3NPLIB_CFLAGS   = $(TEMPLATE_VBOXGUESTR3NPEXE_CFLAGS) -fPIC
+ TEMPLATE_VBOXGUESTR3NPLIB_CXXFLAGS = $(TEMPLATE_VBOXGUESTR3NPEXE_CXXFLAGS) -fPIC -fno-exceptions
 endif
 
 
