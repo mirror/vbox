@@ -1264,7 +1264,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVM pVM)
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysPaePML4;
+            return pVM->pgm.s.HCPhysShwPaePml4;
 
         case PGMMODE_EPT:
             return pVM->pgm.s.HCPhysShwNestedRoot;
@@ -1297,7 +1297,7 @@ VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVM pVM, PGMMODE enmShadowMode)
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysPaePML4;
+            return pVM->pgm.s.HCPhysShwPaePml4;
 
         default:
             AssertMsgFailed(("enmShadowMode=%d\n", enmShadowMode));
@@ -1346,7 +1346,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperPaeCR3(PVM pVM)
  */
 VMMDECL(RTHCPHYS) PGMGetHyperAmd64CR3(PVM pVM)
 {
-    return pVM->pgm.s.HCPhysPaePML4;
+    return pVM->pgm.s.HCPhysShwPaePml4;
 }
 
 

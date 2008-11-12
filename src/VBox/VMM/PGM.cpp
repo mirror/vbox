@@ -1513,11 +1513,11 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysShwPaePdpt=%RHp HCPhysPaePML4=%RHp\n",
+        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysShwPaePdpt=%RHp HCPhysShwPaePml4=%RHp\n",
                 pVM->pgm.s.HCPhysShw32BitPD,
                 pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
                 pVM->pgm.s.HCPhysShwPaePdpt,
-                pVM->pgm.s.HCPhysPaePML4));
+                pVM->pgm.s.HCPhysShwPaePml4));
         LogRel(("Debug: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
         LogRel(("Debug: apInterPTs={%RHp,%RHp} apInterPaePTs={%RHp,%RHp} apInterPaePDs={%RHp,%RHp,%RHp,%RHp} pInterPaePDPT64=%RHp\n",
