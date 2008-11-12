@@ -395,11 +395,11 @@ int main()
     GEN_CHECK_OFF(PGM, GCPhysCR3);
     GEN_CHECK_OFF(PGM, GCPtrCR3Mapping);
     GEN_CHECK_OFF(PGM, GCPhysGstCR3Monitored);
-    GEN_CHECK_OFF(PGM, pGuestPDR3);
+    GEN_CHECK_OFF(PGM, pGst32BitPdR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-    GEN_CHECK_OFF(PGM, pGuestPDR0);
+    GEN_CHECK_OFF(PGM, pGst32BitPdR0);
 #endif
-    GEN_CHECK_OFF(PGM, pGuestPDRC);
+    GEN_CHECK_OFF(PGM, pGst32BitPdRC);
     GEN_CHECK_OFF(PGM, pGstPaePdptR3);
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     GEN_CHECK_OFF(PGM, pGstPaePdptR0);
