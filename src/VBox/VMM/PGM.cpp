@@ -1450,8 +1450,8 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     /* get physical addresses. */
-    pVM->pgm.s.HCPhys32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
-    Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhys32BitPD) == pVM->pgm.s.pShw32BitPdR3);
+    pVM->pgm.s.HCPhysShw32BitPD    = MMPage2Phys(pVM, pVM->pgm.s.pShw32BitPdR3);
+    Assert(MMPagePhys2Page(pVM, pVM->pgm.s.HCPhysShw32BitPD) == pVM->pgm.s.pShw32BitPdR3);
     pVM->pgm.s.aHCPhysPaePDs[0] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[0]);
     pVM->pgm.s.aHCPhysPaePDs[1] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[1]);
     pVM->pgm.s.aHCPhysPaePDs[2] = MMPage2Phys(pVM, pVM->pgm.s.apShwPaePDsR3[2]);
@@ -1472,7 +1472,7 @@ static int pgmR3InitPaging(PVM pVM)
         /* The flags will be corrected when entering and leaving long mode. */
     }
 
-    CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhys32BitPD);
+    CPUMSetHyperCR3(pVM, (uint32_t)pVM->pgm.s.HCPhysShw32BitPD);
 
     /*
      * Initialize paging workers and mode from current host mode
@@ -1513,8 +1513,8 @@ static int pgmR3InitPaging(PVM pVM)
     {
         LogFlow(("pgmR3InitPaging: returns successfully\n"));
 #if HC_ARCH_BITS == 64
-        LogRel(("Debug: HCPhys32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
-                pVM->pgm.s.HCPhys32BitPD,
+        LogRel(("Debug: HCPhysShw32BitPD=%RHp aHCPhysPaePDs={%RHp,%RHp,%RHp,%RHp} HCPhysPaePDPT=%RHp HCPhysPaePML4=%RHp\n",
+                pVM->pgm.s.HCPhysShw32BitPD,
                 pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
                 pVM->pgm.s.HCPhysPaePDPT,
                 pVM->pgm.s.HCPhysPaePML4));
@@ -1815,7 +1815,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     RTGCPTR GCPtr = pVM->pgm.s.pShw32BitPdRC;
     AssertReleaseReturn(GCPtr, VERR_INTERNAL_ERROR);
 
-    int rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhys32BitPD, PAGE_SIZE, 0);
+    int rc = PGMMap(pVM, GCPtr, pVM->pgm.s.HCPhysShw32BitPD, PAGE_SIZE, 0);
     AssertRCReturn(rc, rc);
     pVM->pgm.s.pShw32BitPdRC = GCPtr;
     GCPtr += PAGE_SIZE;
