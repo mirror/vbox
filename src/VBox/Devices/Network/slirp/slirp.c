@@ -225,9 +225,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSAStartup(MAKEWORD(2,0), &Data);
     }
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-    pData->cMaxEvent = WSA_MAXIMUM_WAIT_EVENTS;
-    pData->iCurrentEventIndex = 1; /* 0 - reserved for Sent event*/
-    pData->iCurrentSocketIndex = 0;
+    pData->cMaxEvent = VBOX_EVENT_COUNT;
     pData->phEvents = malloc(sizeof(HANDLE) * pData->cMaxEvent);
     for (i = 1; i < WSA_MAXIMUM_WAIT_EVENTS; ++i) {
 	    pData->phEvents[i] = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -413,7 +411,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                                 FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 #endif
 				continue;
@@ -427,7 +425,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 #endif
 				continue;
@@ -442,7 +440,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
@@ -458,7 +456,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, xfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
+				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
 				AssertRelease(rc != SOCKET_ERROR);
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
@@ -500,7 +498,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
+				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
 				continue;
 #endif
@@ -547,7 +545,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
         *pnfds = nfds;
 #else
-        *pnfds = pData->iCurrentEventIndex;
+        *pnfds = VBOX_EVENT_COUNT;
 #endif
 }
 
@@ -599,7 +597,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
+			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
 			AssertRelease(rc != SOCKET_ERROR);
 #endif
 
@@ -734,7 +732,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			so_next = so->so_next;
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);	
+			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
 			AssertRelease(rc != SOCKET_ERROR);
 #endif
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)

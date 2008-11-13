@@ -635,9 +635,6 @@ udp_listen(PNATState pData, u_int port, u_int32_t laddr, u_int lport, int flags)
 		free(so);
 		return NULL;
 	}
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	soregister_event(pData, so);
-#endif
 	so->s = socket(AF_INET,SOCK_DGRAM,0);
 	so->so_expire = curtime + SO_EXPIRE;
 	insque(pData, so,&udb);

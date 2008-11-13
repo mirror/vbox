@@ -116,10 +116,11 @@ typedef struct NATState
     struct socket udb;
     struct socket *udp_last_so;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+#define VBOX_SOCKET_EVENT_INDEX 1
+#define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
+#define VBOX_EVENT_COUNT 2
     int cMaxEvent;
     HANDLE *phEvents;
-    int iCurrentSocketIndex;
-    int iCurrentEventIndex;
 #endif
 } NATState;
 
