@@ -61,6 +61,8 @@ typedef enum VMMSWITCHER
     VMMSWITCHER_PAE_TO_PAE,
     /** Switcher for PAE host paging to AMD64 shadow paging. */
     VMMSWITCHER_PAE_TO_AMD64,
+    /** Switcher for AMD64 host paging to 32-bit shadow paging. */
+    VMMSWITCHER_AMD64_TO_32,
     /** Switcher for AMD64 host paging to PAE shadow paging. */
     VMMSWITCHER_AMD64_TO_PAE,
     /** Switcher for AMD64 host paging to AMD64 shadow paging. */

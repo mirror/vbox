@@ -137,6 +137,7 @@ extern VMMSWITCHERDEF vmmR3Switcher32BitToAMD64_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherPAETo32Bit_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherPAEToPAE_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherPAEToAMD64_Def;
+extern VMMSWITCHERDEF vmmR3SwitcherAMD64To32Bit_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherAMD64ToPAE_Def;
 extern VMMSWITCHERDEF vmmR3SwitcherAMD64ToAMD64_Def;
 
@@ -146,6 +147,7 @@ extern DECLCALLBACK(void) vmmR3Switcher32BitToAMD64_Relocate(PVM pVM, PVMMSWITCH
 extern DECLCALLBACK(void) vmmR3SwitcherPAETo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
+extern DECLCALLBACK(void) vmmR3SwitcherAMD64To32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 extern DECLCALLBACK(void) vmmR3SwitcherAMD64ToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IdCode);
 __END_DECLS
