@@ -546,7 +546,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
         *pnfds = nfds;
 #else
-        *pnfds = WSA_MAXIMUM_WAIT_EVENTS;
+        *pnfds = pData->iCurrentEventIndex;
 #endif
 }
 

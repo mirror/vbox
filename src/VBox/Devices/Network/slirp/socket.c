@@ -736,10 +736,15 @@ sofwdrain(so)
 void soregister_event(struct NATState *pData, struct socket *so)
 {
 	
+#if 0
 	if (pData->iCurrentSocketIndex >= WSA_MAXIMUM_WAIT_EVENTS * pData->iCurrentEventIndex) {
 		pData->iCurrentEventIndex++;
 	}
 	so->hNetworkEvent = pData->phEvents[pData->iCurrentEventIndex];
 	pData->iCurrentSocketIndex++;
+#else
+	pData->iCurrentEventIndex = 2;
+	so->hNetworkEvent = pData->phEvents[1];
+#endif
 }
 #endif
