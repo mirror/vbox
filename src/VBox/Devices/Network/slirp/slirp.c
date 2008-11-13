@@ -225,7 +225,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSAStartup(MAKEWORD(2,0), &Data);
     }
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-	pData->phEvents[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 #endif
@@ -923,6 +922,6 @@ HANDLE *slirp_get_events(PNATState pData)
 }
 void slirp_register_external_event(PNATState pData, HANDLE hEvent)
 {
-	pData->phEvents[0] = hEvent;
+	pData->phEvents[VBOX_SEND_EVENT_INDEX] = hEvent;
 }
 #endif
