@@ -1237,28 +1237,6 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
 
-/**
- * Mapping cache usage set entry.
- */
-typedef struct PGMMAPSETENTRY
-{
-    /** The mapping cache index. */
-    uint16_t                    iMap;
-    /** The number of references. */
-    uint16_t                    cRef;
-} PGMMAPSETENTRY;
-/** Pointer to a mapping cache usage set entry. */
-typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
-
-/**
- * .
- */
-typedef struct PGMMAPSET
-{
-
-};
-
-
 /** @name Context neutrual page mapper TLB.
  *
  * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
