@@ -462,6 +462,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+			WSAEventSelect(so->s, NULL, 0);
+#endif
 		}
 
 		/*
@@ -500,6 +503,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				AssertRelease(rc != SOCKET_ERROR);
 #endif
 			}
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+			WSAEventSelect(so->s, NULL, 0);
+#endif
 		}
 	}
 
