@@ -418,8 +418,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #else
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
-				pData->phEvents[cEvents] = so->hNetworkEvent;
-                                cEvents++;
 #endif
 				continue;
 			}
@@ -434,8 +432,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #else
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
-				pData->phEvents[cEvents] = so->hNetworkEvent;
-                                cEvents++;
 #endif
 				continue;
 			}
@@ -451,8 +447,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #else
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
 				AssertRelease(rc != SOCKET_ERROR);
-				pData->phEvents[cEvents] = so->hNetworkEvent;
-                                cEvents++;
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
@@ -469,8 +463,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #else
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
 				AssertRelease(rc != SOCKET_ERROR);
-				pData->phEvents[cEvents] = so->hNetworkEvent;
-                                cEvents++;
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
@@ -511,8 +503,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				AssertRelease(cEvents < pData->cMaxEvent);
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
-				pData->phEvents[cEvents] = so->hNetworkEvent;
-                                cEvents++;
 #endif
 			}
 		}
@@ -554,7 +544,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
         *pnfds = nfds;
 #else
-        *pnfds = cEvents;
+        *pnfds = WSA_MAXIMUM_WAIT_EVENTS;
 #endif
 }
 
