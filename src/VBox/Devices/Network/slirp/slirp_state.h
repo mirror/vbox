@@ -119,7 +119,6 @@ typedef struct NATState
 #define VBOX_SOCKET_EVENT_INDEX 1
 #define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
 #define VBOX_EVENT_COUNT 2
-    int cMaxEvent;
     HANDLE *phEvents;
 #endif
 } NATState;
