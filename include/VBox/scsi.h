@@ -125,6 +125,21 @@ typedef enum SCSICMD
 #define SCSI_PAGECONTROL_SAVED          0x03
 
 
+/* Status codes */
+#define SCSI_STATUS_OK                          0x00
+#define SCSI_STATUS_CHECK_CONDITION             0x02
+#define SCSI_STATUS_CONDITION_MET               0x04
+#define SCSI_STATUS_BUSY                        0x08
+#define SCSI_STATUS_INTERMEDIATE                0x10
+#define SCSI_STATUS_DATA_UNDEROVER_RUN          0x12
+#define SCSI_STATUS_INTERMEDIATE_CONDITION_MET  0x14
+#define SCSI_STATUS_RESERVATION_CONFLICT        0x18
+#define SCSI_STATUS_COMMAND_TERMINATED          0x22
+#define SCSI_STATUS_QUEUE_FULL                  0x28
+#define SCSI_STATUS_ACA_ACTIVE                  0x30
+#define SCSI_STATUS_TASK_ABORTED                0x40
+
+
 /* Sense keys */
 #define SCSI_SENSE_NONE             0
 #define SCSI_SENSE_RECOVERED_ERROR  1
