@@ -118,6 +118,8 @@ typedef struct NATState
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
     int cMaxEvent;
     HANDLE *phEvents;
+    int iCurrentSocketIndex;
+    int iCurrentEventIndex;
 #endif
 } NATState;
 
