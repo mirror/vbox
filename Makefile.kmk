@@ -173,6 +173,7 @@ ifdef VBOX_WITH_QT4_SUN
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4)/Frameworks/QtCore.framework/Versions/4/QtCore=>Frameworks/QtCore.framework/Versions/4/QtCore \
 	$(VBOX_PATH_QT4)/Frameworks/QtGui.framework/Versions/4/QtGui=>Frameworks/QtGui.framework/Versions/4/QtGui \
+	$(VBOX_PATH_QT4)/Frameworks/QtNetwork.framework/Versions/4/QtNetwork=>Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
 	$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
   qt4-bin_CLEAN = $(PATH_qt4-bin)/libqtaccessiblewidgets.dylib
 $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib | $$(dir $$@)
@@ -183,6 +184,8 @@ $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessi
 		 @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore \
 		-change                         QtGui.framework/Versions/4/QtGui \
 		 @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui \
+		-change                         QtNetwork.framework/Versions/4/QtNetwork \
+		 @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork \
 		$@
 
  else ifeq ($(KBUILD_TARGET),win)
