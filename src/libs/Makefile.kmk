@@ -19,7 +19,6 @@
 # additional information or have any questions.
 #
 
-if 1 #def VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
@@ -77,72 +76,4 @@ if defined(VBOX_WITH_MAIN) && !defined(VBOX_ONLY_DOCS)
 endif # VBOX_WITH_MAIN && !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
-
-
-else # !VBOX_SINGLE_MAKEFILE
-DEPTH = ../..
-include $(KBUILD_PATH)/header.kmk
-
-subdirs := liblzf-1.51 $(subdirs.$(KBUILD_TARGET))
-
-ifdef IPRT_WITH_KSTUFF
- subdirs += kStuff
-endif
-# @todo win and os2 need that even in OSE, all others should set proper *_INCS
-# values by the configure script
-#ifndef VBOX_OSE
- ifeq ($(SDK_VBOX_ZLIB_INCS),$(PATH_ROOT)/src/libs/zlib-1.2.1)
-   subdirs += zlib-1.2.1
- endif
- ifeq ($(SDK_VBOX_LIBPNG_INCS),$(PATH_ROOT)/src/libs/libpng-1.2.8)
-  subdirs += libpng-1.2.8
- endif
-#endif # !VBOX_OSE
-ifdef VBOX_WITH_VRDP
- ifeq ($(SDK_VBOX_OPENSSL_INCS),$(SDK_VBOX_OPENSSL_DEFAULT_INCS))
-  subdirs += openssl-0.9.8h
- endif
-endif
-ifdef VBOX_WITH_MAIN
- ifdef VBOX_WITH_XPCOM
-  subdirs += xpcom18a4
- endif
- # Only build libxml2 if we don't use an external library.
- ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
-  subdirs += libxml2-2.6.30
- endif
- # Only build libxslt if we don't use an external library.
- ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
-  subdirs += libxslt-1.1.22
- endif
- # FFmpeg for test videos
- ifndef VBOX_OSE
-  ifdef VBOX_WITH_FFMPEG
-   if1of ($(KBUILD_TARGET), darwin linux)
-    subdirs += ffmpeg-20060710
-   endif
-  endif
- endif
-endif
-
-ifdef VBOX_ONLY_DOCS
- subdirs := $(filter liblzf-1.51 zlib-1.2.1 kStuff, $(subdirs))
-endif
-
-ifdef VBOX_ONLY_SDK
- subdirs := $(filter-out liblzf-1.51 zlib-1.2.1 libpng-1.2.8 openssl-0.9.7e openssl-0.9.8h ffmpeg-20060710, $(subdirs))
-endif
-
-# optimized walking
-SUBDIRS_BLDPROGS       = $(filter xpcom18a4,$(subdirs))
-SUBDIRS_LIBRARIES      = $(subdirs)
-SUBDIRS_BINARIES       = $(filter xpcom18a4,$(subdirs))
-SUBDIRS_DLLS           = $(filter xpcom18a4 ffmpeg-20060710,$(subdirs))
-SUBDIRS_OTHERS         = $(filter xpcom18a4,$(subdirs))
-SUBDIRS_INSTALLS       = $(filter xpcom18a4,$(subdirs))
-SUBDIRS_CLEAN          = $(subdirs)
-SUBDIRS_NOTHING        = $(subdirs)
-
-include $(KBUILD_PATH)/footer.kmk
-endif # !VBOX_SINGLE_MAKEFILE
 
