@@ -1161,6 +1161,25 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
     /*
      * Hard disks
      */
+    IDEControllerType_T ideController;
+    const char *pszIdeController = NULL;
+    biosSettings->COMGETTER(IDEControllerType)(&ideController);
+    switch (ideController)
+    {
+        case IDEControllerType_PIIX3:
+            pszIdeController = "PIIX3";
+            break;
+        case IDEControllerType_PIIX4:
+            pszIdeController = "PIIX4";
+            break;
+        default:
+            pszIdeController = "unknown";
+    }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("idecontroller=\"%s\"\n", pszIdeController);
+    else
+        RTPrintf("IDE Controller:  %s\n", pszIdeController);
+
     ComPtr<IHardDisk2> hardDisk;
     Bstr filePath;
     rc = machine->GetHardDisk2(StorageBus_IDE, 0, 0, hardDisk.asOutParam());
