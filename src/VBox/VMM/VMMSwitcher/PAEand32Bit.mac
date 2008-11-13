@@ -394,14 +394,12 @@ htg_debug_regs_guest_no:
 ; esi and edx must be preserved.
 htg_debug_regs_save_dr7and6:
 DEBUG_S_CHAR('s');
-    CPUMCPU_FROM_CPUM(edx)
     mov     eax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
     mov     [edx + CPUMCPU.Host.dr7], eax
     xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
     mov     dr7, eax
     mov     eax, dr6                    ; just in case we save the state register too.
     mov     [edx + CPUMCPU.Host.dr6], eax
-    CPUM_FROM_CPUMCPU(edx)
     jmp     htg_debug_regs_no
 
 ;;
