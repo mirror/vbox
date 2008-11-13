@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            printf ("IVirtualBox(virualBox)=%p IVirtualBox(virualBox2)=%p\n",
+            printf ("IVirtualBox(virtualBox)=%p IVirtualBox(virtualBox2)=%p\n",
                     (IVirtualBox *) virtualBox, (IVirtualBox *) virtualBox2);
             Assert ((IVirtualBox *) virtualBox == (IVirtualBox *) virtualBox2);
 
@@ -287,14 +287,14 @@ int main(int argc, char *argv[])
             ComPtr <IUnknown> unk2;
             unk2 = virtualBox2;
 
-            printf ("IUnknown(virualBox)=%p IUnknown(virualBox2)=%p\n",
+            printf ("IUnknown(virtualBox)=%p IUnknown(virtualBox2)=%p\n",
                     (IUnknown *) unk, (IUnknown *) unk2);
             Assert ((IUnknown *) unk == (IUnknown *) unk2);
 
             ComPtr <IVirtualBox> vb = unk;
             ComPtr <IVirtualBox> vb2 = unk;
 
-            printf ("IVirtualBox(IUnknown(virualBox))=%p IVirtualBox(IUnknown(virualBox2))=%p\n",
+            printf ("IVirtualBox(IUnknown(virtualBox))=%p IVirtualBox(IUnknown(virtualBox2))=%p\n",
                     (IVirtualBox *) vb, (IVirtualBox *) vb2);
             Assert ((IVirtualBox *) vb == (IVirtualBox *) vb2);
         }
