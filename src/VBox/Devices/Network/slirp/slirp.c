@@ -365,7 +365,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     /* Number of valid entries.
      * 1st event for drvNATSend() */
     int cElements;
-    int cEvents = 1;
 #endif
 
     nfds = *pnfds;
@@ -405,9 +404,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			AssertRelease(cEvents < pData->cMaxEvent);
-#endif
 			/*
 			 * Set for reading sockets which are accepting
 			 */
@@ -500,7 +496,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
 #else
-				AssertRelease(cEvents < pData->cMaxEvent);
 				rc = WSAEventSelect(so->s, so->hNetworkEvent, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
 				AssertRelease(rc != SOCKET_ERROR);
 #endif
