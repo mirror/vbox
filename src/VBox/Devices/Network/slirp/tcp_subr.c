@@ -465,9 +465,6 @@ tcp_connect(PNATState pData, struct socket *inso)
 			free(so); /* NOT sofree */
 			return;
 		}
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	  	soregister_event(pData, so);
-#endif
 		so->so_laddr = inso->so_laddr;
 		so->so_lport = inso->so_lport;
 	}
