@@ -183,21 +183,19 @@ typedef struct VMM
     RTR0PTR                     pvCoreCodeR0;
     /** Pointer to core code guest context mapping. */
     RTRCPTR                     pvCoreCodeRC;
+    RTRCPTR                     pRCPadding0; /**< Alignment padding */
 #ifdef VBOX_WITH_NMI
     /** The guest context address of the APIC (host) mapping. */
     RTRCPTR                     GCPtrApicBase;
-    RTRCPTR                     pGCPadding0; /**< Alignment padding */
+    RTRCPTR                     pRCPadding1; /**< Alignment padding */
 #endif
     /** The current switcher.
      * This will be set before the VMM is fully initialized. */
     VMMSWITCHER                 enmSwitcher;
-    /** Array of offsets to the different switchers within the core code. */
-    RTUINT                      aoffSwitchers[VMMSWITCHER_MAX];
     /** Flag to disable the switcher permanently (VMX) (boolean) */
     bool                        fSwitcherDisabled;
-//#if HC_ARCH_BITS == 64
-    uint32_t                    u32PaddingMinus1; /**< Alignment padding. */
-//#endif
+    /** Array of offsets to the different switchers within the core code. */
+    RTUINT                      aoffSwitchers[VMMSWITCHER_MAX];
 
     /** Host to guest switcher entry point. */
     R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
@@ -212,9 +210,6 @@ typedef struct VMM
     RTRCPTR                     pfnCPUMRCResumeGuestV86;
     /** The last RC/R0 return code. */
     RTINT                       iLastGZRc;
-#if HC_ARCH_BITS == 64
-    uint32_t                    u32Padding0; /**< Alignment padding. */
-#endif
     /** @}  */
 
     /** VMM stack, pointer to the top of the stack in R3.
@@ -225,6 +220,9 @@ typedef struct VMM
     RCPTRTYPE(uint8_t *)        pbEMTStackRC;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Padding0; /**< Alignment padding. */
+#endif
 
     /** @name Logging
      * @{
@@ -237,24 +235,23 @@ typedef struct VMM
     /** Pointer to the GC logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
     R3PTRTYPE(PRTLOGGERRC)      pRCLoggerR3;
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-    /** Size of the allocated release logger instance (pRCRelLoggerRC/pRCRelLoggerR3).
-     * This may differ from cbRCLogger. */
-    uint32_t                    cbRCRelLogger;
-    /** Pointer to the GC release logger instance - RC Ptr. */
-    RCPTRTYPE(PRTLOGGERRC)      pRCRelLoggerRC;
-    /** Pointer to the GC release logger instance - R3 Ptr. */
-    R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
-#endif /* VBOX_WITH_RC_RELEASE_LOGGING */
     /** Pointer to the R0 logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
     R3PTRTYPE(PVMMR0LOGGER)     pR0LoggerR3;
     /** Pointer to the R0 logger instance - R0 Ptr.
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Padding1; /**< Alignment padding. */
-#endif
+#ifdef VBOX_WITH_RC_RELEASE_LOGGING
+    /** Pointer to the GC release logger instance - R3 Ptr. */
+    R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
+    /** Pointer to the GC release logger instance - RC Ptr. */
+    RCPTRTYPE(PRTLOGGERRC)      pRCRelLoggerRC;
+    /** Size of the allocated release logger instance (pRCRelLoggerRC/pRCRelLoggerR3).
+     * This may differ from cbRCLogger. */
+    uint32_t                    cbRCRelLogger;
+#else  /* !VBOX_WITH_RC_RELEASE_LOGGING */
+    RTR3PTR                     pR3Padding0; /**< Alignment padding. */
+#endif /* !VBOX_WITH_RC_RELEASE_LOGGING */
     /** @} */
 
 
@@ -269,7 +266,7 @@ typedef struct VMM
     /** The EMT yield timer interval (milliseconds). */
     uint32_t                    cYieldEveryMillies;
 #if HC_ARCH_BITS == 32
-    uint32_t                    u32Padding0; /**< Alignment padding. */
+    RTR3PTR                     pR3Padding1; /**< Alignment padding. */
 #endif
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
