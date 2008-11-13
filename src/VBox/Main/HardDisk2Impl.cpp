@@ -596,7 +596,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
      * unconditionally unregister on failure */
     if (aParent == NULL)
         aVirtualBox->addDependentChild (this);
-
+    else
     {
         /* we set mParent */
         AutoWriteLock treeLock (this->treeLock());
