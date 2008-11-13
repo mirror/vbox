@@ -196,20 +196,20 @@ typedef struct VMM
     bool                        fSwitcherDisabled;
     /** Array of offsets to the different switchers within the core code. */
     RTUINT                      aoffSwitchers[VMMSWITCHER_MAX];
+    uint32_t                    u32Padding0; /**< Alignment padding. */
 
-    /** Host to guest switcher entry point. */
-    R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
-    /** Guest to host switcher entry point. */
-    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGuestToHostRC;
-    /** Call Trampoline. See vmmGCCallTrampoline(). */
-    RTRCPTR                     pfnCallTrampolineRC;
-
+    /** The last RC/R0 return code. */
+    RTINT                       iLastGZRc;
     /** Resume Guest Execution. See CPUMGCResumeGuest(). */
     RTRCPTR                     pfnCPUMRCResumeGuest;
     /** Resume Guest Execution in V86 mode. See CPUMGCResumeGuestV86(). */
     RTRCPTR                     pfnCPUMRCResumeGuestV86;
-    /** The last RC/R0 return code. */
-    RTINT                       iLastGZRc;
+    /** Call Trampoline. See vmmGCCallTrampoline(). */
+    RTRCPTR                     pfnCallTrampolineRC;
+    /** Guest to host switcher entry point. */
+    RCPTRTYPE(PFNVMMSWITCHERRC) pfnGuestToHostRC;
+    /** Host to guest switcher entry point. */
+    R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
     /** @}  */
 
     /** VMM stack, pointer to the top of the stack in R3.
@@ -220,9 +220,6 @@ typedef struct VMM
     RCPTRTYPE(uint8_t *)        pbEMTStackRC;
     /** Pointer to the bottom of the stack - needed for doing relocations. */
     RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Padding0; /**< Alignment padding. */
-#endif
 
     /** @name Logging
      * @{
@@ -241,7 +238,6 @@ typedef struct VMM
     /** Pointer to the R0 logger instance - R0 Ptr.
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
     /** Pointer to the GC release logger instance - R3 Ptr. */
     R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
     /** Pointer to the GC release logger instance - RC Ptr. */
@@ -249,9 +245,6 @@ typedef struct VMM
     /** Size of the allocated release logger instance (pRCRelLoggerRC/pRCRelLoggerR3).
      * This may differ from cbRCLogger. */
     uint32_t                    cbRCRelLogger;
-#else  /* !VBOX_WITH_RC_RELEASE_LOGGING */
-    RTR3PTR                     pR3Padding0; /**< Alignment padding. */
-#endif /* !VBOX_WITH_RC_RELEASE_LOGGING */
     /** @} */
 
 
