@@ -199,9 +199,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                const char *pszBootFile, void *pvUser)
 {
     int fNATfailed = 0;
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-    int i;
-#endif
     PNATState pData = malloc(sizeof(NATState));
     *ppData = pData;
     if (!pData)
@@ -224,7 +221,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSADATA Data;
         WSAStartup(MAKEWORD(2,0), &Data);
     }
-#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 	pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 #endif
@@ -357,9 +354,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     int tmp_time;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
     int rc;
-    /* Number of valid entries.
-     * 1st event for drvNATSend() */
-    int cElements;
+    int error;
 #endif
 
     nfds = *pnfds;
@@ -374,14 +369,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		 */
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
-
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-                /*
-                 * Make this array static with a fixed maximum
-                 * 1st event for drvNATSend()
-                 */
-                cElements = 1;
-#endif
 
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
@@ -408,7 +395,12 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
-				AssertRelease(rc != SOCKET_ERROR);
+                                if (rc == SOCKET_ERROR)
+                                {
+socket_error:
+                                    error = WSAGetLastError();
+                                    LogRel(("WSAEventSelector error %d (so=%x, socket=%s, event=%x)\n", error, so, so->s, VBOX_SOCKET_EVENT));
+                                }
 #endif
 				continue;
 			}
@@ -422,7 +414,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
-				AssertRelease(rc != SOCKET_ERROR);
+                                if (rc == SOCKET_ERROR)
+                                    goto socket_error;
 #endif
 				continue;
 			}
@@ -437,7 +430,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
-				AssertRelease(rc != SOCKET_ERROR);
+                                if (rc == SOCKET_ERROR)
+                                    goto socket_error;
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
@@ -453,12 +447,15 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
-				AssertRelease(rc != SOCKET_ERROR);
+                                if (rc == SOCKET_ERROR)
+                                    goto socket_error;
 				continue; /*XXX: we're using the widest mask for event*/
 #endif
 			}
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			WSAEventSelect(so->s, NULL, 0);
+			rc = WSAEventSelect(so->s, NULL, 0);
+                        if (rc == SOCKET_ERROR)
+                            goto socket_error;
 #endif
 		}
 
@@ -495,12 +492,18 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 				UPD_NFDS(so->s);
 #else
 				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
-				AssertRelease(rc != SOCKET_ERROR);
+                                if (rc == SOCKET_ERROR)
+                                    goto socket_error;
 				continue;
 #endif
 			}
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			WSAEventSelect(so->s, NULL, 0);
+                        else
+                        {
+                            rc = WSAEventSelect(so->s, NULL, 0);
+                            if (rc != SOCKET_ERROR)
+                                goto socket_error;
+                        }
 #endif
 		}
 	}
@@ -550,8 +553,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     struct socket *so, *so_next;
     int ret;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	WSANETWORKEVENTS NetworkEvents;			
+	WSANETWORKEVENTS NetworkEvents;
 	int rc;
+        int error;
 	int timer_update = (readfds == NULL && writefds == NULL && xfds == NULL);
 #endif
 
@@ -594,7 +598,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			   continue;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
-			AssertRelease(rc != SOCKET_ERROR);
+                        if (rc == SOCKET_ERROR)
+                        {
+                            error = WSAGetLastError();
+                            LogRel(("WSAEnumNetworkEvents TCP error %d\n", error));
+                            continue;
+                        }
 #endif
 
 			/*
@@ -729,7 +738,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
-			AssertRelease(rc != SOCKET_ERROR);
+                        if (rc == SOCKET_ERROR)
+                        {
+                            error = WSAGetLastError();
+                            LogRel(("WSAEnumNetworkEvents TCP error %d\n", error));
+                            continue;
+                        }
 #endif
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
@@ -918,7 +932,7 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 HANDLE *slirp_get_events(PNATState pData)
 {
-	return (pData->phEvents);
+	return pData->phEvents;
 }
 void slirp_register_external_event(PNATState pData, HANDLE hEvent)
 {
