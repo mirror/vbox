@@ -225,8 +225,9 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSAStartup(MAKEWORD(2,0), &Data);
     }
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-    /*XXX:probably should be configurable*/
     pData->cMaxEvent = WSA_MAXIMUM_WAIT_EVENTS;
+    pData->iCurrentEventIndex = 1; /* 0 - reserved for Sent event*/
+    pData->iCurrentSocketIndex = 0;
     pData->phEvents = malloc(sizeof(HANDLE) * pData->cMaxEvent);
     for (i = 1; i < WSA_MAXIMUM_WAIT_EVENTS; ++i) {
 	    pData->phEvents[i] = CreateEvent(NULL, FALSE, FALSE, NULL);

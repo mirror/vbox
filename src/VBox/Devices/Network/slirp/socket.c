@@ -738,13 +738,11 @@ sofwdrain(so)
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 void soregister_event(struct NATState *pData, struct socket *so)
 {
-	static int soidx;
-	static int eidx = 1;
 	
-	if (soidx >= WSA_MAXIMUM_WAIT_EVENTS * eidx) {
-		eidx++;
+	if (pData->iCurrentSocketIndex >= WSA_MAXIMUM_WAIT_EVENTS * pData->iCurrentEventIndex) {
+		pData->iCurrentEventIndex++;
 	}
-	so->hNetworkEvent = pData->phEvents[eidx];
-	soidx++;
+	so->hNetworkEvent = pData->phEvents[pData->iCurrentEventIndex];
+	pData->iCurrentSocketIndex++;
 }
 #endif
