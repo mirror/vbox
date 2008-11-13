@@ -195,9 +195,9 @@ typedef struct VMM
     RTUINT                      aoffSwitchers[VMMSWITCHER_MAX];
     /** Flag to disable the switcher permanently (VMX) (boolean) */
     bool                        fSwitcherDisabled;
-#if HC_ARCH_BITS == 64
+//#if HC_ARCH_BITS == 64
     uint32_t                    u32PaddingMinus1; /**< Alignment padding. */
-#endif
+//#endif
 
     /** Host to guest switcher entry point. */
     R0PTRTYPE(PFNVMMSWITCHERHC) pfnHostToGuestR0;
