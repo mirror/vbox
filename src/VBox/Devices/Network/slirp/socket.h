@@ -103,5 +103,8 @@ void sofcantrcvmore _P((struct  socket *));
 void sofcantsendmore _P((struct socket *));
 void soisfdisconnected _P((struct socket *));
 void sofwdrain _P((struct socket *));
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+void soregister_event _P((PNATState, struct socket *));
+#endif
 
 #endif /* _SOCKET_H_ */

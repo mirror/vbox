@@ -390,6 +390,9 @@ findso:
 	    free(so); /* Not sofree (if it failed, it's not insqued) */
 	    goto dropwithreset;
 	  }
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+	  soregister_event(pData, so);
+#endif
 
 	  sbreserve(&so->so_snd, tcp_sndspace);
 	  sbreserve(&so->so_rcv, tcp_rcvspace);
