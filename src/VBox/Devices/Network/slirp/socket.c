@@ -80,9 +80,6 @@ sofree(PNATState pData, struct socket *so)
 
   m_free(pData, so->so_m);
 
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
-    WSACloseEvent(so->hNetworkEvent); /*XXX: NOT correct place*/
-#endif
 
   if(so->so_next && so->so_prev)
     remque(pData, so);  /* crashes if so is not in a queue */
