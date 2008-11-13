@@ -59,10 +59,6 @@ socreate()
     memset(so, 0, sizeof(struct socket));
     so->so_state = SS_NOFDREF;
     so->s = -1;
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-    so->hNetworkEvent = WSACreateEvent(); /*XXX: NOT correct place*/
-    AssertRelease(so->hNetworkEvent != WSA_INVALID_EVENT);
-#endif
   }
   return(so);
 }
@@ -739,3 +735,16 @@ sofwdrain(so)
 		sofcantsendmore(so);
 }
 
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+void soregister_event(struct NATState *pData, struct socket *so)
+{
+	static int soidx;
+	static int eidx = 1;
+	
+	if (soidx >= WSA_MAXIMUM_WAIT_EVENTS * eidx) {
+		eidx++;
+	}
+	so->hNetworkEvent = pData->phEvents[eidx];
+	soidx++;
+}
+#endif
