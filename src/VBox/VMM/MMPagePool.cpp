@@ -131,7 +131,9 @@ void mmR3PagePoolTerm(PVM pVM)
             pSubPool = pSubPool->pNext;
         }
         pVM->mm.s.pPagePoolR3 = NULL;
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
         pVM->mm.s.pPagePoolR0 = NIL_RTR0PTR;
+#endif
     }
 
     if (pVM->mm.s.pPagePoolLowR3)
