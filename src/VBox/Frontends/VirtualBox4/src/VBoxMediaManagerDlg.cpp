@@ -236,6 +236,10 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
     /* Apply UI decorations */
     Ui::VBoxMediaManagerDlg::setupUi (this);
 
+    /* Apply window icons */
+    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
+                                             ":/diskimage_32px.png", ":/diskimage_16px.png"));
+
     mVBox = vboxGlobal().virtualBox();
     Assert (!mVBox.isNull());
 
