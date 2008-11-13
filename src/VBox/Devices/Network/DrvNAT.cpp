@@ -120,7 +120,8 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     int rc;
     /*notify select to wakeup*/
-    memcpy(pThis->cBuffer,pvBuf, cb);
+    AssertRelease(cb <= sizeof(pThis->cBuffer));
+    memcpy(pThis->cBuffer, pvBuf, cb);
     pThis->sBufferSize = cb;
 # ifndef RT_OS_WINDOWS
     rc = RTFileWrite(pThis->PipeWrite, "1", 2, NULL);
@@ -179,6 +180,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
+    LogRel(("drvNATNotifyLinkChanged\n"));
 #ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
@@ -243,7 +245,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     fd_set  WriteFDs;
     fd_set  XcptFDs;
     int     nFDs = -1;
-    int     rc;
 # ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
@@ -255,6 +256,10 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
+
+#ifdef RT_OS_WINDOWS
+    phEvents = slirp_get_events(pThis->pNATState);
+#endif
 
     /*
      * Polling loop.
@@ -301,21 +306,26 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             }
         }
 # else /* RT_OS_WINDOWS */
-        phEvents = slirp_get_events(pThis->pNATState);
         event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
-        AssertRelease(event != WSA_WAIT_FAILED);
+        if (   (event < WSA_WAIT_EVENT_0 || event > WSA_WAIT_EVENT_0 + nFDs - 1)
+            && event != WSA_WAIT_TIMEOUT)
+        {
+            int error = WSAGetLastError();
+            LogRel(("WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
+            RTAssertReleasePanic();
+        }
 
-	if (event == WSA_WAIT_TIMEOUT) {
+        if (event == WSA_WAIT_TIMEOUT)
+        {
             slirp_select_poll(pThis->pNATState, NULL, NULL, NULL);
-	    continue;
-	}
+            continue;
+        }
 
         /*
          * see WSAWaitForMultipleEvents documentation: return value is a minimal index in array
          */
-        if ((event - WSA_WAIT_EVENT_0) > 0) {
+        if ((event - WSA_WAIT_EVENT_0) > 0)
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
-	}
 
         if ((event - WSA_WAIT_EVENT_0) == 0)
         {
@@ -695,7 +705,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pThis->PipeWrite = fds[1];
 # else
             pThis->hSendEvent = WSACreateEvent();
-	    slirp_register_external_event(pThis->pNATState, pThis->hSendEvent);
+            slirp_register_external_event(pThis->pNATState, pThis->hSendEvent);
 # endif
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
