@@ -26,7 +26,9 @@ ifdef VBOX_SINGLE_MAKEFILE
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
- include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
+ ifdef VBOX_WITH_CROGL
+  include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
 
 else ifdef VBOX_ONLY_DOCS
@@ -48,7 +50,6 @@ else
  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
- include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostServices/Makefile.kmk
  ifdef VBOX_WITH_DEBUGGER
   include $(PATH_SUB_CURRENT)/Debugger/Makefile.kmk
@@ -56,6 +57,9 @@ else
  include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
  ifdef VBOX_WITH_VRDP
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_CROGL
+  include $(PATH_SUB_CURRENT)/GuestHost/Makefile.kmk
  endif
  ifdef VBOX_WITH_ADDITIONS
   include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
@@ -68,10 +72,11 @@ endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 else # !VBOX_SINGLE_MAKEFILE
 
 ifdef VBOX_ONLY_ADDITIONS
- SUBDIRS = \
-	Runtime \
-	GuestHost \
-	Additions
+ SUBDIRS = Runtime
+ ifdef VBOX_WITH_CROGL
+  SUBDIRS += GuestHost
+ endif
+ SUBDIRS += Additions
 
 else ifdef VBOX_ONLY_DOCS
  SUBDIRS = \
@@ -80,9 +85,9 @@ else ifdef VBOX_ONLY_DOCS
 	HostDrivers
 
 else ifdef VBOX_ONLY_SDK
-  SUBDIRS =        \
-        Main       \
-        RDP        \
+  SUBDIRS = \
+        Main \
+        RDP \
         Installer
 
 else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
@@ -93,9 +98,13 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 	HostDrivers \
 	VMM \
 	Devices \
-	Disassembler \
-	GuestHost \
-	HostServices
+	Disassembler
+
+ ifdef VBOX_WITH_CROGL
+  SUBDIRS += GuestHost
+ endif
+
+ SUBDIRS += HostServices
 
  ifdef VBOX_WITH_DEBUGGER
   SUBDIRS += Debugger
