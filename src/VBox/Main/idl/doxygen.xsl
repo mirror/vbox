@@ -274,7 +274,7 @@ owns the object will most likely fail or crash your application.
 /*
  *  DO NOT EDIT! This is a generated file.
  *
- *  Doxygen IDL definition for VirualBox Main API (COM interfaces)
+ *  Doxygen IDL definition for VirtualBox Main API (COM interfaces)
  *  generated from XIDL (XML interface definition).
  *
  *  Source    : src/VBox/Main/idl/VirtualBox.xidl

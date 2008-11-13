@@ -80,7 +80,7 @@
 /*
  *  DO NOT EDIT! This is a generated file.
  *
- *  MS IDL (MIDL) definition for VirualBox Main API (COM interfaces)
+ *  MS IDL (MIDL) definition for VirtualBox Main API (COM interfaces)
  *  generated from XIDL (XML interface definition).
  *
  *  Source    : src/VBox/Main/idl/VirtualBox.xidl
