@@ -119,7 +119,7 @@ typedef struct NATState
 #define VBOX_SOCKET_EVENT_INDEX 1
 #define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
 #define VBOX_EVENT_COUNT 2
-    HANDLE *phEvents;
+    HANDLE phEvents[VBOX_EVENT_COUNT];
 #endif
 } NATState;
 
