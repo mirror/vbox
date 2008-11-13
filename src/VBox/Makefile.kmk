@@ -19,9 +19,10 @@
 # additional information or have any questions.
 #
 
-ifdef VBOX_SINGLE_MAKEFILE
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
+
+ifdef VBOX_SINGLE_MAKEFILE
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
@@ -64,11 +65,7 @@ else
  endif
 endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
-include $(KBUILD_PATH)/subfooter.kmk
-
 else # !VBOX_SINGLE_MAKEFILE
-DEPTH = ../..
-include $(KBUILD_PATH)/header.kmk
 
 ifdef VBOX_ONLY_ADDITIONS
  SUBDIRS = \
@@ -124,6 +121,7 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  endif
 endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
-include $(KBUILD_PATH)/footer.kmk
 endif # !VBOX_SINGLE_MAKEFILE
+
+include $(KBUILD_PATH)/subfooter.kmk
 
