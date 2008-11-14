@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 
 #if defined(RT_OS_DARWIN) && defined(KERNEL)
 # include <sys/errno.h>
@@ -439,7 +440,11 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 #endif
 
         default:
+#if 0
+            /* This is quite likely to occur, so please no assertion */
             AssertMsgFailed(("Unhandled error code %Rrc\n", iErr));
+#endif
+            LogRel(("Unhandled error code %d (%Rrc)\n", iErr, iErr));
             return EPROTO;
     }
 }
