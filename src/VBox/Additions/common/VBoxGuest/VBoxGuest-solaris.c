@@ -807,7 +807,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     else
     {
         LogRel((DEVICE_NAME ":VBoxGuestSolarisIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
-        rc = EFAULT;
+        rc = RTErrConvertToErrno(rc);
     }
     *pVal = rc;
     RTMemTmpFree(pvBuf);
