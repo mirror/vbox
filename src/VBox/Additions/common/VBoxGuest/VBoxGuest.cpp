@@ -1152,7 +1152,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 }
 
 
-#ifdef /* HGCM_TIMEOUT */
+#ifdef HGCM_TIMEOUT
 static int VBoxGuestCommonIOCtl_HGCMCallTimeout(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMCallInfoTimeout *pInfoTimeout,
                                          size_t cbData, size_t *pcbDataReturned)
 {
