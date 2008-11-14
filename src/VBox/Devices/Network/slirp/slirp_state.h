@@ -21,8 +21,6 @@
 #ifndef _slirp_state_h_
 #define _slirp_state_h_
 
-#include <VBox/stam.h>
-
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
 

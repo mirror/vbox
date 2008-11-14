@@ -1,6 +1,8 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include <VBox/stam.h>
+
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
 typedef int socklen_t;
