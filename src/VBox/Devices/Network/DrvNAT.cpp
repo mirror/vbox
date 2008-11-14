@@ -196,14 +196,14 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
             LogRel(("NAT: link up\n"));
 #ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
             slirp_link_up(pThis->pNATState);
-#else
+#else /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
 # ifndef RT_OS_WINDOWS
             rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
             AssertRC(rc);
 # else
             WSASetEvent(pThis->hNetEvent); 
 # endif
-#endif
+#endif /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
@@ -211,7 +211,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
             LogRel(("NAT: link down\n"));
 #ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
             slirp_link_down(pThis->pNATState);
-#else
+#else /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
 # ifndef RT_OS_WINDOWS
             rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
             AssertRC(rc);
@@ -219,7 +219,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
             WSASetEvent(pThis->hNetEvent); 
             RTSemEventWait(pThis->semLinkMutex, RT_INDEFINITE_WAIT);
 # endif
-#endif
+#endif /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
             break;
 
         default:
@@ -352,19 +352,21 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             WSAResetEvent(pThis->hSendEvent);
             RTSemEventSignal(pThis->semSndMutex);
         }
-        if ((event - WSA_WAIT_EVENT_0) == VBOX_NET_EVENT_INDEX) {
-                switch(pThis->enmLinkState) {
-                    case PDMNETWORKLINKSTATE_UP:
-                        slirp_link_up(pThis->pNATState);
+        if ((event - WSA_WAIT_EVENT_0) == VBOX_NET_EVENT_INDEX)
+        {
+            switch(pThis->enmLinkState)
+            {
+                case PDMNETWORKLINKSTATE_UP:
+                    slirp_link_up(pThis->pNATState);
                     break;
-                    case PDMNETWORKLINKSTATE_DOWN:
-                    case PDMNETWORKLINKSTATE_DOWN_RESUME:
-                        slirp_link_down(pThis->pNATState);
+                case PDMNETWORKLINKSTATE_DOWN:
+                case PDMNETWORKLINKSTATE_DOWN_RESUME:
+                    slirp_link_down(pThis->pNATState);
                     break;
-                }
-                WSAResetEvent(pThis->hNetEvent);
-                RTSemEventSignal(pThis->semLinkMutex);
-                break;
+            }
+            WSAResetEvent(pThis->hNetEvent);
+            RTSemEventSignal(pThis->semLinkMutex);
+            break;
         }
 # endif /* RT_OS_WINDOWS */
     }
