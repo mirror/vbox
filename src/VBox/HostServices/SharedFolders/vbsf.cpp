@@ -107,7 +107,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
 
     Log2(("vbsfCorrectCasing: %s %s\n", pszFullPath, pszStartComponent));
 
-    cbComponent = strlen(pszStartComponent);
+    cbComponent = (uint32_t) strlen(pszStartComponent);
 
     cbDirEntry = 4096;
     pDirEntry  = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
@@ -222,7 +222,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                 pszFullPath = utf8FullPath;
 
                 if (pcbFullPathRoot)
-                    *pcbFullPathRoot = cbUtf8Root; /* Must index the path delimiter.  */
+                    *pcbFullPathRoot = (uint32_t)cbUtf8Root; /* Must index the path delimiter.  */
             }
 
             RTStrFree (utf8Root);
@@ -300,7 +300,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
 
             char *dst = pszFullPath;
 
-            cbRoot = strlen(dst);
+            cbRoot = (uint32_t)strlen(dst);
             if (dst[cbRoot - 1] != RTPATH_DELIMITER)
             {
                 dst[cbRoot] = RTPATH_DELIMITER;
@@ -345,7 +345,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
                     return rc;
                 }
 
-                uint32_t l = strlen (dst);
+                uint32_t l = (uint32_t)strlen (dst);
 
                 cb -= l;
                 dst += l;
@@ -374,7 +374,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             if (fWildCard)
             {
                 /* strip off the last path component, that contains the wildcard(s) */
-                uint32_t len = strlen(pszFullPath);
+                uint32_t len = (uint32_t)strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
 
                 while(src > pszFullPath)
@@ -411,7 +411,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
             rc = RTPathQueryInfo(pszFullPath, &info, RTFSOBJATTRADD_NOTHING);
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
-                uint32_t len = strlen(pszFullPath);
+                uint32_t len = (uint32_t)strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
 
                 Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
@@ -1413,7 +1413,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 				CFRelease(inStr);
 			}
 #endif
-            pSFDEntry->name.u16Length = RTUtf16Len (pSFDEntry->name.String.ucs2) * 2;
+            pSFDEntry->name.u16Length = (uint32_t)RTUtf16Len (pSFDEntry->name.String.ucs2) * 2;
             pSFDEntry->name.u16Size = pSFDEntry->name.u16Length + 2;
 
             Log(("SHFL: File name size %d\n", pSFDEntry->name.u16Size));

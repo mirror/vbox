@@ -76,7 +76,7 @@ int vbsfMappingsAdd (PSHFLSTRING pFolderName, PSHFLSTRING pMapName, uint32_t fWr
 
             FolderMapping[i].fValid    = true;
             FolderMapping[i].cMappings = 0;
-            FolderMapping[i].fWritable = fWritable;
+            FolderMapping[i].fWritable = !!fWritable;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
@@ -328,7 +328,7 @@ int vbsfMapFolder (SHFLCLIENTDATA *pClient, PSHFLSTRING pszMapName, RTUTF16 deli
     FolderMapping[index].cMappings++;
     Assert(FolderMapping[index].cMappings == 1 || FolderMapping[index].fGuestCaseSensitive == fCaseSensitive);
     FolderMapping[index].fGuestCaseSensitive = fCaseSensitive;
-    *pRoot = index;
+    *pRoot = (SHFLROOT)index;
     return VINF_SUCCESS;
 }
 
