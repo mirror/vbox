@@ -186,7 +186,7 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)
-        *codesStored = keys.size();
+        *codesStored = (uint32_t)keys.size();
 
     return rc;
 }

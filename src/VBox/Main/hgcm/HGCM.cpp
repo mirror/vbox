@@ -1110,7 +1110,7 @@ void HGCMService::ReleaseService (void)
         LogFlowFunc(("Saving service [%s]\n", pSvc->m_pszSvcName));
 
         /* Save the length of the service name. */
-        rc = SSMR3PutU32(pSSM, strlen(pSvc->m_pszSvcName) + 1);
+        rc = SSMR3PutU32(pSSM, (uint32_t) strlen(pSvc->m_pszSvcName) + 1);
         AssertRCReturn(rc, rc);
 
         /* Save the name of the service. */
