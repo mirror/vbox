@@ -178,12 +178,13 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
 static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
     PDRVNAT pThis = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
+    int rc;
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
     LogRel(("drvNATNotifyLinkChanged\n"));
 #ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-    int rc = RTCritSectEnter(&pThis->CritSect);
+    rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
 #endif
     pThis->enmLinkState = enmLinkState;
@@ -195,7 +196,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
             slirp_link_up(pThis->pNATState);
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
 # ifndef RT_OS_WINDOWS
-            int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
+            rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
             AssertRC(rc);
 # else
             WSASetEvent(pThis->hNetEvent); 
@@ -209,7 +210,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
             slirp_link_down(pThis->pNATState);
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
 # ifndef RT_OS_WINDOWS
-            int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
+            rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
             AssertRC(rc);
 # else
             WSASetEvent(pThis->hNetEvent); 
@@ -266,8 +267,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     DWORD   event;
     HANDLE  *phEvents;
 # endif
-    const struct timeval TimeWait   = { 0, 2000 }; /* 2ms for the fast timer */
-    const struct timeval TimeNoWait = { 0,    0 }; /* return immediately */
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
 
@@ -283,7 +282,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
      */
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        bool fWait = true;
 
         FD_ZERO(&ReadFDs);
         FD_ZERO(&WriteFDs);
@@ -295,8 +293,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          */
         slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
 # ifndef RT_OS_WINDOWS
-        struct timeval tv = fWait ? TimeWait : TimeNoWait;
-        FD_SET(pThis->PipeRead, &ReadFDs); /* Linux only */
+        struct timeval tv = { 0, 2000 }; /* 2ms */
+        FD_SET(pThis->PipeRead, &ReadFDs);
         nFDs = ((int)pThis->PipeRead < nFDs ? nFDs : pThis->PipeRead);
         int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
         if (cChangedFDs >= 0)
@@ -314,7 +312,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                         /* called from drvNATSend */
                         slirp_input(pThis->pNATState, (uint8_t *)pThis->cBuffer, pThis->sBufferSize);
                         RTSemEventSignal(pThis->semSndMutex);
-                        fWait = 1;
                         break;
                     case '2':
                         /* wakeup only */
@@ -696,6 +693,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     rc = slirp_init(&pThis->pNATState, &szNetAddr[0], Netmask, fPassDomain, pThis->pszTFTPPrefix, pThis->pszBootFile, pThis);
     if (RT_SUCCESS(rc))
     {
+        slirp_register_timers(pThis->pNATState, pDrvIns);
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
         if (RT_SUCCESS(rc2))
         {

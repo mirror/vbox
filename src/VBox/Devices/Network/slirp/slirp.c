@@ -3,7 +3,12 @@
 # include <paths.h>
 #endif
 
+/* disable these counters for the final release */
+/* #define VBOX_WITHOUT_RELEASE_STATISTICS */
+
 #include <VBox/err.h>
+#include <VBox/stam.h>
+#include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
 static const uint8_t special_ethaddr[6] = {
@@ -249,6 +254,31 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
 }
 
 /**
+ * Statistics counters.
+ */
+void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
+{
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatFill, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp fills", "/Drivers/NAT%d/Fill", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatPoll, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp polls", "/Drivers/NAT%d/Poll", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatFastTimer, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp fast timer", "/Drivers/NAT%d/TimerFast", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatSlowTimer, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_TICKS_PER_CALL, "Profiling slirp slow timer", "/Drivers/NAT%d/TimerSlow", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCP, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_COUNT, "TCP sockets", "/Drivers/NAT%d/SockTCP", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_COUNT, "TCP sockets active", "/Drivers/NAT%d/SockTCPHot", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDP, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_COUNT, "UDP sockets", "/Drivers/NAT%d/SockUDP", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                           STAMUNIT_COUNT, "UDP sockets active", "/Drivers/NAT%d/SockUDPHot", pDrvIns->iInstance);
+#endif /* VBOX_WITHOUT_RELEASE_STATISTICS */
+}
+
+/**
  * Marks the link as up, making it possible to establish new connections.
  */
 void slirp_link_up(PNATState pData)
@@ -357,6 +387,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     int error;
 #endif
 
+    STAM_REL_PROFILE_START(&pData->StatFill, a);
+
     nfds = *pnfds;
 	/*
 	 * First, TCP sockets
@@ -370,8 +402,13 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
 
+                STAM_REL_COUNTER_RESET(&pData->StatTCP);
+                STAM_REL_COUNTER_RESET(&pData->StatTCPHot);
+
 		for (so = tcb.so_next; so != &tcb; so = so_next) {
 			so_next = so->so_next;
+
+                        STAM_REL_COUNTER_INC(&pData->StatTCP);
 
 			/*
 			 * See if we need a tcp_fasttimo
@@ -390,6 +427,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 			 * Set for reading sockets which are accepting
 			 */
 			if (so->so_state & SS_FACCEPTCONN) {
+                                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
                                 FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
@@ -409,6 +447,7 @@ socket_error:
 			 * Set for writing sockets which are connecting
 			 */
 			if (so->so_state & SS_ISFCONNECTING) {
+                                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
@@ -425,6 +464,7 @@ socket_error:
 			 * we have something to send
 			 */
 			if (CONN_CANFSEND(so) && so->so_rcv.sb_cc) {
+                                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 				FD_SET(so->s, writefds);
 				UPD_NFDS(so->s);
@@ -441,6 +481,7 @@ socket_error:
 			 * receive more, and we have room for it XXX /2 ?
 			 */
 			if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2))) {
+                                STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 				FD_SET(so->s, readfds);
 				FD_SET(so->s, xfds);
@@ -462,8 +503,13 @@ socket_error:
 		/*
 		 * UDP sockets
 		 */
+                STAM_REL_COUNTER_RESET(&pData->StatUDP);
+                STAM_REL_COUNTER_RESET(&pData->StatUDPHot);
+
 		for (so = udb.so_next; so != &udb; so = so_next) {
 			so_next = so->so_next;
+
+                        STAM_REL_COUNTER_INC(&pData->StatUDP);
 
 			/*
 			 * See if it's timed out
@@ -487,6 +533,7 @@ socket_error:
 			 * (XXX <= 4 ?)
 			 */
 			if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4) {
+                                STAM_REL_COUNTER_INC(&pData->StatUDPHot);
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 				FD_SET(so->s, readfds);
 				UPD_NFDS(so->s);
@@ -496,6 +543,7 @@ socket_error:
                                     goto socket_error;
 				continue;
 #endif
+                                STAM_REL_COUNTER_INC(&pData->StatUDPHot);
 			}
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
                         else
@@ -546,6 +594,8 @@ socket_error:
 #else
         *pnfds = VBOX_EVENT_COUNT;
 #endif
+
+    STAM_REL_PROFILE_STOP(&pData->StatFill, a);
 }
 
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
@@ -558,6 +608,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         int error;
 	int timer_update = (readfds == NULL && writefds == NULL && xfds == NULL);
 #endif
+        STAM_REL_PROFILE_START(&pData->StatPoll, a);
 
 	/* Update time */
 	updtime(pData);
@@ -567,13 +618,17 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 	 */
 	if (link_up) {
 		if (time_fasttimo && ((curtime - time_fasttimo) >= 2)) {
+                        STAM_REL_PROFILE_START(&pData->StatFastTimer, a);
 			tcp_fasttimo(pData);
 			time_fasttimo = 0;
+                        STAM_REL_PROFILE_STOP(&pData->StatFastTimer, a);
 		}
 		if (do_slowtimo && ((curtime - last_slowtimo) >= 499)) {
+                        STAM_REL_PROFILE_START(&pData->StatSlowTimer, a);
 			ip_slowtimo(pData);
 			tcp_slowtimo(pData);
 			last_slowtimo = curtime;
+                        STAM_REL_PROFILE_STOP(&pData->StatSlowTimer, a);
 		}
 	}
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
@@ -597,7 +652,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
+			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);
                         if (rc == SOCKET_ERROR)
                         {
                             error = WSAGetLastError();
@@ -614,6 +669,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if !defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 			if (FD_ISSET(so->s, xfds))
 #else
+                        /* out-of-band data */
 			if ((NetworkEvents.lNetworkEvents & FD_OOB) && NetworkEvents.iErrorCode[FD_OOB_BIT] == 0)
 #endif
 			   sorecvoob(pData, so);
@@ -760,6 +816,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 	 */
 	if (if_queued && link_up)
 	   if_start(pData);
+
+        STAM_REL_PROFILE_STOP(&pData->StatPoll, a);
 }
 
 #define ETH_ALEN 6
