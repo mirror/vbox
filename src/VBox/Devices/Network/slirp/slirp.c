@@ -7,7 +7,6 @@
 /* #define VBOX_WITHOUT_RELEASE_STATISTICS */
 
 #include <VBox/err.h>
-#include <VBox/stam.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
