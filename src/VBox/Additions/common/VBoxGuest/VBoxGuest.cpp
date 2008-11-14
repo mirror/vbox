@@ -918,6 +918,80 @@ VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *p
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
 
+#ifdef HGCM_TIMEOUT
+/**
+ * This is a callback for dealing with async waits with a timeout.
+ *
+ * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
+ */
+static DECLCALLBACK(void)
+VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser,
+                                      uint32_t u32User)
+{
+    VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+    Log(("VBoxGuestHGCMAsyncWaitCallback: requestType=%d\n", pHdr->header.requestType));
+
+    /*
+     * Check to see if the condition was met by the time we got here.
+     *
+     * We create a simple poll loop here for dealing with out-of-memory
+     * conditions since the caller isn't necessarily able to deal with
+     * us returning too early.
+     */
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PVBOXGUESTWAIT pWait;
+    for (;;)
+    {
+        RTSpinlockAcquireNoInts(pDevExt->WaitSpinlock, &Tmp);
+        if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
+        {
+            RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+            return;
+        }
+        RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+
+        pWait = VBoxGuestWaitAlloc(pDevExt);
+        if (pWait)
+            break;
+        return;
+    }
+    pWait->fReqEvents = VMMDEV_EVENT_HGCM;
+    pWait->pHGCMReq = pHdr;
+
+    /*
+     * Re-enter the spinlock and re-check for the condition.
+     * If the condition is met, return.
+     * Otherwise link us into the HGCM wait list and go to sleep.
+     */
+    RTSpinlockAcquireNoInts(pDevExt->WaitSpinlock, &Tmp);
+    if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
+    {
+        VBoxGuestWaitFreeLocked(pDevExt, pWait);
+        RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+        return;
+    }
+    VBoxGuestWaitAppend(&pDevExt->HGCMWaitList, pWait);
+    RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+
+    int rc = RTSemEventMultiWaitNoResume(pWait->Event, u32User);
+
+    /*
+     * This shouldn't ever return failure...
+     * Unlink, free and return.
+     */
+    if (rc == VERR_SEM_DESTROYED)
+        return;
+    if (RT_FAILURE(rc))
+        LogRel(("VBoxGuestHGCMAsyncWaitCallback: wait failed! %Rrc\n", rc));
+
+    RTSpinlockAcquireNoInts(pDevExt->WaitSpinlock, &Tmp);
+    VBoxGuestWaitUnlink(&pDevExt->HGCMWaitList, pWait);
+    VBoxGuestWaitFreeLocked(pDevExt, pWait);
+    RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+}
+#endif /* HGCM_TIMEOUT */
+
 
 static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMConnectInfo *pInfo,
                                             size_t *pcbDataReturned)
@@ -1078,6 +1152,66 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 }
 
 
+#ifdef /* HGCM_TIMEOUT */
+static int VBoxGuestCommonIOCtl_HGCMCallTimeout(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMCallInfoTimeout *pInfoTimeout,
+                                         size_t cbData, size_t *pcbDataReturned)
+{
+    VBoxGuestHGCMCallInfo *pInfo = &pInfoTimeout->info;
+    /*
+     * Some more validations.
+     */
+    if (pInfo->cParms > 4096) /* (Just make sure it doesn't overflow the next check.) */
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cParm=%RX32 is not sane\n", pInfo->cParms));
+        return VERR_INVALID_PARAMETER;
+    }
+    const size_t cbActual = sizeof(*pInfoTimeout) + pInfo->cParms * sizeof(HGCMFunctionParameter);
+    if (cbData < cbActual)
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cbData=%#zx (%zu) required size is %#zx (%zu)\n",
+             cbData, cbActual));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Validate the client id.
+     */
+    const uint32_t u32ClientId = pInfo->u32ClientID;
+    unsigned i;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pDevExt->SessionSpinlock, &Tmp);
+    for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
+        if (pSession->aHGCMClientIds[i] == u32ClientId)
+            break;
+    RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock, &Tmp);
+    if (RT_UNLIKELY(i >= RT_ELEMENTS(pSession->aHGCMClientIds)))
+    {
+        static unsigned s_cErrors = 0;
+        if (s_cErrors++ > 32)
+            LogRel(("VBoxGuestCommonIOCtl: HGCM_CALL: Invalid handle. u32Client=%RX32\n", u32ClientId));
+        return VERR_INVALID_HANDLE;
+    }
+
+    /*
+     * The VbglHGCMCall call will invoke the callback if the HGCM
+     * call is performed in an ASYNC fashion. This function can
+     * deal with cancelled requests, so we let user more requests
+     * be interruptible (should add a flag for this later I guess).
+     */
+    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
+    int rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallbackTimeout, pDevExt, pInfoTimeout->u32Timeout);
+    if (RT_SUCCESS(rc))
+    {
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: result=%Rrc\n", pInfo->result));
+        if (pcbDataReturned)
+            *pcbDataReturned = cbActual;
+    }
+    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
+    return rc;
+}
+#endif /* HGCM_TIMEOUT */
+
+
 /**
  * @returns VBox status code. Unlike the other HGCM IOCtls this will combine
  *          the VbglHGCMConnect/Disconnect return code with the Info.result.
@@ -1222,13 +1356,20 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
     }
 #ifdef VBOX_WITH_HGCM
     /*
-     * This one is tricky and can be done later.
+     * These ones are tricky and can be done later.
      */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
     {
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
     }
+#ifdef HGCM_TIMEOUT
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0)))
+    {
+        CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfoTimeout));
+        rc = VBoxGuestCommonIOCtl_HGCMCallTimeout(pDevExt, pSession, (VBoxGuestHGCMCallInfoTimeout *)pvData, cbData, pcbDataReturned);
+    }
+#endif /* HGCM_TIMEOUT */
 #endif /* VBOX_WITH_HGCM */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
     {
