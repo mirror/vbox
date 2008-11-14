@@ -252,7 +252,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *psz
  *          @a pcbBufActual if it is not NULL.
  * @retval  VERR_NOT_FOUND if the key wasn't found.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pszName         The value to read.  Utf8
  * @param   pvBuf           A scratch buffer to store the data retrieved into.
  *                          The returned data is only valid for it's lifetime.
@@ -348,7 +348,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
  *          race between our allocating space and the host changing the
  *          property value.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pszName         The value to read. Must be valid UTF-8.
  * @param   ppszValue       Where to store the pointer to the value returned.
  *                          This is always set to NULL or to the result, even
@@ -430,7 +430,7 @@ VBGLR3DECL(void) VbglR3GuestPropReadValueFree(char *pszValue)
  * @note    There is a race here between obtaining the size of the buffer
  *          needed to hold the value and the value being updated.
  *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
+ * @param   u32ClientId     The client id returned by VbglR3ClipboardConnect().
  * @param   pszName         The value to read.  Utf8
  * @param   pszValue        Where to store the value retrieved.
  * @param   cchValue        The size of the buffer pointed to by @a pszValue
@@ -782,124 +782,5 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
 
     VbglR3GuestPropEnumFree(pHandle);
     return rc;
-}
-
-
-/**
- * Wait for notification of changes to a guest property.  If this is called in
- * a loop, the timestamp of the last notification seen can be passed as a
- * parameter to be sure that no notifications are missed.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, @a ppszName, @a ppszValue,
- *          @a pu64Timestamp and @a ppszFlags containing valid data.
- * @retval  VINF_NOT_FOUND if no previous notification could be found with the
- *          timestamp supplied.  This will normally mean that a large number
- *          of notifications occurred in between.
- * @retval  VERR_BUFFER_OVERFLOW if the scratch buffer @a pvBuf is not large
- *          enough.  In this case the size needed will be placed in
- *          @a pcbBufActual if it is not NULL.
- * @retval  VERR_TIMEOUT if a timeout occurred before a notification was seen.
- *
- * @param   u32ClientId     The client id returned by VbglR3GuestPropConnect().
- * @param   pszPatterns     The patterns that the property names must matchfor
- *                          the change to be reported.
- * @param   pvBuf           A scratch buffer to store the data retrieved into.
- *                          The returned data is only valid for it's lifetime.
- *                          @a ppszValue will point to the start of this buffer.
- * @param   cbBuf           The size of @a pvBuf
- * @param   u64Timestamp    The timestamp of the last event seen.  Pass zero
- *                          to wait for the next event.
- * @param   u32Timeout      Timeout in milliseconds.  Use RT_INDEFINITE_WAIT
- *                          to wait indefinitely.
- * @param   ppszName        Where to store the pointer to the name retrieved.
- *                          Optional.
- * @param   ppszValue       Where to store the pointer to the value retrieved.
- *                          Optional.
- * @param   pu64Timestamp   Where to store the timestamp.  Optional.
- * @param   ppszFlags       Where to store the pointer to the flags.  Optional.
- * @param   pcbBufActual    If @a pcBuf is not large enough, the size needed.
- *                          Optional.
- */
-VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
-                                    const char *pszPatterns,
-                                    void *pvBuf, uint32_t cbBuf,
-                                    uint64_t u64Timestamp, uint32_t u32Timeout,
-                                    char ** ppszName, char **ppszValue,
-                                    uint64_t *pu64Timestamp, char **ppszFlags,
-                                    uint32_t *pcbBufActual)
-{
-    /*
-     * Create the GET_NOTIFICATION message and call the host.
-     */
-    GetNotification Msg;
-
-    Msg.hdr.u32Timeout = u32Timeout;
-    Msg.hdr.info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
-    Msg.hdr.info.u32ClientID = u32ClientId;
-    Msg.hdr.info.u32Function = GET_NOTIFICATION;
-    Msg.hdr.info.cParms = 4;
-    Msg.patterns.SetPtr(const_cast<char *>(pszPatterns),
-                        strlen(pszPatterns) + 1);
-    Msg.buffer.SetPtr(pvBuf, cbBuf);
-    Msg.timestamp.SetUInt64(u64Timestamp);
-    Msg.size.SetUInt32(0);
-
-    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(sizeof(Msg)), &Msg, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        rc = Msg.hdr.info.result;
-
-    /*
-     * The cbBufActual parameter is also returned on overflow so the caller can
-     * adjust their buffer.
-     */
-    if (    rc == VERR_BUFFER_OVERFLOW
-        ||  pcbBufActual != NULL)
-    {
-        int rc2 = Msg.size.GetUInt32(pcbBufActual);
-        AssertRCReturn(rc2, RT_FAILURE(rc) ? rc : rc2);
-    }
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Buffer layout: Name\0Value\0Flags\0.
-     *
-     * If the caller cares about any of these strings, make sure things are
-     * propertly terminated (paranoia).
-     */
-    if (    RT_SUCCESS(rc)
-        &&  (ppszName != NULL || ppszValue != NULL || ppszFlags != NULL))
-    {
-        /* Validate / skip 'Name'. */
-        char *pszValue = (char *)memchr(pvBuf, '\0', cbBuf) + 1;
-        AssertPtrReturn(pszValue, VERR_TOO_MUCH_DATA);
-        if (ppszName)
-            *ppszName = (char *)pvBuf;
-
-        /* Validate / skip 'Value'. */
-        char *pszFlags = (char *)memchr(pszValue, '\0',
-                                        cbBuf - (pszValue - (char *)pvBuf)) + 1;
-        AssertPtrReturn(pszFlags, VERR_TOO_MUCH_DATA);
-        if (ppszValue)
-            *ppszValue = pszValue;
-
-        if (ppszFlags)
-        {
-            /* Validate 'Flags'. */
-            void *pvEos = memchr(pszFlags, '\0', cbBuf - (pszFlags - (char *)pvBuf));
-            AssertPtrReturn(pvEos, VERR_TOO_MUCH_DATA);
-            *ppszFlags = pszFlags;
-        }
-    }
-
-    /* And the timestamp, if requested. */
-    if (pu64Timestamp != NULL)
-    {
-        rc = Msg.timestamp.GetUInt64(pu64Timestamp);
-        AssertRCReturn(rc, rc);
-    }
-
-    return VINF_SUCCESS;
 }
 
