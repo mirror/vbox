@@ -137,8 +137,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         return VERR_INVALID_PARAMETER;
     }
 
-    /* Anyone who needs this can re-enable it locally */
-    /* dprintf (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function)); */
+    Log (("VbglHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d\n", pCallInfo->cParms, pCallInfo->u32Function));
 
     pHGCMCall = NULL;
 
@@ -147,8 +146,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
-    /* Anyone who needs this can re-enable it locally */
-    /* dprintf (("VbglHGCMCall Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms)); */
+    Log (("VbglHGCMCall Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 
     if (RT_SUCCESS(rc))
     {
@@ -208,14 +206,12 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
         /* Check that the parameter locking was ok. */
         if (RT_SUCCESS(rc))
         {
-            /* Anyone who needs this can re-enable it locally */
-            /* dprintf (("calling VbglGRPerform\n")); */
+            Log (("calling VbglGRPerform\n"));
 
             /* Issue request */
             rc = VbglGRPerform (&pHGCMCall->header.header);
 
-            /* Anyone who needs this can re-enable it locally */
-            /* dprintf (("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result)); */
+            Log (("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result));
 
             /** If the call failed, but as a result of the request itself, then pretend success
              *  Upper layers will interpret the result code in the packet.
@@ -232,6 +228,7 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                 if (rc == VINF_HGCM_ASYNC_EXECUTE)
                 {
                     /* Wait for request completion interrupt notification from host */
+                    Log (("Processing HGCM call asynchronously\n"));
                     pAsyncCallback (&pHGCMCall->header, pvAsyncData, u32AsyncData);
                 }
 
@@ -247,11 +244,13 @@ DECLVBGL(int) VbglHGCMCall (VBoxGuestHGCMCallInfo *pCallInfo,
                 {
                     /* The callback returns without completing the request,
                      * that means the wait was interrrupted. That can happen
-                     * if system reboots or the VBoxService ended abnormally.
+                     * if the request times out, the system reboots or the
+                     * VBoxService ended abnormally.
                      *
                      * Cancel the request, the host will not write to the
                      * memory related to the cancelled request.
                      */
+                    Log (("Cancelling HGCM call\n"));
                     pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
 
                     pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;

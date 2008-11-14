@@ -31,8 +31,9 @@
 */
 #include <VBox/VBoxGuestLib.h>
 
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
 #include <VBox/log.h>
+
+#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
 # define dprintf(a) RTLogBackdoorPrintf a
 #else
 # define dprintf(a) do {} while (0)

@@ -310,9 +310,10 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     if (!DeviceIoControl(g_hFile, iFunction, pvData, cbData, pvData, cbData, &cbReturned, NULL))
     {
 /** @todo The passing of error codes needs to be tested and fixed (as does *all* the other hosts except for
- * OS, Michael and Ramshankar!). The idea is that the VBox status codes in ring-0 should be
- * transfered without loss down to ring-3. However, it's not vitally important right now (obviously, since
- * the other guys has been ignoring it for 1+ years now). */
+ * OS/2).  The idea is that the VBox status codes in ring-0 should be transfered without loss down to
+ * ring-3. However, it's not vitally important right now (obviously, since the other guys has been
+ * ignoring it for 1+ years now).  On Linux and Solaris the transfer is done, but it is currently not
+ * lossless, so still needs fixing. */
         DWORD LastErr = GetLastError();
         return RTErrConvertFromWin32(LastErr);
     }
