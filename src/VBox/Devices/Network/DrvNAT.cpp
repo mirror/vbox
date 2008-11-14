@@ -402,7 +402,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     AssertRC(rc);
 # else
     /* kick WSAWaitForMultipleEvents() */
-    WSASetEvent(pThis->hNetEvent);
+    WSASetEvent(pThis->hWakeupEvent);
 # endif
 
     return VINF_SUCCESS;
@@ -754,7 +754,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pThis->PipeRead = fds[0];
             pThis->PipeWrite = fds[1];
 # else
-            pThis->hSendWakeup = CreateEvent(NULL, FALSE, FALSE, NULL); /* auto-reset event */
+            pThis->hWakeupEvent = CreateEvent(NULL, FALSE, FALSE, NULL); /* auto-reset event */
             slirp_register_external_event(pThis->pNATState, pThis->hWakeupEvent, VBOX_WAKEUP_EVENT_INDEX);
 # endif
 
