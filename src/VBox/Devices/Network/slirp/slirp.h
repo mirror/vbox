@@ -256,6 +256,8 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 #include "slirp_state.h"
 
+#undef PVM /* XXX Mac hack */
+
 #ifndef NULL
 #define NULL (void *)0
 #endif
