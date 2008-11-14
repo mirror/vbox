@@ -459,9 +459,9 @@ int testSetProp(VBOXHGCMSVCFNTABLE *pTable)
         strncat(szName, setProperties[i].pcszName, sizeof(szName));
         strncat(szValue, setProperties[i].pcszValue, sizeof(szValue));
         strncat(szFlags, setProperties[i].pcszFlags, sizeof(szFlags));
-        paParms[0].setPointer (szName, strlen(szName) + 1);
-        paParms[1].setPointer (szValue, strlen(szValue) + 1);
-        paParms[2].setPointer (szFlags, strlen(szFlags) + 1);
+        paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
+        paParms[1].setPointer (szValue, (uint32_t)strlen(szValue) + 1);
+        paParms[2].setPointer (szFlags, (uint32_t)strlen(szFlags) + 1);
         if (setProperties[i].isHost)
             callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                                 setProperties[i].useSetProp
@@ -531,7 +531,7 @@ int testDelProp(VBOXHGCMSVCFNTABLE *pTable)
          * constant strings in the hgcm parameters. */
         char szName[MAX_NAME_LEN] = "";
         strncat(szName, delProperties[i].pcszName, sizeof(szName));
-        paParms[0].setPointer (szName, strlen(szName) + 1);
+        paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
         if (delProperties[i].isHost)
             callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                                 1, paParms);
@@ -608,7 +608,7 @@ int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         AssertBreakStmt(sizeof(szBuffer) >= getProperties[i].cchValue,
                         rc = VERR_INTERNAL_ERROR);
         strncat(szName, getProperties[i].pcszName, sizeof(szName));
-        paParms[0].setPointer (szName, strlen(szName) + 1);
+        paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
         paParms[1].setPointer (szBuffer, sizeof(szBuffer));
         rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4,
                                   paParms);
