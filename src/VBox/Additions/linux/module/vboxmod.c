@@ -286,39 +286,45 @@ static int vboxadd_wait_event(void *ptr)
 static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
 {
         VBoxGuestHGCMConnectInfo info;
-        VBoxGuestHGCMDisconnectInfo infoDisconnect;
-        int rc = 0, rcVBox;
+        int rc = 0;
 
-        if (0 != copy_from_user ((void *)&info, (void *)userspace_info, sizeof (info))) {
-                LogRelFunc (("VBOXGUEST_IOCTL_HGCM_CONNECT: can not get connection info\n"));
-                return -EFAULT;
+        if (copy_from_user ((void *)&info, (void *)userspace_info,
+                            sizeof (info)) != 0) {
+            LogFunc (("VBOXGUEST_IOCTL_HGCM_CONNECT: can not get connection info\n"));
+            rc = -EFAULT;
         }
-        rcVBox = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT, &info);
-        if (RT_FAILURE(rcVBox) || (RT_FAILURE(info.result))) {
-                LogRelFunc(("VBOXGUEST_IOCTL_HGCM_CONNECT: hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n", rcVBox, info.result));
-                rc = RT_FAILURE(rcVBox) ?   -RTErrConvertToErrno(rcVBox)
-                                          : -RTErrConvertToErrno(info.result);
-        } else {
-                /* Register that the connection is associated with this file pointer. */
-                LogRelFunc(("Connected, client ID %u\n", info.u32ClientID));
-                rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
-                if (0 != rc) {
-                        LogRelFunc(("VBOXGUEST_IOCTL_HGCM_CONNECT: failed to register the HGCM connection\n"));
-                } else {
-                        if (copy_to_user ((void *)userspace_info, (void *)&info,
-                                          sizeof(info))) {
-                                LogRelFunc (("VBOXGUEST_IOCTL_HGCM_CONNECT: failed to return the connection structure\n"));
-                                rc = -EFAULT;
-                        } else {
-                                return 0;
-                        }
-                        /* Unregister again, as we didn't get as far as informing userspace. */
-                        vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
-                }
-                /* And disconnect the hgcm connection again, as we told userspace it failed. */
-                infoDisconnect.u32ClientID = info.u32ClientID;
-                vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
-                                  &infoDisconnect);
+        info.u32ClientID = 0;
+        if (rc >= 0) {
+            int vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_CONNECT,
+                                       &info);
+            rc = RT_FAILURE(vrc) ?   -RTErrConvertToErrno(vrc)
+                                   : -RTErrConvertToErrno(info.result);
+            if (rc < 0)
+                LogFunc(("hgcm connection failed.  internal ioctl result %Rrc, hgcm result %Rrc\n",
+                         vrc, info.result));
+        }
+        if (rc >= 0) {
+            /* Register that the connection is associated with this file pointer. */
+            LogFunc(("Connected, client ID %u\n", info.u32ClientID));
+            rc = vboxadd_register_hgcm_connection(info.u32ClientID, filp);
+            if (rc < 0)
+                LogFunc(("failed to register the HGCM connection\n"));
+        }
+        if (   rc >= 0
+            && copy_to_user ((void *)userspace_info, (void *)&info,
+                             sizeof(info)) != 0) {
+            LogFunc (("failed to return the connection structure\n"));
+            rc = -EFAULT;
+        }
+        if (rc < 0)
+            /* Unregister again, as we didn't get as far as informing userspace. */
+            vboxadd_unregister_hgcm_connection_no_close(info.u32ClientID);
+        if (rc < 0 && info.u32ClientID != 0) {
+            /* Disconnect the hgcm connection again, as we told userspace it failed. */
+            VBoxGuestHGCMDisconnectInfo infoDisconnect;
+            infoDisconnect.u32ClientID = info.u32ClientID;
+            vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
+                             &infoDisconnect);
         }
         return rc;
 }
@@ -334,18 +340,122 @@ static int vboxadd_hgcm_connect(struct file *filp, unsigned long userspace_info)
  */
 static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_info)
 {
+        int rc = 0, vrc = VINF_SUCCESS;
+
         VBoxGuestHGCMDisconnectInfo info;
-        if (0 != copy_from_user ((void *)&info, (void *)userspace_info, sizeof (info))) {
-                LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: can not get info\n"));
-                return -EFAULT;
+        if (copy_from_user ((void *)&info, (void *)userspace_info,
+                            sizeof (info)) != 0) {
+            LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: can not get info\n"));
+            rc = -EFAULT;
         }
-        LogRelFunc(("client ID %u\n", info.u32ClientID));
-        vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT, &info);
-        if (copy_to_user ((void *)userspace_info, (void *)&info, sizeof(info))) {
+        if (rc >= 0) {
+            LogRelFunc(("client ID %u\n", info.u32ClientID));
+            vrc = vboxadd_cmc_call(vboxDev, VBOXGUEST_IOCTL_HGCM_DISCONNECT,
+                                   &info);
+            rc = -RTErrConvertToErrno(vrc);
+        }
+        if (   rc >= 0
+            && copy_to_user ((void *)userspace_info, (void *)&info,
+                             sizeof(info)) != 0) {
                 LogRelFunc (("VBOXGUEST_IOCTL_HGCM_DISCONNECT: failed to return the connection structure\n"));
-                return -EFAULT;
+                rc = -EFAULT;
         }
-        return 0;
+        return rc;
+}
+
+/**
+ * IOCTL handler.  Make an HGCM call.
+ *
+ * @returns 0 on success, or a Linux kernel errno value
+ * @param  userspace_info userspace pointer to the hgcm connection information
+ *                        (VBoxGuestHGCMConnectInfo structure).  This will be
+ *                        updated on success.
+ * @param  u32Size        the size of the userspace structure
+ */
+static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
+{
+        VBoxGuestHGCMCallInfo *pInfo = NULL;
+        int rc = 0;
+        
+        pInfo = kmalloc(u32Size, GFP_KERNEL);
+        if (pInfo == NULL)
+                rc = -ENOMEM;
+        if (rc >= 0 &&
+            0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size)) {
+                LogRelFunc (("can not get info from user space\n"));
+                rc = -EFAULT;
+        }
+        if (rc >= 0 &&
+            sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) != u32Size) {
+                LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
+                             sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter),
+                             u32Size));
+            rc = -EINVAL;
+        }
+        if (rc >= 0) {
+                int vrc;
+                LogRelFunc(("client ID %u\n", pInfo->u32ClientID));
+                vrc = vboxadd_cmc_call(vboxDev,
+                              VBOXGUEST_IOCTL_HGCM_CALL(u32Size), pInfo);
+                rc = -RTErrConvertToErrno(vrc);
+                if (   rc >= 0
+                    && copy_to_user ((void *)userspace_info, (void *)pInfo,
+                                     u32Size)) {
+                        LogRelFunc (("failed to return the information to user space\n"));
+                        rc = -EFAULT;
+                }
+        }
+        if (pInfo != NULL)
+            kfree(pInfo);
+        return rc;
+}
+
+/**
+ * IOCTL handler.  Make an HGCM call with timeout.
+ *
+ * @returns 0 on success, or a Linux kernel errno value
+ * @param  userspace_info userspace pointer to the hgcm connection information
+ *                        (VBoxGuestHGCMConnectInfo structure).  This will be
+ *                        updated on success.
+ * @param  u32Size        the size of the userspace structure
+ */
+static int vboxadd_hgcm_call_timeout(unsigned long userspace_info,
+                                     uint32_t u32Size)
+{
+        VBoxGuestHGCMCallInfoTimeout *pInfo = NULL;
+        int rc = 0;
+        
+        pInfo = kmalloc(u32Size, GFP_KERNEL);
+        if (pInfo == NULL)
+                rc = -ENOMEM;
+        if (rc >= 0 &&
+            0 != copy_from_user ((void *)pInfo, (void *)userspace_info, u32Size)) {
+                LogRelFunc (("can not get info from user space\n"));
+                rc = -EFAULT;
+        }
+        if (rc >= 0 &&
+            sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter) != u32Size) {
+                LogRelFunc (("bad parameter size, structure says %d, ioctl says %d\n",
+                             sizeof(*pInfo) + pInfo->info.cParms * sizeof(HGCMFunctionParameter),
+                             u32Size));
+            rc = -EINVAL;
+        }
+        if (rc >= 0) {
+                int vrc;
+                LogRelFunc(("client ID %u\n", pInfo->info.u32ClientID));
+                vrc = vboxadd_cmc_call(vboxDev,
+                              VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(u32Size), pInfo);
+                rc = -RTErrConvertToErrno(vrc);
+                if (   rc >= 0
+                    && copy_to_user ((void *)userspace_info, (void *)pInfo,
+                                     u32Size)) {
+                        LogRelFunc (("failed to return the information to user space\n"));
+                        rc = -EFAULT;
+                }
+        }
+        if (pInfo != NULL)
+            kfree(pInfo);
+        return rc;
 }
 
 /**
@@ -508,16 +618,18 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
         else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0))
                  == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
         {
-        /* This IOCTL allows the guest to make an HGCM call from user space.  The
-           OS-independant part of the Guest Additions already contain code for making an
-           HGCM call from the guest, but this code assumes that the call is made from the
-           kernel's address space.  So before calling it, we have to copy all parameters
-           to the HGCM call from user space to kernel space and reconstruct the structures
-           passed to the call (which include pointers to other memory) inside the kernel's
-           address space. */
+        /* Do the HGCM call using the Vbgl bits */
                 IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL", arg);
-                rc = vbox_ioctl_hgcm_call(arg, vboxDev);
+                rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
                 IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
+        }
+        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0))
+                 == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
+        {
+        /* Do the HGCM call using the Vbgl bits */
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT", arg);
+                rc = vboxadd_hgcm_call_timeout(arg, _IOC_SIZE(cmd));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT", arg);
         }
         else
         {

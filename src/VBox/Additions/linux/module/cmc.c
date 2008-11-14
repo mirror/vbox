@@ -39,26 +39,47 @@ vboxadd_hgcm_callback_interruptible (VMMDevHGCMRequestHeader *pHeader, void *pvD
     wait_event_interruptible (dev->eventq, pHeader->fu32Flags & VBOX_HGCM_REQ_DONE);
 }
 
+static DECLVBGL(void)
+vboxadd_hgcm_callback_timeout (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
+{
+    VBoxDevice *dev = pvData;
+    wait_event_interruptible_timeout (dev->eventq, pHeader->fu32Flags & VBOX_HGCM_REQ_DONE,
+                                      msecs_to_jiffies (u32Data));
+}
+
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data)
 {
-    switch (func)
+    int rc = VINF_SUCCESS;
+
+    /* this function can handle cancelled requests */
+    if (   VBOXGUEST_IOCTL_STRIP_SIZE(func)
+        == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
+        rc = VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, 0);
+    /* this function can handle cancelled requests */
+    else if (   VBOXGUEST_IOCTL_STRIP_SIZE(func)
+             == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0)))
+    {
+        VBoxGuestHGCMCallInfoTimeout *pCallInfo;
+        pCallInfo = (VBoxGuestHGCMCallInfoTimeout *) data;
+        rc = VbglHGCMCall (&pCallInfo->info, vboxadd_hgcm_callback_timeout,
+                           opaque, pCallInfo->u32Timeout);
+    }
+    else switch (func)
     {
         /* this function can NOT handle cancelled requests */
         case VBOXGUEST_IOCTL_HGCM_CONNECT:
-            return VbglHGCMConnect (data, vboxadd_hgcm_callback, opaque, 0);
+            rc = VbglHGCMConnect (data, vboxadd_hgcm_callback, opaque, 0);
+            break;
 
         /* this function can NOT handle cancelled requests */
         case VBOXGUEST_IOCTL_HGCM_DISCONNECT:
-            return VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, 0);
+            rc = VbglHGCMDisconnect (data, vboxadd_hgcm_callback, opaque, 0);
+            break;
 
-        /* this function can handle cancelled requests */
         default:
-            if (VBOXGUEST_IOCTL_STRIP_SIZE(func) != VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL(0)))
-                return VERR_VBGL_IOCTL_FAILED;
-            /* fall thru */
-        case VBOXGUEST_IOCTL_STRIP_SIZE (VBOXGUEST_IOCTL_HGCM_CALL (0)):
-            return VbglHGCMCall (data, vboxadd_hgcm_callback_interruptible, opaque, 0);
+            rc = VERR_VBGL_IOCTL_FAILED;
     }
+    return rc;
 }
 
 int vboxadd_cmc_init (void)
