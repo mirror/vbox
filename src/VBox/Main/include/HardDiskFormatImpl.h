@@ -80,6 +80,11 @@ public:
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
+    /** Const, no need to lock */
+    const Bstr &id() { return m.id; }
+    /** Const, no need to lock */
+    uint64_t capabilities() { return m.capabilities; }
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HardDiskFormat"; }
 
@@ -108,7 +113,7 @@ private:
         const PropertyList properties;
     };
 
-    Data mData;
+    Data m;
 };
 
 #endif // ____H_HARDDISKFORMAT

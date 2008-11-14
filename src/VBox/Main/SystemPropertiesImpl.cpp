@@ -601,6 +601,38 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
     return S_OK;
 }
 
+/**
+ * Rerurns a hard disk format object corresponding to the given format
+ * identifier or null if no such format.
+ *
+ * @param aFormat   Format identifier.
+ *
+ * @return ComObjPtr<HardDiskFormat>
+ */
+ComObjPtr <HardDiskFormat> SystemProperties::hardDiskFormat (const BSTR aFormat)
+{
+    ComObjPtr <HardDiskFormat> format;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), format);
+
+    AutoReadLock alock (this);
+
+    for (HardDiskFormatList::const_iterator it = mHardDiskFormats.begin();
+         it != mHardDiskFormats.end(); ++ it)
+    {
+        /* HardDiskFormat is all const, no need to lock */
+
+        if ((*it)->id() == aFormat)
+        {
+            format = *it;
+            break;
+        }
+    }
+
+    return format;
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 

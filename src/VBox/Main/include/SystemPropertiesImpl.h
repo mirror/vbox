@@ -95,6 +95,11 @@ public:
     HRESULT loadSettings (const settings::Key &aGlobal);
     HRESULT saveSettings (settings::Key &aGlobal);
 
+    ComObjPtr <HardDiskFormat> hardDiskFormat (const BSTR aFormat);
+
+    // public methods for internal purposes only
+    // (ensure there is a caller and a read lock before calling them!)
+
     /** Default Machine path (as is, not full). Not thread safe (use object lock). */
     const Bstr &defaultMachineFolder() const { return mDefaultMachineFolder; }
     /** Default Machine path (full). Not thread safe (use object lock). */

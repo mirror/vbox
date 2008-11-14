@@ -179,6 +179,9 @@ public:
     HRESULT discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain);
     void cancelDiscard (MergeChain *aChain);
 
+    /** Returns a preferred format for a differencing hard disk. */
+    Bstr preferredDiffFormat();
+
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
