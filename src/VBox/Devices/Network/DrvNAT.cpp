@@ -232,7 +232,6 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 #ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
 
     PRTREQ pReq = NULL;
-    bool fWait;
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pThread->enmState != PDMTHREADSTATE_RUNNING)
         return;
@@ -378,7 +377,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /* poll the sockets in any case */
         slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
         /* process _all_ outstanding requests but don't wait */
-        while (RT_SUCCESS(RTReqProcess(This->pReqQueue, 0)))
+        while (RT_SUCCESS(RTReqProcess(pThis->pReqQueue, 0)))
             ;
 # endif /* RT_OS_WINDOWS */
     }
