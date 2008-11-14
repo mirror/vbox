@@ -88,6 +88,7 @@ typedef struct DRVNAT
 #else
     /*for send event from guest*/
     HANDLE                  hSendEvent;
+    HANDLE                  hNetEvent;
 #endif
     /** Send buffer */
     char                    cBuffer[1600];
@@ -192,12 +193,28 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
         case PDMNETWORKLINKSTATE_UP:
             LogRel(("NAT: link up\n"));
             slirp_link_up(pThis->pNATState);
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+# ifndef RT_OS_WINDOWS
+            int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
+            AssertRC(rc);
+# else
+            WSASetEvent(pThis->hNetEvent); 
+# endif
+#endif
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             LogRel(("NAT: link down\n"));
             slirp_link_down(pThis->pNATState);
+#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+# ifndef RT_OS_WINDOWS
+            int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
+            AssertRC(rc);
+# else
+            WSASetEvent(pThis->hNetEvent); 
+# endif
+#endif
             break;
 
         default:
@@ -324,16 +341,20 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /*
          * see WSAWaitForMultipleEvents documentation: return value is a minimal index in array
          */
-        if ((event - WSA_WAIT_EVENT_0) > 0)
+        if ((event - WSA_WAIT_EVENT_0) >= VBOX_SEND_EVENT_INDEX) {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 
-        if ((event - WSA_WAIT_EVENT_0) == 0)
+        if ((event - WSA_WAIT_EVENT_0) == VBOX_SEND_EVENT_INDEX)
         {
             /** XXX distinguish between drvNATSend and wakeup only */
             slirp_input(pThis->pNATState, (uint8_t *)&pThis->cBuffer[0], pThis->sBufferSize);
             WSAResetEvent(pThis->hSendEvent);
             RTSemEventSignal(pThis->semSndMutex);
         }
+        if ((event - WSA_WAIT_EVENT_0) == VBOX_NET_EVENT_INDEX) {
+            	WSAResetEvent(pThis->hNetEvent);
+		break;
+	}
 # endif /* RT_OS_WINDOWS */
     }
 
@@ -354,8 +375,10 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # ifndef RT_OS_WINDOWS
     int rc = RTFileWrite(pThis->PipeWrite, "2", 2, NULL);
     AssertRC(rc);
+# else
+   WSASetEvent(pThis->hNetEvent); 
+# endif
     RTSemEventSignal(pThis->semSndMutex);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -705,7 +728,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             pThis->PipeWrite = fds[1];
 # else
             pThis->hSendEvent = WSACreateEvent();
-            slirp_register_external_event(pThis->pNATState, pThis->hSendEvent);
+            pThis->hNetEvent = WSACreateEvent();
+	    slirp_register_external_event(pThis->pNATState, pThis->hSendEvent, VBOX_SEND_EVENT_INDEX);
+	    slirp_register_external_event(pThis->pNATState, pThis->hNetEvent, VBOX_NET_EVENT_INDEX);
 # endif
 
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pThread, pThis, drvNATAsyncIoThread, drvNATAsyncIoWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT");
