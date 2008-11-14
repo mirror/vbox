@@ -57,8 +57,7 @@ vboxadd_DEFS     = \
 vboxadd_INCS     = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 vboxadd_SOURCES  = \
 	vboxmod.c \
-	cmc.c \
-	hgcmcall.c
+	cmc.c
 vboxadd_LIBS     = \
 	$(VBOX_LIB_VBGL_R0BASE) \
 	$(VBOX_LIB_IPRT_GUEST_R0)

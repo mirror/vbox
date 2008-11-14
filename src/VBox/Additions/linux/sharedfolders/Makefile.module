@@ -71,7 +71,10 @@ OBJS   = \
 	HGCM.o \
 	VBoxCalls.o \
 	r0drv/alloc-r0drv.o \
+	r0drv/memobj-r0drv.o \
 	r0drv/linux/alloc-r0drv-linux.o \
+	r0drv/linux/memobj-r0drv-linux.o \
+	r0drv/linux/process-r0drv-linux.o \
 	r0drv/linux/semevent-r0drv-linux.o \
 	r0drv/linux/semfastmutex-r0drv-linux.o \
 	divdi3.o \

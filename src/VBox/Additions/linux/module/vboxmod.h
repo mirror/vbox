@@ -76,6 +76,7 @@ extern int vboxadd_cmc_init (void);
 extern void vboxadd_cmc_fini (void);
 DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
 
+#if 0
 /**
  * This IOCTL wrapper allows the guest to make an HGCM call from user space.  The
  * OS-independant part of the Guest Additions already contain code for making an
@@ -89,5 +90,15 @@ DECLVBGL (int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
  * @param arg User space pointer to the call data structure
  */
 extern int vbox_ioctl_hgcm_call(unsigned long arg, VBoxDevice *vboxDev);
+
+/**
+ * This call is similar to vbox_ioctl_hgcm_call, but for the _TIMEOUT variant
+ * of the ioctl.
+ *
+ * @returns   0 on success or Linux error code on failure
+ * @param arg      User space pointer to the call data structure
+ */
+extern int vbox_ioctl_hgcm_call_timeout(unsigned long arg, VBoxDevice *vboxDev);
+#endif
 
 #endif /* !VBOXMOD_H */
