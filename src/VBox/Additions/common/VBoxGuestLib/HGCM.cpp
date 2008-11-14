@@ -186,4 +186,24 @@ DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData,
     return rc;
 }
 
+DECLVBGL(int) VbglHGCMCallTimeout (VBGLHGCMHANDLE handle,
+                                   VBoxGuestHGCMCallInfoTimeout *pData, uint32_t cbData)
+{
+    int rc = VINF_SUCCESS;
+
+    VBGL_HGCM_ASSERTMsg(cbData >= sizeof (VBoxGuestHGCMCallInfoTimeout) + pData->info.cParms * sizeof (HGCMFunctionParameter),
+                        ("cbData = %d, cParms = %d (calculated size %d)\n", cbData, pData->info.cParms, sizeof (VBoxGuestHGCMCallInfoTimeout) + pData->info.cParms * sizeof (VBoxGuestHGCMCallInfo)));
+
+    if (pData->u32Timeout == RT_INDEFINITE_WAIT)
+    {
+        uint32_t cbDataNew = cbData - RT_OFFSETOF(VBoxGuestHGCMCallInfoTimeout, info);
+        rc = vbglDriverIOCtl (&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL(cbDataNew), &pData->info,
+                              cbDataNew);
+    }
+    else
+        rc = vbglDriverIOCtl (&handle->driver, VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(cbData), pData, cbData);
+
+    return rc;
+}
+
 #endif /* VBGL_VBOXGUEST */
