@@ -758,7 +758,7 @@ typedef struct _HGCMFUNCTIONPARAMETER32
     {
         type                    = VMMDevHGCMParmType_LinAddr;
         u.Pointer.size          = cb;
-        u.Pointer.u.linearAddr  = (uintptr_t)pv;
+        u.Pointer.u.linearAddr  = (VMMDEVHYPPTR32)(uintptr_t)pv;
     }
 #endif
 } HGCMFunctionParameter32;
@@ -1688,12 +1688,12 @@ VBGLR3DECL(int)     VbglR3GuestPropReadValue(uint32_t ClientId, const char *pszN
 VBGLR3DECL(int)     VbglR3GuestPropReadValueAlloc(uint32_t u32ClientId, const char *pszName, char **ppszValue);
 VBGLR3DECL(void)    VbglR3GuestPropReadValueFree(char *pszValue);
 VBGLR3DECL(int)     VbglR3GuestPropEnumRaw(uint32_t u32ClientId, const char *paszPatterns, char *pcBuf, uint32_t cbBuf, uint32_t *pcbBufActual);
-VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char const * const *ppaszPatterns, size_t cPatterns, PVBGLR3GUESTPROPENUM *ppHandle,
+VBGLR3DECL(int)     VbglR3GuestPropEnum(uint32_t u32ClientId, char const * const *ppaszPatterns, uint32_t cPatterns, PVBGLR3GUESTPROPENUM *ppHandle,
                                         char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp, char const **ppszFlags);
 VBGLR3DECL(int)     VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle, char const **ppszName, char const **ppszValue, uint64_t *pu64Timestamp,
                                             char const **ppszFlags);
 VBGLR3DECL(void)    VbglR3GuestPropEnumFree(PVBGLR3GUESTPROPENUM pHandle);
-VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t u32ClientId, char const * const *papszPatterns, size_t cPatterns);
+VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t u32ClientId, char const * const *papszPatterns, uint32_t cPatterns);
 VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPatterns, void *pvBuf, uint32_t cbBuf, uint64_t u64Timestamp, uint32_t u32Timeout, char ** ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
 /** @}  */
 #endif /* VBOX_WITH_GUEST_PROPS defined */
