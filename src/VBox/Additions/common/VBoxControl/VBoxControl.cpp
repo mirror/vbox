@@ -88,7 +88,9 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
     RTPrintf("%s [-v|-version]        print version number and exit\n", g_pszProgName);
     RTPrintf("%s -nologo ...          suppress the logo\n\n", g_pszProgName);
 
-#ifdef RT_OS_WINDOWS
+/* Exclude the Windows bits from the test version.  Anyone who needs to test
+ * them can fix this. */
+#if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
     if ((GET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
         doUsage("\n", g_pszProgName, "getvideoacceleration");
     if ((SET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
@@ -108,6 +110,8 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
         doUsage("get <property> [-verbose]\n", g_pszProgName, "guestproperty");
         doUsage("set <property> [<value> [-flags <flags>]]\n", g_pszProgName, "guestproperty");
         doUsage("enumerate [-patterns <patterns>]\n", g_pszProgName, "guestproperty");
+        doUsage("wait <patterns> [-timestamp <last timestamp>]\n", g_pszProgName, "guestproperty");
+        doUsage("[-timeout <timeout>\n");
     }
 #endif
 }
@@ -129,7 +133,7 @@ static void VBoxControlError(const char *pszFormat, ...)
     va_end(va);
 }
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
 
 LONG (WINAPI * gpfnChangeDisplaySettingsEx)(LPCTSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
 
@@ -1093,6 +1097,138 @@ static int enumGuestProperty(int argc, char *argv[])
 
 
 /**
+ * Waits for notifications of changes to guest properties.
+ * This is accessed through the "VBoxGuestPropSvc" HGCM service.
+ *
+ * @returns 0 on success, 1 on failure
+ * @note see the command line API description for parameters
+ */
+int waitGuestProperty(int argc, char **argv)
+{
+    using namespace guestProp;
+
+    /*
+     * Handle arguments
+     */
+    const char *pszPatterns = NULL;
+    uint64_t u64TimestampIn = 0;
+    uint32_t u32Timeout = RT_INDEFINITE_WAIT;
+    bool usageOK = true;
+    if (argc < 1)
+        usageOK = false;
+    pszPatterns = argv[0];
+    for (int i = 1; usageOK && i < argc; ++i)
+    {
+        if (strcmp(argv[i], "-timeout") == 0)
+        {
+            if (   i + 1 >= argc
+                || RTStrToUInt32Full(argv[i + 1], 10, &u32Timeout)
+                       != VINF_SUCCESS
+               )
+                usageOK = false;
+            else
+                ++i;
+        }
+        else if (strcmp(argv[i], "-timestamp") == 0)
+        {
+            if (   i + 1 >= argc
+                || RTStrToUInt64Full(argv[i + 1], 10, &u64TimestampIn)
+                       != VINF_SUCCESS
+               )
+                usageOK = false;
+            else
+                ++i;
+        }
+        else
+            usageOK = false;
+    }
+    if (!usageOK)
+    {
+        usage(GUEST_PROP);
+        return 1;
+    }
+
+    /*
+     * Connect to the service
+     */
+    uint32_t u32ClientId = 0;
+    int rc = VINF_SUCCESS;
+
+    rc = VbglR3GuestPropConnect(&u32ClientId);
+    if (!RT_SUCCESS(rc))
+        VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
+
+    /*
+     * Retrieve the notification from the host
+     */
+    char *pszName = NULL;
+    char *pszValue = NULL;
+    uint64_t u64TimestampOut = 0;
+    char *pszFlags = NULL;
+    /* The buffer for storing the data and its initial size.  We leave a bit
+     * of space here in case the maximum values are raised. */
+    void *pvBuf = NULL;
+    uint32_t cbBuf = MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
+    /* Because there is a race condition between our reading the size of a
+     * property and the guest updating it, we loop a few times here and
+     * hope.  Actually this should never go wrong, as we are generous
+     * enough with buffer space. */
+    bool finish = false;
+    for (unsigned i = 0;
+         (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW) && !finish && (i < 10);
+         ++i)
+    {
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
+        if (NULL == pvTmpBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            VBoxControlError("Out of memory\n");
+        }
+        else
+        {
+            pvBuf = pvTmpBuf;
+            rc = VbglR3GuestPropWait(u32ClientId, pszPatterns, pvBuf, cbBuf,
+                                     u64TimestampIn, u32Timeout,
+                                     &pszName, &pszValue, &u64TimestampOut,
+                                     &pszFlags, &cbBuf);
+        }
+        if (VERR_BUFFER_OVERFLOW == rc)
+            /* Leave a bit of extra space to be safe */
+            cbBuf += 1024;
+        else
+            finish = true;
+        if (rc == VERR_TOO_MUCH_DATA)
+            VBoxControlError("Temporarily unable to get a notification\n");
+        else if (rc == VERR_INTERRUPTED)
+            VBoxControlError("The request timed out or was interrupted\n");
+#ifndef RT_OS_WINDOWS  /* Windows guests do not do this right */
+        else if (!RT_SUCCESS(rc) && (rc != VERR_NOT_FOUND))
+            VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
+#endif
+    }
+/*
+ * And display it on the guest console.
+ */
+    if (VERR_NOT_FOUND == rc)
+        RTPrintf("No value set!\n");
+    else if (rc == VERR_BUFFER_OVERFLOW)
+        RTPrintf("Internal error: unable to determine the size of the data!\n");
+    else if (RT_SUCCESS(rc))
+    {
+        RTPrintf("Name: %s\n", pszName);
+        RTPrintf("Value: %s\n", pszValue);
+        RTPrintf("Timestamp: %lld ns\n", u64TimestampOut);
+        RTPrintf("Flags: %s\n", pszFlags);
+    }
+
+    if (u32ClientId != 0)
+        VbglR3GuestPropDisconnect(u32ClientId);
+    RTMemFree(pvBuf);
+    return RT_SUCCESS(rc) ? 0 : 1;
+}
+
+
+/**
  * Access the guest property store through the "VBoxGuestPropSvc" HGCM
  * service.
  *
@@ -1112,6 +1248,8 @@ static int handleGuestProperty(int argc, char *argv[])
         return setGuestProperty(argc - 1, argv + 1);
     else if (0 == strcmp(argv[0], "enumerate"))
         return enumGuestProperty(argc - 1, argv + 1);
+    else if (0 == strcmp(argv[0], "wait"))
+        return waitGuestProperty(argc - 1, argv + 1);
     /* else */
     usage(GUEST_PROP);
     return 1;
@@ -1130,7 +1268,7 @@ struct COMMANDHANDLER
     PFNHANDLER handler;
 } g_commandHandlers[] =
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
     { "getvideoacceleration", handleGetVideoAcceleration },
     { "setvideoacceleration", handleSetVideoAcceleration },
     { "listcustommodes", handleListCustomModes },

@@ -71,6 +71,7 @@ static const char  *g_apszExclude[] =
     "testcase/tstSDL",
     "testcase/tstTime-3",
     "testcase/tstSeamlessX11",
+    "testcase/tstVBoxControl",
     "./tstRunTestcases",
     "./tstAnimate",
     "./tstAPI",
