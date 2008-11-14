@@ -272,7 +272,7 @@ void slirp_register_timers(PNATState pData, PPDMDRVINS pDrvIns)
                            STAMUNIT_COUNT, "TCP sockets active", "/Drivers/NAT%d/SockTCPHot", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDP, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                            STAMUNIT_COUNT, "UDP sockets", "/Drivers/NAT%d/SockUDP", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatTCPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pData->StatUDPHot, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                            STAMUNIT_COUNT, "UDP sockets active", "/Drivers/NAT%d/SockUDPHot", pDrvIns->iInstance);
 #endif /* VBOX_WITHOUT_RELEASE_STATISTICS */
 }
@@ -542,7 +542,6 @@ socket_error:
                                     goto socket_error;
 				continue;
 #endif
-                                STAM_REL_COUNTER_INC(&pData->StatUDPHot);
 			}
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
                         else
