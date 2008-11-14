@@ -134,7 +134,8 @@ VirtualBox::SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID
  *
  * @param aRoot                 Root settings key.
  * @param aOldVersionString     Where to store old version string
- *                              pointer. May be NULL.
+ *                              pointer. May be NULL. Allocated memory is
+ *                              freed by the caller using RTStrFree().
  */
 bool VirtualBox::SettingsTreeHelper::
 needsConversion (const settings::Key &aRoot, char **aOldVersion) const
