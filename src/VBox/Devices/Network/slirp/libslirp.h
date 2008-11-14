@@ -50,12 +50,33 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
                    int guest_port);
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
-#define VBOX_NET_EVENT_INDEX 0
-#define VBOX_SEND_EVENT_INDEX 1
-#define VBOX_SOCKET_EVENT_INDEX 2
+/**
+ * This event is for
+ *  - slirp_input
+ *  - slirp_link_up
+ *  - slirp_link_down
+ *  - wakeup
+ *
+ * The event index should be smaller than VBOX_SOCKET_EVENT_INDEX to ensure
+ * that we can detect if that event was set (WSAWaitForMultipleEvents()
+ * returns the index of the first active event).
+ */
+#define VBOX_WAKEUP_EVENT_INDEX         0
+
+/*
+ * UDP/TCP socket state change (socket ready to receive, to send, ...)
+ */
+#define VBOX_SOCKET_EVENT_INDEX         1
+
+/*
+ * The number of events for WSAWaitForMultipleEvents().
+ */
+#define VBOX_EVENT_COUNT                2
+
 HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
 #endif
+
 #ifdef __cplusplus
 }
 #endif
