@@ -652,7 +652,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			if (so->so_state & SS_NOFDREF || so->s == -1)
 			   continue;
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, so->hNetworkEvent, &NetworkEvents);
+			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
                         if (rc == SOCKET_ERROR)
                         {
                             error = WSAGetLastError();
