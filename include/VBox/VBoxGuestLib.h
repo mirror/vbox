@@ -240,6 +240,19 @@ DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnect
  * @return VBox status code.
  */
 DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+
+/**
+ * Call to a service with timeout.
+ *
+ * @param handle      Handle of the connection.
+ * @param pData       Call request information structure, including function parameters.
+ * @param cbData      Length in bytes of data.
+ * @param cMillies    Timeout in milliseconds.  Use RT_INDEFINITE_WAIT to wait forever.
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglHGCMCallTimeout (VBGLHGCMHANDLE handle,
+                                   VBoxGuestHGCMCallInfoTimeout *pData, uint32_t cbData);
 /** @} */
 
 #endif /* !VBGL_VBOXGUEST */
