@@ -1427,7 +1427,8 @@ public:
          *
          * @param aRoot                 Root settings key.
          * @param aOldVersionString     Where to store old version string
-         *                              pointer. May be NULL.
+         *                              pointer. May be NULL. Allocated memory is
+         *                              freed by the caller using RTStrFree().
          */
         virtual bool needsConversion (const Key &aRoot,
                                       char **aOldVersion) const = 0;
