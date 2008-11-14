@@ -49,8 +49,11 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
                    int guest_port);
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+#define VBOX_NET_EVENT_INDEX 0
+#define VBOX_SEND_EVENT_INDEX 1
+#define VBOX_SOCKET_EVENT_INDEX 2
 HANDLE *slirp_get_events(PNATState pData);
-void slirp_register_external_event(PNATState pData, HANDLE hEvent);
+void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
 #endif
 #ifdef __cplusplus
 }

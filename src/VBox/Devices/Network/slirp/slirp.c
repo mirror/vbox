@@ -934,8 +934,8 @@ HANDLE *slirp_get_events(PNATState pData)
 {
 	return pData->phEvents;
 }
-void slirp_register_external_event(PNATState pData, HANDLE hEvent)
+void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index)
 {
-	pData->phEvents[VBOX_SEND_EVENT_INDEX] = hEvent;
+	pData->phEvents[index] = hEvent;
 }
 #endif
