@@ -79,6 +79,8 @@ public:
     STDMETHOD(COMGETTER(DefaultHardDiskFolder)) (BSTR *aDefaultHardDiskFolder);
     STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (INPTR BSTR aDefaultHardDiskFolder);
     STDMETHOD(COMGETTER(HardDiskFormats)) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats));
+    STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFolder);
+    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (INPTR BSTR aDefaultHardDiskFolder);
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (INPTR BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
@@ -102,6 +104,9 @@ public:
     /** Default hard disk path (full). Not thread safe (use object lock). */
     const Bstr &defaultHardDiskFolderFull() const { return mDefaultHardDiskFolderFull; }
 
+    /** Default hard disk format. Not thread safe (use object lock). */
+    const Bstr &defaultHardDiskFormat() const { return mDefaultHardDiskFormat; }
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SystemProperties"; }
 
@@ -111,6 +116,8 @@ private:
 
     HRESULT setDefaultMachineFolder (const BSTR aPath);
     HRESULT setDefaultHardDiskFolder (const BSTR aPath);
+    HRESULT setDefaultHardDiskFormat (const BSTR aFormat);
+
     HRESULT setRemoteDisplayAuthLibrary (const BSTR aPath);
     HRESULT setWebServiceAuthLibrary (const BSTR aPath);
 
@@ -120,6 +127,7 @@ private:
     Bstr mDefaultMachineFolderFull;
     Bstr mDefaultHardDiskFolder;
     Bstr mDefaultHardDiskFolderFull;
+    Bstr mDefaultHardDiskFormat;
 
     HardDiskFormatList mHardDiskFormats;
 

@@ -304,6 +304,7 @@
 <xsd:complexType name="TSystemProperties">
   <xsd:attribute name="defaultMachineFolder" type="TLocalFile"/>
   <xsd:attribute name="defaultHardDiskFolder" type="TLocalFile"/>
+  <xsd:attribute name="defaultHardDiskFormat" type="TNonEmptyString"/>
   <xsd:attribute name="remoteDisplayAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="webServiceAuthLibrary" type="TLocalFile"/>
   <xsd:attribute name="HWVirtExEnabled" type="xsd:boolean"/>

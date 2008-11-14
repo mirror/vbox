@@ -471,8 +471,9 @@ void HardDisk2::FinalRelease()
 HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
                          const BSTR aLocation)
 {
-    AssertReturn (aVirtualBox, E_INVALIDARG);
-    AssertReturn (aLocation, E_INVALIDARG);
+    AssertReturn (aVirtualBox != NULL, E_INVALIDARG);
+    AssertReturn (aLocation != NULL, E_INVALIDARG);
+    AssertReturn (aFormat != NULL && *aFormat != '\0', E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);

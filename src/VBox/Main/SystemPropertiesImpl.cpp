@@ -74,6 +74,8 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 
     setDefaultMachineFolder (NULL);
     setDefaultHardDiskFolder (NULL);
+    setDefaultHardDiskFormat (NULL);
+
     setRemoteDisplayAuthLibrary (NULL);
 
     mHWVirtExEnabled = false;
@@ -361,6 +363,36 @@ COMGETTER(HardDiskFormats) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultHardDiskFormat)
+{
+    if (!aDefaultHardDiskFormat)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    mDefaultHardDiskFormat.cloneTo (aDefaultHardDiskFormat);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (INPTR BSTR aDefaultHardDiskFormat)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mParent, this);
+
+    HRESULT rc = setDefaultHardDiskFormat (aDefaultHardDiskFormat);
+    if (SUCCEEDED (rc))
+        rc = mParent->saveSettings();
+
+    return rc;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemoteDisplayAuthLibrary)
 {
     if (!aRemoteDisplayAuthLibrary)
@@ -509,6 +541,10 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
     rc = setDefaultHardDiskFolder (bstr);
     CheckComRCReturnRC (rc);
 
+    bstr = properties.stringValue ("defaultHardDiskFormat");
+    rc = setDefaultHardDiskFormat (bstr);
+    CheckComRCReturnRC (rc);
+
     bstr = properties.stringValue ("remoteDisplayAuthLibrary");
     rc = setRemoteDisplayAuthLibrary (bstr);
     CheckComRCReturnRC (rc);
@@ -548,6 +584,9 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 
     if (mDefaultHardDiskFolder)
         properties.setValue <Bstr> ("defaultHardDiskFolder", mDefaultHardDiskFolder);
+
+    if (mDefaultHardDiskFormat)
+        properties.setValue <Bstr> ("defaultHardDiskFormat", mDefaultHardDiskFormat);
 
     if (mRemoteDisplayAuthLibrary)
         properties.setValue <Bstr> ("remoteDisplayAuthLibrary", mRemoteDisplayAuthLibrary);
@@ -609,28 +648,32 @@ HRESULT SystemProperties::setDefaultHardDiskFolder (const BSTR aPath)
     return S_OK;
 }
 
+HRESULT SystemProperties::setDefaultHardDiskFormat (const BSTR aFormat)
+{
+    if (aFormat && *aFormat)
+        mDefaultHardDiskFormat = aFormat;
+    else
+        mDefaultHardDiskFormat = "VDI";
+
+    return S_OK;
+}
+
 HRESULT SystemProperties::setRemoteDisplayAuthLibrary (const BSTR aPath)
 {
-    Utf8Str path;
     if (aPath && *aPath)
-        path = aPath;
+        mRemoteDisplayAuthLibrary = aPath;
     else
-        path = "VRDPAuth";
-
-    mRemoteDisplayAuthLibrary = path;
+        mRemoteDisplayAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }
 
 HRESULT SystemProperties::setWebServiceAuthLibrary (const BSTR aPath)
 {
-    Utf8Str path;
     if (aPath && *aPath)
-        path = aPath;
+        mWebServiceAuthLibrary = aPath;
     else
-        path = "VRDPAuth";
-
-    mWebServiceAuthLibrary = path;
+        mWebServiceAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }

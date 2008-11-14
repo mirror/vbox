@@ -1059,11 +1059,18 @@ STDMETHODIMP VirtualBox::CreateHardDisk2 (INPTR BSTR aFormat,
 
     /* we don't access non-const data members so no need to lock */
 
+    Bstr format = aFormat;
+    if (format.isEmpty())
+    {
+        AutoReadLock propsLock (systemProperties());
+        format = systemProperties()->defaultHardDiskFormat();
+    }
+
     HRESULT rc = E_FAIL;
 
     ComObjPtr <HardDisk2> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init (this, aFormat, aLocation);
+    rc = hardDisk->init (this, format, aLocation);
 
     if (SUCCEEDED (rc))
         hardDisk.queryInterfaceTo (aHardDisk);
