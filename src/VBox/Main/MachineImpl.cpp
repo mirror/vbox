@@ -2130,11 +2130,9 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
             }
         }
 
-        /// @todo NEWMEDIA use the proper storage format (either the parent
-        /// storage type or the ISystemProperties::defaultHardDiskFormat)
         ComObjPtr <HardDisk2> diff;
         diff.createObject();
-        rc = diff->init (mParent, Bstr ("VDI"),
+        rc = diff->init (mParent, hd->preferredDiffFormat(),
                          BstrFmt ("%ls"RTPATH_SLASH_STR,
                                   mUserData->mSnapshotFolderFull.raw()));
         CheckComRCReturnRC (rc);
@@ -6861,11 +6859,9 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
                          hd->root()->name().raw()));
             CheckComRCThrowRC (rc);
 
-            /// @todo NEWMEDIA use the proper storage format (either the parent
-            /// storage type or the ISystemProperties::defaultHardDiskFormat)
             ComObjPtr <HardDisk2> diff;
             diff.createObject();
-            rc = diff->init (mParent, Bstr ("VDI"),
+            rc = diff->init (mParent, hd->preferredDiffFormat(),
                              BstrFmt ("%ls"RTPATH_SLASH_STR,
                                       mUserData->mSnapshotFolderFull.raw()));
             CheckComRCThrowRC (rc);

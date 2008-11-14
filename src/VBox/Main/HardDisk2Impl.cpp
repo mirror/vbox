@@ -1654,6 +1654,35 @@ void HardDisk2::cancelDiscard (MergeChain *aChain)
     cancelMergeTo (aChain);
 }
 
+/**
+ * Returns a preferred format for differencing hard disks.
+ */
+Bstr HardDisk2::preferredDiffFormat()
+{
+    Bstr format;
+
+    AutoCaller autoCaller (this);
+    AssertComRCReturn (autoCaller.rc(), format);
+
+    /* mm.format is const, no need to lock */
+    format = mm.format;
+
+    /* check that our own format supports diffs */
+
+    /* lock system properties now to make the format check atomic with
+     * defaultHardDiskFormat() */
+    AutoReadLock propsLock (mVirtualBox->systemProperties());
+
+    ComObjPtr <HardDiskFormat> formatObj =
+        mVirtualBox->systemProperties()->hardDiskFormat (format);
+    AssertReturn (!formatObj.isNull(), format);
+
+    if (!(formatObj->capabilities() & HardDiskFormatCapabilities_Differencing))
+        format = mVirtualBox->systemProperties()->defaultHardDiskFormat();
+
+    return format;
+}
+
 // protected methods
 ////////////////////////////////////////////////////////////////////////////////
 
