@@ -1385,9 +1385,12 @@
         methods. Remembered root (base) hard disks are also returned as part of
         the <link to="#hardDisks2"/> array. See IHardDisk2 for more details.
 
-        The list of all <link to="IHardDisk2::format">storage formats</link>
-        supported by this VirtualBox installation can be obtained using
-        <link to="ISystemProperties::hardDiskFormats"/>.
+        The list of all storage formats supported by this VirtualBox
+        installation can be obtained using
+        <link to="ISystemProperties::hardDiskFormats"/>. If the @a format
+        attribute is empty or <tt>null</tt> then the default storage format
+        specified by <link to="ISystemProperties::defaultHardDiskFormat"/> will
+        be used for creating a storage unit of the hard disk.
 
         Note that the format of the location string is storage format specific.
         See <link to="IMedium::location"/>, IHardDisk2 and
@@ -1395,7 +1398,7 @@
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
-          Storage format to use for the new hard disk.
+          Idetifier of the torage format to use for the new hard disk.
         </desc>
       </param>
       <param name="location" type="wstring" dir="in">
@@ -5268,7 +5271,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="c7c060a9-91af-4e74-9188-a6b15a725e49"
+     uuid="604afeba-5963-4d12-a577-902ffb96352a"
      wsmap="managed"
      >
     <desc>
@@ -5414,6 +5417,41 @@
 
         <see>
           <link to="IHardDiskFormat"/>,
+        </see>
+      </desc>
+    </attribute>
+
+    <attribute name="defaultHardDiskFormat" type="wstring">
+      <desc>
+        Identifier of the default hard disk format used by VirtualBox.
+
+        The hard disk format set by this attribute is used by VirtualBox
+        when the hard disk format was not specified explicitly. One example is
+        <link to="IVirtualBox::createHardDisk2()"/> with the <tt>null</tt>
+        format argument. A more complex example is implicit creation of
+        differencing hard disks when taking a snapshot of a virtual machine:
+        this operation will try to use a format of the parent hard disk first
+        and if this format does not support differencing hard disks the default
+        format specified by this argument will be used.
+
+        The list of supported hard disk formats may be obtained by the
+        <link  to="#defaultHardDiskFormats"/> call. Note that the default
+        hard disk format must have a capability to create differencing hard
+        disks; otherwise opeartions that create hard disks implicitly may fail
+        unexpectedly.
+
+        The initial value of this property is <tt>VDI</tt> in the current
+        version of the VirtualBox product, but may change in the future.
+
+        <note>
+          Setting this property to <tt>null</tt> will restore the
+          initial value.
+        </note>
+
+        <see>
+          <link to="#hardDiskFormats"/>,
+          <link to="IHardDiskFormat:id"/>,
+          <link to="IVirtualBox::createHardDisk2()"/>
         </see>
       </desc>
     </attribute>
