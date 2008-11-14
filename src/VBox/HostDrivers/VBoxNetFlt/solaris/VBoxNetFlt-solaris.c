@@ -780,6 +780,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     if (RT_UNLIKELY(!pStream))
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModClose failed to get stream.\n"));
+        vboxNetFltRelease(pStream->pThis, false /* fBusy */);
         return ENXIO;
     }
 
@@ -878,6 +879,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     if (   pStream
         && pStream->Type == kPromiscStream)
     {
+        fSendUpstream = false;
         pThis = ASMAtomicUoReadPtr((void * volatile *)&pStream->pThis);
         if (RT_LIKELY(pThis))
         {
@@ -906,7 +908,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         vboxNetFltSolarisRecv(pThis, pStream, pQueue, pMsg);
                         pMsg = NULL;
                     }
-                    fSendUpstream = false;
                     break;
                 }
 
@@ -925,8 +926,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                             {
                                 LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Invalid notification size; expected>=%d got=%d\n",
                                             DL_NOTIFY_IND_SIZE, MBLKL(pMsg)));
-
-                                fSendUpstream = false;
                                 break;
                             }
 
@@ -949,7 +948,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                     }
 
                                     bcopy(pMsg->b_rptr + cOffset, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
-                                    fSendUpstream = false;
                                     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR. New Mac=%.*Rhxs\n",
                                         sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
                                     break;
@@ -963,7 +961,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                         ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
                                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_UP.\n"));
                                     }
-                                    fSendUpstream = false;
                                     break;
                                 }
 
@@ -975,7 +972,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                         ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
                                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_DOWN.\n"));
                                     }
-                                    fSendUpstream = false;
                                     break;
                                 }
                             }
@@ -988,7 +984,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                              * Swallow our bind request acknowledgement.
                              */
                             LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_BIND_ACK. Bound to requested SAP!\n"));
-                            fSendUpstream = false;
                             break;
                         }
 
@@ -998,7 +993,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                              * Swallow our physical address request acknowledgement.
                              */
                             vboxNetFltSolarisCachePhysAddr(pThis, pMsg);
-                            fSendUpstream = false;
                             break;
                         }
 
@@ -1018,8 +1012,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                 LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: M_PCPROTO: DL_OK_ACK: fPromisc is OFF.\n"));
                                 pPromiscStream->fPromisc = false;
                             }
-
-                            fSendUpstream = false;
                             break;
                         }
                     }
@@ -1037,8 +1029,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         pPromiscStream->fRawMode = true;
                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: Mode acknowledgement. RawMode is %s\n",
                                 pPromiscStream->fRawMode ? "ON" : "OFF"));
-
-                        fSendUpstream = false;
                     }
                     break;
                 }
