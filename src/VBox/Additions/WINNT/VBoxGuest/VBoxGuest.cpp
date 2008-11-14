@@ -379,6 +379,27 @@ DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData,
     return;
 }
 
+/* Note that VbglGRCancel *is* now implemented. */
+DECLVBGL(void) VBoxHGCMCallbackTimeout (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
+{
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
+    LARGE_INTEGER timeout;
+    timeout.QuadPart = u32Data * -10000; /* relative in 100ns units */
+    dprintf(("VBoxHGCMCallbackTimeout: entering, timeout %llu\n", timeout.QuadPart));
+    NTSTATUS rc = KeWaitForSingleObject (&pDevExt->keventNotification, Executive,
+                                         UserMode,
+                                         FALSE, /* Not Alertable */
+                                         &timeout
+                                        );
+    dprintf(("VBoxHGCMCallbackTimeout: Wait returned %d fu32Flags=%x\n", rc, pHeader->fu32Flags));
+
+    if (rc != STATUS_WAIT_0)
+        dprintf(("VBoxHGCMCallbackTimeout: The external event was signalled or the wait timed out or terminated rc = 0x%08X.\n", rc));
+    else
+        dprintf(("VBoxHGCMCallbackTimeout: fu32Flags = %08X\n", pHeader->fu32Flags));
+    return;
+}
+
 NTSTATUS vboxHGCMVerifyIOBuffers (PIO_STACK_LOCATION pStack, unsigned cb)
 {
     if (pStack->Parameters.DeviceIoControl.OutputBufferLength < cb)
@@ -992,6 +1013,47 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_HGCM_CALL: vbox rc = %Rrc\n", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            else
+            {
+                cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+            }
+
+        } break;
+
+        case VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0): /* (The size isn't relevant on NT.) */
+        {
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl: VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT\n"));
+
+            Status = vboxHGCMVerifyIOBuffers (pStack,
+                                              sizeof (VBoxGuestHGCMCallInfoTimeout));
+
+            if (Status != STATUS_SUCCESS)
+            {
+                dprintf(("nvalid parameter. Status: %p\n", Status));
+                break;
+            }
+
+            VBoxGuestHGCMCallInfoTimeout *pInfo = (VBoxGuestHGCMCallInfoTimeout *)pBuf;
+            VBoxGuestHGCMCallInfo *ptr = &pInfo->info;
+
+            int rc;
+            if (pInfo->u32Timeout == RT_INDEFINITE_WAIT)
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: calling VBoxHGCMCall with no timeout\n"));
+                rc = VbglHGCMCall (ptr, VBoxHGCMCallback, pDevExt, 0);
+            }
+            else
+            {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: calling VBoxHGCMCall timeout %lu ms\n",
+                         pInfo->u32Timeout));
+                rc = VbglHGCMCall (ptr, VBoxHGCMCallbackTimeout, pDevExt, pInfo->u32Timeout);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                dprintf(("VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT: vbox rc = %Rrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
             }
             else
