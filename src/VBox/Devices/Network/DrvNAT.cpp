@@ -341,7 +341,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /*
          * see WSAWaitForMultipleEvents documentation: return value is a minimal index in array
          */
-        if ((event - WSA_WAIT_EVENT_0) >= VBOX_SEND_EVENT_INDEX) {
+        if ((event - WSA_WAIT_EVENT_0) >= VBOX_SEND_EVENT_INDEX) 
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
 
         if ((event - WSA_WAIT_EVENT_0) == VBOX_SEND_EVENT_INDEX)
