@@ -53,7 +53,10 @@
 void
 ip_init(PNATState pData)
 {
+#ifndef VBOX_WITH_BSD_REASS
 	ipq.next = ipq.prev = ptr_to_u32(pData, &ipq);
+#else /* !VBOX_WITH_BSD_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 	ip_currid = tt.tv_sec & 0xffff;
 	udp_init(pData);
 	tcp_init(pData);
@@ -152,6 +155,7 @@ ip_input(PNATState pData, struct mbuf *m)
 	 *
 	 * XXX This should fail, don't fragment yet
 	 */
+#ifndef VBOX_WITH_BSD_REASS
 	if (ip->ip_off &~ IP_DF) {
 	  register struct ipq_t *fp;
 		/*
@@ -199,6 +203,8 @@ ip_input(PNATState pData, struct mbuf *m)
 
 	} else
 		ip->ip_len -= hlen;
+#else /* !VBOX_WITH_BSD_REASS */
+#endif /* !VBOX_WITH_BSD_REASS */
 
 	/*
 	 * Switch out to protocol's input routine.
@@ -224,6 +230,7 @@ bad:
 	return;
 }
 
+#ifndef VBOX_WITH_BSD_REASS
 /*
  * Take incoming datagram fragment and try to
  * reassemble it into whole datagram.  If a chain for
@@ -401,6 +408,16 @@ ip_freef(PNATState pData, struct ipq_t *fp)
 	remque_32(pData, fp);
 	(void) m_free(pData, dtom(pData, fp));
 }
+#else /* !VBOX_WITH_BSD_REASS */
+struct mbuf *
+ip_reass(PNATState pData, struct mbuf* m) {
+    return (NULL);
+}
+
+void
+ip_freef(PNATState pData, struct ipq_t *fp) {
+}
+#endif /* VBOX_WITH_BSD_REASS */
 
 /*
  * Put an ip fragment on a reassembly chain.
@@ -442,6 +459,7 @@ ip_slowtimo(PNATState pData)
 
 	DEBUG_CALL("ip_slowtimo");
 
+#ifndef VBOX_WITH_BSD_REASS
 	fp = u32_to_ptr(pData, ipq.next, struct ipq_t *);
 	if (fp == 0)
 	   return;
@@ -454,6 +472,11 @@ ip_slowtimo(PNATState pData)
 			ip_freef(pData, u32_to_ptr(pData, fp->prev, struct ipq_t *));
 		}
 	}
+#else /* !VBOX_WITH_BSD_REASS */
+    /* XXX: the fragment expiration is the same but requier
+     * additional loop see (see ip_input.c in FreeBSD tree)
+     */
+#endif /* VBOX_WITH_BSD_REASS */
 }
 
 /*
