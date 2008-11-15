@@ -119,6 +119,11 @@ struct mbuf {
 #define M_USEDLIST		0x04	/* XXX mbuf is on used list (for dtom()) */
 #define M_DOFREE		0x08	/* when m_free is called on the mbuf, free()
 					 * it rather than putting it on the free list */
+#ifdef VBOX_WITH_BSD_REASS
+#define M_FRAG                  0x0800  /* packet is a fragment of a larger packet */`
+#define M_FIRSTFRAG             0x1000  /* paket is first fragment */
+#define M_LASTFRAG              0x2000  /* paket is last fragment */
+#endif /* VBOX_WITH_BSD_REASS */
 
 /*
  * Mbuf statistics. XXX

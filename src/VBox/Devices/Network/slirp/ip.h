@@ -37,6 +37,14 @@
 #ifndef _IP_H_
 #define _IP_H_
 
+#ifdef VBOX_WITH_BSD_REASS
+# ifndef RT_OS_WINDOWS
+# include <sys/queue.h>
+# else
+/* XXX: Windows has own queue types declared in winnt.h (should look at them once again) */
+# endif
+#endif
+
 #ifdef WORDS_BIGENDIAN
 # ifndef NTOHL
 #  define NTOHL(d)
@@ -235,12 +243,20 @@ struct ipovly {
  * size 28 bytes
  */
 struct ipq_t {
+#ifndef VBOX_WITH_BSD_REASS
 	ipqp_32 next,prev;	/* to other reass headers */
+#else
+        TAILQ_ENTRY(ipq_t) ipq_list;
+#endif
 	u_int8_t	ipq_ttl;		/* time for reass q to live */
 	u_int8_t	ipq_p;			/* protocol of this fragment */
 	u_int16_t	ipq_id;			/* sequence id for reassembly */
-	ipasfragp_32 ipq_next,ipq_prev;
-					/* to ip headers of fragments */
+#ifndef VBOX_WITH_BSD_REASS
+	ipasfragp_32 ipq_next,ipq_prev;         /* to ip headers of fragments */
+#else
+        struct mbuf *ipq_frags;                 /* to ip headers of fragments */
+#endif
+
 	struct	in_addr ipq_src,ipq_dst;
 };
 

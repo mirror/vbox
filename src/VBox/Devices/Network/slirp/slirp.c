@@ -398,8 +398,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
 		 * *_slowtimo needs calling if there are IP fragments
 		 * in the fragment queue, or there are TCP connections active
 		 */
+#ifndef VBOX_WITH_BSD_REASS
 		do_slowtimo = ((tcb.so_next != &tcb) ||
 			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
+#else /* !VBOX_WITH_BSD_REASS */
+    /* XXX: triggering of fragment expiration should be the same but use
+     * new macroses
+     */
+#endif /* VBOX_WITH_BSD_REASS */
 
                 STAM_REL_COUNTER_RESET(&pData->StatTCP);
                 STAM_REL_COUNTER_RESET(&pData->StatTCPHot);
@@ -791,7 +797,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 			so_next = so->so_next;
 
 #if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);	
+			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
                         if (rc == SOCKET_ERROR)
                         {
                             error = WSAGetLastError();
