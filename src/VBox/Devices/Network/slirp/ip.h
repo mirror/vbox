@@ -245,17 +245,17 @@ struct ipovly {
 struct ipq_t {
 #ifndef VBOX_WITH_BSD_REASS
 	ipqp_32 next,prev;	/* to other reass headers */
-#else
+#else /* !VBOX_WITH_BSD_REASS */
         TAILQ_ENTRY(ipq_t) ipq_list;
-#endif
+#endif /* VBOX_WITH_BSD_REASS */
 	u_int8_t	ipq_ttl;		/* time for reass q to live */
 	u_int8_t	ipq_p;			/* protocol of this fragment */
 	u_int16_t	ipq_id;			/* sequence id for reassembly */
 #ifndef VBOX_WITH_BSD_REASS
 	ipasfragp_32 ipq_next,ipq_prev;         /* to ip headers of fragments */
-#else
+#else /* !VBOX_WITH_BSD_REASS */
         struct mbuf *ipq_frags;                 /* to ip headers of fragments */
-#endif
+#endif /* VBOX_WITH_BSD_REASS */
 
 	struct	in_addr ipq_src,ipq_dst;
 };
