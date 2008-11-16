@@ -260,6 +260,18 @@ struct ipq_t {
 	struct	in_addr ipq_src,ipq_dst;
 };
 
+#ifdef VBOX_WITH_BSD_REASS
+/*
+* IP datagram reassembly.
+*/
+#define IPREASS_NHASH_LOG2      6
+#define IPREASS_NHASH           (1 << IPREASS_NHASH_LOG2)
+#define IPREASS_HMASK           (IPREASS_NHASH - 1)
+#define IPREASS_HASH(x,y) \
+(((((x) & 0xF) | ((((x) >> 8) & 0xF) << 4)) ^ (y)) & IPREASS_HMASK)
+TAILQ_HEAD(ipqhead,ipq_t);
+#endif /* VBOX_WITH_BSD_REASS */
+
 /*
  * Ip header, when holding a fragment.
  *

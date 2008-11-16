@@ -68,7 +68,11 @@ typedef struct NATState
     struct icmpstat_t icmpstat;
     /* Stuff from ip_input.c */
     struct ipstat_t ipstat;
+#ifndef VBOX_WITH_BSD_REASS
     struct ipq_t ipq;
+#else /* !VBOX_WITH_BSD_REASS */
+    struct ipqhead ipq[IPREASS_NHASH];
+#endif /* VBOX_WITH_BSD_REASS */
     uint16_t ip_currid;
     /* Stuff from mbuf.c */
     int mbuf_alloced, mbuf_max;
@@ -115,7 +119,7 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
 #endif
