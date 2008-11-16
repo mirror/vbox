@@ -56,6 +56,9 @@ ip_init(PNATState pData)
 #ifndef VBOX_WITH_BSD_REASS
 	ipq.next = ipq.prev = ptr_to_u32(pData, &ipq);
 #else /* !VBOX_WITH_BSD_REASS */
+        int i = 0;
+        for (i = 0; i < IPREASS_NHASH; ++i)
+            TAILQ_INIT(&ipq[i]);
 #endif /* VBOX_WITH_BSD_REASS */
 	ip_currid = tt.tv_sec & 0xffff;
 	udp_init(pData);
