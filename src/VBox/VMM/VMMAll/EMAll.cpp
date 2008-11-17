@@ -2681,8 +2681,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
     LogFlow(("EMInterpretRdmsr %s (%x) -> val=%RX64\n", emMSRtoString(pRegFrame->ecx), pRegFrame->ecx, val));
     if (rc == VINF_SUCCESS)
     {
-        pRegFrame->eax = (uint32_t) val;
-        pRegFrame->edx = (uint32_t) (val >> 32ULL);
+        pRegFrame->rax = (uint32_t) val;
+        pRegFrame->rdx = (uint32_t) (val >> 32ULL);
     }
     return rc;
 }
