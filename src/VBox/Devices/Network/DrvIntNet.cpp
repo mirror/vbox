@@ -1013,17 +1013,19 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     }
 
 #elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# ifndef VBOX_NETFLT_ONDEMAND_BIND
-    /* we have a ndis filter driver started on system boot before the VBoxDrv,
-     * tell the filter driver to init VBoxNetFlt functionality */
-    rc = drvIntNetWinConstruct(pDrvIns, pCfgHandle);
-    if (RT_FAILURE(rc))
-    {
-        return rc;
-    }
-# endif
+
     if(OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
     {
+# ifndef VBOX_NETFLT_ONDEMAND_BIND
+        /* we have a ndis filter driver started on system boot before the VBoxDrv,
+         * tell the filter driver to init VBoxNetFlt functionality */
+        rc = drvIntNetWinConstruct(pDrvIns, pCfgHandle);
+        if (RT_FAILURE(rc))
+        {
+            return rc;
+        }
+# endif
+
         char szBindName[INTNET_MAX_TRUNK_NAME];
         int cBindName = INTNET_MAX_TRUNK_NAME;
 

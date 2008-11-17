@@ -959,9 +959,15 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 #else
         /* for the filter-based approach we get all miniports our filter (sun_VBoxNetFlt)is bound to */
         hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
+# ifndef VBOX_WITH_HARDENING
+        if(hr != S_OK)
+        {
+            /* TODO: try to install the netflt from here */
+        }
+# endif
+
 #endif
 
-        Assert(hr == S_OK);
         if(hr == S_OK)
         {
             hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
@@ -1001,6 +1007,11 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
             }
             VBoxNetCfgWinReleaseRef(pTcpIpNcc);
         }
+        else
+        {
+            LogRel(("failed to get the sun_VBoxNetFlt component, error (0x%x)", hr));
+        }
+
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
 #  endif /* #  if defined VBOX_WITH_NETFLT */
