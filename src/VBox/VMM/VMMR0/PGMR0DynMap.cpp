@@ -26,6 +26,10 @@
 #include "../PGMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/cpuset.h>
+#include <iprt/spinlock.h>
 
 
 /*******************************************************************************
@@ -71,8 +75,10 @@ typedef struct PGMR0DYNMAPENTRY
      * This is duplicate for three reasons: cache locality, cache policy of the PT
      * mappings and sanity checks.   */
     RTHCPHYS                    HCPhys;
+    /** Pointer to the page. */
+    void                       *pvPage;
     /** The number of references. */
-    uint32_t volatile           cRefs;
+    int32_t volatile            cRefs;
     /** PTE pointer union. */
     union PGMR0DYNMAPENTRY_PPTE
     {
@@ -101,7 +107,7 @@ typedef struct PGMR0DYNMAP
     /** The usual magic number / eye catcher. */
     uint32_t                    u32Magic;
     /** Spinlock serializing the normal operation of the cache. */
-    RTSPINLOCK                  hSpinLock;
+    RTSPINLOCK                  hSpinlock;
     /** Array for tracking and managing the pages.  */
     PPGMR0DYNMAPENTRY           paPages;
     /** The cache size given as a number of pages. */
@@ -129,7 +135,7 @@ typedef PGMR0DYNMAP *PPGMR0DYNMAP;
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Pointer to the ring-0 dynamic mapping cache. */
-static PPGMR0DYNMAP *g_pPGMR0DynMap;
+static PPGMR0DYNMAP g_pPGMR0DynMap;
 
 
 
@@ -189,7 +195,8 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
  */
 VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 {
-
+    Assert(pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED);
+    pVCpu->pgm.s.AutoSet.cEntries = 0;
 }
 
 
@@ -201,7 +208,32 @@ VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
  */
 VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
 {
+    PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
 
+    /* close the set */
+    uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
+    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%u\n", i));
+    pVCpu->pgm.s.AutoSet.cEntries = PGMMAPSET_CLOSED;
+
+    /* release any pages we're referencing. */
+    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries)))
+    {
+        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+        RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
+        while (i-- > 0)
+        {
+            uint32_t iPage = pSet->aEntries[i].iPage;
+            Assert(iPage < pThis->cPages);
+            int32_t  cRefs = pSet->aEntries[i].cRefs;
+            Assert(cRefs > 0);
+            cRefs = ASMAtomicSubS32(&pThis->paPages[iPage].cRefs, cRefs);
+            AssertMsg(cRefs >= 0, ("%d\n", cRefs)); NOREF(cRefs);
+        }
+
+        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    }
 }
 
 
@@ -219,7 +251,67 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
  */
 VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
 {
+    PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
+    uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
+    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%u\n", i));
+    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries)))
+    {
+        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+        RTCPUID         idRealCpu = RTMpCpuId();
 
+        while (i-- > 0)
+        {
+            Assert(pSet->aEntries[i].cRefs > 0);
+            uint32_t iPage = pSet->aEntries[i].iPage;
+            Assert(iPage < pThis->cPages);
+            if (RTCpuSetIsMember(&pThis->paPages[iPage].PendingSet, idRealCpu))
+            {
+                RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
+                ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+            }
+        }
+    }
+}
+
+
+DECLINLINE(void *) pgmR0DynMapHCPhys(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys)
+{
+    RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
+    /*
+     * Find an entry, if possible a matching one.
+     */
+
+    /* First hash. */
+    uint32_t        iPage = (HCPhys >> PAGE_SHIFT) % pThis->cPages;
+    if (pThis->paPages[iPage].HCPhys != HCPhys)
+    {
+
+//        uint32_t    iPage2 =
+//        if (pThis->paPages[iPage].cRefs)
+
+    }
+
+    /*
+     * Invalidate the entry?
+     */
+    RTCPUID idRealCpu = RTMpCpuId();
+    if (RTCpuSetIsMember(&pThis->paPages[iPage].PendingSet, idRealCpu))
+    {
+        RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
+        ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+    }
+
+    /*
+     * Reference it and get the return address.
+     */
+    ASMAtomicIncS32(&pThis->paPages[iPage].cRefs);
+    void *pvPage = pThis->paPages[iPage].pvPage;
+
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
+    return pvPage;
 }
 
 
@@ -227,8 +319,14 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
-    AssertMsgFailed(("Not implemented\n"));
-    return VERR_NOT_IMPLEMENTED;
+    PVMCPU          pVCpu     = VMMGetCpu(pVM);
+    PPGMMAPSET      pSet      = &pVCpu->pgm.s.AutoSet;
+
+    /*
+     * Add the page to the auto reference set.
+     */
+
+    return VINF_SUCCESS;
 }
 
 

@@ -1237,11 +1237,55 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
 #define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
 
+/**
+ * Mapping cache usage set entry.
+ *
+ * @remarks 16-bit ints was choosen as the set is not expected to be used beyond
+ *          the dynamic ring-0 and (to some extent) raw-mode context mapping
+ *          cache. If it's extended to include ring-3, well, then something will
+ *          have be changed here...
+ */
+typedef struct PGMMAPSETENTRY
+{
+    /** The mapping cache index. */
+    uint16_t                    iPage;
+    /** The number of references. */
+    uint16_t                    cRefs;
+} PGMMAPSETENTRY;
+/** Pointer to a mapping cache usage set entry. */
+typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
+
+/**
+ * Mapping cache usage set.
+ *
+ * This is used in ring-0 and the raw-mode context to track dynamic mappings
+ * done during exits / traps.  The set is
+ */
+typedef struct PGMMAPSET
+{
+    /** The number of occupied.
+     * This is PGMMAPSET_CLOSED if the set is closed and we're not supposed to do
+     * dynamic mappings. */
+    uint32_t                    cEntries;
+    /** The entries. */
+    PGMMAPSETENTRY              aEntries[32];
+} PGMMAPSET;
+/** Pointer to the mapping cache set. */
+typedef PGMMAPSET *PPGMMAPSET;
+
+/** PGMMAPSET::cEntries value for a closed set. */
+#define PGMMAPSET_CLOSED        UINT32_C(0xdeadc0fe)
+
+
 /** @name Context neutrual page mapper TLB.
  *
  * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
  * code is writting in a kind of context neutrual way. Time will show whether
  * this actually makes sense or not...
+ *
+ * @todo this needs to be reconsidered and dropped/redone since the ring-0
+ *       context ends up using a global mapping cache on some platforms
+ *       (darwin).
  *
  * @{ */
 /** @typedef PPGMPAGEMAPTLB
@@ -2620,6 +2664,9 @@ typedef struct PGMCPU
 {
     /** Offset to the VMCPU structure. */
     RTINT                           offVMCPU;
+    /** Automatically tracked physical memory mapping set.
+     * Ring-0 and strict raw-mode builds. */
+    PGMMAPSET                       AutoSet;
 } PGMCPU;
 /** Pointer to the per-cpu PGM data. */
 typedef PGMCPU *PPGMCPU;

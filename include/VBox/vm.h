@@ -97,7 +97,13 @@ typedef struct VMCPU
     /** The native thread handle. */
     RTNATIVETHREAD          hNativeThread;
 
-    /** Align the next bit on a 64-byte boundary. */
+    /** Align the next bit on a 64-byte boundary.
+     *
+     * @remarks The aligments of the members that are larger than 48 bytes should be
+     *          64-byte for cache line reasons. structs containing small amounts of
+     *          data could be lumped together at the end with a < 64 byte padding
+     *          following it (to grow into and align the struct size).
+     *   */
     uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 9 : 6];
 
     /** CPUM part. */
@@ -106,7 +112,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[2048];      /* multiple of 32 */
+        char                padding[2048];      /* multiple of 64 */
     } cpum;
     /** VMM part. */
     union
@@ -114,7 +120,7 @@ typedef struct VMCPU
 #ifdef ___VMMInternal_h
         struct VMMCPU       s;
 #endif
-        char                padding[32];        /* multiple of 32 */
+        char                padding[64];        /* multiple of 64 */
     } vmm;
 
     /** PGM part. */
@@ -123,7 +129,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        char                padding[32];        /* multiple of 32 */
+        char                padding[192];        /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -132,7 +138,7 @@ typedef struct VMCPU
 #ifdef ___HWACCMInternal_h
         struct HWACCMCPU    s;
 #endif
-        char                padding[1024];        /* multiple of 32 */
+        char                padding[1024];      /* multiple of 64 */
     } hwaccm;
 
     /** EM part. */
@@ -141,7 +147,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[32];        /* multiple of 32 */
+        char                padding[64];        /* multiple of 64 */
     } em;
 
     /** TM part. */
@@ -150,7 +156,7 @@ typedef struct VMCPU
 #ifdef ___TMInternal_h
         struct TMCPU        s;
 #endif
-        char                padding[32];        /* multiple of 32 */
+        char                padding[64];        /* multiple of 64 */
     } tm;
 } VMCPU;
 
