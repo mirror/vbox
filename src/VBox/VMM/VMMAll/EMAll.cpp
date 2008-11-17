@@ -2535,6 +2535,8 @@ static const char *emMSRtoString(uint32_t uMsr)
         return "MSR_K8_GS_BASE";
     case MSR_K8_KERNEL_GS_BASE:
         return "MSR_K8_KERNEL_GS_BASE";
+    case MSR_K8_TSC_AUX:
+        return "Unsupported MSR_K8_TSC_AUX";
     case MSR_IA32_BIOS_SIGN_ID:
         return "Unsupported MSR_IA32_BIOS_SIGN_ID";
     case MSR_IA32_PLATFORM_ID:
