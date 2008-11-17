@@ -113,7 +113,9 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" != "win"
     $(VBOX_IDL_TYPELIB.XPCOM)
 
  VBOX_MAIN_PREREQS += $(VBOX_IDL_TYPELIB.XPCOM) $(VBOX_IDL_HEADER.XPCOM)
- BLDDIRS += $(VBOX_PATH_SDK)/bindings/xpcom/idl
+ BLDDIRS += \
+	$(VBOX_PATH_SDK)/bindings/xpcom/idl \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include
 endif # xpcom
 
 
