@@ -1373,7 +1373,7 @@ typedef struct _VBoxGuestHGCMCallInfo
 typedef struct _VBoxGuestHGCMCallInfoTimeout
 {
     uint32_t u32Timeout;         /**< IN  How long to wait for completion before cancelling the call */
-    VBoxGuestHGCMCallInfo info;  /** The rest of the call information.  Placed after the timeout
+    VBoxGuestHGCMCallInfo info;  /**< IN/OUT The rest of the call information.  Placed after the timeout
                                   * so that the parameters follow as they would for a normal call. */
     /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
 } VBoxGuestHGCMCallInfoTimeout;
