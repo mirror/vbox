@@ -513,15 +513,17 @@ found:
      * ip_reass() will return a different mbuf.
      */
     ipstat.ips_fragments++;
-    m->m_data = (void *)ip;
+    m->m_data = (caddr_t)ip;
 
     /* Previous ip_reass() started here. */
     /*
      * Presence of header sizes in mbufs
      * would confuse code below.
      */
+#if 0
     m->m_data += hlen;
     m->m_len -= hlen;
+#endif
 
     /*
      * If first fragment to arrive, create a reassembly queue.
@@ -645,9 +647,11 @@ found:
      * Concatenate fragments.
      */
     m = q;
+#if 0
     t = m->m_next;
     m->m_next = NULL;
     m_cat(pData, m, t);
+#endif
     nq = q->m_nextpkt;
     q->m_nextpkt = NULL;
     for (q = nq; q != NULL; q = nq) {
@@ -667,8 +671,11 @@ found:
     TAILQ_REMOVE(head, fp, ipq_list);
     nipq--;
     free(fp);
+
     m->m_len += (ip->ip_hl << 2);
+#if 0
     m->m_data -= (ip->ip_hl << 2);
+#endif
     /* some debugging cruft by sklower, below, will go away soon */
 #if 0
     if (m->m_flags & M_PKTHDR)    /* XXX this should be done elsewhere */
