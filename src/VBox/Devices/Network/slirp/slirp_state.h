@@ -72,6 +72,9 @@ typedef struct NATState
     struct ipq_t ipq;
 #else /* !VBOX_WITH_BSD_REASS */
     struct ipqhead ipq[IPREASS_NHASH];
+    int maxnipq;    /* Administrative limit on # of reass queues*/
+    int maxfragsperpacket; /* Maximum number of IPv4 fragments allowed per packet */
+    int nipq; /* total number of reass queues */
 #endif /* VBOX_WITH_BSD_REASS */
     uint16_t ip_currid;
     /* Stuff from mbuf.c */
@@ -226,6 +229,12 @@ typedef struct NATState
 #define udpstat pData->udpstat
 #define udb pData->udb
 #define udp_last_so pData->udp_last_so
+
+#ifdef VBOX_WITH_BSD_REASS
+#define maxfragsperpacket pData->maxfragsperpacket
+#define maxnipq pData->maxnipq
+#define nipq pData->nipq
+#endif /* VBOX_WITH_BSD_REASS */
 
 
 #if SIZEOF_CHAR_P != 4
