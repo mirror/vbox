@@ -933,6 +933,12 @@ ALIGNCODE(16)
 GLOBALNAME HCExitTarget
     DEBUG_CHAR('9')
 
+    ; Clear high dword of the CPUM pointer
+    and     rdx, 0ffffffffh
+
+    ; Load the CPUMCPU offset.
+    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+
     ; load final cr3
     mov     rsi, [rdx + r8 + CPUMCPU.Host.cr3]
     mov     cr3, rsi
