@@ -28,20 +28,22 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:$PATH
 DEVICE=/dev/vboxdrv
-MODNAME=vboxdrv
 GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
+NETFLT=%NETFLT%
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
 
 if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
-    BUILDINTMP="$INSTALL_DIR/src/vboxdrv/build_in_tmp"
+    BUILDVBOXDRV="$INSTALL_DIR/src/vboxdrv/build_in_tmp"
+    BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxnetflt/build_in_tmp"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
-    BUILDINTMP="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
+    BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxdrv/build_in_tmp"
+    BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxnetflt/build_in_tmp"
 fi
 
 if [ -n "$NOLSB" ]; then
@@ -136,21 +138,21 @@ failure()
 
 running()
 {
-    lsmod | grep -q "$MODNAME[^_-]"
+    lsmod | grep -q "$1[^_-]"
 }
 
 start()
 {
     begin_msg "Starting VirtualBox kernel module"
-    if ! running; then
+    if ! running vboxdrv; then
         if ! find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
             failure "No suitable module for running kernel found"
         fi
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
         fi
-        if ! modprobe $MODNAME > /dev/null 2>&1; then
-            failure "modprobe $MODNAME failed. Please use 'dmesg' to find out why"
+        if ! modprobe vboxdrv > /dev/null 2>&1; then
+            failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
         fi
         sleep .2
     fi
@@ -166,18 +168,24 @@ start()
             fi
         fi
         if [ -z "$MAJOR" ]; then
-            rmmod $MODNAME 2>/dev/null
+            rmmod vboxdrv 2>/dev/null
             failure "Cannot locate the VirtualBox device"
         fi
         if ! mknod -m 0660 $DEVICE c $MAJOR $MINOR 2>/dev/null; then
-            rmmod $MODNAME 2>/dev/null
+            rmmod vboxdrv 2>/dev/null
             failure "Cannot create device $DEVICE with major $MAJOR and minor $MINOR"
         fi
     fi
     # ensure permissions
     if ! chown :$GROUPNAME $DEVICE 2>/dev/null; then
-        rmmod $MODNAME 2>/dev/null
+        rmmod vboxnetflt 2>/dev/null
+        rmmod vboxdrv 2>/dev/null
         failure "Cannot change owner $GROUPNAME for device $DEVICE"
+    fi
+    if [ -n "$NETFLT" ]; then
+        if ! modprobe vboxnetflt > /dev/null 2>&1; then
+            failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
+        fi
     fi
     succ_msg
 }
@@ -185,9 +193,14 @@ start()
 stop()
 {
     begin_msg "Stopping VirtualBox kernel module"
-    if running; then
-        if ! rmmod $MODNAME 2>/dev/null; then
-            failure "Cannot unload module $MODNAME"
+    if running vboxdrv; then
+        if running vboxnetflt; then
+            if ! rmmod vboxnetflt 2>/dev/null; then
+                failure "Cannot unload module vboxnetflt"
+            fi
+        fi
+        if ! rmmod vboxdrv 2>/dev/null; then
+            failure "Cannot unload module vboxdrv"
         fi
         if ! rm -f $DEVICE; then
             failure "Cannot unlink $DEVICE"
@@ -246,14 +259,28 @@ stop_vms()
 setup()
 {
     stop
+    if find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|grep -q vboxnetflt; then
+        begin_msg "Removing old VirtualBox netflt kernel module"
+        find /lib/modules/`uname -r` -name "vboxnetflt\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi  
     if find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|grep -q vboxdrv; then
-      begin_msg "Removing old VirtualBox kernel module"
-      find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
-      succ_msg
+        begin_msg "Removing old VirtualBox kernel module"
+        find /lib/modules/`uname -r` -name "vboxdrv\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
     fi
     begin_msg "Recompiling VirtualBox kernel module"
-    if ! $BUILDINTMP install > $LOG 2>&1; then
+    if ! $BUILDVBOXDRV \
+        --save-module-symvers /tmp/vboxdrv-Module.symvers \
+        --no-print-directory install > $LOG 2>&1; then
         failure "Look at $LOG to find out what went wrong"
+    fi
+    if [ -n "$NETFLT" ]; then
+        if ! $BUILDVBOXNETFLT \
+            --use-module-symvers /tmp/vboxdrv-Module.symvers \
+            --no-print-directory install >> $LOG 2>&1; then
+            failure "Look at $LOG to find out what went wrong"
+        fi
     fi
     succ_msg
     start
@@ -261,8 +288,12 @@ setup()
 
 dmnstatus()
 {
-    if running; then
-        echo "VirtualBox kernel module is loaded."
+    if running vboxdrv; then
+        if running vboxnetflt; then
+            echo "VirtualBox kernel modules (vboxdrv and vboxnetflt) are loaded."
+        else
+            echo "VirtualBox kernel module is loaded."
+        fi
         for i in $SHUTDOWN_USERS; do
             # don't create the ipcd directory with wrong permissions!
             if [ -d /tmp/.vbox-$i-ipc ]; then
