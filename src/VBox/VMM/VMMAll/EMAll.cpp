@@ -2439,8 +2439,8 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
     uint64_t uTicks = TMCpuTickGet(pVM);
 
     /* Same behaviour in 32 & 64 bits mode */
-    pRegFrame->eax = uTicks;
-    pRegFrame->edx = (uTicks >> 32ULL);
+    pRegFrame->rax = uTicks;
+    pRegFrame->rdx = (uTicks >> 32ULL);
 
     return VINF_SUCCESS;
 }
