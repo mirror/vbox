@@ -918,15 +918,18 @@ VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *p
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
 
-#ifdef HGCM_TIMEOUT
+
+# ifdef HGCM_TIMEOUT
 /**
  * This is a callback for dealing with async waits with a timeout.
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
+ * @todo r=bird: merge VBoxGuestHGCMAsyncWaitCallbackTimeout into
+ *       VBoxGuestHGCMAsyncWaitCallback, either by using a stack argument or
+ *       (better) create a common worker for them
  */
 static DECLCALLBACK(void)
-VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser,
-                                      uint32_t u32User)
+VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User)
 {
     VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
@@ -990,7 +993,7 @@ VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, 
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
-#endif /* HGCM_TIMEOUT */
+# endif /* HGCM_TIMEOUT */
 
 
 static int VBoxGuestCommonIOCtl_HGCMConnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMConnectInfo *pInfo,
@@ -1095,6 +1098,7 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
 }
 
 
+/** @remarks Identical to VBoxGuestCommonIOCtl_HGCMCallTimeout. */
 static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMCallInfo *pInfo,
                                          size_t cbData, size_t *pcbDataReturned)
 {
@@ -1152,9 +1156,10 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
 }
 
 
-#ifdef HGCM_TIMEOUT
+# ifdef HGCM_TIMEOUT
+/** @remarks Identical to VBoxGuestCommonIOCtl_HGCMCall. */
 static int VBoxGuestCommonIOCtl_HGCMCallTimeout(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestHGCMCallInfoTimeout *pInfoTimeout,
-                                         size_t cbData, size_t *pcbDataReturned)
+                                                size_t cbData, size_t *pcbDataReturned)
 {
     VBoxGuestHGCMCallInfo *pInfo = &pInfoTimeout->info;
     /*
@@ -1209,7 +1214,7 @@ static int VBoxGuestCommonIOCtl_HGCMCallTimeout(PVBOXGUESTDEVEXT pDevExt, PVBOXG
     Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
     return rc;
 }
-#endif /* HGCM_TIMEOUT */
+# endif /* HGCM_TIMEOUT */
 
 
 /**
@@ -1253,7 +1258,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
     Info.u32ClientID = 0;
     Info.result = (uint32_t)VERR_WRONG_ORDER;
 
-    rc = VbglHGCMConnect(&Info,VBoxGuestHGCMAsyncWaitCallback, pDevExt, 0);
+    rc = VbglHGCMConnect(&Info, VBoxGuestHGCMAsyncWaitCallback, pDevExt, 0);
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
@@ -1363,13 +1368,13 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, cbData, pcbDataReturned);
     }
-#ifdef HGCM_TIMEOUT
+# ifdef HGCM_TIMEOUT
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0)))
     {
-        CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfoTimeout));
+        CHECKRET_MIN_SIZE("HGCM_CALL_TIMEOUT", sizeof(VBoxGuestHGCMCallInfoTimeout));
         rc = VBoxGuestCommonIOCtl_HGCMCallTimeout(pDevExt, pSession, (VBoxGuestHGCMCallInfoTimeout *)pvData, cbData, pcbDataReturned);
     }
-#endif /* HGCM_TIMEOUT */
+# endif /* HGCM_TIMEOUT */
 #endif /* VBOX_WITH_HGCM */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
     {
