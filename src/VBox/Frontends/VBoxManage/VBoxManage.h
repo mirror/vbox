@@ -25,9 +25,14 @@
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
+#include <VBox/com/EventQueue.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/types.h>
+
+#if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
+# define USE_XPCOM_QUEUE
+#endif
 
 /** @name Syntax diagram category.
  * @{ */
@@ -85,6 +90,11 @@ typedef uint64_t USAGECATEGORY;
 
 /** flag whether we're in internal mode */
 extern bool g_fInternalMode;
+
+#ifndef VBOX_ONLY_DOCS
+/** A pointer to the event queue, set by main() before calling any handlers. */
+extern nsCOMPtr<nsIEventQueue> g_pEventQ;
+#endif /* !VBOX_ONLY_DOCS */
 
 /** showVMInfo details */
 typedef enum
