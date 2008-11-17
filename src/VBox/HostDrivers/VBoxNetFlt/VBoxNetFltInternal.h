@@ -201,7 +201,7 @@ typedef struct VBOXNETFLTINS
 # if defined(VBOX_NETFLT_ONDEMAND_BIND)
         uint8_t abPadding[192];
 # else
-        uint8_t abPadding[576];
+        uint8_t abPadding[1024];
 # endif
 #elif defined(RT_OS_LINUX)
         uint8_t abPadding[192];
