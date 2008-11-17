@@ -2074,7 +2074,7 @@ echo ""
 if [ "$OS" = "linux" ]; then
     echo "To compile the kernel module, do:"
     echo ""
-    echo "  cd ./out/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src"
+    echo "  cd ./out/$OS.$TARGET_MACHINE/$BUILD_TYPE/bin/src/vboxdrv"
     echo "  make"
     echo ""
 fi
