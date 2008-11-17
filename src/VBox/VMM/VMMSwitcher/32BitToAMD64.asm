@@ -53,83 +53,16 @@ GLOBALNAME Fixups
 BEGINCODE
 GLOBALNAME Start
 
-%ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL
-BITS 64
-
-;;
-; The C interface.
-;
-; @param    pVM  GCC: rdi  MSC:rcx  The VM handle.
-;
-BEGINPROC vmmR0HostToGuest
-%ifdef DEBUG_STUFF
-    COM64_S_NEWLINE
-    COM64_S_CHAR '^'
-%endif
-    ;
-    ; The ordinary version of the code.
-    ;
-
- %ifdef STRICT_IF
-    pushf
-    pop     rax
-    test    eax, X86_EFL_IF
-    jz      .if_clear_in
-    mov     eax, 0c0ffee00h
-    ret
-.if_clear_in:
- %endif
-
-    ;
-    ; make r9 = pVM and rdx = pCpum.
-    ; rax, rcx and r8 are scratch here after.
- %ifdef RT_OS_WINDOWS
-    mov     r9, rcx
- %else
-    mov     r9, rdi
- %endif
-    lea     rdx, [r9 + VM.cpum]
-
- %ifdef VBOX_WITH_STATISTICS
-    ;
-    ; Switcher stats.
-    ;
-    lea     r8, [r9 + VM.StatSwitcherToGC]
-    STAM64_PROFILE_ADV_START r8
- %endif
-
-    ;
-    ; Call worker (far return).
-    ;
-    mov     eax, cs
-    push    rax
-    call    NAME(vmmR0HostToGuestAsm)
-
- %ifdef VBOX_WITH_STATISTICS
-    ;
-    ; Switcher stats.
-    ;
-    lea     r8, [r9 + VM.StatSwitcherToGC]
-    STAM64_PROFILE_ADV_STOP r8
- %endif
-
-    ret
-ENDPROC vmmR0HostToGuest
-
-
-%else ; VBOX_WITH_HYBIRD_32BIT_KERNEL
-
-
 BITS 32
 
 ;;
 ; The C interface.
 ;
 BEGINPROC vmmR0HostToGuest
-%ifdef DEBUG_STUFF
+ %ifdef DEBUG_STUFF
     COM32_S_NEWLINE
     COM32_S_CHAR '^'
-%endif
+ %endif
 
  %ifdef VBOX_WITH_STATISTICS
     ;
@@ -140,51 +73,26 @@ BEGINPROC vmmR0HostToGuest
     STAM_PROFILE_ADV_START edx
  %endif
 
-    ; Thunk to/from 64 bit when invoking the worker routine.
     ;
-    FIXUP FIX_HC_VM_OFF, 1, VM.cpum
+    ; Call worker.
+    ;
+    FIXUP FIX_HC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
+    push    cs                          ; allow for far return and restore cs correctly.
+    call    NAME(vmmR0HostToGuestAsm)
 
-    push    0
-    push    cs
-    push    0
-    FIXUP FIX_HC_32BIT, 1, .vmmR0HostToGuestReturn - NAME(Start)
-    push    0ffffffffh
-
-    FIXUP FIX_HC_64BIT_CS, 1
-    push    0ffffh
-    FIXUP FIX_HC_32BIT, 1, NAME(vmmR0HostToGuestAsm) - NAME(Start)
-    push    0ffffffffh
-    retf
-.vmmR0HostToGuestReturn:
-
-    ;
-    ; This selector reloading is probably not necessary, but we do it anyway to be quite sure
-    ; the CPU has the right idea about the selectors.
-    ;
-    mov     edx, ds
-    mov     ds, edx
-    mov     ecx, es
-    mov     es, ecx
-    mov     edx, ss
-    mov     ss, edx
-
- %ifdef VBOX_WITH_STATISTICS
+%ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
     ;
     FIXUP FIX_HC_VM_OFF, 1, VM.StatSwitcherToHC
     mov     edx, 0ffffffffh
     STAM_PROFILE_ADV_STOP edx
- %endif
+%endif
 
     ret
+   
 ENDPROC vmmR0HostToGuest
-
-BITS 64
-%endif ;!VBOX_WITH_HYBIRD_32BIT_KERNEL
-
-
 
 ; *****************************************************************************
 ; vmmR0HostToGuestAsm
@@ -195,7 +103,7 @@ BITS 64
 ;       - edx       virtual address of CPUM structure (valid in host context)
 ;
 ; USES/DESTROYS:
-;       - eax, ecx, edx, r8
+;       - eax, ecx, edx, esi
 ;
 ; ASSUMPTION:
 ;       - current CS and DS selectors are wide open
@@ -203,506 +111,99 @@ BITS 64
 ; *****************************************************************************
 ALIGNCODE(16)
 BEGINPROC vmmR0HostToGuestAsm
-    mov     cr3, rax
-    DEBUG_CHAR('2')                     ; trashes esi
-
     ;;
-    ;; 1. Switch to compatibility mode, placing ourselves in identity mapped code.
+    ;; Save CPU host context
+    ;;      Skip eax, edx and ecx as these are not preserved over calls.
     ;;
-    jmp far [NAME(fpIDEnterTarget) wrt rip]
+    CPUMCPU_FROM_CPUM(edx)
+    ; general registers.
+    mov     [edx + CPUMCPU.Host.ebx], ebx
+    mov     [edx + CPUMCPU.Host.edi], edi
+    mov     [edx + CPUMCPU.Host.esi], esi
+    mov     [edx + CPUMCPU.Host.esp], esp
+    mov     [edx + CPUMCPU.Host.ebp], ebp
+    ; selectors.
+    mov     [edx + CPUMCPU.Host.ds], ds
+    mov     [edx + CPUMCPU.Host.es], es
+    mov     [edx + CPUMCPU.Host.fs], fs
+    mov     [edx + CPUMCPU.Host.gs], gs
+    mov     [edx + CPUMCPU.Host.ss], ss
+    ; special registers.
+    sldt    [edx + CPUMCPU.Host.ldtr]
+    sidt    [edx + CPUMCPU.Host.idtr]
+    sgdt    [edx + CPUMCPU.Host.gdtr]
+    str     [edx + CPUMCPU.Host.tr]
+    ; flags
+    pushfd
+    pop     dword [edx + CPUMCPU.Host.eflags]
 
-; 16:32 Pointer to IDEnterTarget.
-NAME(fpIDEnterTarget):
-    FIXUP FIX_ID_32BIT, 0, NAME(IDEnterTarget) - NAME(Start)
-dd  0
-    FIXUP FIX_HYPER_CS, 0
-dd  0
-
-
-    ; We're now on an identity mapped pages! in 32-bit compatability mode.
-BITS 32
-ALIGNCODE(16)
-GLOBALNAME IDEnterTarget
-    DEBUG_CHAR('3')
-
-    ; 2. Deactivate long mode by turning off paging.
-    mov     ebx, cr0
-    and     ebx, ~X86_CR0_PG
-    mov     cr0, ebx
-    DEBUG_CHAR('4')
-
-    ; 3. Load 32-bit intermediate page table.
-    FIXUP FIX_INTER_PAE_CR3, 1
-    mov     edx, 0ffffffffh
-    mov     cr3, edx
-
-    ; 4. Disable long mode.
-    ;    We also use the chance to disable syscall/sysret and fast fxsave/fxrstor.
-    mov     ecx, MSR_K6_EFER
-    rdmsr
-    DEBUG_CHAR('5')
-    and     eax, ~(MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_FFXSR)
+    FIXUP FIX_NO_SYSENTER_JMP, 0, htg_no_sysenter - NAME(Start) ; this will insert a jmp htg_no_sysenter if host doesn't use sysenter.
+    ; save MSR_IA32_SYSENTER_CS register.
+    mov     ecx, MSR_IA32_SYSENTER_CS
+    mov     ebx, edx                    ; save edx
+    rdmsr                               ; edx:eax <- MSR[ecx]
+    mov     [ebx + CPUMCPU.Host.SysEnter.cs], eax
+    mov     [ebx + CPUMCPU.Host.SysEnter.cs + 4], edx
+    xor     eax, eax                    ; load 0:0 to cause #GP upon sysenter
+    xor     edx, edx
     wrmsr
-    DEBUG_CHAR('6')
-
-    ; 5. Enable paging.
-    or      ebx, X86_CR0_PG
-    mov     cr0, ebx
-    jmp short just_a_jump
-just_a_jump:
-    DEBUG_CHAR('7')
-
-    ;;
-    ;; 6. Jump to guest code mapping of the code and load the Hypervisor CS.
-    ;;
-    FIXUP FIX_ID_2_GC_NEAR_REL, 1, NAME(JmpGCTarget) - NAME(Start)
-    jmp near NAME(JmpGCTarget)
-
-
-    ;;
-    ;; When we arrive at this label we're at the
-    ;; guest code mapping of the switching code.
-    ;;
-ALIGNCODE(16)
-GLOBALNAME JmpGCTarget
-    DEBUG_CHAR('-')
-    ; load final cr3 and do far jump to load cs.
-    FIXUP FIX_HYPER_PAE_CR3, 1
-    mov     eax, 0ffffffffh
-    mov     cr3, eax
-    DEBUG_CHAR('0')
-
-    ;;
-    ;; We're in VMM MMU context and VMM CS is loaded.
-    ;; Setup the rest of the VMM state.
-    ;;
-    ; Load selectors
-    DEBUG_CHAR('1')
-    FIXUP FIX_HYPER_DS, 1
-    mov     eax, 0ffffh
-    mov     ds, eax
-    mov     es, eax
-    xor     eax, eax
-    mov     gs, eax
-    mov     fs, eax
-    ; Load pCpum into EDX
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
-    mov     edx, 0ffffffffh
-    ; Activate guest IDT
-    DEBUG_CHAR('2')
-    lidt    [edx + CPUM.Hyper.idtr]
-
-    ; Setup stack; use the lss_esp, ss pair for lss
-    DEBUG_CHAR('3')
-    mov     eax, [edx + CPUM.Hyper.esp]
-    mov     [edx + CPUM.Hyper.lss_esp], eax
-    lss     esp, [edx + CPUM.Hyper.lss_esp]
-
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    DEBUG_CHAR('4')
-    FIXUP FIX_GC_TSS_GDTE_DW2, 2
-    and     dword [0ffffffffh], ~0200h      ; clear busy flag (2nd type2 bit)
-    DEBUG_CHAR('5')
-    ltr     word [edx + CPUM.Hyper.tr]
-    DEBUG_CHAR('6')
-
-    ; Activate the ldt (now we can safely crash).
-    lldt    [edx + CPUM.Hyper.ldtr]
-    DEBUG_CHAR('7')
-
-    ;; use flags.
-    mov     esi, [edx + CPUM.ulOffCPUMCPU]
-    mov     esi, [edx + esi + CPUMCPU.fUseFlags]
-
-    ; debug registers
-    test    esi, CPUM_USE_DEBUG_REGS
-    jz      htg_debug_regs_guest_no
-    jmp     htg_debug_regs_guest
-htg_debug_regs_guest_no:
-    DEBUG_CHAR('9')
-
-    ; General registers.
-    mov     ebx, [edx + CPUM.Hyper.ebx]
-    mov     ebp, [edx + CPUM.Hyper.ebp]
-    mov     esi, [edx + CPUM.Hyper.esi]
-    mov     edi, [edx + CPUM.Hyper.edi]
-    push    dword [edx + CPUM.Hyper.eflags]
-    popfd
-    DEBUG_CHAR('!')
-
-    ;;
-    ;; Return to the VMM code which either called the switcher or
-    ;; the code set up to run by HC.
-    ;;
-%ifdef DEBUG_STUFF
-    COM32_S_PRINT ';eip='
-    mov     eax, [edx + CPUM.Hyper.eip]
-    COM32_S_DWORD_REG eax
-    COM32_S_CHAR ';'
-%endif
-    mov     eax, [edx + CPUM.Hyper.eip]
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToGC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_STOP edx
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
-    mov     edx, 0ffffffffh
-%endif
-    jmp     eax
-
-;;
-; Detour for saving host DR0-3 and loading hypervisor debug registers.
-; esi and edx must be preserved.
-htg_debug_regs_guest:
-    DEBUG_S_CHAR('D')
-    DEBUG_S_CHAR('R')
-    DEBUG_S_CHAR('x')
-    ; load hyper DR0-7
-    mov     ebx, [edx + CPUM.Hyper.dr]
-    mov     dr0, ebx
-    mov     ecx, [edx + CPUM.Hyper.dr + 8*1]
-    mov     dr1, ecx
-    mov     eax, [edx + CPUM.Hyper.dr + 8*2]
-    mov     dr2, eax
-    mov     ebx, [edx + CPUM.Hyper.dr + 8*3]
-    mov     dr3, ebx
-    ;mov     eax, [edx + CPUM.Hyper.dr + 8*6]
-    mov     ecx, 0ffff0ff0h
-    mov     dr6, ecx
-    mov     eax, [edx + CPUM.Hyper.dr + 8*7]
-    mov     dr7, eax
-    jmp     htg_debug_regs_guest_no
-
-ENDPROC vmmR0HostToGuestAsm
-
-
-;;
-; Trampoline for doing a call when starting the hyper visor execution.
-;
-; Push any arguments to the routine.
-; Push the argument frame size (cArg * 4).
-; Push the call target (_cdecl convention).
-; Push the address of this routine.
-;
-;
-ALIGNCODE(16)
-BEGINPROC vmmGCCallTrampoline
-%ifdef DEBUG_STUFF
-    COM32_S_CHAR 'c'
-    COM32_S_CHAR 't'
-    COM32_S_CHAR '!'
-%endif
-
-    ; call routine
-    pop     eax                         ; call address
-    mov     esi, edx                    ; save edx
-    pop     edi                         ; argument count.
-%ifdef DEBUG_STUFF
-    COM32_S_PRINT ';eax='
-    COM32_S_DWORD_REG eax
-    COM32_S_CHAR ';'
-%endif
-    call    eax                         ; do call
-    add     esp, edi                    ; cleanup stack
-
-    ; return to the host context.
-    push    byte 0                      ; eip
-    mov     edx, esi                    ; CPUM pointer
-
-%ifdef DEBUG_STUFF
-    COM32_S_CHAR '`'
-%endif
-    jmp     NAME(VMMGCGuestToHostAsm)   ; eax = returncode.
-ENDPROC vmmGCCallTrampoline
-
-
-
-;;
-; The C interface.
-;
-ALIGNCODE(16)
-BEGINPROC vmmGCGuestToHost
-%ifdef DEBUG_STUFF
-    push    esi
-    COM_NEWLINE
-    DEBUG_CHAR('b')
-    DEBUG_CHAR('a')
-    DEBUG_CHAR('c')
-    DEBUG_CHAR('k')
-    DEBUG_CHAR('!')
-    COM_NEWLINE
-    pop     esi
-%endif
-    mov     eax, [esp + 4]
-    jmp     NAME(VMMGCGuestToHostAsm)
-ENDPROC vmmGCGuestToHost
-
-
-;;
-; VMMGCGuestToHostAsmGuestCtx
-;
-; Switches from Guest Context to Host Context.
-; Of course it's only called from within the GC.
-;
-; @param    eax     Return code.
-; @param    esp + 4 Pointer to CPUMCTXCORE.
-;
-; @remark   ASSUMES interrupts disabled.
-;
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmGuestCtx
-    DEBUG_CHAR('~')
-
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalInGC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_STOP edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalGCToQemu
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-%endif
-
-    ;
-    ; Load the CPUM pointer.
-    ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
-    mov     edx, 0ffffffffh
-    ; Convert to CPUMCPU pointer
-    add     edx, [edx + CPUM.ulOffCPUMCPU]
-    
-    ; Skip return address (assumes called!)
-    lea     esp, [esp + 4]
-
-    ;
-    ; Guest Context (assumes esp now points to CPUMCTXCORE structure).
-    ;
-    ; general purpose registers
-    push    eax                         ; save return code.
-    mov     eax, [esp + 4 + CPUMCTXCORE.edi]
-    mov     [edx + CPUMCPU.Guest.edi], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.esi]
-    mov     [edx + CPUMCPU.Guest.esi], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ebp]
-    mov     [edx + CPUMCPU.Guest.ebp], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.eax]
-    mov     [edx + CPUMCPU.Guest.eax], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ebx]
-    mov     [edx + CPUMCPU.Guest.ebx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.edx]
-    mov     [edx + CPUMCPU.Guest.edx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ecx]
-    mov     [edx + CPUMCPU.Guest.ecx], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.esp]
-    mov     [edx + CPUMCPU.Guest.esp], eax
-    ; selectors
-    mov     eax, [esp + 4 + CPUMCTXCORE.ss]
-    mov     [edx + CPUMCPU.Guest.ss], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.gs]
-    mov     [edx + CPUMCPU.Guest.gs], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.fs]
-    mov     [edx + CPUMCPU.Guest.fs], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.es]
-    mov     [edx + CPUMCPU.Guest.es], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.ds]
-    mov     [edx + CPUMCPU.Guest.ds], eax
-    mov     eax, [esp + 4 + CPUMCTXCORE.cs]
-    mov     [edx + CPUMCPU.Guest.cs], eax
-    ; flags
-    mov     eax, [esp + 4 + CPUMCTXCORE.eflags]
-    mov     [edx + CPUMCPU.Guest.eflags], eax
-    ; eip
-    mov     eax, [esp + 4 + CPUMCTXCORE.eip]
-    mov     [edx + CPUMCPU.Guest.eip], eax
-    ; jump to common worker code.
-    pop     eax                         ; restore return code.
-    ; Load CPUM into edx again
-    sub     edx, [edx + CPUMCPU.ulOffCPUM]
-
-    add     esp, CPUMCTXCORE_size      ; skip CPUMCTXCORE structure
-
-    jmp     vmmGCGuestToHostAsm_EIPDone
-ENDPROC VMMGCGuestToHostAsmGuestCtx
-
-
-;;
-; VMMGCGuestToHostAsmHyperCtx
-;
-; This is an alternative entry point which we'll be using
-; when the we have the hypervisor context and need to save
-; that before going to the host.
-;
-; This is typically useful when abandoning the hypervisor
-; because of a trap and want the trap state to be saved.
-;
-; @param    eax     Return code.
-; @param    ecx     Points to CPUMCTXCORE.
-; @uses     eax,edx,ecx
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsmHyperCtx
-    DEBUG_CHAR('#')
-
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalInGC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_STOP edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalGCToQemu
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-%endif
-
-    ;
-    ; Load the CPUM pointer.
-    ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
-    mov     edx, 0ffffffffh
-
-    push    eax                         ; save return code.
-    ; general purpose registers
-    mov     eax, [ecx + CPUMCTXCORE.edi]
-    mov     [edx + CPUM.Hyper.edi], eax
-    mov     eax, [ecx + CPUMCTXCORE.esi]
-    mov     [edx + CPUM.Hyper.esi], eax
-    mov     eax, [ecx + CPUMCTXCORE.ebp]
-    mov     [edx + CPUM.Hyper.ebp], eax
-    mov     eax, [ecx + CPUMCTXCORE.eax]
-    mov     [edx + CPUM.Hyper.eax], eax
-    mov     eax, [ecx + CPUMCTXCORE.ebx]
-    mov     [edx + CPUM.Hyper.ebx], eax
-    mov     eax, [ecx + CPUMCTXCORE.edx]
-    mov     [edx + CPUM.Hyper.edx], eax
-    mov     eax, [ecx + CPUMCTXCORE.ecx]
-    mov     [edx + CPUM.Hyper.ecx], eax
-    mov     eax, [ecx + CPUMCTXCORE.esp]
-    mov     [edx + CPUM.Hyper.esp], eax
-    ; selectors
-    mov     eax, [ecx + CPUMCTXCORE.ss]
-    mov     [edx + CPUM.Hyper.ss], eax
-    mov     eax, [ecx + CPUMCTXCORE.gs]
-    mov     [edx + CPUM.Hyper.gs], eax
-    mov     eax, [ecx + CPUMCTXCORE.fs]
-    mov     [edx + CPUM.Hyper.fs], eax
-    mov     eax, [ecx + CPUMCTXCORE.es]
-    mov     [edx + CPUM.Hyper.es], eax
-    mov     eax, [ecx + CPUMCTXCORE.ds]
-    mov     [edx + CPUM.Hyper.ds], eax
-    mov     eax, [ecx + CPUMCTXCORE.cs]
-    mov     [edx + CPUM.Hyper.cs], eax
-    ; flags
-    mov     eax, [ecx + CPUMCTXCORE.eflags]
-    mov     [edx + CPUM.Hyper.eflags], eax
-    ; eip
-    mov     eax, [ecx + CPUMCTXCORE.eip]
-    mov     [edx + CPUM.Hyper.eip], eax
-    ; jump to common worker code.
-    pop     eax                         ; restore return code.
-    jmp     vmmGCGuestToHostAsm_SkipHyperRegs
-
-ENDPROC VMMGCGuestToHostAsmHyperCtx
-
-
-;;
-; VMMGCGuestToHostAsm
-;
-; This is an alternative entry point which we'll be using
-; when the we have saved the guest state already or we haven't
-; been messing with the guest at all.
-;
-; @param    eax     Return code.
-; @uses     eax, edx, ecx (or it may use them in the future)
-;
-ALIGNCODE(16)
-BEGINPROC VMMGCGuestToHostAsm
-    DEBUG_CHAR('%')
-
-%ifdef VBOX_WITH_STATISTICS
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalInGC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_STOP edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatTotalGCToQemu
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-
-    FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToHC
-    mov     edx, 0ffffffffh
-    STAM32_PROFILE_ADV_START edx
-%endif
-
-    ;
-    ; Load the CPUM pointer.
-    ;
-    FIXUP FIX_GC_CPUM_OFF, 1, 0
-    mov     edx, 0ffffffffh
-
-    pop     dword [edx + CPUM.Hyper.eip] ; call return from stack
-    jmp short vmmGCGuestToHostAsm_EIPDone
+    xchg    ebx, edx                    ; restore edx
+    jmp short htg_no_sysenter
 
 ALIGNCODE(16)
-vmmGCGuestToHostAsm_EIPDone:
-    ; general registers which we care about.
-    mov     dword [edx + CPUM.Hyper.ebx], ebx
-    mov     dword [edx + CPUM.Hyper.esi], esi
-    mov     dword [edx + CPUM.Hyper.edi], edi
-    mov     dword [edx + CPUM.Hyper.ebp], ebp
-    mov     dword [edx + CPUM.Hyper.esp], esp
+htg_no_sysenter:
 
-    ; special registers which may change.
-vmmGCGuestToHostAsm_SkipHyperRegs:
-%ifdef STRICT_IF
-    pushf
-    pop     ecx
-    test    ecx, X86_EFL_IF
-    jz      .if_clear_out
-    mov     eax, 0c0ffee01h
-    cli
-.if_clear_out:
-%endif
-    ; str     [edx + CPUM.Hyper.tr] - double fault only, and it won't be right then either.
-    sldt    [edx + CPUM.Hyper.ldtr]
+    ;; handle use flags.
+    mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
+    and     esi, ~CPUM_USED_FPU         ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
+    mov     [edx + CPUMCPU.fUseFlags], esi
 
-    ; No need to save CRx here. They are set dynamically according to Guest/Host requirements.
-    ; FPU context is saved before restore of host saving (another) branch.
+    ; debug registers.
+    test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
+    jz      htg_debug_regs_no
+    jmp     htg_debug_regs_save_dr7and6
+htg_debug_regs_no:
 
+    ; control registers.
+    mov     eax, cr0
+    mov     [edx + CPUMCPU.Host.cr0], eax
+    ;mov     eax, cr2                   ; assume host os don't stuff things in cr2. (safe)
+    ;mov     [edx + CPUMCPU.Host.cr2], eax
+    mov     eax, cr3
+    mov     [edx + CPUMCPU.Host.cr3], eax
+    mov     eax, cr4
+    mov     [edx + CPUMCPU.Host.cr4], eax
 
     ;;
     ;; Load Intermediate memory context.
     ;;
-    mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
-    FIXUP FIX_INTER_PAE_CR3, 1
+    FIXUP FIX_INTER_32BIT_CR3, 1
     mov     eax, 0ffffffffh
     mov     cr3, eax
     DEBUG_CHAR('?')
 
-    ;; We're now in intermediate memory context!
-
     ;;
-    ;; 0. Jump to identity mapped location
+    ;; Jump to identity mapped location
     ;;
-    FIXUP FIX_GC_2_ID_NEAR_REL, 1, NAME(IDExitTarget) - NAME(Start)
-    jmp near NAME(IDExitTarget)
+    FIXUP FIX_GC_2_ID_NEAR_REL, 1, NAME(IDEnterTarget) - NAME(Start)
+    jmp near NAME(IDEnterTarget)
 
+        
     ; We're now on identity mapped pages!
 ALIGNCODE(16)
-GLOBALNAME IDExitTarget
-    DEBUG_CHAR('1')
-
+GLOBALNAME IDEnterTarget
+    DEBUG_CHAR('2')
+        
     ; 1. Disable paging.
     mov     ebx, cr0
     and     ebx, ~X86_CR0_PG
     mov     cr0, ebx
     DEBUG_CHAR('2')
 
-    ; 2. Enable PAE - already enabled.
+    ; 2. Enable PAE.
+    mov     ecx, cr4
+    or      ecx, X86_CR4_PAE
+    mov     cr4, ecx
 
     ; 3. Load long mode intermediate CR3.
     FIXUP FIX_INTER_AMD64_CR3, 1
@@ -725,35 +226,226 @@ GLOBALNAME IDExitTarget
     DEBUG_CHAR('5')
 
     ; Jump from compatability mode to 64-bit mode.
-    FIXUP FIX_ID_FAR32_TO_64BIT_MODE, 1, NAME(IDExit64Mode) - NAME(Start)
+    FIXUP FIX_ID_FAR32_TO_64BIT_MODE, 1, NAME(IDEnter64Mode) - NAME(Start)
     jmp     0ffffh:0fffffffeh
 
     ;
     ; We're in 64-bit mode (ds, ss, es, fs, gs are all bogus).
-    ; Move on to the HC mapping.
-    ;
 BITS 64
 ALIGNCODE(16)
-NAME(IDExit64Mode):
+NAME(IDEnter64Mode):
     DEBUG_CHAR('6')
-    jmp     [NAME(pHCExitTarget) wrt rip]
+    jmp     [NAME(pICEnterTarget) wrt rip]
 
 ; 64-bit jump target
-NAME(pHCExitTarget):
-FIXUP FIX_HC_64BIT, 0, NAME(HCExitTarget) - NAME(Start)
+NAME(pICEnterTarget):
+FIXUP FIX_HC_64BIT, 0, NAME(ICEnterTarget) - NAME(Start)
 dq 0ffffffffffffffffh
 
 ; 64-bit pCpum address.
-NAME(pCpumHC):
+NAME(pCpumIC):
 FIXUP FIX_HC_64BIT_CPUM, 0
 dq 0ffffffffffffffffh
 
     ;
-    ; When we arrive here we're at the host context
-    ; mapping of the switcher code.
+    ; When we arrive here we're at the 64 bit mode of intermediate context
     ;
 ALIGNCODE(16)
-GLOBALNAME HCExitTarget
+GLOBALNAME ICEnterTarget     
+    ; at this moment we're in 64-bit mode. let's write something to CPUM
+    ; Load CPUM pointer into rdx
+    mov     rdx, [NAME(pCpumIC) wrt rip]
+    ; Load the CPUMCPU offset.
+    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+        
+    mov rsi, 012345678h
+    mov [rdx + r8 + CPUMCPU.uPadding], rsi
+
+    ; now let's switch back
+    mov     rax,  0666h
+    jmp     NAME(VMMGCGuestToHostAsm)   ; rax = returncode.
+
+BITS 32
+;;
+; Detour for saving the host DR7 and DR6.
+; esi and edx must be preserved.
+htg_debug_regs_save_dr7and6:
+DEBUG_S_CHAR('s');
+    mov     eax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
+    mov     [edx + CPUMCPU.Host.dr7], eax
+    xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
+    mov     dr7, eax
+    mov     eax, dr6                    ; just in case we save the state register too.
+    mov     [edx + CPUMCPU.Host.dr6], eax
+    jmp     htg_debug_regs_no
+
+
+BITS 64
+ENDPROC vmmR0HostToGuestAsm
+
+
+;;
+; Trampoline for doing a call when starting the hyper visor execution.
+;
+; Push any arguments to the routine.
+; Push the argument frame size (cArg * 4).
+; Push the call target (_cdecl convention).
+; Push the address of this routine.
+;
+;
+ALIGNCODE(16)
+BEGINPROC vmmGCCallTrampoline
+%ifdef DEBUG_STUFF
+    COM32_S_CHAR 'c'
+    COM32_S_CHAR 't'
+    COM32_S_CHAR '!'
+%endif
+    int3
+ENDPROC vmmGCCallTrampoline
+
+
+BITS 64
+;;
+; The C interface.
+;
+ALIGNCODE(16)
+BEGINPROC vmmGCGuestToHost
+%ifdef DEBUG_STUFF
+    push    esi
+    COM_NEWLINE
+    DEBUG_CHAR('b')
+    DEBUG_CHAR('a')
+    DEBUG_CHAR('c')
+    DEBUG_CHAR('k')
+    DEBUG_CHAR('!')
+    COM_NEWLINE
+    pop     esi
+%endif
+    int3
+ENDPROC vmmGCGuestToHost
+
+;;
+; VMMGCGuestToHostAsm
+;
+; This is an alternative entry point which we'll be using
+; when the we have saved the guest state already or we haven't
+; been messing with the guest at all.
+;
+; @param    eax     Return code.
+; @uses     eax, edx, ecx (or it may use them in the future)
+;
+ALIGNCODE(16)
+BEGINPROC VMMGCGuestToHostAsm
+    CPUMCPU_FROM_CPUM(rdx)
+    FIXUP FIX_INTER_AMD64_CR3, 1
+    mov     rax, 0ffffffffh
+    mov     cr3, rax
+    ;; We're now in intermediate memory context!
+        
+    ;;
+    ;; Jump to identity mapped location
+    ;;
+    FIXUP FIX_GC_2_ID_NEAR_REL, 1, NAME(IDExitTarget) - NAME(Start)
+    jmp near NAME(IDExitTarget)
+
+    ; We're now on identity mapped pages!
+ALIGNCODE(16)
+GLOBALNAME IDExitTarget
+BITS 32     
+    DEBUG_CHAR('1')
+
+    ; 1. Deactivate long mode by turning off paging.
+    mov     ebx, cr0
+    and     ebx, ~X86_CR0_PG
+    mov     cr0, ebx
+    DEBUG_CHAR('2')
+
+    ; 2. Load 32-bit intermediate page table.
+    FIXUP FIX_INTER_32BIT_CR3, 1
+    mov     edx, 0ffffffffh
+    mov     cr3, edx
+    DEBUG_CHAR('3')
+
+    ; 3. Disable long mode.
+    mov     ecx, MSR_K6_EFER
+    rdmsr
+    DEBUG_CHAR('5')
+    and     eax, ~(MSR_K6_EFER_LME)
+    wrmsr
+    DEBUG_CHAR('6')
+
+    ; 3b. Disable PAE.
+    mov     eax, cr4
+    and     eax, ~X86_CR4_PAE
+    mov     cr4, eax
+    DEBUG_CHAR('7')
+
+    ; 4. Enable paging.
+    or      ebx, X86_CR0_PG
+    mov     cr0, ebx
+    jmp short just_a_jump
+just_a_jump:
+    DEBUG_CHAR('8')
+
+    ;;
+    ;; 5. Jump to guest code mapping of the code and load the Hypervisor CS.
+    ;;
+    FIXUP FIX_ID_2_GC_NEAR_REL, 1, NAME(ICExitTarget) - NAME(Start)
+    jmp near NAME(ICExitTarget)
+   
+    ;;
+    ;; When we arrive at this label we're at the
+    ;; intermediate mapping of the switching code.
+    ;;
+BITS 32
+ALIGNCODE(16)
+GLOBALNAME ICExitTarget
+    DEBUG_CHAR('8')
+    FIXUP FIX_HC_CPUM_OFF, 1, 0
+    mov     edx, 0ffffffffh
+    CPUMCPU_FROM_CPUM(edx)
+    mov     esi, [edx + CPUMCPU.Host.cr3]
+    mov     cr3, esi
+
+    ;; now we're in host memory context, let's restore regs
+        
+    ; activate host gdt and idt
+    lgdt    [edx + CPUMCPU.Host.gdtr]
+    DEBUG_CHAR('0')
+    lidt    [edx + CPUMCPU.Host.idtr]
+    DEBUG_CHAR('1')
+        
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
+    movzx   eax, word [edx + CPUMCPU.Host.tr]          ; eax <- TR
+    and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
+    add     eax, [edx + CPUMCPU.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
+    and     dword [eax + 4], ~0200h                 ; clear busy flag (2nd type2 bit)
+    ltr     word [edx + CPUMCPU.Host.tr]
+
+    ; activate ldt
+    DEBUG_CHAR('2')
+    lldt    [edx + CPUMCPU.Host.ldtr]
+    ; Restore segment registers
+    mov     eax, [edx + CPUMCPU.Host.ds]
+    mov     ds, eax
+    mov     eax, [edx + CPUMCPU.Host.es]
+    mov     es, eax
+    mov     eax, [edx + CPUMCPU.Host.fs]
+    mov     fs, eax
+    mov     eax, [edx + CPUMCPU.Host.gs]
+    mov     gs, eax
+    ; restore stack
+    lss     esp, [edx + CPUMCPU.Host.esp]
+
+        FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
+    ; restore MSR_IA32_SYSENTER_CS register.
+    mov     ecx, MSR_IA32_SYSENTER_CS
+    mov     eax, [edx + CPUMCPU.Host.SysEnter.cs]
+    mov     ebx, [edx + CPUMCPU.Host.SysEnter.cs + 4]
+    xchg    edx, ebx                    ; save/load edx
+    wrmsr                               ; MSR[ecx] <- edx:eax
+    xchg    edx, ebx                    ; restore edx
     jmp short gth_sysenter_no
 
 ALIGNCODE(16)
@@ -763,15 +455,31 @@ gth_sysenter_no:
 
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
-    mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
+    mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_USED_FPU
-    jz short gth_fpu_no
-    mov     rcx, cr0
-    and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
-    mov     cr0, rcx
+    jz near gth_fpu_no
+    mov     ecx, cr0
+    and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, ecx
 
-    fxsave  [rdx + r8 + CPUMCPU.Guest.fpu]
-    fxrstor [rdx + r8 + CPUMCPU.Host.fpu]
+    FIXUP FIX_NO_FXSAVE_JMP, 0, gth_no_fxsave - NAME(Start) ; this will insert a jmp gth_no_fxsave if fxsave isn't supported.
+    fxsave  [edx + CPUMCPU.Guest.fpu]
+    fxrstor [edx + CPUMCPU.Host.fpu]
+    jmp near gth_fpu_no
+
+gth_no_fxsave:
+    fnsave  [edx + CPUMCPU.Guest.fpu]
+    mov     eax, [edx + CPUMCPU.Host.fpu]     ; control word
+    not     eax                            ; 1 means exception ignored (6 LS bits)
+    and     eax, byte 03Fh                 ; 6 LS bits only
+    test    eax, [edx + CPUMCPU.Host.fpu + 4] ; status word
+    jz      gth_no_exceptions_pending
+
+    ; technically incorrect, but we certainly don't want any exceptions now!!
+    and     dword [edx + CPUMCPU.Host.fpu + 4], ~03Fh
+
+gth_no_exceptions_pending:
+    frstor  [edx + CPUMCPU.Host.fpu]
     jmp short gth_fpu_no
 
 ALIGNCODE(16)
@@ -780,12 +488,12 @@ gth_fpu_no:
     ; Control registers.
     ; Would've liked to have these highere up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
-    mov     rcx, [rdx + r8 + CPUMCPU.Host.cr4]
-    mov     cr4, rcx
-    mov     rcx, [rdx + r8 + CPUMCPU.Host.cr0]
-    mov     cr0, rcx
-    ;mov     rcx, [rdx + r8 + CPUMCPU.Host.cr2] ; assumes this is waste of time.
-    ;mov     cr2, rcx
+    mov     ecx, [edx + CPUMCPU.Host.cr4]
+    mov     cr4, ecx
+    mov     ecx, [edx + CPUMCPU.Host.cr0]
+    mov     cr0, ecx
+    ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is waste of time.
+    ;mov     cr2, ecx
 
     ; restore debug registers (if modified) (esi must still be fUseFlags!)
     ; (must be done after cr4 reload because of the debug extension.)
@@ -793,6 +501,19 @@ gth_fpu_no:
     jz short gth_debug_regs_no
     jmp     gth_debug_regs_restore
 gth_debug_regs_no:
+
+    ; restore general registers.
+    mov     eax, edi                    ; restore return code. eax = return code !!
+    mov     edi, [edx + CPUMCPU.Host.edi]
+    mov     esi, [edx + CPUMCPU.Host.esi]
+    mov     ebx, [edx + CPUMCPU.Host.ebx]
+    mov     ebp, [edx + CPUMCPU.Host.ebp]
+    push    dword [edx + CPUMCPU.Host.eflags]
+    popfd
+
+%ifdef DEBUG_STUFF
+;    COM_S_CHAR '4'
+%endif
     retf
 
 ;;
@@ -801,34 +522,65 @@ gth_debug_regs_no:
 gth_debug_regs_restore:
     DEBUG_S_CHAR('d')
     xor     eax, eax
-    mov     dr7, rax                    ; paranoia or not?
+    mov     dr7, eax                    ; paranoia or not?
     test    esi, CPUM_USE_DEBUG_REGS
     jz short gth_debug_regs_dr7
     DEBUG_S_CHAR('r')
-    mov     rax, [rdx + r8 + CPUMCPU.Host.dr0]
-    mov     dr0, rax
-    mov     rbx, [rdx + r8 + CPUMCPU.Host.dr1]
-    mov     dr1, rbx
-    mov     rcx, [rdx + r8 + CPUMCPU.Host.dr2]
-    mov     dr2, rcx
-    mov     rax, [rdx + r8 + CPUMCPU.Host.dr3]
-    mov     dr3, rax
+    mov     eax, [edx + CPUMCPU.Host.dr0]
+    mov     dr0, eax
+    mov     ebx, [edx + CPUMCPU.Host.dr1]
+    mov     dr1, ebx
+    mov     ecx, [edx + CPUMCPU.Host.dr2]
+    mov     dr2, ecx
+    mov     eax, [edx + CPUMCPU.Host.dr3]
+    mov     dr3, eax
 gth_debug_regs_dr7:
-    mov     rbx, [rdx + r8 + CPUMCPU.Host.dr6]
-    mov     dr6, rbx
-    mov     rcx, [rdx + r8 + CPUMCPU.Host.dr7]
-    mov     dr7, rcx
+    mov     ebx, [edx + CPUMCPU.Host.dr6]
+    mov     dr6, ebx
+    mov     ecx, [edx + CPUMCPU.Host.dr7]
+    mov     dr7, ecx
     jmp     gth_debug_regs_no
-
+        
 ENDPROC VMMGCGuestToHostAsm
 
+;;
+; VMMGCGuestToHostAsmHyperCtx
+;
+; This is an alternative entry point which we'll be using
+; when the we have the hypervisor context and need to save
+; that before going to the host.
+;
+; This is typically useful when abandoning the hypervisor
+; because of a trap and want the trap state to be saved.
+;
+; @param    eax     Return code.
+; @param    ecx     Points to CPUMCTXCORE.
+; @uses     eax,edx,ecx
+ALIGNCODE(16)
+BEGINPROC VMMGCGuestToHostAsmHyperCtx
+     int3
 
+;;
+; VMMGCGuestToHostAsmGuestCtx
+;
+; Switches from Guest Context to Host Context.
+; Of course it's only called from within the GC.
+;
+; @param    eax     Return code.
+; @param    esp + 4 Pointer to CPUMCTXCORE.
+;
+; @remark   ASSUMES interrupts disabled.
+;
+ALIGNCODE(16)
+BEGINPROC VMMGCGuestToHostAsmGuestCtx
+      int3
+     
 GLOBALNAME End
 ;
 ; The description string (in the text section).
 ;
 NAME(Description):
-    db "32-bits  to/from AMD64", 0
+    db "32-bits to/from AMD64", 0
 
 extern NAME(Relocate)
 
@@ -859,14 +611,14 @@ GLOBALNAME Def
         ; disasm help
         at VMMSWITCHERDEF.offHCCode0,                   dd 0
         at VMMSWITCHERDEF.cbHCCode0,                    dd NAME(IDEnterTarget)              - NAME(Start)
-        at VMMSWITCHERDEF.offHCCode1,                   dd NAME(HCExitTarget)               - NAME(Start)
-        at VMMSWITCHERDEF.cbHCCode1,                    dd NAME(End)                        - NAME(HCExitTarget)
+        at VMMSWITCHERDEF.offHCCode1,                   dd NAME(ICExitTarget)               - NAME(Start)
+        at VMMSWITCHERDEF.cbHCCode1,                    dd NAME(End)                        - NAME(ICExitTarget)
         at VMMSWITCHERDEF.offIDCode0,                   dd NAME(IDEnterTarget)              - NAME(Start)
-        at VMMSWITCHERDEF.cbIDCode0,                    dd NAME(JmpGCTarget)                - NAME(IDEnterTarget)
+        at VMMSWITCHERDEF.cbIDCode0,                    dd NAME(ICEnterTarget)              - NAME(IDEnterTarget)
         at VMMSWITCHERDEF.offIDCode1,                   dd NAME(IDExitTarget)               - NAME(Start)
-        at VMMSWITCHERDEF.cbIDCode1,                    dd NAME(HCExitTarget)               - NAME(IDExitTarget)
-        at VMMSWITCHERDEF.offGCCode,                    dd NAME(JmpGCTarget)                - NAME(Start)
-        at VMMSWITCHERDEF.cbGCCode,                     dd NAME(IDExitTarget)               - NAME(JmpGCTarget)
+        at VMMSWITCHERDEF.cbIDCode1,                    dd NAME(ICExitTarget)               - NAME(IDExitTarget)
+        at VMMSWITCHERDEF.offGCCode,                    dd NAME(ICEnterTarget)              - NAME(Start)
+        at VMMSWITCHERDEF.cbGCCode,                     dd NAME(IDExitTarget)               - NAME(ICEnterTarget)
 
     iend
 
