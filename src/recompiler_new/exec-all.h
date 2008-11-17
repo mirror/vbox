@@ -383,7 +383,7 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 # ifdef VBOX
 target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry);
 #  if !defined(REM_PHYS_ADDR_IN_TLB)
-target_ulong remR3HCVirt2GCPhys(void *env, void *addr);
+target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
 #  endif
 # endif
 /* NOTE: this function can trigger an exception */
@@ -418,7 +418,7 @@ DECLINLINE(target_ulong) get_phys_addr_code(CPUState *env1, target_ulong addr)
 # if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
     return addr + env1->tlb_table[mmu_idx][page_index].addend;
 # elif defined(VBOX)
-    return remR3HCVirt2GCPhys(env, (void *)(addr + env1->tlb_table[mmu_idx][page_index].addend));
+    return remR3HCVirt2GCPhys(env1, (void *)(addr + env1->tlb_table[mmu_idx][page_index].addend));
 # else
     return addr + env1->tlb_table[mmu_idx][page_index].addend - (unsigned long)phys_ram_base;
 # endif
