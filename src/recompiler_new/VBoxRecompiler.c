@@ -1388,6 +1388,30 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 }
 
 
+#ifndef REM_PHYS_ADDR_IN_TLB
+void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr)
+{
+    void* rv = NULL;
+    int rc;
+
+    rc = PGMPhysGCPhys2HCPtr(env1->pVM, (RTGCPHYS)physAddr, 1, &rv);
+    Assert (RT_SUCCESS(rc));
+
+    return rv;
+}
+
+target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr)
+{
+    RTGCPHYS rv = 0;
+    int rc;
+
+    rc = PGMR3DbgR3Ptr2GCPhys(env1->pVM, (RTR3PTR)addr, &rv);
+    Assert (RT_SUCCESS(rc));
+
+    return (target_ulong)rv;
+}
+#endif
+
 /**
  * Called from tlb_protect_code in order to write monitor a code page.
  *
@@ -2760,8 +2784,11 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
     Assert(fFlags == 0 /* normal RAM */);
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
-
+#ifdef REM_PHYS_ADDR_IN_TLB
     cpu_register_physical_memory(GCPhys, cb, GCPhys);
+#else
+    cpu_register_physical_memory(GCPhys, cb, pvRam);
+#endif
 
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
