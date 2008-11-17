@@ -383,8 +383,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         rc = vdiError(pImage, VERR_VDI_COMMENT_TOO_LONG, RT_SRC_POS, N_("VDI: comment is too long for '%s'"), pImage->pszFilename);
         goto out;
     }
-    Assert(VALID_PTR(pPCHSGeometry));
-    Assert(VALID_PTR(pLCHSGeometry));
+    AssertPtr(PCHSGeometry);
+    AssertPtr(pLCHSGeometry);
 
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
@@ -755,7 +755,7 @@ static void vdiFlushImage(PVDIIMAGEDESC pImage)
  */
 static void vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete)
 {
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage->File != NIL_RTFILE)
     {
@@ -1008,7 +1008,7 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     unsigned offRead;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
     Assert(!(uOffset % 512));
     Assert(!(cbToRead % 512));
 
@@ -1043,7 +1043,7 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         rc = RTFileReadAt(pImage->File, u64Offset, pvBuf, cbToRead, NULL);
     }
 
-    if (RT_SUCCESS(rc) || rc == VERR_VDI_BLOCK_FREE)
+    if (pcbActuallyRead)
         *pcbActuallyRead = cbToRead;
 
 out:
@@ -1062,7 +1062,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     unsigned offWrite;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
     Assert(!(uOffset % 512));
     Assert(!(cbToWrite % 512));
 
@@ -1176,7 +1176,7 @@ static unsigned vdiGetVersion(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uVersion;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
         uVersion = pImage->PreHeader.u32Version;
@@ -1194,8 +1194,8 @@ static int vdiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
-    Assert(VALID_PTR(penmImageType));
+    AssertPtr(pImage);
+    AssertPtr(penmImageType);
 
     if (pImage)
         *penmImageType = vdiTranslateTypeVDI2VD(getImageType(&pImage->Header));
@@ -1213,7 +1213,7 @@ static uint64_t vdiGetSize(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     uint64_t cbSize;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
         cbSize = getImageDiskSize(&pImage->Header);
@@ -1231,7 +1231,7 @@ static uint64_t vdiGetFileSize(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     uint64_t cb = 0;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1256,7 +1256,7 @@ static int vdiGetPCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1283,7 +1283,7 @@ static int vdiSetPCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1312,7 +1312,7 @@ static int vdiGetLCHSGeometry(void *pBackendData,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1349,7 +1349,7 @@ static int vdiSetLCHSGeometry(void *pBackendData,
     PVDIDISKGEOMETRY pGeometry;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1387,7 +1387,7 @@ static unsigned vdiGetImageFlags(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uImageFlags;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
         uImageFlags = pImage->uImageFlags;
@@ -1405,7 +1405,7 @@ static unsigned vdiGetOpenFlags(void *pBackendData)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
         uOpenFlags = pImage->uOpenFlags;
@@ -1450,7 +1450,7 @@ static int vdiGetComment(void *pBackendData, char *pszComment,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1478,7 +1478,7 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
@@ -1526,7 +1526,7 @@ static int vdiGetUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1547,7 +1547,7 @@ static int vdiSetUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1581,7 +1581,7 @@ static int vdiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1602,7 +1602,7 @@ static int vdiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1636,7 +1636,7 @@ static int vdiGetParentUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1657,7 +1657,7 @@ static int vdiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1691,7 +1691,7 @@ static int vdiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1712,7 +1712,7 @@ static int vdiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(VALID_PTR(pImage));
+    AssertPtr(pImage);
 
     if (pImage)
     {
