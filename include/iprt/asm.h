@@ -3339,6 +3339,32 @@ DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile *pi32, int32_t i32)
 
 
 /**
+ * Atomically exchanges and subtracts to an unsigned 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu32        Pointer to the value.
+ * @param   u32         Number to subtract.
+ */
+DECLINLINE(uint32_t) ASMAtomicSubU32(int32_t volatile *pi32, uint32_t u32)
+{
+    return ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-(int32_t)u32);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to a signed 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi32        Pointer to the value.
+ * @param   i32         Number to subtract.
+ */
+DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile *pi32, int32_t i32)
+{
+    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-i32);
+}
+
+
+/**
  * Atomically increment a 32-bit value, ordered.
  *
  * @returns The new value.
