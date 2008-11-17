@@ -92,8 +92,10 @@ typedef uint64_t USAGECATEGORY;
 extern bool g_fInternalMode;
 
 #ifndef VBOX_ONLY_DOCS
+# ifdef USE_XPCOM_QUEUE
 /** A pointer to the event queue, set by main() before calling any handlers. */
 extern nsCOMPtr<nsIEventQueue> g_pEventQ;
+# endif
 #endif /* !VBOX_ONLY_DOCS */
 
 /** showVMInfo details */
