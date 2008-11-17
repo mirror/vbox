@@ -43,6 +43,8 @@
 # else
 /* XXX: Windows has own queue types declared in winnt.h (should look at them once again) */
 # endif
+#define VBOX_WITH_BSD_REASS_CKSUM_HACK
+/* XXX: Don't forget to import BSD routines csum validation of reassembled packet */
 #endif
 
 #ifdef WORDS_BIGENDIAN

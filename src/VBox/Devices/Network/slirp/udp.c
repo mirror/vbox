@@ -121,7 +121,12 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 	/*
 	 * Checksum extended UDP header and data.
 	 */
-	if (udpcksum && uh->uh_sum) {
+	if (udpcksum && uh->uh_sum
+#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
+            /*XXX: hack over csum calculation */
+            && (m->m_sum_recalculate == 0 && ip->ip_sum != 0)
+#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
+            ) {
 	  ((struct ipovly *)ip)->ih_next = 0;
 	  ((struct ipovly *)ip)->ih_prev = 0;
 	  ((struct ipovly *)ip)->ih_x1 = 0;

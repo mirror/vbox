@@ -668,6 +668,10 @@ found:
     ip->ip_len = (ip->ip_hl << 2) + next;
     ip->ip_src = fp->ipq_src;
     ip->ip_dst = fp->ipq_dst;
+#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
+    ip->ip_sum = 0;
+    m->m_sum_recalculate = 1;
+#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
     TAILQ_REMOVE(head, fp, ipq_list);
     nipq--;
     free(fp);

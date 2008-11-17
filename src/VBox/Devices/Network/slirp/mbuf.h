@@ -72,6 +72,9 @@ struct m_hdr {
 
 	caddr_t	mh_data;		/* Location of data */
 	int	mh_len;			/* Amount of data in this mbuf */
+#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
+        int     mh_sum_recalculate;
+#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
 };
 
 /*
@@ -107,6 +110,9 @@ struct mbuf {
 #define m_dat		M_dat.m_dat_
 #define m_ext		M_dat.m_ext_
 #define m_so		m_hdr.mh_so
+#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
+#define m_sum_recalculate m_hdr.mh_sum_recalculate
+#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
 
 #define ifq_prev m_prev
 #define ifq_next m_next
