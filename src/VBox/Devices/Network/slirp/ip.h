@@ -247,7 +247,7 @@ struct ipovly {
 struct ipq_t {
 #ifndef VBOX_WITH_BSD_REASS
 	ipqp_32 next,prev;	/* to other reass headers */
-#else /* !VBOX_WITH_BSD_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
         TAILQ_ENTRY(ipq_t) ipq_list;
 #endif /* VBOX_WITH_BSD_REASS */
 	u_int8_t	ipq_ttl;		/* time for reass q to live */
@@ -255,7 +255,7 @@ struct ipq_t {
 	u_int16_t	ipq_id;			/* sequence id for reassembly */
 #ifndef VBOX_WITH_BSD_REASS
 	ipasfragp_32 ipq_next,ipq_prev;         /* to ip headers of fragments */
-#else /* !VBOX_WITH_BSD_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
         u_int8_t        ipq_nfrags;             /* # of fragments in this packet */
         struct mbuf *ipq_frags;                 /* to ip headers of fragments */
 #endif /* VBOX_WITH_BSD_REASS */
