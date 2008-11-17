@@ -383,7 +383,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
         rc = vdiError(pImage, VERR_VDI_COMMENT_TOO_LONG, RT_SRC_POS, N_("VDI: comment is too long for '%s'"), pImage->pszFilename);
         goto out;
     }
-    AssertPtr(PCHSGeometry);
+    AssertPtr(pPCHSGeometry);
     AssertPtr(pLCHSGeometry);
 
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
