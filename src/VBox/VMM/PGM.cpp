@@ -77,7 +77,8 @@
  *
  * The switcher code is mapped at the same location as on the host, at an
  * identity mapped location (physical equals virtual address), and at the
- * hypervisor location.
+ * hypervisor location. The identity mapped location is for when the world
+ * switches that involves disabling paging.
  *
  * PGM maintain page tables for 32-bit, PAE and AMD64 paging modes. This
  * simplifies switching guest CPU mode and consistency at the cost of more
