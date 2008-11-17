@@ -62,6 +62,7 @@
 #endif
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_NETFLT)
+# include <unistd.h>
 # include <sys/ioctl.h>
 # include <sys/socket.h>
 # include <linux/types.h>
