@@ -1043,7 +1043,7 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         rc = RTFileReadAt(pImage->File, u64Offset, pvBuf, cbToRead, NULL);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) || rc == VERR_VDI_BLOCK_FREE)
         *pcbActuallyRead = cbToRead;
 
 out:
