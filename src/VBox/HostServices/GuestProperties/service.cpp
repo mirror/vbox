@@ -194,8 +194,8 @@ private:
         AssertReturn(u64Timestamp != 0, VERR_INVALID_PARAMETER);
         AssertPtrReturn(pProp, VERR_INVALID_POINTER);
         int rc = getOldNotificationInternal(pszPatterns, u64Timestamp, pProp);
-#ifdef DEBUG
-        /* 
+#ifdef VBOX_STRICT
+        /*
          * ENSURE that pProp is the first event in the notification queue that:
          *  - Appears later than u64Timestamp
          *  - Matches the pszPatterns
@@ -215,7 +215,7 @@ private:
             Assert(*pProp == *it);
             Assert(pProp->Matches(pszPatterns));
         }
-#endif
+#endif /* VBOX_STRICT */
         return rc;
     }
 
