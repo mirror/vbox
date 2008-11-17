@@ -197,6 +197,7 @@ Machine::HWData::HWData()
     mHWVirtExNestedPagingEnabled = false;
     mHWVirtExVPIDEnabled = false;
     mPAEEnabled = false;
+    mPropertyServiceActive = false;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder [0] = DeviceType_Floppy;
