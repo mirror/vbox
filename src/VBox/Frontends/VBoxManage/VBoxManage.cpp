@@ -76,6 +76,11 @@ using namespace com;
 typedef DECLCALLBACK(int) FNHANDLER(int argc, char *argv[], ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 typedef FNHANDLER *PFNHANDLER;
 
+#ifdef USE_XPCOM_QUEUE
+/** A pointer to the event queue, set by main() before calling any handlers. */
+nsCOMPtr<nsIEventQueue> g_pEventQ;
+#endif
+
 /**
  * Quick IUSBDevice implementation for detaching / attaching
  * devices to the USB Controller.
@@ -8497,7 +8502,9 @@ int main(int argc, char *argv[])
      * (here it is necessary only to process remaining XPCOM/IPC events
      * after the session is closed) */
 
-    EventQueue eventQ;
+#ifdef USE_XPCOM_QUEUE
+    NS_GetMainEventQ(getter_AddRefs(g_pEventQ));
+#endif
 
     if (!checkForAutoConvertedSettings (virtualBox, session, fConvertSettings))
         break;
@@ -8573,6 +8580,10 @@ int main(int argc, char *argv[])
      * Aborted which may have unwanted side effects like killing the saved
      * state file (if the machine was in the Saved state before). */
     session->Close();
+
+#ifdef USE_XPCOM_QUEUE
+    g_pEventQ->ProcessPendingEvents();
+#endif
 
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
