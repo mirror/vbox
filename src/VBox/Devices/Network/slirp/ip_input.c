@@ -59,6 +59,9 @@ ip_init(PNATState pData)
         int i = 0;
         for (i = 0; i < IPREASS_NHASH; ++i)
             TAILQ_INIT(&ipq[i]);
+        maxnipq = 100; /* ??? */
+        maxfragsperpacket = 16;
+        nipq = 0;
 #endif /* VBOX_WITH_BSD_REASS */
 	ip_currid = tt.tv_sec & 0xffff;
 	udp_init(pData);
@@ -207,6 +210,15 @@ ip_input(PNATState pData, struct mbuf *m)
 	} else
 		ip->ip_len -= hlen;
 #else /* !VBOX_WITH_BSD_REASS */
+        if (ip->ip_off & (IP_MF | IP_OFFMASK)) {
+            m = ip_reass(pData, m);
+            if (m == NULL)
+                return;
+            ip = mtod(m, struct ip *);
+            hlen = ip->ip_len;
+        }
+        else
+		ip->ip_len -= hlen;
 #endif /* !VBOX_WITH_BSD_REASS */
 
 	/*
@@ -414,11 +426,280 @@ ip_freef(PNATState pData, struct ipq_t *fp)
 #else /* !VBOX_WITH_BSD_REASS */
 struct mbuf *
 ip_reass(PNATState pData, struct mbuf* m) {
+    struct ip *ip;
+    struct mbuf *p, *q, *nq, *t;
+    struct ipq_t *fp = NULL;
+    struct ipqhead *head;
+    int i, hlen, next;
+    u_int8_t ecn, ecn0;
+    u_short hash;
+
+    /* If maxnipq or maxfragsperpacket are 0, never accept fragments. */
+    if (maxnipq == 0
+        || maxfragsperpacket == 0) {
+        ipstat.ips_fragments++;
+        ipstat.ips_fragdropped++;
+        m_freem(pData, m);
+        return (NULL);
+    }
+
+    ip = mtod(m, struct ip *);
+    hlen = ip->ip_hl << 2;
+
+    hash = IPREASS_HASH(ip->ip_src.s_addr, ip->ip_id);
+    head = &ipq[hash];
+
+    /*
+     * Look for queue of fragments
+     * of this datagram.
+     */
+    TAILQ_FOREACH(fp, head, ipq_list)
+        if (ip->ip_id == fp->ipq_id &&
+            ip->ip_src.s_addr == fp->ipq_src.s_addr &&
+            ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
+            ip->ip_p == fp->ipq_p)
+            goto found;
+
+    fp = NULL;
+
+    /*
+     * Attempt to trim the number of allocated fragment queues if it
+     * exceeds the administrative limit.
+     */
+    if ((nipq > maxnipq) && (maxnipq > 0)) {
+        /*
+         * drop something from the tail of the current queue
+         * before proceeding further
+         */
+        struct ipq_t *q = TAILQ_LAST(head, ipqhead);
+        if (q == NULL) {   /* gak */
+            for (i = 0; i < IPREASS_NHASH; i++) {
+                struct ipq_t *r = TAILQ_LAST(&ipq[i], ipqhead);
+                if (r) {
+                    ipstat.ips_fragtimeout += r->ipq_nfrags;
+                    ip_freef(pData, &ipq[i], r);
+                    break;
+                }
+            }
+        } else {
+            ipstat.ips_fragtimeout += q->ipq_nfrags;
+            ip_freef(pData, head, q);
+        }
+    }
+
+found:
+    /*
+     * Adjust ip_len to not reflect header,
+     * convert offset of this to bytes.
+     */
+    ip->ip_len -= hlen;
+    if (ip->ip_off & IP_MF) {
+        /*
+         * Make sure that fragments have a data length
+         * that's a non-zero multiple of 8 bytes.
+         */
+        if (ip->ip_len == 0 || (ip->ip_len & 0x7) != 0) {
+            ipstat.ips_toosmall++; /* XXX */
+            goto dropfrag;
+        }
+        m->m_flags |= M_FRAG;
+    } else
+        m->m_flags &= ~M_FRAG;
+    ip->ip_off <<= 3;
+
+
+    /*
+     * Attempt reassembly; if it succeeds, proceed.
+     * ip_reass() will return a different mbuf.
+     */
+    ipstat.ips_fragments++;
+    m->m_data = (void *)ip;
+
+    /* Previous ip_reass() started here. */
+    /*
+     * Presence of header sizes in mbufs
+     * would confuse code below.
+     */
+    m->m_data += hlen;
+    m->m_len -= hlen;
+
+    /*
+     * If first fragment to arrive, create a reassembly queue.
+     */
+    if (fp == NULL) {
+        fp = malloc(sizeof(struct ipq_t));
+        if (fp == NULL)
+            goto dropfrag;
+        TAILQ_INSERT_HEAD(head, fp, ipq_list);
+        nipq++;
+        fp->ipq_nfrags = 1;
+        fp->ipq_ttl = IPFRAGTTL;
+        fp->ipq_p = ip->ip_p;
+        fp->ipq_id = ip->ip_id;
+        fp->ipq_src = ip->ip_src;
+        fp->ipq_dst = ip->ip_dst;
+        fp->ipq_frags = m;
+        m->m_nextpkt = NULL;
+        goto done;
+    } else {
+        fp->ipq_nfrags++;
+    }
+
+#define GETIP(m)    ((struct ip*)((m)->m_data))
+
+
+    /*
+     * Find a segment which begins after this one does.
+     */
+    for (p = NULL, q = fp->ipq_frags; q; p = q, q = q->m_nextpkt)
+        if (GETIP(q)->ip_off > ip->ip_off)
+            break;
+
+    /*
+     * If there is a preceding segment, it may provide some of
+     * our data already.  If so, drop the data from the incoming
+     * segment.  If it provides all of our data, drop us, otherwise
+     * stick new segment in the proper place.
+     *
+     * If some of the data is dropped from the the preceding
+     * segment, then it's checksum is invalidated.
+     */
+    if (p) {
+        i = GETIP(p)->ip_off + GETIP(p)->ip_len - ip->ip_off;
+        if (i > 0) {
+            if (i >= ip->ip_len)
+                goto dropfrag;
+            m_adj(m, i);
+            ip->ip_off += i;
+            ip->ip_len -= i;
+        }
+        m->m_nextpkt = p->m_nextpkt;
+        p->m_nextpkt = m;
+    } else {
+        m->m_nextpkt = fp->ipq_frags;
+        fp->ipq_frags = m;
+    }
+
+    /*
+     * While we overlap succeeding segments trim them or,
+     * if they are completely covered, dequeue them.
+     */
+    for (; q != NULL && ip->ip_off + ip->ip_len > GETIP(q)->ip_off;
+         q = nq) {
+        i = (ip->ip_off + ip->ip_len) - GETIP(q)->ip_off;
+        if (i < GETIP(q)->ip_len) {
+            GETIP(q)->ip_len -= i;
+            GETIP(q)->ip_off += i;
+            m_adj(q, i);
+            break;
+        }
+        nq = q->m_nextpkt;
+        m->m_nextpkt = nq;
+        ipstat.ips_fragdropped++;
+        fp->ipq_nfrags--;
+        m_freem(pData, q);
+    }
+
+    /*
+     * Check for complete reassembly and perform frag per packet
+     * limiting.
+     *
+     * Frag limiting is performed here so that the nth frag has
+     * a chance to complete the packet before we drop the packet.
+     * As a result, n+1 frags are actually allowed per packet, but
+     * only n will ever be stored. (n = maxfragsperpacket.)
+     *
+     */
+    next = 0;
+    for (p = NULL, q = fp->ipq_frags; q; p = q, q = q->m_nextpkt) {
+        if (GETIP(q)->ip_off != next) {
+            if (fp->ipq_nfrags > maxfragsperpacket) {
+                ipstat.ips_fragdropped += fp->ipq_nfrags;
+                ip_freef(pData, head, fp);
+            }
+            goto done;
+        }
+        next += GETIP(q)->ip_len;
+    }
+    /* Make sure the last packet didn't have the IP_MF flag */
+    if (p->m_flags & M_FRAG) {
+        if (fp->ipq_nfrags > maxfragsperpacket) {
+            ipstat.ips_fragdropped += fp->ipq_nfrags;
+            ip_freef(pData, head, fp);
+        }
+        goto done;
+    }
+
+    /*
+     * Reassembly is complete.  Make sure the packet is a sane size.
+     */
+    q = fp->ipq_frags;
+    ip = GETIP(q);
+    if (next + (ip->ip_hl << 2) > IP_MAXPACKET) {
+        ipstat.ips_fragdropped += fp->ipq_nfrags;
+        ip_freef(pData, head, fp);
+        goto done;
+    }
+
+    /*
+     * Concatenate fragments.
+     */
+    m = q;
+    t = m->m_next;
+    m->m_next = NULL;
+    m_cat(pData, m, t);
+    nq = q->m_nextpkt;
+    q->m_nextpkt = NULL;
+    for (q = nq; q != NULL; q = nq) {
+        nq = q->m_nextpkt;
+        q->m_nextpkt = NULL;
+        m_cat(pData, m, q);
+    }
+
+    /*
+     * Create header for new ip packet by modifying header of first
+     * packet;  dequeue and discard fragment reassembly header.
+     * Make header visible.
+     */
+    ip->ip_len = (ip->ip_hl << 2) + next;
+    ip->ip_src = fp->ipq_src;
+    ip->ip_dst = fp->ipq_dst;
+    TAILQ_REMOVE(head, fp, ipq_list);
+    nipq--;
+    free(fp);
+    m->m_len += (ip->ip_hl << 2);
+    m->m_data -= (ip->ip_hl << 2);
+    /* some debugging cruft by sklower, below, will go away soon */
+#if 0
+    if (m->m_flags & M_PKTHDR)    /* XXX this should be done elsewhere */
+        m_fixhdr(m);
+#endif
+    ipstat.ips_reassembled++;
+    return (m);
+
+dropfrag:
+    ipstat.ips_fragdropped++;
+    if (fp != NULL)
+        fp->ipq_nfrags--;
+    m_freem(pData, m);
+done:
     return (NULL);
+
+#undef GETIP
 }
 
 void
-ip_freef(PNATState pData, struct ipq_t *fp) {
+ip_freef(PNATState pData, struct ipqhead *fhp, struct ipq_t *fp) {
+    struct mbuf *q;
+
+    while (fp->ipq_frags) {
+        q = fp->ipq_frags;
+        fp->ipq_frags = q->m_nextpkt;
+        m_freem(pData, q);
+    }
+    TAILQ_REMOVE(fhp, fp, ipq_list);
+    free(fp);
+    nipq--;
 }
 #endif /* VBOX_WITH_BSD_REASS */
 
@@ -460,9 +741,9 @@ ip_slowtimo(PNATState pData)
 {
 	register struct ipq_t *fp;
 
+#ifndef VBOX_WITH_BSD_REASS
 	DEBUG_CALL("ip_slowtimo");
 
-#ifndef VBOX_WITH_BSD_REASS
 	fp = u32_to_ptr(pData, ipq.next, struct ipq_t *);
 	if (fp == 0)
 	   return;
@@ -479,6 +760,34 @@ ip_slowtimo(PNATState pData)
     /* XXX: the fragment expiration is the same but requier
      * additional loop see (see ip_input.c in FreeBSD tree)
      */
+    int i;
+    DEBUG_CALL("ip_slowtimo");
+    for (i = 0; i < IPREASS_NHASH; i++) {
+        for(fp = TAILQ_FIRST(&ipq[i]); fp;) {
+            struct ipq_t *fpp;
+
+            fpp = fp;
+            fp = TAILQ_NEXT(fp, ipq_list);
+            if(--fpp->ipq_ttl == 0) {
+                ipstat.ips_fragtimeout += fpp->ipq_nfrags;
+                ip_freef(pData, &ipq[i], fpp);
+            }
+        }
+    }
+    /*
+     * If we are over the maximum number of fragments
+     * (due to the limit being lowered), drain off
+     * enough to get down to the new limit.
+     */
+    if (maxnipq >= 0 && nipq > maxnipq) {
+        for (i = 0; i < IPREASS_NHASH; i++) {
+            while (nipq > maxnipq && !TAILQ_EMPTY(&ipq[i])) {
+                ipstat.ips_fragdropped +=
+                    TAILQ_FIRST(&ipq[i])->ipq_nfrags;
+                ip_freef(pData, &ipq[i], TAILQ_FIRST(&ipq[i]));
+            }
+        }
+    }
 #endif /* VBOX_WITH_BSD_REASS */
 }
 

@@ -385,6 +385,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     int rc;
     int error;
 #endif
+#ifdef VBOX_WITH_BSD_REASS
+    int i;
+#endif /* VBOX_WITH_BSD_REASS */
 
     STAM_REL_PROFILE_START(&pData->StatFill, a);
 
@@ -405,6 +408,13 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     /* XXX: triggering of fragment expiration should be the same but use
      * new macroses
      */
+                for (i = 0; i < IPREASS_NHASH; i++) {
+                        if (!TAILQ_EMPTY(&ipq[i])) {
+                            do_slowtimo = 1;
+                            break;
+                        }
+                }
+                do_slowtimo |= (tcb.so_next != &tcb);
 #endif /* VBOX_WITH_BSD_REASS */
 
                 STAM_REL_COUNTER_RESET(&pData->StatTCP);
