@@ -169,7 +169,7 @@ DirectoryServiceProvider::GetFile (const char *aProp,
         return NS_ERROR_FAILURE;
 
     rv = NS_NewNativeLocalFile (nsEmbedCString (fileLocation),
-                                PR_TRUE, getter_AddRefs (localFile));  
+                                PR_TRUE, getter_AddRefs (localFile));
     if (NS_FAILED(rv))
         return rv;
 
@@ -345,8 +345,8 @@ HRESULT Initialize()
                      homeDir, RTPATH_DELIMITER, "compreg.dat");
         RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
                      homeDir, RTPATH_DELIMITER, "xpti.dat");
-        RTStrPrintf (compDir, sizeof (compDir), "%s%c/components",
-                     privateArchDir, RTPATH_DELIMITER);
+        RTStrPrintf (compDir, sizeof (compDir), "%s%c%s",
+                     privateArchDir, RTPATH_DELIMITER, "components");
 
         LogFlowFunc (("component registry  : \"%s\"\n", compReg));
         LogFlowFunc (("XPTI data file      : \"%s\"\n", xptiDat));
@@ -397,7 +397,7 @@ HRESULT Initialize()
                                             PR_FALSE, getter_AddRefs (file));
                 if (NS_SUCCEEDED (rc))
                     appDir = do_QueryInterface (file, &rc);
-            
+
                 RTStrFree (appDirCP);
             }
             else
