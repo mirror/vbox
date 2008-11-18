@@ -346,11 +346,11 @@ typedef struct SUPDRVPATCH
 {
 #define SUPDRV_PATCH_CODE_SIZE  0x50
     /** Patch code. */
-    uint8_t                 auCode[SUPDRV_PATCH_CODE_SIZE];
+    uint8_t                         auCode[SUPDRV_PATCH_CODE_SIZE];
     /** Changed IDT entry (for parnoid UnpatchIdt()). */
-    SUPDRVIDTE              ChangedIdt;
+    SUPDRVIDTE                      ChangedIdt;
     /** Saved IDT entry. */
-    SUPDRVIDTE              SavedIdt;
+    SUPDRVIDTE                      SavedIdt;
     /** Pointer to the IDT.
      * We ASSUME the IDT is not re(al)located after bootup and use this as key
      * for the patches rather than processor number. This prevents some
@@ -359,15 +359,15 @@ typedef struct SUPDRVPATCH
      * We're fucked if the processors have different physical mapping for
      * the(se) page(s), but we'll find that out soon enough in VBOX_STRICT mode.
      */
-    void                   *pvIdt;
+    void                           *pvIdt;
     /** Pointer to the IDT entry. */
-    SUPDRVIDTE volatile    *pIdtEntry;
+    SUPDRVIDTE volatile            *pIdtEntry;
     /** Usage counter. */
-    uint32_t volatile       cUsage;
+    uint32_t volatile               cUsage;
     /** The offset into auCode of the VMMR0Entry fixup. */
-    uint16_t                offVMMR0EntryFixup;
+    uint16_t                        offVMMR0EntryFixup;
     /** The offset into auCode of the stub function. */
-    uint16_t                offStub;
+    uint16_t                        offStub;
     /** Pointer to the next patch. */
     struct SUPDRVPATCH * volatile pNext;
 } SUPDRVPATCH, *PSUPDRVPATCH;
@@ -380,9 +380,9 @@ typedef struct SUPDRVPATCHUSAGE
     /** Next in the chain. */
     struct SUPDRVPATCHUSAGE * volatile pNext;
     /** The patch this usage applies to. */
-    PSUPDRVPATCH        pPatch;
+    PSUPDRVPATCH                    pPatch;
     /** Usage count. */
-    uint32_t volatile   cUsage;
+    uint32_t volatile               cUsage;
 } SUPDRVPATCHUSAGE, *PSUPDRVPATCHUSAGE;
 
 #endif /* VBOX_WITH_IDT_PATCHING */
@@ -417,11 +417,11 @@ typedef enum
 typedef struct SUPDRVMEMREF
 {
     /** The memory object handle. */
-    RTR0MEMOBJ          MemObj;
+    RTR0MEMOBJ                      MemObj;
     /** The ring-3 mapping memory object handle. */
-    RTR0MEMOBJ          MapObjR3;
+    RTR0MEMOBJ                      MapObjR3;
     /** Type of memory. */
-    SUPDRVMEMREFTYPE    eType;
+    SUPDRVMEMREFTYPE                eType;
 } SUPDRVMEMREF, *PSUPDRVMEMREF;
 
 
@@ -431,9 +431,9 @@ typedef struct SUPDRVMEMREF
 typedef struct SUPDRVBUNDLE
 {
     /** Pointer to the next bundle. */
-    struct SUPDRVBUNDLE * volatile pNext;
+    struct SUPDRVBUNDLE * volatile  pNext;
     /** Referenced memory. */
-    SUPDRVMEMREF        aMem[64];
+    SUPDRVMEMREF                    aMem[64];
     /** Number of entries used. */
     uint32_t volatile   cUsed;
 } SUPDRVBUNDLE, *PSUPDRVBUNDLE;
@@ -447,27 +447,29 @@ typedef struct SUPDRVLDRIMAGE
     /** Next in chain. */
     struct SUPDRVLDRIMAGE * volatile pNext;
     /** Pointer to the image. */
-    void               *pvImage;
+    void                           *pvImage;
     /** Pointer to the optional module initialization callback. */
-    PFNR0MODULEINIT     pfnModuleInit;
+    PFNR0MODULEINIT                 pfnModuleInit;
     /** Pointer to the optional module termination callback. */
-    PFNR0MODULETERM     pfnModuleTerm;
+    PFNR0MODULETERM                 pfnModuleTerm;
+    /** Service request handler. This is NULL for non-service modules. */
+    PFNSUPR0SERVICEREQHANDLER       pfnServiceReqHandler;
     /** Size of the image. */
-    uint32_t            cbImage;
+    uint32_t                        cbImage;
     /** The offset of the symbol table. */
-    uint32_t            offSymbols;
+    uint32_t                        offSymbols;
     /** The number of entries in the symbol table. */
-    uint32_t            cSymbols;
+    uint32_t                        cSymbols;
     /** The offset of the string table. */
-    uint32_t            offStrTab;
+    uint32_t                        offStrTab;
     /** Size of the string table. */
-    uint32_t            cbStrTab;
+    uint32_t                        cbStrTab;
     /** The ldr image state. (IOCtl code of last opration.) */
-    uint32_t            uState;
+    uint32_t                        uState;
     /** Usage count. */
-    uint32_t volatile   cUsage;
+    uint32_t volatile               cUsage;
     /** Image name. */
-    char                szName[32];
+    char                            szName[32];
 } SUPDRVLDRIMAGE, *PSUPDRVLDRIMAGE;
 
 
@@ -477,9 +479,9 @@ typedef struct SUPDRVLDRUSAGE
     /** Next in chain. */
     struct SUPDRVLDRUSAGE * volatile pNext;
     /** The image. */
-    PSUPDRVLDRIMAGE     pImage;
+    PSUPDRVLDRIMAGE                 pImage;
     /** Load count. */
-    uint32_t volatile   cUsage;
+    uint32_t volatile               cUsage;
 } SUPDRVLDRUSAGE, *PSUPDRVLDRUSAGE;
 
 
@@ -489,14 +491,14 @@ typedef struct SUPDRVLDRUSAGE
 typedef struct SUPDRVFACTORYREG
 {
     /** Pointer to the next registration. */
-    struct SUPDRVFACTORYREG    *pNext;
+    struct SUPDRVFACTORYREG        *pNext;
     /** Pointer to the registered factory. */
-    PCSUPDRVFACTORY             pFactory;
+    PCSUPDRVFACTORY                 pFactory;
     /** The session owning the factory.
      * Used for deregistration and session cleanup. */
-    PSUPDRVSESSION              pSession;
+    PSUPDRVSESSION                  pSession;
     /** Length of the name. */
-    size_t                      cchName;
+    size_t                          cchName;
 } SUPDRVFACTORYREG;
 /** Pointer to a component factory registration record. */
 typedef SUPDRVFACTORYREG *PSUPDRVFACTORYREG;
@@ -557,53 +559,53 @@ typedef struct SUPDRVUSAGE
 typedef struct SUPDRVSESSION
 {
     /** Pointer to the device extension. */
-    PSUPDRVDEVEXT               pDevExt;
+    PSUPDRVDEVEXT                   pDevExt;
     /** Session Cookie. */
-    uint32_t                    u32Cookie;
+    uint32_t                        u32Cookie;
 
     /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
-    PSUPDRVLDRUSAGE volatile    pLdrUsage;
+    PSUPDRVLDRUSAGE volatile        pLdrUsage;
 #ifdef VBOX_WITH_IDT_PATCHING
     /** Patch usage records. (protected by SUPDRVDEVEXT::SpinLock) */
-    PSUPDRVPATCHUSAGE volatile  pPatchUsage;
+    PSUPDRVPATCHUSAGE volatile      pPatchUsage;
 #endif
     /** The VM associated with the session. */
-    PVM                         pVM;
+    PVM                             pVM;
     /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
-    PSUPDRVUSAGE volatile       pUsage;
+    PSUPDRVUSAGE volatile           pUsage;
 
     /** Spinlock protecting the bundles and the GIP members. */
-    RTSPINLOCK                  Spinlock;
+    RTSPINLOCK                      Spinlock;
     /** The ring-3 mapping of the GIP (readonly). */
-    RTR0MEMOBJ                  GipMapObjR3;
+    RTR0MEMOBJ                      GipMapObjR3;
     /** Set if the session is using the GIP. */
-    uint32_t                    fGipReferenced;
+    uint32_t                        fGipReferenced;
     /** Bundle of locked memory objects. */
-    SUPDRVBUNDLE                Bundle;
+    SUPDRVBUNDLE                    Bundle;
 
     /** The user id of the session. (Set by the OS part.) */
-    RTUID                       Uid;
+    RTUID                           Uid;
     /** The group id of the session. (Set by the OS part.) */
-    RTGID                       Gid;
+    RTGID                           Gid;
     /** The process (id) of the session. */
-    RTPROCESS                   Process;
+    RTPROCESS                       Process;
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
-    RTR0PROCESS                 R0Process;
+    RTR0PROCESS                     R0Process;
 #if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */
-    void                       *pvSupDrvClient;
+    void                           *pvSupDrvClient;
     /** Whether this session has been opened or not. */
-    bool                        fOpened;
+    bool                            fOpened;
 #endif
 #if defined(RT_OS_OS2)
     /** The system file number of this session. */
-    uint16_t                    sfn;
-    uint16_t                    Alignment; /**< Alignment */
+    uint16_t                        sfn;
+    uint16_t                        Alignment; /**< Alignment */
 #endif
 #if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
-    PSUPDRVSESSION              pNextHash;
+    PSUPDRVSESSION                  pNextHash;
 #endif
 } SUPDRVSESSION;
 
@@ -615,77 +617,77 @@ typedef struct SUPDRVDEVEXT
 {
     /** Spinlock to serialize the initialization,
      * usage counting and destruction of the IDT entry override and objects. */
-    RTSPINLOCK              Spinlock;
+    RTSPINLOCK                      Spinlock;
 
 #ifdef VBOX_WITH_IDT_PATCHING
     /** List of patches. */
-    PSUPDRVPATCH volatile   pIdtPatches;
+    PSUPDRVPATCH volatile           pIdtPatches;
     /** List of patches Free. */
-    PSUPDRVPATCH volatile   pIdtPatchesFree;
+    PSUPDRVPATCH volatile           pIdtPatchesFree;
 #endif
 
     /** List of registered objects. Protected by the spinlock. */
-    PSUPDRVOBJ volatile     pObjs;
+    PSUPDRVOBJ volatile             pObjs;
     /** List of free object usage records. */
-    PSUPDRVUSAGE volatile   pUsageFree;
+    PSUPDRVUSAGE volatile           pUsageFree;
 
     /** Global cookie. */
-    uint32_t                u32Cookie;
+    uint32_t                        u32Cookie;
 
     /** The IDT entry number.
      * Only valid if pIdtPatches is set. */
-    uint8_t volatile        u8Idt;
+    uint8_t volatile                u8Idt;
 
     /** Loader mutex.
      * This protects pvVMMR0, pvVMMR0Entry, pImages and SUPDRVSESSION::pLdrUsage. */
-    RTSEMFASTMUTEX          mtxLdr;
+    RTSEMFASTMUTEX                  mtxLdr;
 
     /** VMM Module 'handle'.
      * 0 if the code VMM isn't loaded and Idt are nops. */
-    void * volatile         pvVMMR0;
+    void * volatile                 pvVMMR0;
     /** VMMR0EntryInt() pointer. */
-    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryInt, (PVM pVM, unsigned uOperation, void *pvArg));
+    DECLR0CALLBACKMEMBER(int,       pfnVMMR0EntryInt, (PVM pVM, unsigned uOperation, void *pvArg));
     /** VMMR0EntryFast() pointer. */
-    DECLR0CALLBACKMEMBER(void, pfnVMMR0EntryFast, (PVM pVM, unsigned idCpu, unsigned uOperation));
+    DECLR0CALLBACKMEMBER(void,      pfnVMMR0EntryFast, (PVM pVM, unsigned idCpu, unsigned uOperation));
     /** VMMR0EntryEx() pointer. */
-    DECLR0CALLBACKMEMBER(int, pfnVMMR0EntryEx, (PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession));
+    DECLR0CALLBACKMEMBER(int,       pfnVMMR0EntryEx, (PVM pVM, unsigned uOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession));
 
     /** Linked list of loaded code. */
-    PSUPDRVLDRIMAGE volatile pLdrImages;
+    PSUPDRVLDRIMAGE volatile        pLdrImages;
 
     /** GIP mutex.
      * Any changes to any of the GIP members requires ownership of this mutex,
      * except on driver init and termination. */
-    RTSEMFASTMUTEX          mtxGip;
+    RTSEMFASTMUTEX                  mtxGip;
     /** Pointer to the Global Info Page (GIP). */
-    PSUPGLOBALINFOPAGE      pGip;
+    PSUPGLOBALINFOPAGE              pGip;
     /** The physical address of the GIP. */
-    RTHCPHYS                HCPhysGip;
+    RTHCPHYS                        HCPhysGip;
     /** Number of processes using the GIP.
      * (The updates are suspend while cGipUsers is 0.)*/
-    uint32_t volatile       cGipUsers;
+    uint32_t volatile               cGipUsers;
     /** The ring-0 memory object handle for the GIP page. */
-    RTR0MEMOBJ              GipMemObj;
+    RTR0MEMOBJ                      GipMemObj;
     /** The GIP timer handle. */
-    PRTTIMER                pGipTimer;
+    PRTTIMER                        pGipTimer;
     /** If non-zero we've successfully called RTTimerRequestSystemGranularity(). */
-    uint32_t                u32SystemTimerGranularityGrant;
+    uint32_t                        u32SystemTimerGranularityGrant;
     /** The CPU id of the GIP master.
      * This CPU is responsible for the updating the common GIP data. */
-    RTCPUID volatile        idGipMaster;
+    RTCPUID volatile                idGipMaster;
 
 #ifdef RT_OS_WINDOWS
     /* Callback object returned by ExCreateCallback. */
-    PCALLBACK_OBJECT        pObjPowerCallback;
+    PCALLBACK_OBJECT                pObjPowerCallback;
     /* Callback handle returned by ExRegisterCallback. */
-    PVOID                   hPowerCallback;
+    PVOID                           hPowerCallback;
 #endif
 
     /** Component factory mutex.
      * This protects pComponentFactoryHead and component factory querying. */
-    RTSEMFASTMUTEX          mtxComponentFactory;
+    RTSEMFASTMUTEX                  mtxComponentFactory;
     /** The head of the list of registered component factories. */
-    PSUPDRVFACTORYREG       pComponentFactoryHead;
+    PSUPDRVFACTORYREG               pComponentFactoryHead;
 } SUPDRVDEVEXT;
 
 

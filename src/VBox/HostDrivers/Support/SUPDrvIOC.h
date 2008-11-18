@@ -181,7 +181,7 @@ typedef SUPREQHDR *PSUPREQHDR;
 /** Current interface version.
  * The upper 16-bit is the major version, the the lower the minor version.
  * When incompatible changes are made, the upper major number has to be changed. */
-#define SUPDRV_IOC_VERSION                              0x000A0000
+#define SUPDRV_IOC_VERSION                              0x000a0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -382,6 +382,7 @@ typedef enum SUPLDRLOADEP
 {
     SUPLDRLOADEP_NOTHING = 0,
     SUPLDRLOADEP_VMMR0,
+    SUPLDRLOADEP_SERVICE,
     SUPLDRLOADEP_32BIT_HACK = 0x7fffffff
 } SUPLDRLOADEP;
 
@@ -400,17 +401,27 @@ typedef struct SUPLDRLOAD
             /** Special entry points. */
             union
             {
+                /** SUPLDRLOADEP_VMMR0. */
                 struct
                 {
                     /** The module handle (i.e. address). */
-                    RTR0PTR         pvVMMR0;
+                    RTR0PTR                 pvVMMR0;
                     /** Address of VMMR0EntryInt function. */
-                    RTR0PTR         pvVMMR0EntryInt;
+                    RTR0PTR                 pvVMMR0EntryInt;
                     /** Address of VMMR0EntryFast function. */
-                    RTR0PTR         pvVMMR0EntryFast;
+                    RTR0PTR                 pvVMMR0EntryFast;
                     /** Address of VMMR0EntryEx function. */
-                    RTR0PTR         pvVMMR0EntryEx;
+                    RTR0PTR                 pvVMMR0EntryEx;
                 } VMMR0;
+                /** SUPLDRLOADEP_SERVICE. */
+                struct
+                {
+                    /** The service request handler.
+                     * (PFNR0SERVICEREQHANDLER isn't defined yet.) */
+                    RTR0PTR                 pfnServiceReq;
+                    /** Reserved, must be NIL. */
+                    RTR0PTR                 apvReserved[3];
+                } Service;
             }               EP;
             /** Address. */
             RTR0PTR         pvImageBase;
@@ -840,6 +851,39 @@ typedef struct SUPGIPUNMAP
     /** The header. */
     SUPREQHDR               Hdr;
 } SUPGIPUNMAP, *PSUPGIPUNMAP;
+/** @} */
+
+
+/** @name SUP_IOCTL_CALL_SERVICE
+ * Call the a ring-0 service.
+ *
+ * @todo    Might have to convert this to a big request, just like
+ *          SUP_IOCTL_CALL_VMMR0
+ * @{
+ */
+#define SUP_IOCTL_CALL_SERVICE(cbReq)                   SUP_CTL_CODE_SIZE(22, SUP_IOCTL_CALL_SERVICE_SIZE(cbReq))
+#define SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)              RT_UOFFSETOF(SUPCALLSERVICE, abReqPkt[cbReq])
+#define SUP_IOCTL_CALL_SERVICE_SIZE_IN(cbReq)           SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)
+#define SUP_IOCTL_CALL_SERVICE_SIZE_OUT(cbReq)          SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)
+typedef struct SUPCALLSERVICE
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The service name. */
+            char            szName[28];
+            /** Which operation to execute. */
+            uint32_t        uOperation;
+            /** Argument to use when no request packet is supplied. */
+            uint64_t        u64Arg;
+        } In;
+    } u;
+    /** The request packet passed to SUP. */
+    uint8_t                 abReqPkt[1];
+} SUPCALLSERVICE, *PSUPCALLSERVICE;
 /** @} */
 
 

@@ -140,6 +140,7 @@ static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvV
 static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 #ifdef RT_OS_WINDOWS
@@ -159,6 +160,7 @@ DECLASM(void)   supdrvNtWrapObjDestructor(PFNRT pfnDestruction, void *pvObj, voi
 DECLASM(void *) supdrvNtWrapQueryFactoryInterface(PFNRT pfnQueryFactoryInterface, struct SUPDRVFACTORY const *pSupDrvFactory, PSUPDRVSESSION pSession, const char *pszInterfaceUuid);
 DECLASM(int)    supdrvNtWrapModuleInit(PFNRT pfnModuleInit);
 DECLASM(void)   supdrvNtWrapModuleTerm(PFNRT pfnModuleTerm);
+DECLASM(int)    supdrvNtWrapServiceReqHandler(PFNRT pfnServiceReqHandler, PSUPDRVSESSION pSession, uint32_t uOperation, uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
 
 DECLASM(int)    UNWIND_WRAP(SUPR0ComponentRegisterFactory)(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
 DECLASM(int)    UNWIND_WRAP(SUPR0ComponentDeregisterFactory)(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
@@ -1413,6 +1415,30 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0PageFree(pSession, pReq->u.In.pvR3);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_SERVICE(0)):
+        {
+            /* validate */
+            PSUPCALLSERVICE pReq = (PSUPCALLSERVICE)pReqHdr;
+            Log4(("SUP_IOCTL_CALL_SERVICE: op=%u in=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+                  pReq->u.In.uOperation, pReq->Hdr.cbIn, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+
+            if (pReq->Hdr.cbIn == SUP_IOCTL_CALL_SERVICE_SIZE(0))
+                REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_SERVICE, SUP_IOCTL_CALL_SERVICE_SIZE_IN(0), SUP_IOCTL_CALL_SERVICE_SIZE_OUT(0));
+            else
+            {
+                PSUPR0SERVICEREQHDR pSrvReq = (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0];
+                REQ_CHECK_EXPR_FMT(pReq->Hdr.cbIn >= SUP_IOCTL_CALL_SERVICE_SIZE(sizeof(SUPR0SERVICEREQHDR)),
+                                   ("SUP_IOCTL_CALL_SERVICE: cbIn=%#x < %#lx\n", pReq->Hdr.cbIn, SUP_IOCTL_CALL_SERVICE_SIZE(sizeof(SUPR0SERVICEREQHDR))));
+                REQ_CHECK_EXPR(SUP_IOCTL_CALL_SERVICE, pSrvReq->u32Magic == SUPR0SERVICEREQHDR_MAGIC);
+                REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_SERVICE, SUP_IOCTL_CALL_SERVICE_SIZE_IN(pSrvReq->cbReq), SUP_IOCTL_CALL_SERVICE_SIZE_OUT(pSrvReq->cbReq));
+            }
+            REQ_CHECK_EXPR(SUP_IOCTL_CALL_SERVICE, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
+
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_CallServiceModule(pDevExt, pSession, pReq);
             return 0;
         }
 
@@ -3712,6 +3738,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->cbImage         = pReq->u.In.cbImage;
     pImage->pfnModuleInit   = NULL;
     pImage->pfnModuleTerm   = NULL;
+    pImage->pfnServiceReqHandler = NULL;
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
     pImage->cUsage          = 1;
     strcpy(pImage->szName, pReq->u.In.szName);
@@ -3781,6 +3808,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         case SUPLDRLOADEP_NOTHING:
             break;
+
         case SUPLDRLOADEP_VMMR0:
             if (    !pReq->u.In.EP.VMMR0.pvVMMR0
                 ||  !pReq->u.In.EP.VMMR0.pvVMMR0EntryInt
@@ -3805,6 +3833,35 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                 return VERR_INVALID_PARAMETER;
             }
             break;
+
+        case SUPLDRLOADEP_SERVICE:
+            if (!pReq->u.In.EP.Service.pfnServiceReq)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                Log(("NULL pointer: pfnServiceReq=%p!\n", pReq->u.In.EP.Service.pfnServiceReq));
+                return VERR_INVALID_PARAMETER;
+            }
+            if ((uintptr_t)pReq->u.In.EP.Service.pfnServiceReq  - (uintptr_t)pImage->pvImage >= pReq->u.In.cbImage)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                Log(("Out of range (%p LB %#x): pfnServiceReq=%p, pvVMMR0EntryFast=%p or pvVMMR0EntryEx=%p is NULL!\n",
+                     pImage->pvImage, pReq->u.In.cbImage, pReq->u.In.EP.Service.pfnServiceReq));
+                return VERR_INVALID_PARAMETER;
+            }
+            if (    pReq->u.In.EP.Service.apvReserved[0] != NIL_RTR0PTR
+                ||  pReq->u.In.EP.Service.apvReserved[1] != NIL_RTR0PTR
+                ||  pReq->u.In.EP.Service.apvReserved[2] != NIL_RTR0PTR)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxLdr);
+                Log(("Out of range (%p LB %#x): apvReserved={%p,%p,%p} MBZ!\n",
+                     pImage->pvImage, pReq->u.In.cbImage,
+                     pReq->u.In.EP.Service.apvReserved[0],
+                     pReq->u.In.EP.Service.apvReserved[1],
+                     pReq->u.In.EP.Service.apvReserved[2]));
+                return VERR_INVALID_PARAMETER;
+            }
+            break;
+
         default:
             RTSemFastMutexRelease(pDevExt->mtxLdr);
             Log(("Invalid eEPType=%d\n", pReq->u.In.eEPType));
@@ -3852,6 +3909,10 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         case SUPLDRLOADEP_VMMR0:
             rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
                                   pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
+            break;
+        case SUPLDRLOADEP_SERVICE:
+            pImage->pfnServiceReqHandler = pReq->u.In.EP.Service.pfnServiceReq;
+            rc = VINF_SUCCESS;
             break;
     }
 
@@ -4348,6 +4409,76 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     pImage->pNext  = 0;
     pImage->uState = SUP_IOCTL_LDR_FREE;
     RTMemExecFree(pImage);
+}
+
+
+/**
+ * Implements the service call request.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         The device extension.
+ * @param   pSession        The calling session.
+ * @param   pReq            The request packet, valid.
+ */
+static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq)
+{
+#if !defined(RT_OS_WINDOWS) || defined(DEBUG)
+    int rc;
+
+    /*
+     * Find the module first in the module referenced by the calling session.
+     */
+    rc = RTSemFastMutexRequest(pDevExt->mtxLdr);
+    if (RT_SUCCESS(rc))
+    {
+        PFNSUPR0SERVICEREQHANDLER   pfnServiceReqHandler = NULL;
+        PSUPDRVLDRUSAGE             pUsage;
+
+        for (pUsage = pSession->pLdrUsage; pUsage; pUsage = pUsage->pNext)
+            if (    pUsage->pImage->pfnServiceReqHandler
+                &&  !strcmp(pUsage->pImage->szName, pReq->u.In.szName))
+            {
+                pfnServiceReqHandler = pUsage->pImage->pfnServiceReqHandler;
+                break;
+            }
+        RTSemFastMutexRelease(pDevExt->mtxLdr);
+
+        if (pfnServiceReqHandler)
+        {
+            /*
+             * Call it.
+             */
+            if (pReq->Hdr.cbIn == SUP_IOCTL_CALL_SERVICE_SIZE(0))
+#ifdef RT_WITH_W64_UNWIND_HACK
+                rc = supdrvNtWrapServiceReqHandler((PRNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, NULL);
+#else
+                rc = pfnServiceReqHandler(pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, NULL);
+#endif
+            else
+#ifdef RT_WITH_W64_UNWIND_HACK
+                rc = supdrvNtWrapServiceReqHandler((PRNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation,
+                                                   pReq->u.In.u64Arg, (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0]);
+#else
+                rc = pfnServiceReqHandler(pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0]);
+#endif
+        }
+        else
+            rc = VERR_SUPDRV_SERVICE_NOT_FOUND;
+    }
+
+    /* log it */
+    if (    RT_FAILURE(rc)
+        &&  rc != VERR_INTERRUPTED
+        &&  rc != VERR_TIMEOUT)
+        Log(("SUP_IOCTL_CALL_SERVICE: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+             rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+    else
+        Log4(("SUP_IOCTL_CALL_SERVICE: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
+              rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+    return rc;
+#else  /* RT_OS_WINDOWS && !DEBUG */
+    return VERR_NOT_IMPLEMENTED;
+#endif /* RT_OS_WINDOWS && !DEBUG */
 }
 
 
