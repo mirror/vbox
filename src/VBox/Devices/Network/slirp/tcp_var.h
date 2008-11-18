@@ -54,9 +54,15 @@
 # include <iprt/types.h>
 # include <iprt/assert.h>
 
+#if defined(VBOX_WITH_BSD_TCP_REASS) && defined(VBOX_WITH_BSD_REASS)
+# define u32ptr_done(pData, u32, ptr)  do {} while (0)
+# define ptr_to_u32(pData, ptr)        (ptr)
+# define u32_to_ptr(pData, u32, type)  ((type)(u32))
+#else /* VBOX_WITH_BSD_REASS && VBOX_WITH_BSD_TCP_REASS */
 # define u32ptr_done(pData, u32, ptr) VBoxU32PtrDone((pData), (ptr), (u32))
 # define ptr_to_u32(pData, ptr)       VBoxU32PtrHash((pData), (ptr))
 # define u32_to_ptr(pData, u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
+#endif /* !VBOX_WITH_BSD_REASS || !VBOX_WITH_BSD_TCP_REASS*/
 
 #endif
 
