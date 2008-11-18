@@ -676,8 +676,8 @@ found:
     nipq--;
     free(fp);
 
-    m->m_len += (ip->ip_hl << 2);
 #if 0
+    m->m_len += (ip->ip_hl << 2);
     m->m_data -= (ip->ip_hl << 2);
 #endif
     /* some debugging cruft by sklower, below, will go away soon */
