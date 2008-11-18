@@ -1038,7 +1038,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox,
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
      * freeze but mark it as initially inaccessible instead. The vital UUID and
      * location properties are read from the registry file above; to get the
-     * actual state and the the rest of data, the user will have to call
+     * actual state and the rest of the data, the user will have to call
      * COMGETTER(State).*/
 
     /* Confirm a successful initialization when it's the case */
