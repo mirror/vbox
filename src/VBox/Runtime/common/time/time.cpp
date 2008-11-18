@@ -618,7 +618,7 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
  * Normalizes the fields of a time structure.
  *
  * It is possible to calculate year-day from month/day and vice
- * versa. If you adjust any of of these, make sure to zero the
+ * versa. If you adjust any of these, make sure to zero the
  * other so you make it clear which of the fields to use. If
  * it's ambiguous, the year-day field is used (and you get
  * assertions in debug builds).
