@@ -539,7 +539,7 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
     int rc = VINF_SUCCESS;
     PVMDKFILE pVmdkFile = *ppVmdkFile;
 
-    Assert(VALID_PTR(pVmdkFile));
+    AssertPtr(pVmdkFile);
 
     pVmdkFile->fDelete |= fDelete;
     Assert(pVmdkFile->uReferences);
@@ -697,7 +697,7 @@ static char *vmdkEncodeString(const char *psz)
     char szEnc[VMDK_ENCODED_COMMENT_MAX + 3];
     char *pszDst = szEnc;
 
-    Assert(VALID_PTR(psz));
+    AssertPtr(psz);
 
     for (; *psz; psz = RTStrNextCp(psz))
     {
@@ -741,7 +741,7 @@ static int vmdkDecodeString(const char *pszEncoded, char *psz, size_t cb)
     if (!cb)
         return VERR_BUFFER_OVERFLOW;
 
-    Assert(VALID_PTR(psz));
+    AssertPtr(psz);
 
     for (; *pszEncoded; pszEncoded = RTStrNextCp(pszEncoded))
     {
@@ -2969,7 +2969,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, VDIMAGETYPE enmType,
 
     /* Basename strings needed for constructing the extent names. */
     char *pszBasenameSubstr = RTPathFilename(pImage->pszFilename);
-    Assert(pszBasenameSubstr);
+    AssertPtr(pszBasenameSubstr);
     size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
 
     /* Create searate descriptor file if necessary. */
@@ -3366,7 +3366,7 @@ static int vmdkSetImageComment(PVMDKIMAGE pImage, const char *pszComment)
  */
 static void vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
 {
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage->enmImageType)
     {
@@ -3942,9 +3942,9 @@ out:
  */
 static char * vmdkStrReplace(const char *pszWhere, const char *pszWhat, const char *pszByWhat)
 {
-    Assert(VALID_PTR(pszWhere));
-    Assert(VALID_PTR(pszWhat));
-    Assert(VALID_PTR(pszByWhat));
+    AssertPtr(pszWhere);
+    AssertPtr(pszWhat);
+    AssertPtr(pszByWhat);
     const char *pszFoundStr = strstr(pszWhere, pszWhat);
     if (!pszFoundStr)
         return NULL;
@@ -4150,11 +4150,11 @@ rollback:
             pImage->pExtents = &ExtentCopy;
         }
         else
-        {    
+        {
             /* Shouldn't be null for separate descriptor.
              * There will be no access to the actual content.
              */
-            pImage->pDescData = pszOldDescName; 
+            pImage->pDescData = pszOldDescName;
             pImage->pFile = pFile;
         }
         pImage->Descriptor = DescriptorCopy;
@@ -4239,7 +4239,7 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     uint64_t uSectorExtentAbs;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToRead % 512 == 0);
 
@@ -4295,7 +4295,8 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             memset(pvBuf, '\0', cbToRead);
             break;
     }
-    *pcbActuallyRead = cbToRead;
+    if (pcbActuallyRead)
+        *pcbActuallyRead = cbToRead;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -4314,7 +4315,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     uint64_t uSectorExtentAbs;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
 
@@ -4420,7 +4421,7 @@ static int vmdkFlush(void *pBackendData)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     rc = vmdkFlushImage(pImage);
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -4433,7 +4434,7 @@ static unsigned vmdkGetVersion(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         return VMDK_IMAGE_VERSION;
@@ -4448,8 +4449,8 @@ static int vmdkGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
-    Assert(penmImageType);
+    AssertPtr(pImage);
+    AssertPtr(penmImageType);
 
     if (pImage && pImage->cExtents != 0)
         *penmImageType = pImage->enmImageType;
@@ -4466,7 +4467,7 @@ static uint64_t vmdkGetSize(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         return pImage->cbSize;
@@ -4481,7 +4482,7 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     uint64_t cb = 0;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4512,7 +4513,7 @@ static int vmdkGetPCHSGeometry(void *pBackendData,
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4539,7 +4540,7 @@ static int vmdkSetPCHSGeometry(void *pBackendData,
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4571,7 +4572,7 @@ static int vmdkGetLCHSGeometry(void *pBackendData,
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4598,7 +4599,7 @@ static int vmdkSetLCHSGeometry(void *pBackendData,
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4629,7 +4630,7 @@ static unsigned vmdkGetImageFlags(void *pBackendData)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     unsigned uImageFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uImageFlags = pImage->uImageFlags;
@@ -4647,7 +4648,7 @@ static unsigned vmdkGetOpenFlags(void *pBackendData)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uOpenFlags = pImage->uOpenFlags;
@@ -4690,7 +4691,7 @@ static int vmdkGetComment(void *pBackendData, char *pszComment,
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4724,7 +4725,7 @@ static int vmdkSetComment(void *pBackendData, const char *pszComment)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
@@ -4749,7 +4750,7 @@ static int vmdkGetUuid(void *pBackendData, PRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4771,7 +4772,7 @@ static int vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
     int rc;
 
     LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4801,7 +4802,7 @@ static int vmdkGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4822,7 +4823,7 @@ static int vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4852,7 +4853,7 @@ static int vmdkGetParentUuid(void *pBackendData, PRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4873,7 +4874,7 @@ static int vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4903,7 +4904,7 @@ static int vmdkGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4924,7 +4925,7 @@ static int vmdkSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -4952,7 +4953,7 @@ static void vmdkDump(void *pBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
     {
         RTLogPrintf("Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
@@ -5036,7 +5037,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
     unsigned  cbLeftInCurrentSegment = paSegCurrent->cbSeg;
     unsigned  uOffsetInCurrentSegment = 0;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbRead % 512 == 0);
 
@@ -5172,7 +5173,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
     unsigned  cbLeftInCurrentSegment = paSegCurrent->cbSeg;
     unsigned  uOffsetInCurrentSegment = 0;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
     Assert(cbWrite % 512 == 0);
 
