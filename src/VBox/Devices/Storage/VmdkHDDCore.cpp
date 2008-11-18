@@ -4493,7 +4493,7 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
             if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
-        for (unsigned i = 0; i <= pImage->cExtents; i++)
+        for (unsigned i = 0; i < pImage->cExtents; i++)
         {
             if (pImage->pExtents[i].pFile != NULL)
             {
