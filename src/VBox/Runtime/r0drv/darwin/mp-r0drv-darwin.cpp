@@ -39,6 +39,14 @@
 #include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
 
+#define MY_DARWIN_MAX_CPUS      (0xf + 1) /* see MAX_CPUS */
+
+
+DECLINLINE(int) rtMpDarwinMaxCpus(void)
+{
+    return ml_get_max_cpus();
+}
+
 
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
@@ -46,10 +54,100 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 }
 
 
-/** 
- * Wrapper between the native darwin per-cpu callback and PFNRTWORKER 
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return idCpu < MY_DARWIN_MAX_CPUS ? (int)idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return (unsigned)iCpu < MY_DARWIN_MAX_CPUS ? (RTCPUID)iCpu : NIL_RTCPUID;
+}
+
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return rtMpDarwinMaxCpus() - 1;
+}
+
+
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
+{
+    return idCpu < MY_DARWIN_MAX_CPUS
+        && idCpu < (RTCPUID)rtMpDarwinMaxCpus();
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
+{
+
+}
+
+
+RTDECL(RTCPUID) RTMpGetCount(void)
+{
+    return rtMpDarwinMaxCpus();
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
+{
+    /** @todo darwin R0 MP */
+    return RTMpGetSet(pSet);
+}
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCount(void)
+{
+    /** @todo darwin R0 MP */
+    return RTMpGetCount();
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    /** @todo darwin R0 MP */
+    return RTMpIsCpuPossible(idCpu);
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet)
+{
+    return RTMpGetSet(pSet);
+}
+
+
+RTDECL(RTCPUID) RTMpGetPresentCount(void)
+{
+    return RTMpGetCount();
+}
+
+
+RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
+{
+    return RTMpIsCpuPossible(idCpu);
+}
+
+
+RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
+{
+    /** @todo darwin R0 MP (rainy day) */
+    return 0;
+}
+
+
+RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
+{
+    /** @todo darwin R0 MP (rainy day) */
+    return 0;
+}
+
+
+/**
+ * Wrapper between the native darwin per-cpu callback and PFNRTWORKER
  * for the RTMpOnAll API.
- * 
+ *
  * @param   pvArg   Pointer to the RTMPARGS package.
  */
 static void rtmpOnAllDarwinWrapper(void *pvArg)
@@ -67,15 +165,15 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.pvUser2 = pvUser2;
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
-    mp_rendezvous(NULL, rtmpOnAllDarwinWrapper, NULL, &Args);
+    mp_rendezvous_no_intrs(rtmpOnAllDarwinWrapper, &Args);
     return VINF_SUCCESS;
 }
 
 
-/** 
- * Wrapper between the native darwin per-cpu callback and PFNRTWORKER 
+/**
+ * Wrapper between the native darwin per-cpu callback and PFNRTWORKER
  * for the RTMpOnOthers API.
- * 
+ *
  * @param   pvArg   Pointer to the RTMPARGS package.
  */
 static void rtmpOnOthersDarwinWrapper(void *pvArg)
@@ -96,15 +194,15 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.pvUser2 = pvUser2;
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
-    mp_rendezvous(NULL, rtmpOnOthersDarwinWrapper, NULL, &Args);
+    mp_rendezvous_no_intrs(rtmpOnOthersDarwinWrapper, &Args);
     return VINF_SUCCESS;
 }
 
 
-/** 
- * Wrapper between the native darwin per-cpu callback and PFNRTWORKER 
+/**
+ * Wrapper between the native darwin per-cpu callback and PFNRTWORKER
  * for the RTMpOnSpecific API.
- * 
+ *
  * @param   pvArg   Pointer to the RTMPARGS package.
  */
 static void rtmpOnSpecificDarwinWrapper(void *pvArg)
@@ -128,9 +226,9 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.pvUser2 = pvUser2;
     Args.idCpu = idCpu;
     Args.cHits = 0;
-    mp_rendezvous(NULL, rtmpOnSpecificDarwinWrapper, NULL, &Args);
-    return Args.cHits == 1 
-         ? VINF_SUCCESS 
+    mp_rendezvous_no_intrs(rtmpOnSpecificDarwinWrapper, &Args);
+    return Args.cHits == 1
+         ? VINF_SUCCESS
          : VERR_CPU_NOT_FOUND;
 }
 
