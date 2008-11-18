@@ -526,19 +526,13 @@ Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
 Drivers_DEFS.win  += _WIN32_WINNT=0x0510
 Drivers_DEFS       = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
-Drivers_DEFS       = VBOX_WITH_NETFLT
-endif
-ifdef VBOX_WITH_SYNC_SLIRP
-Drivers_DEFS       = VBOX_WITH_SYNC_SLIRP
-endif
-ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-Drivers_DEFS       = VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+Drivers_DEFS      += VBOX_WITH_NETFLT
 endif
 ifdef VBOX_WITH_BSD_REASS
-Drivers_DEFS       = VBOX_WITH_BSD_REASS
+Drivers_DEFS      += VBOX_WITH_BSD_REASS
 endif
 ifdef VBOX_WITH_BSD_TCP_REASS
-Drivers_DEFS       = VBOX_WITH_BSD_TCP_REASS
+Drivers_DEFS      += VBOX_WITH_BSD_TCP_REASS
 endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
@@ -587,6 +581,9 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/udp.c
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
  define def_vbox_slirp_cflags
+  ifeq ($(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC),1)
+   $(file)_DEFS = VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+  endif
   ifeq ($(KBUILD_TARGET),win)
    $(file)_CFLAGS = -wd4018
   else
@@ -595,11 +592,9 @@ Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
  endef
   $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(def_vbox_slirp_cflags)))
 else
+
 NatAlias_TEMPLATE   = VBOXR3NP
-
-
-Drivers_SOURCES +=	Network/DrvNAT.cpp
-
+Drivers_SOURCES += Network/DrvNAT.cpp
 Network/DrvNAT.cpp_DEFS += VBOX_NAT_SOURCES
 Network/nat/src/sys/net/if_clone.c_CFLAGS.linux += -std=c99
 
