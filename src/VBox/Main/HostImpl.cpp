@@ -43,6 +43,7 @@
 # endif
 # include <errno.h>
 # include <net/if.h>
+# include <net/if_arp.h>
 #endif /* RT_OS_LINUX */
 
 #ifdef RT_OS_SOLARIS
@@ -1029,14 +1030,20 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         {
             for (struct ifreq *pReq = ifConf.ifc_req; (char*)pReq < pBuffer + ifConf.ifc_len; pReq++)
             {
-                RTUUID uuid;
-                Assert(sizeof(uuid) <= sizeof(*pReq));
-                memcpy(&uuid, pReq, sizeof(uuid));
+                if (ioctl(sock, SIOCGIFHWADDR, pReq) >= 0)
+                {
+                    if (pReq->ifr_hwaddr.sa_family == ARPHRD_ETHER)
+                    {
+                        RTUUID uuid;
+                        Assert(sizeof(uuid) <= sizeof(*pReq));
+                        memcpy(&uuid, pReq, sizeof(uuid));
 
-                ComObjPtr<HostNetworkInterface> IfObj;
-                IfObj.createObject();
-                if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid))))
-                    list.push_back(IfObj);
+                        ComObjPtr<HostNetworkInterface> IfObj;
+                        IfObj.createObject();
+                        if (SUCCEEDED(IfObj->init(Bstr(pReq->ifr_name), Guid(uuid))))
+                            list.push_back(IfObj);
+                    }
+                }
             }
         }
         close(sock);
