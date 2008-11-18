@@ -605,7 +605,7 @@ HRESULT Machine::registeredInit()
  *  by the current thread; otherwise uninit() will hang either a) due to
  *  AutoUninitSpan waiting for a number of calls to drop to zero or b) due to
  *  a dead-lock caused by this thread waiting for all callers on the other
- *  threads are are done but preventing them from doing so by holding a lock.
+ *  threads are done but preventing them from doing so by holding a lock.
  */
 void Machine::uninit()
 {
@@ -1879,7 +1879,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
             if (aDevice < 0 || aDevice > 1)
                 return setError (E_FAIL,
                     tr ("Invalid IDE device slot: %l (must be in range "
-                        "[0, 1] for for channel 0)"),
+                        "[0, 1] for channel 0)"),
                     aDevice);
         }
         else
@@ -5841,7 +5841,7 @@ HRESULT Machine::saveSettings (int aFlags /*= 0*/)
 
     HRESULT rc = S_OK;
 
-    /* First, prepare to save settings. It will will care about renaming the
+    /* First, prepare to save settings. It will care about renaming the
      * settings directory and file if the machine name was changed and about
      * creating a new settings file if this is a new machine. */
     bool isRenamed = false;
@@ -6804,7 +6804,7 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
     {
         if (!aOnline)
         {
-            /* lock all attached hard disks early to to detect "in use"
+            /* lock all attached hard disks early to detect "in use"
              * situations before creating actual diffs */
             for (HDData::AttachmentList::const_iterator
                  it = mHDData->mAttachments.begin();
@@ -7976,7 +7976,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
      *  before it triggered #OnSessionEnd(), or before releasing IPC semaphore,
      *  etc). However, it's also possible, that the client releases the IPC
      *  semaphore correctly (i.e. before it releases the VirtualBox reference),
-     *  but but the VirtualBox release event comes first to the server process.
+     *  but the VirtualBox release event comes first to the server process.
      *  This case is practically possible, so we should not assert on an
      *  unexpected uninit, just log a warning.
      */
