@@ -21,7 +21,6 @@
 
 #include "HardDisk2Impl.h"
 
-#include "VirtualBoxImpl.h"
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
 
@@ -491,13 +490,13 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
     /* no storage yet */
     m.state = MediaState_NotCreated;
 
-    rc = setLocation (aLocation);
-    CheckComRCReturnRC (rc);
-
     /* No storage unit is created yet, no need to queryInfo() */
 
-    /// @todo NEWMEDIA check the format ID is valid
-    unconst (mm.format) = aFormat;
+    rc = setFormat (aFormat);
+    CheckComRCReturnRC (rc);
+
+    rc = setLocation (aLocation);
+    CheckComRCReturnRC (rc);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -552,13 +551,11 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aLocation)
             Assert (!m.lastAccessError.isNull());
             rc = setError (E_FAIL, Utf8Str (m.lastAccessError));
         }
-    }
 
-    /* storage format must be detected by queryInfo() if the medium is
-     * accessible */
-    AssertReturn (m.state == MediaState_Inaccessible ||
-                  (!m.id.isEmpty() && !mm.format.isNull()),
-                  E_FAIL);
+        /* storage format must be detected by queryInfo() if the medium is
+         * accessible */
+        AssertReturn (!m.id.isEmpty() && !mm.format.isNull(), E_FAIL);
+    }
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -612,10 +609,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
 
     /* required */
     unconst (m.id) = aNode.value <Guid> ("uuid");
-    /* required */
-    Bstr location = aNode.stringValue ("location");
-    rc = setLocation (location);
-    CheckComRCReturnRC (rc);
+
     /* optional */
     {
         settings::Key descNode = aNode.findKey ("Description");
@@ -624,10 +618,17 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
     }
 
     /* required */
-    unconst (mm.format) = aNode.stringValue ("format");
-    AssertReturn (!mm.format.isNull(), E_FAIL);
+    Bstr format = aNode.stringValue ("format");
+    AssertReturn (!format.isNull(), E_FAIL);
+    rc = setFormat (format);
+    CheckComRCReturnRC (rc);
 
-    /* only for base hard disks */
+    /* required */
+    Bstr location = aNode.stringValue ("location");
+    rc = setLocation (location);
+    CheckComRCReturnRC (rc);
+
+    /* type is only for base hard disks */
     if (mParent.isNull())
     {
         const char *type = aNode.stringValue ("type");
@@ -689,6 +690,13 @@ void HardDisk2::uninit()
     AutoUninitSpan autoUninitSpan (this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    if (!mm.formatObj.isNull())
+    {
+        /* remove the caller reference we added in setFormat() */
+        mm.formatObj->releaseCaller();
+        mm.formatObj.setNull();
+    }
 
     if (m.state == MediaState_Deleting)
     {
@@ -1310,7 +1318,7 @@ HRESULT HardDisk2::compareLocationTo (const char *aLocation, int &aResult)
 
     /// @todo NEWMEDIA delegate the comparison to the backend?
 
-    if (isFileLocation (locationFull))
+    if (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File)
     {
         Utf8Str location (aLocation);
 
@@ -1356,6 +1364,9 @@ Utf8Str HardDisk2::name()
     return name;
 }
 
+/// @todo NEWMEDIA remove, should not need anymore
+#if 0
+
 /**
  * Returns @c true if the given location is a file in the host's filesystem.
  *
@@ -1397,6 +1408,8 @@ bool HardDisk2::isFileLocation (const char *aLocation)
     /* everything else is treaten as file */
     return true;
 }
+
+#endif /* if 0 */
 
 /**
  * Checks that this hard disk may be discarded and performs necessary state
@@ -1668,17 +1681,12 @@ Bstr HardDisk2::preferredDiffFormat()
     format = mm.format;
 
     /* check that our own format supports diffs */
-
-    /* lock system properties now to make the format check atomic with
-     * defaultHardDiskFormat() */
-    AutoReadLock propsLock (mVirtualBox->systemProperties());
-
-    ComObjPtr <HardDiskFormat> formatObj =
-        mVirtualBox->systemProperties()->hardDiskFormat (format);
-    AssertReturn (!formatObj.isNull(), format);
-
-    if (!(formatObj->capabilities() & HardDiskFormatCapabilities_Differencing))
+    if (!(mm.formatObj->capabilities() & HardDiskFormatCapabilities_Differencing))
+    {
+        /* use the default format if not */
+        AutoReadLock propsLock (mVirtualBox->systemProperties());
         format = mVirtualBox->systemProperties()->defaultHardDiskFormat();
+    }
 
     return format;
 }
@@ -2242,62 +2250,168 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
     if (aLocation == NULL)
         return E_INVALIDARG;
 
-    /// @todo NEWMEDIA treat non-FS-paths specially! (may require to request
-    /// this information from the VD backend)
+    AutoCaller autoCaller (this);
+    AssertComRCReturnRC (autoCaller.rc());
 
-    Utf8Str location (aLocation);
+    /* formatObj may be null only when initializing from an existing path and
+     * no format is known yet */
+    AssertReturn ((!mm.format.isNull() && !mm.formatObj.isNull()) ||
+                  (autoCaller.state() == InInit &&
+                   m.state != MediaState_NotCreated && m.id.isEmpty() &&
+                   mm.format.isNull() && mm.formatObj.isNull()),
+                  E_FAIL);
 
-    Guid id;
+    /* are we dealing with a hard disk opened from the existing path? */
+    bool isNew = mm.format.isNull();
 
-    if (RTPathFilename (location) == NULL)
+    if (isNew ||
+        (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File))
     {
-        /* no file name is given (either an empty string or ends with a slash),
-         * generate a new UUID + file name if the state allows this */
+        Guid id;
+
+        Utf8Str location (aLocation);
 
         if (m.state == MediaState_NotCreated)
         {
-            id.create();
+            /* must be a file (formatObj must be already known) */
+            Assert (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File);
 
-            /// @todo NEWMEDIA use the default extension for the given VD backend
-            location = Utf8StrFmt ("%s{%RTuuid}.vdi", location.raw(), id.raw());
+            if (RTPathFilename (location) == NULL)
+            {
+                /* no file name is given (either an empty string or ends with a
+                 * slash), generate a new UUID + file name if the state allows
+                 * this */
+
+                ComAssertMsgRet (!mm.formatObj->fileExtensions().empty(),
+                                 ("Must be at least one extension if it is "
+                                  "HardDiskFormatCapabilities_File\n"),
+                                 E_FAIL);
+
+                Bstr ext = mm.formatObj->fileExtensions().front();
+                ComAssertMsgRet (!ext.isEmpty(),
+                                 ("Default extension must not be empty\n"),
+                                 E_FAIL);
+
+                id.create();
+
+                location = Utf8StrFmt ("%s{%RTuuid}.%ls",
+                                       location.raw(), id.raw(), ext.raw());
+            }
+        }
+
+        /* append the default folder if no path is given */
+        if (!RTPathHavePath (location))
+        {
+            AutoReadLock propsLock (mVirtualBox->systemProperties());
+            location = Utf8StrFmt ("%ls%c%s",
+                mVirtualBox->systemProperties()->defaultHardDiskFolder().raw(),
+                RTPATH_DELIMITER,
+                location.raw());
+        }
+
+        /* get the full file name */
+        Utf8Str locationFull;
+        int vrc = mVirtualBox->calculateFullPath (location, locationFull);
+        if (RT_FAILURE (vrc))
+            return setError (E_FAIL,
+                tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
+                location.raw(), vrc);
+
+        /* detect the backend from the storage unit if new */
+        if (isNew)
+        {
+            char *backendName = NULL;
+
+            /* is it a file? */
+            {
+                RTFILE file;
+                vrc = RTFileOpen (&file, locationFull, RTFILE_O_READ);
+                if (RT_SUCCESS (vrc))
+                    RTFileClose (file);
+            }
+            if (RT_SUCCESS (vrc))
+            {
+                vrc = VDGetFormat (locationFull, &backendName);
+            }
+            else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+            {
+                /* assume it's not a file, restore the original location */
+                location = locationFull = aLocation;
+                vrc = VDGetFormat (locationFull, &backendName);
+            }
+
+            if (RT_FAILURE (vrc))
+                return setError (E_FAIL,
+                    tr ("Could not get the storage format of the hard disk "
+                        "'%s' (%Rrc)"), locationFull.raw(), vrc);
+
+            ComAssertRet (backendName != NULL && *backendName != '\0', E_FAIL);
+
+            HRESULT rc = setFormat (Bstr (backendName));
+            RTStrFree (backendName);
+
+            /* setFormat() must not fail since we've just used the backend so
+             * the format object must be there */
+            AssertComRCReturnRC (rc);
+        }
+
+        /* is it still a file? */
+        if (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File)
+        {
+            m.location = location;
+            m.locationFull = locationFull;
+
+            /* assign a new UUID if we generated it */
+            if (!id.isEmpty())
+                unconst (m.id) = id;
         }
         else
         {
-            /* it's an error to not have a file name :) */
-            return setError (E_FAIL,
-                tr ("Hard disk storage file location '%s' does not contain "
-                    "a file name"),
-                location.raw());
+            m.location = locationFull;
+            m.locationFull = locationFull;
         }
     }
-
-    /* append the default folder if no path is given */
-    if (!RTPathHavePath (location))
+    else
     {
-        AutoReadLock propsLock (mVirtualBox->systemProperties());
-        location = Utf8StrFmt ("%ls%c%s",
-            mVirtualBox->systemProperties()->defaultHardDiskFolder().raw(),
-            RTPATH_DELIMITER,
-            location.raw());
+        m.location = aLocation;
+        m.locationFull = aLocation;
     }
-
-    /* get the full file name */
-    Utf8Str locationFull;
-    int vrc = mVirtualBox->calculateFullPath (location, locationFull);
-    if (RT_FAILURE (vrc))
-        return setError (E_FAIL,
-            tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
-            location.raw(), vrc);
-
-    m.location = location;
-    m.locationFull = locationFull;
-
-    /* assign a new UUID if we generated it */
-    if (!id.isEmpty())
-        unconst (m.id) = id;
 
     return S_OK;
 }
+
+/**
+ * Checks that the format ID is valid and sets it on success.
+ *
+ * Note that this method will caller-reference the format object on success!
+ * This reference must be released somewhere to let the HardDiskFormat object be
+ * uninitialized.
+ *
+ * @note Must be called from under this object's write lock.
+ */
+HRESULT HardDisk2::setFormat (const BSTR aFormat)
+{
+    /* get the format object first */
+    {
+        AutoReadLock propsLock (mVirtualBox->systemProperties());
+
+        unconst (mm.formatObj)
+            = mVirtualBox->systemProperties()->hardDiskFormat (aFormat);
+        if (mm.formatObj.isNull())
+            return setError (E_FAIL,
+                tr ("Invalid hard disk storage format '%ls'"), aFormat);
+
+        /* reference the format permanently to prevent its unexpected
+         * uninitialization */
+        HRESULT rc = mm.formatObj->addCaller();
+        AssertComRCReturnRC (rc);
+    }
+
+    unconst (mm.format) = aFormat;
+
+    return S_OK;
+}
+
 /**
  * Queries information from the image file.
  *
@@ -2380,27 +2494,8 @@ HRESULT HardDisk2::queryInfo()
     {
         Utf8Str location (m.locationFull);
 
-        /* are we dealing with an unknown (just opened) image? */
-        bool isNew = mm.format.isNull();
-
-        if (isNew)
-        {
-            /* detect the backend from the storage unit */
-            char *backendName = NULL;
-            vrc = VDGetFormat (location, &backendName);
-            if (RT_FAILURE (vrc))
-            {
-                lastAccessError = Utf8StrFmt (
-                    tr ("Could not get the storage format of the hard disk "
-                        "'%ls'%s"), m.locationFull.raw(), vdError (vrc).raw());
-                throw S_OK;
-            }
-
-            ComAssertThrow (backendName != NULL, E_FAIL);
-
-            unconst (mm.format) = backendName;
-            RTStrFree (backendName);
-        }
+        /* are we dealing with a hard disk opened from the existing path? */
+        bool isNew = m.id.isEmpty();
 
         PVBOXHDD hdd;
         vrc = VDCreate (mm.vdDiskIfaces, &hdd);
@@ -2408,9 +2503,17 @@ HRESULT HardDisk2::queryInfo()
 
         try
         {
-            vrc = VDOpen (hdd, Utf8Str (mm.format), location,
-                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                          NULL);
+            unsigned flags = VD_OPEN_FLAGS_INFO;
+
+            /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
+             * hard disks because that would prevent necessary modifications
+             * when opening hard disks of some third-party formats for the first
+             * time in VirtualBox (such as VMDK for which VDOpen() needs to
+             * generate an UUID if it is missing) */
+            if (!isNew)
+                flags |= VD_OPEN_FLAGS_READONLY;
+
+            vrc = VDOpen (hdd, Utf8Str (mm.format), location, flags, NULL);
             if (RT_FAILURE (vrc))
             {
                 lastAccessError = Utf8StrFmt (
