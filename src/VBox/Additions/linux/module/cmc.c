@@ -20,6 +20,7 @@
 
 #include "the-linux-kernel.h"
 #include "vboxmod.h"
+#include "waitcompat.h"
 
 /**
  * HGCM
