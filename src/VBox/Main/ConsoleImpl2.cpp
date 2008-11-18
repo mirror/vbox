@@ -44,6 +44,9 @@
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#ifdef VBOX_WITH_CROGL
+#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+#endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
@@ -1762,6 +1765,45 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
         }
     }
+
+#ifdef VBOX_WITH_CROGL
+    /*
+     * crOpenGL
+     */
+    {
+        BOOL fEnabled = false;
+        hrc = pMachine->COMGETTER(Accelerate3DEnabled) (&fEnabled);                               H();
+
+        if (fEnabled)
+        {
+            /* Load the service */
+            rc = pConsole->mVMMDev->hgcmLoadService ("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("Failed to load Shared OpenGL service %Rrc\n", rc));
+                /* That is not a fatal failure. */
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                LogRel(("Shared crOpenGL service loaded.\n"));
+
+                /* Setup the service. */
+                VBOXHGCMSVCPARM parm;
+                parm.type = VBOX_HGCM_SVC_PARM_PTR;
+
+                //parm.u.pointer.addr = static_cast <IConsole *> (pData->pVMMDev->getParent());
+                parm.u.pointer.addr = pConsole->mVMMDev->getParent()->getDisplay()->getFramebuffer();
+                parm.u.pointer.size = sizeof(IFramebuffer *);
+
+                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
+                if (!RT_SUCCESS(rc))
+                    AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Rrc\n", rc));
+                }
+        }
+    }
+#endif
+
 #ifdef VBOX_WITH_GUEST_PROPS
     /*
      * Guest property service

@@ -35,7 +35,6 @@
 #ifdef VBOX_WITH_HGCM
 #include "hgcm/HGCM.h"
 #include "hgcm/HGCMObjects.h"
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 
 //
@@ -814,32 +813,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
         else
         {
             LogRel(("Failed to load Shared OpenGL service %Rrc\n", rc));
-        }
-    }
-
-    rc = CFGMR3QueryBool(pCfgHandle, "crOpenGLEnabled", &fEnabled);
-    if ( RT_SUCCESS(rc) &&  fEnabled)
-    {
-        rc = pData->pVMMDev->hgcmLoadService ("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("Shared Chromium OpenGL service loaded.\n"));
-
-            /* Setup the service. */
-            VBOXHGCMSVCPARM parm;
-            parm.type = VBOX_HGCM_SVC_PARM_PTR;
-
-            //parm.u.pointer.addr = static_cast <IConsole *> (pData->pVMMDev->getParent());
-            parm.u.pointer.addr = pData->pVMMDev->getParent()->getDisplay()->getFramebuffer();
-            parm.u.pointer.size = sizeof(IFramebuffer *);
-
-            rc = HGCMHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
-            if (!RT_SUCCESS(rc))
-                AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Rrc\n", rc));
-        }
-        else
-        {
-            LogRel(("Failed to load Shared Chromium OpenGL service %Rrc\n", rc));
         }
     }
 
