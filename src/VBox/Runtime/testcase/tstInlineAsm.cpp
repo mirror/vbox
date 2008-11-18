@@ -1050,11 +1050,11 @@ void tstASMMath(void)
        *
        * which is definitely greater than  0x3b9aca00.
        *
-       * bird: No, the C version does *not* crash. So, the question is whether there any
+       * bird: No, the C version does *not* crash. So, the question is whether there's any
        * code depending on it not crashing.
        *
        * Of course the assembly versions of the code crash right now for the reasons you've
-       * given, but the the 32-bit MSC version does not crash.
+       * given, but the 32-bit MSC version does not crash.
        *
        * frank: The C version does not crash but delivers incorrect results for this case.
        * The reason is
