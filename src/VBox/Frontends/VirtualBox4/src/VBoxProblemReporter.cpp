@@ -1538,7 +1538,7 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
 }
 
 bool VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
-                                                   ulong aSize)
+                                                    ulong aSize)
 {
     return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
         tr ("<p>Are you sure you want to download the VirtualBox "
@@ -1623,7 +1623,7 @@ void VBoxProblemReporter::cannotConnectRegister (QWidget *aParent,
 
     message (aParent, Error,
              tr ("<p>Failed to connect to the VirtualBox online "
-                 "registration service.</p><p>%1</p>")
+                 "registration service due to the following error:</p><p><b>%1</b></p>")
                  .arg (aReason));
 }
 
@@ -1655,9 +1655,9 @@ void VBoxProblemReporter::showUpdateSuccess (QWidget *aParent,
 void VBoxProblemReporter::showUpdateFailure (QWidget *aParent,
                                              const QString &aReason)
 {
-    message (aParent, Info,
+    message (aParent, Error,
              tr ("<p>Unable to obtain the new version information "
-                 "due to the following network error:</p><p><b>%1</b></p>")
+                 "due to the following error:</p><p><b>%1</b></p>")
                  .arg (aReason));
 }
 

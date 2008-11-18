@@ -108,6 +108,7 @@
     <file alias="site_32px.png">images/site_32px.png</file>
     <file alias="site_disabled_32px.png">images/site_disabled_32px.png</file>
     <file alias="register_16px.png">images/register_16px.png</file>
+    <file alias="register_32px.png">images/register_32px.png</file>
     <file alias="register_disabled_16px.png">images/register_disabled_16px.png</file>
     <file alias="reset_16px.png">images/reset_16px.png</file>
     <file alias="reset_disabled_16px.png">images/reset_disabled_16px.png</file>

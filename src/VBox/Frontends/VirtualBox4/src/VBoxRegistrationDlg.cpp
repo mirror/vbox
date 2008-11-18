@@ -20,21 +20,13 @@
  * additional information or have any questions.
  */
 
-#include "VBoxRegistrationDlg.h"
+#include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxNetworkFramework.h"
+#include "VBoxRegistrationDlg.h"
 
 /* Qt includes */
 #include <QTimer>
-#include <QProcess>
-
-#include <iprt/err.h>
-#include <iprt/param.h>
-#include <iprt/path.h>
-
-/* Time to auto-disconnect if no network answer received. */
-static const int MaxWaitTime = 20000;
 
 /**
  *  This class is used to encode/decode the registration data.
@@ -46,29 +38,29 @@ public:
     VBoxRegistrationData (const QString &aData)
         : mIsValid (false), mIsRegistered (false)
         , mData (aData)
-        , mTriesLeft (3 /* the initial tries value! */)
+        , mTriesLeft (3 /* the initial tries value */)
     {
         decode (aData);
     }
 
     VBoxRegistrationData (const QString &aName, const QString &aEmail,
-                          const QString &aPrivate)
+                          const QString &aIsPrivate)
         : mIsValid (true), mIsRegistered (true)
-        , mName (aName), mEmail (aEmail), mPrivate (aPrivate)
+        , mName (aName), mEmail (aEmail), mIsPrivate (aIsPrivate)
         , mTriesLeft (0)
     {
-        encode (aName, aEmail, aPrivate);
+        encode (aName, aEmail, aIsPrivate);
     }
 
-    bool isValid() const              { return mIsValid; }
-    bool isRegistered() const         { return mIsRegistered; }
+    bool isValid() const { return mIsValid; }
+    bool isRegistered() const { return mIsRegistered; }
 
-    const QString &data() const       { return mData; }
-    const QString &name() const       { return mName; }
-    const QString &email() const      { return mEmail; }
-    const QString &isPrivate() const  { return mPrivate; }
+    const QString &data() const { return mData; }
+    const QString &name() const { return mName; }
+    const QString &email() const { return mEmail; }
+    const QString &isPrivate() const { return mIsPrivate; }
 
-    uint triesLeft() const            { return mTriesLeft; }
+    uint triesLeft() const { return mTriesLeft; }
 
 private:
 
@@ -116,7 +108,7 @@ private:
         QStringList dataList = result.split ("|");
         mName = dataList [0];
         mEmail = dataList [1];
-        mPrivate = dataList [2];
+        mIsPrivate = dataList [2];
 
         mIsValid = true;
         mIsRegistered = true;
@@ -188,29 +180,37 @@ private:
     QString mData;
     QString mName;
     QString mEmail;
-    QString mPrivate;
+    QString mIsPrivate;
 
     uint mTriesLeft;
 };
 
-VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
-                                          QWidget *aParent,
-                                          Qt::WindowFlags aFlags)
-    : QIWithRetranslateUI2<QIAbstractWizard> (aParent, aFlags)
+/* Static member to check if registration dialog necessary. */
+bool VBoxRegistrationDlg::hasToBeShown()
+{
+    VBoxRegistrationData regData (vboxGlobal().virtualBox().
+        GetExtraData (VBoxDefs::GUI_RegistrationData));
+
+    return (!regData.isValid()) ||
+           (!regData.isRegistered() && regData.triesLeft() > 0);
+}
+
+VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *aParent)
+    : QIWithRetranslateUI <QIAbstractWizard> (aParent)
     , mSelf (aSelf)
     , mWvalReg (0)
     , mUrl ("http://registration.virtualbox.org/register762.php")
-    , mKey (QString::null)
-    , mTimeout (new QTimer (this))
-    , mHandshake (true)
-    , mSuicide (false)
-    , mNetfw (0)
+    , mHttp (new QIHttp (this, mUrl.host()))
 {
-    /* Store external pointer to this dialog. */
+    /* Store external pointer to this dialog */
     *mSelf = this;
 
     /* Apply UI decorations */
     Ui::VBoxRegistrationDlg::setupUi (this);
+
+    /* Apply window icons */
+    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
+                                             ":/register_32px.png", ":/register_16px.png"));
 
     /* Initialize wizard hdr */
     initializeWizardHdr();
@@ -218,7 +218,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
     /* Setup validations for line-edit fields */
     QRegExp nameExp ("[\\S\\s]+");
     /* E-mail address is validated according to RFC2821, RFC2822,
-     * see http://en.wikipedia.org/wiki/E-mail_address. */
+     * see http://en.wikipedia.org/wiki/E-mail_address */
     QRegExp emailExp ("(([a-zA-Z0-9_\\-\\.!#$%\\*/?|^{}`~&'\\+=]*"
                         "[a-zA-Z0-9_\\-!#$%\\*/?|^{}`~&'\\+=])|"
                       "(\"([\\x0001-\\x0008,\\x000B,\\x000C,\\x000E-\\x0019,\\x007F,"
@@ -233,16 +233,12 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
     mLeName->setMaxLength (50);
     mLeEmail->setMaxLength (50);
 
-    /* This is a single shot timer */
-    mTimeout->setSingleShot (true);
-
     /* Setup other connections */
     mWvalReg = new QIWidgetValidator (mPageReg, this);
     connect (mWvalReg, SIGNAL (validityChanged (const QIWidgetValidator *)),
              this, SLOT (enableNext (const QIWidgetValidator *)));
     connect (mWvalReg, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
-    connect (mTimeout, SIGNAL (timeout()), this, SLOT (processTimeout()));
 
     /* Setup initial dialog parameters. */
     VBoxRegistrationData regData (vboxGlobal().virtualBox().
@@ -263,25 +259,12 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf,
 
 VBoxRegistrationDlg::~VBoxRegistrationDlg()
 {
-    /* Delete network framework. */
-    delete mNetfw;
-
     /* Erase dialog handle in config file. */
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationDlgWinID,
                                             QString::null);
 
     /* Erase external pointer to this dialog. */
     *mSelf = 0;
-}
-
-/* Static member to check if registration dialog necessary. */
-bool VBoxRegistrationDlg::hasToBeShown()
-{
-    VBoxRegistrationData regData (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_RegistrationData));
-
-    return !regData.isValid() ||
-           (!regData.isRegistered() && regData.triesLeft() > 0);
 }
 
 void VBoxRegistrationDlg::retranslateUi()
@@ -301,7 +284,7 @@ void VBoxRegistrationDlg::accept()
     cancelButton()->setEnabled (false);
 
     /* Perform connection handshake */
-    QTimer::singleShot (0, this, SLOT (handshake()));
+    QTimer::singleShot (0, this, SLOT (handshakeStart()));
 }
 
 void VBoxRegistrationDlg::reject()
@@ -324,102 +307,72 @@ void VBoxRegistrationDlg::reject()
     QIAbstractWizard::reject();
 }
 
-void VBoxRegistrationDlg::handshake()
+void VBoxRegistrationDlg::handshakeStart()
 {
-    /* Handshake arguments initializing */
-    QString version = vboxGlobal().virtualBox().GetVersion();
-    version = QUrl::toPercentEncoding (version);
+    /* Compose query */
+    QUrl url (mUrl);
+    url.addQueryItem ("version", vboxGlobal().virtualBox().GetVersion());
 
     /* Handshake */
-    QString body = QString ("version=%1").arg (version);
-    postRequest (mUrl.host(), mUrl.path(), body);
+    mHttp->disconnect (this);
+    connect (mHttp, SIGNAL (allIsDone (bool)), this, SLOT (handshakeResponse (bool)));
+    mHttp->post (url.toEncoded());
 }
 
-void VBoxRegistrationDlg::registration()
+void VBoxRegistrationDlg::handshakeResponse (bool aError)
 {
-    /* Registration arguments initializing */
-    mHandshake = false;
-    QString version = vboxGlobal().virtualBox().GetVersion();
-    QString platform = vboxGlobal().platformInfo();
-    QString name = mLeName->text();
-    QString email = mLeEmail->text();
-    QString prvt = mCbUse->isChecked() ? "1" : "0";
-    version = QUrl::toPercentEncoding (version);
-    platform = QUrl::toPercentEncoding (platform);
-    name = QUrl::toPercentEncoding (name);
-    email = QUrl::toPercentEncoding (email);
+    /* Block all the other incoming signals */
+    mHttp->disconnect (this);
+
+    /* Process error if present */
+    if (aError)
+        return abortRequest (mHttp->errorString());
+
+    /* Read received data */
+    mKey = mHttp->readAll();
+
+    /* Verifying key correctness */
+    if (QString (mKey).indexOf (QRegExp ("^[a-zA-Z0-9]{32}$")))
+        return abortRequest (tr ("Could not perform connection handshake."));
+
+    /* Perform registration */
+    QTimer::singleShot (0, this, SLOT (registrationStart()));
+}
+
+void VBoxRegistrationDlg::registrationStart()
+{
+    /* Compose query */
+    QUrl url (mUrl);
+    url.addQueryItem ("version", vboxGlobal().virtualBox().GetVersion());
+    url.addQueryItem ("key", mKey);
+    url.addQueryItem ("platform", vboxGlobal().platformInfo());
+    url.addQueryItem ("name", mLeName->text());
+    url.addQueryItem ("email", mLeEmail->text());
+    url.addQueryItem ("private", mCbUse->isChecked() ? "1" : "0");
 
     /* Registration */
-    QString body;
-    body += QString ("version=%1").arg (version);
-    body += QString ("&key=%1").arg (mKey);
-    body += QString ("&platform=%1").arg (platform);
-    body += QString ("&name=%1").arg (name);
-    body += QString ("&email=%1").arg (email);
-    body += QString ("&private=%1").arg (prvt);
-
-    postRequest (mUrl.host(), mUrl.path(), body);
+    mHttp->disconnect (this);
+    connect (mHttp, SIGNAL (allIsDone (bool)), this, SLOT (registrationResponse (bool)));
+    mHttp->post (url.toEncoded());
 }
 
-void VBoxRegistrationDlg::processTimeout()
+void VBoxRegistrationDlg::registrationResponse (bool aError)
 {
-    abortRegisterRequest (tr ("Connection timed out."));
-}
+    /* Block all the other incoming signals */
+    mHttp->disconnect (this);
 
-/* Handles the network request begining. */
-void VBoxRegistrationDlg::onNetBegin (int aStatus)
-{
-    if (mSuicide) return;
+    /* Process error if present */
+    if (aError)
+        return abortRequest (mHttp->errorString());
 
-    if (aStatus == 404)
-        abortRegisterRequest (tr ("Could not locate the registration form on "
-            "the server (response: %1).").arg (aStatus));
-    else
-        mTimeout->start (MaxWaitTime);
-}
+    /* Read received data */
+    QString data (mHttp->readAll());
 
-/* Handles the network request data incoming. */
-void VBoxRegistrationDlg::onNetData (const QByteArray&)
-{
-    if (mSuicide) return;
+    /* Show registration result */
+    vboxProblem().showRegisterResult (this, data);
 
-    mTimeout->start (MaxWaitTime);
-}
-
-/* Handles the network request end. */
-void VBoxRegistrationDlg::onNetEnd (const QByteArray &aTotalData)
-{
-    if (mSuicide) return;
-
-    mTimeout->stop();
-    if (mHandshake)
-    {
-        /* Verifying key correctness */
-        if (QString (aTotalData).indexOf (QRegExp ("^[a-zA-Z0-9]{32}$")))
-        {
-            abortRegisterRequest (tr ("Could not perform connection handshake."));
-            return;
-        }
-        mKey = aTotalData;
-
-        /* Perform registration */
-        QTimer::singleShot (0, this, SLOT (registration()));
-    }
-    else
-    {
-        /* Show registration result */
-        QString result (aTotalData);
-        vboxProblem().showRegisterResult (this, result);
-
-        /* Close the dialog */
-        result == "OK" ? finish() : reject();
-    }
-}
-
-/* Handles the network error. */
-void VBoxRegistrationDlg::onNetError (const QString &aError)
-{
-    abortRegisterRequest (aError);
+    /* Close the dialog */
+    data == "OK" ? finish() : reject();
 }
 
 void VBoxRegistrationDlg::revalidate (QIWidgetValidator *aWval)
@@ -440,34 +393,12 @@ void VBoxRegistrationDlg::onPageShow()
     mLeName->setFocus();
 }
 
-void VBoxRegistrationDlg::postRequest (const QString &aHost,
-                                       const QString &aUrl,
-                                       const QString &aBody)
+/* This wrapper displays an error message box (unless aReason is QString::null)
+ * with the cause of the request-send procedure termination. After the message
+ * box dismissed, the registration dialog signals to close itself on the next
+ * event loop iteration. */
+void VBoxRegistrationDlg::abortRequest (const QString &aReason)
 {
-    delete mNetfw;
-    mNetfw = new VBoxNetworkFramework();
-    connect (mNetfw, SIGNAL (netBegin (int)),
-             SLOT (onNetBegin (int)));
-    connect (mNetfw, SIGNAL (netData (const QByteArray&)),
-             SLOT (onNetData (const QByteArray&)));
-    connect (mNetfw, SIGNAL (netEnd (const QByteArray&)),
-             SLOT (onNetEnd (const QByteArray&)));
-    connect (mNetfw, SIGNAL (netError (const QString&)),
-             SLOT (onNetError (const QString&)));
-    mTimeout->start (MaxWaitTime);
-    mNetfw->postRequest (aHost, aUrl, aBody);
-}
-
-/* This wrapper displays an error message box (unless aReason is
- * QString::null) with the cause of the request-send procedure
- * termination. After the message box is dismissed, the downloader signals
- * to close itself on the next event loop iteration. */
-void VBoxRegistrationDlg::abortRegisterRequest (const QString &aReason)
-{
-    /* Protect against double kill request. */
-    if (mSuicide) return;
-    mSuicide = true;
-
     if (!aReason.isNull())
         vboxProblem().cannotConnectRegister (this, mUrl.toString(), aReason);
 
@@ -478,7 +409,7 @@ void VBoxRegistrationDlg::abortRegisterRequest (const QString &aReason)
 void VBoxRegistrationDlg::finish()
 {
     VBoxRegistrationData regData (mLeName->text(), mLeEmail->text(),
-        mCbUse->isChecked() ? "yes" : "no");
+                                  mCbUse->isChecked() ? "yes" : "no");
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_RegistrationData,
                                             regData.data());
 

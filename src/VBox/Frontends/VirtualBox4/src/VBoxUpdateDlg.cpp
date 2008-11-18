@@ -21,17 +21,13 @@
  */
 
 /* Common includes */
-#include "VBoxUpdateDlg.h"
+#include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxNetworkFramework.h"
+#include "VBoxUpdateDlg.h"
 
 /* Qt includes */
 #include <QTimer>
-
-/* Time to auto-disconnect if no network answer received. */
-static const int MaxWaitTime = 20000;
-
 
 /* VBoxVersion stuff */
 class VBoxVersion
@@ -52,7 +48,7 @@ public:
 
     bool operator< (const VBoxVersion &aOther) const
     {
-        return x <  aOther.x ||
+        return (x <  aOther.x) ||
                (x == aOther.x && y <  aOther.y) ||
                (x == aOther.x && y == aOther.y && z <  aOther.z);
     }
@@ -71,7 +67,7 @@ private:
 
 
 /* VBoxUpdateData stuff */
-QList<UpdateDay> VBoxUpdateData::mDayList = QList<UpdateDay>();
+QList <UpdateDay> VBoxUpdateData::mDayList = QList <UpdateDay>();
 
 void VBoxUpdateData::populate()
 {
@@ -120,8 +116,7 @@ VBoxUpdateData::VBoxUpdateData (int aIndex)
 
 bool VBoxUpdateData::isNecessary()
 {
-    return mIndex != NeverCheck &&
-           QDate::currentDate() >= mDate;
+    return mIndex != NeverCheck && QDate::currentDate() >= mDate;
 }
 
 bool VBoxUpdateData::isNeverCheck()
@@ -214,15 +209,12 @@ bool VBoxUpdateDlg::isNecessary()
     return data.isNecessary();
 }
 
-VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
-                              QWidget *aParent, Qt::WindowFlags aFlags)
-    : QIWithRetranslateUI2<QIAbstractWizard> (aParent, aFlags)
+VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aParent)
+    : QIWithRetranslateUI <QIAbstractWizard> (aParent)
     , mSelf (aSelf)
-    , mNetfw (0)
-    , mTimeout (new QTimer (this))
     , mUrl ("http://update.virtualbox.org/query.php")
+    , mHttp (new QIHttp (this, mUrl.host()))
     , mForceRun (aForceRun)
-    , mSuicide (false)
 {
     /* Store external pointer to this dialog. */
     *mSelf = this;
@@ -230,24 +222,22 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
     /* Apply UI decorations */
     Ui::VBoxUpdateDlg::setupUi (this);
 
+    /* Apply window icons */
+    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
+                                             ":/refresh_32px.png", ":/refresh_16px.png"));
+
     /* Initialize wizard hdr */
     initializeWizardHdr();
 
-    /* Network outage - single shot timer */
-    mTimeout->setSingleShot (true);
-
     /* Setup other connections */
-    connect (mTimeout, SIGNAL (timeout()), this, SLOT (processTimeout()));
     connect (mBtnCheck, SIGNAL (clicked()), this, SLOT (search()));
 
     /* Initialize wizard hdr */
     initializeWizardFtr();
 
     /* Setup initial condition */
-    mPbCheck->setMinimumWidth (mLogoUpdate->width() +
-                               mLogoUpdate->frameWidth() * 2);
+    mPbCheck->setMinimumWidth (mLogoUpdate->width() + mLogoUpdate->frameWidth() * 2);
     mPbCheck->hide();
-
     mTextSuccessInfo->hide();
     mTextFailureInfo->hide();
     mTextNotFoundInfo->hide();
@@ -258,22 +248,56 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
 
 VBoxUpdateDlg::~VBoxUpdateDlg()
 {
-    /* Delete network framework. */
-    delete mNetfw;
-
     /* Erase dialog handle in config file. */
-    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDlgWinID,
-                                            QString::null);
+    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDlgWinID, QString::null);
 
     /* Erase external pointer to this dialog. */
     *mSelf = 0;
+}
+
+void VBoxUpdateDlg::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::VBoxUpdateDlg::retranslateUi (this);
+
+#if 0 /* All the text constants */
+    setWindowTitle (tr ("VirtualBox Update Wizard"));
+
+    mPageUpdateHdr->setText (tr ("Check for Updates"));
+    mBtnCheck->setText (tr ("Chec&k"));
+    mBtnCancel->setText (tr ("Cancel"));
+
+    mPageFinishHdr->setText (tr ("Summary"));
+    mBtnFinish->setText (tr ("&Close"));
+
+    mTextUpdateInfo->setText (tr ("<p>This wizard will connect to the VirtualBox "
+                                  "web-site and check if a newer version of "
+                                  "VirtualBox is available.</p><p>Use the "
+                                  "<b>Check</b> button to check for a new version "
+                                  "now or the <b>Cancel</b> button if you do not "
+                                  "want to perform this check.</p><p>You can run "
+                                  "this wizard at any time by choosing <b>Check "
+                                  "for Updates...</b> from the <b>Help</b> menu.</p>"));
+
+    mTextSuccessInfo->setText (tr ("<p>A new version of VirtualBox has been released! "
+                                   "Version <b>%1</b> is available at "
+                                   "<a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
+                                   "<p>You can download this version from this direct link:</p>"
+                                   "<p><a href=%2>%3</a></p>"));
+
+    mTextFailureInfo->setText (tr ("<p>Unable to obtain the new version information "
+                                   "due to the following network error:</p><p><b>%1</b></p>"));
+
+    mTextNotFoundInfo->setText (tr ("You have already installed the latest VirtualBox "
+                                    "version. Please repeat the version check later."));
+#endif
 }
 
 void VBoxUpdateDlg::accept()
 {
     /* Recalculate new update data */
     VBoxUpdateData oldData (vboxGlobal().virtualBox().
-        GetExtraData (VBoxDefs::GUI_UpdateDate));
+                            GetExtraData (VBoxDefs::GUI_UpdateDate));
     VBoxUpdateData newData (oldData.index());
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate,
                                             newData.data());
@@ -283,154 +307,76 @@ void VBoxUpdateDlg::accept()
 
 void VBoxUpdateDlg::search()
 {
-    /* Create & setup network framework */
-    mNetfw = new VBoxNetworkFramework();
-    connect (mNetfw, SIGNAL (netBegin (int)),
-             SLOT (onNetBegin (int)));
-    connect (mNetfw, SIGNAL (netData (const QByteArray&)),
-             SLOT (onNetData (const QByteArray&)));
-    connect (mNetfw, SIGNAL (netEnd (const QByteArray&)),
-             SLOT (onNetEnd (const QByteArray&)));
-    connect (mNetfw, SIGNAL (netError (const QString&)),
-             SLOT (onNetError (const QString&)));
-
+    /* Calculate the count of checks left */
     int count = 1;
-    bool ok = false;
     QString sc = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_UpdateCheckCount);
     if (!sc.isEmpty())
     {
-        int c = sc.toLongLong(&ok);
-        if (ok)
-            count = c;
+        bool ok = false;
+        int c = sc.toLongLong (&ok);
+        if (ok) count = c;
     }
-    QString package = vboxGlobal().virtualBox().GetPackageType();
-    QString version = vboxGlobal().virtualBox().GetVersion();
-    QString revision = QString::number (vboxGlobal().virtualBox().GetRevision());
-    package = QUrl::toPercentEncoding (package);
-    version = QUrl::toPercentEncoding (version);
-    revision = QUrl::toPercentEncoding (revision);
-    QString body;
-    body += QString ("platform=%1").arg (package);
-    body += QString ("&version=%1_%2").arg (version).arg (revision);
-    body += QString ("&count=%1").arg (count);
 
-    QStringList header ("User-Agent");
-    header << QString ("VirtualBox %1 <%2>")
-              .arg (vboxGlobal().virtualBox().GetVersion())
-              .arg (vboxGlobal().platformInfo());
+    /* Compose query */
+    QUrl url (mUrl);
+    url.addQueryItem ("platform", vboxGlobal().virtualBox().GetPackageType());
+    url.addQueryItem ("version", QString ("%1_%2").arg (vboxGlobal().virtualBox().GetVersion())
+                                                  .arg (vboxGlobal().virtualBox().GetRevision()));
+    url.addQueryItem ("count", QString::number (count));
 
-    /* Show progress bar & send composed information */
+    QString userAgent (QString ("VirtualBox %1 <%2>")
+                                .arg (vboxGlobal().virtualBox().GetVersion())
+                                .arg (vboxGlobal().platformInfo()));
+
+    /* Show progress bar */
     mPbCheck->show();
-    mTimeout->start (MaxWaitTime);
-    mNetfw->postRequest (mUrl.host(), mUrl.path(), body, header);
+
+    /* Send composed information */
+    QHttpRequestHeader header ("POST", url.toEncoded());
+    header.setValue ("Host", url.host());
+    header.setValue ("User-Agent", userAgent);
+    mHttp->disconnect (this);
+    connect (mHttp, SIGNAL (allIsDone (bool)), this, SLOT (searchResponse (bool)));
+    mHttp->request (header);
 }
 
-void VBoxUpdateDlg::retranslateUi()
+void VBoxUpdateDlg::searchResponse (bool aError)
 {
-    /* Translate uic generated strings */
-    Ui::VBoxUpdateDlg::retranslateUi (this);
-}
+    /* Block all the other incoming signals */
+    mHttp->disconnect (this);
 
-void VBoxUpdateDlg::processTimeout()
-{
-    networkAbort (tr ("Connection timed out."));
-}
-
-/* Handles the network request begining. */
-void VBoxUpdateDlg::onNetBegin (int aStatus)
-{
-    if (mSuicide) return;
-
-    if (aStatus == 404)
-        networkAbort (tr ("Could not locate the latest version "
-            "list on the server (response: %1).").arg (aStatus));
-    else
-        mTimeout->start (MaxWaitTime);
-}
-
-/* Handles the network request data incoming. */
-void VBoxUpdateDlg::onNetData (const QByteArray&)
-{
-    if (mSuicide) return;
-
-    mTimeout->start (MaxWaitTime);
-}
-
-/* Handles the network request end. */
-void VBoxUpdateDlg::onNetEnd (const QByteArray &aTotalData)
-{
-    if (mSuicide) return;
-
-    mTimeout->stop();
-    processResponse (aTotalData);
-}
-
-/* Handles the network error. */
-void VBoxUpdateDlg::onNetError (const QString &aError)
-{
-    networkAbort (aError);
-}
-
-void VBoxUpdateDlg::onPageShow()
-{
-    if (mPageStack->currentWidget() == mPageUpdate)
-        mBtnCheck->setFocus();
-    else
-        mBtnFinish->setFocus();
-}
-
-void VBoxUpdateDlg::networkAbort (const QString &aReason)
-{
-    /* Protect against double kill request. */
-    if (mSuicide) return;
-    mSuicide = true;
+    /* Process error if present */
+    if (aError)
+        return abortRequest (mHttp->errorString());
 
     /* Hide progress bar */
     mPbCheck->hide();
 
-    if (isHidden())
-    {
-        /* For background update */
-        if (mForceRun)
-            vboxProblem().showUpdateFailure (vboxGlobal().mainWindow(), aReason);
-        QTimer::singleShot (0, this, SLOT (accept()));
-    }
-    else
-    {
-        /* For wizard update */
-        mTextFailureInfo->setText (mTextFailureInfo->text().arg (aReason));
-        mTextFailureInfo->show();
-        mPageStack->setCurrentIndex (1);
-    }
-}
+    /* Parse incoming data */
+    QString responseData (mHttp->readAll());
 
-void VBoxUpdateDlg::processResponse (const QString &aResponse)
-{
-    /* Hide progress bar */
-    mPbCheck->hide();
-
-    if (aResponse.indexOf (QRegExp ("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
+    if (responseData.indexOf (QRegExp ("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
     {
         /* Newer version of necessary package found */
-        QStringList response = aResponse.split (" ", QString::SkipEmptyParts);
+        QStringList response = responseData.split (" ", QString::SkipEmptyParts);
 
         if (isHidden())
         {
             /* For background update */
             vboxProblem().showUpdateSuccess (vboxGlobal().mainWindow(),
-                response [0], response [1]);
+                                             response [0], response [1]);
             QTimer::singleShot (0, this, SLOT (accept()));
         }
         else
         {
             /* For wizard update */
             mTextSuccessInfo->setText (mTextSuccessInfo->text()
-                .arg (response [0], response [1], response [1]));
+                                       .arg (response [0], response [1], response [1]));
             mTextSuccessInfo->show();
             mPageStack->setCurrentIndex (1);
         }
     }
-    else /* if (aResponse == "UPTODATE") */
+    else /* if (responseData == "UPTODATE") */
     {
         /* No newer version of necessary package found */
         if (isHidden())
@@ -448,12 +394,42 @@ void VBoxUpdateDlg::processResponse (const QString &aResponse)
         }
     }
 
+    /* Save left count of checks */
     int count = 1;
     bool ok = false;
     QString sc = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_UpdateCheckCount);
     if (!sc.isEmpty())
-        count = sc.toLongLong(&ok);
+        count = sc.toLongLong (&ok);
     vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateCheckCount,
                                             QString ("%1").arg ((qulonglong) count + 1));
+}
+
+void VBoxUpdateDlg::onPageShow()
+{
+    if (mPageStack->currentWidget() == mPageUpdate)
+        mBtnCheck->setFocus();
+    else
+        mBtnFinish->setFocus();
+}
+
+void VBoxUpdateDlg::abortRequest (const QString &aReason)
+{
+    /* Hide progress bar */
+    mPbCheck->hide();
+
+    if (isHidden())
+    {
+        /* For background update */
+        if (mForceRun)
+            vboxProblem().showUpdateFailure (vboxGlobal().mainWindow(), aReason);
+        QTimer::singleShot (0, this, SLOT (accept()));
+    }
+    else
+    {
+        /* For wizard update */
+        mTextFailureInfo->setText (mTextFailureInfo->text().arg (aReason));
+        mTextFailureInfo->show();
+        mPageStack->setCurrentIndex (1);
+    }
 }
 

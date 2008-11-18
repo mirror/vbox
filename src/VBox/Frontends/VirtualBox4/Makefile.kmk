@@ -216,6 +216,7 @@ endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox4_QT_MOCHDRS = \
+	include/QIHttp.h \
 	include/QIWidgetValidator.h \
 	include/QIHotKeyEdit.h \
 	include/QIStatusBar.h \
@@ -241,7 +242,6 @@ VirtualBox4_QT_MOCHDRS = \
 	include/VBoxConsoleView.h \
 	include/VBoxProblemReporter.h \
 	include/VBoxDownloaderWgt.h \
-	include/VBoxNetworkFramework.h \
 	include/VBoxAboutDlg.h \
 	include/VBoxCloseVMDlg.h \
 	include/VBoxNewVMWzd.h \
@@ -281,6 +281,7 @@ VirtualBox4_QT_MOCHDRS = \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox4_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
+	src/VBoxConsoleWnd.cpp \
 	src/VBoxMediaManagerDlg.cpp
 ifdef VBOX_WITH_XPCOM
  VirtualBox4_QT_MOCSRCS += \
@@ -317,8 +318,6 @@ VirtualBox4_SOURCES = \
 	src/VBoxDownloaderWgt.cpp \
 	src/VBoxVMListView.cpp \
 	src/VBoxFrameBuffer.cpp \
-	src/HappyHttp.cpp \
-	src/VBoxNetworkFramework.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxCloseVMDlg.cpp \
 	src/VBoxNewVMWzd.cpp \
@@ -390,7 +389,7 @@ endif
 
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
-VirtualBox4_QT_MODULES = Core Gui
+VirtualBox4_QT_MODULES = Core Gui Network
 
 # Import QDesigner UI sources and translations from VBoxUI.pro.
 ifndef VBOX_WITH_REGISTRATION
@@ -411,14 +410,6 @@ VirtualBox4_LRCFLAGS = -compress -silent
 # Where to install the translations (a separate install target, VirtualBox4-nls-inst is created).
 VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 
-
-# Some flag hacks (should go away).
-ifneq ($(KBUILD_TARGET),win)
- VirtualBox4_src/HappyHttp.cpp_CXXFLAGS += -fexceptions
- VirtualBox4_src/VBoxDownloaderWgt.cpp_CXXFLAGS += -fexceptions
- VirtualBox4_src/VBoxNetworkFramework.cpp_CXXFLAGS += -fexceptions
-endif
-VirtualBox4_src/HappyHttp.cpp_CXXFLAGS.linux += -O2
 
 ## @todo how to detect what tool is used?
 ## @todo GCC3 seems to lack -Wno-missing-base-class-initializer, so we use

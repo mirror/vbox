@@ -23,16 +23,15 @@
 #ifndef __VBoxUpdateDlg_h__
 #define __VBoxUpdateDlg_h__
 
-/* Common includes */
 #include "QIAbstractWizard.h"
-#include "VBoxUpdateDlg.gen.h"
 #include "QIWithRetranslateUI.h"
+#include "VBoxUpdateDlg.gen.h"
 
 /* Qt includes */
 #include <QUrl>
 #include <QDate>
 
-class VBoxNetworkFramework;
+class QIHttp;
 
 /**
  *  This structure is used to store retranslated reminder values.
@@ -83,14 +82,14 @@ private:
     void encode (int aIndex);
 
     /* Private variables */
-    static QList<UpdateDay> mDayList;
+    static QList <UpdateDay> mDayList;
 
     QString mData;
     int mIndex;
     QDate mDate;
 };
 
-class VBoxUpdateDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
+class VBoxUpdateDlg : public QIWithRetranslateUI <QIAbstractWizard>,
                       public Ui::VBoxUpdateDlg
 {
     Q_OBJECT;
@@ -99,13 +98,11 @@ public:
 
     static bool isNecessary();
 
-    VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun,
-                   QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
+    VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aParent = 0);
    ~VBoxUpdateDlg();
 
 public slots:
 
-    void accept();
     void search();
 
 protected:
@@ -114,28 +111,19 @@ protected:
 
 private slots:
 
-    void processTimeout();
-
-    void onNetBegin (int aStatus);
-    void onNetData (const QByteArray &aData);
-    void onNetEnd (const QByteArray &aData);
-    void onNetError (const QString &aError);
-
+    void accept();
+    void searchResponse (bool aError);
     void onPageShow();
 
 private:
 
-    /* Private functions */
-    void networkAbort (const QString &aReason);
-    void processResponse (const QString &aResponse);
+    void abortRequest (const QString &aReason);
 
     /* Private variables */
     VBoxUpdateDlg **mSelf;
-    VBoxNetworkFramework *mNetfw;
-    QTimer *mTimeout;
-    QUrl mUrl;
-    bool mForceRun;
-    bool mSuicide;
+    QUrl            mUrl;
+    QIHttp         *mHttp;
+    bool            mForceRun;
 };
 
 #endif // __VBoxUpdateDlg_h__
