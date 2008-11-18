@@ -246,7 +246,11 @@ typedef union {
  *   user   : user mode access using soft MMU
  *   kernel : kernel mode access using soft MMU
  */
+
 #ifdef VBOX
+#ifndef VBOX_WITH_NEW_PHYS_CODE
+void     remR3GrowDynRange(unsigned long physaddr);
+#endif
 
 void     remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
 uint8_t  remR3PhysReadU8(RTGCPHYS SrcGCPhys);
@@ -263,14 +267,14 @@ void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
 void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
 void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
-#ifndef VBOX_WITH_NEW_PHYS_CODE
-void     remR3GrowDynRange(unsigned long physaddr);
+#ifndef REM_PHYS_ADDR_IN_TLB
+target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
+void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr);
 #endif
-#if 0 /*defined(RT_ARCH_AMD64) && defined(VBOX_STRICT)*/
-# define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
-#else
-# define VBOX_CHECK_ADDR(ptr) do { } while (0)
-#endif
+
+#endif /* VBOX */
+
+#if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
 
 DECLINLINE(int) ldub_p(void *ptr)
 {
@@ -372,7 +376,7 @@ DECLINLINE(void) stfq_le_p(void *ptr, float64 v)
     stl_le_p((uint8_t*)ptr + 4, u.l.upper);
 }
 
-#else  /* !VBOX */
+#else  /* !(VBOX && REM_PHYS_ADDR_IN_TLB) */
 
 static inline int ldub_p(void *ptr)
 {
@@ -908,7 +912,6 @@ static inline void stfq_be_p(void *ptr, float64 v)
 /* All direct uses of g2h and h2g need to go away for usermode softmmu.  */
 #define g2h(x) ((void *)((unsigned long)(x) + GUEST_BASE))
 #define h2g(x) ((target_ulong)(x - GUEST_BASE))
-
 #define saddr(x) g2h(x)
 #define laddr(x) g2h(x)
 

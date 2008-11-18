@@ -2068,7 +2068,7 @@ DECLINLINE(void) tlb_update_dirty(CPUTLBEntry *tlb_entry)
         ram_addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) +
             tlb_entry->addend - (unsigned long)phys_ram_base;
 #else
-        ram_addr = remR3HCVirt2GCPhys(first_cpu, (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend);
+        ram_addr = remR3HCVirt2GCPhys(first_cpu, (void*)((tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend));
 #endif
         if (!cpu_physical_memory_is_dirty(ram_addr)) {
             tlb_entry->addr_write |= TLB_NOTDIRTY;
@@ -2700,12 +2700,10 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
+#if defined(VBOX) 
     ram_addr = addr;
-#elif !defined(VBOX)
+#elif
     ram_addr = addr - (unsigned long)phys_ram_base;
-#else
-    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
@@ -2724,7 +2722,11 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
         dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
 #endif
     }
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    remR3PhysWriteU8(addr, val);
+#else
     stb_p((uint8_t *)(long)addr, val);
+#endif
 #ifdef USE_KQEMU
     if (cpu_single_env->kqemu_enabled &&
         (dirty_flags & KQEMU_MODIFY_PAGE_MASK) != KQEMU_MODIFY_PAGE_MASK)
@@ -2745,12 +2747,10 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
+#if defined(VBOX) 
     ram_addr = addr;
-#elif !defined(VBOX)
-    ram_addr = addr - (unsigned long)phys_ram_base;
 #else
-    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
+    ram_addr = addr - (unsigned long)phys_ram_base;
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
@@ -2769,7 +2769,12 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
         dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
 #endif
     }
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    remR3PhysWriteU16(addr, val);
+#else
     stw_p((uint8_t *)(long)addr, val);
+#endif
+
 #ifdef USE_KQEMU
     if (cpu_single_env->kqemu_enabled &&
         (dirty_flags & KQEMU_MODIFY_PAGE_MASK) != KQEMU_MODIFY_PAGE_MASK)
@@ -2790,12 +2795,10 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
+#if defined(VBOX) 
     ram_addr = addr;
-#elif !defined(VBOX)
-    ram_addr = addr - (unsigned long)phys_ram_base;
 #else
-    ram_addr = remR3HCVirt2GCPhys(first_cpu, (void *)addr);
+    ram_addr = addr - (unsigned long)phys_ram_base;
 #endif
 #ifdef VBOX
     if (RT_UNLIKELY((ram_addr >> TARGET_PAGE_BITS) >= phys_ram_dirty_size))
@@ -2814,7 +2817,11 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
         dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
 #endif
     }
+#if defined(VBOX) && !defined(REM_PHYS_ADDR_IN_TLB)
+    remR3PhysWriteU32(addr, val);
+#else
     stl_p((uint8_t *)(long)addr, val);
+#endif
 #ifdef USE_KQEMU
     if (cpu_single_env->kqemu_enabled &&
         (dirty_flags & KQEMU_MODIFY_PAGE_MASK) != KQEMU_MODIFY_PAGE_MASK)
