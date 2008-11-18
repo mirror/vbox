@@ -482,7 +482,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
         /*
          * Complete the calculation of the current TMCLOCK_VIRTUAL_SYNC time. The current
          * approach is to never pass the head timer. So, when we do stop the clock and
-         * set the the timer pending flag.
+         * set the timer pending flag.
          */
         u64 -= off;
         const uint64_t u64Expire = pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire;

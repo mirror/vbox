@@ -403,7 +403,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
                 else
                     cbPrev = 0;
 
-                /* advance to the the next page. */
+                /* advance to the next page. */
                 GCPhys |= PAGE_OFFSET_MASK;
                 if (GCPhys++ >= GCPhysLast)
                     return VERR_DBGF_MEM_NOT_FOUND;
@@ -498,7 +498,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, RTGCPTR GCPtr, RTGCPTR cbRange, cons
         else
             cbPrev = 0; /* ignore error. */
 
-        /* advance to the the next page. */
+        /* advance to the next page. */
         GCPtr |= PAGE_OFFSET_MASK;
         GCPtr++;
     }

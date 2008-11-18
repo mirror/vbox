@@ -985,7 +985,7 @@ VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 
 
 /**
- * Checks if the the debugger can wait for events or not.
+ * Checks if the debugger can wait for events or not.
  *
  * This function is only used by lazy, multiplexing debuggers. :-)
  *
