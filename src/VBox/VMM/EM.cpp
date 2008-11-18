@@ -3437,6 +3437,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, RTCPUID idCpu)
                  * We might end up doing a double reset for now, we'll have to clean up the mess later.
                  */
                 case VINF_EM_RESET:
+                {
                     EMSTATE enmState = emR3Reschedule(pVM, pVM->em.s.pCtx);
                     Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVM->em.s.enmState, enmState, EMR3GetStateName(enmState)));
                     pVM->em.s.enmState = enmState;
