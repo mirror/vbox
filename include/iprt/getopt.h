@@ -170,7 +170,7 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  * @code
  * int main(int argc, char *argv[])
  * {
- *      static const RTOPTIONDEF g_aOptions[] =
+ *      static const RTOPTIONDEF s_aOptions[] =
  *      {
  *          { "--optwithstring",    's', RTGETOPT_REQ_STRING },
  *          { "--optwithint",       'i', RTGETOPT_REQ_INT32 },
@@ -180,10 +180,8 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *      int ch;
  *      int i = 1;
  *      RTOPTIONUNION ValueUnion;
- *      while ((ch = RTGetOpt(argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), &i, &ValueUnion)))
+ *      while ((ch = RTGetOpt(argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), &i, &ValueUnion)))
  *      {
- *          if (ch < 0) { .... error }
- *
  *          // for options that require an argument, ValueUnion has received the value
  *          switch (ch)
  *          {
@@ -198,6 +196,15 @@ typedef RTOPTIONUNION const *PCRTOPTIONUNION;
  *              case 'v': // --verbose or -v
  *                  g_fOptVerbose = true;
  *                  break;
+ *
+ *              default:
+ *                  if (ch > 0)
+ *                      Error("missing case: %c\n", ch);
+ *                  else if (ValueUnion.pDef)
+ *                      Error("%s: %Rrc, ValueUnion.pDef->pszLong);
+ *                  else
+ *                      Error("%Rrc, ValueUnion.pDef->pszLong);
+ *                  return 1;
  *          }
  *      }
  *
