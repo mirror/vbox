@@ -2421,6 +2421,28 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_EPT_MISCONFIG:
+    {
+        RTGCPHYS GCPhys;
+
+        Assert(pVM->hwaccm.s.fNestedPaging);
+
+#if HC_ARCH_BITS == 64
+        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
+        AssertRC(rc);
+#else
+        uint32_t val_hi;
+        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &val);
+        AssertRC(rc);
+        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_HIGH, &val_hi);
+        AssertRC(rc);
+        GCPhys = RT_MAKE_U64(val, val_hi);
+#endif
+
+        Log(("VMX_EXIT_EPT_MISCONFIG for %VGp\n", GCPhys));
+        break;
+    }
+
     case VMX_EXIT_IRQ_WINDOW:           /* 7 Interrupt window. */
         /* Clear VM-exit on IF=1 change. */
         LogFlow(("VMX_EXIT_IRQ_WINDOW %RGv pending=%d IF=%d\n", (RTGCPTR)pCtx->rip, VM_FF_ISPENDING(pVM, (VM_FF_INTERRUPT_APIC|VM_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
@@ -2464,6 +2486,7 @@ ResumeExecution:
         rc = EMInterpretRdtsc(pVM, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
+Log(("Rdtsc: %x:%x\n", pCtx->edx, pCtx->eax));
             /* Update EIP and continue execution. */
             Assert(cbInstr == 2);
             pCtx->rip += cbInstr;
