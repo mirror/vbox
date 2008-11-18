@@ -2040,8 +2040,15 @@ ResumeExecution:
             pVCpu->hwaccm.s.Event.errCode  = 0;
         }
     }
-
 #ifdef VBOX_STRICT
+    else
+    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hwaccm.s.Event.intInfo)
+        /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
+        &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hwaccm.s.Event.intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
+    {
+        Log(("Ignore pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+    }
+
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
         HWACCMDumpRegs(pVM, pCtx);
 #endif
