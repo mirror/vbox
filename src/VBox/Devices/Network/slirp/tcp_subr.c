@@ -58,7 +58,7 @@ tcp_init(PNATState pData)
 #ifdef VBOX_WITH_BSD_TCP_REASS
         tcp_reass_maxqlen = 48;
         tcp_reass_maxseg  = 256;
-#endif
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 }
 
 /*
