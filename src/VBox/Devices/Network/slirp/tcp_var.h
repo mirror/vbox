@@ -84,7 +84,7 @@ struct tcpcb {
 #ifndef VBOX_WITH_BSD_TCP_REASS
 	tcpiphdrp_32 seg_next;	/* sequencing queue */
 	tcpiphdrp_32 seg_prev;
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
 	LIST_ENTRY(tcpcb) t_list;
 	struct	tsegqe_head t_segq;	/* segment reassembly queue */
 	int	t_segqlen;		/* segment reassembly queue length */

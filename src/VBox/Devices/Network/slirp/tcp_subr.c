@@ -194,7 +194,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
 	memset((char *) tp, 0, sizeof(struct tcpcb));
 #ifndef VBOX_WITH_BSD_TCP_REASS
 	tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
         LIST_INSERT_HEAD(&pData->tcpcbhead, tp, t_list);
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 	tp->t_maxseg = tcp_mssdflt;
@@ -285,7 +285,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
  */
 /*	free(tp, M_PCB);  */
 	u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
         struct tseg_qent *te;
 	DEBUG_CALL("tcp_close");
 	DEBUG_ARG("tp = %lx", (long )tp);
