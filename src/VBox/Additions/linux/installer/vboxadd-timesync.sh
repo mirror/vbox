@@ -45,6 +45,9 @@ elif [ -f /etc/debian_version ]; then
 elif [ -f /etc/gentoo-release ]; then
     system=gentoo
     PIDFILE="/var/run/vboxadd-timesync"
+ elif [ -f /etc/arch-release ]; then
+     system=arch
+     PIDFILE="/var/run/vboxadd-timesync"
 elif [ -f /etc/slackware-version ]; then
     system=slackware
     PIDFILE="/var/run/vboxadd-timesync"
@@ -126,6 +129,27 @@ if [ "$system" = "gentoo" ]; then
     fi
 fi
 
+if [ "$system" = "arch" ]; then
+    . /etc/rc.d/functions
+    daemon() {
+        $@
+        test $? -eq 0 && add_daemon `basename $1`
+    }
+
+    killproc() {
+        killall $@
+        rm_daemon `basename $@`
+    }
+
+    fail_msg() {
+        echo " ...fail!"
+    }
+
+    succ_msg() {
+        echo " ...done."
+    }
+fi
+ 
 if [ "$system" = "slackware" ]; then
     daemon() {
 	$1 $2
