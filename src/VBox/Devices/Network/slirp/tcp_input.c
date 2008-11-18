@@ -1236,7 +1236,7 @@ trimthenstep6:
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		(void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (struct mbuf *)0);
 #else /* !VBOX_WITH_BSD_TCP_REASS */
-		(void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (int *)0, (struct mbuf *)0);
+		(void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
 #endif /*VBOX_WITH_BSD_TCP_REASS*/
 		tp->snd_wl1 = ti->ti_seq - 1;
 		/* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
@@ -1542,17 +1542,23 @@ dodata:
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		TCP_REASS(pData, tp, ti, m, so, tiflags);
 #else /* !VBOX_WITH_BSD_TCP_REASS */
-		DELAY_ACK(tp, ti); /* little bit different from BSD declaration see netinet/tcp_input.c */
-		tp->rcv_nxt += tlen;
-		tiflags = ti->ti_t.th_flags & TH_FIN;
-		tcpstat.tcps_rcvpack++;
-		tcpstat.tcps_rcvbyte += tlen;
-		if (so->so_state & SS_FCANTRCVMORE)
-			m_freem(pData, m);
-		else
-			sbappend(pData, so, m);
-		/* NB: sorwakeup_locked() does an implicit unlock. */
-		sorwakeup(so);
+                if (ti->ti_seq == tp->rcv_nxt
+                && LIST_EMPTY(&tp->t_segq)
+                && tp->t_state == TCPS_ESTABLISHED) {
+		    DELAY_ACK(tp, ti); /* little bit different from BSD declaration see netinet/tcp_input.c */
+		    tp->rcv_nxt += tlen;
+		    tiflags = ti->ti_t.th_flags & TH_FIN;
+		    tcpstat.tcps_rcvpack++;
+		    tcpstat.tcps_rcvbyte += tlen;
+		    if (so->so_state & SS_FCANTRCVMORE)
+		    	m_freem(pData, m);
+		    else
+		    	sbappend(pData, so, m);
+                }
+                else {
+                    tiflags = tcp_reass(pData, tp, &ti->ti_t, &tlen, m);
+                    tiflags |= TF_ACKNOW;
+                }
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 		/*
 		 * Note the amount of data that peer has sent into
