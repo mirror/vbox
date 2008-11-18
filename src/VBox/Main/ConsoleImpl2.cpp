@@ -1235,7 +1235,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);               RC_CHECK();
                     rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt); RC_CHECK();
                     char szNetwork[80];
-                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s\n", pszHifName);
+                    RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                     rc = CFGMR3InsertString(pCfg, "Network", szNetwork);            RC_CHECK();
 
 # if defined(RT_OS_DARWIN)
