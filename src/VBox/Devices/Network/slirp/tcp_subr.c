@@ -55,6 +55,10 @@ tcp_init(PNATState pData)
 	tcp_iss = 1;		/* wrong */
 	tcb.so_next = tcb.so_prev = &tcb;
         tcp_last_so = &tcb;
+#ifdef VBOX_WITH_BSD_TCP_REASS
+        tcp_reass_maxqlen = 48;
+        tcp_reass_maxseg  = 256;
+#endif
 }
 
 /*
