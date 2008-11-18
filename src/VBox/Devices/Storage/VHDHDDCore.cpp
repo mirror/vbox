@@ -467,7 +467,7 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
     memcpy(&pImage->ImageUuid, &vhdFooter.UniqueID, 16);
 
     pImage->u64DataOffset = RT_BE2H_U64(vhdFooter.DataOffset);
-    LogFlow(("%s: DataOffset=%llu\n", __FUNCTION__, pImage->u64DataOffset));
+    LogFlowFunc(("DataOffset=%llu\n", pImage->u64DataOffset));
 
     if (pImage->enmImageType == VD_IMAGE_TYPE_NORMAL || pImage->enmImageType == VD_IMAGE_TYPE_DIFF)
         rc = vhdLoadDynamicDisk(pImage, pImage->u64DataOffset);
@@ -523,13 +523,13 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
         return VERR_INVALID_PARAMETER;
 
     pImage->cbDataBlock = RT_BE2H_U32(vhdDynamicDiskHeader.BlockSize);
-    LogFlow(("%s: BlockSize=%u\n", __FUNCTION__, pImage->cbDataBlock));
+    LogFlowFunc(("BlockSize=%u\n", pImage->cbDataBlock));
     pImage->cBlockAllocationTableEntries = RT_BE2H_U32(vhdDynamicDiskHeader.MaxTableEntries);
-    LogFlow(("%s: MaxTableEntries=%lu\n", __FUNCTION__, pImage->cBlockAllocationTableEntries));
+    LogFlowFunc(("MaxTableEntries=%lu\n", pImage->cBlockAllocationTableEntries));
     AssertMsg(!(pImage->cbDataBlock % 512), ("%s: Data block size is not a multiple of 512!!\n", __FUNCTION__));
 
     pImage->cSectorsPerDataBlock = pImage->cbDataBlock / 512;
-    LogFlow(("%s: SectorsPerDataBlock=%u\n", __FUNCTION__, pImage->cSectorsPerDataBlock));
+    LogFlowFunc(("SectorsPerDataBlock=%u\n", pImage->cSectorsPerDataBlock));
 
     /*
      * Every block starts with a bitmap indicating which sectors are valid and which are not.
@@ -537,7 +537,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      */
     pImage->cbDataBlockBitmap = pImage->cSectorsPerDataBlock / 8;
     pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / 512;
-    LogFlow(("%s: cbDataBlockBitmap=%u\n", __FUNCTION__, pImage->cbDataBlockBitmap));
+    LogFlowFunc(("cbDataBlockBitmap=%u\n", pImage->cbDataBlockBitmap));
 
     pImage->pu8Bitmap = (uint8_t *)RTMemAllocZ(pImage->cbDataBlockBitmap);
     if (!pImage->pu8Bitmap)
@@ -551,11 +551,11 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      * Read the table.
      */
     uBlockAllocationTableOffset = RT_BE2H_U64(vhdDynamicDiskHeader.TableOffset);
-    LogFlow(("%s: uBlockAllocationTableOffset=%llu\n", __FUNCTION__, uBlockAllocationTableOffset));
+    LogFlowFunc(("uBlockAllocationTableOffset=%llu\n", uBlockAllocationTableOffset));
     pImage->uBlockAllocationTableOffset = uBlockAllocationTableOffset;
     rc = RTFileReadAt(pImage->File, uBlockAllocationTableOffset, pBlockAllocationTable, pImage->cBlockAllocationTableEntries * sizeof(uint32_t), NULL);
     pImage->uDataBlockStart = uBlockAllocationTableOffset + pImage->cBlockAllocationTableEntries * sizeof(uint32_t);
-    LogFlow(("%s: uDataBlockStart=%llu\n", __FUNCTION__, pImage->uDataBlockStart));
+    LogFlowFunc(("uDataBlockStart=%llu\n", pImage->uDataBlockStart));
 
     /*
      * Because the offset entries inside the allocation table are stored big endian
@@ -611,7 +611,7 @@ static unsigned vhdGetVersion(void *pBackendData)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         return 1; /**< @todo use correct version */
@@ -624,8 +624,8 @@ static int vhdGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    Assert(pImage);
-    Assert(penmImageType);
+    AssertPtr(pImage);
+    AssertPtr(penmImageType);
 
     if (pImage)
         *penmImageType = pImage->enmImageType;
@@ -640,7 +640,7 @@ static int vhdGetPCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pPCHSGeometr
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -655,8 +655,7 @@ static int vhdGetPCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pPCHSGeometr
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlow(("%s: returned %Rrc (CHS=%u/%u/%u)\n", __FUNCTION__, rc,
-             pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors));
+    LogFlowFunc(("returned %Rrc (CHS=%u/%u/%u)\n", rc, pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors));
     return rc;
 }
 
@@ -665,7 +664,7 @@ static int vhdSetPCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pPCHSGeomet
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -682,7 +681,7 @@ static int vhdSetPCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pPCHSGeomet
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -691,7 +690,7 @@ static int vhdGetLCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pLCHSGeometr
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -706,8 +705,7 @@ static int vhdGetLCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pLCHSGeometr
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlow(("%s: returned %Rrc (CHS=%u/%u/%u)\n", __FUNCTION__, rc,
-             pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors));
+    LogFlowFunc(("returned %Rrc (CHS=%u/%u/%u)\n", rc, pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors));
     return rc;
 }
 
@@ -716,7 +714,7 @@ static int vhdSetLCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pLCHSGeomet
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -733,7 +731,7 @@ static int vhdSetLCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pLCHSGeomet
         rc = VERR_VDI_NOT_OPENED;
 
 out:
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -742,14 +740,14 @@ static unsigned vhdGetImageFlags(void *pBackendData)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     unsigned uImageFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uImageFlags = pImage->uImageFlags;
     else
         uImageFlags = 0;
 
-    LogFlow(("%s: returned %#x\n", __FUNCTION__, uImageFlags));
+    LogFlowFunc(("returned %#x\n", uImageFlags));
     return uImageFlags;
 }
 
@@ -758,14 +756,14 @@ static unsigned vhdGetOpenFlags(void *pBackendData)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     unsigned uOpenFlags;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
         uOpenFlags = pImage->uOpenFlags;
     else
         uOpenFlags = 0;
 
-    LogFlow(("%s: returned %d\n", __FUNCTION__, uOpenFlags));
+    LogFlowFunc(("returned %d\n", uOpenFlags));
     return uOpenFlags;
 }
 
@@ -792,7 +790,7 @@ static int vhdSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
             : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
 
 out:
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -833,7 +831,7 @@ static int vhdFreeImage(PVHDIMAGE pImage)
         vhdFreeImageMemory(pImage);
     }
 
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -856,7 +854,7 @@ static int vhdClose(void *pBackendData, bool fDelete)
             rc = vhdFreeImage(pImage);
     }
 
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -865,7 +863,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: pBackendData=%p uOffset=%#llx pvBuf=%p cbRead=%u pcbActuallyRead=%p\n", __FUNCTION__, pBackendData, uOffset, pvBuf, cbRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%p uOffset=%#llx pvBuf=%p cbRead=%u pcbActuallyRead=%p\n", pBackendData, uOffset, pvBuf, cbRead, pcbActuallyRead));
 
     if (uOffset + cbRead > pImage->cbSize)
         return VERR_INVALID_PARAMETER;
@@ -882,8 +880,8 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         uint32_t cBATEntryIndex = (uOffset / 512) % pImage->cSectorsPerDataBlock;
         uint64_t uVhdOffset;
 
-        LogFlow(("%s: cBlockAllocationTableEntry=%u cBatEntryIndex=%u\n", __FUNCTION__, cBlockAllocationTableEntry, cBATEntryIndex));
-        LogFlow(("%s: BlockAllocationEntry=%u\n", __FUNCTION__, pImage->pBlockAllocationTable[cBlockAllocationTableEntry]));
+        LogFlowFunc(("cBlockAllocationTableEntry=%u cBatEntryIndex=%u\n", cBlockAllocationTableEntry, cBATEntryIndex));
+        LogFlowFunc(("BlockAllocationEntry=%u\n", pImage->pBlockAllocationTable[cBlockAllocationTableEntry]));
 
         /*
          * If the block is not allocated the content of the entry is ~0
@@ -896,7 +894,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         }
 
         uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
-        Log(("%s: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
+        Log(("%s: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
 
         /*
          * Clip read range to remain in this data block.
@@ -947,7 +945,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
 
-                Log(("%s: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
+                Log(("%s: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
                 rc = RTFileReadAt(pImage->File, uVhdOffset, pvBuf, cbRead, NULL);
             }
             else
@@ -976,7 +974,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
                 } while (cSectors < (cbRead / VHD_SECTOR_SIZE));
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
-                Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", __FUNCTION__, uVhdOffset, cbRead));
+                Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
                 rc = VERR_VDI_BLOCK_FREE;
             }
         }
@@ -998,16 +996,17 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
     return rc;
 }
 
-static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, size_t cbWrite, size_t *pcbWriteProcess, size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
+static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, size_t cbToWrite, size_t *pcbWriteProcess, size_t *pcbPreRead, size_t *pcbPostRead, unsigned fWrite)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    LogFlow(("%s: pBackendData=%p uOffset=%llu pvBuf=%p cbWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
-             __FUNCTION__, pBackendData, uOffset, pvBuf, cbWrite, pcbPreRead, pcbPostRead, fWrite));
+    LogFlowFunc(("pBackendData=%p uOffset=%llu pvBuf=%p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
+             pBackendData, uOffset, pvBuf, cbToWrite, pcbPreRead, pcbPostRead, fWrite));
 
+    AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
-    Assert(cbWrite % 512 == 0);
+    Assert(cbToWrite % 512 == 0);
 
     if (pImage->pBlockAllocationTable)
     {
@@ -1023,6 +1022,8 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
          * If the block is not allocated the content of the entry is ~0
          * and we need to allocate a new block.
          */
+        /** @todo Integrate this properly into the unallocated block logic.
+         * The current code wouldn't be able to handle diff images at all. */
         if (pImage->pBlockAllocationTable[cBlockAllocationTableEntry] == ~0U)
         {
             size_t  cbNewBlock = (pImage->cbDataBlock + pImage->cbDataBlockBitmap) * sizeof(uint8_t);
@@ -1052,8 +1053,8 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         /*
          * Clip write range.
          */
-        cbWrite = RT_MIN(cbWrite, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
-        RTFileWriteAt(pImage->File, uVhdOffset, pvBuf, cbWrite, NULL);
+        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * 512)));
+        RTFileWriteAt(pImage->File, uVhdOffset, pvBuf, cbToWrite, NULL);
 
         /* Read in the block's bitmap. */
         rc = RTFileReadAt(pImage->File,
@@ -1062,7 +1063,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
         if (RT_SUCCESS(rc))
         {
             /* Set the bits for all sectors having been written. */
-            for (uint32_t iSector = 0; iSector < (cbWrite / VHD_SECTOR_SIZE); iSector++)
+            for (uint32_t iSector = 0; iSector < (cbToWrite / VHD_SECTOR_SIZE); iSector++)
             {
                 uint32_t iBitmap    = cBATEntryIndex / 8; /* Byte in the block bitmap. */
                 uint8_t  iBitInByte = (8 - 1) - (cBATEntryIndex % 8);
@@ -1080,11 +1081,11 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
     }
     else
     {
-        rc = RTFileWriteAt(pImage->File, uOffset, pvBuf, cbWrite, NULL);
+        rc = RTFileWriteAt(pImage->File, uOffset, pvBuf, cbToWrite, NULL);
     }
 
     if (pcbWriteProcess)
-        *pcbWriteProcess = cbWrite;
+        *pcbWriteProcess = cbToWrite;
 
     return rc;
 }
@@ -1135,11 +1136,11 @@ static uint64_t vhdGetSize(void *pBackendData)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
-        Log(("%s: cbSize=%llu\n", __FUNCTION__, pImage->cbSize));
+        Log(("%s: cbSize=%llu\n", pImage->cbSize));
         return pImage->cbSize;
     }
     else
@@ -1150,7 +1151,7 @@ static uint64_t vhdGetFileSize(void *pBackendData)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1170,7 +1171,7 @@ static int vhdGetUuid(void *pBackendData, PRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1179,7 +1180,7 @@ static int vhdGetUuid(void *pBackendData, PRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc (%RTuuid)\n", __FUNCTION__, rc, pUuid));
+    LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -1188,8 +1189,8 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    LogFlowFunc((" %RTuuid\n", pUuid));
-    Assert(pImage);
+    LogFlowFunc(("Uuid=%RTuuid\n", pUuid));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1199,7 +1200,7 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1208,7 +1209,7 @@ static int vhdGetComment(void *pBackendData, char *pszComment, size_t cbComment)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1217,7 +1218,7 @@ static int vhdGetComment(void *pBackendData, char *pszComment, size_t cbComment)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlow(("%s: returned %Rrc comment='%s'\n", __FUNCTION__, rc, pszComment));
+    LogFlowFunc(("returned %Rrc comment='%s'\n", rc, pszComment));
     return rc;
 }
 
@@ -1226,8 +1227,8 @@ static int vhdSetComment(void *pBackendData, const char *pszComment)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    LogFlowFunc((" comment '%s'\n", pszComment));
-    Assert(pImage);
+    LogFlowFunc(("pszComment='%s'\n", pszComment));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1237,7 +1238,7 @@ static int vhdSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VDI_NOT_OPENED;
 
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1246,7 +1247,7 @@ static int vhdGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1254,7 +1255,7 @@ static int vhdGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc (%RTuuid)\n", __FUNCTION__, rc, pUuid));
+    LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -1263,8 +1264,8 @@ static int vhdSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    LogFlowFunc((" %RTuuid\n", pUuid));
-    Assert(pImage);
+    LogFlowFunc(("Uuid=%RTuuid\n", pUuid));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1272,7 +1273,7 @@ static int vhdSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1281,7 +1282,7 @@ static int vhdGetParentUuid(void *pBackendData, PRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1290,7 +1291,7 @@ static int vhdGetParentUuid(void *pBackendData, PRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc (%RTuuid)\n", __FUNCTION__, rc, pUuid));
+    LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -1300,7 +1301,7 @@ static int vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     int rc = VINF_SUCCESS;
 
     LogFlowFunc((" %RTuuid\n", pUuid));
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage && pImage->File != NIL_RTFILE)
     {
@@ -1314,7 +1315,7 @@ static int vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1323,7 +1324,7 @@ static int vhdGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    Assert(pImage);
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1331,7 +1332,7 @@ static int vhdGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc (%RTuuid)\n", __FUNCTION__, rc, pUuid));
+    LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
 
@@ -1340,8 +1341,8 @@ static int vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc;
 
-    LogFlow(("%s: %RTuuid\n", pUuid));
-    Assert(pImage);
+    LogFlowFunc(("%RTuuid\n", pUuid));
+    AssertPtr(pImage);
 
     if (pImage)
     {
@@ -1349,7 +1350,7 @@ static int vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1720,7 +1721,7 @@ static int vhdCreate(const char *pszFilename, VDIMAGETYPE enmType,
         *ppvBackendData = pImage;
     }
 out:
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1728,7 +1729,7 @@ static void vhdDump(void *pBackendData)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
     {
         /** @todo this is just a stub */
@@ -1741,7 +1742,7 @@ static int vhdGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
     {
         RTFSOBJINFO info;
@@ -1751,7 +1752,7 @@ static int vhdGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1760,12 +1761,12 @@ static int vhdGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
         vhdTime2RtTime(pTimeStamp, pImage->u32ParentTimeStamp);
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1774,7 +1775,7 @@ static int vhdSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
@@ -1787,7 +1788,7 @@ static int vhdSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1796,12 +1797,12 @@ static int vhdGetParentFilename(void *pvBackendData, char **ppszParentFilename)
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
         *ppszParentFilename = RTStrDup(pImage->pszParentFilename);
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1810,7 +1811,7 @@ static int vhdSetParentFilename(void *pvBackendData, const char *pszParentFilena
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage = (PVHDIMAGE)pvBackendData;
 
-    Assert(pImage);
+    AssertPtr(pImage);
     if (pImage)
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
@@ -1828,7 +1829,7 @@ static int vhdSetParentFilename(void *pvBackendData, const char *pszParentFilena
     }
     else
         rc = VERR_VDI_NOT_OPENED;
-    LogFlow(("%s: returned %Rrc\n", __FUNCTION__, rc));
+    LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
 
@@ -1845,7 +1846,7 @@ static int vhdAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
     return rc;
 }
 
-static int vhdAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+static int vhdAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite,
                          PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
 {
     int rc = VERR_NOT_IMPLEMENTED;
