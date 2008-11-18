@@ -919,7 +919,7 @@ VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *p
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
 
-# else /* HGCM_TIMEOUT defined */
+# else /* HGCM_TIMEOUT */
 /** Worker for VBoxGuestHGCMAsyncWaitCallback* */
 void
 VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, PVBOXGUESTDEVEXT pDevExt,
@@ -949,7 +949,9 @@ VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, P
         pWait = VBoxGuestWaitAlloc(pDevExt);
         if (pWait)
             break;
-        return;
+        if (fInterruptible)
+            return;
+        RTThreadSleep(1);
     }
     pWait->fReqEvents = VMMDEV_EVENT_HGCM;
     pWait->pHGCMReq = pHdr;
@@ -969,6 +971,7 @@ VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, P
     VBoxGuestWaitAppend(&pDevExt->HGCMWaitList, pWait);
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 
+    int rc;
     if (fInterruptible)
         rc = RTSemEventMultiWaitNoResume(pWait->Event, u32Timeout);
     else
@@ -989,6 +992,7 @@ VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, P
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
 
+
 /**
  * This is a callback for dealing with async waits.
  *
@@ -1004,6 +1008,7 @@ VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *p
     VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, fInterruptible, RT_INDEFINITE_WAIT);
 }
 
+
 /**
  * This is a callback for dealing with async waits with a timeout.
  *
@@ -1015,8 +1020,9 @@ VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible(VMMDevHGCMRequestHeader *pHdr
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, true, u32user);
+    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, true /* fInterruptible */, u32user);
 }
+
 
 /**
  * This is an uninterruptible callback for dealing with async waits with a timeout.
@@ -1029,7 +1035,7 @@ VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, 
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, false, u32user);
+    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, false /* fInterruptible */, u32user);
 }
 # endif /* HGCM_TIMEOUT */
 
