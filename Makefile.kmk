@@ -193,6 +193,7 @@ $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessi
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/VBoxQtCore4.dll \
 	$(VBOX_PATH_QT4_LIB)/VBoxQtGui4.dll \
+	$(VBOX_PATH_QT4_LIB)/VBoxQtNetwork4.dll \
 	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
 
  else
@@ -200,6 +201,7 @@ $$(PATH_qt4-bin)/libqtaccessiblewidgets.dylib: $$(VBOX_PATH_QT4)/plugins/accessi
   qt4-bin_SOURCES = \
 	$(VBOX_PATH_QT4_LIB)/libVBoxQtCore.so.4 \
 	$(VBOX_PATH_QT4_LIB)/libVBoxQtGui.so.4 \
+	$(VBOX_PATH_QT4_LIB)/libVBoxQtNetwork.so.4 \
 	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
  endif
 endif # VBOX_WITH_QT4_SUN
