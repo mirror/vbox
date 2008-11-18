@@ -52,6 +52,7 @@
 #define TSTMP_LT(a,b)	((int)((a)-(b)) < 0)
 #define TSTMP_GEQ(a,b)	((int)((a)-(b)) >= 0)
 
+#ifndef VBOX_WITH_BSD_TCP_REASS
 /*
  * Insert segment ti into reassembly queue of tcp with
  * control block tp.  Return TH_FIN if reassembly now includes
@@ -218,6 +219,187 @@ present:
 /*	sorwakeup(so); */
 	return (flags);
 }
+
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+
+#ifndef TCP_ACK_HACK
+#define DELAY_ACK(tp, ti)                           \
+               if (ti->ti_flags & TH_PUSH)          \
+                       tp->t_flags |= TF_ACKNOW;    \
+               else                                 \
+                       tp->t_flags |= TF_DELACK;
+#else /* !TCP_ACK_HACK */
+#define DELAY_ACK(tp, ign)                          \
+		tp->t_flags |= TF_DELACK;
+#endif /* TCP_ACK_HACK */
+
+
+/*
+ * deps: netinet/tcp_reass.c
+ *          tcp_reass_maxqlen = 48 (deafault)
+ *          tcp_reass_maxseg  = nmbclusters/16 (nmbclusters = 1024 + maxusers * 64 from kern/kern_mbuf.c let's say 256)
+ */
+int
+tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
+{
+	struct tseg_qent *q;
+	struct tseg_qent *p = NULL;
+	struct tseg_qent *nq;
+	struct tseg_qent *te = NULL;
+	struct socket *so = tp->t_socket;
+	int flags;
+
+	/*
+	 * XXX: tcp_reass() is rather inefficient with its data structures
+	 * and should be rewritten (see NetBSD for optimizations).  While
+	 * doing that it should move to its own file tcp_reass.c.
+	 */
+
+	/*
+	 * Call with th==NULL after become established to
+	 * force pre-ESTABLISHED data up to user socket.
+	 */
+	if (th == NULL)
+		goto present;
+
+	/*
+	 * Limit the number of segments in the reassembly queue to prevent
+	 * holding on to too many segments (and thus running out of mbufs).
+	 * Make sure to let the missing segment through which caused this
+	 * queue.  Always keep one global queue entry spare to be able to
+	 * process the missing segment.
+	 */
+	if (th->th_seq != tp->rcv_nxt &&
+	    (tcp_reass_qsize + 1 >= tcp_reass_maxseg ||
+	     tp->t_segqlen >= tcp_reass_maxqlen)) {
+		tcp_reass_overflows++;
+		tcpstat.tcps_rcvmemdrop++;
+		m_freem(pData, m);
+		*tlenp = 0;
+		return (0);
+	}
+
+	/*
+	 * Allocate a new queue entry. If we can't, or hit the zone limit
+	 * just drop the pkt.
+	 */
+	te = malloc(sizeof(struct tseg_qent));
+	if (te == NULL) {
+		tcpstat.tcps_rcvmemdrop++;
+		m_freem(pData, m);
+		*tlenp = 0;
+		return (0);
+	}
+	tp->t_segqlen++;
+	tcp_reass_qsize++;
+
+	/*
+	 * Find a segment which begins after this one does.
+	 */
+	LIST_FOREACH(q, &tp->t_segq, tqe_q) {
+		if (SEQ_GT(q->tqe_th->th_seq, th->th_seq))
+			break;
+		p = q;
+	}
+
+	/*
+	 * If there is a preceding segment, it may provide some of
+	 * our data already.  If so, drop the data from the incoming
+	 * segment.  If it provides all of our data, drop us.
+	 */
+	if (p != NULL) {
+		int i;
+		/* conversion to int (in i) handles seq wraparound */
+		i = p->tqe_th->th_seq + p->tqe_len - th->th_seq;
+		if (i > 0) {
+			if (i >= *tlenp) {
+				tcpstat.tcps_rcvduppack++;
+				tcpstat.tcps_rcvdupbyte += *tlenp;
+				m_freem(pData, m);
+				free(te);
+				tp->t_segqlen--;
+				tcp_reass_qsize--;
+				/*
+				 * Try to present any queued data
+				 * at the left window edge to the user.
+				 * This is needed after the 3-WHS
+				 * completes.
+				 */
+				goto present;	/* ??? */
+			}
+			m_adj(m, i);
+			*tlenp -= i;
+			th->th_seq += i;
+		}
+	}
+	tcpstat.tcps_rcvoopack++;
+	tcpstat.tcps_rcvoobyte += *tlenp;
+
+	/*
+	 * While we overlap succeeding segments trim them or,
+	 * if they are completely covered, dequeue them.
+	 */
+	while (q) {
+		int i = (th->th_seq + *tlenp) - q->tqe_th->th_seq;
+		if (i <= 0)
+			break;
+		if (i < q->tqe_len) {
+			q->tqe_th->th_seq += i;
+			q->tqe_len -= i;
+			m_adj(q->tqe_m, i);
+			break;
+		}
+
+		nq = LIST_NEXT(q, tqe_q);
+		LIST_REMOVE(q, tqe_q);
+		m_freem(pData, q->tqe_m);
+		free(q);
+		tp->t_segqlen--;
+		tcp_reass_qsize--;
+		q = nq;
+	}
+
+	/* Insert the new segment queue entry into place. */
+	te->tqe_m = m;
+	te->tqe_th = th;
+	te->tqe_len = *tlenp;
+
+	if (p == NULL) {
+		LIST_INSERT_HEAD(&tp->t_segq, te, tqe_q);
+	} else {
+		LIST_INSERT_AFTER(p, te, tqe_q);
+	}
+
+present:
+	/*
+	 * Present data to user, advancing rcv_nxt through
+	 * completed sequence space.
+	 */
+	if (!TCPS_HAVEESTABLISHED(tp->t_state))
+		return (0);
+	q = LIST_FIRST(&tp->t_segq);
+	if (!q || q->tqe_th->th_seq != tp->rcv_nxt)
+		return (0);
+	do {
+		tp->rcv_nxt += q->tqe_len;
+		flags = q->tqe_th->th_flags & TH_FIN;
+		nq = LIST_NEXT(q, tqe_q);
+		LIST_REMOVE(q, tqe_q);
+                /* XXX: This place should be checked for the same code in
+                 * original BSD code for Slirp and current BSD used SS_FCANTRCVMORE
+                 */
+		if (so->so_state & SS_FCANTSENDMORE)
+			m_freem(pData, q->tqe_m);
+		else
+			sbappend(pData, so, q->tqe_m);
+		free(q);
+		tp->t_segqlen--;
+		tcp_reass_qsize--;
+		q = nq;
+	} while (q && q->tqe_th->th_seq == tp->rcv_nxt);
+	return (flags);
+}
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 
 /*
  * TCP input routine, follows pages 65-76 of the
@@ -544,7 +726,11 @@ findso:
 				return;
 			}
 		} else if (ti->ti_ack == tp->snd_una &&
+#ifndef VBOX_WITH_BSD_TCP_REASS
 		    u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+                    LIST_NEXT(tp, t_list) == tp &&
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 		    ti->ti_len <= sbspace(&so->so_rcv)) {
 			/*
 			 * this is a pure, in-sequence data packet
@@ -773,8 +959,12 @@ findso:
  *				tp->rcv_scale = tp->request_r_scale;
  *			}
  */
+#ifndef VBOX_WITH_BSD_TCP_REASS
 			(void) tcp_reass(pData, tp, (struct tcpiphdr *)0,
 				(struct mbuf *)0);
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+			(void) tcp_reass(pData, tp, (struct tcphdr *)0, NULL, (struct mbuf *)0);
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 			/*
 			 * if we didn't have to retransmit the SYN,
 			 * use its rtt as our initial srtt & rtt var.
@@ -1043,7 +1233,11 @@ trimthenstep6:
  *			tp->rcv_scale = tp->request_r_scale;
  *		}
  */
+#ifndef VBOX_WITH_BSD_TCP_REASS
 		(void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (struct mbuf *)0);
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+		(void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (int *)0, (struct mbuf *)0);
+#endif /*VBOX_WITH_BSD_TCP_REASS*/
 		tp->snd_wl1 = ti->ti_seq - 1;
 		/* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
 		goto synrx_to_est;
@@ -1345,7 +1539,21 @@ dodata:
 	 */
 	if ((ti->ti_len || (tiflags&TH_FIN)) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+#ifndef VBOX_WITH_BSD_TCP_REASS
 		TCP_REASS(pData, tp, ti, m, so, tiflags);
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+		DELAY_ACK(tp, ti); /* little bit different from BSD declaration see netinet/tcp_input.c */
+		tp->rcv_nxt += tlen;
+		tiflags = ti->ti_t.th_flags & TH_FIN;
+		tcpstat.tcps_rcvpack++;
+		tcpstat.tcps_rcvbyte += tlen;
+		if (so->so_state & SS_FCANTRCVMORE)
+			m_freem(pData, m);
+		else
+			sbappend(pData, so, m);
+		/* NB: sorwakeup_locked() does an implicit unlock. */
+		sorwakeup(so);
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 		/*
 		 * Note the amount of data that peer has sent into
 		 * our window, in order to estimate the sender's

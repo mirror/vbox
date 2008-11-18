@@ -537,6 +537,9 @@ endif
 ifdef VBOX_WITH_BSD_REASS
 Drivers_DEFS       = VBOX_WITH_BSD_REASS
 endif
+ifdef VBOX_WITH_BSD_TCP_REASS
+Drivers_DEFS       = VBOX_WITH_BSD_TCP_REASS
+endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp

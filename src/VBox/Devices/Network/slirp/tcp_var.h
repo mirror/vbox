@@ -37,6 +37,10 @@
 #ifndef _TCP_VAR_H_
 #define _TCP_VAR_H_
 
+#ifdef VBOX_WITH_BSD_TCP_REASS
+#include <sys/queue.h>
+#endif /* VBOX_WITH_BSD_TCP_REASS */
+
 #include "tcpip.h"
 #include "tcp_timer.h"
 
@@ -56,12 +60,29 @@
 
 #endif
 
+#ifdef VBOX_WITH_BSD_TCP_REASS
+/* TCP segment queue entry */
+struct tseg_qent {
+	LIST_ENTRY(tseg_qent) tqe_q;
+	int	tqe_len;		/* TCP segment data length */
+	struct	tcphdr *tqe_th;		/* a pointer to tcp header */
+	struct	mbuf	*tqe_m;		/* mbuf contains packet */
+};
+LIST_HEAD(tsegqe_head, tseg_qent);
+#endif
+
 /*
  * Tcp control block, one per tcp; fields:
  */
 struct tcpcb {
+#ifndef VBOX_WITH_BSD_TCP_REASS
 	tcpiphdrp_32 seg_next;	/* sequencing queue */
 	tcpiphdrp_32 seg_prev;
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+	LIST_ENTRY(tcpcb) t_list;
+	struct	tsegqe_head t_segq;	/* segment reassembly queue */
+	int	t_segqlen;		/* segment reassembly queue length */
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 	short	t_state;		/* state of this connection */
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
@@ -147,6 +168,10 @@ struct tcpcb {
 	tcp_seq	last_ack_sent;
 
 };
+
+#ifdef VBOX_WITH_BSD_TCP_REASS
+LIST_HEAD(tcpcbhead, tcpcb);
+#endif /*VBOX_WITH_BSD_TCP_REASS*/
 
 #define	sototcpcb(so)	((so)->so_tcpcb)
 
@@ -260,6 +285,9 @@ struct tcpstat_t {
 	u_long	tcps_preddat;		/* times hdr predict ok for data pkts */
 	u_long	tcps_socachemiss;	/* tcp_last_so misses */
 	u_long	tcps_didnuttin;		/* Times tcp_output didn't do anything XXX */
+#ifdef VBOX_WITH_BSD_TCP_REASS
+        u_long tcps_rcvmemdrop;
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 };
 
 
