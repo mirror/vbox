@@ -137,55 +137,7 @@ static WId FindWindowIdFromPid (ULONG aPid)
 VBoxVMItem::VBoxVMItem (const CMachine &aMachine, VBoxSelectorWnd *pParent)
     : mParent (pParent), mMachine (aMachine)
 {
-    vmConfigAction = new QAction (this);
-    vmConfigAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_settings_32px.png", ":/settings_16px.png",
-        ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
-    vmDeleteAction = new QAction (this);
-    vmDeleteAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_delete_32px.png", ":/delete_16px.png",
-        ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
-    vmStartAction = new QAction (this);
-    vmStartAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_start_32px.png", ":/start_16px.png",
-        ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
-    vmDiscardAction = new QAction (this);
-    vmDiscardAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_discard_32px.png", ":/discard_16px.png",
-        ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
-    vmPauseAction = new QAction (this);
-    vmPauseAction->setCheckable (true);
-    vmPauseAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_pause_32px.png", ":/pause_16px.png",
-        ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
-    vmRefreshAction = new QAction (this);
-    vmRefreshAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/refresh_32px.png", ":/refresh_16px.png",
-        ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
-    vmShowLogsAction = new QAction (this);
-    vmShowLogsAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
-        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
-
     recache();
-
-    connect (vmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
-    connect (vmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
-    connect (vmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
-    connect (vmDiscardAction, SIGNAL (triggered()), this, SLOT (vmDiscard()));
-    connect (vmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
-    connect (vmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
-    connect (vmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
-
-    updateActions();
-    retranslateUi();
 }
 
 VBoxVMItem::~VBoxVMItem()
@@ -199,41 +151,6 @@ QString VBoxVMItem::sessionStateName() const
 {
     return mAccessible ? vboxGlobal().toString (mState) :
            VBoxVMListView::tr ("Inaccessible");
-}
-
-void VBoxVMItem::vmSettings()
-{
-    mParent->vmSettings (NULL, NULL, mId);
-}
-
-void VBoxVMItem::vmDelete()
-{
-    mParent->vmDelete (mId);
-}
-
-void VBoxVMItem::vmStart()
-{
-    mParent->vmStart (mId);
-}
-
-void VBoxVMItem::vmDiscard()
-{
-    mParent->vmDiscard (mId);
-}
-
-void VBoxVMItem::vmPause (bool aPause)
-{
-    mParent->vmPause (aPause, mId);
-}
-
-void VBoxVMItem::vmRefresh()
-{
-    mParent->vmRefresh (mId);
-}
-
-void VBoxVMItem::vmShowLogs()
-{
-    mParent->vmShowLogs (mId);
 }
 
 QString VBoxVMItem::toolTipText() const
@@ -470,113 +387,6 @@ bool VBoxVMItem::switchTo()
 #endif
 }
 
-void VBoxVMItem::updateActions()
-{
-    if (accessible())
-    {
-        CMachine m = machine();
-
-        KMachineState s = state();
-        bool run = running();
-        bool modifyEnabled = !run && s != KMachineState_Saved;
-
-        /* enable/disable modify actions */
-        vmConfigAction->setEnabled (modifyEnabled);
-        vmDeleteAction->setEnabled (modifyEnabled);
-        vmDiscardAction->setEnabled (s == KMachineState_Saved && !run);
-        vmPauseAction->setEnabled (s == KMachineState_Running ||
-                                   s == KMachineState_Paused);
-
-        /* change the Start button text accordingly */
-        if (s >= KMachineState_Running)
-        {
-            vmStartAction->setText (VBoxVMListView::tr ("S&how"));
-            vmStartAction->setStatusTip (
-                VBoxVMListView::tr ("Switch to the window of the selected virtual machine"));
-
-            vmStartAction->setEnabled (canSwitchTo());
-        }
-        else
-        {
-            vmStartAction->setText (VBoxVMListView::tr ("S&tart"));
-            vmStartAction->setStatusTip (
-                VBoxVMListView::tr ("Start the selected virtual machine"));
-
-            vmStartAction->setEnabled (!run);
-        }
-
-        /* change the Pause/Resume button text accordingly */
-        if (s == KMachineState_Paused)
-        {
-            vmPauseAction->setText (VBoxVMListView::tr ("R&esume"));
-            vmPauseAction->setStatusTip (
-                VBoxVMListView::tr ("Resume the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (true);
-            vmPauseAction->blockSignals (false);
-        }
-        else
-        {
-            vmPauseAction->setText (VBoxVMListView::tr ("&Pause"));
-            vmPauseAction->setStatusTip (
-                VBoxVMListView::tr ("Suspend the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (false);
-            vmPauseAction->blockSignals (false);
-        }
-
-        /* disable Refresh for accessible machines */
-        vmRefreshAction->setEnabled (false);
-
-        /* enable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (true);
-    }
-    else
-    {
-        vmRefreshAction->setEnabled (true);
-
-        /* disable modify actions */
-        vmConfigAction->setEnabled (false);
-        vmDeleteAction->setEnabled (true);
-        vmDiscardAction->setEnabled (false);
-        vmPauseAction->setEnabled (false);
-
-        /* change the Start button text accordingly */
-        vmStartAction->setText (VBoxVMListView::tr ("S&tart"));
-        vmStartAction->setStatusTip (
-            VBoxVMListView::tr ("Start the selected virtual machine"));
-        vmStartAction->setEnabled (false);
-
-        /* disable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (false);
-    }
-}
-
-void VBoxVMItem::retranslateUi ()
-{
-    vmConfigAction->setText (VBoxVMListView::tr ("&Settings..."));
-    vmConfigAction->setStatusTip (VBoxVMListView::tr ("Configure the selected virtual machine"));
-
-    vmDeleteAction->setText (VBoxVMListView::tr ("&Delete"));
-    vmDeleteAction->setStatusTip (VBoxVMListView::tr ("Delete the selected virtual machine"));
-
-    vmDiscardAction->setText (VBoxVMListView::tr ("D&iscard"));
-    vmDiscardAction->setStatusTip (
-        VBoxVMListView::tr ("Discard the saved state of the selected virtual machine"));
-
-    vmRefreshAction->setText (VBoxVMListView::tr ("&Refresh"));
-    vmRefreshAction->setStatusTip (
-        VBoxVMListView::tr ("Refresh the accessibility state of the selected virtual machine"));
-
-    vmShowLogsAction->setText (VBoxVMListView::tr ("Show &Log..."));
-    vmShowLogsAction->setIconText (VBoxVMListView::tr ("Log", "icon text"));
-    vmShowLogsAction->setStatusTip (
-        VBoxVMListView::tr ("Show the log files of the selected virtual machine"));
-
-    /* Update other actions which changes behavior depending the machine's state. */
-    updateActions();
-}
-
 /* VBoxVMModel class */
 
 void VBoxVMModel::addItem (VBoxVMItem *aItem)
@@ -613,7 +423,6 @@ bool VBoxVMModel::removeRows (int aRow, int aCount, const QModelIndex &aParent /
 void VBoxVMModel::refreshItem (VBoxVMItem *aItem)
 {
     Assert (aItem);
-    aItem->updateActions();
     if (aItem->recache())
         sort();
     itemChanged (aItem);
