@@ -718,6 +718,22 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QCheckBox" name="mCb3D" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="whatsThis" >
+            <string>When checked, the VirtualBox allows guests to make use of the 3D graphics support available on the host.</string>
+           </property>
+           <property name="text" >
+            <string>Enable &amp;3D Acceleration</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item row="2" column="0" >

@@ -1952,16 +1952,17 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             + QString (sSectionItemTpl).arg (tr ("ACPI", "details report"), "%6")
             + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7")
             + QString (sSectionItemTpl).arg (tr ("VT-x/AMD-V", "details report"), "%8")
-            + QString (sSectionItemTpl).arg (tr ("PAE/NX", "details report"), "%9");
+            + QString (sSectionItemTpl).arg (tr ("PAE/NX", "details report"), "%9")
+            + QString (sSectionItemTpl).arg (tr ("3D Acceleration", "details report"), "%10");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
-            .arg (2 + 9) /* rows */
+            .arg (2 + 10) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
                   generalItems); /* items */
         sGeneralFullBoldTpl = QString (sSectionBoldTpl)
-            .arg (2 + 9) /* rows */
+            .arg (2 + 10) /* rows */
             .arg (":/machine_16px.png", /* icon */
                   "#general", /* link */
                   tr ("General", "details report"), /* title */
@@ -2072,6 +2073,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
 
+        /* 3D Acceleration */
+        QString acc3d = aMachine.GetAccelerate3DEnabled()
+            ? tr ("Enabled", "details report (3D Acceleration)")
+            : tr ("Disabled", "details report (3D Acceleration)");
+
         /* General + Hard Disks */
         detailsReport
             = generalFullTpl
@@ -2084,6 +2090,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 .arg (ioapic)
                 .arg (virt)
                 .arg (pae)
+                .arg (acc3d)
             + hardDisks;
 
         QString item;

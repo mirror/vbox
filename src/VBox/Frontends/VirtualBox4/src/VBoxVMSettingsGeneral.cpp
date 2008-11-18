@@ -264,6 +264,9 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mCbPae->setEnabled (fPAESupported);
     mCbPae->setChecked (aMachine.GetPAEEnabled());
 
+    /* 3D Acceleration */
+    mCb3D->setChecked (aMachine.GetAccelerate3DEnabled());
+
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
     mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
@@ -338,6 +341,9 @@ void VBoxVMSettingsGeneral::putBackTo()
     /* PAE/NX */
     mMachine.SetPAEEnabled (mCbPae->isChecked());
 
+    /* 3D Acceleration */
+    mMachine.SetAccelerate3DEnabled (mCb3D->isChecked());
+
     /* Saved state folder */
     if (mPsSnapshot->isModified())
     {
@@ -381,7 +387,8 @@ void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mCbAcpi, mCbApic);
     setTabOrder (mCbApic, mCbVirt);
     setTabOrder (mCbVirt, mCbPae);
-    setTabOrder (mCbPae, mCbClipboard);
+    setTabOrder (mCbPae, mCb3D);
+    setTabOrder (mCb3D, mCbClipboard);
     setTabOrder (mCbClipboard, mCbIDEController);
     setTabOrder (mCbIDEController, mPsSnapshot);
 
