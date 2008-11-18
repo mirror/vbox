@@ -729,7 +729,7 @@ findso:
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		    u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
 #else /* !VBOX_WITH_BSD_TCP_REASS */
-                    LIST_NEXT(tp, t_list) == tp &&
+                    LIST_FIRST(&tp->t_segq) &&
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 		    ti->ti_len <= sbspace(&so->so_rcv)) {
 			/*
