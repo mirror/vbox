@@ -293,6 +293,31 @@ BEGINPROC supdrvNtWrapModuleTerm
 ENDPROC   supdrvNtWrapModuleTerm
 
 
+;;
+; @cproto DECLASM(int) supdrvNtWrapServiceReqHandler(PFNRT pfnServiceReqHandler, PSUPDRVSESSION pSession, uint32_t uOperation, uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
+;
+; @param    pfnSerivceReqHandler rcx
+; @param    pSession            rdx
+; @param    uOperation          r8
+; @param    u64Arg              r9
+; @param    pReq                [rsp + 28h] / [rbp + 30h]
+;
+BEGINPROC supdrvNtWrapServiceReqHandler
+        NtWrapProlog supdrvNtWrapServiceReqHandler
+        NtWrapCreateMarker
+
+        mov     rax, rcx
+        mov     rcx, rdx
+        mov     rdx, r8
+        mov     r8, r9
+        mov     r9, [rbp + 30h]
+        call    rax
+
+        NtWrapDestroyMarker
+        NtWrapEpilog supdrvNtWrapServiceReqHandler
+ENDPROC   supdrvNtWrapServiceReqHandler
+
+
  %endif ; RT_ARCH_AMD64
 %endif ; RT_WITH_W64_UNWIND_HACK
 

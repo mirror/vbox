@@ -274,7 +274,7 @@ typedef struct SUPVMMR0REQHDR
 /** Pointer to a ring-0 request header. */
 typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 /** the SUPVMMR0REQHDR::u32Magic value (Ethan Iverson - The Bad Plus). */
-#define SUPVMMR0REQHDR_MAGIC    UINT32_C(0x19730211)
+#define SUPVMMR0REQHDR_MAGIC        UINT32_C(0x19730211)
 
 
 /** For the fast ioctl path.
@@ -287,6 +287,22 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 /** @see VMMR0_DO_NOP */
 #define SUP_VMMR0_DO_NOP        2
 /** @} */
+
+
+/**
+ * Request for generic FNSUPR0SERVICEREQHANDLER calls.
+ */
+typedef struct SUPR0SERVICEREQHDR
+{
+    /** The magic. (SUPR0SERVICEREQHDR_MAGIC) */
+    uint32_t    u32Magic;
+    /** The size of the request. */
+    uint32_t    cbReq;
+} SUPR0SERVICEREQHDR;
+/** Pointer to a ring-0 service request header. */
+typedef SUPR0SERVICEREQHDR *PSUPR0SERVICEREQHDR;
+/** the SUPVMMR0REQHDR::u32Magic value (Esbjoern Svensson - E.S.P.).  */
+#define SUPR0SERVICEREQHDR_MAGIC    UINT32_C(0x19640416)
 
 
 
@@ -462,6 +478,22 @@ SUPR3DECL(int) SUPCallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, unsigned idCPU
 SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 
 /**
+ * Calls a ring-0 service.
+ *
+ * The operation and the request packet is specific to the service.
+ *
+ * @returns error code specific to uFunction.
+ * @param   pszService  The service name.
+ * @param   cchService  The length of the service name.
+ * @param   uReq        The request number.
+ * @param   u64Arg      Constant argument.
+ * @param   pReqHdr     Pointer to a request header. Optional.
+ *                      This will be copied in and out of kernel space. There currently is a size
+ *                      limit on this, just below 4KB.
+ */
+SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uint32_t uOperation, uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
+
+/**
  * Queries the paging mode of the host OS.
  *
  * @returns The paging mode.
@@ -625,8 +657,25 @@ SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages);
  * @returns VBox status code.
  * @param   pszFilename     The path to the image file.
  * @param   pszModule       The module name. Max 32 bytes.
+ * @param   ppvImageBase        Where to store the image address.
  */
 SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
+
+/**
+ * Load a module into R0 HC.
+ *
+ * This will verify the file integrity in a similar manner as
+ * SUPR3HardenedVerifyFile before loading it.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename         The path to the image file.
+ * @param   pszModule           The module name. Max 32 bytes.
+ * @param   pszSrvReqHandler    The name of the service request handler entry
+ *                              point. See FNSUPR0SERVICEREQHANDLER.
+ * @param   ppvImageBase        Where to store the image address.
+ */
+SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszModule,
+                                      const char *pszSrvReqHandler, void **ppvImageBase);
 
 /**
  * Frees a R0 HC module.
@@ -817,6 +866,20 @@ typedef SUPDRVFACTORY const *PCSUPDRVFACTORY;
 SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
 SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFACTORY pFactory);
 SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
+
+
+/**
+ * Service request callback function.
+ *
+ * @returns VBox status code.
+ * @param   pSession    The caller's session.
+ * @param   u64Arg      64-bit integer argument.
+ * @param   pReqHdr     The request header. Input / Output. Optional.
+ */
+typedef DECLCALLBACK(int) FNSUPR0SERVICEREQHANDLER(PSUPDRVSESSION pSession, uint32_t uOperation,
+                                                   uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr);
+/** Pointer to a FNR0SERVICEREQHANDLER(). */
+typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
 
 
 /** @defgroup   grp_sup_r0_idc  The IDC Interface

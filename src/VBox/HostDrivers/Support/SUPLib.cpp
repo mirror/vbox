@@ -150,7 +150,7 @@ static uint32_t     g_u32FakeMode = ~0;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int supInitFake(PSUPDRVSESSION *ppSession);
-static int supLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
+static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase);
 #ifdef VBOX_WITH_IDT_PATCHING
 static int supInstallIDTE(void);
 #endif
@@ -678,6 +678,63 @@ SUPR3DECL(int) SUPSetVMForFastIOCtl(PVMR0 pVMR0)
 }
 
 
+SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uint32_t uOperation, uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
+{
+    AssertReturn(cchService < RT_SIZEOFMEMB(SUPCALLSERVICE, u.In.szName), VERR_INVALID_PARAMETER);
+    Assert(strlen(pszService) == cchService);
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VERR_NOT_SUPPORTED;
+
+    int rc;
+    if (!pReqHdr)
+    {
+        /* no data. */
+        SUPCALLSERVICE Req;
+        Req.Hdr.u32Cookie = g_u32Cookie;
+        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+        Req.Hdr.cbIn = SUP_IOCTL_CALL_SERVICE_SIZE_IN(0);
+        Req.Hdr.cbOut = SUP_IOCTL_CALL_SERVICE_SIZE_OUT(0);
+        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+        Req.Hdr.rc = VERR_INTERNAL_ERROR;
+        memcpy(Req.u.In.szName, pszService, cchService);
+        Req.u.In.szName[cchService] = '\0';
+        Req.u.In.uOperation = uOperation;
+        Req.u.In.u64Arg = u64Arg;
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_CALL_SERVICE(0), &Req, SUP_IOCTL_CALL_SERVICE_SIZE(0));
+        if (RT_SUCCESS(rc))
+            rc = Req.Hdr.rc;
+    }
+    else if (SUP_IOCTL_CALL_SERVICE_SIZE(pReqHdr->cbReq) < _4K) /* FreeBSD won't copy more than 4K. */
+    {
+        AssertPtrReturn(pReqHdr, VERR_INVALID_POINTER);
+        AssertReturn(pReqHdr->u32Magic == SUPR0SERVICEREQHDR_MAGIC, VERR_INVALID_MAGIC);
+        const size_t cbReq = pReqHdr->cbReq;
+
+        PSUPCALLSERVICE pReq = (PSUPCALLSERVICE)alloca(SUP_IOCTL_CALL_SERVICE_SIZE(cbReq));
+        pReq->Hdr.u32Cookie = g_u32Cookie;
+        pReq->Hdr.u32SessionCookie = g_u32SessionCookie;
+        pReq->Hdr.cbIn = SUP_IOCTL_CALL_SERVICE_SIZE_IN(cbReq);
+        pReq->Hdr.cbOut = SUP_IOCTL_CALL_SERVICE_SIZE_OUT(cbReq);
+        pReq->Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+        pReq->Hdr.rc = VERR_INTERNAL_ERROR;
+        memcpy(pReq->u.In.szName, pszService, cchService);
+        pReq->u.In.szName[cchService] = '\0';
+        pReq->u.In.uOperation = uOperation;
+        pReq->u.In.u64Arg = u64Arg;
+        memcpy(&pReq->abReqPkt[0], pReqHdr, cbReq);
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_CALL_SERVICE(cbReq), pReq, SUP_IOCTL_CALL_SERVICE_SIZE(cbReq));
+        if (RT_SUCCESS(rc))
+            rc = pReq->Hdr.rc;
+        memcpy(pReqHdr, &pReq->abReqPkt[0], cbReq);
+    }
+    else /** @todo may have to remove the size limits one this request... */
+        AssertMsgFailedReturn(("cbReq=%#x\n", pReqHdr->cbReq), VERR_INTERNAL_ERROR);
+    return rc;
+}
+
+
 SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
 {
     /*
@@ -1179,7 +1236,7 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
          * Load the module.
          * If it's VMMR0.r0 we need to install the IDTE.
          */
-        rc = supLoadModule(pszFilename, pszModule, ppvImageBase);
+        rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
 #ifdef VBOX_WITH_IDT_PATCHING
         if (    RT_SUCCESS(rc)
             &&  !strcmp(pszModule, "VMMR0.r0"))
@@ -1192,6 +1249,32 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
     }
     else
         LogRel(("SUPLoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszModule,
+                                      const char *pszSrvReqHandler, void **ppvImageBase)
+{
+    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pszSrvReqHandler, VERR_INVALID_PARAMETER);
+
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Check that the module can be trusted.
+     */
+    rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+#endif
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Load the module.
+         * If it's VMMR0.r0 we need to install the IDTE.
+         */
+        rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, ppvImageBase);
+    }
+    else
+        LogRel(("SUPR3LoadServiceModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1568,7 +1651,7 @@ static DECLCALLBACK(int) supLoadModuleCreateTabsCB(RTLDRMOD hLdrMod, const char 
  * @returns VBox status code.
  * @param   pszFilename     Name of the VMMR0 image file
  */
-static int supLoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase)
+static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase)
 {
     /*
      * Validate input.
@@ -1579,6 +1662,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
     AssertReturn(strlen(pszModule) < RT_SIZEOFMEMB(SUPLDROPEN, u.In.szName), VERR_FILENAME_TOO_LONG);
 
     const bool fIsVMMR0 = !strcmp(pszModule, "VMMR0.r0");
+    AssertReturn(!pszSrvReqHandler || !fIsVMMR0, VERR_INTERNAL_ERROR);
     *ppvImageBase = NULL;
 
     /*
@@ -1648,6 +1732,7 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                     RTUINTPTR VMMR0EntryInt = 0;
                     RTUINTPTR VMMR0EntryFast = 0;
                     RTUINTPTR VMMR0EntryEx = 0;
+                    RTUINTPTR SrvReqHandler = 0;
                     RTUINTPTR ModuleInit = 0;
                     RTUINTPTR ModuleTerm = 0;
                     if (fIsVMMR0)
@@ -1658,6 +1743,8 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                         if (RT_SUCCESS(rc))
                             rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "VMMR0EntryEx", &VMMR0EntryEx);
                     }
+                    else if (pszSrvReqHandler)
+                        rc = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, pszSrvReqHandler, &SrvReqHandler);
                     if (RT_SUCCESS(rc))
                     {
                         int rc2 = RTLdrGetSymbolEx(hLdrMod, &pLoadReq->u.In.achImage[0], (uintptr_t)OpenReq.u.Out.pvImageBase, "ModuleInit", &ModuleInit);
@@ -1703,6 +1790,14 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, void **
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryInt = (RTR0PTR)VMMR0EntryInt;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryFast= (RTR0PTR)VMMR0EntryFast;
                                 pLoadReq->u.In.EP.VMMR0.pvVMMR0EntryEx  = (RTR0PTR)VMMR0EntryEx;
+                            }
+                            else if (pszSrvReqHandler)
+                            {
+                                pLoadReq->u.In.eEPType                = SUPLDRLOADEP_SERVICE;
+                                pLoadReq->u.In.EP.Service.pfnServiceReq = (RTR0PTR)SrvReqHandler;
+                                pLoadReq->u.In.EP.Service.apvReserved[0] = NIL_RTR0PTR;
+                                pLoadReq->u.In.EP.Service.apvReserved[1] = NIL_RTR0PTR;
+                                pLoadReq->u.In.EP.Service.apvReserved[2] = NIL_RTR0PTR;
                             }
                             else
                                 pLoadReq->u.In.eEPType                = SUPLDRLOADEP_NOTHING;

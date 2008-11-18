@@ -1132,6 +1132,8 @@
 #define VERR_SUPDRV_COMPONENT_NOT_FOUND             (-3700)
 /** The component factories do not support the requested interface. */
 #define VERR_SUPDRV_INTERFACE_NOT_SUPPORTED         (-3701)
+/** The service module was not found. */
+#define VERR_SUPDRV_SERVICE_NOT_FOUND               (-3702)
 /** @} */
 
 
