@@ -906,7 +906,6 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         && pPromiscStream->fRawMode)
                     {
                         vboxNetFltSolarisRecv(pThis, pStream, pQueue, pMsg);
-                        pMsg = NULL;
                     }
                     break;
                 }
@@ -1060,7 +1059,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
          */
         putnext(pQueue, pMsg);
     }
-    else if (pMsg)
+    else
     {
         /*
          * We need to free up the message if we don't pass it through.
@@ -2086,7 +2085,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to open UDP. rc=%d\n", rc));
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get IPv6 flags.\n", pThis->szName));
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get IPv6 flags.\n", pThis->szName));
 
     ldi_close(Ip6DevHandle, FREAD | FWRITE, kcred);
 
@@ -2677,7 +2676,6 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (RT_UNLIKELY(!pPromiscStream))
     {
-        freemsg(pMsg);
         LogRel((DEVICE_NAME ":Promiscuous stream missing!! Failing to receive packet.\n"));
         return VERR_INVALID_POINTER;
     }
@@ -2689,7 +2687,6 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     if (vboxNetFltSolarisIsOurMBlk(pThis, pPromiscStream, pMsg))
     {
         LogFlow((DEVICE_NAME ":Avoiding packet loopback.\n"));
-        freemsg(pMsg);
         return VINF_SUCCESS;
     }
 
@@ -2727,7 +2724,6 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
 
-    freemsg(pMsg);
     return VINF_SUCCESS;
 }
 
