@@ -254,10 +254,16 @@ int pgmR3PoolInit(PVM pVM)
     /* The Shadow 32-bit PD. (32 bits guest paging) */
     pPool->aPages[PGMPOOL_IDX_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PD].GCPhys    = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = 0;
+    pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_32BIT_PD;
+#else
     pPool->aPages[PGMPOOL_IDX_PD].pvPageR3  = pVM->pgm.s.pShw32BitPdR3;
     pPool->aPages[PGMPOOL_IDX_PD].enmKind   = PGMPOOLKIND_ROOT_32BIT_PD;
+#endif
     pPool->aPages[PGMPOOL_IDX_PD].idx       = PGMPOOL_IDX_PD;
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /* The Shadow PAE PDs. This is actually 4 pages! (32 bits guest paging)  */
     pPool->aPages[PGMPOOL_IDX_PAE_PD].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PAE_PD].GCPhys    = NIL_RTGCPHYS;
@@ -274,18 +280,28 @@ int pgmR3PoolInit(PVM pVM)
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].enmKind   = PGMPOOLKIND_PAE_PD_FOR_PAE_PD;
         pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + i].idx       = PGMPOOL_IDX_PAE_PD_0 + i;
     }
+#endif
 
     /* The Shadow PDPT. */
     pPool->aPages[PGMPOOL_IDX_PDPT].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_PDPT].GCPhys    = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pPool->aPages[PGMPOOL_IDX_PDPT].pvPageR3  = 0;
+    pPool->aPages[PGMPOOL_IDX_PDPT].enmKind   = PGMPOOLKIND_PAE_PDPT;
+#else
     pPool->aPages[PGMPOOL_IDX_PDPT].pvPageR3  = pVM->pgm.s.pShwPaePdptR3;
     pPool->aPages[PGMPOOL_IDX_PDPT].enmKind   = PGMPOOLKIND_ROOT_PDPT;
+#endif
     pPool->aPages[PGMPOOL_IDX_PDPT].idx       = PGMPOOL_IDX_PDPT;
 
     /* The Shadow AMD64 CR3. */
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].Core.Key  = NIL_RTHCPHYS;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].GCPhys    = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageR3  = 0;
+#else
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].pvPageR3  = pVM->pgm.s.pShwPaePdptR3;  /* not used - isn't it wrong as well? */
+#endif
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind   = PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4;
     pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx       = PGMPOOL_IDX_AMD64_CR3;
 

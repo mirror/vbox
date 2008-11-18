@@ -429,11 +429,13 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
         pCur = pCur->pNextR3;
     }
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     /*
      * Turn off CR3 updating monitoring.
      */
     int rc2 = PGM_GST_PFN(UnmonitorCR3, pVM)(pVM);
     AssertRC(rc2);
+#endif
 
     /*
      * Mark the mappings as fixed and return.
@@ -481,9 +483,10 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     int rc = PGM_GST_PFN(MapCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRC(rc);
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
     rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, pVM->pgm.s.GCPhysCR3);
     AssertRC(rc);
-
+#endif
     return VINF_SUCCESS;
 }
 
@@ -722,21 +725,26 @@ static void pgmR3MapClearPDEs(PPGM pPGM, PPGMMAPPING pMap, unsigned iOldPDE)
          * 32-bit.
          */
         pPGM->pInterPD->a[iOldPDE].u        = 0;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->pShw32BitPdR3->a[iOldPDE].u   = 0;
-
+#endif
         /*
          * PAE.
          */
         const unsigned iPD = iOldPDE / 256;
         unsigned iPDE = iOldPDE * 2 % 512;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->apShwPaePDsR3[iPD]->a[iPDE].u = 0;
+#endif
         iPDE++;
         pPGM->apInterPaePDs[iPD]->a[iPDE].u = 0;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->apShwPaePDsR3[iPD]->a[iPDE].u = 0;
 
         /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entry. (legacy PAE guest mode) */
         pPGM->pShwPaePdptR3->a[iPD].u &= ~PGM_PLXFLAGS_MAPPING;
+#endif
     }
 }
 
@@ -770,36 +778,46 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         /*
          * 32-bit.
          */
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->pShw32BitPdR3->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
+#endif
         X86PDE Pde;
         /* Default mapping page directory flags are read/write and supervisor; individual page attributes determine the final flags */
         Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
         pPGM->pInterPD->a[iNewPDE]        = Pde;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->pShw32BitPdR3->a[iNewPDE]   = Pde;
-
+#endif
         /*
          * PAE.
          */
         const unsigned iPD = iNewPDE / 256;
         unsigned iPDE = iNewPDE * 2 % 512;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
+#endif
         X86PDEPAE PdePae0;
         PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae0;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae0;
-
+#endif
         iPDE++;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
+#endif
         X86PDEPAE PdePae1;
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
         pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae1;
 
         /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
         pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
+#endif
     }
 }
 
@@ -1128,6 +1146,131 @@ VMMR3DECL(bool) PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0) /** @to
     return false;
 }
 
+#ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
+/**
+ * Apply the hypervisor mappings to the active CR3.
+ *
+ * @returns VBox status.
+ * @param   pVM         The virtual machine.
+ */
+VMMR3DECL(int) PGMR3MapActivate(PVM pVM)
+{
+    /*
+     * Can skip this if mappings are safely fixed.
+     */
+    if (pVM->pgm.s.fMappingsFixed)
+        return VINF_SUCCESS;
+
+    PGMMODE const enmGuestMode = PGMGetGuestMode(pVM);
+    Assert(enmGuestMode <= PGMMODE_PAE_NX);
+
+    /*
+     * Iterate mappings.
+     */
+    if (enmGuestMode == PGMMODE_32_BIT)
+    {
+        /*
+         * Resolve the page directory.
+         */
+        PX86PD pPD = (PX86PD)pVM->pgm.s.pShwPageCR3R3;
+        Assert(pPD);
+
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+            unsigned iPT = pCur->cPTs;
+            while (iPT-- > 0)
+                pPD->a[iPDE + iPT].u = 0;
+        }
+    }
+    else if (   enmGuestMode == PGMMODE_PAE
+             || enmGuestMode == PGMMODE_PAE_NX)
+    {
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            RTGCPTR   GCPtr = pCur->GCPtr;
+            unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+
+            unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
+            while (iPT-- > 0)
+            {
+                PX86PDEPAE pPDE = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtr);
+                pPDE->u = 0;
+
+                GCPtr += (1 << X86_PD_PAE_SHIFT);
+            }
+        }
+    }
+    else
+        AssertFailed();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Remove the hypervisor mappings from the active CR3
+ *
+ * @returns VBox status.
+ * @param   pVM         The virtual machine.
+ */
+VMMR3DECL(int) PGMR3MapDeactivate(PVM pVM)
+{
+    /*
+     * Can skip this if mappings are safely fixed.
+     */
+    if (pVM->pgm.s.fMappingsFixed)
+        return VINF_SUCCESS;
+
+    PGMMODE const enmGuestMode = PGMGetGuestMode(pVM);
+    Assert(enmGuestMode <= PGMMODE_PAE_NX);
+
+    /*
+     * Iterate mappings.
+     */
+    if (enmGuestMode == PGMMODE_32_BIT)
+    {
+        /*
+         * Resolve the page directory.
+         */
+        PX86PD pPD = (PX86PD)pVM->pgm.s.pShwPageCR3R3;
+        Assert(pPD);
+
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
+            unsigned iPT = pCur->cPTs;
+            while (iPT-- > 0)
+                pPD->a[iPDE + iPT].u = 0;
+        }
+    }
+    else if (   enmGuestMode == PGMMODE_PAE
+             || enmGuestMode == PGMMODE_PAE_NX)
+    {
+        for (PPGMMAPPING pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
+        {
+            RTGCPTR   GCPtr = pCur->GCPtr;
+
+            unsigned  iPT = pCur->cb >> X86_PD_PAE_SHIFT;
+            while (iPT-- > 0)
+            {
+                PX86PDEPAE pPDE = pgmShwGetPaePDEPtr(&pVM->pgm.s, GCPtr);
+                pPDE->u = 0;
+
+                GCPtr += (1 << X86_PD_PAE_SHIFT);
+            }
+        }
+
+        /* Clear the PGM_PDFLAGS_MAPPING flag for the page directory pointer entries. (legacy PAE guest mode) */
+        PX86PDPT pPdpt = (PX86PDPT)pVM->pgm.s.pShwPageCR3R3;
+        for (unsigned i=0;i<X86_PG_PAE_PDPE_ENTRIES;i++)
+            pPdpt->a[i].u &= ~PGM_PLXFLAGS_MAPPING;
+    }
+    else
+        AssertFailed();
+
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 /**
  * Read memory from the guest mappings.

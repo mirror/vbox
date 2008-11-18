@@ -534,6 +534,9 @@ VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 VMMR3DECL(bool)     PGMR3MapHasConflicts(PVM pVM, uint64_t cr3, bool fRawR0);
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
+VMMR3DECL(int)      PGMR3MapActivate(PVM pVM);
+VMMR3DECL(int)      PGMR3MapDeactivate(PVM pVM);
+
 VMMR3DECL(int)      PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                                  PFNPGMR3PHYSHANDLER pfnHandlerR3, void *pvUserR3,
                                                  const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,

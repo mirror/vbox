@@ -438,7 +438,8 @@ GLOBALNAME ICExitTarget
     ; restore stack
     lss     esp, [edx + CPUMCPU.Host.esp]
 
-        FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
+    FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
+    
     ; restore MSR_IA32_SYSENTER_CS register.
     mov     ecx, MSR_IA32_SYSENTER_CS
     mov     eax, [edx + CPUMCPU.Host.SysEnter.cs]
