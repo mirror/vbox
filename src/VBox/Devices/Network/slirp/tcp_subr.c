@@ -279,17 +279,24 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 		remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
 		m_freem(pData, m);
 	}
-#else /* !VBOX_WITH_BSD_TCP_REASS */
-	DEBUG_CALL("tcp_close");
-	DEBUG_ARG("tp = %lx", (long )tp);
-        /*XXX: freeing the reassembly queue */
-#endif /* VBOX_WITH_BSD_TCP_REASS */
 	/* It's static */
 /*	if (tp->t_template)
  *		(void) m_free(dtom(tp->t_template));
  */
 /*	free(tp, M_PCB);  */
 	u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+        struct tseg_qent *te;
+	DEBUG_CALL("tcp_close");
+	DEBUG_ARG("tp = %lx", (long )tp);
+        /*XXX: freeing the reassembly queue */
+        LIST_FOREACH(te, &tp->t_segq, tqe_q) {
+            LIST_REMOVE(te, tqe_q);
+            m_freem(pData, te->tqe_m);
+            free(te);
+            tcp_reass_qsize--;
+        }
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 	free(tp);
 	so->so_tcpcb = 0;
 	soisfdisconnected(so);
