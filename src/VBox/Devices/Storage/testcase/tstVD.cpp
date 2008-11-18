@@ -200,7 +200,7 @@ fiddling when b=2^32-1 and cmwc rather than mwc.)
 
 To generate 64-bit x's, it is difficult to form
 t=a*x+c in 128 bits then get the new c and new x
-from the the top and bottom halves.
+from the top and bottom halves.
 But if 'a' has a special form, for example,
 a=2^62+2^47+2 and b=2^64-1, then the new c and
 the new x can be formed with shifts, tests and +/-'s,

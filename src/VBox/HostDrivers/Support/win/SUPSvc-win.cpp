@@ -367,7 +367,7 @@ static int supSvcWinCreate(int argc, char **argv)
             if (hSvc)
             {
                 RTPrintf("Successfully created the %s service.\n", SUPSVC_SERVICE_NAME);
-                /** @todo Set the service description or it'll look weird the the vista service manager.
+                /** @todo Set the service description or it'll look weird in the vista service manager.
                  *  Anything else that should be configured? Start access or something? */
                 rc = 0;
                 CloseServiceHandle(hSvc);
