@@ -811,35 +811,6 @@ findso:
 	   * But a bit of spaghetti code never hurt anybody :)
 	   */
 
-	  /*
-	   * If this is destined for the control address, then flag to
-	   * tcp_ctl once connected, otherwise connect
-	   */
-	  if ((so->so_faddr.s_addr&htonl(pData->netmask)) == special_addr.s_addr) {
-	    int lastbyte=ntohl(so->so_faddr.s_addr) & ~pData->netmask;
-	    if (lastbyte!=CTL_ALIAS && lastbyte!=CTL_DNS) {
-#if 0
-	      if(lastbyte==CTL_CMD || lastbyte==CTL_EXEC) {
-		/* Command or exec adress */
-		so->so_state |= SS_CTL;
-	      } else
-#endif
-              {
-		/* May be an add exec */
-		struct ex_list *ex_ptr;
-		for(ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next) {
-		  if(ex_ptr->ex_fport == so->so_fport &&
-		     lastbyte == ex_ptr->ex_addr) {
-		    so->so_state |= SS_CTL;
-		    break;
-		  }
-		}
-	      }
-	      if(so->so_state & SS_CTL) goto cont_input;
-	    }
-	    /* CTL_ALIAS: Do nothing, tcp_fconnect will be called on it */
-	  }
-
 	  if (so->so_emu & EMU_NOCONNECT) {
 	    so->so_emu &= ~EMU_NOCONNECT;
 	    goto cont_input;
@@ -1210,21 +1181,7 @@ trimthenstep6:
 		 * tp->snd_una++; or:
 		 */
 		tp->snd_una=ti->ti_ack;
-		if (so->so_state & SS_CTL) {
-		  /* So tcp_ctl reports the right state */
-		  ret = tcp_ctl(pData, so);
-		  if (ret == 1) {
-		    soisfconnected(so);
-		    so->so_state &= ~SS_CTL;   /* success XXX */
-		  } else if (ret == 2) {
-		    so->so_state = SS_NOFDREF; /* CTL_CMD */
-		  } else {
-		    needoutput = 1;
-		    tp->t_state = TCPS_FIN_WAIT_1;
-		  }
-		} else {
-		  soisfconnected(so);
-		}
+                soisfconnected(so);
 
 		/* Do window scaling? */
 /*		if ((tp->t_flags & (TF_RCVD_SCALE|TF_REQ_SCALE)) ==

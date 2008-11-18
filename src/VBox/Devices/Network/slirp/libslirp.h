@@ -77,6 +77,11 @@ HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
 #endif
 
+/*
+ * Return the timeout.
+ */
+unsigned int slirp_get_timeout_ms(PNATState pData);
+
 #ifdef __cplusplus
 }
 #endif

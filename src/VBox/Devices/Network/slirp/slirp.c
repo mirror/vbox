@@ -1011,3 +1011,15 @@ void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index)
 	pData->phEvents[index] = hEvent;
 }
 #endif
+
+unsigned int slirp_get_timeout_ms(PNATState pData)
+{
+    if (link_up)
+    {
+        if (time_fasttimo)
+            return 2;
+        if (do_slowtimo)
+            return 500;
+    }
+    return 0;
+}
