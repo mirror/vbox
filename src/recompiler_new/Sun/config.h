@@ -37,3 +37,9 @@
 /* #define DEBUG_ALL_LOGGING */
 /* Uncomment to see generated code */
 /* #define DEBUG_DISAS */
+
+#if 0 /*defined(RT_ARCH_AMD64) && defined(VBOX_STRICT)*/
+# define VBOX_CHECK_ADDR(ptr) do { if ((uintptr_t)(ptr) >= _4G) __asm__("int3"); } while (0)
+#else
+# define VBOX_CHECK_ADDR(ptr) do { } while (0)
+#endif

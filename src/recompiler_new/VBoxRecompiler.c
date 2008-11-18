@@ -28,6 +28,7 @@
 #include "osdep.h"
 #include "exec-all.h"
 #include "config.h"
+#include "cpu-all.h"
 
 void cpu_exec_init_all(unsigned long tb_size);
 
@@ -2784,12 +2785,7 @@ REMR3DECL(void) REMR3NotifyPhysRamChunkRegister(PVM pVM, RTGCPHYS GCPhys, RTUINT
     Assert(fFlags == 0 /* normal RAM */);
     Assert(!pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = true;
-#ifdef REM_PHYS_ADDR_IN_TLB
     cpu_register_physical_memory(GCPhys, cb, GCPhys);
-#else
-    cpu_register_physical_memory(GCPhys, cb, pvRam);
-#endif
-
     Assert(pVM->rem.s.fIgnoreAll);
     pVM->rem.s.fIgnoreAll = false;
 }
@@ -3086,15 +3082,6 @@ target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, C
               (RTGCPTR)pTLBEntry->addr_code, (RTGCPHYS)pTLBEntry->addend, (RTGCPTR)addr, pVM->rem.s.iHandlerMemType, pVM->rem.s.iMMIOMemType);
     AssertFatalFailed();
 }
-
-
-/** Validate the physical address passed to the read functions.
- * Useful for finding non-guest-ram reads/writes.  */
-#if 0 //1 /* disable if it becomes bothersome... */
-# define VBOX_CHECK_ADDR(GCPhys) AssertMsg(PGMPhysIsGCPhysValid(cpu_single_env->pVM, (GCPhys)), ("%RGp\n", (GCPhys)))
-#else
-# define VBOX_CHECK_ADDR(GCPhys) do { } while (0)
-#endif
 
 /**
  * Read guest RAM and ROM.
