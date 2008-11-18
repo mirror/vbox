@@ -4492,9 +4492,12 @@ static uint64_t vmdkGetFileSize(void *pBackendData)
             int rc = vmdkFileGetSize(pImage->pFile, &cbFile);
             if (RT_SUCCESS(rc))
                 cb += cbFile;
-            for (unsigned i = 0; i <= pImage->cExtents; i++)
+        }
+        for (unsigned i = 0; i <= pImage->cExtents; i++)
+        {
+            if (pImage->pExtents[i].pFile != NULL)
             {
-                rc = vmdkFileGetSize(pImage->pFile, &cbFile);
+                int rc = vmdkFileGetSize(pImage->pExtents[i].pFile, &cbFile);
                 if (RT_SUCCESS(rc))
                     cb += cbFile;
             }
