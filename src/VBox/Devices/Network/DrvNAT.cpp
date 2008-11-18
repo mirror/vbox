@@ -354,8 +354,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
             }
             /* process _all_ outstanding requests but don't wait */
-            while (RT_SUCCESS(RTReqProcess(pThis->pReqQueue, 0)))
-                ;
+            RTReqProcess(pThis->pReqQueue, 0);
         }
 # else /* RT_OS_WINDOWS */
         event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
@@ -377,8 +376,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /* poll the sockets in any case */
         slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
         /* process _all_ outstanding requests but don't wait */
-        while (RT_SUCCESS(RTReqProcess(pThis->pReqQueue, 0)))
-            ;
+        RTReqProcess(pThis->pReqQueue, 0);
 # endif /* RT_OS_WINDOWS */
     }
 
