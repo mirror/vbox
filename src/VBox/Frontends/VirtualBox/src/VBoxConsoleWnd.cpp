@@ -1613,7 +1613,7 @@ void VBoxConsoleWnd::languageChange()
             "(<img src=hostkey_captured_16px.png/>) or not (<img src=hostkey_16px.png/>)."));
     QToolTip::add (hostkey_name,
         tr ("Shows the currently assigned Host key.<br>"
-            "This key, when pressed alone, toggles the the keyboard and mouse "
+            "This key, when pressed alone, toggles the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu."));
 

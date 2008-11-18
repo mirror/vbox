@@ -481,8 +481,8 @@ DECLCALLBACK(void) VMDisplay::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInte
 
 
     /* Contrary to displayUpdateCallback and displayResizeCallback
-     * the framebuffer lock must be taken since the the function
-     * pointed to by pDrv->pUpPort->pfnUpdateDisplay is anaware
+     * the framebuffer lock must be taken since the function
+     * pointed to by pDrv->pUpPort->pfnUpdateDisplay is unaware
      * of any locking issues. */
 
     VMDisplay *pDisplay = pDrv->pDisplay;

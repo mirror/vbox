@@ -1736,7 +1736,7 @@ void VBoxConsoleWnd::retranslateUi()
             "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
     hostkey_name->setToolTip (
         tr ("Shows the currently assigned Host key.<br>"
-            "This key, when pressed alone, toggles the the keyboard and mouse "
+            "This key, when pressed alone, toggles the keyboard and mouse "
             "capture state. It can also be used in combination with other keys "
             "to quickly perform actions from the main menu."));
     hostkey_name->setText (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()));
