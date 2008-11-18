@@ -840,6 +840,7 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 
 #ifdef VBOX_WITH_HGCM
 
+# ifndef HGCM_TIMEOUT
 /**
  * This is a callback for dealing with async waits.
  *
@@ -918,22 +919,13 @@ VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *p
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 }
 
-
-# ifdef HGCM_TIMEOUT
-/**
- * This is a callback for dealing with async waits with a timeout.
- *
- * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
- * @todo r=bird: merge VBoxGuestHGCMAsyncWaitCallbackTimeout into
- *       VBoxGuestHGCMAsyncWaitCallback, either by using a stack argument or
- *       (better) create a common worker for them
- */
-static DECLCALLBACK(void)
-VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User)
+# else /* HGCM_TIMEOUT defined */
+/** Worker for VBoxGuestHGCMAsyncWaitCallback* */
+void
+VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, PVBOXGUESTDEVEXT pDevExt,
+                                     bool fInterruptible, uint32_t u32Timeout)
 {
     VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
-    Log(("VBoxGuestHGCMAsyncWaitCallback: requestType=%d\n", pHdr->header.requestType));
 
     /*
      * Check to see if the condition was met by the time we got here.
@@ -977,7 +969,10 @@ VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, 
     VBoxGuestWaitAppend(&pDevExt->HGCMWaitList, pWait);
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
 
-    int rc = RTSemEventMultiWaitNoResume(pWait->Event, u32User);
+    if (fInterruptible)
+        rc = RTSemEventMultiWaitNoResume(pWait->Event, u32Timeout);
+    else
+        rc = RTSemEventMultiWait(pWait->Event, u32Timeout);
 
     /*
      * This shouldn't ever return failure...
@@ -992,6 +987,49 @@ VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, 
     VBoxGuestWaitUnlink(&pDevExt->HGCMWaitList, pWait);
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
     RTSpinlockReleaseNoInts(pDevExt->WaitSpinlock, &Tmp);
+}
+
+/**
+ * This is a callback for dealing with async waits.
+ *
+ * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
+ */
+static DECLCALLBACK(void)
+VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User)
+{
+    VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
+    const bool fInterruptible = (bool)u32User;
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+    LogFunc(("requestType=%d\n", pHdr->header.requestType));
+    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, fInterruptible, RT_INDEFINITE_WAIT);
+}
+
+/**
+ * This is a callback for dealing with async waits with a timeout.
+ *
+ * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
+ */
+static DECLCALLBACK(void)
+VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible(VMMDevHGCMRequestHeader *pHdrNonVolatile,
+                                                   void *pvUser, uint32_t u32User)
+{
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+    LogFunc(("requestType=%d\n", pHdr->header.requestType));
+    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, true, u32user);
+}
+
+/**
+ * This is an uninterruptible callback for dealing with async waits with a timeout.
+ *
+ * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
+ */
+static DECLCALLBACK(void)
+VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser,
+                                      uint32_t u32User)
+{
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
+    LogFunc(("requestType=%d\n", pHdr->header.requestType));
+    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, false, u32user);
 }
 # endif /* HGCM_TIMEOUT */
 
@@ -1204,7 +1242,12 @@ static int VBoxGuestCommonIOCtl_HGCMCallTimeout(PVBOXGUESTDEVEXT pDevExt, PVBOXG
      * be interruptible (should add a flag for this later I guess).
      */
     Log(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
-    int rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallbackTimeout, pDevExt, pInfoTimeout->u32Timeout);
+    int rc;
+    if (pSession->R0Process == NIL_RTR0PROCESS)
+        rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallbackTimeout, pDevExt, pInfoTimeout->u32Timeout);
+    else
+        rc = VbglHGCMCall(pInfo, VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible, pDevExt,
+                          pInfoTimeout->u32Timeout);
     if (RT_SUCCESS(rc))
     {
         Log(("VBoxGuestCommonIOCtl: HGCM_CALL: result=%Rrc\n", pInfo->result));
