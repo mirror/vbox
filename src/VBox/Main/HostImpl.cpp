@@ -1188,8 +1188,14 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo */
-    return E_NOTIMPL;
+    /* @todo This is an ugly hack. There must be a function in IPRT for that. */
+    pm::CollectorHAL *hal = pm::createHAL();
+    if (!hal)
+        return VERR_INTERNAL_ERROR;
+    ULONG tmp;
+    int rc = hal->getHostMemoryUsage(size, &tmp, &tmp);
+    delete hal;
+    return rc;
 }
 
 /**
@@ -1204,8 +1210,14 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
         return E_POINTER;
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo */
-    return E_NOTIMPL;
+    /* @todo This is an ugly hack. There must be a function in IPRT for that. */
+    pm::CollectorHAL *hal = pm::createHAL();
+    if (!hal)
+        return VERR_INTERNAL_ERROR;
+    ULONG tmp;
+    int rc = hal->getHostMemoryUsage(&tmp, &tmp, available);
+    delete hal;
+    return rc;
 }
 
 /**
