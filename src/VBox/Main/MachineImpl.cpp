@@ -5070,13 +5070,13 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     {
         Key displayNode = aNode.key ("Display");
 
-        mHWData->mVRAMSize = displayNode.value <ULONG> ("VRAMSize");
-        mHWData->mMonitorCount = displayNode.value <ULONG> ("MonitorCount");
+        mHWData->mVRAMSize      = displayNode.value <ULONG> ("VRAMSize");
+        mHWData->mMonitorCount  = displayNode.value <ULONG> ("MonitorCount");
 
         /* Accelerate3DEnabled (optional, default is false) */
         Key Accelerate3DNode = displayNode.findKey ("Accelerate3D");
         if (!Accelerate3DNode.isNull())
-            mHWData->mAccelerate3DEnabled = Accelerate3DNode.value <bool> ("enabled");
+            mHWData->mAccelerate3DEnabled = displayNode.value <bool> ("Accelerate3D");
     }
 
 #ifdef VBOX_WITH_VRDP
