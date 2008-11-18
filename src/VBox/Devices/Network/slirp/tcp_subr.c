@@ -188,7 +188,11 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
 		return ((struct tcpcb *)0);
 
 	memset((char *) tp, 0, sizeof(struct tcpcb));
+#ifndef VBOX_WITH_BSD_TCP_REASS
 	tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+        /*XXX: inject initialization here*/
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 	tp->t_maxseg = tcp_mssdflt;
 
 	tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
@@ -262,6 +266,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 	DEBUG_CALL("tcp_close");
 	DEBUG_ARG("tp = %lx", (long )tp);
 
+#ifndef VBOX_WITH_BSD_TCP_REASS
 	/* free the reassembly queue, if any */
 	t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
 	while (t != (struct tcpiphdr *)tp) {
@@ -270,6 +275,9 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
 		remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
 		m_freem(pData, m);
 	}
+#else /* !VBOX_WITH_BSD_TCP_REASS */
+        /*XXX: freeing the reassembly queue */
+#endif /* VBOX_WITH_BSD_TCP_REASS */
 	/* It's static */
 /*	if (tp->t_template)
  *		(void) m_free(dtom(tp->t_template));
