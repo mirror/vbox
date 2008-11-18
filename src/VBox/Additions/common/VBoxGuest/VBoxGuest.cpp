@@ -840,11 +840,9 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 #ifdef VBOX_WITH_HGCM
 
 /** Worker for VBoxGuestHGCMAsyncWaitCallback*. */
-void
-VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, PVBOXGUESTDEVEXT pDevExt,
-                                     bool fInterruptible, uint32_t u32Timeout)
+static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile *pHdr, PVBOXGUESTDEVEXT pDevExt,
+                                                 bool fInterruptible, uint32_t u32Timeout)
 {
-    VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
 
     /*
      * Check to see if the condition was met by the time we got here.
@@ -917,14 +915,12 @@ VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader *pHdrNonVolatile, P
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
  */
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile,
-                                                         void *pvUser, uint32_t u32User)
+static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdr, void *pvUser, uint32_t u32User)
 {
-    VMMDevHGCMRequestHeader volatile *pHdr = (VMMDevHGCMRequestHeader volatile *)pHdrNonVolatile;
     const bool fInterruptible = (bool)u32User;
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, fInterruptible, RT_INDEFINITE_WAIT);
+    VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr, pDevExt, fInterruptible, RT_INDEFINITE_WAIT);
 }
 
 
@@ -933,12 +929,11 @@ static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
  */
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible(VMMDevHGCMRequestHeader *pHdrNonVolatile,
-                                                                             void *pvUser, uint32_t u32User)
+static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible(VMMDevHGCMRequestHeader *pHdr, void *pvUser, uint32_t u32User)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, true /* fInterruptible */, u32user);
+    VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr, pDevExt, true /* fInterruptible */, u32User);
 }
 
 
@@ -947,12 +942,11 @@ static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackTimeoutInterruptible(VMM
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
  */
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdrNonVolatile,
-                                                                void *pvUser, uint32_t u32User)
+static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackTimeout(VMMDevHGCMRequestHeader *pHdr, void *pvUser, uint32_t u32User)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker(pHdrNonVolatile, pDevExt, false /* fInterruptible */, u32user);
+    VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr, pDevExt, false /* fInterruptible */, u32User);
 }
 
 
