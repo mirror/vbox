@@ -1334,7 +1334,7 @@ static void vboxClipboardLoseProc(Widget, Atom *)
  * subsystem.
  *
  * @param pClient    Context data for the guest system
- * @param u32Formats Clipboard formats the the guest is offering
+ * @param u32Formats Clipboard formats the guest is offering
  */
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
