@@ -66,14 +66,6 @@ public:
     QString snapshotName() const { return mSnapshotName; }
     ULONG snapshotCount() const { return mSnapshotCount; }
 
-    QAction* vmActionConfig() const { return vmConfigAction; }
-    QAction* vmActionDelete() const { return vmDeleteAction; }
-    QAction* vmActionStart() const { return vmStartAction; }
-    QAction* vmActionDiscard() const { return vmDiscardAction; }
-    QAction* vmActionPause() const { return vmPauseAction; }
-    QAction* vmActionRefresh() const { return vmRefreshAction; }
-    QAction* vmActionShowLogs() const { return vmShowLogsAction; }
-
     QString toolTipText() const;
 
     bool accessible() const { return mAccessible; }
@@ -87,23 +79,11 @@ public:
     bool canSwitchTo() const;
     bool switchTo();
 
-    /* Updates all internal actions depending on the VM's state. */
-    void updateActions();
-    void retranslateUi();
-
 private:
 
     /* Private member vars */
     VBoxSelectorWnd *mParent;
     CMachine mMachine;
-
-    QAction *vmConfigAction;
-    QAction *vmDeleteAction;
-    QAction *vmStartAction;
-    QAction *vmDiscardAction;
-    QAction *vmPauseAction;
-    QAction *vmRefreshAction;
-    QAction *vmShowLogsAction;
 
     /* Cached machine data (to minimize server requests) */
     QUuid mId;
@@ -121,16 +101,6 @@ private:
     ULONG mSnapshotCount;
 
     ULONG mPid;
-
-private slots:
-
-    void vmSettings();
-    void vmDelete();
-    void vmStart();
-    void vmDiscard();
-    void vmPause(bool aPause);
-    void vmRefresh();
-    void vmShowLogs();
 };
 
 /* Make the pointer of this class public to the QVariant framework */

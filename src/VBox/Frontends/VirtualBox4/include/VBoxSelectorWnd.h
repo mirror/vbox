@@ -43,12 +43,13 @@ class VBoxVMLogViewer;
 class VBoxVMListView;
 class VBoxVMModel;
 class VBoxVMItem;
+class VBoxTrayIcon;
 
 class QTabWidget;
 class QListView;
 class QEvent;
 
-class VBoxSelectorWnd: public QIWithRetranslateUI2 <QMainWindow>
+class VBoxSelectorWnd : public QIWithRetranslateUI2 <QMainWindow>
 {
     Q_OBJECT;
 
@@ -81,10 +82,6 @@ public slots:
     void vmPause (bool, const QUuid & = QUuid_null);
     void vmRefresh (const QUuid & = QUuid_null);
     void vmShowLogs (const QUuid & = QUuid_null);
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    void refreshSysTray (bool aRetranslate = false);
-#endif
 
     void refreshVMList();
     void refreshVMItem (const QUuid &aID, bool aDetails,
@@ -158,8 +155,7 @@ private:
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* The systray icon */
-    QSystemTrayIcon *mTrayIcon;
-    QMenu *mTrayIconMenu;
+    VBoxTrayIcon *mTrayIcon;
 #endif
 
     /* The vm list view/model */
@@ -177,5 +173,61 @@ private:
 
     bool doneInaccessibleWarningOnce : 1;
 };
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+
+Q_DECLARE_METATYPE(QUuid);
+
+class VBoxTrayIcon : public QSystemTrayIcon
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel);
+    virtual ~VBoxTrayIcon ();
+
+    void refresh ();
+    void retranslateUi ();
+
+protected:
+
+    VBoxVMItem* GetItem (QObject* aObject);
+
+signals:
+
+public slots:
+
+
+private slots:
+
+    void showSubMenu();
+    void hideSubMenu ();
+
+    void vmSettings();
+    void vmDelete();
+    void vmStart();
+    void vmDiscard();
+    void vmPause(bool aPause);
+    void vmRefresh();
+    void vmShowLogs();
+
+private:
+
+    /* The vm list model */
+    VBoxVMModel *mVMModel;
+
+    VBoxSelectorWnd* mParent;
+    QMenu *mTrayIconMenu;
+    QAction *mVmConfigAction;
+    QAction *mVmDeleteAction;
+    QAction *mVmStartAction;
+    QAction *mVmDiscardAction;
+    QAction *mVmPauseAction;
+    QAction *mVmRefreshAction;
+    QAction *mVmShowLogsAction;
+};
+
+#endif // VBOX_GUI_WITH_SYSTRAY
 
 #endif // __VBoxSelectorWnd_h__
