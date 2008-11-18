@@ -4450,13 +4450,13 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
              */
             if (pReq->Hdr.cbIn == SUP_IOCTL_CALL_SERVICE_SIZE(0))
 #ifdef RT_WITH_W64_UNWIND_HACK
-                rc = supdrvNtWrapServiceReqHandler((PRNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, NULL);
+                rc = supdrvNtWrapServiceReqHandler((PFNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, NULL);
 #else
                 rc = pfnServiceReqHandler(pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, NULL);
 #endif
             else
 #ifdef RT_WITH_W64_UNWIND_HACK
-                rc = supdrvNtWrapServiceReqHandler((PRNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation,
+                rc = supdrvNtWrapServiceReqHandler((PFNRT)pfnServiceReqHandler, pSession, pReq->u.In.uOperation,
                                                    pReq->u.In.u64Arg, (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0]);
 #else
                 rc = pfnServiceReqHandler(pSession, pReq->u.In.uOperation, pReq->u.In.u64Arg, (PSUPR0SERVICEREQHDR)&pReq->abReqPkt[0]);
