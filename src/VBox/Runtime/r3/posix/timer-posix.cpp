@@ -109,7 +109,7 @@ typedef struct RTTIMER
      * This is RTTIMER_MAGIC, but changes to something else before the timer
      * is destroyed to indicate clearly that thread should exit. */
     uint32_t volatile       u32Magic;
-    /** Flag indicating the the timer is suspended. */
+    /** Flag indicating the timer is suspended. */
     uint8_t volatile        fSuspended;
     /** Flag indicating that the timer has been destroyed. */
     uint8_t volatile        fDestroyed;
