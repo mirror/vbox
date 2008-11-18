@@ -3395,7 +3395,7 @@ HRESULT Console::onUSBControllerChange()
 /// @todo (dmik)
 //  check for the Enabled state and disable virtual USB controller??
 //  Anyway, if we want to query the machine's USB Controller we need to cache
-//  it to to mUSBController in #init() (as it is done with mDVDDrive).
+//  it to mUSBController in #init() (as it is done with mDVDDrive).
 //
 //  bird: While the VM supports hot-plugging, I doubt any guest can handle it at this time... :-)
 //
