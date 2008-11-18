@@ -58,6 +58,7 @@
 #include <kern/clock.h>
 #include <kern/sched_prim.h>
 #include <kern/locks.h>
+#include <i386/mp_events.h>
 #include <libkern/libkern.h>
 #include <mach/thread_act.h>
 #include <mach/vm_map.h>
@@ -95,6 +96,17 @@ extern kern_return_t vm_map_unwire(vm_map_t, vm_map_offset_t, vm_map_offset_t, b
 
 /* mach/i386/thread_act.h */
 extern kern_return_t thread_terminate(thread_t);
+
+/* osfmk/i386/mp.h */
+extern void mp_rendezvous(void (*)(void *), void (*)(void *), void (*)(void *), void *);
+extern void mp_rendezvous_no_intrs(void (*)(void *), void *);
+
+/* osfmk/i386/cpu_number.h */
+extern int cpu_number(void);
+
+/* i386/machine_routines.h */
+extern int ml_get_max_cpus(void);
+
 __END_DECLS
 
 
