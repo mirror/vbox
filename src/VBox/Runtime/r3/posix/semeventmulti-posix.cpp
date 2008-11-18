@@ -66,7 +66,7 @@ struct RTSEMEVENTMULTIINTERNAL
  * @{ */
 /** The object isn't initialized. */
 #define EVENTMULTI_STATE_UNINITIALIZED   0
-/** The semaphore is is signaled. */
+/** The semaphore is signaled. */
 #define EVENTMULTI_STATE_SIGNALED        0xff00ff00
 /** The semaphore is not signaled. */
 #define EVENTMULTI_STATE_NOT_SIGNALED    0x00ff00ff

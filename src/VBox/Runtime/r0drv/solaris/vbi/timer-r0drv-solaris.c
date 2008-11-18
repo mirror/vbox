@@ -58,7 +58,7 @@ typedef struct RTTIMER
      * This is RTTIMER_MAGIC, but changes to something else before the timer
      * is destroyed to indicate clearly that thread should exit. */
     uint32_t volatile       u32Magic;
-    /** Flag indicating the the timer is suspended. */
+    /** Flag indicating that the timer is suspended. */
     uint8_t volatile        fSuspended;
     /** Run on all CPUs if set */
     uint8_t                 fAllCpu;

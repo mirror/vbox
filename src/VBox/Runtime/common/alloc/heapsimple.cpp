@@ -62,7 +62,7 @@ typedef struct RTHEAPSIMPLEFREE *PRTHEAPSIMPLEFREE;
 
 /**
  * Structure describing a simple heap block.
- * If this block is allocated, it is followed by the user user data.
+ * If this block is allocated, it is followed by the user data.
  * If this block is free, see RTHEAPSIMPLEFREE.
  */
 typedef struct RTHEAPSIMPLEBLOCK
