@@ -167,7 +167,7 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
  * only when CSAM is enabled. Leaving these selection criteria
  * to the caller simplifies the interface (PTE passing).
  *
- * Note the the page has not yet been synced, so the TLB trick
+ * Note that the page has not yet been synced, so the TLB trick
  * (which wasn't ever active anyway) cannot be applied.
  *
  * @returns true if the page should be marked not present because

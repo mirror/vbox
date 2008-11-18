@@ -93,7 +93,7 @@ static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const 
  * Then the device configuration is enumerated, the instantiation order
  * is determined, and finally they are instantiated.
  *
- * After all device have been successfully instantiated the the primary
+ * After all devices have been successfully instantiated the primary
  * PCI Bus device is called to emulate the PCI BIOS, i.e. making the
  * resource assignments. If there is no PCI device, this step is of course
  * skipped.

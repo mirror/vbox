@@ -779,7 +779,7 @@ int mmR3MapLocked(PVM pVM, PMMLOCKEDMEM pLockedMem, RTGCPTR Addr, unsigned iPage
     AssertMsg(iPage + cPages <= (pLockedMem->cb >> PAGE_SHIFT), ("never even think about giving me a bad cPages(=%d)\n", cPages));
 
     /*
-     * Map the the pages.
+     * Map the pages.
      */
     PSUPPAGE    pPhysPage = &pLockedMem->aPhysPages[iPage];
     while (cPages)

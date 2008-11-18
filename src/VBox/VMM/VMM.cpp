@@ -894,7 +894,7 @@ VMMR3DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrV
 
 
 /**
- * Suspends the the CPU yielder.
+ * Suspends the CPU yielder.
  *
  * @param   pVM             The VM handle.
  */
@@ -915,7 +915,7 @@ VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM)
 
 
 /**
- * Stops the the CPU yielder.
+ * Stops the CPU yielder.
  *
  * @param   pVM             The VM handle.
  */
@@ -953,7 +953,7 @@ VMMR3DECL(void) VMMR3YieldResume(PVM pVM)
 static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
     /*
-     * This really needs some careful tuning. While we shouldn't be too gready since
+     * This really needs some careful tuning. While we shouldn't be too greedy since
      * that'll cause the rest of the system to stop up, we shouldn't be too nice either
      * because that'll cause us to stop up.
      *
