@@ -139,13 +139,6 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
                     strcpy (VBoxSVCPath, path.get());
                     RTPathStripFilename (VBoxSVCPath);
-                    /* Get rid of the trailing slash left by RTPathStripFilename(). */
-                    size_t cbPath = strlen(VBoxSVCPath);
-                    if (cbPath)
-                    {
-                        Assert(RTPATH_IS_SLASH(VBoxSVCPath[cbPath-1]));
-                        VBoxSVCPath[cbPath-1] = '\0';
-                    }
                     strcat (VBoxSVCPath, VBoxSVC_exe);
 
                     IsVBoxSVCPathSet = true;
