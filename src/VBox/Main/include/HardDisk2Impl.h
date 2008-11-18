@@ -27,6 +27,7 @@
 #include "VirtualBoxBase.h"
 
 #include "VirtualBoxImpl.h"
+#include "HardDiskFormatImpl.h"
 #include "MediumImpl.h"
 
 #include <VBox/com/SupportErrorInfo.h>
@@ -173,8 +174,6 @@ public:
 
     Utf8Str name();
 
-    static bool isFileLocation (const char *aLocation);
-
     HRESULT prepareDiscard (MergeChain * &aChain);
     HRESULT discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain);
     void cancelDiscard (MergeChain *aChain);
@@ -224,6 +223,8 @@ protected:
 private:
 
     HRESULT setLocation (const BSTR aLocation);
+    HRESULT setFormat (const BSTR aFormat);
+
     HRESULT queryInfo();
 
     HRESULT canClose();
@@ -255,6 +256,7 @@ private:
                , vdProgress (NULL) , vdDiskIfaces (NULL) {}
 
         const Bstr format;
+        ComObjPtr <HardDiskFormat> formatObj;
 
         HardDiskType_T type;
         uint64_t logicalSize;   /*< In MBytes. */

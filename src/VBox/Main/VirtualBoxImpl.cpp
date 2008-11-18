@@ -246,7 +246,7 @@ HRESULT VirtualBox::init()
             rc = mData.mHost->loadSettings (global);
             CheckComRCThrowRC (rc);
 
-            /* create the system properties object */
+            /* create the system properties object, someone may need it too */
             unconst (mData.mSystemProperties).createObject();
             rc = mData.mSystemProperties->init (this);
             ComAssertComRCThrowRC (rc);
@@ -374,6 +374,26 @@ void VirtualBox::uninit()
         mData.mMachines.clear();
     }
 
+    /* Uninit all other children still referenced by clients (unregistered
+     * machines, hard disks, DVD/floppy images, server-side progress
+     * operations). */
+    uninitDependentChildren();
+
+    mData.mHardDisk2Map.clear();
+
+    mData.mFloppyImages2.clear();
+    mData.mDVDImages2.clear();
+    mData.mHardDisks2.clear();
+
+    mData.mProgressOperations.clear();
+
+    mData.mGuestOSTypes.clear();
+
+    /* Note that we release singleton children after we've all other children.
+     * In some cases this is important because these other children may use
+     * some resources of the singletons which would prevent them from
+     * uninitializing (as for example, mSystemProperties which owns
+     * HardDiskFormat objects which HardDisk2 objects refer to) */
     if (mData.mSystemProperties)
     {
         mData.mSystemProperties->uninit();
@@ -393,21 +413,6 @@ void VirtualBox::uninit()
         unconst (mData.mPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-    /* Uninit all other children still referenced by clients (unregistered
-     * machines, hard disks, DVD/floppy images, server-side progress
-     * operations). */
-    uninitDependentChildren();
-
-    mData.mHardDisk2Map.clear();
-
-    mData.mFloppyImages2.clear();
-    mData.mDVDImages2.clear();
-    mData.mHardDisks2.clear();
-
-    mData.mProgressOperations.clear();
-
-    mData.mGuestOSTypes.clear();
 
     /* unlock the config file */
     unlockConfig();

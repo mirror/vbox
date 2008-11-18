@@ -32,6 +32,15 @@
 
 struct VDBACKENDINFO;
 
+/**
+ * The HardDiskFormat class represents the backend used to store hard disk data
+ * (IHardDiskFormat interface).
+ *
+ * @note Instances of this class are permanently caller-referenced by HardDisk2
+ * objects (through addCaller()) so that an attempt to uninitialize or delete
+ * them before all HardDisk2 objects are uninitialized will produce an endless
+ * wait!
+ */
 class ATL_NO_VTABLE HardDiskFormat :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <HardDiskFormat, IHardDiskFormat>,
@@ -39,6 +48,29 @@ class ATL_NO_VTABLE HardDiskFormat :
     public IHardDiskFormat
 {
 public:
+
+    struct Property
+    {
+        Bstr name;
+        Bstr description;
+        DataType_T type;
+        ULONG flags;
+        Bstr defaultValue;
+    };
+
+    typedef std::list <Bstr> BstrList;
+    typedef std::list <Property> PropertyList;
+
+    struct Data
+    {
+        Data() : capabilities (0) {}
+
+        const Bstr id;
+        const Bstr name;
+        const BstrList fileExtensions;
+        const uint64_t capabilities;
+        const PropertyList properties;
+    };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (HardDiskFormat)
 
@@ -83,35 +115,14 @@ public:
     /** Const, no need to lock */
     const Bstr &id() { return m.id; }
     /** Const, no need to lock */
+    const BstrList &fileExtensions() { return m.fileExtensions; }
+    /** Const, no need to lock */
     uint64_t capabilities() { return m.capabilities; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HardDiskFormat"; }
 
 private:
-
-    typedef std::list <Bstr> BstrList;
-
-    struct Property
-    {
-        Bstr name;
-        Bstr description;
-        DataType_T type;
-        ULONG flags;
-        Bstr defaultValue;
-    };
-    typedef std::list <Property> PropertyList;
-
-    struct Data
-    {
-        Data() : capabilities (0) {}
-
-        const Bstr id;
-        const Bstr name;
-        const BstrList fileExtensions;
-        const uint64_t capabilities;
-        const PropertyList properties;
-    };
 
     Data m;
 };
