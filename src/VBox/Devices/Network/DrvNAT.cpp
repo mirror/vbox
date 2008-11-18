@@ -310,6 +310,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     fd_set  WriteFDs;
     fd_set  XcptFDs;
     int     nFDs = -1;
+    unsigned int ms;
 # ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
@@ -338,11 +339,12 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * To prevent concurent execution of sending/receving threads
          */
         slirp_select_fill(pThis->pNATState, &nFDs, &ReadFDs, &WriteFDs, &XcptFDs);
+        ms = slirp_get_timeout_ms(pThis->pNATState);
 # ifndef RT_OS_WINDOWS
-        struct timeval tv = { 0, 2000 }; /* 2ms */
+        struct timeval tv = { 0, ms*1000 };
         FD_SET(pThis->PipeRead, &ReadFDs);
         nFDs = ((int)pThis->PipeRead < nFDs ? nFDs : pThis->PipeRead);
-        int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, &tv);
+        int cChangedFDs = select(nFDs + 1, &ReadFDs, &WriteFDs, &XcptFDs, ms ? &tv : NULL);
         if (cChangedFDs >= 0)
         {
             slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
@@ -357,7 +359,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             RTReqProcess(pThis->pReqQueue, 0);
         }
 # else /* RT_OS_WINDOWS */
-        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, 2 /*ms*/, FALSE);
+        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, ms ? ms : WSA_INFINITE, FALSE);
         if (   (event < WSA_WAIT_EVENT_0 || event > WSA_WAIT_EVENT_0 + nFDs - 1)
             && event != WSA_WAIT_TIMEOUT)
         {
