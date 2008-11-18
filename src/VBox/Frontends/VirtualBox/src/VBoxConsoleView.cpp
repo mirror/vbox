@@ -3701,7 +3701,7 @@ void VBoxConsoleView::calculateDesktopGeometry()
 }
 
 /**
- *  Sets the the minimum size restriction depending on the auto-resize feature
+ *  Sets the minimum size restriction depending on the auto-resize feature
  *  state and the current rendering mode.
  *
  *  Currently, the restriction is set only in SDL mode and only when the
