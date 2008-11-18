@@ -93,7 +93,7 @@ struct _VBGLPHYSHEAPCHUNK
 {
     uint32_t u32Signature;
 
-    /* Size of the the chunk. Includes the chunk header. */
+    /* Size of the chunk. Includes the chunk header. */
     uint32_t cbSize;
 
     /* Physical address of the chunk */

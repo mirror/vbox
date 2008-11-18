@@ -287,7 +287,7 @@ static int vboxGuestOS2MapMemory(void)
             &&  pVMMDev->u32Size >= 32 /* just for checking sanity */)
         {
             /*
-             * Did we hit the the correct size? If not we'll have to
+             * Did we hit the correct size? If not we'll have to
              * redo the mapping using the correct size.
              */
             if (RT_ALIGN_32(pVMMDev->u32Size, PAGE_SIZE) == cb)
