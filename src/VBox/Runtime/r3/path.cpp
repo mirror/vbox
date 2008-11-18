@@ -50,12 +50,14 @@
  * Strips the filename from a path.
  *
  * @param   pszPath     Path which filename should be extracted from.
+ *                      If only filename in the string a '.' will be returned.
  *
  */
 RTDECL(void) RTPathStripFilename(char *pszPath)
 {
     char *psz = pszPath;
-    char *pszLastSep = pszPath;
+    char *pszLastSep = NULL;
+
 
     for (;; psz++)
     {
@@ -65,6 +67,10 @@ RTDECL(void) RTPathStripFilename(char *pszPath)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
                 pszLastSep = psz + 1;
+                if (RTPATH_IS_SLASH(psz[1]))
+                    pszPath = psz + 1;
+                else
+                    pszPath = psz;
                 break;
 
             case '\\':
@@ -75,9 +81,19 @@ RTDECL(void) RTPathStripFilename(char *pszPath)
 
             /* the end */
             case '\0':
-                if (pszLastSep == pszPath)
-                    *pszLastSep++ = '.';
-                *pszLastSep = '\0';
+                if (!pszLastSep)
+                {
+                    /* no directory component */
+                    pszPath[0] = '.';
+                    pszPath[1] = '\0';
+                }
+                else if (pszLastSep == pszPath)
+                {
+                    /* only root. */
+                    pszLastSep[1] = '\0';
+                }
+                else
+                    pszLastSep[0] = '\0';
                 return;
         }
     }
@@ -252,6 +268,8 @@ RTDECL(char *) RTPathFilename(const char *pszPath)
  * Strips the trailing slashes of a path name.
  *
  * @param   pszPath     Path to strip.
+ *
+ * @todo    This isn't safe for a root element! Needs fixing.
  */
 RTDECL(void) RTPathStripTrailingSlash(char *pszPath)
 {
