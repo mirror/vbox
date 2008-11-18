@@ -24,28 +24,26 @@
 #define __VBoxRegistrationDlg_h__
 
 #include "QIAbstractWizard.h"
-#include "VBoxRegistrationDlg.gen.h"
-#include "COMDefs.h"
 #include "QIWidgetValidator.h"
 #include "QIWithRetranslateUI.h"
+#include "VBoxRegistrationDlg.gen.h"
 
 /* Qt includes */
 #include <QUrl>
 
-class VBoxNetworkFramework;
+class QIHttp;
 
-class VBoxRegistrationDlg : public QIWithRetranslateUI2<QIAbstractWizard>,
+class VBoxRegistrationDlg : public QIWithRetranslateUI <QIAbstractWizard>,
                             public Ui::VBoxRegistrationDlg
 {
     Q_OBJECT;
 
 public:
 
-    VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *aParent = 0,
-                         Qt::WindowFlags aFlags = 0);
-   ~VBoxRegistrationDlg();
-
     static bool hasToBeShown();
+
+    VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *aParent = 0);
+   ~VBoxRegistrationDlg();
 
 protected:
 
@@ -55,13 +53,12 @@ private slots:
 
     void accept();
     void reject();
-    void handshake();
-    void registration();
-    void processTimeout();
-    void onNetBegin (int aStatus);
-    void onNetData (const QByteArray &aData);
-    void onNetEnd (const QByteArray &aData);
-    void onNetError (const QString &aError);
+
+    void handshakeStart();
+    void handshakeResponse (bool aError);
+
+    void registrationStart();
+    void registrationResponse (bool aError);
 
     void revalidate (QIWidgetValidator *aWval);
     void enableNext (const QIWidgetValidator *aWval);
@@ -69,18 +66,15 @@ private slots:
 
 private:
 
-    void postRequest (const QString &aHost, const QString &aUrl, const QString &aBody);
-    void abortRegisterRequest (const QString &aReason);
+    void postRequest (const QUrl &aUrl);
+    void abortRequest (const QString &aReason);
     void finish();
 
     VBoxRegistrationDlg **mSelf;
     QIWidgetValidator    *mWvalReg;
     QUrl                  mUrl;
+    QIHttp               *mHttp;
     QString               mKey;
-    QTimer               *mTimeout;
-    bool                  mHandshake;
-    bool                  mSuicide;
-    VBoxNetworkFramework *mNetfw;
 };
 
 #endif // __VBoxRegistrationDlg_h__

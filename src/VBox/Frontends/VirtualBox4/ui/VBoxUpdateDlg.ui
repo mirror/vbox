@@ -26,12 +26,6 @@
     <height>417</height>
    </rect>
   </property>
-  <property name="windowTitle" >
-   <string>VirtualBox Update Wizard</string>
-  </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/refresh_16px.png</iconset>
-  </property>
   <layout class="QVBoxLayout" >
    <property name="leftMargin" >
     <number>0</number>
@@ -61,9 +55,6 @@
            <weight>75</weight>
            <bold>true</bold>
           </font>
-         </property>
-         <property name="text" >
-          <string>Check for Updates</string>
          </property>
         </widget>
        </item>
@@ -110,11 +101,6 @@
                <width>300</width>
                <height>0</height>
               </size>
-             </property>
-             <property name="text" >
-              <string>&lt;p>This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p>
-&lt;p>Use the &lt;b>Check&lt;/b> button to check for a new version now or the &lt;b>Cancel&lt;/b> button if you do not want to perform this check.&lt;/p>
-&lt;p>You can run this wizard at any time by choosing &lt;b>Check for Updates...&lt;/b> from the &lt;b>Help&lt;/b> menu.&lt;/p></string>
              </property>
              <property name="wordWrap" >
               <bool>true</bool>
@@ -187,9 +173,6 @@
          </item>
          <item>
           <widget class="QPushButton" name="mBtnCheck" >
-           <property name="text" >
-            <string>Chec&amp;k</string>
-           </property>
            <property name="default" >
             <bool>true</bool>
            </property>
@@ -212,11 +195,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="mBtnCancel" >
-           <property name="text" >
-            <string>Cancel</string>
-           </property>
-          </widget>
+          <widget class="QPushButton" name="mBtnCancel" />
          </item>
         </layout>
        </item>
@@ -233,9 +212,6 @@
            <weight>75</weight>
            <bold>true</bold>
           </font>
-         </property>
-         <property name="text" >
-          <string>Summary</string>
          </property>
         </widget>
        </item>
@@ -288,9 +264,6 @@
                  <height>0</height>
                 </size>
                </property>
-               <property name="text" >
-                <string>&lt;p>A new version of VirtualBox has been released! Version &lt;b>%1&lt;/b> is available at &lt;a href="http://www.virtualbox.org/">virtualbox.org&lt;/a>.&lt;/p>&lt;p>You can download this version from this direct link:&lt;/p>&lt;p>&lt;a href=%2>%3&lt;/a>&lt;/p></string>
-               </property>
                <property name="wordWrap" >
                 <bool>true</bool>
                </property>
@@ -310,9 +283,6 @@
                  <height>0</height>
                 </size>
                </property>
-               <property name="text" >
-                <string>&lt;p>Unable to obtain the new version information due to the following network error:&lt;/p>&lt;p>&lt;b>%1&lt;/b>&lt;/p></string>
-               </property>
                <property name="wordWrap" >
                 <bool>true</bool>
                </property>
@@ -331,9 +301,6 @@
                  <width>300</width>
                  <height>0</height>
                 </size>
-               </property>
-               <property name="text" >
-                <string>You have already installed the latest VirtualBox version. Please repeat the version check later.</string>
                </property>
                <property name="wordWrap" >
                 <bool>true</bool>
@@ -386,9 +353,6 @@
          </item>
          <item>
           <widget class="QPushButton" name="mBtnFinish" >
-           <property name="text" >
-            <string>&amp;Close</string>
-           </property>
            <property name="default" >
             <bool>true</bool>
            </property>

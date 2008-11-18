@@ -23,94 +23,71 @@
 #ifndef __VBoxDownloaderWgt_h__
 #define __VBoxDownloaderWgt_h__
 
-#include "HappyHttp.h"
 #include "QIWithRetranslateUI.h"
 
 /* Qt includes */
-#include <QWidget>
 #include <QUrl>
-#include <QMutex>
+#include <QWidget>
 
-class QStatusBar;
-class QAction;
+class QIHttp;
+class QHttpResponseHeader;
 class QProgressBar;
 class QToolButton;
-class QThread;
-class QTimer;
-typedef happyhttp::Connection HConnect;
 
-/** class VBoxDownloaderWgt
+/**
+ * The VBoxDownloaderWgt class is QWidget class re-implementation which embeds
+ * into the Dialog's status-bar and allows background http downloading.
+ * This class is not supposed to be used itself and made for sub-classing only.
  *
- *  The VBoxDownloaderWgt class is an QWidget class for Guest Additions
- *  http backgroung downloading. This class is also used to display the
- *  Guest Additions download state through the progress dialog integrated
- *  into the VM console status bar.
+ * This class has two parts:
+ * 1. Acknowledging (getting information about target presence and size).
+ * 2. Downloading (starting and handling file downloading process).
+ * Every subclass can determine using or not those two parts and handling
+ * the result of those parts itself.
  */
-class VBoxDownloaderWgt : public QIWithRetranslateUI<QWidget>
+class VBoxDownloaderWgt : public QIWithRetranslateUI <QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxDownloaderWgt (QStatusBar *aStatusBar, QAction *aAction,
-                       const QString &aUrl, const QString &aTarget);
+    VBoxDownloaderWgt (const QString &aSource, const QString &aTarget);
 
+    virtual void start();
 
-    bool isCheckingPresence() { return mIsChecking; }
+protected slots:
+
+    /* Acknowledging part */
+    virtual void acknowledgeStart();
+    virtual void acknowledgeProcess (const QHttpResponseHeader &aResponse);
+    virtual void acknowledgeFinished (bool aError);
+
+    /* Downloading part */
+    virtual void downloadStart();
+    virtual void downloadProcess (int aDone, int aTotal);
+    virtual void downloadFinished (bool aError);
+
+    /* Common slots */
+    virtual void cancelDownloading();
+    virtual void abortDownload (const QString &aError);
+    virtual void suicide();
 
 protected:
 
-    void retranslateUi();
+    /* In sub-class this function will show the user downloading object size
+     * and ask him about downloading confirmation. Returns user response. */
+    virtual bool confirmDownload() = 0;
 
-private slots:
+    /* In sub-class this function will show the user which error happens
+     * in context of downloading file and executing his request. */
+    virtual void warnAboutError (const QString &aError) = 0;
 
-    /* This slot is used to control the connection timeout. */
-    void processTimeout();
-
-    /* This slot is used to process cancel-button clicking signal. */
-    void processAbort();
-
-    /* This slot is used to terminate the downloader, activate the
-     * Install Guest Additions action and removing the downloader's
-     * sub-widgets from the VM Console status-bar. */
-    void suicide();
-
-private:
-
-    /* Used to process all the widget events */
-    bool event (QEvent *aEvent);
-
-    /* This function is used to make a request to get a file */
-    void getFile();
-
-    /* This function is used to ask the user about he wants to download the
-     * founded Guest Additions image or not. It also shows the progress-bar
-     * and Cancel-button widgets. */
-    void processFile (int aSize);
-
-    /* This wrapper displays an error message box (unless @aReason is
-     * QString::null) with the cause of the download procedure
-     * termination. After the message box is dismissed, the downloader signals
-     * to close itself on the next event loop iteration. */
-    void abortDownload (const QString &aReason = QString::null);
-
-    void abortConnection();
-
-    QUrl mUrl;
+    QUrl mSource;
     QString mTarget;
-    QStatusBar *mStatusBar;
-    QAction *mAction;
+    QIHttp *mHttp;
     QProgressBar *mProgressBar;
     QToolButton *mCancelButton;
-    bool mIsChecking;
-    bool mSuicide;
-    HConnect *mConn;
-    QThread *mRequestThread;
-    QMutex mMutex;
-    QByteArray mDataArray;
-    QDataStream mDataStream;
-    QTimer *mTimeout;
 };
 
-#endif
+#endif // __VBoxDownloaderWgt_h__
 

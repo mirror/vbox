@@ -35,6 +35,7 @@
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
 #include "QIHotKeyEdit.h"
+#include "QIHttp.h"
 
 /* Qt includes */
 #include <QActionGroup>
@@ -43,6 +44,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QTimer>
+#include <QProgressBar>
 #ifdef Q_WS_X11
 # include <QX11Info>
 #endif
@@ -92,6 +94,104 @@ public:
 class Q3Http;
 class Q3HttpResponseHeader;
 #endif
+
+class VBoxAdditionsDownloader : public VBoxDownloaderWgt
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxAdditionsDownloader (const QString &aSource, const QString &aTarget, QAction *aAction)
+        : VBoxDownloaderWgt (aSource, aTarget)
+        , mAction (aAction)
+    {
+        mAction->setEnabled (false);
+        retranslateUi();
+    }
+
+    void start()
+    {
+        acknowledgeStart();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        mCancelButton->setText (tr ("Cancel"));
+        mProgressBar->setToolTip (tr ("Downloading the VirtualBox Guest Additions "
+                                      "CD image from <nobr><b>%1</b>...</nobr>")
+                                      .arg (mSource.toString()));
+        mCancelButton->setToolTip (tr ("Cancel the VirtualBox Guest "
+                                       "Additions CD image download"));
+    }
+
+private slots:
+
+    void downloadFinished (bool aError)
+    {
+        if (aError)
+            VBoxDownloaderWgt::downloadFinished (aError);
+        else
+        {
+            QByteArray receivedData (mHttp->readAll());
+            /* Serialize the incoming buffer into the .iso image. */
+            while (true)
+            {
+                QFile file (mTarget);
+                if (file.open (QIODevice::WriteOnly))
+                {
+                    file.write (receivedData);
+                    file.close();
+                    if (vboxProblem().confirmMountAdditions (mSource.toString(),
+                        QDir::toNativeSeparators (mTarget)))
+                        vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
+                    QTimer::singleShot (0, this, SLOT (suicide()));
+                    break;
+                }
+                else
+                {
+                    vboxProblem().message (window(), VBoxProblemReporter::Error,
+                        tr ("<p>Failed to save the downloaded file as "
+                            "<nobr><b>%1</b>.</nobr></p>")
+                        .arg (QDir::toNativeSeparators (mTarget)));
+                }
+
+                QString target = vboxGlobal().getExistingDirectory (
+                    QFileInfo (mTarget).absolutePath(), this,
+                    tr ("Select folder to save Guest Additions image to"), true);
+                if (target.isNull())
+                    QTimer::singleShot (0, this, SLOT (suicide()));
+                else
+                    mTarget = QDir (target).absoluteFilePath (QFileInfo (mTarget).fileName());
+            }
+        }
+    }
+
+    void suicide()
+    {
+        QStatusBar *sb = qobject_cast <QStatusBar*> (parent());
+        Assert (sb);
+        sb->removeWidget (this);
+        mAction->setEnabled (true);
+        VBoxDownloaderWgt::suicide();
+    }
+
+private:
+
+    bool confirmDownload()
+    {
+        return vboxProblem().confirmDownloadAdditions (mSource.toString(),
+            mHttp->lastResponse().contentLength());
+    }
+
+    void warnAboutError (const QString &aError)
+    {
+        return vboxProblem().cannotDownloadGuestAdditions (mSource.toString(), aError);
+    }
+
+    QAction *mAction;
+};
 
 /** \class VBoxConsoleWnd
  *
@@ -2681,50 +2781,49 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     QString src2 = qApp->applicationDirPath() + "/../../release/bin/additions/VBoxGuestAdditions.iso";
 #else
     char szAppPrivPath [RTPATH_MAX];
-    int rc;
-
-    rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
+    int rc = RTPathAppPrivateNoArch (szAppPrivPath, sizeof (szAppPrivPath));
     AssertRC (rc);
 
     QString src1 = QString (szAppPrivPath) + "/VBoxGuestAdditions.iso";
     QString src2 = qApp->applicationDirPath() + "/additions/VBoxGuestAdditions.iso";
 #endif
 
+    /* Check the standard image locations */
     if (QFile::exists (src1))
-        installGuestAdditionsFrom (src1);
+        return installGuestAdditionsFrom (src1);
     else if (QFile::exists (src2))
-        installGuestAdditionsFrom (src2);
-    else
+        return installGuestAdditionsFrom (src2);
+
+    /* Check for the already registered image */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString name = QString ("VBoxGuestAdditions_%1.iso")
+                            .arg (vbox.GetVersion().remove ("_OSE"));
+
+    CDVDImage2Vector vec = vbox.GetDVDImages();
+    for (CDVDImage2Vector::ConstIterator it = vec.begin();
+         it != vec.end(); ++ it)
     {
-        /* Check for the already registered required image */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        QString name = QString ("VBoxGuestAdditions_%1.iso")
-                                 .arg (vbox.GetVersion().remove ("_OSE"));
+        QString path = it->GetLocation();
+        /* Compare the name part ignoring the file case */
+        QString fn = QFileInfo (path).fileName();
+        if (RTPathCompare (name.toUtf8().constData(), fn.toUtf8().constData()) == 0)
+            return installGuestAdditionsFrom (path);
+    }
 
-        CDVDImage2Vector vec = vbox.GetDVDImages();
-        for (CDVDImage2Vector::ConstIterator it = vec.begin();
-             it != vec.end(); ++ it)
-        {
-            QString path = it->GetLocation();
-            /* Compare the name part ignoring the file case */
-            QString fn = QFileInfo (path).fileName();
-            if (RTPathCompare (name.toUtf8().constData(), fn.toUtf8().constData()) == 0)
-                return installGuestAdditionsFrom (path);
-        }
+    /* Download the required image */
+    int result = vboxProblem().cannotFindGuestAdditions (
+        QDir::toNativeSeparators (src1), QDir::toNativeSeparators (src2));
+    if (result == QIMessageBox::Yes)
+    {
+        QString source = QString ("http://download.virtualbox.org/virtualbox/%1/")
+                                  .arg (vbox.GetVersion().remove ("_OSE")) + name;
+        QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
+                               .absoluteFilePath (name);
 
-        /* Download the required image: */
-        int rc = vboxProblem().cannotFindGuestAdditions (
-            QDir::toNativeSeparators (src1), QDir::toNativeSeparators (src2));
-        if (rc == QIMessageBox::Yes)
-        {
-            QString url = QString ("http://download.virtualbox.org/virtualbox/%1/")
-                                   .arg (vbox.GetVersion().remove ("_OSE")) + name;
-            QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
-                                   .absoluteFilePath (name);
-
-            new VBoxDownloaderWgt (statusBar(), devicesInstallGuestToolsAction,
-                                   url, target);
-        }
+        VBoxAdditionsDownloader *dl =
+            new VBoxAdditionsDownloader (source, target, devicesInstallGuestToolsAction);
+        statusBar()->addWidget (dl, 0);
+        dl->start();
     }
 }
 
@@ -2744,17 +2843,23 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
         uuid = image.GetId();
 
     if (!vbox.isOk())
-    {
-        vboxProblem().cannotOpenMedium (this, vbox,
-                                        VBoxDefs::MediaType_DVD, aSource);
-        return;
-    }
+        return vboxProblem().cannotOpenMedium (this, vbox,
+                                               VBoxDefs::MediaType_DVD, aSource);
 
     Assert (!uuid.isNull());
     CDVDDrive drv = csession.GetMachine().GetDVDDrive();
     drv.MountImage (uuid);
-    /// @todo NEWMEDIA use VBoxProblemReporter::cannotMountMedia
     AssertWrapperOk (drv);
+    if (drv.isOk())
+    {
+        if (mIsAutoSaveMedia)
+        {
+            CMachine m = csession.GetMachine();
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
+    }
 }
 
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
@@ -3634,3 +3739,5 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     setMinimumWidth (400);
     QDialog::showEvent (aEvent);
 }
+
+#include "VBoxConsoleWnd.moc"
