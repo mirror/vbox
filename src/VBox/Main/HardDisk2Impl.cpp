@@ -650,7 +650,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
      * freeze but mark it as initially inaccessible instead. The vital UUID,
      * location and format properties are read from the registry file above; to
-     * get the actual state and the the rest of data, the user will have to call
+     * get the actual state and the rest of the data, the user will have to call
      * COMGETTER(State). */
 
     /* load all children */
@@ -3390,8 +3390,8 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 else
                 {
                     /* too bad if we fail, but we'll need to rollback everything
-                     * we did above to at least keep the the HD tree in sync
-                     * with the current regstry on disk */
+                     * we did above to at least keep the HD tree in sync with
+                     * the current registry on disk */
 
                     saveSettingsFailed = true;
 
@@ -3409,7 +3409,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                  * and so on) or VirtualBox::saveSettings() failed (where we
                  * should have the original tree but with intermediate storage
                  * units deleted by VDMerge()). We have to only restore states
-                 * (through the MergeChain dtor) unless we are run syncronously
+                 * (through the MergeChain dtor) unless we are run synchronously
                  * in which case it's the responsibility of the caller as stated
                  * in the mergeTo() docs. The latter also implies that we
                  * don't own the merge chain, so release it in this case. */
