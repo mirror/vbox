@@ -220,7 +220,7 @@ present:
 	return (flags);
 }
 
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else /* VBOX_WITH_BSD_TCP_REASS */
 
 #ifndef TCP_ACK_HACK
 #define DELAY_ACK(tp, ti)                           \
@@ -728,7 +728,7 @@ findso:
 		} else if (ti->ti_ack == tp->snd_una &&
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		    u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
                     LIST_FIRST(&tp->t_segq) &&
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 		    ti->ti_len <= sbspace(&so->so_rcv)) {
@@ -962,7 +962,7 @@ findso:
 #ifndef VBOX_WITH_BSD_TCP_REASS
 			(void) tcp_reass(pData, tp, (struct tcpiphdr *)0,
 				(struct mbuf *)0);
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
 			(void) tcp_reass(pData, tp, (struct tcphdr *)0, NULL, (struct mbuf *)0);
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 			/*
@@ -1235,7 +1235,7 @@ trimthenstep6:
  */
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		(void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (struct mbuf *)0);
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
 		(void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
 #endif /*VBOX_WITH_BSD_TCP_REASS*/
 		tp->snd_wl1 = ti->ti_seq - 1;
@@ -1541,7 +1541,7 @@ dodata:
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 #ifndef VBOX_WITH_BSD_TCP_REASS
 		TCP_REASS(pData, tp, ti, m, so, tiflags);
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_TCP_REASS */
                 if (ti->ti_seq == tp->rcv_nxt
                 && LIST_EMPTY(&tp->t_segq)
                 && tp->t_state == TCPS_ESTABLISHED) {
