@@ -226,7 +226,7 @@ endif
 	sed \
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
-	    -e 's|%NETFLT%|$(if $(wildcard $(builddir)/src/vboxnetflt),1,)|g' \
+	    -e 's|%NETFLT%|$(if $(wildcard $(builddir)/bin/src/vboxnetflt),1,)|g' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	sed \
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g' \
