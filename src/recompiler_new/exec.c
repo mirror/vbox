@@ -2201,6 +2201,16 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
         }
     }
 
+#ifdef VBOX
+#  if !defined(REM_PHYS_ADDR_IN_TLB)
+    if (remR3IsMonitored(env, vaddr & TARGET_PAGE_MASK))
+    {
+         address |= TLB_MMIO;
+         iotlb = (pd & ~TARGET_PAGE_MASK) + paddr +env->pVM->rem.s.iHandlerMemType;
+    }
+#  endif
+#endif
+
     index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     env->iotlb[mmu_idx][index] = iotlb - vaddr;
     te = &env->tlb_table[mmu_idx][index];

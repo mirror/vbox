@@ -1451,6 +1451,12 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
 #endif
 }
 
+#ifndef REM_PHYS_ADDR_IN_TLB
+bool remR3IsMonitored(CPUState *env, RTGCPTR GCPtr)
+{
+    return PGMHandlerIsAddressMonitored(env->pVM, GCPtr);
+}
+#endif
 
 /**
  * Called when the CPU is initialized, any of the CRx registers are changed or
