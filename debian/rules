@@ -16,7 +16,7 @@ export DH_COMPAT=4
 
 # possible overrides:
 #  OSE=1            force VBOX_OSE
-#  NOPARALLEL=1     compile with -j1 (-j2 is default)
+#  NOPARALLEL=1     compile with -j1
 #  LINUX=<dir>      compile vboxdrv against Linux found in <dir>
 #  VERBOSE=1        verbose build
 #  DEBUG=1          debug build
@@ -47,19 +47,19 @@ archdir   := $(prefix)/opt/VirtualBox-$(ver)
 endif
 
 ifneq ($(STAGEDISO),)
-ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
-$(error STAGEDISO='$(STAGEDISO)/VBoxGuestAdditions.iso' not found)
-endif
+ ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
+  $(error STAGEDISO='$(STAGEDISO)/VBoxGuestAdditions.iso' not found)
+ endif
 endif
 
 # Hack: Xandros is actually Debian/sarge ... :(
 ifneq ($(wildcard /etc/xandros-desktop-version),)
-debrel   := _xandros4.1
+ debrel  := _xandros4.1
 else
 ifneq ($(wildcard /etc/univention),)
-debrel   := _ucs1.3
+ debrel  := _ucs1.3
 else
-debrel   := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),)
+ debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),unknown)
 endif
 endif
 
@@ -85,9 +85,9 @@ debian/build-stamp $(verfile):
 	dh_testdir
 	. debian/env.sh && kmk -C $(vboxroot) $(if \
 	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
-	    $(NOPARALLEL),-j1,-j2) $(if \
+	    $(NOPARALLEL),-j1,) $(if \
 	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
-	    $(NODOCS),VBOX_WITH_DOCS=,)\
+	    $(NODOCS),VBOX_WITH_DOCS= ,)\
 	    $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
@@ -117,15 +117,25 @@ modules: debian/build-stamp debian/modules-stamp
 debian/modules-stamp: debian/build-stamp
 	rm -rf $(moddir)
 	mkdir $(moddir)
-	make -C $(builddir)/bin/src clean
+	make -C $(builddir)/bin/src/vboxdrv clean
 	for d in $(wildcard /lib/modules/*); do \
 	    if [ -L $$d/build ]; then \
-	        make -C $(builddir)/bin/src KERN_DIR=$$d/build MODULE_DIR=$$d clean all && \
+	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
+	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d all && \
 	        install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
+	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
+		if [ -f $(builddir)/bin/src/vboxnetflt/Makefile ]; then \
+	          make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
+	          make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d all && \
+	          install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko; \
+		fi \
 	    fi; \
 	done
-	make -C $(builddir)/bin/src clean
+	make -C $(builddir)/bin/src/vboxdrv clean
+	if [ -f $(builddir)/bin/src/vboxnetflt/Makefile ]; then \
+	  make -C $(builddir)/bin/src/vboxnetflt clean; \
+	fi
 	touch debian/modules-stamp
 
 clean:
@@ -182,15 +192,21 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
-	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; done)
+	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
+	    if [ -d $$/vboxnetflt.ko ]; then \
+	      install -D -g 0 -o 0 -m 644 \
+		$$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
+	    fi; done)
 ifeq ($(ose),)
 	$(if $(HEADLESS),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
-	dh_installdocs $(addprefix $(archdir)/,\
-	    UserManual.pdf VirtualBox.chm LICENSE)
-	rm $(addprefix $(archdir)/,UserManual.pdf VirtualBox.chm LICENSE)
+	dh_installdocs \
+	  $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
+	  LICENSE
+	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 	rmdir $(archdir)/additions
+	if [ -d $(archdir)/accessible ]; then mv $(archdir)/accessible $(prefix)/usr/lib/virtualbox; fi
 else
 	dh_installdocs
 endif
@@ -207,9 +223,13 @@ endif
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
-	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g; s|%PACKAGE%|virtualbox|g;' \
+	sed \
+	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    -e 's|%NETFLT%|$(if $(wildcard $(builddir)/src/vboxnetflt),1,)|g' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
-	sed -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g;' \
+	sed \
+	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g' \
 	    src/VBox/Installer/linux/vboxnet.sh.in > debian/vboxnet.init
 	dh_installinit --name=vboxdrv
 	dh_installinit --name=vboxnet
@@ -219,7 +239,7 @@ endif
 	dh_installdebconf
 	dh_installchangelogs
 	dh_link
-	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4 --exclude=libqtaccessiblewidgets.so
+	dh_strip --keep-debug --exclude=libVBoxQtCore.so.4 --exclude=libVBoxQtGui.so.4 --exclude=libVBoxQtNetwork.so.4 --exclude=libqtaccessiblewidgets.so
 	# manually strip our R0/GC modules, dh_strip cannot handle them
 	for f in \
 	  $(prefix)/usr/lib/$(package)/*.r0 $(prefix)/usr/lib/$(package)/*.gc; do \

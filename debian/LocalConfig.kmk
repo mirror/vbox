@@ -16,17 +16,20 @@
 #
 
 # shut up wine complaining about unknown locale
-EXEC_X86_WIN32          := wine
+EXEC_X86_WIN32             := wine
 
 # don't build testcases to save time, they are not needed for the package
-VBOX_WITH_TESTCASES     :=
-VBOX_WITH_TESTSUITE     :=
-VBOX_DOCBOOK_WITH_LATEX := 1
+VBOX_WITH_TESTCASES        :=
+VBOX_WITH_TESTSUITE        :=
 
-KBUILD_MSG_STYLE        := brief
 
 VBOX_WITH_HARDENING        := 1
+
+# required for VBOX_WITH_RUNPATH
 VBOX_WITH_ORIGIN           :=
+
+VBOX_DOCBOOK_WITH_LATEX    := 1
+KBUILD_MSG_STYLE           := brief
 VBOX_PATH_APP_PRIVATE_ARCH := /usr/lib/virtualbox
 VBOX_PATH_SHARED_LIBS      := $(VBOX_PATH_APP_PRIVATE_ARCH)
 VBOX_WITH_RUNPATH          := $(VBOX_PATH_APP_PRIVATE_ARCH)
