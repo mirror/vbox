@@ -443,6 +443,7 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
         if (rc >= 0) {
                 int vrc;
                 LogRelFunc(("client ID %u\n", pInfo->info.u32ClientID));
+                pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
                 vrc = vboxadd_cmc_call(vboxDev,
                               VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
                 rc = -RTErrConvertToErrno(vrc);
