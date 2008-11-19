@@ -1370,19 +1370,20 @@ typedef struct _VBoxGuestHGCMCallInfo
     /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
 } VBoxGuestHGCMCallInfo;
 
-typedef struct _VBoxGuestHGCMCallInfoTimeout
+typedef struct _VBoxGuestHGCMCallInfoTimed
 {
     uint32_t u32Timeout;         /**< IN  How long to wait for completion before cancelling the call */
+    uint32_t fInterruptible;     /**< IN  Is this request interruptible? */
     VBoxGuestHGCMCallInfo info;  /**< IN/OUT The rest of the call information.  Placed after the timeout
                                   * so that the parameters follow as they would for a normal call. */
     /* Parameters follow in form HGCMFunctionParameter aParms[cParms] */
-} VBoxGuestHGCMCallInfoTimeout;
+} VBoxGuestHGCMCallInfoTimed;
 # pragma pack()
 
 # define VBOXGUEST_IOCTL_HGCM_CONNECT             VBOXGUEST_IOCTL_CODE(16, sizeof(VBoxGuestHGCMConnectInfo))
 # define VBOXGUEST_IOCTL_HGCM_DISCONNECT          VBOXGUEST_IOCTL_CODE(17, sizeof(VBoxGuestHGCMDisconnectInfo))
 # define VBOXGUEST_IOCTL_HGCM_CALL(Size)          VBOXGUEST_IOCTL_CODE(18, (Size))
-# define VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(Size)  VBOXGUEST_IOCTL_CODE(20, (Size))
+# define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)    VBOXGUEST_IOCTL_CODE(20, (Size))
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE(19, sizeof(uint32_t))
 
 # define VBOXGUEST_HGCM_CALL_PARMS(a)       ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VBoxGuestHGCMCallInfo)))

@@ -419,10 +419,10 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
  *                        updated on success.
  * @param  u32Size        the size of the userspace structure
  */
-static int vboxadd_hgcm_call_timeout(unsigned long userspace_info,
+static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
                                      uint32_t u32Size)
 {
-        VBoxGuestHGCMCallInfoTimeout *pInfo = NULL;
+        VBoxGuestHGCMCallInfoTimed *pInfo = NULL;
         int rc = 0;
         
         pInfo = kmalloc(u32Size, GFP_KERNEL);
@@ -444,7 +444,7 @@ static int vboxadd_hgcm_call_timeout(unsigned long userspace_info,
                 int vrc;
                 LogRelFunc(("client ID %u\n", pInfo->info.u32ClientID));
                 vrc = vboxadd_cmc_call(vboxDev,
-                              VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(u32Size), pInfo);
+                              VBOXGUEST_IOCTL_HGCM_CALL_TIMED(u32Size), pInfo);
                 rc = -RTErrConvertToErrno(vrc);
                 if (   rc >= 0
                     && copy_to_user ((void *)userspace_info, (void *)pInfo,
@@ -623,13 +623,13 @@ static int vboxadd_ioctl(struct inode *inode, struct file *filp,
                 rc = vboxadd_hgcm_call(arg, _IOC_SIZE(cmd));
                 IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL", arg);
         }
-        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT(0))
+        else if (   VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0))
                  == VBOXGUEST_IOCTL_STRIP_SIZE(cmd))
         {
         /* Do the HGCM call using the Vbgl bits */
-                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT", arg);
-                rc = vboxadd_hgcm_call_timeout(arg, _IOC_SIZE(cmd));
-                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMEOUT", arg);
+                IOCTL_ENTRY("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
+                rc = vboxadd_hgcm_call_timed(arg, _IOC_SIZE(cmd));
+                IOCTL_EXIT("VBOXGUEST_IOCTL_HGCM_CALL_TIMED", arg);
         }
         else
         {
