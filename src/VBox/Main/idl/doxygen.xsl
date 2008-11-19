@@ -215,7 +215,7 @@ owns the object will most likely fail or crash your application.
   <xsl:if test="../param/@mod='ptr'">
     <xsl:text>
 
-@warning This method is non-scriptable. In particluar, this also means that an
+@warning This method is non-scriptable. In particular, this also means that an
 attempt to call it from a process other than the process that has created and
 owns the object will most likely fail or crash your application.
 </xsl:text>
@@ -604,7 +604,7 @@ owns the object will most likely fail or crash your application.
           <xsl:choose>
             <!-- standard types -->
             <!--xsl:when test=".='result'">??</xsl:when-->
-            <xsl:when test=".='boolean'">booeanPtr</xsl:when>
+            <xsl:when test=".='boolean'">booleanPtr</xsl:when>
             <xsl:when test=".='octet'">octetPtr</xsl:when>
             <xsl:when test=".='short'">shortPtr</xsl:when>
             <xsl:when test=".='unsigned short'">ushortPtr</xsl:when>
@@ -631,7 +631,7 @@ owns the object will most likely fail or crash your application.
           <xsl:message terminate="yes">
             <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
             <xsl:value-of select="concat('value &quot;',../@mod,'&quot; ')"/>
-            <xsl:text>of attibute 'mod' is invalid!</xsl:text>
+            <xsl:text>of attribute 'mod' is invalid!</xsl:text>
           </xsl:message>
         </xsl:otherwise>
       </xsl:choose>
