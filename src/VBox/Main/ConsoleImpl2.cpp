@@ -1164,7 +1164,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
 
                     Bstr HifName;
-                    hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam()); H();
+                    hrc = networkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
+
                     Utf8Str HifNameUtf8(HifName);
                     const char *pszHifName = HifNameUtf8.raw();
 
@@ -1206,19 +1212,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 # elif defined(RT_OS_WINDOWS)
                     ComPtr<IHostNetworkInterfaceCollection> coll;
-                    hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());    H();
+                    hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(NetworkInterfaces) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
                     ComPtr<IHostNetworkInterface> hostInterface;
                     rc = coll->FindByName(HifName, hostInterface.asOutParam());
                     if (!SUCCEEDED(rc))
                     {
                         AssertBreakpoint();
+                        LogRel(("NetworkAttachmentType_HostInterface: FindByName failed, rc (0x%x)", rc));
                         return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                           N_("Inexistent host networking interface, name '%ls'"),
                                           HifName.raw());
                     }
 
                     Guid hostIFGuid;
-                    hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());    H();
+                    hrc = hostInterface->COMGETTER(Id)(hostIFGuid.asOutParam());
+                    if(FAILED(hrc))
+                    {
+                        LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+                        H();
+                    }
                     char szDriverGUID[RTUUID_STR_LENGTH];
                     strcpy(szDriverGUID , hostIFGuid.toString().raw());
                     const char *pszTrunk = szDriverGUID;
