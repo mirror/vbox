@@ -102,7 +102,7 @@
 </xsl:text>
   <!-- native typedefs for the 'mod="ptr"' attribute -->
   <xsl:text>
-[ptr] native booeanPtr  (PRBool);
+[ptr] native booleanPtr (PRBool);
 [ptr] native octetPtr   (PRUint8);
 [ptr] native shortPtr   (PRInt16);
 [ptr] native ushortPtr  (PRUint16);
@@ -168,7 +168,7 @@
 <xsl:template match="@if" mode="begin">
   <xsl:message terminate="yes">
     @if attributes are not currently allowed because xpidl lacks
-    support of #ifdef and stuff.
+    support for #ifdef and stuff.
   </xsl:message>
   <xsl:text>#if </xsl:text>
   <xsl:value-of select="."/>
@@ -233,7 +233,7 @@
   <!-- Interface implementation forwarder macro -->
   <xsl:text>/* Interface implementation forwarder macro */&#x0A;</xsl:text>
   <xsl:text>%{C++&#x0A;</xsl:text>
-  <!-- 1) indivudual methods -->
+  <!-- 1) individual methods -->
   <xsl:apply-templates select="attribute" mode="forwarder"/>
   <xsl:apply-templates select="method" mode="forwarder"/>
   <xsl:apply-templates select="if" mode="forwarder"/>
@@ -888,7 +888,7 @@
           <xsl:choose>
             <!-- standard types -->
             <!--xsl:when test=".='result'">??</xsl:when-->
-            <xsl:when test=".='boolean'">booeanPtr</xsl:when>
+            <xsl:when test=".='boolean'">booleanPtr</xsl:when>
             <xsl:when test=".='octet'">octetPtr</xsl:when>
             <xsl:when test=".='short'">shortPtr</xsl:when>
             <xsl:when test=".='unsigned short'">ushortPtr</xsl:when>
