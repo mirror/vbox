@@ -1011,21 +1011,23 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     {
         try
         {
-            for (CallList::iterator it = mGuestWaiters.begin();
-                 it != mGuestWaiters.end(); ++it)
+            CallList::iterator it = mGuestWaiters.begin();
+            while (it != mGuestWaiters.end())
             {
                 const char *pszPatterns;
                 uint32_t cchPatterns;
                 it->mParms[0].getPointer((void **) &pszPatterns, &cchPatterns);
                 if (prop.Matches(pszPatterns))
                 {
-                    GuestCall call = mGuestWaiters.back();
+                    GuestCall call = *it;
                     int rc2 = getNotificationWriteOut(call.mParms, prop);
                     if (RT_SUCCESS(rc2))
                         rc2 = call.mRc;
                     mpHelpers->pfnCallComplete (call.mHandle, rc2);
                     it = mGuestWaiters.erase(it);
                 }
+                else
+                    ++it;
             }
             mGuestNotifications.push_back(prop);
         }
