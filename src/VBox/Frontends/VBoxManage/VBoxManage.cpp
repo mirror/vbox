@@ -1148,23 +1148,60 @@ static HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> mac
 
     /*
      * SATA.
+     *
+     * Contributed by: James Lucas
      */
+#ifdef VBOX_WITH_AHCI
     ComPtr<ISATAController> SATACtl;
+    BOOL fSataEnabled;
     rc = machine->COMGETTER(SATAController)(SATACtl.asOutParam());
     if (SUCCEEDED(rc))
     {
-        BOOL fEnabled;
-        rc = SATACtl->COMGETTER(Enabled)(&fEnabled);
+        rc = SATACtl->COMGETTER(Enabled)(&fSataEnabled);
         if (FAILED(rc))
-            fEnabled = false;
+            fSataEnabled = false;
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("sata=\"%s\"\n", fEnabled ? "on" : "off");
+            RTPrintf("sata=\"%s\"\n", fSataEnabled ? "on" : "off");
         else
-            RTPrintf("SATA:            %s\n", fEnabled ? "enabled" : "disabled");
+            RTPrintf("SATA:            %s\n", fSataEnabled ? "enabled" : "disabled");
     }
 
+    /* 
+     * SATA Hard disks
+     */
+    if (fSataEnabled)
+    {
+        ComPtr<IHardDisk2> hardDisk;
+        Bstr  filePath;
+        ULONG cSataPorts;
+
+        SATACtl->COMGETTER(PortCount)(&cSataPorts);
+        for (ULONG i = 0; i < cSataPorts; ++ i)
+        {
+            rc = machine->GetHardDisk2(StorageBus_SATA, i, 0, hardDisk.asOutParam());
+            if (SUCCEEDED(rc) && hardDisk)
+            {
+                hardDisk->COMGETTER(Location)(filePath.asOutParam());
+                hardDisk->COMGETTER(Id)(uuid.asOutParam());
+                if (details == VMINFO_MACHINEREADABLE)
+                {
+                    RTPrintf("sata%d=\"%lS\"\n", i, filePath.raw());
+                    RTPrintf("sata%dImageUUID=\"%s\"\n", i, uuid.toString().raw());
+                }
+                else
+                    RTPrintf("SATA %d:          %lS (UUID: %s)\n", i, filePath.raw(), uuid.toString().raw());
+            }
+            else
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("sata%d=\"none\"\n",i);
+            }
+        }
+    }
+#endif
+
     /*
-     * Hard disks
+     * IDE Hard disks
      */
     IDEControllerType_T ideController;
     const char *pszIdeController = NULL;
