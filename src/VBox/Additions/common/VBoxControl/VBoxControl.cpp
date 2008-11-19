@@ -111,7 +111,7 @@ static void usage(g_eUsage eWhich = USAGE_ALL)
         doUsage("set <property> [<value> [-flags <flags>]]\n", g_pszProgName, "guestproperty");
         doUsage("enumerate [-patterns <patterns>]\n", g_pszProgName, "guestproperty");
         doUsage("wait <patterns> [-timestamp <last timestamp>]\n", g_pszProgName, "guestproperty");
-        doUsage("[-timeout <timeout>\n");
+        doUsage("[-timeout <timeout in ms>\n");
     }
 #endif
 }
