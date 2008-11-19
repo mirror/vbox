@@ -74,9 +74,11 @@ struc TRPM
     .StatTrap0dDisasm         resb STAMPROFILE_size
     .StatTrap0dRdTsc          resb STAMCOUNTER_size
 
+%ifdef VBOX_WITH_STATISTICS
     .paStatForwardedIRQR3  RTR3PTR_RES 1
     .paStatForwardedIRQR0  RTR0PTR_RES 1
     .paStatForwardedIRQRC  RTRCPTR_RES 1
+%endif
 endstruc
 
 struc VBOXTSS
