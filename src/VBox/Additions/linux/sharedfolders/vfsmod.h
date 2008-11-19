@@ -112,7 +112,11 @@ int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 #undef ALIGN
 #endif
 
-#define CMC_API __attribute__ ((cdecl, regparm (0)))
+#ifdef __cplusplus
+# define CMC_API __attribute__ ((cdecl, regparm (0)))
+#else
+# define CMC_API __attribute__ ((regparm (0)))
+#endif
 
 #define TRACE() LogFunc (("tracepoint\n"))
 
