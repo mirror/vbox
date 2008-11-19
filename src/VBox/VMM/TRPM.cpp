@@ -678,8 +678,10 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         }
     }
 
+#ifdef VBOX_WITH_STATISTICS
     pVM->trpm.s.paStatForwardedIRQRC += offDelta;
     pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
+#endif
 }
 
 
