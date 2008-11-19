@@ -31,6 +31,8 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/cpuset.h>
+#include <iprt/memobj.h>
+#include <iprt/mp.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
 
@@ -128,7 +130,9 @@ typedef struct PGMR0DYNMAP
     uint32_t                    cUsers;
     /** Array containing a copy of the original page tables.
      * The entries are either X86PTE or X86PTEPAE according to fLegacyMode. */
-    void                       *pvSavedPTs;
+    void                       *pvSavedPTEs;
+    /** List of segments. */
+    PPGMR0DYNMAPSEG             pSegHead;
 } PGMR0DYNMAP;
 /** Pointer to the ring-0 dynamic mapping cache */
 typedef PGMR0DYNMAP *PPGMR0DYNMAP;
@@ -399,6 +403,25 @@ static int pgmR0DynMapGrow(PPGMR0DYNMAP pThis)
 
 
 /**
+ * Shoots down the TLBs for all the cache pages, pgmR0DynMapTearDown helper.
+ *
+ * @param   idCpu           The current CPU.
+ * @param   pvUser1         The dynamic mapping cache instance.
+ * @param   pvUser2         Unused, NULL.
+ */
+static DECLCALLBACK(void) pgmR0DynMapShootDownTlbs(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    Assert(!pvUser2);
+    PPGMR0DYNMAP        pThis   = (PPGMR0DYNMAP)pvUser1;
+    AssertPtr(pThis == g_pPGMR0DynMap);
+    PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
+    uint32_t            iPage   = pThis->cPages;
+    while (iPage-- > 0)
+        ASMInvalidatePage(paPages[iPage].pvPage);
+}
+
+
+/**
  * Called by PGMR0DynMapTermVM under the init lock.
  *
  * @returns VBox status code.
@@ -406,6 +429,78 @@ static int pgmR0DynMapGrow(PPGMR0DYNMAP pThis)
  */
 static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
 {
+    /*
+     * Restore the original page table entries
+     */
+    PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
+    uint32_t            iPage   = pThis->cPages;
+    if (pThis->fLegacyMode)
+    {
+        X86PGUINT const    *paSavedPTEs = (X86PGUINT const *)pThis->pvSavedPTEs;
+        while (iPage-- > 0)
+        {
+            X86PGUINT       uOld  = paPages[iPage].uPte.pLegacy->u;
+            X86PGUINT       uOld2 = uOld; NOREF(uOld2);
+            X86PGUINT       uNew  = paSavedPTEs[iPage];
+            while (!ASMAtomicCmpXchgExU32(&paPages[iPage].uPte.pLegacy->u, uNew, uOld, &uOld))
+                AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
+        }
+    }
+    else
+    {
+        X86PGPAEUINT const *paSavedPTEs = (X86PGPAEUINT const *)pThis->pvSavedPTEs;
+        while (iPage-- > 0)
+        {
+            X86PGPAEUINT    uOld  = paPages[iPage].uPte.pPae->u;
+            X86PGPAEUINT    uOld2 = uOld; NOREF(uOld2);
+            X86PGPAEUINT    uNew  = paSavedPTEs[iPage];
+            while (!ASMAtomicCmpXchgExU64(&paPages[iPage].uPte.pPae->u, uNew, uOld, &uOld))
+                AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
+        }
+    }
+
+    /*
+     * Shoot down the TLBs on all CPUs before freeing them.
+     * If RTMpOnAll fails, make sure the TLBs are invalidated on the current CPU at least.
+     */
+    int rc = RTMpOnAll(pgmR0DynMapShootDownTlbs, pThis, NULL);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        iPage = pThis->cPages;
+        while (iPage-- > 0)
+            ASMInvalidatePage(paPages[iPage].pvPage);
+    }
+
+    /*
+     * Free the segments.
+     */
+    while (pThis->pSegHead)
+    {
+        PPGMR0DYNMAPSEG pSeg = pThis->pSegHead;
+        pThis->pSegHead = pSeg->pNext;
+
+        int rc;
+        rc = RTR0MemObjFree(pSeg->hMemObjPT, true /* fFreeMappings */); AssertRC(rc);
+        pSeg->hMemObjPT = NIL_RTR0MEMOBJ;
+        rc = RTR0MemObjFree(pSeg->hMemObj,   true /* fFreeMappings */); AssertRC(rc);
+        pSeg->hMemObj   = NIL_RTR0MEMOBJ;
+        pSeg->pNext     = NULL;
+        pSeg->iPage     = UINT32_MAX;
+        pSeg->cPages    = 0;
+        RTMemFree(pSeg);
+    }
+
+    /*
+     * Free the arrays and restore the initial state.
+     * The cLoadMax value is left behind for the next setup.
+     */
+    RTMemFree(pThis->paPages);
+    pThis->paPages = NULL;
+    RTMemFree(pThis->pvSavedPTEs);
+    pThis->pvSavedPTEs = NULL;
+    pThis->cPages = 0;
+    pThis->cLoad = 0;
 }
 
 
