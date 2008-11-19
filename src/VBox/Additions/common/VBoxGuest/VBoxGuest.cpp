@@ -920,7 +920,7 @@ static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader
     LogFunc(("requestType=%d\n", pHdr->header.requestType));
     VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr,
                                          pDevExt, false /* fInterruptible */,
-                                         RT_INDEFINITE_WAIT);
+                                         u32User);
 }
 
 /**

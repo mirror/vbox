@@ -835,6 +835,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
     GetNotification Msg;
 
     Msg.hdr.u32Timeout = u32Timeout;
+    Msg.hdr.fInterruptible = true;
     Msg.hdr.info.result = (uint32_t)VERR_WRONG_ORDER;  /** @todo drop the cast when the result type has been fixed! */
     Msg.hdr.info.u32ClientID = u32ClientId;
     Msg.hdr.info.u32Function = GET_NOTIFICATION;
