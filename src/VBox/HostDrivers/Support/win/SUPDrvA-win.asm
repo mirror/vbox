@@ -73,6 +73,7 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0MemFree
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageAlloc
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0PageFree
 ;NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0Printf            - cannot wrap this buster.
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0GetPagingMode
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAlloc
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemAllocZ
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTMemFree

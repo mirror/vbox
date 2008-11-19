@@ -773,11 +773,6 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
  */
 
 /**
- * Execute callback on all cpus/cores (SUPR0ExecuteCallback)
- */
-#define SUPDRVEXECCALLBACK_CPU_ALL      (~0)
-
-/**
  * Security objectype.
  */
 typedef enum SUPDRVOBJTYPE
@@ -827,6 +822,7 @@ SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
+SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 
 
 /**
