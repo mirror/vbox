@@ -1398,7 +1398,7 @@
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
-          Idetifier of the torage format to use for the new hard disk.
+          Identifier of the storage format to use for the new hard disk.
         </desc>
       </param>
       <param name="location" type="wstring" dir="in">
