@@ -55,6 +55,7 @@ PROGRAMS += \
 	tstDeadlock \
 	tstDir \
 	tstDir-2 \
+	tstDir-3 \
 	tstEnv \
 	tstErrUnique \
 	tstFile \
@@ -143,6 +144,8 @@ tstDeadlock_SOURCES = tstDeadlock.cpp
 tstDir_SOURCES = tstDir.cpp
 
 tstDir-2_SOURCES = tstDir-2.cpp
+
+tstDir-3_SOURCES = tstDir-3.cpp
 
 tstEnv_SOURCES = tstEnv.cpp
 
