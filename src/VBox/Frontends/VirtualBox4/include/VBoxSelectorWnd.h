@@ -148,7 +148,6 @@ private:
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     QAction *mTrayShowWindowAction;
-    QAction *mTrayExitAction;
 #endif
 
     VBoxHelpActions mHelpActions;

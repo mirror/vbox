@@ -32,26 +32,11 @@
 
 class VBoxSelectorWnd;
 
-class VBoxVMItem : public QObject
+class VBoxVMItem
 {
-    Q_OBJECT;
-
 public:
 
-    enum Action
-    {
-        Config = 0,
-        Delete,
-        Start,
-        Discard,
-        Pause,
-        Refresh,
-        ShowLogs
-    };
-
-public:
-
-    VBoxVMItem (const CMachine &aMachine, VBoxSelectorWnd *pParent);
+    VBoxVMItem (const CMachine &aMachine);
     virtual ~VBoxVMItem();
 
     CMachine machine() const { return mMachine; }
@@ -69,7 +54,6 @@ public:
     QString toolTipText() const;
 
     bool accessible() const { return mAccessible; }
-    bool running() const {  return (sessionState() != KSessionState_Closed); }
     const CVirtualBoxErrorInfo &accessError() const { return mAccessError; }
     KMachineState state() const { return mState; }
     KSessionState sessionState() const { return mSessionState; }
@@ -82,7 +66,6 @@ public:
 private:
 
     /* Private member vars */
-    VBoxSelectorWnd *mParent;
     CMachine mMachine;
 
     /* Cached machine data (to minimize server requests) */
