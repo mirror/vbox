@@ -2412,6 +2412,13 @@ typedef struct PGM
      * The cache size is covering half of the mapping area. */
     RTHCPHYS                        aHCPhysDynPageMapCache[MM_HYPER_DYNAMIC_SIZE >> (PAGE_SHIFT + 1)];
 
+    /** The address of the ring-0 mapping cache if we're making use of it.  */
+    RTR0PTR                         pvR0DynMapUsed;
+#if HC_ARCH_BITS == 32
+    RTR0PTR                         R0PtrPadding0;  /**< Alignment. */
+#endif
+
+
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 */
     RTGCPHYS                        GCPhys4MBPSEMask;
 
