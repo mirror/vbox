@@ -251,8 +251,8 @@ DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData,
  *
  * @return VBox status code.
  */
-DECLVBGL(int) VbglHGCMCallTimeout (VBGLHGCMHANDLE handle,
-                                   VBoxGuestHGCMCallInfoTimeout *pData, uint32_t cbData);
+DECLVBGL(int) VbglHGCMCallTimed (VBGLHGCMHANDLE handle,
+                                 VBoxGuestHGCMCallInfoTimed *pData, uint32_t cbData);
 /** @} */
 
 #endif /* !VBGL_VBOXGUEST */

@@ -447,7 +447,7 @@ typedef struct _EnumProperties
  */
 typedef struct _GetNotification
 {
-    VBoxGuestHGCMCallInfoTimeout hdr;
+    VBoxGuestHGCMCallInfoTimed hdr;
 
     /**
      * A list of patterns to match the guest event name against, separated by
