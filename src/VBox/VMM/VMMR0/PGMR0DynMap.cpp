@@ -635,7 +635,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
 
     /* close the set */
     uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
-    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%u\n", i));
+    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%#x (%u)\n", i, i));
     pVCpu->pgm.s.AutoSet.cEntries = PGMMAPSET_CLOSED;
 
     /* release any pages we're referencing. */
@@ -679,7 +679,7 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
 {
     PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
     uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
-    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%u\n", i));
+    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%#x (%u)\n", i, i));
     if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries)))
     {
         PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
@@ -743,12 +743,15 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Validate state.
      */
+    AssertMsgReturn(pVM->pgm.s.pvR0DynMapUsed == g_pPGMR0DynMap,
+                    ("%p != %p\n", pVM->pgm.s.pvR0DynMapUsed, g_pPGMR0DynMap),
+                    VERR_ACCESS_DENIED);
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
     PVMCPU          pVCpu   = VMMGetCpu(pVM);
     PPGMMAPSET      pSet    = &pVCpu->pgm.s.AutoSet;
     AssertPtrReturn(pVCpu, VERR_INTERNAL_ERROR);
     AssertMsgReturn(pSet->cEntries > RT_ELEMENTS(pSet->aEntries),
-                    ("%#x\n", pSet->cEntries), VERR_WRONG_ORDER);
+                    ("%#x (%u)\n", pSet->cEntries, pSet->cEntries), VERR_WRONG_ORDER);
 
     /*
      * Map it.
@@ -807,5 +810,4 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 
     return VINF_SUCCESS;
 }
-
 
