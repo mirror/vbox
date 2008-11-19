@@ -47,7 +47,8 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     : QIWithRetranslateUI<QIMainDialog> (aParent)
     , mPolished (false)
     , mValid (true)
-    , mWarnIconLabel (new VBoxWarnIconLabel (this))
+    , mSilent (true)
+    , mIconLabel (new VBoxWarnIconLabel (this))
     , mWhatsThisTimer (new QTimer (this))
     , mWhatsThisCandidate (0)
 {
@@ -104,11 +105,10 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
                                   mLbWhatsThis->margin() * 2 +
                                   mLbWhatsThis->fontMetrics().lineSpacing() * 4);
 
-    /* Setup warning stuff */
-    QIcon icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
-    if (!icon.isNull())
-        mWarnIconLabel->setWarningPixmap (icon.pixmap (16, 16));
-    mButtonBox->addExtraWidget (mWarnIconLabel);
+    /* Setup error & warning stuff */
+    mButtonBox->addExtraWidget (mIconLabel);
+    mErrorIcon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this).pixmap (16, 16);
+    mWarnIcon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this).pixmap (16, 16);
 
     /* Set the default button */
     mButtonBox->button (QDialogButtonBox::Ok)->setDefault (true);
@@ -129,7 +129,12 @@ void VBoxSettingsDialog::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxSettingsDialog::retranslateUi (this);
 
-    mWarnIconLabel->setWarningText (tr ("Invalid settings detected"));
+    mErrorHint = tr ("Invalid settings detected");
+    mWarnHint = tr ("Important warnings detected");
+    if (!mValid)
+        mIconLabel->setWarningText (mErrorHint);
+    else if (!mSilent)
+        mIconLabel->setWarningText (mWarnHint);
 
     QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
 
@@ -144,16 +149,31 @@ void VBoxSettingsDialog::retranslateUi()
             revalidate (wval);
 }
 
-void VBoxSettingsDialog::setWarning (const QString &aWarning)
+void VBoxSettingsDialog::setError (const QString &aError)
 {
+    mErrorString = aError.isEmpty() ? QString::null :
+                   QString ("<font color=red>%1</font>").arg (aError);
+
     /* Not touching QILabel until dialog is polished otherwise
      * it can change its size to undefined */
     if (!mPolished)
         return;
 
-    mWarnString = aWarning;
-    if (!aWarning.isEmpty())
-        mWarnString = QString ("<font color=red>%1</font>").arg (aWarning);
+    if (!mErrorString.isEmpty())
+        mLbWhatsThis->setText (mErrorString);
+    else
+        updateWhatsThis (true);
+}
+
+void VBoxSettingsDialog::setWarning (const QString &aWarning)
+{
+    mWarnString = aWarning.isEmpty() ? QString::null :
+                  QString ("<font color=green>%1</font>").arg (aWarning);
+
+    /* Not touching QILabel until dialog is polished otherwise
+     * it can change its size to undefined */
+    if (!mPolished)
+        return;
 
     if (!mWarnString.isEmpty())
         mLbWhatsThis->setText (mWarnString);
@@ -163,36 +183,66 @@ void VBoxSettingsDialog::setWarning (const QString &aWarning)
 
 void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
 {
-    setWarning (QString::null);
-    QString wvalWarning;
+    QList <QIWidgetValidator*> vlist (findChildren <QIWidgetValidator*>());
 
-    /* Detect the overall validity */
-    bool newValid = true;
+    /* Detect ERROR presence */
     {
-        QList<QIWidgetValidator*> vlist = findChildren<QIWidgetValidator*>();
+        setError (QString::null);
+        QString wvalError;
+        bool newValid = true;
         foreach (QIWidgetValidator *wval, vlist)
         {
             newValid = wval->isValid();
             if (!newValid)
             {
-                wvalWarning = wval->warningText();
+                wvalError = wval->warningText();
+                if (wvalError.isNull())
+                    wvalError = wval->lastWarning();
                 break;
             }
         }
-    }
 
-    if (mWarnString.isNull() && !wvalWarning.isNull())
-    {
-        /* Try to set the generic error message when invalid but
-         * no specific message is provided */
-        setWarning (wvalWarning);
-    }
+        /* Try to set the generic error message when invalid
+         * but no specific message is provided */
+        if (mErrorString.isNull() && !wvalError.isNull())
+            setError (wvalError);
 
-    if (mValid != newValid)
-    {
         mValid = newValid;
+        mIconLabel->setWarningPixmap (mErrorIcon);
+        mIconLabel->setWarningText (mErrorHint);
+        mIconLabel->setVisible (!mValid);
         mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (mValid);
-        mWarnIconLabel->setVisible (!mValid);
+
+        if (!mValid) return;
+    }
+
+    /* Detect WARNING presence */
+    {
+        setWarning (QString::null);
+        QString wvalWarning;
+        bool newSilent = true;
+        foreach (QIWidgetValidator *wval, vlist)
+        {
+            if (!wval->warningText().isNull() ||
+                !wval->lastWarning().isNull())
+            {
+                newSilent = false;
+                wvalWarning = wval->warningText();
+                if (wvalWarning.isNull())
+                    wvalWarning = wval->lastWarning();
+                break;
+            }
+        }
+
+        /* Try to set the generic error message when invalid
+         * but no specific message is provided */
+        if (mWarnString.isNull() && !wvalWarning.isNull())
+            setWarning (wvalWarning);
+
+        mSilent = newSilent;
+        mIconLabel->setWarningPixmap (mWarnIcon);
+        mIconLabel->setWarningText (mWarnHint);
+        mIconLabel->setVisible (!mSilent);
     }
 }
 
@@ -265,7 +315,9 @@ void VBoxSettingsDialog::updateWhatsThis (bool aGotFocus /* = false */)
         widget = widget->parentWidget();
     }
 
-    if (text.isEmpty() && !mWarnString.isEmpty())
+    if (text.isEmpty() && !mErrorString.isEmpty())
+        text = mErrorString;
+    else if (text.isEmpty() && !mWarnString.isEmpty())
         text = mWarnString;
     if (text.isEmpty())
         text = whatsThis();

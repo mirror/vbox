@@ -61,6 +61,7 @@ protected:
     virtual QString dialogTitle() const = 0;
     QString titleExtension() const;
 
+    void setError (const QString &aError);
     void setWarning (const QString &aWarning);
 
     VBoxSettingsSelector *mSelector;
@@ -79,11 +80,17 @@ private:
 
     /* Flags */
     bool mPolished;
-    bool mValid;
 
-    /* Warning Stuff */
-    VBoxWarnIconLabel *mWarnIconLabel;
+    /* Error & Warning stuff */
+    bool mValid;
+    bool mSilent;
+    QString mErrorHint;
+    QString mWarnHint;
+    QString mErrorString;
     QString mWarnString;
+    QPixmap mErrorIcon;
+    QPixmap mWarnIcon;
+    VBoxWarnIconLabel *mIconLabel;
 
     /* WhatsThis Stuff */
     QTimer *mWhatsThisTimer;

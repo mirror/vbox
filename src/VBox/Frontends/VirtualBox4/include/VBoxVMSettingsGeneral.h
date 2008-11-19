@@ -45,6 +45,8 @@ protected:
     void getFrom (const CMachine &aMachine);
     void putBackTo();
 
+    bool revalidate (QString &aWarning, QString &aTitle);
+
     void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();
