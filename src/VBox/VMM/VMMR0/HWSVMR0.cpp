@@ -758,8 +758,10 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
-#if !defined(VBOX_WITH_64_BITS_GUESTS) || HC_ARCH_BITS != 64
+#if !defined(VBOX_WITH_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#elif HC_ARCH_BITS == 32
+        pVCpu->hwaccm.s.svm.pfnVMRun = SVMVMSwitcherRun64;
 #else
         pVCpu->hwaccm.s.svm.pfnVMRun = SVMVMRun64;
 #endif
@@ -2256,3 +2258,19 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBInvlpga);
     return VINF_SUCCESS;
 }
+
+#ifdef HC_ARCH_BITS == 32
+/**
+ * Prepares for and executes VMRUN (64 bits guests).
+ *
+ * @returns VBox status code.
+ * @param   pVMCBHostPhys   Physical address of host VMCB.
+ * @param   pVMCBPhys       Physical address of the VMCB.
+ * @param   pCtx            Guest context.
+ */
+DECLASM(int) SVMVMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+#endif /* HC_ARCH_BITS == 32 */

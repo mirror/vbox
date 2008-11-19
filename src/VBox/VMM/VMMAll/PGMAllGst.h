@@ -130,14 +130,18 @@ PGM_GST_DECL(int, ModifyPage)(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags
 PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmapCR3)(PVM pVM);
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 PGM_GST_DECL(int, MonitorCR3)(PVM pVM, RTGCPHYS GCPhysCR3);
 PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM);
+#endif
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4);
-#ifndef IN_RING3
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+# ifndef IN_RING3
 PGM_GST_DECL(int, WriteHandlerCR3)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-# if PGM_GST_TYPE == PGM_TYPE_PAE \
+#  if PGM_GST_TYPE == PGM_TYPE_PAE \
   || PGM_GST_TYPE == PGM_TYPE_AMD64
 PGM_GST_DECL(int, PAEWriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
+#  endif
 # endif
 #endif
 __END_DECLS
@@ -618,6 +622,8 @@ PGM_GST_DECL(int, UnmapCR3)(PVM pVM)
 }
 
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
+
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_PGM_POOL
 
@@ -797,6 +803,8 @@ PGM_GST_DECL(int, UnmonitorCR3)(PVM pVM)
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_PGM
+
+#endif /* VBOX_WITH_PGMPOOL_PAGING_ONLY */
 
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
@@ -1005,6 +1013,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
 #endif
 }
 
+#ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT && !defined(IN_RING3)
 
@@ -1239,3 +1248,4 @@ PGM_GST_DECL(int, WriteHandlerPD)(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRe
 
 #endif /* PGM_TYPE_PAE && !IN_RING3 */
 
+#endif /* !VBOX_WITH_PGMPOOL_PAGING_ONLY */
