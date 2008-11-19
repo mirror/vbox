@@ -351,7 +351,10 @@ void VBoxHGCMCallbackWorker (VMMDevHGCMRequestHeader *pHeader, PVBOXGUESTDEVEXT 
     if (u32Timeout == RT_INDEFINITE_WAIT)
         timeout.QuadPart = pDevExt->HGCMWaitTimeout.QuadPart;
     else
-        timeout.QuadPart = u32Timeout * -10000; /* relative in 100ns units */
+    {
+        timeout.QuadPart = u32Timeout;
+        timeout.QuadPart *= -10000; /* relative in 100ns units */
+    }
     while ((pHeader->fu32Flags & VBOX_HGCM_REQ_DONE) == 0)
     {
         /* Specifying UserMode so killing the user process will abort the wait. */
@@ -389,7 +392,7 @@ DECLVBGL(void) VBoxHGCMCallbackInterruptible (VMMDevHGCMRequestHeader *pHeader, 
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
 
-    dprintf(("VBoxHGCMCallback\n"));
+    dprintf(("VBoxHGCMCallbackInterruptible\n"));
     VBoxHGCMCallbackWorker (pHeader, pDevExt, u32Data, true);
 }
 
