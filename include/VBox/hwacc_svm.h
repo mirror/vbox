@@ -666,14 +666,6 @@ typedef struct _SVM_VMCB
 } SVM_VMCB;
 #pragma pack()
 
-/**
- * Executes INVLPGA.
- *
- * @param   pPageGC         Virtual page to invalidate.
- * @param   u32ASID         Tagged TLB id.
- */
-DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
-
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys);

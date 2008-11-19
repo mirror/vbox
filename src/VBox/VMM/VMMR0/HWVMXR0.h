@@ -207,6 +207,15 @@ DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx);
  */
 DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx);
 
+/**
+ * Prepares for and executes VMLAUNCH (64 bits guest mode)
+ *
+ * @returns VBox status code
+ * @param   fResume     vmlauch/vmresume
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx);
+
 #endif /* IN_RING0 */
 
 /** @} */

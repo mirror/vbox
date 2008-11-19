@@ -761,9 +761,9 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #if !defined(VBOX_WITH_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #elif HC_ARCH_BITS == 32
-        pVCpu->hwaccm.s.svm.pfnVMRun = SVMVMSwitcherRun64;
+        pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMSwitcherRun64;
 #else
-        pVCpu->hwaccm.s.svm.pfnVMRun = SVMVMRun64;
+        pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMRun64;
 #endif
         /* Unconditionally update these as wrmsr might have changed them. (HWACCM_CHANGED_GUEST_SEGMENT_REGS will not be set) */
         pVMCB->guest.FS.u64Base    = pCtx->fsHid.u64Base;
@@ -774,7 +774,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Filter out the MSR_K6_LME bit or else AMD-V expects amd64 shadow paging. */
         pVMCB->guest.u64EFER &= ~MSR_K6_EFER_LME;
 
-        pVCpu->hwaccm.s.svm.pfnVMRun = SVMVMRun;
+        pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMRun;
     }
 
     /* TSC offset. */
@@ -2154,8 +2154,8 @@ static int svmR0InterpretInvlPg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     if (RT_SUCCESS(rc))
     {
         /* Manually invalidate the page for the VM's TLB. */
-        Log(("SVMInvlpgA %RGv ASID=%d\n", addr, uASID));
-        SVMInvlpgA(addr, uASID);
+        Log(("SVMR0InvlpgA %RGv ASID=%d\n", addr, uASID));
+        SVMR0InvlpgA(addr, uASID);
         return VINF_SUCCESS;
     }
     Assert(rc == VERR_REM_FLUSHED_PAGES_OVERFLOW);
@@ -2236,7 +2236,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
-        SVMInvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        SVMR0InvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
     }
     return VINF_SUCCESS;
 }
@@ -2261,14 +2261,14 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 
 #ifdef HC_ARCH_BITS == 32
 /**
- * Prepares for and executes VMRUN (64 bits guests).
+ * Prepares for and executes VMRUN (64 bits guests from a 32 bits hosts).
  *
  * @returns VBox status code.
  * @param   pVMCBHostPhys   Physical address of host VMCB.
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Guest context.
  */
-DECLASM(int) SVMVMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
+DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
 {
     return VERR_NOT_IMPLEMENTED;
 }
