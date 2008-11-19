@@ -360,16 +360,15 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
     QWidget *pg = aWval->widget();
     bool valid = aWval->isOtherValid();
 
-    QString warningText;
-
-    VBoxSettingsPage *page = static_cast<VBoxSettingsPage*> (pg);
+    VBoxSettingsPage *page = static_cast <VBoxSettingsPage*> (pg);
     QString pageTitle = mSelector->itemTextByPage (page);
 
-    valid = page->revalidate (warningText, pageTitle);
-
-    if (!valid)
-        setWarning (tr ("%1 on the <b>%2</b> page.")
-                    .arg (warningText, pageTitle));
+    QString text;
+    valid = page->revalidate (text, pageTitle);
+    text = text.isEmpty() ? QString::null :
+           tr ("%1 on the <b>%2</b> page.").arg (text, pageTitle);
+    aWval->setLastWarning (text);
+    valid ? setWarning (text) : setError (text);
 
     aWval->setOtherValid (valid);
 }

@@ -369,6 +369,27 @@ void VBoxVMSettingsGeneral::putBackTo()
                            mCbSaveMounted->isChecked() ? "yes" : "no");
 }
 
+bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle */)
+{
+    ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+
+    if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
+    {
+        aWarning = tr ("More than 75% of total system RAM allocated for "
+                       "virtual machine, this will provoke host system "
+                       "to work unstable. Error found");
+        return false;
+    } else
+    if (mSlRam->value() + mSlVideo->value() > 0.5 * fullSize)
+    {
+        aWarning = tr ("More than 50% of total system RAM allocated for "
+                       "virtual machine, this could provoke host system "
+                       "to work unstable. Use at your own risk. Problem found");
+        return true;
+    }
+    return true;
+}
+
 void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
 {
     /* Setup Tab order */

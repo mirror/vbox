@@ -46,9 +46,12 @@ public:
     void rescan();
 
     void setCaption (const QString& aCaption) { mCaption = aCaption; }
-    QString caption() const { return mCaption; } 
+    QString caption() const { return mCaption; }
 
     QString warningText() const;
+
+    QString lastWarning() const { return mLastWarning; }
+    void setLastWarning (const QString &aLastWarning) { mLastWarning = aLastWarning; }
 
     void setOtherValid (bool aValid) { mOtherValid = aValid; }
     bool isOtherValid() const { return mOtherValid; }
@@ -64,6 +67,7 @@ public slots:
 
 private:
 
+    QString mLastWarning;
     QString mCaption;
     QWidget *mWidget;
     bool mOtherValid;
