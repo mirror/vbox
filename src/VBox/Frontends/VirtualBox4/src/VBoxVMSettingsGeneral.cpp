@@ -26,6 +26,7 @@
 #include <iprt/asm.h>
 #include <VBox/x86.h>
 
+#include <QDesktopWidget>
 #include <QDir>
 
 #define ITEM_TYPE_ROLE Qt::UserRole + 1
@@ -372,19 +373,38 @@ void VBoxVMSettingsGeneral::putBackTo()
 bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle */)
 {
     ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    QSize desktopRes = QApplication::desktop()->screenGeometry().size();
+    quint64 needBits = (desktopRes.width() /* display width */
+                        * desktopRes.height() /* display height */
+                        * 32 /* will take max possible bpp for now */
+                        + _1M * 8 /* current cache per screen - may be changed in future */)
+                        * (mMachine.isNull() ? 1 : mMachine.GetMonitorCount())
+                        + 4096 * 8 /* adapter info */;
+    quint64 needBytes = needBits % 8 ? needBits / 8 + _1M :
+                        needBits / 8 /* to bytes */;
 
     if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
     {
-        aWarning = tr ("You have assigned more than 75% of your computer's memory to "
+        aWarning = tr ("You have assigned more than 75% of your computer's memory (%1) to "
                        "the virtual machine. Not enough memory is left for your host "
-                       "operating system. Please select a smaller amount. Error found");
+                       "operating system. Please select a smaller amount. Error found")
+                       .arg (vboxGlobal().formatSize (fullSize * _1M));
         return false;
     } else
     if (mSlRam->value() + mSlVideo->value() > 0.5 * fullSize)
     {
-        aWarning = tr ("You have assigned more than 50% of your computer's memory to "
+        aWarning = tr ("You have assigned more than 50% of your computer's memory (%1) to "
                        "the virtual machine. Not enough memory might be left for your host "
-                       "operating system. Continue at your own risk. Problem found");
+                       "operating system. Continue at your own risk. Problem found")
+                       .arg (vboxGlobal().formatSize (fullSize * _1M));
+        return true;
+    } else
+    if (mSlVideo->value() * _1M < needBytes)
+    {
+        aWarning = tr ("You have assigned less than %1 for video memory. This is the minimum "
+                       "requirement which allow you to operate the guest in fullscreen & "
+                       " seamless modes. Continue at your own risk. Problem found")
+                       .arg (vboxGlobal().formatSize (needBytes));
         return true;
     }
     return true;
