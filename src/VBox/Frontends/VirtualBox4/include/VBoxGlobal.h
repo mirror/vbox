@@ -959,7 +959,6 @@ private:
 
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;
-    VBoxMediaList::iterator mCurrentMediumIterator;
 
     VBoxDefs::RenderMode vm_render_mode;
     const char * vm_render_mode_str;

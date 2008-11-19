@@ -606,9 +606,10 @@ class VBoxMediaEnumEvent : public QEvent
 public:
 
     /** Constructs a regular enum event */
-    VBoxMediaEnumEvent (const VBoxMedium &aMedium)
+    VBoxMediaEnumEvent (const VBoxMedium &aMedium,
+                        VBoxMediaList::const_iterator &aIterator)
         : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
-        , mMedium (aMedium), mLast (false)
+        , mMedium (aMedium), mIterator (aIterator), mLast (false)
         {}
     /** Constructs the last enum event */
     VBoxMediaEnumEvent()
@@ -616,6 +617,8 @@ public:
         , mLast (true)
         {}
 
+    /** The last enumerated medium iterator (invalid when #last is true) */
+    VBoxMediaList::const_iterator mIterator;
     /** The last enumerated medium (not valid when #last is true) */
     const VBoxMedium mMedium;
     /** Whether this is the last event for the given enumeration or not */
@@ -2832,7 +2835,6 @@ void VBoxGlobal::startEnumeratingMedia()
                 -- first;
         }
     }
-    mCurrentMediumIterator = mMediaList.begin();
 
     /* enumeration thread class */
     class MediaEnumThread : public QThread
@@ -2850,15 +2852,12 @@ void VBoxGlobal::startEnumeratingMedia()
             QObject *self = &vboxGlobal();
 
             /* Enumerate the list */
-            int index = 0;
-            VBoxMediaList::const_iterator it;
-            for (it = mList.begin();
-                 it != mList.end() && !sVBoxGlobalInCleanup;
-                 ++ it, ++ index)
+            for (VBoxMediaList::const_iterator it = mList.begin();
+                 it != mList.end() && !sVBoxGlobalInCleanup; ++ it)
             {
                 VBoxMedium medium = *it;
                 medium.blockAndQueryState();
-                QApplication::postEvent (self, new VBoxMediaEnumEvent (medium));
+                QApplication::postEvent (self, new VBoxMediaEnumEvent (medium, it));
             }
 
             /* Post the end-of-enumeration event */
@@ -4949,10 +4948,10 @@ bool VBoxGlobal::event (QEvent *e)
                 if (ev->mMedium.state() == KMediaState_Inaccessible &&
                     !ev->mMedium.result().isOk())
                     vboxProblem().cannotGetMediaAccessibility (ev->mMedium);
-                Assert (mCurrentMediumIterator != mMediaList.end());
-                *mCurrentMediumIterator = ev->mMedium;
-                emit mediumEnumerated (*mCurrentMediumIterator);
-                ++ mCurrentMediumIterator;
+                Assert (ev->mIterator != mMediaList.end());
+                VBoxMedium *medium = unconst (&*ev->mIterator);
+                *medium = ev->mMedium;
+                emit mediumEnumerated (*medium);
             }
             else
             {
@@ -4960,7 +4959,6 @@ bool VBoxGlobal::event (QEvent *e)
                 mMediaEnumThread->wait();
                 delete mMediaEnumThread;
                 mMediaEnumThread = 0;
-                Assert (mCurrentMediumIterator == mMediaList.end());
                 emit mediumEnumFinished (mMediaList);
             }
 
@@ -5329,7 +5327,6 @@ void VBoxGlobal::cleanup()
     vm_os_types.clear();
     /* media list contains a lot of CUUnknown, release them */
     mMediaList.clear();
-    mCurrentMediumIterator = mMediaList.end();
     /* the last step to ensure we don't use COM any more */
     mVBox.detach();
 
