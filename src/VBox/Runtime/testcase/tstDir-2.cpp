@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
             if (rc != VERR_NO_MORE_FILES)
             {
-                RTPrintf("tstDir: Enumeration failed! rc=%Rrc\n", rc);
+                RTPrintf("tstDir-2: Enumeration failed! rc=%Rrc\n", rc);
                 rcRet = 1;
             }
 
@@ -84,13 +84,13 @@ int main(int argc, char **argv)
             rc = RTDirClose(pDir);
             if (RT_FAILURE(rc))
             {
-                RTPrintf("tstDir: Failed to close dir! rc=%Rrc\n", rc);
+                RTPrintf("tstDir-2: Failed to close dir! rc=%Rrc\n", rc);
                 rcRet = 1;
             }
         }
         else
         {
-            RTPrintf("tstDir: Failed to open '%s', rc=%Rrc\n", argv[i], rc);
+            RTPrintf("tstDir-2: Failed to open '%s', rc=%Rrc\n", argv[i], rc);
             rcRet = 1;
         }
     }
