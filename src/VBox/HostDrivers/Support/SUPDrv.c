@@ -141,7 +141,6 @@ static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
 static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
-static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void);
 static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 #ifdef RT_OS_WINDOWS
 static int      supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
@@ -181,6 +180,7 @@ DECLASM(int)    UNWIND_WRAP(SUPR0MemFree)(PSUPDRVSESSION pSession, RTHCUINTPTR u
 DECLASM(int)    UNWIND_WRAP(SUPR0PageAlloc)(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
 DECLASM(int)    UNWIND_WRAP(SUPR0PageFree)(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 //DECLASM(int)    UNWIND_WRAP(SUPR0Printf)(const char *pszFormat, ...);
+DECLASM(SUPPAGINGMODE) UNWIND_WRAP(SUPR0GetPagingMode)(void);
 DECLASM(void *) UNWIND_WRAP(RTMemAlloc)(size_t cb) RT_NO_THROW;
 DECLASM(void *) UNWIND_WRAP(RTMemAllocZ)(size_t cb) RT_NO_THROW;
 DECLASM(void)   UNWIND_WRAP(RTMemFree)(void *pv) RT_NO_THROW;
@@ -300,6 +300,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageAlloc",                         (void *)UNWIND_WRAP(SUPR0PageAlloc) },
     { "SUPR0PageFree",                          (void *)UNWIND_WRAP(SUPR0PageFree) },
     { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
+    { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -1325,7 +1326,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = VINF_SUCCESS;
-            pReq->u.Out.enmMode = supdrvIOCtl_GetPagingMode();
+            pReq->u.Out.enmMode = SUPR0GetPagingMode();
             return 0;
         }
 
@@ -4483,9 +4484,11 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
 
 
 /**
- * Gets the current paging mode of the CPU and stores in in pOut.
+ * Gets the paging mode of the current CPU.
+ *
+ * @returns Paging mode, SUPPAGEINGMODE_INVALID on error.
  */
-static SUPPAGINGMODE supdrvIOCtl_GetPagingMode(void)
+SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
 {
     SUPPAGINGMODE enmMode;
 

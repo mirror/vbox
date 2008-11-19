@@ -48,7 +48,7 @@ EXPORTS
     SUPR0MemGetPhys
     SUPR0MemFree
     SUPR0Printf
-    SUPR0ExecuteCallback
+    SUPR0GetPagingMode
     RTMemAlloc
     RTMemAllocZ
     RTMemFree
