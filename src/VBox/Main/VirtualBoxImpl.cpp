@@ -2817,7 +2817,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
                               "in the media registry ('%ls')"),
                       aId->raw(), mData.mCfgFile.mName.raw());
         else
-            setError (rc, tr ("Could not find a CD/DVD image with location '%ls' "
+            setError (rc, tr ("Could not find a floppy image with location '%ls' "
                               "in the media registry ('%ls')"),
                       aLocation, mData.mCfgFile.mName.raw());
     }
