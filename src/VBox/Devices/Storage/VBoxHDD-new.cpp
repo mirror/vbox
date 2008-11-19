@@ -795,10 +795,10 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                         }
                     }
                     else
-                        LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Vrc\n", pszPluginPath, pBackend->cbSize, rc));
+                        LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
                 }
                 else
-                    LogFunc(("ignored plugin '%s': rc=%Vrc\n", pszPluginPath, rc));
+                    LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
 
                 RTLdrClose(hPlugin);
             }
