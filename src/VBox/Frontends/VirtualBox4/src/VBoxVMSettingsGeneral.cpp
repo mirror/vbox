@@ -375,16 +375,16 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
 
     if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
     {
-        aWarning = tr ("More than 75% of total system RAM allocated for "
-                       "virtual machine, this will provoke host system "
-                       "to work unstable. Error found");
+        aWarning = tr ("You have assigned more than 75% of your computer's memory to "
+                       "the virtual machine. Not enough memory is left for your host "
+                       "operating system. Please select a smaller amount. Error found");
         return false;
     } else
     if (mSlRam->value() + mSlVideo->value() > 0.5 * fullSize)
     {
-        aWarning = tr ("More than 50% of total system RAM allocated for "
-                       "virtual machine, this could provoke host system "
-                       "to work unstable. Use at your own risk. Problem found");
+        aWarning = tr ("You have assigned more than 50% of your computer's memory to "
+                       "the virtual machine. Not enough memory might be left for your host "
+                       "operating system. Continue at your own risk. Problem found");
         return true;
     }
     return true;
