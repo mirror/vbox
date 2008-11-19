@@ -687,7 +687,12 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
         /* The plugins are in the same directory as the other shared libs. */
         rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
         if (RT_FAILURE(rc))
+        {
+            /* On Windows the above immediately signals that there are no
+             * files matching, while on other platforms enumerating the
+             * files below fails. Either way: no plugins. */
             break;
+        }
 
         PRTDIRENTRYEX pPluginDirEntry = NULL;
         size_t cbPluginDirEntry = sizeof(RTDIRENTRY);
@@ -773,8 +778,6 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                                 break;
                             }
                         }
-                        if (RT_FAILURE(rc))
-                            break;
                         paExts[iExt] = NULL;
                         pEntries[cEntries].papszFileExtensions = paExts;
                         if (pBackend->paConfigInfo != NULL)
@@ -791,9 +794,11 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                             break;
                         }
                     }
+                    else
+                        LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Vrc\n", pszPluginPath, pBackend->cbSize, rc));
                 }
                 else
-                    pBackend = NULL;
+                    LogFunc(("ignored plugin '%s': rc=%Vrc\n", pszPluginPath, rc));
 
                 RTLdrClose(hPlugin);
             }
@@ -807,6 +812,10 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
         if (pPluginDir)
             RTDirClose(pPluginDir);
     } while (0);
+    /* Ignore any files which can't be found. Happens e.g. on Windows when
+     * absolutely no plugins are installed (see above). Totally harmless. */
+    if (rc == VERR_FILE_NOT_FOUND)
+        rc = VINF_SUCCESS;
 
     LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
     *pcEntriesUsed = cEntries;
