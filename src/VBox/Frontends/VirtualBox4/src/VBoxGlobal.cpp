@@ -607,20 +607,21 @@ public:
 
     /** Constructs a regular enum event */
     VBoxMediaEnumEvent (const VBoxMedium &aMedium,
-                        VBoxMediaList::const_iterator &aIterator)
+                        VBoxMediaList::iterator &aIterator)
         : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
         , mMedium (aMedium), mIterator (aIterator), mLast (false)
         {}
     /** Constructs the last enum event */
-    VBoxMediaEnumEvent()
+    VBoxMediaEnumEvent (VBoxMediaList::iterator &aIterator)
         : QEvent ((QEvent::Type) VBoxDefs::MediaEnumEventType)
-        , mLast (true)
+        , mIterator (aIterator), mLast (true)
         {}
 
-    /** The last enumerated medium iterator (invalid when #last is true) */
-    VBoxMediaList::const_iterator mIterator;
-    /** The last enumerated medium (not valid when #last is true) */
+    /** Last enumerated medium (not valid when #last is true) */
     const VBoxMedium mMedium;
+    /** Opaque iterator provided by the event sender (guaranteed to be
+     *  the same variable for all media in the single enumeration procedure) */
+    VBoxMediaList::iterator &mIterator;
     /** Whether this is the last event for the given enumeration or not */
     const bool mLast;
 };
@@ -2841,7 +2842,13 @@ void VBoxGlobal::startEnumeratingMedia()
     {
     public:
 
-        MediaEnumThread (const VBoxMediaList &aList) : mList (aList) {}
+        MediaEnumThread (VBoxMediaList &aList)
+            : mSavedIt (aList.begin())
+        {
+            for (VBoxMediaList::const_iterator it = aList.begin();
+                 it != aList.end(); ++ it)
+                mVector.append (*it);
+        }
 
         virtual void run()
         {
@@ -2852,17 +2859,17 @@ void VBoxGlobal::startEnumeratingMedia()
             QObject *self = &vboxGlobal();
 
             /* Enumerate the list */
-            for (VBoxMediaList::const_iterator it = mList.begin();
-                 it != mList.end() && !sVBoxGlobalInCleanup; ++ it)
+            for (int i = 0; i < mVector.size() && !sVBoxGlobalInCleanup; ++ i)
             {
-                VBoxMedium medium = *it;
-                medium.blockAndQueryState();
-                QApplication::postEvent (self, new VBoxMediaEnumEvent (medium, it));
+                mVector [i].blockAndQueryState();
+                QApplication::
+                    postEvent (self,
+                               new VBoxMediaEnumEvent (mVector [i], mSavedIt));
             }
 
             /* Post the end-of-enumeration event */
             if (!sVBoxGlobalInCleanup)
-                QApplication::postEvent (self, new VBoxMediaEnumEvent());
+                QApplication::postEvent (self, new VBoxMediaEnumEvent (mSavedIt));
 
             COMBase::CleanupCOM();
             LogFlow (("MediaEnumThread finished.\n"));
@@ -2870,7 +2877,8 @@ void VBoxGlobal::startEnumeratingMedia()
 
     private:
 
-        const VBoxMediaList &mList;
+        QVector <VBoxMedium> mVector;
+        VBoxMediaList::iterator mSavedIt;
     };
 
     mMediaEnumThread = new MediaEnumThread (mMediaList);
@@ -4949,9 +4957,9 @@ bool VBoxGlobal::event (QEvent *e)
                     !ev->mMedium.result().isOk())
                     vboxProblem().cannotGetMediaAccessibility (ev->mMedium);
                 Assert (ev->mIterator != mMediaList.end());
-                VBoxMedium *medium = unconst (&*ev->mIterator);
-                *medium = ev->mMedium;
-                emit mediumEnumerated (*medium);
+                *(ev->mIterator) = ev->mMedium;
+                emit mediumEnumerated (*ev->mIterator);
+                ++ ev->mIterator;
             }
             else
             {
