@@ -160,6 +160,7 @@ SOLARIS_EXTRAS = \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtXml.so.4,) \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQtSql.so.4,) \
 	$(if $(VBOX_WITH_QT4GUI),libVBoxQt3Support.so.4,) \
+	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	VBox.png \
 	autoresponse \
 	vboxdrv.conf \
@@ -295,6 +296,7 @@ endif
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSDL.so                             $(SOLARIS_INST_DIR)/VBoxSDL.so,)
 endif
+	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2 $(SOLARIS_INST_DIR)/libSDL-1.2.so.0,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxRT.so                                                        $(SOLARIS_INST_DIR)/VBoxRT.so
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxKeyboard.so                         $(SOLARIS_INST_DIR)/VBoxKeyboard.so,)
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_BIN)/VirtualBox                              $(SOLARIS_INST_DIR)/VirtualBox,)
@@ -347,6 +349,7 @@ endif
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXSDL),strip $(SOLARIS_INST_DIR)/VBoxSDL.so,),)
 endif
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VBOXSDL),strip $(SOLARIS_INST_DIR)/libSDL-1.2.so.0,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxRT.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxKeyboard.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VirtualBox,),)
