@@ -309,8 +309,8 @@ int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available
     mstat.dwLength = sizeof(mstat);
     if (GlobalMemoryStatusEx(&mstat))
     {
-        *total = (ULONG)( mstat.ullTotalPhys / 1000 );
-        *available = (ULONG)( mstat.ullAvailPhys / 1000 );
+        *total = (ULONG)( mstat.ullTotalPhys / 1024 );
+        *available = (ULONG)( mstat.ullAvailPhys / 1024 );
         *used = *total - *available;
     }
     else
