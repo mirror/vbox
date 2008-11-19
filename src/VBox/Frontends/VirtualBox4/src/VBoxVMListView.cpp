@@ -134,8 +134,8 @@ static WId FindWindowIdFromPid (ULONG aPid)
 
 #endif
 
-VBoxVMItem::VBoxVMItem (const CMachine &aMachine, VBoxSelectorWnd *pParent)
-    : mParent (pParent), mMachine (aMachine)
+VBoxVMItem::VBoxVMItem (const CMachine &aMachine)
+    : mMachine (aMachine)
 {
     recache();
 }
@@ -200,7 +200,7 @@ bool VBoxVMItem::recache()
     if (mAccessible)
     {
         QString name = mMachine.GetName();
-        setObjectName (name);
+
         CSnapshot snp = mMachine.GetCurrentSnapshot();
         mSnapshotName = snp.isNull() ? QString::null : snp.GetName();
         needsResort = name != mName;

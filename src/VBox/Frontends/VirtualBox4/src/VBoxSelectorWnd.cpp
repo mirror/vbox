@@ -569,11 +569,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mTrayShowWindowAction->setIcon (VBoxGlobal::iconSet (":/VirtualBox_16px.png"));
     mTrayShowWindowAction->setText (tr ("Sun xVM VirtualBox"));
 
-    mTrayExitAction = new QAction (this);
-    Assert (mTrayExitAction);
-    mTrayExitAction->setMenuRole (QAction::QuitRole);
-    mTrayExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
-
     if (QSystemTrayIcon::isSystemTrayAvailable())
     {
         mTrayIcon = new VBoxTrayIcon (this, mVMModel);
@@ -902,13 +897,14 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    /* We always get here when mVMListView emits the activated() signal,
-     * so we must explicitly check if the action is enabled or not. */
-   if (aUuid.isNull())  /* If Uuid is NULL, this function is called from the mVMListView activated() signal. */
-   {
-       if (!vmStartAction->isEnabled())
-           return;
-   }
+    /* Are we called from the mVMListView's activated() signal? */
+    if (aUuid.isNull())
+    {
+        /* We always get here when mVMListView emits the activated() signal,
+         * so we must explicitly check if the action is enabled or not. */
+        if (!vmStartAction->isEnabled())
+            return;
+    }
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
@@ -1073,10 +1069,11 @@ void VBoxSelectorWnd::refreshVMList()
     CMachineVector vec = vbox.GetMachines2();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
-        mVMModel->addItem (new VBoxVMItem (*m, this));
+        mVMModel->addItem (new VBoxVMItem (*m));
     mVMModel->sort();
 
     vmListViewCurrentChanged();
+
 #ifdef VBOX_GUI_WITH_SYSTRAY
     mTrayIcon->refresh();
 #endif
@@ -1331,14 +1328,14 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         CMachine m = item->machine();
 
         KMachineState state = item->state();
-        bool bRunning = item->running();
-        bool bModifyEnabled = !bRunning && state != KMachineState_Saved;
+        bool running = item->sessionState() != KSessionState_Closed;
+        bool modifyEnabled = !running && state != KMachineState_Saved;
 
         if (aRefreshDetails)
         {
             vmDetailsView->setDetailsText (
                 vboxGlobal().detailsReport (m, false /* isNewVM */,
-                                            bModifyEnabled /* withLinks */));
+                                            modifyEnabled /* withLinks */));
         }
         if (aRefreshSnapshots)
         {
@@ -1366,9 +1363,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         }
 
         /* enable/disable modify actions */
-        vmConfigAction->setEnabled (bModifyEnabled);
-        vmDeleteAction->setEnabled (bModifyEnabled);
-        vmDiscardAction->setEnabled (state == KMachineState_Saved && !bRunning);
+        vmConfigAction->setEnabled (modifyEnabled);
+        vmDeleteAction->setEnabled (modifyEnabled);
+        vmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
         vmPauseAction->setEnabled (state == KMachineState_Running ||
                                    state == KMachineState_Paused);
 
@@ -1387,7 +1384,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             vmStartAction->setStatusTip (
                 tr ("Start the selected virtual machine"));
 
-            vmStartAction->setEnabled (!bRunning);
+            vmStartAction->setEnabled (!running);
         }
 
         /* change the Pause/Resume button text accordingly */
@@ -1553,7 +1550,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
         CMachine m = vbox.GetMachine (e.id);
         if (!m.isNull())
         {
-            mVMModel->addItem (new VBoxVMItem (m, this));
+            mVMModel->addItem (new VBoxVMItem (m));
             mVMModel->sort();
             /* Make sure the description, ... pages are properly updated.
              * Actualy we haven't call the next method, but unfortunately Qt
@@ -1685,9 +1682,10 @@ void VBoxTrayIcon::showSubMenu ()
 
     if (pItem && pItem->accessible())
     {
+        /* look at vmListViewCurrentChanged() */
         CMachine m = pItem->machine();
         KMachineState s = pItem->state();
-        bool bRunning = pItem->running();
+        bool bRunning = pItem->sessionState() != KSessionState_Closed;
         bool bModifyEnabled = !bRunning && s != KMachineState_Saved;
 
         /* Settings */
