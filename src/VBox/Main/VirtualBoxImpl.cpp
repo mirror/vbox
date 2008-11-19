@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * Implmentation of IVirtualBox in VBoxSVC.
+ * Implementation of IVirtualBox in VBoxSVC.
  */
 
 /*
@@ -1390,7 +1390,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
         using namespace settings;
 
         /* load the settings file (we don't reuse the existing handle but
-         * request a new one to allow for concurrent multithreaded reads) */
+         * request a new one to allow for concurrent multi-threaded reads) */
         File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
@@ -1488,7 +1488,7 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
         using namespace settings;
 
         /* load the settings file (we don't reuse the existing handle but
-         * request a new one to allow for concurrent multithreaded reads) */
+         * request a new one to allow for concurrent multi-threaded reads) */
         File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
         XmlTreeBackend tree;
 
@@ -1905,7 +1905,7 @@ HRESULT VirtualBox::postEvent (Event *event)
  * Adds a progress to the global collection of pending operations.
  * Usually gets called upon progress object initialization.
  *
- * @param aProgress Peration to add to the collection.
+ * @param aProgress Operation to add to the collection.
  *
  * @note Doesn't lock objects.
  */
@@ -1930,7 +1930,7 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
 
 /**
  * Removes the progress from the global collection of pending operations.
- * Usualy gets called upon progress completion.
+ * Usually gets called upon progress completion.
  *
  * @param aId   UUID of the progress operation to remove
  *
@@ -1973,7 +1973,7 @@ struct StartSVCHelperClientData
  *
  *  The user function is supposed to communicate to the helper process
  *  using the \a aClient argument to do the requested job and optionally expose
- *  the prgress through the \a aProgress object. The user function should never
+ *  the progress through the \a aProgress object. The user function should never
  *  call notifyComplete() on it: this will be done automatically using the
  *  result code returned by the function.
  *
@@ -1999,7 +1999,7 @@ struct StartSVCHelperClientData
  *  After the user function returns, the thread will send the SVCHlpMsg::Null
  *  message to indicate a process termination.
  *
- *  @param  aPrivileged |true| to start the SVC Hepler process as a privlieged
+ *  @param  aPrivileged |true| to start the SVC Helper process as a privileged
  *                      user that can perform administrative tasks
  *  @param  aFunc       user function to run
  *  @param  aUser       argument to the user function
@@ -2128,7 +2128,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
                  * (pressing the Cancel button to close the Run As dialog) */
                 if (vrc2 == VERR_CANCELLED)
                     rc = setError (E_FAIL,
-                        tr ("Operatiion cancelled by the user"));
+                        tr ("Operation cancelled by the user"));
                 else
                     rc = setError (E_FAIL,
                         tr ("Could not launch a privileged process '%s' (%Rrc)"),
@@ -2521,7 +2521,7 @@ ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
  *
  * @note It can be possible that a session machine from the list has been
  * already uninitialized, so do a usual AutoCaller/AutoReadLock sequence
- * whenaccessing unprotected data directly.
+ * when accessing unprotected data directly.
  *
  * @note Locks objects for reading.
  */
@@ -3598,7 +3598,7 @@ HRESULT VirtualBox::unregisterFloppyImage (FloppyImage2 *aImage,
 
 /**
  * Attempts to cast from a raw interface pointer to an underlying object.
- * On sucess, @a aTo will contain the object reference. On failure, @a aTo will
+ * On success, @a aTo will contain the object reference. On failure, @a aTo will
  * be set to @c null and an extended error info will be returned.
  *
  * @param aFrom     Interface pointer to cast from.
@@ -3680,11 +3680,11 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
 }
 
 /**
- * Creates the path to the specified file accoring to the path information
+ * Creates the path to the specified file according to the path information
  * present in the file name.
  *
  * Note that the given file name must contain the full path otherwise the
- * extracted reliative path will be created based on the current working
+ * extracted relative path will be created based on the current working
  * directory which is normally unknown.
  *
  * @param aFileName     Full file name which path needs to be created.
@@ -3834,7 +3834,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
  * supplied version format string and optionally with numbers from .0 to .9
  * if the backup file already exists.
  *
- * @param aFileName     Orignal settings file name.
+ * @param aFileName     Original settings file name.
  * @param aOldFormat    Version of the original format.
  * @param aBakFileName  File name of the created backup copy (only on success).
  */
@@ -3898,7 +3898,7 @@ HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
 {
     try
     {
-        /* rethrow the current exception */
+        /* re-throw the current exception */
         throw;
     }
     catch (const std::exception &err)
@@ -3929,7 +3929,7 @@ HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
  *  @note If the configuration file is not found, the method returns
  *  S_OK, but subsequent #isConfigLocked() will return FALSE. This is used
  *  in some places to determine the (valid) situation when no config file
- *  exists yet, and therefore a new one should be created from scatch.
+ *  exists yet, and therefore a new one should be created from scratch.
  */
 HRESULT VirtualBox::lockConfig()
 {
@@ -3952,7 +3952,7 @@ HRESULT VirtualBox::lockConfig()
             mData.mCfgFile.mHandle = NIL_RTFILE;
 
             /*
-             *  It is ok if the file is not found, it will be created by
+             *  It is OK if the file is not found, it will be created by
              *  init(). Otherwise return an error.
              */
             if (vrc != VERR_FILE_NOT_FOUND)
