@@ -414,6 +414,10 @@
 #define VERR_PGM_INTERMEDIATE_PAGING_CONFLICT   (-1627)
 /** The shadow paging mode is not supported yet. */
 #define VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE (-1628)
+/** The dynamic mapping cache for physical memory failed. */
+#define VERR_PGM_DYNMAP_FAILED                  (-1629)
+/** The auto usage cache for the dynamic mapping set is full. */
+#define VERR_PGM_DYNMAP_FULL_SET                (-1630)
 
 /** @} */
 
