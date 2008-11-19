@@ -3350,3 +3350,19 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
         break;
     }
 }
+
+#if HC_ARCH_BITS == 32
+/**
+ * Prepares for and executes VMLAUNCH (64 bits guest mode)
+ *
+ * @returns VBox status code
+ * @param   fResume     vmlauch/vmresume
+ * @param   pCtx        Guest context
+ */
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+#endif
+
+

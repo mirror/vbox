@@ -938,7 +938,7 @@ ENDPROC VMXR0InvVPID
 ; * @param   HCPhysVMCB     Physical address of guest VMCB
 ; * @param   pCtx           Guest context
 ; */
-BEGINPROC SVMVMRun
+BEGINPROC SVMR0VMRun
 %ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
     push    rdx
@@ -1035,7 +1035,7 @@ BEGINPROC SVMVMRun
     add     xSP, 4*xS
 %endif
     ret
-ENDPROC SVMVMRun
+ENDPROC SVMR0VMRun
 
 %ifdef RT_ARCH_AMD64
 ;/**
@@ -1046,7 +1046,7 @@ ENDPROC SVMVMRun
 ; * @param   HCPhysVMCB     Physical address of guest VMCB
 ; * @param   pCtx           Guest context
 ; */
-BEGINPROC SVMVMRun64
+BEGINPROC SVMR0VMRun64
     ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
     push    rdx
@@ -1156,7 +1156,7 @@ BEGINPROC SVMVMRun64
     pop     rbp
     add     rsp, 4*xS
     ret
-ENDPROC SVMVMRun64
+ENDPROC SVMR0VMRun64
 %endif ; RT_ARCH_AMD64
 
 
@@ -1167,8 +1167,8 @@ ENDPROC SVMVMRun64
 ; @param   pPageGC  msc:rcx  gcc:rdi  x86:[esp+04]  Virtual page to invalidate
 ; @param   uASID    msc:rdx  gcc:rsi  x86:[esp+0C]  Tagged TLB id
 ;
-;DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
-BEGINPROC SVMInvlpgA
+;DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t uASID);
+BEGINPROC SVMR0InvlpgA
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     mov     rax, rdi
@@ -1187,7 +1187,7 @@ BEGINPROC SVMInvlpgA
 %endif
     invlpga [xAX], ecx
     ret
-ENDPROC SVMInvlpgA
+ENDPROC SVMR0InvlpgA
 
 %else
 ;;
@@ -1196,8 +1196,8 @@ ENDPROC SVMInvlpgA
 ; @param   pPageGC  msc:ecx  gcc:edi  x86:[esp+04]  Virtual page to invalidate
 ; @param   uASID    msc:edx  gcc:esi  x86:[esp+08]  Tagged TLB id
 ;
-;DECLASM(void) SVMInvlpgA(RTGCPTR pPageGC, uint32_t uASID);
-BEGINPROC SVMInvlpgA
+;DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t uASID);
+BEGINPROC SVMR0InvlpgA
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     movzx   rax, edi
@@ -1216,7 +1216,7 @@ BEGINPROC SVMInvlpgA
 %endif
     invlpga [xAX], ecx
     ret
-ENDPROC SVMInvlpgA
+ENDPROC SVMR0InvlpgA
 
 %endif ; GC_ARCH_BITS != 64
 
