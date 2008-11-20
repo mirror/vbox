@@ -3155,6 +3155,56 @@ static uint32_t pcnetAPROMReadU8(PCNetState *pThis, uint32_t addr)
     return val;
 }
 
+static int pcnetIoportWriteU8(PCNetState *pThis, uint32_t addr, uint32_t val)
+{
+    int rc = VINF_SUCCESS;
+
+#ifdef PCNET_DEBUG_IO
+    Log2(("#%d pcnetIoportWriteU8: addr=%#010x val=%#06x\n", PCNET_INST_NR,
+         addr, val));
+#endif
+    if (RT_LIKELY(!BCR_DWIO(pThis)))
+    {
+        switch (addr & 0x0f)
+        {
+            case 0x04: /* RESET */
+                break;
+        }
+    }
+    else
+        Log(("#%d pcnetIoportWriteU8: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val));
+
+    return rc;
+}
+
+static uint32_t pcnetIoportReadU8(PCNetState *pThis, uint32_t addr, int *pRC)
+{
+    uint32_t val = ~0U;
+
+    *pRC = VINF_SUCCESS;
+
+    if (RT_LIKELY(!BCR_DWIO(pThis)))
+    {
+        switch (addr & 0x0f)
+        {
+            case 0x04: /* RESET */
+                pcnetSoftReset(pThis);
+                val = 0;
+                break;
+        }
+    }
+    else
+        Log(("#%d pcnetIoportReadU8: addr=%#010x val=%#06x BCR_DWIO !!\n", PCNET_INST_NR, addr, val & 0xff));
+
+    pcnetUpdateIrq(pThis);
+
+skip_update_irq:
+#ifdef PCNET_DEBUG_IO
+    Log2(("#%d pcnetIoportReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
+#endif
+    return val;
+}
+
 static int pcnetIoportWriteU16(PCNetState *pThis, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
@@ -3516,11 +3566,13 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     {
         switch (cb)
         {
+            case 1: *pu32 = pcnetIoportReadU8(pThis, Port, &rc); break;
             case 2: *pu32 = pcnetIoportReadU16(pThis, Port, &rc); break;
             case 4: *pu32 = pcnetIoportReadU32(pThis, Port, &rc); break;
             default:
-                rc = VERR_IOM_IOPORT_UNUSED;
-                break;
+                rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                                       "pcnetIOPortRead: unsupported op size: offset=%#10x cb=%u\n",
+                                       Port, cb);
         }
         PDMCritSectLeave(&pThis->CritSect);
     }
@@ -3557,12 +3609,13 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     {
         switch (cb)
         {
+            case 1: rc = pcnetIoportWriteU8(pThis, Port, u32); break;
             case 2: rc = pcnetIoportWriteU16(pThis, Port, u32); break;
             case 4: rc = pcnetIoportWriteU32(pThis, Port, u32); break;
             default:
-                AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
-                rc = VERR_INTERNAL_ERROR;
-                break;
+                rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                                       "pcnetIOPortWrite: unsupported op size: offset=%#10x cb=%u\n",
+                                       Port, cb);
         }
         PDMCritSectLeave(&pThis->CritSect);
     }
@@ -3608,9 +3661,9 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
                 case 2:  *(uint16_t *)pv = pcnetMMIOReadU16(pThis, GCPhysAddr); break;
                 case 4:  *(uint32_t *)pv = pcnetMMIOReadU32(pThis, GCPhysAddr); break;
                 default:
-                    AssertMsgFailed(("cb=%d\n", cb));
-                    rc = VERR_INTERNAL_ERROR;
-                    break;
+                    rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                                           "pcnetMMIORead: unsupported op size: address=%RGp cb=%u\n",
+                                           GCPhysAddr, cb);
             }
             PDMCritSectLeave(&pThis->CritSect);
         }
@@ -3661,9 +3714,9 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case 2:  pcnetMMIOWriteU16(pThis, GCPhysAddr, *(uint16_t *)pv); break;
                 case 4:  pcnetMMIOWriteU32(pThis, GCPhysAddr, *(uint32_t *)pv); break;
                 default:
-                    AssertMsgFailed(("cb=%d\n", cb));
-                    rc = VERR_INTERNAL_ERROR;
-                    break;
+                    rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                                           "pcnetMMIOWrite: unsupported op size: address=%RGp cb=%u\n",
+                                           GCPhysAddr, cb);
             }
             PDMCritSectLeave(&pThis->CritSect);
         }
