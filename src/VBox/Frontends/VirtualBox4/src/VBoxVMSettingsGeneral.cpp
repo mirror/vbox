@@ -402,8 +402,8 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
     if ((quint64)mSlVideo->value() * _1M < needBytes)
     {
         aWarning = tr ("You have assigned less than %1 for video memory. This is the minimum "
-                       "requirement which allow you to operate the guest in fullscreen & "
-                       " seamless modes. Continue at your own risk. Problem found")
+                       "requirement for the guest to be able to switch to fullscreen or "
+                       "seamless mode. Problem found")
                        .arg (vboxGlobal().formatSize (needBytes));
         return true;
     }
