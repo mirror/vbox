@@ -693,7 +693,9 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
                      vb:Machine//vb:Hardware/vb:CPU"
               mode="v1.5">
   <xsl:copy>
-    <xsl:attribute name="count"><xsl:value-of select="vb:CPUCount/@count"/></xsl:attribute>
+    <xsl:if test="vb:CPUCount/@count">
+      <xsl:attribute name="count"><xsl:value-of select="vb:CPUCount/@count"/></xsl:attribute>
+    </xsl:if>
     <xsl:apply-templates select="@*" mode="v1.5"/>
     <xsl:apply-templates select="node()[not(self::vb:CPUCount)]" mode="v1.5"/>
   </xsl:copy>
