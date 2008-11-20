@@ -752,8 +752,8 @@
       </param>
       <param name="allowChange" type="boolean" dir="return">
         <desc>
-          Flag to indicate whether the callee agrees (@ true)
-          or vetoes against the change (@ false).
+          Flag to indicate whether the callee agrees (@c true)
+          or vetoes against the change (@c false).
         </desc>
       </param>
     </method>
