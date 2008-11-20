@@ -219,7 +219,7 @@ ip_input(PNATState pData, struct mbuf *m)
         }
         else
 		ip->ip_len -= hlen;
-#endif /* !VBOX_WITH_BSD_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 
 	/*
 	 * Switch out to protocol's input routine.
@@ -513,17 +513,15 @@ found:
      * ip_reass() will return a different mbuf.
      */
     ipstat.ips_fragments++;
-    m->m_data = (caddr_t)ip;
+    m->m_hdr.header = ip;
 
     /* Previous ip_reass() started here. */
     /*
      * Presence of header sizes in mbufs
      * would confuse code below.
      */
-#if 0
     m->m_data += hlen;
     m->m_len -= hlen;
-#endif
 
     /*
      * If first fragment to arrive, create a reassembly queue.
@@ -547,7 +545,7 @@ found:
         fp->ipq_nfrags++;
     }
 
-#define GETIP(m)    ((struct ip*)((m)->m_data))
+#define GETIP(m)    ((struct ip*)((m)->m_hdr.header))
 
 
     /*
@@ -665,21 +663,19 @@ found:
      * packet;  dequeue and discard fragment reassembly header.
      * Make header visible.
      */
+#if 0
     ip->ip_len = (ip->ip_hl << 2) + next;
+#else
+    ip->ip_len = next;
+#endif
     ip->ip_src = fp->ipq_src;
     ip->ip_dst = fp->ipq_dst;
-#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
-    ip->ip_sum = 0;
-    m->m_sum_recalculate = 1;
-#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
     TAILQ_REMOVE(head, fp, ipq_list);
     nipq--;
     free(fp);
 
-#if 0
     m->m_len += (ip->ip_hl << 2);
     m->m_data -= (ip->ip_hl << 2);
-#endif
     /* some debugging cruft by sklower, below, will go away soon */
 #if 0
     if (m->m_flags & M_PKTHDR)    /* XXX this should be done elsewhere */

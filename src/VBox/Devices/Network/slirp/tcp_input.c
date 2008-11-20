@@ -478,16 +478,10 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 	/* keep checksum for ICMP reply
 	 * ti->ti_sum = cksum(m, len);
 	 * if (ti->ti_sum) { */
-#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
-        if (m->m_sum_recalculate == 0 && ip->ip_sum != 0) {
-#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
 	if(cksum(m, len)) {
 	  tcpstat.tcps_rcvbadsum++;
 	  goto drop;
 	}
-#ifdef VBOX_WITH_BSD_REASS_CKSUM_HACK
-        }
-#endif /* VBOX_WITH_BSD_REASS_CKSUM_HACK */
 
 	/*
 	 * Check that TCP offset makes sense,
