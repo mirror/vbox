@@ -581,9 +581,7 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/udp.c
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
  define def_vbox_slirp_cflags
-  ifeq ($(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC),1)
-   $(file)_DEFS = VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
-  endif
+  $(file)_DEFS = VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
   ifeq ($(KBUILD_TARGET),win)
    $(file)_CFLAGS = -wd4018
   else
