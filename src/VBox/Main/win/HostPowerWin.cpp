@@ -23,6 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <windows.h>
+#include <PowrProf.h>
 
 #include <VBox/com/ptr.h>
 #include "HostPower.h"
@@ -161,11 +162,30 @@ LRESULT CALLBACK HostPowerServiceWin::WndProc(HWND hwnd, UINT msg, WPARAM wParam
                     {
                         Log(("PBT_APMPOWERSTATUSCHANGE ACLineStatus=%d BatteryFlag=%d\n", SystemPowerStatus.ACLineStatus, SystemPowerStatus.BatteryFlag));
 
-                        /* If the machine has less than 5% battery left (and is not connected to the AC), then we should save the state. */
-                        if (   SystemPowerStatus.ACLineStatus == 0      /* offline */
-                            && SystemPowerStatus.BatteryFlag  == 4      /* critical battery status; less than 5% */)
+                        if (SystemPowerStatus.ACLineStatus == 0)      /* offline */
                         {
-                            pPowerObj->notify(HostPowerEvent_BatteryLow);
+                            if (SystemPowerStatus.BatteryFlag == 2 /* low > 33% */)
+                            {
+                                LONG rc;
+                                SYSTEM_BATTERY_STATE BatteryState;
+
+                                rc = CallNtPowerInformation(SystemBatteryState, NULL, 0, (PVOID)&BatteryState, sizeof(BatteryState));
+#ifdef LOG_ENABLED
+                                if (rc == 0 /* STATUS_SUCCESS */)
+                                    Log(("CallNtPowerInformation claims %d seconds of power left\n", BatteryState.EstimatedTime));
+#endif
+                                if (    rc == 0 /* STATUS_SUCCESS */
+                                    &&  BatteryState.EstimatedTime < 60*5)
+                                {
+                                    pPowerObj->notify(HostPowerEvent_BatteryLow);
+                                }
+                            }
+                            else
+                            /* If the machine has less than 5% battery left (and is not connected to the AC), then we should save the state. */
+                            if (SystemPowerStatus.BatteryFlag == 4      /* critical battery status; less than 5% */)
+                            {
+                                pPowerObj->notify(HostPowerEvent_BatteryLow);
+                            }
                         }
                     }
                     break;
