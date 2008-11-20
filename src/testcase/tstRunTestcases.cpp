@@ -52,13 +52,14 @@ static const char  *g_apszExclude[] =
     "testcase/tstSemMutex",
     "testcase/tstVD",
 #endif
-    "testcase/tstVD-2",
     "testcase/tstFileLock",
     "testcase/tstCritSect",
     "testcase/tstCritSectW32",
     "testcase/tstDeadlock",
     "testcase/tstDisasm-2",
     "testcase/tstFileAppendWin-1",
+    "testcase/tstDir",              /* useless, requires parameters */
+    "testcase/tstDir-2",            /* useless, requires parameters */
     "testcase/tstGlobalConfig",
     "testcase/tstLdr-2",
     "testcase/tstLdr-3",
