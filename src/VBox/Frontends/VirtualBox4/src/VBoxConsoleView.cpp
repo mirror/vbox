@@ -679,6 +679,20 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #ifdef Q_WS_MAC
     /* Overlay logo for the dock icon */
     mVirtualBoxLogo = ::darwinToCGImageRef ("VirtualBox_cube_42px.png");
+
+    /* Install the event handler which will proceed external window handling */
+    EventHandlerUPP eventHandler = ::NewEventHandlerUPP (::darwinOverlayWindowHandler);
+    EventTypeSpec eventTypes[] =
+    {
+        { kEventClassVBox, kEventVBoxShowWindow },
+        { kEventClassVBox, kEventVBoxMoveWindow },
+        { kEventClassVBox, kEventVBoxResizeWindow }
+    };
+
+    mDarwinWindowOverlayHandlerRef = NULL;
+    ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
+                                      this, &mDarwinWindowOverlayHandlerRef);
+    ::DisposeEventHandlerUPP (eventHandler);
 #endif
 
     /* No frame around the view */
@@ -854,6 +868,11 @@ VBoxConsoleView::~VBoxConsoleView()
     mConsole.UnregisterCallback (mCallback);
 
 #ifdef Q_WS_MAC
+    if (mDarwinWindowOverlayHandlerRef)
+    {
+        ::RemoveEventHandler (mDarwinWindowOverlayHandlerRef);
+        mDarwinWindowOverlayHandlerRef = NULL;
+    }
     CGImageRelease (mVirtualBoxLogo);
 #endif
 }
