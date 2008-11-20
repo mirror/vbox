@@ -73,7 +73,6 @@ extern int  sync_tr(CPUX86State *env1, int selector);
 unsigned long get_phys_page_offset(target_ulong addr);
 #endif
 
-
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
