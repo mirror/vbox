@@ -2843,11 +2843,13 @@ void VBoxGlobal::startEnumeratingMedia()
     public:
 
         MediaEnumThread (VBoxMediaList &aList)
-            : mSavedIt (aList.begin())
+            : mVector (aList.size())
+            , mSavedIt (aList.begin())
         {
+            int i = 0;
             for (VBoxMediaList::const_iterator it = aList.begin();
                  it != aList.end(); ++ it)
-                mVector.append (*it);
+                mVector [i ++] = *it;
         }
 
         virtual void run()
