@@ -38,7 +38,7 @@
 
 #include "Builtins.h"
 
-#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 # ifndef RT_OS_WINDOWS
 #  include <unistd.h>
 # endif
@@ -64,7 +64,7 @@ typedef struct DRVNAT
     PPDMINETWORKCONFIG      pConfig;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /** Slirp critical section. */
     RTCRITSECT              CritSect;
 #endif
@@ -76,7 +76,7 @@ typedef struct DRVNAT
     char                    *pszTFTPPrefix;
     /** Boot file name to provide in the DHCP server response. */
     char                    *pszBootFile;
-#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /* polling thread */
     PPDMTHREAD              pThread;
     /** Queue for NAT-thread-external events. */
@@ -124,7 +124,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
 
-#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 
     PRTREQ pReq = NULL;
     int rc;
@@ -158,7 +158,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
         AssertReleaseRC(rc);
     RTReqFree(pReq);
 
-#else /* !VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
@@ -167,7 +167,7 @@ static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void
 
     RTCritSectLeave(&pThis->CritSect);
 
-#endif /* !VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#endif /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
     LogFlow(("drvNATSend: end\n"));
     return VINF_SUCCESS;
@@ -229,7 +229,7 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
-#ifdef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifdef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 
     PRTREQ pReq = NULL;
     /* don't queue new requests when the NAT thread is about to stop */
@@ -261,18 +261,18 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterfa
         AssertReleaseRC(rc);
     RTReqFree(pReq);
 
-#else /* !VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#else /* !VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
     drvNATNotifyLinkChangedWorker(pThis, enmLinkState);
     RTCritSectLeave(&pThis->CritSect);
 
-#endif /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 }
 
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
 
 /**
  * Poller callback.
@@ -301,7 +301,7 @@ static DECLCALLBACK(void) drvNATPoller(PPDMDRVINS pDrvIns)
     RTCritSectLeave(&pThis->CritSect);
 }
 
-#else /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#else /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -408,7 +408,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
-#endif /* VBOX_WITH_SIMPLEFIED_SLIRP_SYNC */
+#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 
 /**
@@ -422,7 +422,7 @@ int slirp_can_output(void *pvUser)
 
     Assert(pThis);
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /** Happens during termination */
     if (!RTCritSectIsOwner(&pThis->CritSect))
         return 0;
@@ -445,7 +445,7 @@ void slirp_output(void *pvUser, const uint8_t *pu8Buf, int cb)
 
     Assert(pThis);
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     /** Happens during termination */
     if (!RTCritSectIsOwner(&pThis->CritSect))
         return;
@@ -495,13 +495,13 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 
     LogFlow(("drvNATDestruct:\n"));
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertReleaseRC(rc);
 #endif
     slirp_term(pThis->pNATState);
     pThis->pNATState = NULL;
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     RTCritSectLeave(&pThis->CritSect);
     RTCritSectDelete(&pThis->CritSect);
 #endif
@@ -710,7 +710,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * The slirp lock..
      */
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     rc = RTCritSectInit(&pThis->CritSect);
     if (RT_FAILURE(rc))
         return rc;
@@ -733,7 +733,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                        pDrvIns->iInstance, 0, 0,
                                        NULL, NULL, NULL, NULL, NULL, drvNATLoadDone);
             AssertRC(rc2);
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
             pDrvIns->pDrvHlp->pfnPDMPollerRegister(pDrvIns, drvNATPoller);
 #else
             rc = RTReqCreateQueue(&pThis->pReqQueue);
@@ -778,7 +778,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         AssertMsgFailed(("Add error message for rc=%d (%Rrc)\n", rc, rc));
     }
 
-#ifndef VBOX_WITH_SIMPLEFIED_SLIRP_SYNC
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
     RTCritSectDelete(&pThis->CritSect);
 #endif
     return rc;

@@ -49,7 +49,7 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
 
-#if defined(VBOX_WITH_SIMPLEFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
 /**
  * This event is for
  *  - slirp_input
