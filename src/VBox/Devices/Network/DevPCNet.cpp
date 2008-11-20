@@ -3198,7 +3198,6 @@ static uint32_t pcnetIoportReadU8(PCNetState *pThis, uint32_t addr, int *pRC)
 
     pcnetUpdateIrq(pThis);
 
-skip_update_irq:
 #ifdef PCNET_DEBUG_IO
     Log2(("#%d pcnetIoportReadU8: addr=%#010x val=%#06x\n", PCNET_INST_NR, addr, val & 0xff));
 #endif
