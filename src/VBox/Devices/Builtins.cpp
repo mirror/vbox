@@ -149,7 +149,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePCIBridge);
     if (RT_FAILURE(rc))
         return rc;
-
+#ifdef VBOX_WITH_LSILOGIC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLsiLogicSCSI);
+    if (VBOX_FAILURE(rc))
+        return rc;
+#endif
 
     return VINF_SUCCESS;
 }
