@@ -734,17 +734,19 @@ VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 # out directory names inside the additions building VMs.
 VBOX_ADDITIONS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
 
+VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
+
 # Oh well, this gets really fancy - ms vc8 doesn't work inside ssh due to some
 # session setup issue. So do this indirectly through psexec. The downside is
 # that there is no direct build feedback. Also I couldn't get the share to
 # work via psexec, so rsync over the result of the build.
 additions-build-win.amd64:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	$(call MSG_L1,Building Windows/amd64 additions)
 	rsync -av --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
-	ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME).log 2>&1'\'; \
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 c:/psexec/psexec.exe \\\\\\\\addvm -u vbox -p $(WIN64PASSWORD) c:\\\\cygwin\\\\bin\\\\bash.exe -c \''PATH=/usr/bin:/bin e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) > e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME).log 2>&1'\'; \
 	rc=$$?; \
 	rsync -av --delete 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/win.amd64/ out/win.amd64; \
 	mkdir -p out/win.amd64; \
@@ -755,51 +757,51 @@ endif
 
 additions-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
 	$(call MSG_L1,Building Windows/x86 additions)
 	rsync -av --no-owner --no-group --delete --delete-excluded --exclude .svn/ --exclude out/ --exclude tinderclient.log . 192.168.27.5:/cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
-	ssh vbox@192.168.27.5 " cd /cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && PATH_OUT_BASE=Z:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86)"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " cd /cygdrive/e/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && PATH_OUT_BASE=Z:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86)"
 endif
 
 additions-build-solaris.amd64:
 ifeq ($(KBUILD_TARGET),solaris)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	$(call MSG_L1,Building Solaris/amd64 additions)
-	ssh vbox@192.168.27.4 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
 endif
 
 # ASSUMES 64-bit is built already. See @todo above.
 additions-build-solaris.x86:
 ifeq ($(KBUILD_TARGET),solaris)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1
 else
 	$(call MSG_L1,Building Solaris/x86 additions)
-	ssh vbox@192.168.27.4 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
 endif
 
 additions-build-os2.x86:
 #ifeq ($(KBUILD_TARGET),os2)
-#	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 #else
-#	ssh vbox@192.168.27.3 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 #endif
 
 additions-build-linux.amd64:
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64)
 else
 	$(call MSG_L1,Building Linux/amd64 additions)
-	ssh vbox@192.168.27.12 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) "
 endif
 
 additions-build-linux.x86:
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
-	+ $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86)
 else
 	$(call MSG_L1,Building Linux/x86 additions)
-	ssh vbox@192.168.27.2 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " cd /mnt/vbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && ./tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) "
 endif
 
 
