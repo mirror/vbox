@@ -67,18 +67,35 @@ EOF
       cat << EOF
 Messages emitted during module compilation will be logged to $LOG.
 EOF
-      if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp install > /var/log/vbox-install.log 2>&1; then
+      rm -f /etc/vbox/module_not_compiled
+      echo "** Compiling vboxdrv" > /var/log/vbox-install.log
+      if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp \
+          --save-module-symvers /tmp/vboxdrv-Module.symvers \
+          --no-print-directory KBUILD_VERBOSE= \
+          install >> /var/log/vbox-install.log 2>&1; then
         db_fset virtualbox/module-compilation-failed seen false
         db_input critical virtualbox/module-compilation-failed || true
         db_go || true
         touch /etc/vbox/module_not_compiled
         # don't abort the installation!
       else
+        echo "** Compiling vboxnetflt" >> /var/log/vbox-install.log
+        if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp \
+            --use-module-symvers /tmp/vboxdrv-Module.symvers \
+            --no-print-directory KBUILD_VERBOSE= \
+            install >> /var/log/vbox-install.log 2>&1; then
+          db_fset virtualbox/module-compilation-failed seen false
+          db_input critical virtualbox/module-compilation-failed || true
+          db_go || true
+          touch /etc/vbox/module_not_compiled
+          # don't abort the installation!
+        fi
+      fi
+      if [ ! -f /etc/vbox/module_not_compiled ]; then
         # success
         cat << EOF
 Success!
 EOF
-        rm -f /etc/vbox/module_not_compiled
       fi
     fi
   fi

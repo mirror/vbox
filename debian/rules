@@ -121,21 +121,18 @@ debian/modules-stamp: debian/build-stamp
 	for d in $(wildcard /lib/modules/*); do \
 	    if [ -L $$d/build ]; then \
 	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
-	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d all && \
+	        make -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
 	        install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko; \
-		if [ -f $(builddir)/bin/src/vboxnetflt/Makefile ]; then \
-	          make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
-	          make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d all && \
-	          install -D -m 0644 -g 0 -o 0 \
+	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko && \
+	        make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
+		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetflt || true) && \
+	        make -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all && \
+	        install -D -m 0644 -g 0 -o 0 \
 	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko; \
-		fi \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
-	if [ -f $(builddir)/bin/src/vboxnetflt/Makefile ]; then \
-	  make -C $(builddir)/bin/src/vboxnetflt clean; \
-	fi
+	make -C $(builddir)/bin/src/vboxnetflt clean
 	touch debian/modules-stamp
 
 clean:
@@ -192,16 +189,15 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    install -D -g 0 -o 0 -m 0644 \
-	        $$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
-	    if [ -d $$/vboxnetflt.ko ]; then \
-	      install -D -g 0 -o 0 -m 644 \
+		$$d/vboxdrv.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxdrv.ko; \
+	    install -D -g 0 -o 0 -m 0644 \
 		$$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
-	    fi; done)
+	    done)
 ifeq ($(ose),)
 	$(if $(HEADLESS),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
 	dh_installdocs \
-	  $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
-	  LICENSE
+	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
+	    LICENSE
 	rm $(addprefix $(archdir)/,UserManual*.pdf VirtualBox*.chm LICENSE)
 	for i in rdesktop-vrdp.tar.gz additions/VBoxGuestAdditions.iso; do \
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
@@ -213,20 +209,21 @@ endif
 	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
-	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VirtualBox) \
-	    usr/bin/VBox usr/bin/VBoxManage \
-	    $(if $(HEADLESS),,usr/bin/VBox usr/bin/VBoxSDL) \
-	    $(if $(ose),,usr/bin/VBox usr/bin/VBoxVRDP) \
-	    usr/bin/VBox    usr/bin/VBoxHeadless \
-	    usr/bin/VBoxTAP usr/bin/VBoxAddIF \
-	    usr/bin/VBoxTAP usr/bin/VBoxDeleteIF
+	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VirtualBox) \
+	    usr/bin/VBox                        usr/bin/VBoxManage \
+	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
+	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
+	    usr/bin/VBox                        usr/bin/VBoxHeadless \
+	    usr/bin/VBoxTAP                     usr/bin/VBoxAddIF \
+	    usr/bin/VBoxTAP                     usr/bin/VBoxDeleteIF \
+	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
+	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver)
 	dh_desktop
 	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
 	sed \
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
-	    -e 's|%NETFLT%|$(if $(wildcard $(builddir)/bin/src/vboxnetflt),1,)|g' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	sed \
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g' \

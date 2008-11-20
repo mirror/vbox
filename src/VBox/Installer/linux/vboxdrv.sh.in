@@ -31,7 +31,6 @@ DEVICE=/dev/vboxdrv
 GROUPNAME=vboxusers
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
-NETFLT=%NETFLT%
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
@@ -182,10 +181,8 @@ start()
         rmmod vboxdrv 2>/dev/null
         failure "Cannot change owner $GROUPNAME for device $DEVICE"
     fi
-    if [ -n "$NETFLT" ]; then
-        if ! modprobe vboxnetflt > /dev/null 2>&1; then
-            failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
-        fi
+    if ! modprobe vboxnetflt > /dev/null 2>&1; then
+        failure "modprobe vboxnetflt failed. Please use 'dmesg' to find out why"
     fi
     succ_msg
 }
@@ -275,12 +272,10 @@ setup()
         --no-print-directory install > $LOG 2>&1; then
         failure "Look at $LOG to find out what went wrong"
     fi
-    if [ -n "$NETFLT" ]; then
-        if ! $BUILDVBOXNETFLT \
-            --use-module-symvers /tmp/vboxdrv-Module.symvers \
-            --no-print-directory install >> $LOG 2>&1; then
-            failure "Look at $LOG to find out what went wrong"
-        fi
+    if ! $BUILDVBOXNETFLT \
+        --use-module-symvers /tmp/vboxdrv-Module.symvers \
+        --no-print-directory install >> $LOG 2>&1; then
+        failure "Look at $LOG to find out what went wrong"
     fi
     succ_msg
     start
