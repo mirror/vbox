@@ -119,7 +119,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENT_MAGIC + 1);
+    ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENT_MAGIC | UINT32_C(0x80000000));
     if (ASMAtomicXchgS32(&pThis->cWaiters, INT32_MIN / 2) > 0)
     {
         sys_futex(&pThis->cWaiters, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
@@ -147,12 +147,9 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
      */
     for (unsigned i = 0;; i++)
     {
-        int32_t iCur = pThis->cWaiters;
-        if (iCur == 0)
-        {
-            if (ASMAtomicCmpXchgS32(&pThis->cWaiters, -1, 0))
-                break; /* nobody is waiting */
-        }
+        int32_t iCur;
+        if (ASMAtomicCmpXchgExS32(&pThis->cWaiters, -1, 0, &iCur))
+            break; /* nobody is waiting */
         else if (iCur < 0)
             break; /* already signaled */
         else
@@ -188,6 +185,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
                     AssertReleaseMsg(i < 4096, ("iCur=%#x pThis=%p\n", iCur, pThis));
             }
         }
+
+        /* Check the magic to fend off races with RTSemEventDestroy. */
+        if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
+            return VERR_SEM_DESTROYED;
     }
     return VINF_SUCCESS;
 }
