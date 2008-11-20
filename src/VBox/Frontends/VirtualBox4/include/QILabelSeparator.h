@@ -43,7 +43,7 @@ public slots:
 
     void clear();
     void setText (const QString &aText);
-
+    QString text() const;
 
 protected:
 

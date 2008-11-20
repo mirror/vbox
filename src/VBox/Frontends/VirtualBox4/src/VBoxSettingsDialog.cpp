@@ -130,7 +130,7 @@ void VBoxSettingsDialog::retranslateUi()
     Ui::VBoxSettingsDialog::retranslateUi (this);
 
     mErrorHint = tr ("Invalid settings detected");
-    mWarnHint = tr ("Important warnings detected");
+    mWarnHint = tr ("Non-optimal settings detected");
     if (!mValid)
         mIconLabel->setWarningText (mErrorHint);
     else if (!mSilent)
@@ -168,7 +168,7 @@ void VBoxSettingsDialog::setError (const QString &aError)
 void VBoxSettingsDialog::setWarning (const QString &aWarning)
 {
     mWarnString = aWarning.isEmpty() ? QString::null :
-                  QString ("<font color=#ff6c00>%1</font>").arg (aWarning);
+                  QString ("<font color=#ff5400>%1</font>").arg (aWarning);
 
     /* Not touching QILabel until dialog is polished otherwise
      * it can change its size to undefined */

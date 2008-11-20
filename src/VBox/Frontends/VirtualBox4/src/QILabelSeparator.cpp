@@ -57,6 +57,11 @@ void QILabelSeparator::setText (const QString &aText)
     mLabel->setText (aText);
 }
 
+QString QILabelSeparator::text() const
+{
+    return mLabel->text();
+}
+
 void QILabelSeparator::init()
 {
     mLabel = new QLabel();

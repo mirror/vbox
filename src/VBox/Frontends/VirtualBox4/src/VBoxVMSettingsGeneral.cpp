@@ -385,26 +385,30 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
 
     if (mSlRam->value() + mSlVideo->value() > 0.75 * fullSize)
     {
-        aWarning = tr ("You have assigned more than 75% of your computer's memory (%1) to "
-                       "the virtual machine. Not enough memory is left for your host "
-                       "operating system. Please select a smaller amount. Error found")
-                       .arg (vboxGlobal().formatSize (fullSize * _1M));
+        aWarning = tr (
+            "you have assigned more than <b>75%</b> of your computer's memory "
+            "(<b>%1</b>) to the virtual machine. Not enough memory is left "
+            "for your host operating system. Please select a smaller amount.")
+            .arg (vboxGlobal().formatSize (fullSize * _1M));
         return false;
     } else
     if (mSlRam->value() + mSlVideo->value() > 0.5 * fullSize)
     {
-        aWarning = tr ("You have assigned more than 50% of your computer's memory (%1) to "
-                       "the virtual machine. Not enough memory might be left for your host "
-                       "operating system. Continue at your own risk. Problem found")
-                       .arg (vboxGlobal().formatSize (fullSize * _1M));
+        aWarning = tr (
+            "you have assigned more than <b>50%</b> of your computer's memory "
+            "(<b>%1</b>) to the virtual machine. Not enough memory might be "
+            "left for your host operating system. Continue at your own risk.")
+            .arg (vboxGlobal().formatSize (fullSize * _1M));
         return true;
     } else
-    if ((quint64)mSlVideo->value() * _1M < needBytes)
+    if ((quint64) mSlVideo->value() * _1M < needBytes)
     {
-        aWarning = tr ("You have assigned less than %1 for video memory. This is the minimum "
-                       "requirement for the guest to be able to switch to fullscreen or "
-                       "seamless mode. Problem found")
-                       .arg (vboxGlobal().formatSize (needBytes));
+        aWarning = tr (
+            "you have assigned less than <b>%1</b> for video memory which is "
+            "the minimum amount required to switch the virtual machine to "
+            "fullscreen or seamless mode.")
+            .arg (vboxGlobal().formatSize (needBytes),
+            VBoxGlobal::removeAccelMark (mGbVideo->text()));
         return true;
     }
     return true;
