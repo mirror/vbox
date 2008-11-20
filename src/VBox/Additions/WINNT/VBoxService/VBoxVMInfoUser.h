@@ -24,7 +24,9 @@
 
 typedef struct _VBOXUSERINFO
 {
-    TCHAR szUser[_MAX_PATH];
+    TCHAR szUser [_MAX_PATH];
+    TCHAR szAuthenticationPackage [_MAX_PATH];
+    TCHAR szLogonDomain [_MAX_PATH];
 } VBOXUSERINFO;
 
 int vboxVMInfoUser (VBOXINFORMATIONCONTEXT* a_pCtx);
