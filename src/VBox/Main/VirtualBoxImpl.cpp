@@ -261,9 +261,12 @@ HRESULT VirtualBox::init()
                 rc = guestOSTypeObj.createObject();
                 if (SUCCEEDED (rc))
                 {
-                    rc = guestOSTypeObj->init (Global::sOSTypes [i].id,
+                    rc = guestOSTypeObj->init (Global::sOSTypes [i].familyId,
+                                               Global::sOSTypes [i].familyDescription,
+                                               Global::sOSTypes [i].id,
                                                Global::sOSTypes [i].description,
                                                Global::sOSTypes [i].osType,
+                                               Global::sOSTypes [i].is64Bit,
                                                Global::sOSTypes [i].recommendedRAM,
                                                Global::sOSTypes [i].recommendedVRAM,
                                                Global::sOSTypes [i].recommendedHDD);

@@ -42,12 +42,15 @@ public:
     /** Represents OS Type <-> string mappings. */
     struct OSType
     {
-        const char    *id;          /* utf-8 */
-        const char    *description; /* utf-8 */
-        const VBOXOSTYPE osType;
-        const uint32_t recommendedRAM;
-        const uint32_t recommendedVRAM;
-        const uint32_t recommendedHDD;
+        const char       *familyId;          /* utf-8 */
+        const char       *familyDescription; /* utf-8 */
+        const char       *id;          /* utf-8 */
+        const char       *description; /* utf-8 */
+        const VBOXOSTYPE  osType;
+        const bool        is64Bit;
+        const uint32_t    recommendedRAM;
+        const uint32_t    recommendedVRAM;
+        const uint32_t    recommendedHDD;
     };
 
     static const OSType sOSTypes [SchemaDefs::OSTypeId_COUNT];

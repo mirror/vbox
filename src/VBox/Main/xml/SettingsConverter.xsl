@@ -119,6 +119,14 @@ The source version is not supported.
   </xsl:copy>
 </xsl:template>
 
+<!-- 1.4 => 1.5 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.4']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.5','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.5"/>
+  </xsl:copy>
+</xsl:template>
+
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *  1.1 => 1.2
@@ -585,6 +593,111 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
 <!--
  *  Machine settings
 -->
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.4 => 1.5
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.5">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.5"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings
+-->
+
+<!--
+ *  Machine settings
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.4']/
+                     vb:Machine"
+              mode="v1.5">
+  <xsl:copy>
+    <xsl:attribute name="OSType">
+      <xsl:choose>
+        <xsl:when test="@OSType='unknown'">Other</xsl:when>
+        <xsl:when test="@OSType='dos'">DOS</xsl:when>
+        <xsl:when test="@OSType='win31'">Windows31</xsl:when>
+        <xsl:when test="@OSType='win95'">Windows95</xsl:when>
+        <xsl:when test="@OSType='win98'">Windows98</xsl:when>
+        <xsl:when test="@OSType='winme'">WindowsMe</xsl:when>
+        <xsl:when test="@OSType='winnt4'">WindowsNT4</xsl:when>
+        <xsl:when test="@OSType='win2k'">Windows2000</xsl:when>
+        <xsl:when test="@OSType='winxp'">WindowsXP</xsl:when>
+        <xsl:when test="@OSType='win2k3'">Windows2003</xsl:when>
+        <xsl:when test="@OSType='winvista'">WindowsVista</xsl:when>
+        <xsl:when test="@OSType='win2k8'">Windows2008</xsl:when>
+        <xsl:when test="@OSType='os2warp3'">OS2Warp3</xsl:when>
+        <xsl:when test="@OSType='os2warp4'">OS2Warp4</xsl:when>
+        <xsl:when test="@OSType='os2warp45'">OS2Warp45</xsl:when>
+        <xsl:when test="@OSType='ecs'">OS2eCS</xsl:when>
+        <xsl:when test="@OSType='linux22'">Linux22</xsl:when>
+        <xsl:when test="@OSType='linux24'">Linux24</xsl:when>
+        <xsl:when test="@OSType='linux26'">Linux26</xsl:when>
+        <xsl:when test="@OSType='archlinux'">ArchLinux</xsl:when>
+        <xsl:when test="@OSType='debian'">Debian</xsl:when>
+        <xsl:when test="@OSType='opensuse'">OpenSUSE</xsl:when>
+        <xsl:when test="@OSType='fedoracore'">Fedora</xsl:when>
+        <xsl:when test="@OSType='gentoo'">Gentoo</xsl:when>
+        <xsl:when test="@OSType='mandriva'">Mandriva</xsl:when>
+        <xsl:when test="@OSType='redhat'">RedHat</xsl:when>
+        <xsl:when test="@OSType='ubuntu'">Ubuntu</xsl:when>
+        <xsl:when test="@OSType='xandros'">Xandros</xsl:when>
+        <xsl:when test="@OSType='freebsd'">FreeBSD</xsl:when>
+        <xsl:when test="@OSType='openbsd'">OpenBSD</xsl:when>
+        <xsl:when test="@OSType='netbsd'">NetBSD</xsl:when>
+        <xsl:when test="@OSType='netware'">Netware</xsl:when>
+        <xsl:when test="@OSType='solaris'">Solaris</xsl:when>
+        <xsl:when test="@OSType='opensolaris'">OpenSolaris</xsl:when>
+        <xsl:when test="@OSType='l4'">L4</xsl:when>
+      </xsl:choose>
+    </xsl:attribute>
+    <xsl:apply-templates select="@*[name()!='OSType']" mode="v1.5"/>
+    <xsl:apply-templates select="node()" mode="v1.5"/>
+  </xsl:copy>
+</xsl:template>
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.4']/
+                     vb:Machine//vb:Hardware/vb:Display"
+              mode="v1.5">
+  <xsl:copy>
+    <xsl:apply-templates select="node()" mode="v1.5"/>
+    <xsl:for-each select="@*">
+      <xsl:choose>
+        <xsl:when test="name()='MonitorCount'">
+          <xsl:attribute name="monitorCount"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:when test="name()='Accelerate3D'">
+          <xsl:attribute name="accelerate3D"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="." mode="v1.5"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+-->
+
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.4']/
+                     vb:Machine//vb:Hardware/vb:CPU"
+              mode="v1.5">
+  <xsl:copy>
+    <xsl:attribute name="count"><xsl:value-of select="vb:CPUCount/@count"/></xsl:attribute>
+    <xsl:apply-templates select="@*" mode="v1.5"/>
+    <xsl:apply-templates select="node()[not(self::vb:CPUCount)]" mode="v1.5"/>
+  </xsl:copy>
+</xsl:template>
 
 
 <!-- @todo add lastStateChange with the current timestamp if missing.

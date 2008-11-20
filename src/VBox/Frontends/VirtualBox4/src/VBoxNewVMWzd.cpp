@@ -62,7 +62,7 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     mWvalNameAndOS = new QIWidgetValidator (mPageNameAndOS, this);
     connect (mWvalNameAndOS, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableNext (const QIWidgetValidator*)));
-    connect (mCbOS, SIGNAL (activated (int)), this, SLOT (cbOSActivated (int)));
+    connect (mOSTypeSelector, SIGNAL (osTypeChanged()), this, SLOT (onOSTypeChanged()));
 
     /* Memory page */
     CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
@@ -88,15 +88,13 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     connect (mGbHDA, SIGNAL (toggled (bool)), mWvalHDD, SLOT (revalidate()));
     connect (mHDCombo, SIGNAL (currentIndexChanged (int)),
              mWvalHDD, SLOT (revalidate()));
-    connect (mPbNewHD, SIGNAL (clicked()), this, SLOT (showNewHardDiskWizard()));
-    connect (mPbExistingHD, SIGNAL (clicked()), this, SLOT (showHardDiskManager()));
+    connect (mPbNewHD, SIGNAL (clicked()), this, SLOT (showNewHDWizard()));
+    connect (mPbExistingHD, SIGNAL (clicked()), this, SLOT (showMediaManager()));
 
     /* Summary page */
 
 
     /* Name and OS page */
-    mCbOS->addItems (vboxGlobal().vmGuestOSTypeDescriptions());
-    cbOSActivated (mCbOS->currentIndex());
 
     /* Memory page */
     mSlRAM->setPageStep (calcPageStep (MaxRAM));
@@ -105,7 +103,7 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     /* Setup the scale so that ticks are at page step boundaries */
     mSlRAM->setRange ((MinRAM / mSlRAM->pageStep()) * mSlRAM->pageStep(),
                       MaxRAM);
-    /* Initial RAM value is set in cbOSActivated()
+    /* Initial RAM value is set in onTypeChanged()
      * limit min/max. size of QLineEdit */
     mLeRAM->setFixedWidthByText ("99999");
     /* Ensure mLeRAM value and validation is updated */
@@ -141,7 +139,7 @@ void VBoxNewVMWzd::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxNewVMWzd::retranslateUi (this);
 
-    CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOS->currentIndex());
+    CGuestOSType type = mOSTypeSelector->type();
 
     mTextRAMBest->setText (
         tr ("The recommended base memory size is <b>%1</b> MB.")
@@ -169,8 +167,7 @@ void VBoxNewVMWzd::retranslateUi()
             "<tr><td><nobr>%3:&nbsp;</nobr></td><td>%4</td></tr>"
             "<tr><td><nobr>%5:&nbsp;</nobr></td><td>%6&nbsp;%7</td></tr>")
             .arg (tr ("Name", "summary"), mLeName->text())
-            .arg (tr ("OS Type", "summary"),
-                  vboxGlobal().vmGuestOSType (mCbOS->currentIndex()).GetDescription())
+            .arg (tr ("OS Type", "summary"), type.GetDescription())
             .arg (tr ("Base Memory", "summary")).arg (mSlRAM->value())
             .arg (tr ("MB", "megabytes"));
 
@@ -191,7 +188,7 @@ void VBoxNewVMWzd::accept()
         QDialog::accept();
 }
 
-void VBoxNewVMWzd::showHardDiskManager()
+void VBoxNewVMWzd::showMediaManager()
 {
     VBoxMediaManagerDlg dlg (this);
     dlg.setup (VBoxDefs::MediaType_HardDisk, true);
@@ -209,13 +206,12 @@ void VBoxNewVMWzd::showHardDiskManager()
     mHDCombo->setFocus();
 }
 
-void VBoxNewVMWzd::showNewHardDiskWizard()
+void VBoxNewVMWzd::showNewHDWizard()
 {
     VBoxNewHDWzd dlg (this);
 
-    CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOS->currentIndex());
     dlg.setRecommendedFileName (mLeName->text());
-    dlg.setRecommendedSize (type.GetRecommendedHDD());
+    dlg.setRecommendedSize (mOSTypeSelector->type().GetRecommendedHDD());
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -227,6 +223,11 @@ void VBoxNewVMWzd::showNewHardDiskWizard()
     mHDCombo->setFocus();
 }
 
+void VBoxNewVMWzd::onOSTypeChanged()
+{
+    slRAMValueChanged (mOSTypeSelector->type().GetRecommendedRAM());
+}
+
 void VBoxNewVMWzd::slRAMValueChanged (int aValue)
 {
     mLeRAM->setText (QString().setNum (aValue));
@@ -235,13 +236,6 @@ void VBoxNewVMWzd::slRAMValueChanged (int aValue)
 void VBoxNewVMWzd::leRAMTextChanged (const QString &aText)
 {
     mSlRAM->setValue (aText.toInt());
-}
-
-void VBoxNewVMWzd::cbOSActivated (int aItem)
-{
-    CGuestOSType type = vboxGlobal().vmGuestOSType (aItem);
-    mPmOS->setPixmap (vboxGlobal().vmGuestOSTypeIcon (type.GetId()));
-    mSlRAM->setValue (type.GetRecommendedRAM());
 }
 
 void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
@@ -323,16 +317,18 @@ bool VBoxNewVMWzd::constructMachine()
     }
 
     /* OS type */
-    CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOS->currentIndex());
+    CGuestOSType type = mOSTypeSelector->type();
     AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
     QString typeId = type.GetId();
     mMachine.SetOSTypeId (typeId);
 
+    /* Dsen: move it to Main when implementing 3002: GUI/Main enhancements for 64 bits guests */
     if (typeId == "os2warp3"  ||
         typeId == "os2warp4"  ||
         typeId == "os2warp45" ||
         typeId == "ecs")
         mMachine.SetHWVirtExEnabled (KTSBool_True);
+    /* Dsen: move it to Main when implementing 3002: GUI/Main enhancements for 64 bits guests */
 
     /* RAM size */
     mMachine.SetMemorySize (mSlRAM->value());

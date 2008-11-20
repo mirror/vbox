@@ -134,44 +134,64 @@
 
 <xsd:simpleType name="TGuestOSType">
   <xsd:restriction base="xsd:string">
-    <!-- @todo on next format change, rename dos to DOS, win2k3 to Win2003 and
-    so on. Possibly also use prefixes that determine the platform family:
-    Win_31, Win_Vista, Linux_ArchLinux, Unix_FreeBSD and so on. -->
-    <xsd:enumeration value="unknown"/>
-    <xsd:enumeration value="dos"/>
-    <xsd:enumeration value="win31"/>
-    <xsd:enumeration value="win95"/>
-    <xsd:enumeration value="win98"/>
-    <xsd:enumeration value="winme"/>
-    <xsd:enumeration value="winnt4"/>
-    <xsd:enumeration value="win2k"/>
-    <xsd:enumeration value="winxp"/>
-    <xsd:enumeration value="win2k3"/>
-    <xsd:enumeration value="winvista"/>
-    <xsd:enumeration value="win2k8"/>
-    <xsd:enumeration value="os2warp3"/>
-    <xsd:enumeration value="os2warp4"/>
-    <xsd:enumeration value="os2warp45"/>
-    <xsd:enumeration value="ecs"/>
-    <xsd:enumeration value="linux22"/>
-    <xsd:enumeration value="linux24"/>
-    <xsd:enumeration value="linux26"/>
-    <xsd:enumeration value="archlinux"/>
-    <xsd:enumeration value="debian"/>
-    <xsd:enumeration value="opensuse"/>
-    <xsd:enumeration value="fedoracore"/>
-    <xsd:enumeration value="gentoo"/>
-    <xsd:enumeration value="mandriva"/>
-    <xsd:enumeration value="redhat"/>
-    <xsd:enumeration value="ubuntu"/>
-    <xsd:enumeration value="xandros"/>
-    <xsd:enumeration value="freebsd"/>
-    <xsd:enumeration value="openbsd"/>
-    <xsd:enumeration value="netbsd"/>
-    <xsd:enumeration value="netware"/>
-    <xsd:enumeration value="solaris"/>
-    <xsd:enumeration value="opensolaris"/>
-    <xsd:enumeration value="l4"/>
+    <xsd:enumeration value="Other"/>
+    <xsd:enumeration value="DOS"/>
+    <xsd:enumeration value="Netware"/>
+    <xsd:enumeration value="L4"/>
+    <xsd:enumeration value="Windows31"/>
+    <xsd:enumeration value="Windows95"/>
+    <xsd:enumeration value="Windows98"/>
+    <xsd:enumeration value="WindowsMe"/>
+    <xsd:enumeration value="WindowsNT4"/>
+    <xsd:enumeration value="Windows2000"/>
+    <xsd:enumeration value="WindowsXP"/>
+    <xsd:enumeration value="WindowsXP_64"/>
+    <xsd:enumeration value="Windows2003"/>
+    <xsd:enumeration value="Windows2003_64"/>
+    <xsd:enumeration value="WindowsVista"/>
+    <xsd:enumeration value="WindowsVista_64"/>
+    <xsd:enumeration value="Windows2008"/>
+    <xsd:enumeration value="Windows2008_64"/>
+    <xsd:enumeration value="WindowsNT"/>
+    <xsd:enumeration value="OS2Warp3"/>
+    <xsd:enumeration value="OS2Warp4"/>
+    <xsd:enumeration value="OS2Warp45"/>
+    <xsd:enumeration value="OS2eCS"/>
+    <xsd:enumeration value="OS2"/>
+    <xsd:enumeration value="Linux22"/>
+    <xsd:enumeration value="Linux24"/>
+    <xsd:enumeration value="Linux24_64"/>
+    <xsd:enumeration value="Linux26"/>
+    <xsd:enumeration value="Linux26_64"/>
+    <xsd:enumeration value="ArchLinux"/>
+    <xsd:enumeration value="ArchLinux_64"/>
+    <xsd:enumeration value="Debian"/>
+    <xsd:enumeration value="Debian_64"/>
+    <xsd:enumeration value="OpenSUSE"/>
+    <xsd:enumeration value="OpenSUSE_64"/>
+    <xsd:enumeration value="Fedora"/>
+    <xsd:enumeration value="Fedora_64"/>
+    <xsd:enumeration value="Gentoo"/>
+    <xsd:enumeration value="Gentoo_64"/>
+    <xsd:enumeration value="Mandriva"/>
+    <xsd:enumeration value="Mandriva_64"/>
+    <xsd:enumeration value="RedHat"/>
+    <xsd:enumeration value="RedHat_64"/>
+    <xsd:enumeration value="Ubuntu"/>
+    <xsd:enumeration value="Ubuntu_64"/>
+    <xsd:enumeration value="Xandros"/>
+    <xsd:enumeration value="Xandros_64"/>
+    <xsd:enumeration value="Linux"/>
+    <xsd:enumeration value="FreeBSD"/>
+    <xsd:enumeration value="FreeBSD_64"/>
+    <xsd:enumeration value="OpenBSD"/>
+    <xsd:enumeration value="OpenBSD_64"/>
+    <xsd:enumeration value="NetBSD"/>
+    <xsd:enumeration value="NetBSD_64"/>
+    <xsd:enumeration value="Solaris"/>
+    <xsd:enumeration value="Solaris_64"/>
+    <xsd:enumeration value="OpenSolaris"/>
+    <xsd:enumeration value="OpenSolaris_64"/>
   </xsd:restriction>
 </xsd:simpleType>
 
@@ -392,16 +412,12 @@
   <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
-<xsd:complexType name="TCPUCount">
-  <xsd:attribute name="count">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:unsignedInt">
-        <xsd:minInclusive value="1"/>
-        <xsd:maxInclusive value="255"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
-</xsd:complexType>
+<xsd:simpleType name="TCPUCount">
+  <xsd:restriction base="xsd:unsignedInt">
+    <xsd:minInclusive value="1"/>
+    <xsd:maxInclusive value="255"/>
+  </xsd:restriction>
+</xsd:simpleType>
 
 <xsd:complexType name="TCPU">
   <xsd:sequence>
@@ -409,8 +425,8 @@
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
-    <xsd:element name="CPUCount" type="TCPUCount" minOccurs="0"/>
   </xsd:sequence>
+  <xsd:attribute name="count" type="TCPUCount" default="1"/>
 </xsd:complexType>
 
 <xsd:complexType name="TBoot">
@@ -440,14 +456,14 @@
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="MonitorCount" default="1">
+  <xsd:attribute name="monitorCount" default="1">
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:maxInclusive value="8"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>
-  <xsd:attribute name="Accelerate3D" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="accelerate3D" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TRemoteDisplay">

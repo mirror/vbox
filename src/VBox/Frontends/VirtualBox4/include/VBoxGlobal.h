@@ -473,12 +473,12 @@ public:
 
     /* VBox enum to/from string/icon/color convertors */
 
-    QStringList vmGuestOSTypeDescriptions() const;
-    QList<QPixmap> vmGuestOSTypeIcons (int aHorizonalMargin, int aVerticalMargin) const;
-    CGuestOSType vmGuestOSType (int aIndex) const;
-    int vmGuestOSTypeIndex (const QString &aId) const;
-    QPixmap vmGuestOSTypeIcon (const QString &aId) const;
-    QString vmGuestOSTypeDescription (const QString &aId) const;
+    QList <CGuestOSType> vmGuestOSFamilyList() const;
+    QList <CGuestOSType> vmGuestOSTypeList (const QString &aFamilyId) const;
+    QPixmap vmGuestOSTypeIcon (const QString &aTypeId) const;
+    CGuestOSType vmGuestOSType (const QString &aTypeId,
+                                const QString &aFamilyId = QString::null) const;
+    QString vmGuestOSTypeDescription (const QString &aTypeId) const;
 
     QPixmap toIcon (KMachineState s) const
     {
@@ -985,8 +985,9 @@ private:
 
     QString verString;
 
-    QVector <CGuestOSType> vm_os_types;
-    QHash <QString, QPixmap *> vm_os_type_icons;
+    QList <QString> mFamilyIDs;
+    QList <QList <CGuestOSType> > mTypes;
+    QHash <QString, QPixmap *> mOsTypeIcons;
     QVector <QColor *> vm_state_color;
 
     QHash <long int, QPixmap *> mStateIcons;
