@@ -111,6 +111,7 @@ helper_mwait
 helper_record_call
 helper_rdmsr
 helper_rdtsc
+helper_rdtscp
 helper_rsm
 helper_syscall
 helper_sysenter
