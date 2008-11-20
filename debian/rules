@@ -261,7 +261,7 @@ endif
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy,$(debrel)),dkms,)
+	  -Vdkms=$(if $(filter _Ubuntu_gutsy _Ubuntu_hardy _Ubuntu_intrepid,$(debrel)),dkms,)
 	dh_md5sums
 	dh_builddeb
 endif
