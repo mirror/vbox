@@ -897,14 +897,13 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    /* Are we called from the mVMListView's activated() signal? */
-    if (aUuid.isNull())
-    {
-        /* We always get here when mVMListView emits the activated() signal,
-         * so we must explicitly check if the action is enabled or not. */
-        if (!vmStartAction->isEnabled())
-            return;
-    }
+    /* We always get here when mVMListView emits the activated() signal,
+     * so we must explicitly check if the action is enabled or not. */
+   if (aUuid.isNull() && vmStartAction)  /* If Uuid is NULL, this function is called from the mVMListView activated() signal. */
+   {
+       if (!vmStartAction->isEnabled())
+           return;
+   }
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
