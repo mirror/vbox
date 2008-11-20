@@ -147,13 +147,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
     const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
     PX86PDPAE       pPDDst = pgmShwGetPaePDPtr(&pVM->pgm.s, pvFault);
 
-#   if PGM_GST_TYPE == PGM_TYPE_PAE
     /* Did we mark the PDPT as not present in SyncCR3? */
     unsigned        iPdpt  = (pvFault >> SHW_PDPT_SHIFT) & SHW_PDPT_MASK;
     PX86PDPT        pPdptDst = pgmShwGetPaePDPTPtr(&pVM->pgm.s);
     if (!pPdptDst->a[iPdpt].n.u1Present)
         pPdptDst->a[iPdpt].n.u1Present = 1;
-#   endif /* GST PAE */
 
 #  elif PGM_SHW_TYPE == PGM_TYPE_AMD64
     const unsigned  iPDDst = ((pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
@@ -1120,7 +1118,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVM pVM, RTGCPTR GCPtrPage)
      	    }
     	}
         if (!(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
- 	        pPdptDst->a[iPdpt].n.u1Present = 0;
+            pPdptDst->a[iPdpt].n.u1Present = 0;
         PGM_INVL_GUEST_TLBS();
     }
     AssertMsg(pVM->pgm.s.fMappingsFixed || (PdpeSrc.u & X86_PDPE_PG_MASK) == pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpt], ("%RGp vs %RGp (mon)\n", (PdpeSrc.u & X86_PDPE_PG_MASK), pVM->pgm.s.aGCPhysGstPaePDsMonitored[iPdpt]));
@@ -3219,7 +3217,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 }
             }
             if (!(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING))
-                    pPdptDst->a[iPdpt].n.u1Present = 0;
+                pPdptDst->a[iPdpt].n.u1Present = 0;
             continue;
         }
 #  else  /* PGM_GST_TYPE != PGM_TYPE_PAE */
