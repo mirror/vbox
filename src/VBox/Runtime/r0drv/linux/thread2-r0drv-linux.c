@@ -33,13 +33,21 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 
+#include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/err.h>
 #include "internal/thread.h"
 
-
+/* @todo Implement
 RTDECL(RTTHREAD) RTThreadSelf(void)
 {
-    return rtThreadGetByNative(((RTNATIVETHREAD)current);
+    return rtThreadGetByNative((RTNATIVETHREAD)current);
 }
+*/
 
+RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD);
+    return !in_atomic();
+}
+ 
