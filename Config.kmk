@@ -327,6 +327,10 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 ifeq ($(KBUILD_TARGET),linux)
 # VBOX_WITH_FFMPEG = 1
 endif
+# Enable crOpenGL service
+if1of ($(KBUILD_TARGET),win linux solaris darwin)
+VBOX_WITH_CROGL = 1
+endif
 # Enable OpenGL service
 VBOX_WITH_OGL = 1
 # Enable shared folders
