@@ -1266,7 +1266,7 @@ VBoxGlobal &VBoxGlobal::instance()
 
 VBoxGlobal::~VBoxGlobal()
 {
-    qDeleteAll (vm_os_type_icons);
+    qDeleteAll (mOsTypeIcons);
     qDeleteAll (mStateIcons);
     qDeleteAll (vm_state_color);
 }
@@ -1354,89 +1354,75 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
 }
 
 /**
- *  Returns the list of all guest OS type descriptions, queried from
- *  IVirtualBox.
+ *  Returns the list of few guest OS types, queried from
+ *  IVirtualBox corresponding to every family id.
  */
-QStringList VBoxGlobal::vmGuestOSTypeDescriptions() const
+QList <CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
 {
-    static QStringList list;
-    if (list.empty()) {
-        for (int i = 0; i < vm_os_types.count(); i++) {
-            list += vm_os_types [i].GetDescription();
-        }
-    }
-    return list;
-}
-
-QList<QPixmap> VBoxGlobal::vmGuestOSTypeIcons (int aHorizonalMargin, int aVerticalMargin) const
-{
-    static QList<QPixmap> list;
-    if (list.empty())
-    {
-        for (int i = 0; i < vm_os_types.count(); i++)
-        {
-            QPixmap image (32 + 2 * aHorizonalMargin, 32 + 2 * aVerticalMargin);
-            image.fill (Qt::transparent);
-            QPainter p (&image);
-            p.drawPixmap (aHorizonalMargin, aVerticalMargin, *vm_os_type_icons.value (vm_os_types [i].GetId()));
-            p.end();
-            list << image;
-        }
-    }
-    return list;
+    QList <CGuestOSType> result;
+    for (int i = 0 ; i < mFamilyIDs.size(); ++ i)
+        result << mTypes [i][0];
+    return result;
 }
 
 /**
- *  Returns the guest OS type object corresponding to the given index.
- *  The index argument corresponds to the index in the list of OS type
- *  descriptions as returnded by #vmGuestOSTypeDescriptions().
- *
- *  If the index is invalid a null object is returned.
+ *  Returns the list of all guest OS types, queried from
+ *  IVirtualBox corresponding to passed family id.
  */
-CGuestOSType VBoxGlobal::vmGuestOSType (int aIndex) const
+QList <CGuestOSType> VBoxGlobal::vmGuestOSTypeList (const QString &aFamilyId) const
 {
-    CGuestOSType type;
-    if (aIndex >= 0 && aIndex < (int) vm_os_types.count())
-        type = vm_os_types.value (aIndex);
-    AssertMsg (!type.isNull(), ("Index for OS type must be valid: %d", aIndex));
-    return type;
+    AssertMsg (mFamilyIDs.contains (aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
+    return mFamilyIDs.contains (aFamilyId) ?
+           mTypes [mFamilyIDs.indexOf (aFamilyId)] : QList <CGuestOSType>();
 }
 
 /**
- *  Returns the index corresponding to the given guest OS type ID.
- *  The returned index corresponds to the index in the list of OS type
- *  descriptions as returnded by #vmGuestOSTypeDescriptions().
- *
- *  If the guest OS type ID is invalid, -1 is returned.
+ *  Returns the icon corresponding to the given guest OS type id.
  */
-int VBoxGlobal::vmGuestOSTypeIndex (const QString &aId) const
-{
-    for (int i = 0; i < (int) vm_os_types.count(); i++) {
-        if (!vm_os_types [i].GetId().compare (aId))
-            return i;
-    }
-    return -1;
-}
-
-/**
- *  Returns the icon corresponding to the given guest OS type ID.
- */
-QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aId) const
+QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aTypeId) const
 {
     static const QPixmap none;
-    QPixmap *p = vm_os_type_icons.value (aId);
-    AssertMsg (p, ("Icon for type `%s' must be defined", aId.toLatin1().constData()));
+    QPixmap *p = mOsTypeIcons.value (aTypeId);
+    AssertMsg (p, ("Icon for type '%s' must be defined.", aTypeId.toLatin1().constData()));
     return p ? *p : none;
 }
 
 /**
- *  Returns the description corresponding to the given guest OS type ID.
+ *  Returns the guest OS type object corresponding to the given type id of list
+ *  containing OS types related to OS family determined by family id attribute.
+ *  If the index is invalid a null object is returned.
  */
-QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
+CGuestOSType VBoxGlobal::vmGuestOSType (const QString &aTypeId,
+             const QString &aFamilyId /* = QString::null */) const
 {
-    for (int i = 0; i < (int) vm_os_types.count(); i++) {
-        if (!vm_os_types [i].GetId().compare (aId))
-            return vm_os_types [i].GetDescription();
+    QList <CGuestOSType> list;
+    if (mFamilyIDs.contains (aFamilyId))
+    {
+        list = mTypes [mFamilyIDs.indexOf (aFamilyId)];
+    }
+    else
+    {
+        for (int i = 0; i < mFamilyIDs.size(); ++ i)
+            list += mTypes [i];
+    }
+    for (int j = 0; j < list.size(); ++ j)
+        if (!list [j].GetId().compare (aTypeId))
+            return list [j];
+    AssertMsgFailed (("Type ID incorrect: '%s'.", aTypeId.toLatin1().constData()));
+    return CGuestOSType();
+}
+
+/**
+ *  Returns the description corresponding to the given guest OS type id.
+ */
+QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
+{
+    for (int i = 0; i < mFamilyIDs.size(); ++ i)
+    {
+        QList <CGuestOSType> list (mTypes [i]);
+        for ( int j = 0; j < list.size(); ++ j)
+            if (!list [j].GetId().compare (aTypeId))
+                return list [j].GetDescription();
     }
     return QString::null;
 }
@@ -5073,61 +5059,91 @@ void VBoxGlobal::init()
         return;
     }
 
-    /* initialize guest OS type vector */
+    /* Initialize guest OS Type list */
     CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.GetCount();
     AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
     if (osTypeCount > 0)
     {
-        vm_os_types.resize (osTypeCount);
-        int i = 0;
         CGuestOSTypeEnumerator en = coll.Enumerate();
         while (en.HasMore())
-            vm_os_types [i++] = en.GetNext();
+        {
+            CGuestOSType os (en.GetNext());
+            QString familyId (os.GetFamilyId());
+            if (!mFamilyIDs.contains (familyId))
+            {
+                mFamilyIDs << familyId;
+                mTypes << QList <CGuestOSType> ();
+            }
+            mTypes [mFamilyIDs.indexOf (familyId)].append (os);
+        }
     }
 
-    /* fill in OS type icon dictionary */
+    /* Fill in OS type icon dictionary */
     static const char *kOSTypeIcons [][2] =
     {
-        {"unknown",     ":/os_unknown.png"},
-        {"dos",         ":/os_dos.png"},
-        {"win31",       ":/os_win31.png"},
-        {"win95",       ":/os_win95.png"},
-        {"win98",       ":/os_win98.png"},
-        {"winme",       ":/os_winme.png"},
-        {"winnt4",      ":/os_winnt4.png"},
-        {"win2k",       ":/os_win2k.png"},
-        {"winxp",       ":/os_winxp.png"},
-        {"win2k3",      ":/os_win2k3.png"},
-        {"winvista",    ":/os_winvista.png"},
-        {"win2k8",      ":/os_win2k8.png"},
-        {"os2warp3",    ":/os_os2warp3.png"},
-        {"os2warp4",    ":/os_os2warp4.png"},
-        {"os2warp45",   ":/os_os2warp45.png"},
-        {"ecs",         ":/os_ecs.png"},
-        {"linux22",     ":/os_linux22.png"},
-        {"linux24",     ":/os_linux24.png"},
-        {"linux26",     ":/os_linux26.png"},
-        {"archlinux",   ":/os_archlinux.png"},
-        {"debian",      ":/os_debian.png"},
-        {"opensolaris", ":/os_opensolaris.png"},
-        {"opensuse",    ":/os_opensuse.png"},
-        {"fedoracore",  ":/os_fedoracore.png"},
-        {"gentoo",      ":/os_gentoo.png"},
-        {"mandriva",    ":/os_mandriva.png"},
-        {"redhat",      ":/os_redhat.png"},
-        {"ubuntu",      ":/os_ubuntu.png"},
-        {"xandros",     ":/os_xandros.png"},
-        {"freebsd",     ":/os_freebsd.png"},
-        {"openbsd",     ":/os_openbsd.png"},
-        {"netbsd",      ":/os_netbsd.png"},
-        {"netware",     ":/os_netware.png"},
-        {"solaris",     ":/os_solaris.png"},
-        {"l4",          ":/os_l4.png"},
+        {"Other",           ":/os_other.png"},
+        {"DOS",             ":/os_dos.png"},
+        {"Netware",         ":/os_netware.png"},
+        {"L4",              ":/os_l4.png"},
+        {"Windows31",       ":/os_win31.png"},
+        {"Windows95",       ":/os_win95.png"},
+        {"Windows98",       ":/os_win98.png"},
+        {"WindowsMe",       ":/os_winme.png"},
+        {"WindowsNT4",      ":/os_winnt4.png"},
+        {"Windows2000",     ":/os_win2k.png"},
+        {"WindowsXP",       ":/os_winxp.png"},
+        {"WindowsXP_64",    ":/os_winxp_64.png"},
+        {"Windows2003",     ":/os_win2k3.png"},
+        {"Windows2003_64",  ":/os_win2k3_64.png"},
+        {"WindowsVista",    ":/os_winvista.png"},
+        {"WindowsVista_64", ":/os_winvista_64.png"},
+        {"Windows2008",     ":/os_win2k8.png"},
+        {"Windows2008_64",  ":/os_win2k8_64.png"},
+        {"WindowsNT",       ":/os_win_other.png"},
+        {"OS2Warp3",        ":/os_os2warp3.png"},
+        {"OS2Warp4",        ":/os_os2warp4.png"},
+        {"OS2Warp45",       ":/os_os2warp45.png"},
+        {"OS2eCS",          ":/os_os2ecs.png"},
+        {"OS2",             ":/os_os2_other.png"},
+        {"Linux22",         ":/os_linux22.png"},
+        {"Linux24",         ":/os_linux24.png"},
+        {"Linux24_64",      ":/os_linux24_64.png"},
+        {"Linux26",         ":/os_linux26.png"},
+        {"Linux26_64",      ":/os_linux26_64.png"},
+        {"ArchLinux",       ":/os_archlinux.png"},
+        {"ArchLinux_64",    ":/os_archlinux_64.png"},
+        {"Debian",          ":/os_debian.png"},
+        {"Debian_64",       ":/os_debian_64.png"},
+        {"OpenSUSE",        ":/os_opensuse.png"},
+        {"OpenSUSE_64",     ":/os_opensuse_64.png"},
+        {"Fedora",          ":/os_fedora.png"},
+        {"Fedora_64",       ":/os_fedora_64.png"},
+        {"Gentoo",          ":/os_gentoo.png"},
+        {"Gentoo_64",       ":/os_gentoo_64.png"},
+        {"Mandriva",        ":/os_mandriva.png"},
+        {"Mandriva_64",     ":/os_mandriva_64.png"},
+        {"RedHat",          ":/os_redhat.png"},
+        {"RedHat_64",       ":/os_redhat_64.png"},
+        {"Ubuntu",          ":/os_ubuntu.png"},
+        {"Ubuntu_64",       ":/os_ubuntu_64.png"},
+        {"Xandros",         ":/os_xandros.png"},
+        {"Xandros_64",      ":/os_xandros_64.png"},
+        {"Linux",           ":/os_linux_other.png"},
+        {"FreeBSD",         ":/os_freebsd.png"},
+        {"FreeBSD_64",      ":/os_freebsd_64.png"},
+        {"OpenBSD",         ":/os_openbsd.png"},
+        {"OpenBSD_64",      ":/os_openbsd_64.png"},
+        {"NetBSD",          ":/os_netbsd.png"},
+        {"NetBSD_64",       ":/os_netbsd_64.png"},
+        {"Solaris",         ":/os_solaris.png"},
+        {"Solaris_64",      ":/os_solaris_64.png"},
+        {"OpenSolaris",     ":/os_opensolaris.png"},
+        {"OpenSolaris_64",  ":/os_opensolaris_64.png"},
     };
-    for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); n ++)
+    for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); ++ n)
     {
-        vm_os_type_icons.insert (kOSTypeIcons [n][0],
+        mOsTypeIcons.insert (kOSTypeIcons [n][0],
             new QPixmap (kOSTypeIcons [n][1]));
     }
 
@@ -5334,7 +5350,9 @@ void VBoxGlobal::cleanup()
         delete mSelectorWnd;
 
     /* ensure CGuestOSType objects are no longer used */
-    vm_os_types.clear();
+    mFamilyIDs.clear();
+    mTypes.clear();
+
     /* media list contains a lot of CUUnknown, release them */
     mMediaList.clear();
     /* the last step to ensure we don't use COM any more */

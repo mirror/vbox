@@ -5015,12 +5015,8 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 mHWData->mPAEEnabled = PAENode.value <bool> ("enabled");
             }
 
-            /* CPUCount(optional, default is 1) */
-            Key CPUCountNode = cpuNode.findKey ("CPUCount");
-            if (!CPUCountNode.isNull())
-            {
-                mHWData->mCPUCount = CPUCountNode.value <ULONG> ("count");
-            }
+            /* CPUCount (optional, default is 1) */
+            mHWData->mCPUCount = cpuNode.value <ULONG> ("count");
         }
     }
 
@@ -5071,8 +5067,8 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         Key displayNode = aNode.key ("Display");
 
         mHWData->mVRAMSize      = displayNode.value <ULONG> ("VRAMSize");
-        mHWData->mMonitorCount  = displayNode.value <ULONG> ("MonitorCount");
-        mHWData->mAccelerate3DEnabled = displayNode.value <bool> ("Accelerate3D");
+        mHWData->mMonitorCount  = displayNode.value <ULONG> ("monitorCount");
+        mHWData->mAccelerate3DEnabled = displayNode.value <bool> ("accelerate3D");
     }
 
 #ifdef VBOX_WITH_VRDP
@@ -6394,8 +6390,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         }
 
         /* CPU count */
-        Key CPUCountNode = cpuNode.createKey ("CPUCount");
-        CPUCountNode.setValue <ULONG> ("count", mHWData->mCPUCount);
+        cpuNode.setValue <ULONG> ("count", mHWData->mCPUCount);
     }
 
     /* memory (required) */
@@ -6439,8 +6434,8 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     {
         Key displayNode = aNode.createKey ("Display");
         displayNode.setValue <ULONG> ("VRAMSize", mHWData->mVRAMSize);
-        displayNode.setValue <ULONG> ("MonitorCount", mHWData->mMonitorCount);
-        displayNode.setValue <bool> ("Accelerate3D", !!mHWData->mAccelerate3DEnabled);
+        displayNode.setValue <ULONG> ("monitorCount", mHWData->mMonitorCount);
+        displayNode.setValue <bool> ("accelerate3D", !!mHWData->mAccelerate3DEnabled);
     }
 
 #ifdef VBOX_WITH_VRDP

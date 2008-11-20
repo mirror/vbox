@@ -54,13 +54,18 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (const char *aId, const char *aDescription, VBOXOSTYPE aOSType,
+    HRESULT init (const char *aFamilyId, const char *aFamilyDescription,
+                  const char *aId, const char *aDescription,
+                  VBOXOSTYPE aOSType, bool aIs64Bit,
                   uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize);
     void uninit();
 
     // IGuestOSType properties
+    STDMETHOD(COMGETTER(FamilyId)) (BSTR *aFamilyId);
+    STDMETHOD(COMGETTER(FamilyDescription)) (BSTR *aFamilyDescription);
     STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
+    STDMETHOD(COMGETTER(Is64Bit)) (BOOL *aIs64Bit);
     STDMETHOD(COMGETTER(RecommendedRAM)) (ULONG *aRAMSize);
     STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *aVRAMSize);
     STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
@@ -73,9 +78,12 @@ public:
 
 private:
 
+    const Bstr mFamilyID;
+    const Bstr mFamilyDescription;
     const Bstr mID;
     const Bstr mDescription;
     const VBOXOSTYPE mOSType;
+    const bool mIs64Bit;
     const uint32_t mRAMSize;
     const uint32_t mVRAMSize;
     const uint32_t mHDDSize;

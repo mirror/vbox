@@ -2742,14 +2742,14 @@
       <desc>Video memory size in megabytes.</desc>
     </attribute>
 
-    <attribute name="Accelerate3DEnabled" type="boolean" default="false">
+    <attribute name="accelerate3DEnabled" type="boolean" default="false">
       <desc>
         This setting determines whether VirtualBox allows guests to make use
         of the 3D graphics support available on the host. Currently limited
         to OpenGL only. </desc>
     </attribute>
 
-    <attribute name="MonitorCount" type="unsigned long">
+    <attribute name="monitorCount" type="unsigned long">
       <desc>
         Number of virtual monitors.
         <note>
@@ -5533,12 +5533,24 @@
     <desc>
     </desc>
 
+    <attribute name="familyId" type="wstring" readonly="yes">
+      <desc>Guest OS family identifier string.</desc>
+    </attribute>
+
+    <attribute name="familyDescription" type="wstring" readonly="yes">
+      <desc>Human readable description of the guest OS family.</desc>
+    </attribute>
+
     <attribute name="id" type="wstring" readonly="yes">
       <desc>Guest OS identifier string.</desc>
     </attribute>
 
     <attribute name="description" type="wstring" readonly="yes">
       <desc>Human readable description of the guest OS.</desc>
+    </attribute>
+
+    <attribute name="is64Bit" type="boolean" readonly="yes">
+      <desc>Returns @c true if the given OS is 64-bit</desc>
     </attribute>
 
     <attribute name="recommendedRAM" type="unsigned long" readonly="yes">

@@ -48,11 +48,11 @@ protected:
 private slots:
 
     void accept();
-    void showHardDiskManager();
-    void showNewHardDiskWizard();
+    void showMediaManager();
+    void showNewHDWizard();
+    void onOSTypeChanged();
     void slRAMValueChanged (int aValue);
     void leRAMTextChanged (const QString &aTtext);
-    void cbOSActivated (int aItem);
     void revalidate (QIWidgetValidator *aWval);
     void enableNext (const QIWidgetValidator *aWval);
     void onPageShow();

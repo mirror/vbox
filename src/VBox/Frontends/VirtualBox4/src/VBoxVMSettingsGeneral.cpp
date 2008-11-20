@@ -99,11 +99,6 @@ VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
                                                    ":/list_movedown_disabled_16px.png"));
 
     /* Setup initial values */
-    mCbOsType->insertItems (0, vboxGlobal().vmGuestOSTypeDescriptions());
-    QList<QPixmap> list = vboxGlobal().vmGuestOSTypeIcons (0, 2);
-    for (int i=0; i < list.count(); ++i)
-        mCbOsType->setItemIcon (i, list.at (i));
-
     mSlRam->setPageStep (calcPageStep (MaxRAM));
     mSlRam->setSingleStep (mSlRam->pageStep() / 4);
     mSlRam->setTickInterval (mSlRam->pageStep());
@@ -155,8 +150,7 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     mLeName->setText (aMachine.GetName());
 
     /* OS type */
-    QString typeId = aMachine.GetOSTypeId();
-    mCbOsType->setCurrentIndex (vboxGlobal().vmGuestOSTypeIndex (typeId));
+    mOSTypeSelector->setType (vboxGlobal().vmGuestOSType (aMachine.GetOSTypeId()));
 
     /* RAM size */
     mSlRam->setValue (aMachine.GetMemorySize());
@@ -295,9 +289,8 @@ void VBoxVMSettingsGeneral::putBackTo()
     mMachine.SetName (mLeName->text());
 
     /* OS type */
-    CGuestOSType type = vboxGlobal().vmGuestOSType (mCbOsType->currentIndex());
-    AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    mMachine.SetOSTypeId (type.GetId());
+    AssertMsg (!mOSTypeSelector->type().isNull(), ("mOSTypeSelector must return non-null type"));
+    mMachine.SetOSTypeId (mOSTypeSelector->type().GetId());
 
     /* RAM size */
     mMachine.SetMemorySize (mSlRam->value());
@@ -419,8 +412,8 @@ void VBoxVMSettingsGeneral::setOrderAfter (QWidget *aWidget)
     /* Setup Tab order */
     setTabOrder (aWidget, mTabGeneral->focusProxy());
     setTabOrder (mTabGeneral->focusProxy(), mLeName);
-    setTabOrder (mLeName, mCbOsType);
-    setTabOrder (mCbOsType, mSlRam);
+    setTabOrder (mLeName, mOSTypeSelector);
+    setTabOrder (mOSTypeSelector, mSlRam);
     setTabOrder (mSlRam, mLeRam);
     setTabOrder (mLeRam, mSlVideo);
     setTabOrder (mSlVideo, mLeVideo);

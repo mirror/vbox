@@ -28,6 +28,7 @@
 
 GuestOSType::GuestOSType()
     : mOSType (VBOXOSTYPE_Unknown)
+    , mIs64Bit (false)
     , mRAMSize (0), mVRAMSize (0)
     , mHDDSize (0), mMonitorCount (0)
 {
@@ -54,30 +55,42 @@ void GuestOSType::FinalRelease()
  * Initializes the guest OS type object.
  *
  * @returns COM result indicator
- * @param aId          os short name string
- * @param aDescription os name string
- * @param aOSType      global OS type ID
- * @param aRAMSize     recommended RAM size in megabytes
- * @param aVRAMSize    recommended video memory size in megabytes
- * @param aHDDSize     recommended HDD size in megabytes
+ * @param aFamilyId          os family short name string
+ * @param aFamilyDescription os family name string
+ * @param aId                os short name string
+ * @param aDescription       os name string
+ * @param aOSType            global OS type ID
+ * @param aIs64Bit           returns true if the given OS is 64-bit
+ * @param aRAMSize           recommended RAM size in megabytes
+ * @param aVRAMSize          recommended video memory size in megabytes
+ * @param aHDDSize           recommended HDD size in megabytes
  */
-HRESULT GuestOSType::init (const char *aId, const char *aDescription, VBOXOSTYPE aOSType,
+HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription,
+                           const char *aId, const char *aDescription,
+                           VBOXOSTYPE aOSType, bool aIs64Bit,
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize)
 {
-    LogFlowThisFunc (("aId='%s', aDescription='%s', aType=%d, "
+    LogFlowThisFunc (("aFamilyId='%s', aFamilyDescription='%s', "
+                      "aId='%s', aDescription='%s', "
+                      "aType=%d, aIs64Bit=%d, "
                       "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d\n",
-                      aId, aDescription, aOSType,
+                      aFamilyId, aFamilyDescription,
+                      aId, aDescription,
+                      aOSType, aIs64Bit,
                       aRAMSize, aVRAMSize, aHDDSize));
 
-    ComAssertRet (aId && aDescription, E_INVALIDARG);
+    ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
 
+    unconst (mFamilyID) = aFamilyId;
+    unconst (mFamilyDescription) = aFamilyDescription;
     unconst (mID) = aId;
     unconst (mDescription) = aDescription;
     unconst (mOSType) = aOSType;
+    unconst (mIs64Bit) = aIs64Bit;
     unconst (mRAMSize) = aRAMSize;
     unconst (mVRAMSize) = aVRAMSize;
     unconst (mHDDSize) = aHDDSize;
@@ -103,6 +116,34 @@ void GuestOSType::uninit()
 // IGuestOSType properties
 /////////////////////////////////////////////////////////////////////////////
 
+STDMETHODIMP GuestOSType::COMGETTER(FamilyId) (BSTR *aFamilyId)
+{
+    if (!aFamilyId)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mFamilyID is constant during life time, no need to lock */
+    mFamilyID.cloneTo (aFamilyId);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(FamilyDescription) (BSTR *aFamilyDescription)
+{
+    if (!aFamilyDescription)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mFamilyDescription is constant during life time, no need to lock */
+    mFamilyDescription.cloneTo (aFamilyDescription);
+
+    return S_OK;
+}
+
 STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
 {
     if (!aId)
@@ -127,6 +168,20 @@ STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
 
     /* mDescription is constant during life time, no need to lock */
     mDescription.cloneTo (aDescription);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
+{
+    if (!aIs64Bit)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mIs64Bit is constant during life time, no need to lock */
+    *aIs64Bit = mIs64Bit;
 
     return S_OK;
 }
