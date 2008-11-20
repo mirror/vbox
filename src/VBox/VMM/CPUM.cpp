@@ -67,11 +67,13 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define CPUM_SAVED_STATE_VERSION            9
+#define CPUM_SAVED_STATE_VERSION                10
+/** The saved state version for the 2.1 trunk before the MSR changes. */
+#define CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR   9
 /** The saved state version of 2.0, used for backwards compatibility. */
-#define CPUM_SAVED_STATE_VERSION_VER2_0     8
+#define CPUM_SAVED_STATE_VERSION_VER2_0         8
 /** The saved state version of 1.6, used for backwards compatability. */
-#define CPUM_SAVED_STATE_VERSION_VER1_6     6
+#define CPUM_SAVED_STATE_VERSION_VER1_6         6
 
 
 /*******************************************************************************
@@ -349,8 +351,8 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                        | X86_CPUID_AMD_FEATURE_EDX_FFXSR
                                        //| X86_CPUID_AMD_FEATURE_EDX_PAGE1GB
-                                       //| X86_CPUID_AMD_FEATURE_EDX_RDTSCP
-                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - not yet.
+                                       //| X86_CPUID_AMD_FEATURE_EDX_RDTSCP - AMD only; turned on when necessary
+                                       //| X86_CPUID_AMD_FEATURE_EDX_LONG_MODE - turned on when necessary
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                        | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                        | 0;
@@ -781,6 +783,7 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
         SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVM->aCpus[i].cpum.s.fChanged);
+        SSMR3PutMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
     }
 
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
@@ -911,6 +914,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      * Validate version.
      */
     if (    u32Version != CPUM_SAVED_STATE_VERSION
+        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
         &&  u32Version != CPUM_SAVED_STATE_VERSION_VER2_0
         &&  u32Version != CPUM_SAVED_STATE_VERSION_VER1_6)
     {
@@ -946,7 +950,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     }
     else
     {
-        if (u32Version == CPUM_SAVED_STATE_VERSION)
+        if (u32Version >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
             int rc = SSMR3GetU32(pSSM, &pVM->cCPUs);
             AssertRCReturn(rc, rc);
@@ -966,6 +970,8 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
             SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
             SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
             SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
+            if (u32Version == CPUM_SAVED_STATE_VERSION)
+                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
         }
     }
 

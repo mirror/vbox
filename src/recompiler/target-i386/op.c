@@ -1055,6 +1055,13 @@ void OPPROTO op_rdtsc(void)
     helper_rdtsc();
 }
 
+#ifdef VBOX
+void OPPROTO op_rdtscp(void)
+{
+    helper_rdtscp();
+}
+#endif
+
 void OPPROTO op_cpuid(void)
 {
     helper_cpuid();

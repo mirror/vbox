@@ -2451,6 +2451,29 @@ VMMDECL(int) EMInterpretRdtsc(PVM pVM, PCPUMCTXCORE pRegFrame)
     return VINF_SUCCESS;
 }
 
+VMMDECL(int) EMInterpretRdtscp(PVM pVM, PCPUMCTX pCtx)
+{
+    unsigned uCR4 = CPUMGetGuestCR4(pVM);
+
+    if (!CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
+    {
+        AssertFailed();
+        return VERR_EM_INTERPRETER; /* genuine #UD */
+    }
+
+    if (uCR4 & X86_CR4_TSD)
+        return VERR_EM_INTERPRETER; /* genuine #GP */
+
+    uint64_t uTicks = TMCpuTickGet(pVM);
+
+    /* Same behaviour in 32 & 64 bits mode */
+    pCtx->rax = (uint32_t)uTicks;
+    pCtx->rdx = (uTicks >> 32ULL);
+    /* Low dword of the TSC_AUX msr only. */
+    pCtx->rcx = (uint32_t)CPUMGetGuestMsr(pVM, MSR_K8_TSC_AUX);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * RDTSC Emulation.
@@ -2542,7 +2565,7 @@ static const char *emMSRtoString(uint32_t uMsr)
     case MSR_K8_KERNEL_GS_BASE:
         return "MSR_K8_KERNEL_GS_BASE";
     case MSR_K8_TSC_AUX:
-        return "Unsupported MSR_K8_TSC_AUX";
+        return "MSR_K8_TSC_AUX";
     case MSR_IA32_BIOS_SIGN_ID:
         return "Unsupported MSR_IA32_BIOS_SIGN_ID";
     case MSR_IA32_PLATFORM_ID:
@@ -2660,6 +2683,10 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     case MSR_K8_KERNEL_GS_BASE:
         val = pCtx->msrKERNELGSBASE;
+        break;
+
+    case MSR_K8_TSC_AUX:
+        val = CPUMGetGuestMsr(pVM, MSR_K8_TSC_AUX);
         break;
 
 #if 0 /*def IN_RING0 */
@@ -2820,6 +2847,10 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     case MSR_K8_KERNEL_GS_BASE:
         pCtx->msrKERNELGSBASE = val;
+        break;
+
+    case MSR_K8_TSC_AUX:
+        CPUMSetGuestMsr(pVM, MSR_K8_TSC_AUX, val);
         break;
 
     default:

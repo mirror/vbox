@@ -856,6 +856,11 @@ uint64_t cpu_apic_rdmsr(CPUX86State *env, uint32_t reg);
 void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value);
 void cpu_smm_update(CPUX86State *env);
 
+#ifdef VBOX
+uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr);
+void     cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val);
+#endif
+
 /* will be suppressed */
 void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 

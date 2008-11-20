@@ -5939,6 +5939,19 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         mod = (modrm >> 6) & 3;
         op = (modrm >> 3) & 7;
         rm = modrm & 7;
+
+#ifdef VBOX
+        /* 0f 01 f9 */
+        if (modrm == 0xf9)
+        {
+            if (!(s->cpuid_ext2_features & CPUID_EXT2_RDTSCP))
+                 goto illegal_op;
+            gen_jmp_im(pc_start - s->cs_base);
+            gen_op_rdtscp();
+            break;
+        }
+#endif
+
         switch(op) {
         case 0: /* sgdt */
             if (mod == 3)

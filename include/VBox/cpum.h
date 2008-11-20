@@ -361,7 +361,6 @@ typedef struct CPUMCTX
  */
 #define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->edi)
 
-
 /**
  * Selector hidden registers, for version 1.6 saved state.
  */
@@ -543,6 +542,20 @@ typedef struct CPUMCTX_VER1_6
 } CPUMCTX_VER1_6;
 #pragma pack()
 
+/* Guest MSR state. */
+typedef union CPUMCTXMSR
+{
+    struct
+    {
+        uint64_t        tscAux;         /* MSR_K8_TSC_AUX */
+    } msr;
+    uint64_t    au64[64];
+} CPUMCTXMSR;
+/** Pointer to the guest MSR state. */
+typedef CPUMCTXMSR *PCPUMCTXMSR;
+/** Pointer to the const guest MSR state. */
+typedef const CPUMCTXMSR *PCCPUMCTXMSR;
+
 
 /**
  * The register set returned by a CPUID operation.
@@ -583,6 +596,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_PAT,
     /** The x2APIC  feature bit. (Std) */
     CPUMCPUIDFEATURE_X2APIC,
+    /** The RDTSCP feature bit. (Ext) */
+    CPUMCPUIDFEATURE_RDTSCP,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
@@ -648,6 +663,7 @@ VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 VMMDECL(CPUMSELREGHID *) CPUMGetGuestTRHid(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestMsr(PVM pVM, unsigned idMsr);
+VMMDECL(void)       CPUMSetGuestMsr(PVM pVM, unsigned idMsr, uint64_t valMsr);
 /** @} */
 
 /** @name Guest Register Setters.

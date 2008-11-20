@@ -112,7 +112,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[2048];      /* multiple of 64 */
+        char                padding[2560];      /* multiple of 64 */
     } cpum;
     /** VMM part. */
     union
