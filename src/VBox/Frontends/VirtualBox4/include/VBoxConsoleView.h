@@ -301,6 +301,7 @@ private:
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
 #elif defined (Q_WS_MAC)
+    EventHandlerRef mDarwinWindowOverlayHandlerRef;
 # ifndef VBOX_WITH_HACKED_QT
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);

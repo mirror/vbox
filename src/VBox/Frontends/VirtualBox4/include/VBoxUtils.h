@@ -219,6 +219,18 @@ void darwinDisableIconsInMenus();
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
+/* Handler for the OpenGL overlay window stuff & the possible messages. */
+enum
+{
+    /* Event classes */
+    kEventClassVBox        = 'vbox',
+    /* Event kinds */
+    kEventVBoxShowWindow   = 'swin',
+    kEventVBoxMoveWindow   = 'mwin',
+    kEventVBoxResizeWindow = 'rwin',
+};
+OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
+
 # ifdef DEBUG
 void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
 # endif

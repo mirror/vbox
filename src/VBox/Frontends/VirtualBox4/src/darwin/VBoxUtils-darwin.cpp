@@ -373,6 +373,66 @@ OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
     return status;
 }
 
+OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
+{
+    if (aInUserData)
+        return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
+
+    UInt32 eventClass = ::GetEventClass (aInEvent);
+    UInt32 eventKind = ::GetEventKind (aInEvent);
+    /* For debugging events */
+    /*
+    if (!(eventClass == 'cute'))
+        ::darwinDebugPrintEvent ("view: ", aInEvent);
+    */
+    QWidget *view = static_cast<QWidget *> (aInUserData);
+
+    if (eventClass == kEventClassVBox)
+    {
+        if (eventKind == kEventVBoxShowWindow)
+        {
+//            printf ("ShowWindow requested\n");
+            WindowRef w;
+            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
+                return noErr;
+            ShowWindow (w);
+            SelectWindow (w);
+            return noErr;
+        }
+        if (eventKind == kEventVBoxMoveWindow)
+        {
+//            printf ("MoveWindow requested\n");
+            WindowPtr w;
+            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
+                return noErr;
+            HIPoint p;
+            if (GetEventParameter (aInEvent, kEventParamOrigin, typeHIPoint, NULL, sizeof (p), NULL, &p) != noErr)
+                return noErr;
+            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
+            QPoint p1 = view->mapToGlobal (QPoint (p.x, p.y));
+            MoveWindow (w, p1.x(), p1.y(), true);
+            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
+            return noErr;
+        }
+        if (eventKind == kEventVBoxResizeWindow)
+        {
+//            printf ("ResizeWindow requested\n");
+            WindowPtr w;
+            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
+                return noErr;
+            HISize s;
+            if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
+                return noErr;
+            SizeWindow (w, s.width, s.height, true);
+            return noErr;
+        }
+    }
+
+    return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
+}
+
+
+
 /* Event debugging stuff. Borrowed from the Knuts Qt patch. */
 #ifdef DEBUG
 
