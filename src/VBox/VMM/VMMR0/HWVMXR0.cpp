@@ -2493,7 +2493,6 @@ ResumeExecution:
         rc = EMInterpretRdtsc(pVM, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
-Log(("Rdtsc: %x:%x\n", pCtx->edx, pCtx->eax));
             /* Update EIP and continue execution. */
             Assert(cbInstr == 2);
             pCtx->rip += cbInstr;
