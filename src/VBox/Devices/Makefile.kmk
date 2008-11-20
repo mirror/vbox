@@ -151,6 +151,9 @@ endif
 ifdef VBOX_WITH_SCSI
  VBoxDD_DEFS           += VBOX_WITH_SCSI
 endif
+ifdef VBOX_WITH_LSILOGIC
+ VBoxDD_DEFS           += VBOX_WITH_LSILOGIC
+endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
@@ -314,6 +317,12 @@ DevicesR3_SOURCES      += \
 	Storage/VBoxSCSI.cpp
 endif
 
+ifdef VBOX_WITH_LSILOGIC
+DevicesR3_DEFS	       += VBOX_WITH_LSILOGIC
+DevicesR3_SOURCES      += \
+	Storage/DevLsiLogicSCSI.cpp
+endif
+
 ifdef VBOX_WITH_USB
 DevicesR3_DEFS         += VBOX_WITH_USB IN_USB_R3
 
@@ -404,6 +413,12 @@ VBoxDDGC_SOURCES       += \
 	Storage/DevBusLogic.cpp
 endif
 
+ifdef VBOX_WITH_LSILOGIC
+VBoxDDGC_DEFS          += VBOX_WITH_LSILOGIC
+VBoxDDGC_SOURCES       += \
+	Storage/DevLsiLogicSCSI.cpp
+endif
+
 ifeq ($(VBOX_LDR_FMT32),pe)
 VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
 endif
@@ -465,6 +480,12 @@ ifdef VBOX_WITH_BUSLOGIC
 VBoxDDR0_DEFS          += VBOX_WITH_BUSLOGIC
 VBoxDDR0_SOURCES       += \
 	Storage/DevBusLogic.cpp
+endif
+
+ifdef VBOX_WITH_LSILOGIC
+VBoxDDR0_DEFS          += VBOX_WITH_LSILOGIC
+VBoxDDR0_SOURCES       += \
+	Storage/DevLsiLogicSCSI.cpp
 endif
 
 ifeq ($(VBOX_LDR_FMT32),pe)

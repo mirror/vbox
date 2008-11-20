@@ -101,6 +101,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_INIP,
     /** KeyBoard Controller Device group. */
     LOG_GROUP_DEV_KBD,
+    /** LsiLogic SCSI controller Device group. */
+    LOG_GROUP_DEV_LSILOGICSCSI,
     /** NE2000 Device group. */
     LOG_GROUP_DEV_NE2000,
     /** Parallel Device group */
@@ -177,6 +179,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_RAW_IMAGE,
     /** SCSI driver group. */
     LOG_GROUP_DRV_SCSI,
+    /** Host SCSI driver group. */
+    LOG_GROUP_DRV_SCSIHOST,
     /** Async transport driver group */
     LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
@@ -349,6 +353,7 @@ typedef enum LOGGROUP
     "DEV_IDE",      \
     "DEV_INIP",     \
     "DEV_KBD",      \
+    "DEV_LSILOGICSCSI", \
     "DEV_NE2000",   \
     "DEV_PARALLEL", \
     "DEV_PC",       \
@@ -387,6 +392,7 @@ typedef enum LOGGROUP
     "DRV_NAT",      \
     "DRV_RAW_IMAGE", \
     "DRV_SCSI", \
+    "DRV_SCSIHOST", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
     "DRV_USBPROXY", \
