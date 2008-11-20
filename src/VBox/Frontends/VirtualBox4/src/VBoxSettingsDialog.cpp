@@ -168,7 +168,7 @@ void VBoxSettingsDialog::setError (const QString &aError)
 void VBoxSettingsDialog::setWarning (const QString &aWarning)
 {
     mWarnString = aWarning.isEmpty() ? QString::null :
-                  QString ("<font color=green>%1</font>").arg (aWarning);
+                  QString ("<font color=#ff6c00>%1</font>").arg (aWarning);
 
     /* Not touching QILabel until dialog is polished otherwise
      * it can change its size to undefined */
