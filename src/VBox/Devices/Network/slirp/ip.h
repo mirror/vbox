@@ -38,11 +38,7 @@
 #define _IP_H_
 
 #ifdef VBOX_WITH_BSD_REASS
-# ifndef RT_OS_WINDOWS
-# include <sys/queue.h>
-# else
-/* XXX: Windows has own queue types declared in winnt.h (should look at them once again) */
-# endif
+# include "queue.h"
 #endif
 
 #ifdef WORDS_BIGENDIAN

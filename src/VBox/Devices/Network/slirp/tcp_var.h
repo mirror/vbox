@@ -38,7 +38,7 @@
 #define _TCP_VAR_H_
 
 #ifdef VBOX_WITH_BSD_TCP_REASS
-#include <sys/queue.h>
+#include "queue.h"
 #endif /* VBOX_WITH_BSD_TCP_REASS */
 
 #include "tcpip.h"
