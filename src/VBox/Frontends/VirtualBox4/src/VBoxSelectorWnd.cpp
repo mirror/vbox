@@ -1665,7 +1665,7 @@ void VBoxTrayIcon::showSubMenu ()
     VBoxVMItem* pItem = NULL;
     QMenu *pMenu = NULL;
     QVariant vID;
-    if (pMenu = qobject_cast<QMenu*>(sender()))
+    if ((pMenu = qobject_cast<QMenu*>(sender())))
     {
         vID = pMenu->menuAction()->data();
         if (vID.canConvert<QUuid>() && mVMModel)
@@ -1799,9 +1799,8 @@ void VBoxTrayIcon::retranslateUi ()
 void VBoxTrayIcon::hideSubMenu ()
 {
     VBoxVMItem* pItem = NULL;
-    QMenu *pMenu = NULL;
     QVariant vID;
-    if (pMenu = qobject_cast<QMenu*>(sender()))
+    if (QMenu *pMenu = qobject_cast<QMenu*>(sender()))
     {
         vID = pMenu->menuAction()->data();
         if (vID.canConvert<QUuid>() && mVMModel)
@@ -1866,9 +1865,8 @@ void VBoxTrayIcon::refresh ()
 
 VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 {
-    QAction *pAction = NULL;
     VBoxVMItem* pItem = NULL;
-    if (pAction = qobject_cast<QAction*>(sender()))
+    if (QAction *pAction = qobject_cast<QAction*>(sender()))
     {
         QVariant v = pAction->data();
         if (v.canConvert<QUuid>() && mVMModel)
