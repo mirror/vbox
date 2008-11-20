@@ -4095,7 +4095,7 @@
           more than one callback at a time. If you have multiple
           IConsoleCallback instances registered on the given
           IConsole object, make sure you simply do nothing but
-          return@c S_OK from all but one of them that actually
+          return @c S_OK from all but one of them that actually
           manages console window activation.
         </note>
       </desc>
