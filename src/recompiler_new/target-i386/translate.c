@@ -640,8 +640,8 @@ DECLINLINE(void) gen_op_seg_check(int reg, bool keepA0)
     TCGv t0, a0;
 
     /* For other segments this check is waste of time, and also TCG is unable to cope with this code,
-       for data segments, as expects alive temps */
-    if (reg != R_GS)
+       for data/stack segments, as expects alive cpu_T[0] */
+    if (reg != R_GS) 
         return;
 
     if (keepA0)
@@ -7641,6 +7641,18 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         mod = (modrm >> 6) & 3;
         op = (modrm >> 3) & 7;
         rm = modrm & 7;
+
+#ifdef VBOX
+        /* 0f 01 f9 */
+        if (modrm == 0xf9)
+        {
+            if (!(s->cpuid_ext2_features & CPUID_EXT2_RDTSCP))
+                goto illegal_op;
+            gen_jmp_im(pc_start - s->cs_base);
+            tcg_gen_helper_0_0(helper_rdtscp);
+            break;
+        }
+#endif
         switch(op) {
         case 0: /* sgdt */
             if (mod == 3)
