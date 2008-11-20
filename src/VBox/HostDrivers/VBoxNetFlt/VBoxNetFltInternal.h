@@ -204,7 +204,7 @@ typedef struct VBOXNETFLTINS
         uint8_t abPadding[1024];
 # endif
 #elif defined(RT_OS_LINUX)
-        uint8_t abPadding[224];
+        uint8_t abPadding[256];
 #else
         uint8_t abPadding[64];
 #endif
