@@ -143,7 +143,7 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
     if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
     {
 # if defined(IN_RING0) \
-  && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS))
+  && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX))
         if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
             return VERR_PREEMPT_DISABLED;
 # endif
