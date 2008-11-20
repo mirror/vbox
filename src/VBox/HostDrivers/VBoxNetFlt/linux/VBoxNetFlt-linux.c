@@ -624,7 +624,9 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
 
 {
     int rc;
+#ifdef DEBUG
     char *pszEvent = "<unknown>";
+#endif
     struct net_device *pDev = (struct net_device *)ptr;
     PVBOXNETFLTINS pThis = VBOX_FLT_NB_TO_INST(self);
 
