@@ -328,7 +328,7 @@ ifeq ($(KBUILD_TARGET),linux)
 # VBOX_WITH_FFMPEG = 1
 endif
 # Enable crOpenGL service
-if1of ($(KBUILD_TARGET),win linux solaris)
+if1of ($(KBUILD_TARGET),win linux solaris darwin)
 VBOX_WITH_CROGL = 1
 endif
 # Enable OpenGL service
@@ -1147,7 +1147,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
-ifdef VBOX_WITH_NEW_RECOMPILER 
+ifdef VBOX_WITH_NEW_RECOMPILER
  LIB_REM         = $(PATH_BIN)/VBoxREM.dylib
 else
  LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
