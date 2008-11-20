@@ -387,6 +387,9 @@ RuntimeR3_SOURCES.linux.x86 += \
 RuntimeR3_SOURCES.linux.amd64 += \
 	r3/linux/semevent-linux.cpp \
 	r3/linux/semeventmulti-linux.cpp
+# with glibc >= 2.6 we use the libc implementation
+r3/linux/semevent-linux.cpp_INCS = .
+r3/linux/semeventmulti-linux.cpp_INCS = .
 ifdef RT_NEW_LINUX_MUTEX_CODE
  RuntimeR3_SOURCES.linux.amd64 += \
 	r3/linux/semmutex-linux.cpp

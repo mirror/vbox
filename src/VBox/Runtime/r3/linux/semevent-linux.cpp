@@ -28,6 +28,19 @@
  * additional information or have any questions.
  */
 
+#include <features.h>
+#if __GLIBC_PREREQ(2,6)
+
+/* glibc 2.6 fixed a serious bug in the mutex implementation
+ * The external refernce to epoll_pwait is a hack which prevents
+ * that we link against glibc < 2.6 */
+
+asm volatile (".global epoll_pwait");
+
+#include "r3/posix/semevent-posix.cpp"
+
+#else /* glibc < 2.6 */
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -296,3 +309,4 @@ RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies)
     return rtSemEventWait(EventSem, cMillies, false);
 }
 
+#endif /* glibc < 2.6 */
