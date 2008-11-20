@@ -328,7 +328,7 @@ ifeq ($(KBUILD_TARGET),linux)
 # VBOX_WITH_FFMPEG = 1
 endif
 # Enable crOpenGL service
-if1of ($(KBUILD_TARGET),win linux solaris darwin)
+if1of ($(KBUILD_TARGET),win linux solaris)
 VBOX_WITH_CROGL = 1
 endif
 # Enable OpenGL service
