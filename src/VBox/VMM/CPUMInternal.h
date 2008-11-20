@@ -339,6 +339,12 @@ typedef struct CPUMCPU
      */
     CPUMCTX                 Guest;
 
+    /** 
+     * Guest context - misc MSRs
+     * Aligned on a 64-byte boundrary.
+     */
+    CPUMCTXMSR              GuestMsr;
+
     /** Use flags.
      * These flags indicates both what is to be used and what has been used.
      */

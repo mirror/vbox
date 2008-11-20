@@ -214,6 +214,9 @@ void helper_sysexit(void);
 void helper_syscall(int next_eip_addend);
 void helper_sysret(int dflag);
 void helper_rdtsc(void);
+#ifdef VBOX
+void helper_rdtscp(void);
+#endif
 void helper_rdmsr(void);
 void helper_wrmsr(void);
 void helper_lsl(void);

@@ -838,6 +838,10 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
             u64 = pCpumCpu->Guest.msrKERNELGSBASE;
             break;
 
+        case MSR_K8_TSC_AUX:
+            u64 = pCpumCpu->GuestMsr.msr.tscAux;
+            break;
+
         /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
         default:
             AssertFailed();
@@ -846,6 +850,22 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVM pVM, unsigned idMsr)
     return u64;
 }
 
+VMMDECL(void) CPUMSetGuestMsr(PVM pVM, unsigned idMsr, uint64_t valMsr)
+{
+    PCPUMCPU pCpumCpu = cpumGetCpumCpu(pVM);
+
+    /* On purpose only a limited number of MSRs; use the emulation function to update the others. */
+    switch (idMsr)
+    {
+        case MSR_K8_TSC_AUX:
+            pCpumCpu->GuestMsr.msr.tscAux = valMsr;
+            break;
+
+        default:
+            AssertFailed();
+            break;
+    }
+}
 
 VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVM pVM, uint16_t *pcbLimit)
 {
@@ -1430,6 +1450,21 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
+        case CPUMCPUIDFEATURE_RDTSCP:
+        {
+            if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_RDTSCP))
+            {
+                LogRel(("WARNING: Can't turn on RDTSCP when the host doesn't support it!!\n"));
+                return;
+            }
+
+            /* Valid for AMD only (for now). */
+            pVM->cpum.s.aGuestCpuIdExt[1].edx |= X86_CPUID_AMD_FEATURE_EDX_RDTSCP;
+            LogRel(("CPUMSetGuestCpuIdFeature: Enabled RDTSCP.\n"));
+            break;
+        }
+
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
@@ -1455,6 +1490,13 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         {
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 return !!(pVM->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_PAE);
+            break;
+        }
+
+        case CPUMCPUIDFEATURE_RDTSCP:
+        {
+            if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_RDTSCP);
             break;
         }
 

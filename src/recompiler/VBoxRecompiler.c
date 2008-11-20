@@ -1772,7 +1772,6 @@ REMR3DECL(int)  REMR3State(PVM pVM)
         pVM->rem.s.Env.hflags &= ~(HF_LMA_MASK | HF_CS64_MASK);
 #endif
 
-
     /*
      * Registers which are rarely changed and require special handling / order when changed.
      */
@@ -4132,6 +4131,17 @@ void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
     /** @todo: exception if error ? */
     LogFlow(("cpu_apic_wrmsr: rc=%Rrc\n", rc)); NOREF(rc);
 }
+
+uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr)
+{
+    return CPUMGetGuestMsr(env->pVM, msr);
+}
+
+void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val)
+{
+    CPUMSetGuestMsr(env->pVM, msr, val);
+}
+
 /* -+- I/O Ports -+- */
 
 #undef LOG_GROUP

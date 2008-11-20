@@ -401,6 +401,8 @@ struc CPUMCPU
     .Guest.trHid.u32Limit     resd    1
     .Guest.trHid.Attr         resd    1
 
+    .GuestMsr.au64            resq    64
+
     .fUseFlags            resd    1
     .fChanged             resd    1
     .ulOffCPUM            resd    1

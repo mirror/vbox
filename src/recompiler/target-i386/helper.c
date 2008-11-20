@@ -3022,6 +3022,22 @@ void helper_rdtsc(void)
     EDX = (uint32_t)(val >> 32);
 }
 
+#ifdef VBOX
+void helper_rdtscp(void)
+{
+    uint64_t val;
+
+    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception(EXCP0D_GPF);
+    }
+
+    val = cpu_get_tsc(env);
+    EAX = (uint32_t)(val);
+    EDX = (uint32_t)(val >> 32);
+    ECX = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+}
+#endif
+
 #if defined(CONFIG_USER_ONLY)
 void helper_wrmsr(void)
 {
@@ -3105,6 +3121,9 @@ void helper_wrmsr(void)
         /** @todo else exception? */
         break;
     }
+    case MSR_K8_TSC_AUX:
+        cpu_wrmsr(env, MSR_K8_TSC_AUX, val);
+        break;
 #endif /* VBOX */
     }
 }
@@ -3169,6 +3188,9 @@ void helper_rdmsr(void)
             val = 0; /** @todo else exception? */
         break;
     }
+    case MSR_K8_TSC_AUX:
+        val = cpu_rdmsr(env, MSR_K8_TSC_AUX);
+        break;
 #endif /* VBOX */
     }
     EAX = (uint32_t)(val);

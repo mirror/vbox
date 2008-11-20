@@ -197,6 +197,12 @@ struc CPUMCTX
 ;;;    .padding            resd    6
 endstruc
 
+
+;;/* Guest MSR state. */
+struc CPUMCTXMSR
+    .au64               resq  64
+endstruc
+
 ;;
 ; FPU/XMM state
 ;;

@@ -326,7 +326,6 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL2_INTERCEPT_STGI
                                         | SVM_CTRL2_INTERCEPT_CLGI
                                         | SVM_CTRL2_INTERCEPT_SKINIT
-                                        | SVM_CTRL2_INTERCEPT_RDTSCP        /* AMD only; we don't support this one */
                                         | SVM_CTRL2_INTERCEPT_WBINVD
                                         | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
                                         ;
@@ -780,12 +779,12 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVM, &pVMCB->ctrl.u64TSCOffset))
     {
-        pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
+        pVMCB->ctrl.u32InterceptCtrl1 &= ~(SVM_CTRL1_INTERCEPT_RDTSC | SVM_CTRL2_INTERCEPT_RDTSCP);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
     }
     else
     {
-        pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
+        pVMCB->ctrl.u32InterceptCtrl1 |= (SVM_CTRL1_INTERCEPT_RDTSC | SVM_CTRL2_INTERCEPT_RDTSCP);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCIntercept);
     }
 
@@ -1036,7 +1035,6 @@ ResumeExecution:
                                              | SVM_CTRL2_INTERCEPT_STGI
                                              | SVM_CTRL2_INTERCEPT_CLGI
                                              | SVM_CTRL2_INTERCEPT_SKINIT
-                                             | SVM_CTRL2_INTERCEPT_RDTSCP        /* AMD only; we don't support this one */
                                              | SVM_CTRL2_INTERCEPT_WBINVD
                                              | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND  /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
                                             ));
@@ -1626,6 +1624,23 @@ ResumeExecution:
         break;
     }
 
+    case SVM_EXIT_RDTSCP:                /* Guest software attempted to execute RDTSCP. */
+    {
+        Log2(("SVM: Rdtscp\n"));
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitRdtsc);
+        rc = EMInterpretRdtscp(pVM, pCtx);
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += 3;             /* Note! hardcoded opcode size! */
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            goto ResumeExecution;
+        }
+        AssertMsgFailed(("EMU: rdtscp failed with %Rrc\n", rc));
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+        break;
+    }
+
     case SVM_EXIT_INVLPG:               /* Guest software attempted to execute INVPG. */
     {
         Log2(("SVM: invlpg\n"));
@@ -1976,7 +1991,6 @@ ResumeExecution:
     case SVM_EXIT_STGI:
     case SVM_EXIT_CLGI:
     case SVM_EXIT_SKINIT:
-    case SVM_EXIT_RDTSCP:
     {
         /* Unsupported instructions. */
         SVM_EVENT Event;
