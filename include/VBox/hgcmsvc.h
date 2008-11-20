@@ -58,8 +58,11 @@
  * 3.1->3.2 Because pfnRegisterExtension was added
  * 3.2->3.3 Because pfnDisconnectClient helper was added
  * 3.3->4.1 Because the pvService entry and parameter was added
+ * 4.1->4.2 Because the VBOX_HGCM_SVC_PARM_CALLBACK parameter type was added
+ * 4.2->5.1 Removed the VBOX_HGCM_SVC_PARM_CALLBACK parameter type, as
+ *          this problem is already solved by service extension callbacks
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0004)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0005)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
