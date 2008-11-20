@@ -164,6 +164,9 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis);
  */
 VMMR0DECL(int) PGMR0DynMapInit(void)
 {
+#ifndef DEBUG_bird
+    return VINF_SUCCESS;
+#else
     Assert(!g_pPGMR0DynMap);
 
     /*
@@ -210,6 +213,7 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
     }
     RTMemFree(pThis);
     return rc;
+#endif
 }
 
 
@@ -218,6 +222,7 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
  */
 VMMR0DECL(void) PGMR0DynMapTerm(void)
 {
+#ifdef DEBUG_bird
     /*
      * Destroy the cache.
      *
@@ -246,6 +251,7 @@ VMMR0DECL(void) PGMR0DynMapTerm(void)
         pThis->u32Magic = UINT32_MAX;
         RTMemFree(pThis);
     }
+#endif
 }
 
 
@@ -257,6 +263,9 @@ VMMR0DECL(void) PGMR0DynMapTerm(void)
  */
 VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
 {
+#ifndef DEBUG_bird
+    return VINF_SUCCESS;
+#else
     /*
      * Initialize the auto sets.
      */
@@ -300,6 +309,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     RTSemFastMutexRelease(pThis->hInitLock);
 
     return rc;
+#endif
 }
 
 
@@ -310,6 +320,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
  */
 VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
 {
+#ifdef DEBUG_bird
     /*
      * Return immediately if we're not using the cache.
      */
@@ -375,6 +386,7 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
         AssertMsgFailed(("pvR0DynMapUsed=%p pThis=%p\n", pVM->pgm.s.pvR0DynMapUsed, pThis));
 
     RTSemFastMutexRelease(pThis->hInitLock);
+#endif
 }
 
 
