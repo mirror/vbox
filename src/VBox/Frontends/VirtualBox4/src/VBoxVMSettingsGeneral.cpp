@@ -399,7 +399,7 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
                        .arg (vboxGlobal().formatSize (fullSize * _1M));
         return true;
     } else
-    if (mSlVideo->value() * _1M < needBytes)
+    if ((quint64)mSlVideo->value() * _1M < needBytes)
     {
         aWarning = tr ("You have assigned less than %1 for video memory. This is the minimum "
                        "requirement which allow you to operate the guest in fullscreen & "
