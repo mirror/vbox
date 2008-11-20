@@ -1147,7 +1147,11 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
+ifdef VBOX_WITH_NEW_RECOMPILER 
+ LIB_REM         = $(PATH_BIN)/VBoxREM.dylib
+else
  LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
+endif
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.dylib
