@@ -199,6 +199,8 @@ $(warning dbg: KERN_INCL    = $(KERN_INCL))
 $(warning dbg: MODULE_DIR   = $(MODULE_DIR))
 endif
 
+KBUILD_VERBOSE ?= 1
+
 #
 # Compiler options
 #
@@ -250,7 +252,7 @@ all: $(MODULE)
 obj-m += $(MODULE).o
 
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \

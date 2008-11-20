@@ -205,6 +205,8 @@ $(warning dbg: MODULE_DIR   = $(MODULE_DIR))
 $(warning dbg: KERN_VERSION = $(KERN_VERSION))
 endif
 
+KBUILD_VERBOSE ?= 1
+
 #
 # Compiler options
 #
@@ -268,7 +270,7 @@ all: $(MODULE)
 obj-m += $(MODULE).o
 
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=1 -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
 ifeq ($(KERN_VERSION),24)
 #
