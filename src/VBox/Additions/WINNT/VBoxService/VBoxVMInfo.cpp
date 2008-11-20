@@ -50,14 +50,14 @@ int vboxVMInfoWriteProp(VBOXINFORMATIONCONTEXT* a_pCtx, char *a_pszKey, char *a_
         }
     }
 
-    rc = VbglR3GuestPropWriteValue(a_pCtx->iInfoSvcClientID, szKeyTemp, (a_pszValue == NULL) ? NULL : pszValue);
+    rc = VbglR3GuestPropWriteValue(a_pCtx->iInfoSvcClientID, szKeyTemp, ((a_pszValue == NULL) || (0 == strlen(a_pszValue))) ? NULL : pszValue);
     if (!RT_SUCCESS(rc))
     {
         LogRel(("vboxVMInfoThread: Failed to store the property \"%s\"=\"%s\"! ClientID: %d, Error: %Rrc\n", szKeyTemp, pszValue, a_pCtx->iInfoSvcClientID, rc));
         goto cleanup;
     }
 
-    if (pszValue != NULL)
+    if ((pszValue != NULL) && (strlen(a_pszValue) > 0))
         Log(("vboxVMInfoThread: Property written: %s = %s\n", szKeyTemp, pszValue));
     else
         Log(("vboxVMInfoThread: Property deleted: %s\n", szKeyTemp));
