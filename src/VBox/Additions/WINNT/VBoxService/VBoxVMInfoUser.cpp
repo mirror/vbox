@@ -150,19 +150,17 @@ BOOL isLoggedIn(VBOXINFORMATIONCONTEXT* a_pCtx,
     BOOL bLoggedIn = FALSE;
     BOOL bFoundUser = FALSE;
     PSECURITY_LOGON_SESSION_DATA sessionData = NULL;
-    NTSTATUS ret = 0;
-    WCHAR szAuthPkg[256] = { 0 };
-    WCHAR szLogonDomain[256] = { 0 };
+    NTSTATUS r = 0;
     WCHAR *usBuffer = NULL;
-    int usLength = 0;
+    int iLength = 0;
 
     if (!a_pSession)
         return FALSE;
 
-    ret = LsaGetLogonSessionData (a_pSession, &sessionData);
-    if (ret != STATUS_SUCCESS)
+    r = LsaGetLogonSessionData (a_pSession, &sessionData);
+    if (r != STATUS_SUCCESS)
     {
-        Log(("vboxVMInfoThread: LsaGetLogonSessionData failed %lu\n", LsaNtStatusToWinError(ret)));
+        Log(("vboxVMInfoThread: Users: LsaGetLogonSessionData failed %lu\n", LsaNtStatusToWinError(r)));
 
         if (sessionData)
             LsaFreeReturnBuffer(sessionData);
@@ -172,9 +170,12 @@ BOOL isLoggedIn(VBOXINFORMATIONCONTEXT* a_pCtx,
 
     if (!sessionData)
     {
-        Log(("vboxVMInfoThread: Invalid logon session data.\n"));
+        Log(("vboxVMInfoThread: Users: Invalid logon session data.\n"));
         return FALSE;
     }
+
+    Log(("vboxVMInfoThread: Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n", 
+        (sessionData->UserName).Buffer, (sessionData->UserName).Length, (sessionData->Sid != NULL) ? "1" : "0", sessionData->LogonId.HighPart, sessionData->LogonId.LowPart));
 
     if ((sessionData->UserName.Buffer != NULL) &&
         (sessionData->Sid != NULL) &&
@@ -182,105 +183,115 @@ BOOL isLoggedIn(VBOXINFORMATIONCONTEXT* a_pCtx,
     {
         /* Get the user name. */
         usBuffer = (sessionData->UserName).Buffer;
-        usLength = (sessionData->UserName).Length;
-        if (usLength > 256)
+        iLength = (sessionData->UserName).Length;
+        if (iLength > sizeof(a_pUserInfo->szUser) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
         {
-            Log(("vboxVMInfoThread: User name too long for buffer! Length: %d, Buffer: 256\n", usLength));
+            LogRel(("vboxVMInfoThread: Users: User name too long (%d bytes) for buffer! Name will be truncated.\n", iLength));
+            iLength = sizeof(a_pUserInfo->szUser) - sizeof(TCHAR);
         }
-        else
+        wcsncpy (a_pUserInfo->szUser, usBuffer, iLength);
+        wcscat (a_pUserInfo->szUser, L"");      /* Add terminating null char. */
+
+        /* Get authentication package. */
+        usBuffer = (sessionData->AuthenticationPackage).Buffer;
+        iLength = (sessionData->AuthenticationPackage).Length;
+        if (iLength > sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
         {
-            /** @todo r=bird: Check this code for buffer overruns. the if check above is wrong as it's making assumptions about _MAX_PATH (which is 260 not 256 as stated). */
-            wcsncpy (a_pUserInfo->szUser, usBuffer, usLength);
-            wcscat (a_pUserInfo->szUser, L"");
+            LogRel(("vboxVMInfoThread: Users: Authentication pkg name too long (%d bytes) for buffer! Name will be truncated.\n", iLength));
+            iLength = sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(TCHAR);
+        }
+        wcsncpy (a_pUserInfo->szAuthenticationPackage, usBuffer, iLength);
+        wcscat (a_pUserInfo->szAuthenticationPackage, L"");     /* Add terminating null char. */
 
-            usBuffer = (sessionData->AuthenticationPackage).Buffer;
-            usLength = (sessionData->AuthenticationPackage).Length;
-            wcsncpy (szAuthPkg, usBuffer, usLength);
-            wcscat (szAuthPkg, L"");
+        /* Get logon domain. */
+        usBuffer = (sessionData->LogonDomain).Buffer;
+        iLength = (sessionData->LogonDomain).Length;
+        if (iLength > sizeof(a_pUserInfo->szLogonDomain) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
+        {
+            LogRel(("vboxVMInfoThread: Users: Logon domain name too long (%d bytes) for buffer! Name will be truncated.\n", iLength));
+            iLength = sizeof(a_pUserInfo->szLogonDomain) - sizeof(TCHAR);
+        }
+        wcsncpy (a_pUserInfo->szLogonDomain, usBuffer, iLength);
+        wcscat (a_pUserInfo->szLogonDomain, L"");       /* Add terminating null char. */
 
-            usBuffer = (sessionData->LogonDomain).Buffer;
-            usLength = (sessionData->LogonDomain).Length;
-            wcsncpy (szLogonDomain, usBuffer, usLength);
-            wcscat (szLogonDomain, L""); /** @todo r=bird: There is a potential buffer overrun here. */
+        /* Only handle users which can login interactively or logged in remotely over native RDP. */
+        if (   (((SECURITY_LOGON_TYPE)sessionData->LogonType == Interactive) 
+             || ((SECURITY_LOGON_TYPE)sessionData->LogonType == RemoteInteractive))
+             && (sessionData->Sid != NULL))
+        {
+            TCHAR szOwnerName [_MAX_PATH] = { 0 };
+            DWORD dwOwnerNameSize = _MAX_PATH;
 
-            /* Only handle users which can login interactively. */
-            if (    ((SECURITY_LOGON_TYPE)sessionData->LogonType == Interactive)
-                 && (sessionData->Sid != NULL))
+            TCHAR szDomainName [_MAX_PATH] = { 0 };
+            DWORD dwDomainNameSize = _MAX_PATH;
+
+            SID_NAME_USE ownerType;
+
+            if (LookupAccountSid(NULL,
+                                 sessionData->Sid,
+                                 szOwnerName,
+                                 &dwOwnerNameSize,
+                                 szDomainName,
+                                 &dwDomainNameSize,
+                                 &ownerType))
             {
-                TCHAR szOwnerName [_MAX_PATH] = { 0 };
-                DWORD dwOwnerNameSize = _MAX_PATH;
+                Log(("vboxVMInfoThread: Users: Account User=%ls, Session=%ld, LUID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
+                     a_pUserInfo->szUser, sessionData->Session, sessionData->LogonId.HighPart, sessionData->LogonId.LowPart, a_pUserInfo->szAuthenticationPackage, a_pUserInfo->szLogonDomain));
 
-                TCHAR szDomainName [_MAX_PATH] = { 0 };
-                DWORD dwDomainNameSize = _MAX_PATH;
+                /* The session ID increments/decrements on Vista often! So don't compare
+                   the session data SID with the current SID here. */
+                DWORD dwActiveSession = 0;
+                if (a_pCtx->pfnWTSGetActiveConsoleSessionId != NULL)            /* Check terminal session ID. */
+                    dwActiveSession = a_pCtx->pfnWTSGetActiveConsoleSessionId();
 
-                SID_NAME_USE ownerType;
+                /*Log(("vboxVMInfoThread: Users: Current active session ID: %ld\n", dwActiveSession));*/
 
-                if (LookupAccountSid(NULL,
-                                     sessionData->Sid,
-                                     szOwnerName,
-                                     &dwOwnerNameSize,
-                                     szDomainName,
-                                     &dwDomainNameSize,
-                                     &ownerType))
+                if (SidTypeUser == ownerType)
                 {
-                    Log(("vboxVMInfoThread: Account User=%ls, Session=%ld, LUID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
-                         a_pUserInfo->szUser, sessionData->Session, sessionData->LogonId.HighPart, sessionData->LogonId.LowPart, szAuthPkg, szLogonDomain));
+                    LPWSTR pBuffer = NULL;
+                    DWORD dwBytesRet = 0;
+                    int iState = 0;
 
-                    /* The session ID increments/decrements on Vista often! So don't compare
-                       the session data SID with the current SID here. */
-                    DWORD dwActiveSession = 0;
-                    if (a_pCtx->pfnWTSGetActiveConsoleSessionId != NULL)            /* Check terminal session ID. */
-                        dwActiveSession = a_pCtx->pfnWTSGetActiveConsoleSessionId();
-
-                    /*Log(("vboxVMInfoThread: Current active session ID: %ld\n", dwActiveSession));*/
-
-                    if (SidTypeUser == ownerType)
+                    if (WTSQuerySessionInformation(     /* Detect RDP sessions as well. */
+                        WTS_CURRENT_SERVER_HANDLE,
+                        WTS_CURRENT_SESSION,
+                        WTSConnectState,
+                        &pBuffer,
+                        &dwBytesRet))
                     {
-                        LPWSTR pBuffer = NULL;
-                        DWORD dwBytesRet = 0;
-                        int iState = 0;
+                        /*Log(("vboxVMInfoThread: Users: WTSQuerySessionInformation returned %ld bytes, p=%p, state=%d\n", dwBytesRet, pBuffer, pBuffer != NULL ? (INT)*pBuffer : -1));*/
+                        if(dwBytesRet)
+                            iState = *pBuffer;
 
-                        if (WTSQuerySessionInformation(     /* Detect RDP sessions as well. */
-                            WTS_CURRENT_SERVER_HANDLE,
-                            WTS_CURRENT_SESSION,
-                            WTSConnectState,
-                            &pBuffer,
-                            &dwBytesRet))
+                        if (    (iState == WTSActive)           /* User logged on to WinStation. */
+                             || (iState == WTSShadow)           /* Shadowing another WinStation. */
+                             || (iState == WTSDisconnected))    /* WinStation logged on without client. */
                         {
-                            /*Log(("vboxVMInfoThread: WTSQuerySessionInformation returned %ld bytes, p=%p, state=%d\n", dwBytesRet, pBuffer, pBuffer != NULL ? (INT)*pBuffer : -1));*/
-                            if(dwBytesRet)
-                                iState = *pBuffer;
-
-                            if (    (iState == WTSActive)           /* User logged on to WinStation. */
-                                 || (iState == WTSShadow)           /* Shadowing another WinStation. */
-                                 || (iState == WTSDisconnected))    /* WinStation logged on without client. */
-                            {
-                                /** @todo On Vista and W2K, always "old" user name are still there. Filter out the old! */
-                                Log(("vboxVMInfoThread: Account User=%ls is logged in via TCS/RDP. State=%d\n", a_pUserInfo->szUser, iState));
-                                bFoundUser = TRUE;
-                            }
-                        }
-                        else
-                        {
-                            /* Terminal services don't run (for example in W2K, nothing to worry about ...). */
-                            /* ... or is on Vista fast user switching page! */
+                            /** @todo On Vista and W2K, always "old" user name are still there. Filter out the old! */
+                            Log(("vboxVMInfoThread: Users: Account User=%ls is logged in via TCS/RDP. State=%d\n", a_pUserInfo->szUser, iState));
                             bFoundUser = TRUE;
                         }
+                    }
+                    else
+                    {
+                        /* Terminal services don't run (for example in W2K, nothing to worry about ...). */
+                        /* ... or is on Vista fast user switching page! */
+                        bFoundUser = TRUE;
+                    }
 
-                        if (pBuffer)
-                            WTSFreeMemory(pBuffer);
+                    if (pBuffer)
+                        WTSFreeMemory(pBuffer);
 
-                        /* A user logged in, but it could be a stale/orphaned logon session. */
-                        BOOL bFoundInLUIDs = FALSE;
-                        for (DWORD dwIndex = 0; dwIndex < a_dwNumOfProcLUIDs; dwIndex++)
+                    /* A user logged in, but it could be a stale/orphaned logon session. */
+                    BOOL bFoundInLUIDs = FALSE;
+                    for (DWORD dwIndex = 0; dwIndex < a_dwNumOfProcLUIDs; dwIndex++)
+                    {
+                        if (   (a_pLuid[dwIndex].HighPart == sessionData->LogonId.HighPart)
+                            && (a_pLuid[dwIndex].LowPart == sessionData->LogonId.LowPart))
                         {
-                            if (   (a_pLuid[dwIndex].HighPart == sessionData->LogonId.HighPart)
-                                && (a_pLuid[dwIndex].LowPart == sessionData->LogonId.LowPart))
-                            {
-                                bLoggedIn = TRUE;
-                                Log(("vboxVMInfoThread: User \"%ls\" is logged in!\n", a_pUserInfo->szUser));
-                                break;
-                            }
+                            bLoggedIn = TRUE;
+                            Log(("vboxVMInfoThread: Users: User \"%ls\" is logged in!\n", a_pUserInfo->szUser));
+                            break;
                         }
                     }
                 }
@@ -296,7 +307,7 @@ int vboxVMInfoUser(VBOXINFORMATIONCONTEXT* a_pCtx)
 {
     PLUID pSessions = NULL;
     ULONG ulCount = 0;
-    NTSTATUS ret = 0;
+    NTSTATUS r = 0;
 
     int iUserCount = 0;
     char szUserList[4096] = {0};
@@ -304,12 +315,12 @@ int vboxVMInfoUser(VBOXINFORMATIONCONTEXT* a_pCtx)
 
     /* This function can report stale or orphaned interactive logon sessions of already logged
        off users (especially in Windows 2000). */
-    ret = LsaEnumerateLogonSessions(&ulCount, &pSessions);
-    Log(("vboxVMInfoThread: Found %d users.\n", ulCount));
+    r = LsaEnumerateLogonSessions(&ulCount, &pSessions);
+    Log(("vboxVMInfoThread: Users: Found %d users.\n", ulCount));
 
-    if (ret != STATUS_SUCCESS)
+    if (r != STATUS_SUCCESS)
     {
-        Log(("vboxVMInfoThread: LsaEnumerate failed %lu\n", LsaNtStatusToWinError(ret)));
+        Log(("vboxVMInfoThread: Users: LsaEnumerate failed %lu\n", LsaNtStatusToWinError(r)));
         return 1;
     }
 
@@ -355,6 +366,6 @@ int vboxVMInfoUser(VBOXINFORMATIONCONTEXT* a_pCtx)
     }
     a_pCtx->cUsers = iUserCount;
 
-    return ret;
+    return r;
 }
 
