@@ -366,7 +366,7 @@ void VBoxVMSettingsDlg::revalidate (QIWidgetValidator *aWval)
     QString text;
     valid = page->revalidate (text, pageTitle);
     text = text.isEmpty() ? QString::null :
-           tr ("%1 on the <b>%2</b> page.").arg (text, pageTitle);
+           tr ("On the <b>%1</b> page, %2").arg (pageTitle, text);
     aWval->setLastWarning (text);
     valid ? setWarning (text) : setError (text);
 
