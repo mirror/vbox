@@ -210,9 +210,9 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
          * not charge the battery */
         uint32_t uBs = PDM_ACPI_BAT_STATE_CHARGED;
         if (powerStatus.BatteryFlag & 8)
-            uBs = PDM_ACPI_BAT_STATE_DISCHARGING;
-        else if (powerStatus.ACLineStatus == 0 || powerStatus.ACLineStatus == 255)
             uBs = PDM_ACPI_BAT_STATE_CHARGING;
+        else if (powerStatus.ACLineStatus == 0 || powerStatus.ACLineStatus == 255)
+            uBs = PDM_ACPI_BAT_STATE_DISCHARGING;
         if (powerStatus.BatteryFlag & 4)
             uBs |= PDM_ACPI_BAT_STATE_CRITICAL;
         *penmBatteryState = (PDMACPIBATSTATE)uBs;
@@ -395,9 +395,9 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
     /* charging/discharging bits are mutual exclusive */
     uint32_t uBs = PDM_ACPI_BAT_STATE_CHARGED;
     if (fDischarging)
-        uBs = PDM_ACPI_BAT_STATE_CHARGING;
-    else if (fCharging)
         uBs = PDM_ACPI_BAT_STATE_DISCHARGING;
+    else if (fCharging)
+        uBs = PDM_ACPI_BAT_STATE_CHARGING;
     if (fCritical)
         uBs |= PDM_ACPI_BAT_STATE_CRITICAL;
     *penmBatteryState = (PDMACPIBATSTATE)uBs;
