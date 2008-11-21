@@ -59,6 +59,7 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
 
     /* Name and OS page */
     mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
+
     mWvalNameAndOS = new QIWidgetValidator (mPageNameAndOS, this);
     connect (mWvalNameAndOS, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableNext (const QIWidgetValidator*)));
@@ -68,10 +69,18 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     CSystemProperties sysProps = vboxGlobal().virtualBox().GetSystemProperties();
     const uint MinRAM = sysProps.GetMinGuestRAM();
     const uint MaxRAM = sysProps.GetMaxGuestRAM();
+    mSlRAM->setPageStep (calcPageStep (MaxRAM));
+    mSlRAM->setSingleStep (mSlRAM->pageStep() / 4);
+    mSlRAM->setTickInterval (mSlRAM->pageStep());
+    mSlRAM->setRange ((MinRAM / mSlRAM->pageStep()) * mSlRAM->pageStep(), MaxRAM);
+    mLeRAM->setFixedWidthByText ("99999");
     mLeRAM->setValidator (new QIntValidator (MinRAM, MaxRAM, this));
+
     mWvalMemory = new QIWidgetValidator (mPageMemory, this);
     connect (mWvalMemory, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableNext (const QIWidgetValidator*)));
+    connect (mWvalMemory, SIGNAL (isValidRequested (QIWidgetValidator*)),
+             this, SLOT (revalidate (QIWidgetValidator*)));
     connect (mSlRAM, SIGNAL (valueChanged (int)),
              this, SLOT (slRAMValueChanged (int)));
     connect (mLeRAM, SIGNAL (textChanged (const QString&)),
@@ -80,6 +89,7 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     /* HDD Images page */
     mHDCombo->setType (VBoxDefs::MediaType_HardDisk);
     mHDCombo->repopulate();
+
     mWvalHDD = new QIWidgetValidator (mPageHDD, this);
     connect (mWvalHDD, SIGNAL (validityChanged (const QIWidgetValidator*)),
              this, SLOT (enableNext (const QIWidgetValidator*)));
@@ -91,29 +101,13 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
     connect (mPbNewHD, SIGNAL (clicked()), this, SLOT (showNewHDWizard()));
     connect (mPbExistingHD, SIGNAL (clicked()), this, SLOT (showMediaManager()));
 
-    /* Summary page */
-
-
     /* Name and OS page */
+    onOSTypeChanged();
 
     /* Memory page */
-    mSlRAM->setPageStep (calcPageStep (MaxRAM));
-    mSlRAM->setSingleStep (mSlRAM->pageStep() / 4);
-    mSlRAM->setTickInterval (mSlRAM->pageStep());
-    /* Setup the scale so that ticks are at page step boundaries */
-    mSlRAM->setRange ((MinRAM / mSlRAM->pageStep()) * mSlRAM->pageStep(),
-                      MaxRAM);
-    /* Initial RAM value is set in onTypeChanged()
-     * limit min/max. size of QLineEdit */
-    mLeRAM->setFixedWidthByText ("99999");
-    /* Ensure mLeRAM value and validation is updated */
     slRAMValueChanged (mSlRAM->value());
 
-    /* HDD Images page */
-
-    /* Summary page */
-    /* Update the next button state for pages with validation
-     * (validityChanged() connected to enableNext() will do the job) */
+    /* Initial revalidation */
     mWvalNameAndOS->revalidate();
     mWvalMemory->revalidate();
     mWvalHDD->revalidate();
@@ -244,7 +238,16 @@ void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
     bool valid = aWval->isOtherValid();
 
     /* Do individual validations for pages */
-    if (aWval->widget() == mPageHDD)
+    ulong memorySize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    ulong summarySize = (ulong)(mSlRAM->value()) +
+                        (ulong)(VBoxGlobal::requiredVideoMemory() / _1M);
+    if (aWval->widget() == mPageMemory)
+    {
+        valid = true;
+        if (summarySize > 0.5 * memorySize)
+            valid = false;
+    }
+    else if (aWval->widget() == mPageHDD)
     {
         valid = true;
         if (mGbHDA->isChecked() && mHDCombo->id().isNull())
@@ -332,6 +335,10 @@ bool VBoxNewVMWzd::constructMachine()
 
     /* RAM size */
     mMachine.SetMemorySize (mSlRAM->value());
+
+    /* VRAM size - select maximum between recommended and minimum for fullscreen */
+    mMachine.SetVRAMSize (qMax (type.GetRecommendedVRAM(),
+                                (ULONG) (VBoxGlobal::requiredVideoMemory() / _1M)));
 
     /* Add one network adapter (NAT) by default */
     {

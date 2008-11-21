@@ -3921,6 +3921,28 @@ QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
 }
 
 /**
+ *  Returns the required video memory in bytes for the current desktop
+ *  resolution at maximum possible screen depth in bpp.
+ */
+/* static */
+quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine)
+{
+    QSize desktopRes = QApplication::desktop()->screenGeometry().size();
+    /* Calculate summary required memory amount in bits */
+    quint64 needBits = (desktopRes.width() /* display width */ *
+                        desktopRes.height() /* display height */ *
+                        32 /* we will take the maximum possible bpp for now */ +
+                        8 * _1M /* current cache per screen - may be changed in future */) *
+                       (!aMachine || aMachine->isNull() ? 1 : aMachine->GetMonitorCount()) +
+                       8 * 4096 /* adapter info */;
+    /* Translate value into megabytes with rounding to highest side */
+    quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
+                         needBits / (8 * _1M) /* convert to megabytes */;
+
+    return needMBytes * _1M;
+}
+
+/**
  * Puts soft hyphens after every path component in the given file name.
  *
  * @param aFileName File name (must be a full path name).
