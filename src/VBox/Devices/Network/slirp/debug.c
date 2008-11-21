@@ -29,63 +29,6 @@ dump_packet(void *dat, int n)
 }
 #endif
 
-#if 0
-/*
- * Statistic routines
- *
- * These will print statistics to the screen, the debug file (dfd), or
- * a buffer, depending on "type", so that the stats can be sent over
- * the link as well.
- */
-
-void
-ttystats(ttyp)
-        struct ttys *ttyp;
-{
-        struct slirp_ifstats *is = &ttyp->ifstats;
-        char buff[512];
-
-        lprint(" \r\n");
-
-        if (if_comp & IF_COMPRESS)
-           strcpy(buff, "on");
-        else if (if_comp & IF_NOCOMPRESS)
-           strcpy(buff, "off");
-        else
-           strcpy(buff, "off (for now)");
-        lprint("Unit %d:\r\n", ttyp->unit);
-        lprint("  using %s encapsulation (VJ compression is %s)\r\n", (
-#ifdef USE_PPP
-               ttyp->proto==PROTO_PPP?"PPP":
-#endif
-               "SLIP"), buff);
-        lprint("  %d baudrate\r\n", ttyp->baud);
-        lprint("  interface is %s\r\n", ttyp->up?"up":"down");
-        lprint("  using fd %d, guardian pid is %d\r\n", ttyp->fd, ttyp->pid);
-#ifndef FULL_BOLT
-        lprint("  towrite is %d bytes\r\n", ttyp->towrite);
-#endif
-        if (ttyp->zeros)
-           lprint("  %d zeros have been typed\r\n", ttyp->zeros);
-        else if (ttyp->ones)
-           lprint("  %d ones have been typed\r\n", ttyp->ones);
-        lprint("Interface stats:\r\n");
-        lprint("  %6d output packets sent (%d bytes)\r\n", is->out_pkts, is->out_bytes);
-        lprint("  %6d output packets dropped (%d bytes)\r\n", is->out_errpkts, is->out_errbytes);
-        lprint("  %6d input packets received (%d bytes)\r\n", is->in_pkts, is->in_bytes);
-        lprint("  %6d input packets dropped (%d bytes)\r\n", is->in_errpkts, is->in_errbytes);
-        lprint("  %6d bad input packets\r\n", is->in_mbad);
-}
-
-void
-allttystats()
-{
-        struct ttys *ttyp;
-
-        for (ttyp = ttys; ttyp; ttyp = ttyp->next)
-           ttystats(ttyp);
-}
-#endif
 
 void
 ipstats(PNATState pData)
@@ -111,24 +54,6 @@ ipstats(PNATState pData)
         lprint("  %6d total packets delivered\r\n", ipstat.ips_delivered);
 }
 
-#if 0
-void
-vjstats()
-{
-        lprint(" \r\n");
-
-        lprint("VJ compression stats:\r\n");
-
-        lprint("  %6d outbound packets (%d compressed)\r\n",
-               comp_s.sls_packets, comp_s.sls_compressed);
-        lprint("  %6d searches for connection stats (%d misses)\r\n",
-               comp_s.sls_searches, comp_s.sls_misses);
-        lprint("  %6d inbound uncompressed packets\r\n", comp_s.sls_uncompressedin);
-        lprint("  %6d inbound compressed packets\r\n", comp_s.sls_compressedin);
-        lprint("  %6d inbound unknown type packets\r\n", comp_s.sls_errorin);
-        lprint("  %6d inbound packets tossed due to error\r\n", comp_s.sls_tossed);
-}
-#endif
 
 void
 tcpstats(PNATState pData)

@@ -62,8 +62,6 @@ DECLINLINE(void) __debug_log(FILE *pIgnore, const char *pszFormat, ...)
 #endif  /* !LOG_ENABLED */
 
 void debug_init _P((char *, int));
-/*void ttystats _P((struct ttys *)); */
-void allttystats _P((void));
 void ipstats _P((PNATState));
 void tcpstats _P((PNATState));
 void udpstats _P((PNATState));
