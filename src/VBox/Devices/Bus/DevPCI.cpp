@@ -864,7 +864,6 @@ static void pci_set_io_region_addr(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t u
 
 static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint8_t cBridgeDepth, uint8_t *paBridgePositions)
 {
-    PCIIORegion *r;
     uint32_t *paddr;
     int i, pin, pic_irq;
     uint16_t devclass, vendor_id, device_id;
@@ -1232,9 +1231,9 @@ static DECLCALLBACK(int) pciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     /*
      * Save IRQ states.
      */
-    for (uint8_t i = 0; i < PCI_IRQ_PINS; i++)
+    for (i = 0; i < PCI_IRQ_PINS; i++)
         SSMR3PutU32(pSSMHandle, pThis->pci_irq_levels[i]);
-    for (uint8_t i = 0; i < PCI_APIC_IRQ_PINS; i++)
+    for (i = 0; i < PCI_APIC_IRQ_PINS; i++)
         SSMR3PutU32(pSSMHandle, pThis->pci_apic_irq_levels[i]);
 
     SSMR3PutU32(pSSMHandle, pThis->acpi_irq_level);
