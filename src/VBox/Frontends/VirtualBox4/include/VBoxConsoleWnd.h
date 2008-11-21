@@ -209,49 +209,49 @@ private:
     QActionGroup *mRunningActions;
     QActionGroup *mRunningOrPausedActions;
 
-    // Machine actions
-    QAction *vmFullscreenAction;
-    QAction *vmSeamlessAction;
-    QAction *vmAutoresizeGuestAction;
-    QAction *vmAdjustWindowAction;
-    QAction *vmTypeCADAction;
+    /* Machine actions */
+    QAction *mVmFullscreenAction;
+    QAction *mVmSeamlessAction;
+    QAction *mVmAutoresizeGuestAction;
+    QAction *mVmAdjustWindowAction;
+    QAction *mVmTypeCADAction;
 #if defined(Q_WS_X11)
-    QAction *vmTypeCABSAction;
+    QAction *mVmTypeCABSAction;
 #endif
-    QAction *vmResetAction;
-    QAction *vmPauseAction;
-    QAction *vmACPIShutdownAction;
-    QAction *vmCloseAction;
-    QAction *vmTakeSnapshotAction;
-    QAction *vmDisableMouseIntegrAction;
-    QAction *vmShowInformationDlgAction;
+    QAction *mVmResetAction;
+    QAction *mVmPauseAction;
+    QAction *mVmACPIShutdownAction;
+    QAction *mVmCloseAction;
+    QAction *mVmTakeSnapshotAction;
+    QAction *mVmDisableMouseIntegrAction;
+    QAction *mVmShowInformationDlgAction;
 
-    // Devices actions
-    QAction *devicesMountFloppyImageAction;
-    QAction *devicesUnmountFloppyAction;
-    QAction *devicesMountDVDImageAction;
-    QAction *devicesUnmountDVDAction;
-    QAction *devicesSwitchVrdpAction;
-    QAction *devicesSFDialogAction;
-    QAction *devicesInstallGuestToolsAction;
+    /* Devices actions */
+    QAction *mDevicesMountFloppyImageAction;
+    QAction *mDevicesUnmountFloppyAction;
+    QAction *mDevicesMountDVDImageAction;
+    QAction *mDevicesUnmountDVDAction;
+    QAction *mDevicesSwitchVrdpAction;
+    QAction *mDevicesSFDialogAction;
+    QAction *mDevicesInstallGuestToolsAction;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    // Debugger actions
-    QAction *dbgStatisticsAction;
-    QAction *dbgCommandLineAction;
-    QAction *dbgLoggingAction;
+    /* Debugger actions */
+    QAction *mDbgStatisticsAction;
+    QAction *mDbgCommandLineAction;
+    QAction *mDbgLoggingAction;
 #endif
 
-    // Help actions
+    /* Help actions */
     VBoxHelpActions mHelpActions;
 
-    // Machine popup menus
-    VBoxSwitchMenu *vmAutoresizeMenu;
-    VBoxSwitchMenu *vmDisMouseIntegrMenu;
+    /* Machine popup menus */
+    VBoxSwitchMenu *mVmAutoresizeMenu;
+    VBoxSwitchMenu *mVmDisMouseIntegrMenu;
 
-    // Devices popup menus
-    bool waitForStatusBarChange;
-    bool statusBarChangedInside;
+    /* Devices popup menus */
+    bool mWaitForStatusBarChange : 1;
+    bool mStatusBarChangedInside : 1;
 
     QAction *mDevicesUSBMenuSeparator;
     QAction *mDevicesVRDPMenuSeparator;
