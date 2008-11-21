@@ -380,7 +380,7 @@ void QIMessageBox::closeEvent (QCloseEvent *e)
 
 void QIMessageBox::reject()
 {
-    if (mButtonEsc != NULL)
+    if (mButtonEsc)
     {
         QDialog::reject();
         setResult (mButtonEsc & ButtonMask);
