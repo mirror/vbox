@@ -51,13 +51,11 @@ OTHER_CLEAN   += \
 		deffiles \
 		routines.sh \
 		vboxdrv.sh \
-		vboxnet.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
 	$(wildcard $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-*) \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/,\
 		vboxdrv.sh \
-		vboxnet.sh \
 		install.sh)
 
 #
@@ -68,14 +66,7 @@ linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
         VBoxSysInfo.sh \
-	VBox.sh=>VBox.sh \
-	$(PATH_linux-bin)/VBoxAddIF.sh
-linux-bin_CLEAN = \
-	$(PATH_linux-bin)/VBoxAddIF.sh
-
-$$(PATH_linux-bin)/VBoxAddIF.sh: $(PATH_SUB_CURRENT)/VBoxAddIF.sh $(VBOX_VERSION_STAMP) | $$(dir $$@)
-	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(SED) -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" --output $@ $<
+	VBox.sh=>VBox.sh
 
 INSTALLS += linux-misc
 linux-misc_INST = bin/
@@ -151,7 +142,6 @@ VBOX_LNX_NO_STRIP = \
         VBoxSysInfo.sh \
 	VBox.sh \
 	VBox.png \
-	VBoxAddIF.sh \
 	src
 
 # Qt4 GUI
@@ -233,7 +223,6 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
-		$(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
 		$(wildcard $(PATH_BIN)/src/*) \
@@ -245,7 +234,6 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
@@ -259,9 +247,6 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 		-e "s|%PACKAGE%|virtualbox|g" \
 		--output $@ \
 		$<
-
-$(VBOX_LNX_INST_OUT_DIR)/vboxnet.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxnet.sh.in | $$(dir $$@)
-	$(QUIET)$(SED_EXT) -e "s|%NOLSB%|yes|g" --output $@ $<
 
 $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh | $$(dir $$@)
 	$(QUIET)$(SED) \
