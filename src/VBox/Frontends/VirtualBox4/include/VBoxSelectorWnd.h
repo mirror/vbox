@@ -146,10 +146,6 @@ private:
     QAction *vmRefreshAction;
     QAction *vmShowLogsAction;
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    QAction *mTrayShowWindowAction;
-#endif
-
     VBoxHelpActions mHelpActions;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -213,11 +209,16 @@ private slots:
 
 private:
 
+    bool mActive;           /* Is systray menu active/available? */
+
     /* The vm list model */
     VBoxVMModel *mVMModel;
 
     VBoxSelectorWnd* mParent;
     QMenu *mTrayIconMenu;
+
+    QAction *mShowSelectorAction;
+    QAction *mExitSelectorAction;
     QAction *mVmConfigAction;
     QAction *mVmDeleteAction;
     QAction *mVmStartAction;
