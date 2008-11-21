@@ -22,12 +22,35 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# For 64-bit Windows we currently use gcc (due to MSVC unaware of such a novel 
+# thing as C99, a lot of GCC extensions deployed by QEMU
+# and calling convention differences) to cross-compile code to Linux/ELF 
+# and generate invocation wrappers.
+if1of (win.amd64, $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+ REM_MOD              += VBoxREM2
+ SYSMODS              += VBoxREM2
+ DLLS                 += VBoxREM
+# IMPORT_LIBS          += VBoxREMImp
+else
+ REM_MOD              += VBoxREM
+ IMPORT_LIBS          += VBoxREM
+endif
 
-REM_MOD              += VBoxREM
-#DLLS                 += VBoxREM
-IMPORT_LIBS          += VBoxREM
-
-$(REM_MOD)_TEMPLATE  = VBOXR3NP
+ifeq ($(KBUILD_TARGET), win)
+ TEMPLATE_DUMMY = dummy template (move to kBuild)
+ $(REM_MOD)_TOOL.win.x86    = MINGW32
+ $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
+ $(REM_MOD)_TEMPLATE        = DUMMY
+ $(REM_MOD)_SDKS.win.x86    = W32API
+ $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
+ $(REM_MOD)_CFLAGS          = -Wall -g
+ $(REM_MOD)_CFLAGS.debug    = -O0
+ $(REM_MOD)_CFLAGS.release += -fomit-frame-pointer -fno-gcse -O2
+ $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
+ $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
+else
+ $(REM_MOD)_TEMPLATE  = VBOXR3NP
+endif
 
 OTHER_CLEAN          += 
 
@@ -80,12 +103,41 @@ else
  $(REM_MOD)_INCS             +=  tcg/i386
 endif
 
-
-$(REM_MOD)_SOURCES.debug = \
+$(REM_MOD)_SOURCES.debug += \
 	Sun/testmath.c
 $(REM_MOD)_SOURCES.win.x86  = $(REM_MOD).def
 ifneq ($(REM_MOD),VBoxREM2)
  $(REM_MOD)_POST_CMDS       = $(VBOX_SIGN_IMAGE_CMDS)
+endif
+
+ifeq ($(REM_MOD),VBoxREM2)
+#
+# The VBoxREM2 wrapper.
+#
+VBoxREM_TEMPLATE       = VBOXR3
+VBoxREM_DEFS           = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+VBoxREM_SOURCES        =   \
+	VBoxREMWrapper.cpp \
+	VBoxREMWrapperA.asm
+VBoxREM_LIBS           =   \
+	$(LIB_VMM)         \
+	$(LIB_RUNTIME)
+
+$(REM_MOD)_TEMPLATE        = VBOXNOCRTGAS
+$(REM_MOD)_DEFS           += LOG_USE_C99 $(ARCH_BITS_DEFS)
+$(REM_MOD)_CFLAGS.amd64    = -O2
+$(REM_MOD)_CFLAGS.debug    = -O0
+
+# This doesn't fit in IPRT because it requires GAS and is LGPL.
+$(REM_MOD)_SOURCES        += \
+	Sun/e_powl-$(KBUILD_TARGET_ARCH).S
+
+$(REM_MOD)_INCS           += \
+        Sun/crt
+$(REM_MOD)_LIBS           = \
+	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
+$(REM_MOD)_SYSSUFF        = .rel
+
 endif
 
 # gcc targets
@@ -108,7 +160,8 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 #$(REM_MOD)_LIBS           = 	\
 	$(LIB_VMM) 		\
- 	$(LIB_RUNTIME)
+	$(LIB_RUNTIME)
+
 
 
 if1of ($(KBUILD_TARGET), linux darwin solaris)
