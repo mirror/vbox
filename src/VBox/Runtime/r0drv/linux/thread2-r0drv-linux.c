@@ -38,16 +38,18 @@
 #include <iprt/err.h>
 #include "internal/thread.h"
 
-/* @todo Implement
+
+/** @todo Later.
 RTDECL(RTTHREAD) RTThreadSelf(void)
 {
     return rtThreadGetByNative((RTNATIVETHREAD)current);
 }
 */
 
+
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    return !in_atomic();
+    return !in_atomic() && !irqs_disabled();
 }
- 
+
