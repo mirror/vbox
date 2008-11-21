@@ -1013,35 +1013,26 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     }
 
 #elif defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-
-    if(OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
+    if (OpenReq.enmTrunkType == kIntNetTrunkType_NetFlt)
     {
 # ifndef VBOX_NETFLT_ONDEMAND_BIND
-        /* we have a ndis filter driver started on system boot before the VBoxDrv,
-         * tell the filter driver to init VBoxNetFlt functionality */
+        /*
+         * We have a ndis filter driver started on system boot before the VBoxDrv,
+         * tell the filter driver to init VBoxNetFlt functionality.
+         */
         rc = drvIntNetWinConstruct(pDrvIns, pCfgHandle);
-        Assert(RT_SUCCESS(rc));
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("drvIntNetConstruct: drvIntNetWinConstruct failed, rc (0x%x)", rc));
-            return rc;
-        }
+        AssertLogRelMsgRCReturn(rc, ("drvIntNetWinConstruct failed, rc=%Rrc", rc), rc);
 # endif
 
+        /*
+         * <Describe what this does here or/and in the function docs of drvIntNetWinIfGuidToBindName>.
+         */
         char szBindName[INTNET_MAX_TRUNK_NAME];
-        int cBindName = INTNET_MAX_TRUNK_NAME;
-
-        rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, cBindName);
-        Assert(RT_SUCCESS(rc));
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("drvIntNetConstruct: drvIntNetWinIfGuidToBindName failed, rc (0x%x)", rc));
-            return rc;
-        }
-
+        rc = drvIntNetWinIfGuidToBindName(OpenReq.szTrunk, szBindName, INTNET_MAX_TRUNK_NAME);
+        AssertLogRelMsgRCReturn(rc, ("drvIntNetWinIfGuidToBindName failed, rc=%Rrc", rc), rc);
         strcpy(OpenReq.szTrunk, szBindName);
     }
-#endif
+#endif /* WINDOWS && NETFLT */
 
     /*
      * Create the event semaphores
