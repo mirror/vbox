@@ -40,15 +40,16 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 }
 
 void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
-                                         const VBoxGlobalSettings &)
+                                     const VBoxGlobalSettings &aGs)
 {
     mPsHardDisk->setPath (aProps.GetDefaultHardDiskFolder());
     mPsMach->setPath (aProps.GetDefaultMachineFolder());
     mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
+    mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
 }
 
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
-                                       VBoxGlobalSettings &)
+                                       VBoxGlobalSettings &aGs)
 {
     if (mPsHardDisk->isModified())
         aProps.SetDefaultHardDiskFolder (mPsHardDisk->path());
@@ -56,6 +57,7 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
         aProps.SetDefaultMachineFolder (mPsMach->path());
     if (aProps.isOk() && mPsVRDP->isModified())
         aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
+    aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
 }
 
 void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
@@ -63,6 +65,7 @@ void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (aWidget, mPsHardDisk);
     setTabOrder (mPsHardDisk, mPsMach);
     setTabOrder (mPsMach, mPsVRDP);
+    setTabOrder (mPsVRDP, mCbCheckTrayIcon);
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()
@@ -81,5 +84,7 @@ void VBoxGLSettingsGeneral::retranslateUi()
     mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
                                "provides authentication for Remote Display "
                                "(VRDP) clients."));
+    mCbCheckTrayIcon->setWhatsThis (tr ("When checked, the application will provide "
+                                        "an icon with a context menu in the system tray."));
 }
 
