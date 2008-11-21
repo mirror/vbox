@@ -116,6 +116,26 @@
     </widget>
    </item>
    <item row="4" column="0" colspan="2" >
+    <widget class="Line" name="mLnSeparator" >
+     <property name="orientation" >
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="4" >
+    <widget class="QCheckBox" name="mCbCheckTrayIcon" >
+     <property name="whatsThis" >
+      <string>When checked, the application will provide an icon with a context menu in the system tray.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Show system tray icon</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
