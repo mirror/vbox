@@ -406,6 +406,9 @@ int Service::validateValue(const char *pszValue, uint32_t cbValue)
     if (RT_SUCCESS(rc))
         rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, (uint32_t) MAX_VALUE_LEN),
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    for (unsigned i = 0; RT_SUCCESS(rc) && i < cbValue; ++i)
+        if (pszValue[i] == '*' || pszValue[i] == '?' || pszValue[i] == '|')
+            rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
     LogFlowFunc(("returning %Rrc\n", rc));
