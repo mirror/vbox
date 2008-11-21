@@ -13,6 +13,9 @@
  * Only done when the tty being used is /dev/tty --RedWolf */
 extern struct termios slirp_tty_settings;
 extern int slirp_tty_restore;
+#ifdef DEBUG
+void dump_packet(void *, int);
+#endif
 
 
 /*
