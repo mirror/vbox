@@ -1,4 +1,4 @@
-/* $Id:$ */
+/* $Id$ */
 /** @file
  * VBoxGuest - Guest Additions Driver.
  */
@@ -1051,7 +1051,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
                                          PVBOXGUESTSESSION pSession,
                                          VBoxGuestHGCMCallInfo *pInfo,
                                          uint32_t cMillies, bool fInterruptible,
-                                         size_t cbData, size_t *pcbDataReturned)
+                                         size_t cbExtra, size_t cbData, size_t *pcbDataReturned)
 {
     /*
      * Some more validations.
@@ -1061,7 +1061,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
         Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cParm=%RX32 is not sane\n", pInfo->cParms));
         return VERR_INVALID_PARAMETER;
     }
-    const size_t cbActual = sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter);
+    const size_t cbActual = cbExtra + sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter);
     if (cbData < cbActual)
     {
         Log(("VBoxGuestCommonIOCtl: HGCM_CALL: cbData=%#zx (%zu) required size is %#zx (%zu)\n",
@@ -1262,7 +1262,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         bool fInterruptible = pSession->R0Process != NIL_RTR0PROCESS;
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, RT_INDEFINITE_WAIT,
                                            fInterruptible,
-                                           cbData, pcbDataReturned);
+                                           0, cbData, pcbDataReturned);
     }
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0)))
     {
@@ -1270,7 +1270,7 @@ int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUE
         VBoxGuestHGCMCallInfoTimed *pInfo = (VBoxGuestHGCMCallInfoTimed *)pvData;
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, &pInfo->info, pInfo->u32Timeout,
                                            !!pInfo->fInterruptible || pSession->R0Process != NIL_RTR0PROCESS,
-                                           cbData, pcbDataReturned);
+                                           RT_OFFSETOF(VBoxGuestHGCMCallInfoTimed, info), cbData, pcbDataReturned);
     }
 #endif /* VBOX_WITH_HGCM */
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_LOG(0)))
