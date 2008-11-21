@@ -33,14 +33,6 @@ const Global::OSType Global::sOSTypes [SchemaDefs::OSTypeId_COUNT] =
     /* NOTE1: we assume that unknown is always the first entry!
      * NOTE2: please use powers of 2 when specifying the size of harddisks since
      *        '2GB' looks better than '1.95GB' (= 2000MB) */
-    { "Other",   "Other",             SchemaDefs_OSTypeId_Other,           "Other/Unknown",
-      VBOXOSTYPE_Unknown,         false,  64,   4,  2 * _1K },
-    { "Other",   "Other",             SchemaDefs_OSTypeId_DOS,             "DOS",
-      VBOXOSTYPE_DOS,             false,  32,   4,      512 },
-    { "Other",   "Other",             SchemaDefs_OSTypeId_Netware,         "Netware",
-      VBOXOSTYPE_Netware,         false, 512,   4,  4 * _1K },
-    { "Other",   "Other",             SchemaDefs_OSTypeId_L4,              "L4",
-      VBOXOSTYPE_L4,              false,  64,   4,  2 * _1K },
     { "Windows", "Microsoft Windows", SchemaDefs_OSTypeId_Windows31,       "Windows 3.1",
       VBOXOSTYPE_Win31,           false,  32,   4,  1 * _1K },
     { "Windows", "Microsoft Windows", SchemaDefs_OSTypeId_Windows95,       "Windows 95",
@@ -148,7 +140,15 @@ const Global::OSType Global::sOSTypes [SchemaDefs::OSTypeId_COUNT] =
     { "Solaris", "Solaris",           SchemaDefs_OSTypeId_OpenSolaris,     "OpenSolaris",
       VBOXOSTYPE_OpenSolaris,     false, 512,  12, 16 * _1K },
     { "Solaris", "Solaris",           SchemaDefs_OSTypeId_OpenSolaris_64,  "OpenSolaris (64 bit)",
-      VBOXOSTYPE_OpenSolaris_x64, true,  512,  12, 16 * _1K }
+      VBOXOSTYPE_OpenSolaris_x64, true,  512,  12, 16 * _1K },
+    { "Other",   "Other",             SchemaDefs_OSTypeId_DOS,             "DOS",
+      VBOXOSTYPE_DOS,             false,  32,   4,      512 },
+    { "Other",   "Other",             SchemaDefs_OSTypeId_Netware,         "Netware",
+      VBOXOSTYPE_Netware,         false, 512,   4,  4 * _1K },
+    { "Other",   "Other",             SchemaDefs_OSTypeId_L4,              "L4",
+      VBOXOSTYPE_L4,              false,  64,   4,  2 * _1K },
+    { "Other",   "Other",             SchemaDefs_OSTypeId_Other,           "Other/Unknown",
+      VBOXOSTYPE_Unknown,         false,  64,   4,  2 * _1K }
 };
 
 /**

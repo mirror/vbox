@@ -832,6 +832,8 @@ public:
     static quint64 parseSize (const QString &);
     static QString formatSize (quint64, int aMode = 0);
 
+    static quint64 requiredVideoMemory (CMachine *aMachine = 0);
+
     static QString locationForHTML (const QString &aFileName);
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
