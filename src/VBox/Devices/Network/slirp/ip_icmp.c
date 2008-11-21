@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ip_icmp.c	8.2 (Berkeley) 1/4/94
+ *      @(#)ip_icmp.c   8.2 (Berkeley) 1/4/94
  * ip_icmp.c,v 1.7 1995/05/30 08:09:42 rgrimes Exp
  */
 
@@ -45,13 +45,13 @@ static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp 
 /* list of actions for icmp_error() on RX of an icmp message */
 static const int icmp_flush[19] = {
 /*  ECHO REPLY (0)  */   0,
-		         1,
-		         1,
+                         1,
+                         1,
 /* DEST UNREACH (3) */   1,
 /* SOURCE QUENCH (4)*/   1,
 /* REDIRECT (5) */       1,
-		         1,
-		         1,
+                         1,
+                         1,
 /* ECHO (8) */           0,
 /* ROUTERADVERT (9) */   1,
 /* ROUTERSOLICIT (10) */ 1,
@@ -103,14 +103,14 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
   m->m_len += hlen;
   m->m_data -= hlen;
 
-  /*	icmpstat.icps_inhist[icp->icmp_type]++; */
+  /*    icmpstat.icps_inhist[icp->icmp_type]++; */
   /* code = icp->icmp_code; */
 
   DEBUG_ARG("icmp_type = %d", icp->icmp_type);
   switch (icp->icmp_type) {
   case ICMP_ECHO:
     icp->icmp_type = ICMP_ECHOREPLY;
-    ip->ip_len += hlen;	             /* since ip_input subtracts this */
+    ip->ip_len += hlen;              /* since ip_input subtracts this */
     if (ip->ip_dst.s_addr == alias_addr.s_addr) {
       icmp_reflect(pData, m);
     } else {
@@ -118,11 +118,11 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
       struct sockaddr_in addr;
       if ((so = socreate()) == NULL) goto freeit;
       if(udp_attach(pData, so) == -1) {
-	DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
-		    errno,strerror(errno)));
-	sofree(pData, so);
-	m_free(pData, m);
-	goto end_error;
+        DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
+                    errno,strerror(errno)));
+        sofree(pData, so);
+        m_free(pData, m);
+        goto end_error;
       }
       so->so_m = m;
       so->so_faddr = ip->ip_dst;
@@ -136,26 +136,26 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
       /* Send the packet */
       addr.sin_family = AF_INET;
       if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
-	/* It's an alias */
-	switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
-	case CTL_DNS:
-	  addr.sin_addr = dns_addr;
-	  break;
-	case CTL_ALIAS:
-	default:
-	  addr.sin_addr = loopback_addr;
-	  break;
-	}
+        /* It's an alias */
+        switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
+        case CTL_DNS:
+          addr.sin_addr = dns_addr;
+          break;
+        case CTL_ALIAS:
+        default:
+          addr.sin_addr = loopback_addr;
+          break;
+        }
       } else {
-	addr.sin_addr = so->so_faddr;
+        addr.sin_addr = so->so_faddr;
       }
       addr.sin_port = so->so_fport;
       if(sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
-		(struct sockaddr *)&addr, sizeof(addr)) == -1) {
-	DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-		    errno,strerror(errno)));
-	icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-	udp_detach(pData, so);
+                (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                    errno,strerror(errno)));
+        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+        udp_detach(pData, so);
       }
     } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
     break;
@@ -183,13 +183,13 @@ end_error:
 
 
 /*
- *	Send an ICMP message in response to a situation
+ *      Send an ICMP message in response to a situation
  *
- *	RFC 1122: 3.2.2	MUST send at least the IP header and 8 bytes of header. MAY send more (we do).
- *			MUST NOT change this header information.
- *			MUST NOT reply to a multicast/broadcast IP address.
- *			MUST NOT reply to a multicast/broadcast MAC address.
- *			MUST reply to only the first fragment.
+ *      RFC 1122: 3.2.2 MUST send at least the IP header and 8 bytes of header. MAY send more (we do).
+ *                      MUST NOT change this header information.
+ *                      MUST NOT reply to a multicast/broadcast IP address.
+ *                      MUST NOT reply to a multicast/broadcast MAC address.
+ *                      MUST reply to only the first fragment.
  */
 /*
  * Send ICMP_UNREACH back to the source regarding msrc.
@@ -231,8 +231,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
   if(ip->ip_p == IPPROTO_ICMP) {
     icp = (struct icmp *)((char *)ip + shlen);
     /*
-     *	Assume any unknown ICMP type is an error. This isn't
-     *	specified by the RFC, but think about it..
+     *  Assume any unknown ICMP type is an error. This isn't
+     *  specified by the RFC, but think about it..
      */
     if(icp->icmp_type>18 || icmp_flush[icp->icmp_type]) goto end_error;
   }
@@ -344,7 +344,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
      * mbuf's data back, and adjust the IP length.
      */
     memmove((caddr_t)(ip + 1), (caddr_t)ip + hlen,
-	    (unsigned )(m->m_len - hlen));
+            (unsigned )(m->m_len - hlen));
     hlen -= optlen;
     ip->ip_hl = hlen >> 2;
     ip->ip_len -= optlen;

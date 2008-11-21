@@ -5,8 +5,8 @@
  * terms and conditions of the copyright.
  */
 
-#define PRN_STDERR	1
-#define PRN_SPRINTF	2
+#define PRN_STDERR      1
+#define PRN_SPRINTF     2
 
 /* Unused anyway, using VBox Log facility. */
 #define dfd NULL

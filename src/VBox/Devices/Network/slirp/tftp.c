@@ -74,9 +74,9 @@ static int tftp_session_find(PNATState pData, struct tftp_t *tp)
 
     if (spt->in_use) {
       if (!memcmp(&spt->client_ip, &tp->ip.ip_src, sizeof(spt->client_ip))) {
-	if (spt->client_port == tp->udp.uh_sport) {
-	  return k;
-	}
+        if (spt->client_port == tp->udp.uh_sport) {
+          return k;
+        }
       }
     }
   }
@@ -85,7 +85,7 @@ static int tftp_session_find(PNATState pData, struct tftp_t *tp)
 }
 
 static int tftp_read_data(PNATState pData, struct tftp_session *spt, u_int16_t block_nr,
-			  u_int8_t *buf, int len)
+                          u_int8_t *buf, int len)
 {
   int fd;
   int bytes_read = 0;
@@ -93,7 +93,7 @@ static int tftp_read_data(PNATState pData, struct tftp_session *spt, u_int16_t b
   int n;
 
   n = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
-	       tftp_prefix, spt->filename);
+               tftp_prefix, spt->filename);
   if (n >= sizeof(buffer))
     return -1;
 
@@ -127,7 +127,7 @@ static int tftp_send_oack(PNATState pData,
     m = m_get(pData);
 
     if (!m)
-	return -1;
+        return -1;
 
     memset(m->m_data, 0, m->m_size);
 
@@ -156,8 +156,8 @@ static int tftp_send_oack(PNATState pData,
 
 static int tftp_send_error(PNATState pData,
                            struct tftp_session *spt,
-			   u_int16_t errorcode, const char *msg,
-			   struct tftp_t *recv_tp)
+                           u_int16_t errorcode, const char *msg,
+                           struct tftp_t *recv_tp)
 {
   struct sockaddr_in saddr, daddr;
   struct mbuf *m;
@@ -200,8 +200,8 @@ static int tftp_send_error(PNATState pData,
 
 static int tftp_send_data(PNATState pData,
                           struct tftp_session *spt,
-			  u_int16_t block_nr,
-			  struct tftp_t *recv_tp)
+                          u_int16_t block_nr,
+                          struct tftp_t *recv_tp)
 {
   struct sockaddr_in saddr, daddr;
   struct mbuf *m;
@@ -346,33 +346,33 @@ static void tftp_handle_rrq(PNATState pData, struct tftp_t *tp, int pktlen)
       k += strlen(key) + 1;
 
       if (k >= n) {
-	  tftp_send_error(pData, spt, 2, "Access violation", tp);
-	  return;
+          tftp_send_error(pData, spt, 2, "Access violation", tp);
+          return;
       }
 
       value = (const char *)src + k;
       k += strlen(value) + 1;
 
       if (strcmp(key, "tsize") == 0) {
-	  int tsize = atoi(value);
-	  struct stat stat_p;
+          int tsize = atoi(value);
+          struct stat stat_p;
 
-	  if (tsize == 0 && tftp_prefix) {
-	      char buffer[1024];
-	      int len;
+          if (tsize == 0 && tftp_prefix) {
+              char buffer[1024];
+              int len;
 
-	      len = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
-			     tftp_prefix, spt->filename);
+              len = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
+                             tftp_prefix, spt->filename);
 
-	      if (stat(buffer, &stat_p) == 0)
-		  tsize = stat_p.st_size;
-	      else {
-		  tftp_send_error(pData, spt, 1, "File not found", tp);
-		  return;
-	      }
-	  }
+              if (stat(buffer, &stat_p) == 0)
+                  tsize = stat_p.st_size;
+              else {
+                  tftp_send_error(pData, spt, 1, "File not found", tp);
+                  return;
+              }
+          }
 
-	  tftp_send_oack(pData, spt, "tsize", tsize, tp);
+          tftp_send_oack(pData, spt, "tsize", tsize, tp);
       }
   }
 
@@ -390,8 +390,8 @@ static void tftp_handle_ack(PNATState pData, struct tftp_t *tp, int pktlen)
   }
 
   if (tftp_send_data(pData, &tftp_sessions[s],
-		     ntohs(tp->x.tp_data.tp_block_nr) + 1,
-		     tp) < 0) {
+                     ntohs(tp->x.tp_data.tp_block_nr) + 1,
+                     tp) < 0) {
     return;
   }
 }

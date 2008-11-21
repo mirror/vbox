@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)udp.h	8.1 (Berkeley) 6/10/93
+ *      @(#)udp.h       8.1 (Berkeley) 6/10/93
  * udp.h,v 1.3 1994/08/21 05:27:41 paul Exp
  */
 
@@ -47,18 +47,18 @@ extern struct socket *udp_last_so;
  * Per RFC 768, September, 1981.
  */
 struct udphdr {
-	u_int16_t	uh_sport;		/* source port */
-	u_int16_t	uh_dport;		/* destination port */
-	int16_t	uh_ulen;		/* udp length */
-	u_int16_t	uh_sum;			/* udp checksum */
+        u_int16_t       uh_sport;               /* source port */
+        u_int16_t       uh_dport;               /* destination port */
+        int16_t uh_ulen;                /* udp length */
+        u_int16_t       uh_sum;                 /* udp checksum */
 };
 
 /*
  * UDP kernel structures and variables.
  */
 struct udpiphdr {
-	        struct  ipovly ui_i;            /* overlaid ip structure */
-	        struct  udphdr ui_u;            /* udp header */
+                struct  ipovly ui_i;            /* overlaid ip structure */
+                struct  udphdr ui_u;            /* udp header */
 };
 #define ui_next         ui_i.ih_next
 #define ui_prev         ui_i.ih_prev
@@ -73,17 +73,17 @@ struct udpiphdr {
 #define ui_sum          ui_u.uh_sum
 
 struct udpstat_t {
-	                                /* input statistics: */
-	        u_long  udps_ipackets;          /* total input packets */
-	        u_long  udps_hdrops;            /* packet shorter than header */
-	        u_long  udps_badsum;            /* checksum error */
-	        u_long  udps_badlen;            /* data length larger than packet */
-	        u_long  udps_noport;            /* no socket on port */
-	        u_long  udps_noportbcast;       /* of above, arrived as broadcast */
-	        u_long  udps_fullsock;          /* not delivered, input socket full */
-	        u_long  udpps_pcbcachemiss;     /* input packets missing pcb cache */
-	                                /* output statistics: */
-	        u_long  udps_opackets;          /* total output packets */
+                                        /* input statistics: */
+                u_long  udps_ipackets;          /* total input packets */
+                u_long  udps_hdrops;            /* packet shorter than header */
+                u_long  udps_badsum;            /* checksum error */
+                u_long  udps_badlen;            /* data length larger than packet */
+                u_long  udps_noport;            /* no socket on port */
+                u_long  udps_noportbcast;       /* of above, arrived as broadcast */
+                u_long  udps_fullsock;          /* not delivered, input socket full */
+                u_long  udpps_pcbcachemiss;     /* input packets missing pcb cache */
+                                        /* output statistics: */
+                u_long  udps_opackets;          /* total output packets */
 };
 
 /*
