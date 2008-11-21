@@ -95,6 +95,15 @@ public slots:
     void showWindow();
 #endif
 
+    const QAction *vmNewAction() const { return mVmNewAction; }
+    const QAction *vmConfigAction() const { return mVmConfigAction; }
+    const QAction *vmDeleteAction() const { return mVmDeleteAction; }
+    const QAction *vmStartAction() const { return mVmStartAction; }
+    const QAction *vmDiscardAction() const { return mVmDiscardAction; }
+    const QAction *vmPauseAction() const { return mVmPauseAction; }
+    const QAction *vmRefreshAction() const { return mVmRefreshAction; }
+    const QAction *vmShowLogsAction() const { return mVmShowLogsAction; }
+
 protected:
 
     /* Events */
@@ -134,17 +143,17 @@ private:
     QMenu *mVMCtxtMenu;
 
     /* Actions */
-    QAction *fileMediaMgrAction;
-    QAction *fileSettingsAction;
-    QAction *fileExitAction;
-    QAction *vmNewAction;
-    QAction *vmConfigAction;
-    QAction *vmDeleteAction;
-    QAction *vmStartAction;
-    QAction *vmDiscardAction;
-    QAction *vmPauseAction;
-    QAction *vmRefreshAction;
-    QAction *vmShowLogsAction;
+    QAction *mFileMediaMgrAction;
+    QAction *mFileSettingsAction;
+    QAction *mFileExitAction;
+    QAction *mVmNewAction;
+    QAction *mVmConfigAction;
+    QAction *mVmDeleteAction;
+    QAction *mVmStartAction;
+    QAction *mVmDiscardAction;
+    QAction *mVmPauseAction;
+    QAction *mVmRefreshAction;
+    QAction *mVmShowLogsAction;
 
     VBoxHelpActions mHelpActions;
 
@@ -158,15 +167,15 @@ private:
     VBoxVMModel *mVMModel;
 
     /* The right information widgets */
-    QTabWidget *vmTabWidget;
-    VBoxVMDetailsView *vmDetailsView;
-    VBoxSnapshotsWgt *vmSnapshotsWgt;
-    VBoxVMDescriptionPage *vmDescriptionPage;
+    QTabWidget *mVmTabWidget;
+    VBoxVMDetailsView *mVmDetailsView;
+    VBoxSnapshotsWgt *mVmSnapshotsWgt;
+    VBoxVMDescriptionPage *mVmDescriptionPage;
 
-    QPoint normal_pos;
-    QSize normal_size;
+    QPoint mNormalPos;
+    QSize mNormalSize;
 
-    bool doneInaccessibleWarningOnce : 1;
+    bool mDoneInaccessibleWarningOnce : 1;
 };
 
 #ifdef VBOX_GUI_WITH_SYSTRAY

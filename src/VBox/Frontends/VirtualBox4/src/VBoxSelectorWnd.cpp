@@ -380,7 +380,7 @@ VBoxSelectorWnd::
 VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
                  Qt::WindowFlags aFlags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow> (aParent, aFlags)
-    , doneInaccessibleWarningOnce (false)
+    , mDoneInaccessibleWarningOnce (false)
 {
     VBoxGlobalSettings settings = vboxGlobal().settings();
 
@@ -401,52 +401,52 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* actions */
 
-    fileMediaMgrAction = new QAction (this);
-    fileMediaMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
-    fileSettingsAction = new QAction(this);
-    fileSettingsAction->setMenuRole (QAction::PreferencesRole);
-    fileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
-    fileExitAction = new QAction (this);
-    fileExitAction->setMenuRole (QAction::QuitRole);
-    fileExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
+    mFileMediaMgrAction = new QAction (this);
+    mFileMediaMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
+    mFileSettingsAction = new QAction(this);
+    mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
+    mFileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
+    mFileExitAction = new QAction (this);
+    mFileExitAction->setMenuRole (QAction::QuitRole);
+    mFileExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
 
-    vmNewAction = new QAction (this);
-    vmNewAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmNewAction = new QAction (this);
+    mVmNewAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_new_32px.png", ":/new_16px.png"));
-    vmConfigAction = new QAction (this);
-    vmConfigAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmConfigAction = new QAction (this);
+    mVmConfigAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_settings_32px.png", ":/settings_16px.png",
         ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
-    vmDeleteAction = new QAction (this);
-    vmDeleteAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmDeleteAction = new QAction (this);
+    mVmDeleteAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_delete_32px.png", ":/delete_16px.png",
         ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
-    vmStartAction = new QAction (this);
-    vmStartAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmStartAction = new QAction (this);
+    mVmStartAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_start_32px.png", ":/start_16px.png",
         ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
-    vmDiscardAction = new QAction (this);
-    vmDiscardAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmDiscardAction = new QAction (this);
+    mVmDiscardAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_discard_32px.png", ":/discard_16px.png",
         ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
-    vmPauseAction = new QAction (this);
-    vmPauseAction->setCheckable (true);
-    vmPauseAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmPauseAction = new QAction (this);
+    mVmPauseAction->setCheckable (true);
+    mVmPauseAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_pause_32px.png", ":/pause_16px.png",
         ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
-    vmRefreshAction = new QAction (this);
-    vmRefreshAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmRefreshAction = new QAction (this);
+    mVmRefreshAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/refresh_32px.png", ":/refresh_16px.png",
         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
-    vmShowLogsAction = new QAction (this);
-    vmShowLogsAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmShowLogsAction = new QAction (this);
+    mVmShowLogsAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (32, 32), QSize (16, 16),
         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
@@ -491,30 +491,30 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     leftVLayout->addWidget (mVMListView);
 
     /* VM tab widget containing details and snapshots tabs */
-    vmTabWidget = new QTabWidget();
-    rightVLayout->addWidget (vmTabWidget);
+    mVmTabWidget = new QTabWidget();
+    rightVLayout->addWidget (mVmTabWidget);
 
     /* VM details view */
-    vmDetailsView = new VBoxVMDetailsView (NULL, vmRefreshAction);
-    vmTabWidget->addTab (vmDetailsView,
-                         VBoxGlobal::iconSet (":/settings_16px.png"),
-                         QString::null);
+    mVmDetailsView = new VBoxVMDetailsView (NULL, mVmRefreshAction);
+    mVmTabWidget->addTab (mVmDetailsView,
+                          VBoxGlobal::iconSet (":/settings_16px.png"),
+                          QString::null);
 
     /* VM snapshots list */
-    vmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
-    vmTabWidget->addTab (vmSnapshotsWgt,
-                         VBoxGlobal::iconSet (":/take_snapshot_16px.png",
-                                              ":/take_snapshot_dis_16px.png"),
-                         QString::null);
-    vmSnapshotsWgt->setContentsMargins (10, 10, 10, 10);
+    mVmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
+    mVmTabWidget->addTab (mVmSnapshotsWgt,
+                          VBoxGlobal::iconSet (":/take_snapshot_16px.png",
+                                               ":/take_snapshot_dis_16px.png"),
+                          QString::null);
+    mVmSnapshotsWgt->setContentsMargins (10, 10, 10, 10);
 
     /* VM comments page */
-    vmDescriptionPage = new VBoxVMDescriptionPage (this);
-    vmTabWidget->addTab (vmDescriptionPage,
-                         VBoxGlobal::iconSet (":/description_16px.png",
-                                              ":/description_disabled_16px.png"),
-                         QString::null);
-    vmDescriptionPage->setContentsMargins (10, 10, 10, 10);
+    mVmDescriptionPage = new VBoxVMDescriptionPage (this);
+    mVmTabWidget->addTab (mVmDescriptionPage,
+                          VBoxGlobal::iconSet (":/description_16px.png",
+                                               ":/description_disabled_16px.png"),
+                          QString::null);
+    mVmDescriptionPage->setContentsMargins (10, 10, 10, 10);
 
     /* add actions to the toolbar */
 
@@ -522,45 +522,45 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     vmTools->setToolButtonStyle (Qt::ToolButtonTextUnderIcon);
     vmTools->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Preferred);
 
-    vmTools->addAction (vmNewAction);
-    vmTools->addAction (vmConfigAction);
+    vmTools->addAction (mVmNewAction);
+    vmTools->addAction (mVmConfigAction);
 #if 0 /* delete action is really rare */
-    vmTools->addAction (vmDeleteAction);
+    vmTools->addAction (mVmDeleteAction);
 #endif
-    vmTools->addAction (vmStartAction);
-    vmTools->addAction (vmDiscardAction);
+    vmTools->addAction (mVmStartAction);
+    vmTools->addAction (mVmDiscardAction);
 
     /* add actions to menubar */
 
     mFileMenu = menuBar()->addMenu (QString::null);
-    mFileMenu->addAction (fileMediaMgrAction);
+    mFileMenu->addAction (mFileMediaMgrAction);
     mFileMenu->addSeparator();
-    mFileMenu->addAction (fileSettingsAction);
+    mFileMenu->addAction (mFileSettingsAction);
     mFileMenu->addSeparator();
-    mFileMenu->addAction (fileExitAction);
+    mFileMenu->addAction (mFileExitAction);
 
     mVMMenu = menuBar()->addMenu (QString::null);
-    mVMMenu->addAction (vmNewAction);
-    mVMMenu->addAction (vmConfigAction);
-    mVMMenu->addAction (vmDeleteAction);
+    mVMMenu->addAction (mVmNewAction);
+    mVMMenu->addAction (mVmConfigAction);
+    mVMMenu->addAction (mVmDeleteAction);
     mVMMenu->addSeparator();
-    mVMMenu->addAction (vmStartAction);
-    mVMMenu->addAction (vmDiscardAction);
-    mVMMenu->addAction (vmPauseAction);
+    mVMMenu->addAction (mVmStartAction);
+    mVMMenu->addAction (mVmDiscardAction);
+    mVMMenu->addAction (mVmPauseAction);
     mVMMenu->addSeparator();
-    mVMMenu->addAction (vmRefreshAction);
-    mVMMenu->addAction (vmShowLogsAction);
+    mVMMenu->addAction (mVmRefreshAction);
+    mVMMenu->addAction (mVmShowLogsAction);
 
     mVMCtxtMenu = new QMenu (this);
-    mVMCtxtMenu->addAction (vmConfigAction);
-    mVMCtxtMenu->addAction (vmDeleteAction);
+    mVMCtxtMenu->addAction (mVmConfigAction);
+    mVMCtxtMenu->addAction (mVmDeleteAction);
     mVMCtxtMenu->addSeparator();
-    mVMCtxtMenu->addAction (vmStartAction);
-    mVMCtxtMenu->addAction (vmDiscardAction);
-    mVMCtxtMenu->addAction (vmPauseAction);
+    mVMCtxtMenu->addAction (mVmStartAction);
+    mVMCtxtMenu->addAction (mVmDiscardAction);
+    mVMCtxtMenu->addAction (mVmPauseAction);
     mVMCtxtMenu->addSeparator();
-    mVMCtxtMenu->addAction (vmRefreshAction);
-    mVMCtxtMenu->addAction (vmShowLogsAction);
+    mVMCtxtMenu->addAction (mVmRefreshAction);
+    mVMCtxtMenu->addAction (mVmShowLogsAction);
 
     mHelpMenu = menuBar()->addMenu (QString::null);
     mHelpActions.addTo (mHelpMenu);
@@ -601,13 +601,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
                 y = ar.top();
 
             /* Composing normal parameters */
-            normal_size = QSize (w, h).expandedTo (minimumSizeHint())
+            mNormalSize = QSize (w, h).expandedTo (minimumSizeHint())
                           .boundedTo (ar.size());
-            normal_pos = QPoint (x, y);
+            mNormalPos = QPoint (x, y);
 
             /* Applying normal parameters */
-            resize (normal_size);
-            move (normal_pos);
+            resize (mNormalSize);
+            move (mNormalPos);
             if (max)
                 /* maximize if needed */
                 showMaximized();
@@ -633,18 +633,18 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     }
 
     /* signals and slots connections */
-    connect (fileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
-    connect (fileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
-    connect (fileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
-    connect (vmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
+    connect (mFileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
+    connect (mFileSettingsAction, SIGNAL (triggered()), this, SLOT (fileSettings()));
+    connect (mFileExitAction, SIGNAL (triggered()), this, SLOT (fileExit()));
+    connect (mVmNewAction, SIGNAL (triggered()), this, SLOT (vmNew()));
 
-    connect (vmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
-    connect (vmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
-    connect (vmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
-    connect (vmDiscardAction, SIGNAL (triggered()), this, SLOT (vmDiscard()));
-    connect (vmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
-    connect (vmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
-    connect (vmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
+    connect (mVmConfigAction, SIGNAL (triggered()), this, SLOT (vmSettings()));
+    connect (mVmDeleteAction, SIGNAL (triggered()), this, SLOT (vmDelete()));
+    connect (mVmStartAction, SIGNAL (triggered()), this, SLOT (vmStart()));
+    connect (mVmDiscardAction, SIGNAL (triggered()), this, SLOT (vmDiscard()));
+    connect (mVmPauseAction, SIGNAL (toggled (bool)), this, SLOT (vmPause (bool)));
+    connect (mVmRefreshAction, SIGNAL (triggered()), this, SLOT (vmRefresh()));
+    connect (mVmShowLogsAction, SIGNAL (triggered()), this, SLOT (vmShowLogs()));
 
     connect (mVMListView, SIGNAL (currentChanged()),
              this, SLOT (vmListViewCurrentChanged()));
@@ -653,7 +653,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (mVMListView, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
 
-    connect (vmDetailsView, SIGNAL (linkClicked (const QString &)),
+    connect (mVmDetailsView, SIGNAL (linkClicked (const QString &)),
             this, SLOT (vmSettings (const QString &)));
 
     /* listen to media enumeration signals */
@@ -685,10 +685,10 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     /* Save the position of the window */
     {
         QString winPos = QString ("%1,%2,%3,%4")
-                                 .arg (normal_pos.x())
-                                 .arg (normal_pos.y())
-                                 .arg (normal_size.width())
-                                 .arg (normal_size.height());
+                                 .arg (mNormalPos.x())
+                                 .arg (mNormalPos.y())
+                                 .arg (mNormalSize.width())
+                                 .arg (mNormalSize.height());
         if (isMaximized())
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
@@ -898,7 +898,7 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
     {
         /* We always get here when mVMListView emits the activated() signal,
          * so we must explicitly check if the action is enabled or not. */
-        if (!vmStartAction->isEnabled())
+        if (!mVmStartAction->isEnabled())
             return;
     }
 
@@ -1155,7 +1155,7 @@ bool VBoxSelectorWnd::event (QEvent *e)
             QResizeEvent *re = (QResizeEvent *) e;
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-                normal_size = re->size();
+                mNormalSize = re->size();
             break;
         }
         case QEvent::Move:
@@ -1172,7 +1172,7 @@ bool VBoxSelectorWnd::event (QEvent *e)
                  * Do not trust frameGeometry() in this situation. */
 
                 if (!(pos().x() == geometry().x() && pos().y() == geometry().y()))
-                    normal_pos = pos();
+                    mNormalPos = pos();
             }
             break;
         }
@@ -1229,16 +1229,16 @@ void VBoxSelectorWnd::retranslateUi()
     setWindowTitle (tr ("Sun xVM VirtualBox"));
 #endif
 
-    vmTabWidget->setTabText (vmTabWidget->indexOf (vmDetailsView), tr ("&Details"));
+    mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDetailsView), tr ("&Details"));
     /* note: Snapshots and Details tabs are changed dynamically by
      * vmListViewCurrentChanged() */
 
     /* ensure the details and screenshot view are updated */
     vmListViewCurrentChanged();
 
-    fileMediaMgrAction->setText (tr ("&Virtual Media Manager..."));
-    fileMediaMgrAction->setShortcut (QKeySequence ("Ctrl+D"));
-    fileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
+    mFileMediaMgrAction->setText (tr ("&Virtual Media Manager..."));
+    mFileMediaMgrAction->setShortcut (QKeySequence ("Ctrl+D"));
+    mFileMediaMgrAction->setStatusTip (tr ("Display the Virtual Media Manager dialog"));
 
 #ifdef Q_WS_MAC
     /*
@@ -1251,56 +1251,56 @@ void VBoxSelectorWnd::retranslateUi()
      * Now, since both QMenuBar and we translate these strings, it's going to
      * be really interesting to see how this plays on non-english systems...
      */
-    fileSettingsAction->setText (tr ("&Preferences...", "global settings"));
+    mFileSettingsAction->setText (tr ("&Preferences...", "global settings"));
 #else
     /*
      * ...and on other platforms we use "Preferences" as well. The #ifdef is
      * left because of the possible localization problems on Mac we first need
      * to figure out.
      */
-    fileSettingsAction->setText (tr ("&Preferences...", "global settings"));
+    mFileSettingsAction->setText (tr ("&Preferences...", "global settings"));
 #endif
-    fileSettingsAction->setShortcut (QKeySequence ("Ctrl+G"));
-    fileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
+    mFileSettingsAction->setShortcut (QKeySequence ("Ctrl+G"));
+    mFileSettingsAction->setStatusTip (tr ("Display the global settings dialog"));
 
-    fileExitAction->setText (tr ("E&xit"));
-    fileExitAction->setShortcut (QKeySequence ("Ctrl+Q"));
-    fileExitAction->setStatusTip (tr ("Close application"));
+    mFileExitAction->setText (tr ("E&xit"));
+    mFileExitAction->setShortcut (QKeySequence ("Ctrl+Q"));
+    mFileExitAction->setStatusTip (tr ("Close application"));
 
-    vmNewAction->setText (tr ("&New..."));
-    vmNewAction->setShortcut (QKeySequence ("Ctrl+N"));
-    vmNewAction->setStatusTip (tr ("Create a new virtual machine"));
-    vmNewAction->setToolTip (vmNewAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (vmNewAction->shortcut().toString()));
+    mVmNewAction->setText (tr ("&New..."));
+    mVmNewAction->setShortcut (QKeySequence ("Ctrl+N"));
+    mVmNewAction->setStatusTip (tr ("Create a new virtual machine"));
+    mVmNewAction->setToolTip (mVmNewAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mVmNewAction->shortcut().toString()));
 
-    vmConfigAction->setText (tr ("&Settings..."));
-    vmConfigAction->setShortcut (QKeySequence ("Ctrl+S"));
-    vmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
-    vmConfigAction->setToolTip (vmConfigAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (vmConfigAction->shortcut().toString()));
+    mVmConfigAction->setText (tr ("&Settings..."));
+    mVmConfigAction->setShortcut (QKeySequence ("Ctrl+S"));
+    mVmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
+    mVmConfigAction->setToolTip (mVmConfigAction->text().remove ('&').remove ('.') +
+        QString (" (%1)").arg (mVmConfigAction->shortcut().toString()));
 
-    vmDeleteAction->setText (tr ("&Delete"));
-    vmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
+    mVmDeleteAction->setText (tr ("&Delete"));
+    mVmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
 
-    /* Note: vmStartAction text is set up in vmListViewCurrentChanged() */
+    /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
 
-    vmDiscardAction->setText (tr ("D&iscard"));
-    vmDiscardAction->setStatusTip (
+    mVmDiscardAction->setText (tr ("D&iscard"));
+    mVmDiscardAction->setStatusTip (
         tr ("Discard the saved state of the selected virtual machine"));
 
-    vmPauseAction->setText (tr ("&Pause"));
-    vmPauseAction->setStatusTip (
+    mVmPauseAction->setText (tr ("&Pause"));
+    mVmPauseAction->setStatusTip (
         tr ("Suspend the execution of the virtual machine"));
 
-    vmRefreshAction->setText (tr ("&Refresh"));
-    vmRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
-    vmRefreshAction->setStatusTip (
+    mVmRefreshAction->setText (tr ("&Refresh"));
+    mVmRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
+    mVmRefreshAction->setStatusTip (
         tr ("Refresh the accessibility state of the selected virtual machine"));
 
-    vmShowLogsAction->setText (tr ("Show &Log..."));
-    vmShowLogsAction->setIconText (tr ("Log", "icon text"));
-    vmShowLogsAction->setShortcut (QKeySequence ("Ctrl+L"));
-    vmShowLogsAction->setStatusTip (
+    mVmShowLogsAction->setText (tr ("Show &Log..."));
+    mVmShowLogsAction->setIconText (tr ("Log", "icon text"));
+    mVmShowLogsAction->setShortcut (QKeySequence ("Ctrl+L"));
+    mVmShowLogsAction->setStatusTip (
         tr ("Show the log files of the selected virtual machine"));
 
     mHelpActions.retranslateUi();
@@ -1339,7 +1339,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
 
         if (aRefreshDetails)
         {
-            vmDetailsView->setDetailsText (
+            mVmDetailsView->setDetailsText (
                 vboxGlobal().detailsReport (m, false /* isNewVM */,
                                             modifyEnabled /* withLinks */));
         }
@@ -1350,76 +1350,76 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             ULONG count = item->snapshotCount();
             if (count)
                 name += QString (" (%1)").arg (count);
-            vmTabWidget->setTabText (vmTabWidget->indexOf (vmSnapshotsWgt), name);
+            mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmSnapshotsWgt), name);
             /* refresh the snapshots widget */
-            vmSnapshotsWgt->setMachine (m);
+            mVmSnapshotsWgt->setMachine (m);
             /* ensure the tab is enabled */
-            vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmSnapshotsWgt), true);
+            mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmSnapshotsWgt), true);
         }
         if (aRefreshDescription)
         {
             /* update the description tab name */
             QString name = m.GetDescription().isEmpty() ?
                 tr ("D&escription") : tr ("D&escription *");
-            vmTabWidget->setTabText (vmTabWidget->indexOf (vmDescriptionPage), name);
+            mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDescriptionPage), name);
             /* refresh the description widget */
-            vmDescriptionPage->setMachineItem (item);
+            mVmDescriptionPage->setMachineItem (item);
             /* ensure the tab is enabled */
-            vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmDescriptionPage), true);
+            mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmDescriptionPage), true);
         }
 
         /* enable/disable modify actions */
-        vmConfigAction->setEnabled (modifyEnabled);
-        vmDeleteAction->setEnabled (modifyEnabled);
-        vmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
-        vmPauseAction->setEnabled (state == KMachineState_Running ||
+        mVmConfigAction->setEnabled (modifyEnabled);
+        mVmDeleteAction->setEnabled (modifyEnabled);
+        mVmDiscardAction->setEnabled (state == KMachineState_Saved && !running);
+        mVmPauseAction->setEnabled (state == KMachineState_Running ||
                                    state == KMachineState_Paused);
 
         /* change the Start button text accordingly */
         if (state >= KMachineState_Running)
         {
-            vmStartAction->setText (tr ("S&how"));
-            vmStartAction->setStatusTip (
+            mVmStartAction->setText (tr ("S&how"));
+            mVmStartAction->setStatusTip (
                 tr ("Switch to the window of the selected virtual machine"));
 
-            vmStartAction->setEnabled (item->canSwitchTo());
+            mVmStartAction->setEnabled (item->canSwitchTo());
         }
         else
         {
-            vmStartAction->setText (tr ("S&tart"));
-            vmStartAction->setStatusTip (
+            mVmStartAction->setText (tr ("S&tart"));
+            mVmStartAction->setStatusTip (
                 tr ("Start the selected virtual machine"));
 
-            vmStartAction->setEnabled (!running);
+            mVmStartAction->setEnabled (!running);
         }
 
         /* change the Pause/Resume button text accordingly */
         if (state == KMachineState_Paused)
         {
-            vmPauseAction->setText (tr ("R&esume"));
-            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            vmPauseAction->setStatusTip (
+            mVmPauseAction->setText (tr ("R&esume"));
+            mVmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
+            mVmPauseAction->setStatusTip (
                 tr ("Resume the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (true);
-            vmPauseAction->blockSignals (false);
+            mVmPauseAction->blockSignals (true);
+            mVmPauseAction->setChecked (true);
+            mVmPauseAction->blockSignals (false);
         }
         else
         {
-            vmPauseAction->setText (tr ("&Pause"));
-            vmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
-            vmPauseAction->setStatusTip (
+            mVmPauseAction->setText (tr ("&Pause"));
+            mVmPauseAction->setShortcut (QKeySequence ("Ctrl+P"));
+            mVmPauseAction->setStatusTip (
                 tr ("Suspend the execution of the virtual machine"));
-            vmPauseAction->blockSignals (true);
-            vmPauseAction->setChecked (false);
-            vmPauseAction->blockSignals (false);
+            mVmPauseAction->blockSignals (true);
+            mVmPauseAction->setChecked (false);
+            mVmPauseAction->blockSignals (false);
         }
 
         /* disable Refresh for accessible machines */
-        vmRefreshAction->setEnabled (false);
+        mVmRefreshAction->setEnabled (false);
 
         /* enable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (true);
+        mVmShowLogsAction->setEnabled (true);
     }
     else
     {
@@ -1430,15 +1430,15 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         if (item)
         {
             /* the VM is inaccessible */
-            vmDetailsView->setErrorText (
+            mVmDetailsView->setErrorText (
                 VBoxProblemReporter::formatErrorInfo (item->accessError()));
-            vmRefreshAction->setEnabled (true);
+            mVmRefreshAction->setEnabled (true);
         }
         else
         {
             /* default HTML support in Qt is terrible so just try to get
              * something really simple */
-            vmDetailsView->setDetailsText
+            mVmDetailsView->setDetailsText
                 (tr ("<h3>"
                      "Welcome to VirtualBox!</h3>"
                      "<p>The left part of this window is intended to display "
@@ -1453,33 +1453,33 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                      "or visit "
                      "<a href=http://www.virtualbox.org>www.virtualbox.org</a> "
                      "for the latest information and news.</p>"));
-            vmRefreshAction->setEnabled (false);
+            mVmRefreshAction->setEnabled (false);
         }
 
         /* empty and disable other tabs */
 
-        vmSnapshotsWgt->setMachine (CMachine());
-        vmTabWidget->setTabText (vmTabWidget->indexOf (vmSnapshotsWgt), tr ("&Snapshots"));
-        vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmSnapshotsWgt), false);
+        mVmSnapshotsWgt->setMachine (CMachine());
+        mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmSnapshotsWgt), tr ("&Snapshots"));
+        mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmSnapshotsWgt), false);
 
-        vmDescriptionPage->setMachineItem (NULL);
-        vmTabWidget->setTabText (vmTabWidget->indexOf (vmDescriptionPage), tr ("D&escription"));
-        vmTabWidget->setTabEnabled (vmTabWidget->indexOf (vmDescriptionPage), false);
+        mVmDescriptionPage->setMachineItem (NULL);
+        mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDescriptionPage), tr ("D&escription"));
+        mVmTabWidget->setTabEnabled (mVmTabWidget->indexOf (mVmDescriptionPage), false);
 
         /* disable modify actions */
-        vmConfigAction->setEnabled (false);
-        vmDeleteAction->setEnabled (item != NULL);
-        vmDiscardAction->setEnabled (false);
-        vmPauseAction->setEnabled (false);
+        mVmConfigAction->setEnabled (false);
+        mVmDeleteAction->setEnabled (item != NULL);
+        mVmDiscardAction->setEnabled (false);
+        mVmPauseAction->setEnabled (false);
 
         /* change the Start button text accordingly */
-        vmStartAction->setText (tr ("S&tart"));
-        vmStartAction->setStatusTip (
+        mVmStartAction->setText (tr ("S&tart"));
+        mVmStartAction->setStatusTip (
             tr ("Start the selected virtual machine"));
-        vmStartAction->setEnabled (false);
+        mVmStartAction->setEnabled (false);
 
         /* disable the show log item for the selected vm */
-        vmShowLogsAction->setEnabled (false);
+        mVmShowLogsAction->setEnabled (false);
     }
 }
 
@@ -1496,10 +1496,10 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
 
     /* we warn about inaccessible media only once (after media emumeration
      * started from main() at startup), to avoid annoying the user */
-    if (doneInaccessibleWarningOnce)
+    if (mDoneInaccessibleWarningOnce)
         return;
 
-    doneInaccessibleWarningOnce = true;
+    mDoneInaccessibleWarningOnce = true;
 
     do
     {
@@ -1537,7 +1537,7 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    vmDescriptionPage->updateState();
+    mVmDescriptionPage->updateState();
 }
 
 void VBoxSelectorWnd::machineDataChanged (const VBoxMachineDataChangeEvent &e)
@@ -1591,7 +1591,7 @@ void VBoxSelectorWnd::sessionStateChanged (const VBoxSessionStateChangeEvent &e)
                    false /* aDescription */);
 
     /* simulate a state change signal */
-    vmDescriptionPage->updateState();
+    mVmDescriptionPage->updateState();
 }
 
 void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
@@ -1606,64 +1606,52 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 
 VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 {
+    mParent = aParent;
+    mVMModel = aVMModel;
+
     mShowSelectorAction = new QAction (this);
     Assert (mShowSelectorAction);
     mShowSelectorAction->setIcon (VBoxGlobal::iconSet (
         ":/VirtualBox_16px.png"));
+
     mHideSystrayMenuAction = new QAction (this);
     Assert (mHideSystrayMenuAction);
     mHideSystrayMenuAction->setIcon (VBoxGlobal::iconSet (
         ":/exit_16px.png"));
 
+    /* reuse parent action data */
+
     mVmConfigAction = new QAction (this);
     Assert (mVmConfigAction);
-    mVmConfigAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_settings_32px.png", ":/settings_16px.png",
-        ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
+    mVmConfigAction->setIcon (mParent->vmConfigAction()->icon());
+
     mVmDeleteAction = new QAction (this);
     Assert (mVmDeleteAction);
-    mVmDeleteAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_delete_32px.png", ":/delete_16px.png",
-        ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
+    mVmDeleteAction->setIcon (mParent->vmDeleteAction()->icon());
+
     mVmStartAction = new QAction (this);
     Assert (mVmStartAction);
-    mVmStartAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_start_32px.png", ":/start_16px.png",
-        ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
+    mVmStartAction->setIcon (mParent->vmStartAction()->icon());
+
     mVmDiscardAction = new QAction (this);
     Assert (mVmDiscardAction);
-    mVmDiscardAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_discard_32px.png", ":/discard_16px.png",
-        ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
+    mVmDiscardAction->setIcon (mParent->vmDiscardAction()->icon());
+
     mVmPauseAction = new QAction (this);
     Assert (mVmPauseAction);
     mVmPauseAction->setCheckable (true);
-    mVmPauseAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_pause_32px.png", ":/pause_16px.png",
-        ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
+    mVmPauseAction->setIcon (mParent->vmPauseAction()->icon());
+
     mVmRefreshAction = new QAction (this);
     Assert (mVmRefreshAction);
-    mVmRefreshAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/refresh_32px.png", ":/refresh_16px.png",
-        ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
+    mVmRefreshAction->setIcon (mParent->vmRefreshAction()->icon());
+
     mVmShowLogsAction = new QAction (this);
     Assert (mVmConfigAction);
-    mVmShowLogsAction->setIcon (VBoxGlobal::iconSetFull (
-        QSize (32, 32), QSize (16, 16),
-        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
-        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
+    mVmShowLogsAction->setIcon (mParent->vmShowLogsAction()->icon());
 
     mTrayIconMenu = new QMenu (aParent);
     Assert (mTrayIconMenu);
-
-    mParent = aParent;
-    mVMModel = aVMModel;
 
     setIcon (QIcon (":/VirtualBox_16px.png"));
     setContextMenu (mTrayIconMenu);
@@ -1696,20 +1684,22 @@ void VBoxTrayIcon::retranslateUi ()
     mHideSystrayMenuAction->setStatusTip (tr (
         "Remove this icon from the system tray"));
 
-    mVmConfigAction->setText (tr ("&Settings..."));
-    mVmConfigAction->setStatusTip (tr ("Configure the selected virtual machine"));
+    /* reuse parent action data */
 
-    mVmDeleteAction->setText (tr ("&Delete"));
-    mVmDeleteAction->setStatusTip (tr ("Delete the selected virtual machine"));
+    mVmConfigAction->setText (mParent->vmConfigAction()->text());
+    mVmConfigAction->setStatusTip (mParent->vmConfigAction()->statusTip());
 
-    mVmPauseAction->setText (tr ("&Pause"));
-    mVmPauseAction->setStatusTip (tr ("Suspend the execution of the virtual machine"));
+    mVmDeleteAction->setText (mParent->vmDeleteAction()->text());
+    mVmDeleteAction->setStatusTip (mParent->vmDeleteAction()->statusTip());
 
-    mVmDiscardAction->setText (tr ("D&iscard"));
-    mVmDiscardAction->setStatusTip (tr ("Discard the saved state of the selected virtual machine"));
+    mVmPauseAction->setText (mParent->vmPauseAction()->text());
+    mVmPauseAction->setStatusTip (mParent->vmPauseAction()->statusTip());
 
-    mVmShowLogsAction->setText (tr ("Show &Log..."));
-    mVmShowLogsAction->setStatusTip (tr ("Show the log files of the selected virtual machine"));
+    mVmDiscardAction->setText (mParent->vmDiscardAction()->text());
+    mVmDiscardAction->setStatusTip (mParent->vmDiscardAction()->statusTip());
+
+    mVmShowLogsAction->setText (mParent->vmShowLogsAction()->text());
+    mVmShowLogsAction->setStatusTip (mParent->vmShowLogsAction()->statusTip());
 }
 
 void VBoxTrayIcon::showSubMenu ()
