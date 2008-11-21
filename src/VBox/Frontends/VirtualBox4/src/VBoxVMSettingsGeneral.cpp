@@ -391,8 +391,7 @@ bool VBoxVMSettingsGeneral::revalidate (QString &aWarning, QString & /* aTitle *
             "you have assigned less than <b>%1</b> for video memory which is "
             "the minimum amount required to switch the virtual machine to "
             "fullscreen or seamless mode.")
-            .arg (vboxGlobal().formatSize (needBytes),
-            VBoxGlobal::removeAccelMark (mGbVideo->text()));
+            .arg (vboxGlobal().formatSize (needBytes));
         return true;
     }
     return true;
