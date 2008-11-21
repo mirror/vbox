@@ -1,37 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="pt">
-<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2474"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3047"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Português</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2486"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3059"/>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation>Brasil</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2498"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3071"/>
         <source>English</source>
         <comment>Language name, in English</comment>
         <translation>Portuguese</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2510"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3083"/>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation>Brazil</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2522"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3095"/>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Erico Mendonca &lt;erico.mendonca@gmail.com&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>AttachmentsModel</name>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
+        <source>Double-click to add a new attachment</source>
+        <translation type="unfinished">Dê um clique duplo para acrescentar uma nova conexão</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
+        <source>Hard Disk</source>
+        <translation type="unfinished">Disco Rígido</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
+        <source>Slot</source>
+        <translation type="unfinished">Slot</translation>
     </message>
 </context>
 <context>
@@ -70,30 +87,45 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
         <source>Double-click to add a new attachment</source>
-        <translation>Dê um clique duplo para acrescentar uma nova conexão</translation>
+        <translation type="obsolete">Dê um clique duplo para acrescentar uma nova conexão</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Hard Disk</source>
-        <translation>Disco Rígido</translation>
+        <translation type="obsolete">Disco Rígido</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
         <source>Slot</source>
-        <translation>Slot</translation>
+        <translation type="obsolete">Slot</translation>
     </message>
 </context>
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="265"/>
+        <location filename="../src/main.cpp" line="319"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>O executável &lt;b&gt;%1&lt;/b&gt; requer o Qt %2.x, encontrado Qt %3.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="269"/>
+        <location filename="../src/main.cpp" line="323"/>
         <source>Incompatible Qt Library Error</source>
         <translation>Erro de biblioteca Qt incompatível</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="447"/>
+        <source>VirtualBox - Error In %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="453"/>
+        <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="474"/>
+        <source>It may help to reinstall VirtualBox.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -107,12 +139,12 @@
 <context>
     <name>QIHotKeyEdit</name>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="425"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="432"/>
         <source>Left </source>
         <translation>Esquerda </translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="431"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="438"/>
         <source>Right </source>
         <translation>Direita </translation>
     </message>
@@ -177,7 +209,7 @@
         <translation>Scroll Lock</translation>
     </message>
     <message>
-        <location filename="../src/QIHotKeyEdit.cpp" line="574"/>
+        <location filename="../src/QIHotKeyEdit.cpp" line="581"/>
         <source>&lt;key_%1&gt;</source>
         <translation>&lt;key_%1&gt;</translation>
     </message>
@@ -328,6 +360,19 @@
     </message>
 </context>
 <context>
+    <name>QIHttp</name>
+    <message>
+        <location filename="../include/QIHttp.h" line="90"/>
+        <source>Connection timed out</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../include/QIHttp.h" line="93"/>
+        <source>Could not locate the file on the server (response: %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QILabelPrivate</name>
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
@@ -338,27 +383,27 @@
 <context>
     <name>QIMessageBox</name>
     <message>
-        <location filename="../src/QIMessageBox.cpp" line="241"/>
+        <location filename="../src/QIMessageBox.cpp" line="254"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../src/QIMessageBox.cpp" line="242"/>
+        <location filename="../src/QIMessageBox.cpp" line="255"/>
         <source>Yes</source>
         <translation>Sim</translation>
     </message>
     <message>
-        <location filename="../src/QIMessageBox.cpp" line="243"/>
+        <location filename="../src/QIMessageBox.cpp" line="256"/>
         <source>No</source>
         <translation>Não</translation>
     </message>
     <message>
-        <location filename="../src/QIMessageBox.cpp" line="244"/>
+        <location filename="../src/QIMessageBox.cpp" line="257"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/QIMessageBox.cpp" line="245"/>
+        <location filename="../src/QIMessageBox.cpp" line="258"/>
         <source>Ignore</source>
         <translation>Ignorar</translation>
     </message>
@@ -399,7 +444,7 @@
 <context>
     <name>VBoxAboutDlg</name>
     <message>
-        <location filename="../ui/VBoxAboutDlg.ui" line="30"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="47"/>
         <source>VirtualBox - About</source>
         <translation>Sobre o VirtualBox</translation>
     </message>
@@ -413,7 +458,17 @@
     <message>
         <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Interface Gráfica do VirtualBox Versão %1&lt;br&gt;%2&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Interface Gráfica do VirtualBox Versão %1&lt;br&gt;%2&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
+        <source>VirtualBox Graphical User Interface</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
+        <source>Version %1</source>
+        <translation type="unfinished">Versão %1</translation>
     </message>
 </context>
 <context>
@@ -421,13 +476,13 @@
     <message>
         <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="38"/>
         <source>VirtualBox - About</source>
-        <translation>Sobre o VirtualBox</translation>
+        <translation type="obsolete">Sobre o VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="39"/>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
-        <translation>Interface Gráfica para o VirtualBox
+        <translation type="obsolete">Interface Gráfica para o VirtualBox
 Versão %1</translation>
     </message>
 </context>
@@ -530,6 +585,34 @@ Versão %1</translation>
         <location filename="" line="1647262769"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Quando selecionado, o sistema operacional Convidado não poderá escrever na pasta compartilhada especificada.</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxAdditionsDownloader</name>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">Baixando a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">Cancela o download da imagem de CD dos Adicionais para Convidado do VirtualBox</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="unfinished">Selecione a pasta onde a imagem dos Adicionais para Convidado será gravada</translation>
     </message>
 </context>
 <context>
@@ -676,7 +759,7 @@ Versão %1</translation>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;A controladora USB está desabilitada&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1431"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1572"/>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
     </message>
@@ -686,144 +769,144 @@ Versão %1</translation>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1451"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1592"/>
         <source>&amp;Fullscreen Mode</source>
         <translation>Tela Cheia (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1452"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
         <source>Switch to fullscreen mode</source>
         <translation>Alternar para tela cheia</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1458"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1599"/>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
         <translation>Integração de Mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1460"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1601"/>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
         <translation>Redimensionar Tela Automaticamente</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1461"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1602"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>Redimensionar Tela Automaticamente (&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1465"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1606"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
         <translation>Automaticamente redimensionar a tela do sistema convidado quando a janela for redimensionada (requer instalação dos Adicionais Para Convidado)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1467"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1608"/>
         <source>&amp;Adjust Window Size</source>
         <translation>&amp;Ajustar Tamanho da Janela</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1469"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1610"/>
         <source>Adjust window size and position to best fit the guest display</source>
         <translation>Ajustar o tamanho e posição da janela para melhor se acomodar à tela do sistema convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1471"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1612"/>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>&amp;Inserir Ctrl-Alt-Del</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1473"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1614"/>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>Envia a sequência Ctrl-Alt-Del para a máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1476"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1617"/>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
         <translation>&amp;Inserir Ctrl-Alt-Backspace</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1479"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1620"/>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
         <translation>Envia a sequência Ctrl-Alt-Backspace para a máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1482"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1623"/>
         <source>&amp;Reset</source>
         <translation>&amp;Reinicializar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1483"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1624"/>
         <source>Reset the virtual machine</source>
         <translation>Reinicializa a máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1491"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1632"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>Desligamento por ACPI (&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1494"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1635"/>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
         <translation>Envia o evento de pressionamento de botão de energia ACPI para a máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1496"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1637"/>
         <source>&amp;Close...</source>
         <translation>Fechar(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1497"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1638"/>
         <source>Close the virtual machine</source>
         <translation>Fecha a máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1500"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1641"/>
         <source>Take &amp;Snapshot...</source>
         <translation>Criar &amp;Snapshot...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1501"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1642"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>Tira um snapshot (registro instantâneo) da máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1511"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
         <source>&amp;Floppy Image...</source>
         <translation>Imagem de Disquete (&amp;F)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1512"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1653"/>
         <source>Mount a floppy image file</source>
         <translation>Monta uma imagem de disquete</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1514"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1655"/>
         <source>Unmount F&amp;loppy</source>
         <translation>Desmontar Disquete (&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1516"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1657"/>
         <source>Unmount the currently mounted floppy media</source>
         <translation>Desmonta o disquete atualmente montado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1518"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1659"/>
         <source>&amp;CD/DVD-ROM Image...</source>
         <translation>Imagem de &amp;CD/DVD-ROM...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1520"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1661"/>
         <source>Mount a CD/DVD-ROM image file</source>
         <translation>Monta uma imagem de CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1522"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1663"/>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation>Desmontar C&amp;D/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1524"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1665"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
         <translation>Desmonta a mídia de CD/DVD-ROM atualmente montada</translation>
     </message>
@@ -834,12 +917,12 @@ Versão %1</translation>
         <translation type="obsolete">Servidor de Desktop Remoto (RDP)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1528"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1669"/>
         <source>Remote Dis&amp;play</source>
         <translation>Tela Remota (&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1530"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1671"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
         <translation>Habilita ou desabilita conexões de desktop remoto (RDP) para esta máquina</translation>
     </message>
@@ -849,22 +932,22 @@ Versão %1</translation>
         <translation type="obsolete">Abrir</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1532"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1673"/>
         <source>&amp;Shared Folders...</source>
         <translation>Pastas Compartilhada&amp;s...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1534"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1675"/>
         <source>Open the dialog to operate on shared folders</source>
         <translation>Abre o diálogo de pastas compartilhadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1536"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1677"/>
         <source>&amp;Install Guest Additions...</source>
         <translation>&amp;Instalar Adicionais para Convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1538"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1679"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Montar a imagem de instalação dos Adicionais para Convidado</translation>
     </message>
@@ -909,32 +992,32 @@ Versão %1</translation>
         <translation type="obsolete">Faz com que todos os avisos e mensagens desabilitados sejam mostrados novamente</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1555"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1698"/>
         <source>Mount &amp;Floppy</source>
         <translation>Montar Disquete (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1556"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1699"/>
         <source>Mount &amp;CD/DVD-ROM</source>
         <translation>Montar &amp;CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1558"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1701"/>
         <source>&amp;USB Devices</source>
         <translation>Dispositivos &amp;USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1565"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1708"/>
         <source>&amp;Devices</source>
         <translation>&amp;Dispositivos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1570"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1713"/>
         <source>De&amp;bug</source>
         <translation>Depuração (&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1572"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1715"/>
         <source>&amp;Help</source>
         <translation>Ajuda (&amp;H)</translation>
     </message>
@@ -956,7 +1039,7 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Mostra a tecla atualmente definida como Tecla do Hospedeiro.&lt;br&gt;Esta tecla, quando pressionada sozinha, alterna o estado de captura do teclado e mouse. Ela também pode ser utilizada em combinação com outras teclas para executar ações rápidas constantes do menu principal.</translation>
+        <translation type="obsolete">Mostra a tecla atualmente definida como Tecla do Hospedeiro.&lt;br&gt;Esta tecla, quando pressionada sozinha, alterna o estado de captura do teclado e mouse. Ela também pode ser utilizada em combinação com outras teclas para executar ações rápidas constantes do menu principal.</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1014,52 +1097,52 @@ Versão %1</translation>
         <translation type="obsolete">Indica se a Tela Remota (servidor VRDP) está habilitada (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1841"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1985"/>
         <source>&lt;hr&gt;VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;O Servidor VRDP está ouvindo na porta %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1896"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2040"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pausar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1898"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2042"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Suspender a execução da máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1902"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2046"/>
         <source>R&amp;esume</source>
         <translation>Continuar (&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1904"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2048"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>Continuar a execução da máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1912"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2056"/>
         <source>Disable &amp;Mouse Integration</source>
         <translation>Desabilitar Integração de &amp;Mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1915"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2059"/>
         <source>Temporarily disable host mouse pointer integration</source>
         <translation>Temporariamente desabilitar integração de ponteiro de mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1919"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2063"/>
         <source>Enable &amp;Mouse Integration</source>
         <translation>Habilitar Integração de &amp;Mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1922"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2066"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
         <translation>Habilitar temporariamente integração de ponteiro de mouse</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2461"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2605"/>
         <source>Snapshot %1</source>
         <translation>Snapshot %1</translation>
     </message>
@@ -1069,12 +1152,12 @@ Versão %1</translation>
         <translation type="obsolete">&lt;p&gt;Falha ao procurar imagem de CD de Adicionais para Convidados &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2865"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3024"/>
         <source>Host Drive </source>
         <translation>Drive Hospedeiro </translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1562"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1705"/>
         <source>&amp;Machine</source>
         <translation>&amp;Máquina</translation>
     </message>
@@ -1109,45 +1192,45 @@ Versão %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Todos os adaptadores de rede estão desabilitados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1557"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1700"/>
         <source>&amp;Network Adapters</source>
         <translation>Adaptadores de Rede (&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2898"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3057"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>Adaptador %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2819"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2978"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>Floppy tip</comment>
         <translation>Montar o drive físico do PC hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2867"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3026"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
         <translation>Montar o drive físico do hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2913"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3072"/>
         <source>Disconnect the cable from the selected virtual network adapter</source>
         <translation>Desconectar o cabo do adaptador de rede virtual selecionado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="2914"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3073"/>
         <source>Connect the cable to the selected virtual network adapter</source>
         <translation>Conectar o cabo ao adaptador de rede virtual selecionado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1454"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1595"/>
         <source>Seam&amp;less Mode</source>
         <translation>Modo Seam&amp;less</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1455"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
         <source>Switch to seamless desktop integration mode</source>
         <translation>Alterna para o modo &quot;seamless&quot; de integração com o desktop</translation>
     </message>
@@ -1157,109 +1240,109 @@ Versão %1</translation>
         <translation type="obsolete">Indica se o teclado foi capturad pelo sistema operacional Convidado (&lt;img src=hostkey_captured_16px.png/&gt;) ou não (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1787"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade na mídia de disquete:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1657"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1800"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drive do Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1664"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1807"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imagem&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1670"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1813"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhuma mídia montada&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1688"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1831"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade em mídias de CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1701"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1844"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drive do Hospedeiro&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1708"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1851"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Image&lt;/b&gt;: %1&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Imagem&lt;/b&gt;: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1714"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1857"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhuma mídia montada&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1726"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1869"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade dos discos rígidos virtuais:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1743"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1886"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhum disco rígido conectado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1764"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1907"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade das interfaces de rede:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1773"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1916"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: cabo %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1776"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1919"/>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
         <translation>conectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1777"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1920"/>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
         <translation>desconectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1782"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1925"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Todos os adaptadores de rede estão desabilitados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1794"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1937"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade dos dispositivos USB conectados:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1811"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1955"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhum dispositivo USB conectado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1818"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1962"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controladora USB desabilitada&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1270,13 +1353,13 @@ Versão %1</translation>
         <translation type="obsolete">Indica se o servidor de Display Remoto (VRDP) está habilitado (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1850"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1994"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;qt&gt;&lt;nobr&gt;Indica a atividade em pastas compartilhadas:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1888"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="2032"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nenhuma pasta compartilhada&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -1307,57 +1390,62 @@ Versão %1</translation>
         <translation type="obsolete">Abrir o formulário de registro do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1433"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1574"/>
         <source>Sun xVM VirtualBox</source>
         <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1503"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1644"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>Diálogo de I&amp;nformações sobre a Sessão</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1505"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1646"/>
         <source>Show Session Information Dialog</source>
         <translation>Mostrar Diálogo de Informações Sobre a Sessão</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1544"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1685"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation>E&amp;statísticas...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1546"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1687"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>Linha de &amp;Comando...</translation>
     </message>
     <message>
-        <location filename="" line="1647262769"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="obsolete">Opções de &amp;Log...</translation>
+        <translation type="unfinished">Opções de &amp;Log...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1581"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1724"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation>Indica se a função de auto-redimensionar a tela do sistema convidado está Ligada (&lt;img src=auto_resize_on_16px.png/&gt;) ou Desligada (&lt;img src=auto_resize_off_16px.png/&gt;). Note que esta função requer que os Adicionais Para Convidado estejam instalados no sistema convidado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Indica se o ponteiro do mouse do sistema hospedeiro foi capturado pelo sistema convidado:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro não foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integração de mouse (IM) está Ligada&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM está Desligada, o ponteiro foi capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM está Desligada, o ponteiro não está capturado&lt;/nobr&gt;&lt;br&gt;Note que o recurso de integração do mouse requer que os Adicionais Para Convidado sejam instalados no sistema convidado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1593"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1736"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>Indica se o teclado foi capturad pelo sistema operacional Convidado (&lt;img src=hostkey_captured_16px.png/&gt;) ou não (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1839"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1983"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
         <translation>Indica se o servidor de Display Remoto (VRDP) está habilitado (&lt;img src=vrdp_16px.png/&gt;) ou não (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
+        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1365,27 +1453,27 @@ Versão %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="330"/>
         <source>Name</source>
-        <translation>Nome</translation>
+        <translation type="obsolete">Nome</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="85"/>
         <source>Virtual Size</source>
-        <translation>Tamanho Virtual</translation>
+        <translation type="obsolete">Tamanho Virtual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="90"/>
         <source>Actual Size</source>
-        <translation>Tamanho Real</translation>
+        <translation type="obsolete">Tamanho Real</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="335"/>
         <source>Size</source>
-        <translation>Tamanho</translation>
+        <translation type="obsolete">Tamanho</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="36"/>
         <source>Virtual Disk Manager</source>
-        <translation>Gerenciador de Discos Virtuais</translation>
+        <translation type="obsolete">Gerenciador de Discos Virtuais</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1395,12 +1483,12 @@ Versão %1</translation>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="211"/>
         <source>&amp;CD/DVD Images</source>
-        <translation>Imagens de &amp;CD/DVD</translation>
+        <translation type="obsolete">Imagens de &amp;CD/DVD</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="308"/>
         <source>&amp;Floppy Images</source>
-        <translation>Imagens de Disquete (&amp;F)</translation>
+        <translation type="obsolete">Imagens de Disquete (&amp;F)</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1446,32 +1534,32 @@ Versão %1</translation>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation>--</translation>
+        <translation type="obsolete">--</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
         <source>&amp;New...</source>
-        <translation>&amp;Novo...</translation>
+        <translation type="obsolete">&amp;Novo...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
         <source>&amp;Add...</source>
-        <translation>&amp;Acrescentar...</translation>
+        <translation type="obsolete">&amp;Acrescentar...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
         <source>R&amp;emove</source>
-        <translation>R&amp;emover</translation>
+        <translation type="obsolete">R&amp;emover</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="782"/>
         <source>Re&amp;lease</source>
-        <translation>&amp;Liberar</translation>
+        <translation type="obsolete">&amp;Liberar</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="783"/>
         <source>Re&amp;fresh</source>
-        <translation>Atualizar (&amp;F)</translation>
+        <translation type="obsolete">Atualizar (&amp;F)</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1526,7 +1614,7 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
         <source>&amp;Actions</source>
-        <translation>&amp;Ações</translation>
+        <translation type="obsolete">&amp;Ações</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1556,82 +1644,82 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="812"/>
         <source>Checking accessibility</source>
-        <translation>Verificando acessibilidade</translation>
+        <translation type="obsolete">Verificando acessibilidade</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="588"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificando acessibilidade...</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificando acessibilidade...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="596"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tipo de disco:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tipo de armazenamento:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tipo de disco:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Tipo de armazenamento:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="602"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="605"/>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
         <comment>HDD</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="614"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erro ao verificar acessibilidade da mídia</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erro ao verificar acessibilidade da mídia</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="620"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="726"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificando acessibilidade...</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Verificando acessibilidade...</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="732"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="737"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="746"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erro ao verificar acessibilidade da mídia</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Erro ao verificar acessibilidade da mídia</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="754"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="756"/>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
-        <translation>O arquivo de imagem não está acessível</translation>
+        <translation type="obsolete">O arquivo de imagem não está acessível</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="822"/>
         <source>&amp;Select</source>
-        <translation>&amp;Selecionar</translation>
+        <translation type="obsolete">&amp;Selecionar</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1641,7 +1729,7 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
         <source>Select a hard disk image file</source>
-        <translation>Selecione um arquivo de imagem de disco rígido</translation>
+        <translation type="obsolete">Selecione um arquivo de imagem de disco rígido</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1651,7 +1739,7 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Selecione um arquivo de imagem de CD/DVD-ROM</translation>
+        <translation type="obsolete">Selecione um arquivo de imagem de CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1661,77 +1749,77 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1109"/>
         <source>Select a floppy disk image file</source>
-        <translation>Selecione um arquivo de imagem de disquete</translation>
+        <translation type="obsolete">Selecione um arquivo de imagem de disquete</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="792"/>
         <source>Create a new virtual hard disk</source>
-        <translation>Criar um novo disco rígido virtual</translation>
+        <translation type="obsolete">Criar um novo disco rígido virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="793"/>
         <source>Add (register) an existing image file</source>
-        <translation>Acrescentar (registrar) um arquivo de imagem existente</translation>
+        <translation type="obsolete">Acrescentar (registrar) um arquivo de imagem existente</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="795"/>
         <source>Remove (unregister) the selected media</source>
-        <translation>Remover (desregistrar) a mídia selecionada</translation>
+        <translation type="obsolete">Remover (desregistrar) a mídia selecionada</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="796"/>
         <source>Release the selected media by detaching it from the machine</source>
-        <translation>Liberar a mídia selecionada desconectando-a da máquina virtual</translation>
+        <translation type="obsolete">Liberar a mídia selecionada desconectando-a da máquina virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="797"/>
         <source>Refresh the media list</source>
-        <translation>Atualizar a lista de mídias</translation>
+        <translation type="obsolete">Atualizar a lista de mídias</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1101"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>Imagens de CD/DVD-ROM (*.iso);;Todos os arquivos (*)</translation>
+        <translation type="obsolete">Imagens de CD/DVD-ROM (*.iso);;Todos os arquivos (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1108"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation>Imagens de disquete (*.img);;Todos os arquivos (*)</translation>
+        <translation type="obsolete">Imagens de disquete (*.img);;Todos os arquivos (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation>Todas as imagens de disco rígido (*.vdi *.vmdk *.vhd);;Imagens de Disco Virtual (*.vdi);;Imagens VMDK (*.vmdk);;Imagens VHD (*.vhd);;Todos os arquivos (*)</translation>
+        <translation type="obsolete">Todas as imagens de disco rígido (*.vdi *.vmdk *.vhd);;Imagens de Disco Virtual (*.vdi);;Imagens VMDK (*.vmdk);;Imagens VHD (*.vhd);;Todos os arquivos (*)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
         <source>Hard &amp;Disks</source>
-        <translation>Discos Rígidos (&amp;H)</translation>
+        <translation type="obsolete">Discos Rígidos (&amp;H)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Localização:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Localização:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Tipo de Disco:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Tipo de Disco:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Tipo de Armazenamento:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Tipo de Armazenamento:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;Conectado a:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;Conectado a:&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1739,22 +1827,22 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation type="obsolete">Cancelar</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Baixando a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Baixando a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Cancela o download da imagem de CD dos Adicionais para Convidado do VirtualBox</translation>
+        <translation type="obsolete">Cancela o download da imagem de CD dos Adicionais para Convidado do VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
         <source>Could not locate the file on the server (response: %1).</source>
-        <translation>Não foi possível localizar o arquivo no servidor (resposta: %1).</translation>
+        <translation type="obsolete">Não foi possível localizar o arquivo no servidor (resposta: %1).</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -1774,20 +1862,20 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="278"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Selecione a pasta onde a imagem dos Adicionais para Convidado será gravada</translation>
+        <translation type="obsolete">Selecione a pasta onde a imagem dos Adicionais para Convidado será gravada</translation>
     </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="191"/>
         <source>Connection timed out.</source>
-        <translation>Tempo para conexão excedido.</translation>
+        <translation type="obsolete">Tempo para conexão excedido.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="198"/>
+        <location filename="../src/VBoxDownloaderWgt.cpp" line="152"/>
         <source>The download process has been cancelled by the user.</source>
         <translation>O processo de download foi cancelado pelo usuário.</translation>
     </message>
@@ -1795,67 +1883,67 @@ Versão %1</translation>
 <context>
     <name>VBoxFilePathSelectorWidget</name>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="210"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>&lt;reset to default&gt;</source>
         <translation>&lt;redefinir para o padrão&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="214"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
         <translation>O valor padrão real será exibido após aceitar as mudanças e abrir este diálogo novamente.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="216"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>&lt;not selected&gt;</source>
         <translation>&lt;não selecionado&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="220"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
         <translation>Por favor utilize o item &lt;b&gt;Outro...&lt;/b&gt; da lista de opções para selecionar o caminho desejado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="230"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="232"/>
         <source>Other...</source>
         <translation>Outro...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="234"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="236"/>
         <source>Reset</source>
         <translation>Padrão</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="241"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="243"/>
         <source>Opens a dialog to select a different folder.</source>
         <translation>Abre um diálogo para selecionar uma pasta diferente.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="244"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="246"/>
         <source>Resets the folder path to the default value.</source>
         <translation>Redefine o caminho da pasta para o valor padrão.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="249"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="251"/>
         <source>Opens a dialog to select a different file.</source>
         <translation>Abre um diálogo para selecionar um arquivo diferente.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="252"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="254"/>
         <source>Resets the file path to the default value.</source>
         <translation>Redefine o caminho da pasta para o valor padrão.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="260"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="262"/>
         <source>&amp;Copy</source>
         <translation>&amp;Copiar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="410"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="423"/>
         <source>Please type the desired folder path here.</source>
         <translation>Por favor informe o caminho da pasta desejada aqui.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="411"/>
+        <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="424"/>
         <source>Please type the desired file path here.</source>
         <translation>Por favor digite o caminho da pasta desejada aqui.</translation>
     </message>
@@ -1898,15 +1986,15 @@ Versão %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Mostra o caminho para a pasta padrão de arquivos VDI. Esta pasta será sempre utilizada para acrescentar discos rígidos virtuais novos ou existentes, a não ser que seja definida especificamente outra pasta na máquina virtual.</translation>
+        <translation type="obsolete">Mostra o caminho para a pasta padrão de arquivos VDI. Esta pasta será sempre utilizada para acrescentar discos rígidos virtuais novos ou existentes, a não ser que seja definida especificamente outra pasta na máquina virtual.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="80"/>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Mostra o caminho padrão da pasta de máquinas virtuais. Esta pasta é utilizada ao criar novas máquinas virtuais, a não ser que seja especificamente definida uma pasta durante o processo de criação.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="86"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Exibe o caminho para a biblioteca que provê autenticação para clientes com Display Remoto (VRDP).</translation>
     </message>
@@ -1924,6 +2012,21 @@ Versão %1</translation>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
         <translation>Biblioteca de Autenticação V&amp;RDP:</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
+        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
+        <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
+        <source>&amp;Show System Tray Icon</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2050,172 +2153,172 @@ Versão %1</translation>
         <location filename="../include/VBoxGlobal.h" line="400"/>
         <source>Differencing</source>
         <comment>hard disk</comment>
-        <translation>Diferencial</translation>
+        <translation type="obsolete">Diferencial</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1357"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1787"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Dispositivo desconhecido %1:%2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1383"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1813"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revisão: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1389"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1819"/>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Número de Série %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1396"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1826"/>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;Estado: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1509"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1921"/>
         <source>Name</source>
         <comment>details report</comment>
         <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1510"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1922"/>
         <source>OS Type</source>
         <comment>details report</comment>
         <translation>Tipo de Sistema</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1511"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1923"/>
         <source>Base Memory</source>
         <comment>details report</comment>
         <translation>Memória Principal</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1512"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1924"/>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1545"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1958"/>
         <source>General</source>
         <comment>details report</comment>
         <translation>Geral</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1527"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1939"/>
         <source>Video Memory</source>
         <comment>details report</comment>
         <translation>Memória de Vídeo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1528"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1940"/>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1529"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1941"/>
         <source>Boot Order</source>
         <comment>details report</comment>
         <translation>Ordem de Boot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1530"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1942"/>
         <source>ACPI</source>
         <comment>details report</comment>
         <translation>ACPI</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1531"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1943"/>
         <source>IO APIC</source>
         <comment>details report</comment>
         <translation>IO APIC</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1588"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1995"/>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
         <translation>Não Conectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1596"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2003"/>
         <source>Hard Disks</source>
         <comment>details report</comment>
         <translation>Discos Rígidos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2049"/>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Habilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2049"/>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1647"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2054"/>
         <source>Enabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Habilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1647"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2054"/>
         <source>Disabled</source>
         <comment>details report (IO APIC)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2131"/>
         <source>Not mounted</source>
         <comment>details report (floppy)</comment>
         <translation>Não montado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1723"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2136"/>
         <source>Image</source>
         <comment>details report (floppy)</comment>
         <translation>Imagem</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1735"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2148"/>
         <source>Host Drive</source>
         <comment>details report (floppy)</comment>
         <translation>Drive do Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1746"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2159"/>
         <source>Floppy</source>
         <comment>details report</comment>
         <translation>Disquete</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1681"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2094"/>
         <source>Not mounted</source>
         <comment>details report (DVD)</comment>
         <translation>Não montado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1686"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2099"/>
         <source>Image</source>
         <comment>details report (DVD)</comment>
         <translation>Imagem</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1698"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2111"/>
         <source>Host Drive</source>
         <comment>details report (DVD)</comment>
         <translation>Drive do Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1709"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2122"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
         <translation>CD/DVD-ROM</translation>
@@ -2227,49 +2330,49 @@ Versão %1</translation>
         <translation type="obsolete">Adaptador</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1762"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2175"/>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1768"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2181"/>
         <source>Audio</source>
         <comment>details report</comment>
         <translation>Áudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="574"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="590"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
         <translation>Adaptador %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1806"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2219"/>
         <source>Disabled</source>
         <comment>details report (network)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1814"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2227"/>
         <source>Network</source>
         <comment>details report</comment>
         <translation>Rede</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1913"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2326"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
         <translation>Filtros de Dispositivo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1915"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2328"/>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
         <translation>%1 (%2 ativos)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1919"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2332"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
         <translation>Desabilitado</translation>
@@ -2281,144 +2384,144 @@ Versão %1</translation>
         <translation type="obsolete">Controladora USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1959"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2372"/>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
         <translation>Porta do Servidor VRDP</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1961"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2374"/>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
         <translation>%1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1964"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2377"/>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1970"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2383"/>
         <source>Remote Display</source>
         <comment>details report</comment>
         <translation>Tela Remota</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4089"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4833"/>
         <source>Opening URLs is not implemented yet.</source>
         <translation>Recurso de abrir URLs ainda não implementado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2531"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3104"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>Desligada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2532"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3105"/>
         <source>Saved</source>
         <comment>MachineState</comment>
         <translation>Salva</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2533"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3106"/>
         <source>Aborted</source>
         <comment>MachineState</comment>
         <translation>Abortada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2534"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3107"/>
         <source>Running</source>
         <comment>MachineState</comment>
         <translation>Executando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2535"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3108"/>
         <source>Paused</source>
         <comment>MachineState</comment>
         <translation>Pausada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2537"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3110"/>
         <source>Starting</source>
         <comment>MachineState</comment>
         <translation>Iniciando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2538"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3111"/>
         <source>Stopping</source>
         <comment>MachineState</comment>
         <translation>Parando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2539"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3112"/>
         <source>Saving</source>
         <comment>MachineState</comment>
         <translation>Salvando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2540"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3113"/>
         <source>Restoring</source>
         <comment>MachineState</comment>
         <translation>Restaurando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2541"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3114"/>
         <source>Discarding</source>
         <comment>MachineState</comment>
         <translation>Descartando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2543"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3117"/>
         <source>Closed</source>
         <comment>SessionState</comment>
         <translation>Fechada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2544"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3118"/>
         <source>Open</source>
         <comment>SessionState</comment>
         <translation>Aberta</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2545"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3119"/>
         <source>Spawning</source>
         <comment>SessionState</comment>
         <translation>Criando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2546"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3120"/>
         <source>Closing</source>
         <comment>SessionState</comment>
         <translation>Fechando</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2548"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3122"/>
         <source>None</source>
         <comment>DeviceType</comment>
         <translation>Nenhum</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2549"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3123"/>
         <source>Floppy</source>
         <comment>DeviceType</comment>
         <translation>Disquete</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2550"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3124"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2551"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3125"/>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
         <translation>Disco Rígido</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2552"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3126"/>
         <source>Network</source>
         <comment>DeviceType</comment>
         <translation>Rede</translation>
@@ -2436,19 +2539,19 @@ Versão %1</translation>
         <translation type="obsolete">Secundário</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2574"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3148"/>
         <source>Normal</source>
         <comment>DiskType</comment>
         <translation>Normal</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2576"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3150"/>
         <source>Immutable</source>
         <comment>DiskType</comment>
         <translation>Imutável</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2578"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3152"/>
         <source>Writethrough</source>
         <comment>DiskType</comment>
         <translation>Writethrough</translation>
@@ -2457,46 +2560,46 @@ Versão %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="2581"/>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Imagem de Disco Virtual</translation>
+        <translation type="obsolete">Imagem de Disco Virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2583"/>
         <source>iSCSI</source>
         <comment>DiskStorageType</comment>
-        <translation>iSCSI</translation>
+        <translation type="obsolete">iSCSI</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2585"/>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Imagem VMDK</translation>
+        <translation type="obsolete">Imagem VMDK</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2592"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3157"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
         <translation>Nula</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2594"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3159"/>
         <source>External</source>
         <comment>VRDPAuthType</comment>
         <translation>Externa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2596"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3161"/>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
         <translation>Convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2606"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3171"/>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
         <translation>Ignorar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2608"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3173"/>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
         <translation>Reservar</translation>
@@ -2520,97 +2623,97 @@ Versão %1</translation>
         <translation type="obsolete">Dispositivo&amp;nbsp;%1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2611"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3176"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Driver de áudio Nulo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2613"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3178"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Multimídia do Windows</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2617"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3182"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Driver de áudio OSS</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2619"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3184"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Driver de áudio ALSA</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2621"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3186"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2623"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3188"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2642"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3207"/>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Não conectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2644"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3209"/>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2646"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3211"/>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Interface do Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2648"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3213"/>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Rede Interna</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2665"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3230"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>Não suportado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2667"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3232"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>Não disponível</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2669"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3234"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>Ocupado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2671"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3236"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>Disponível</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2673"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3238"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>Reservado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2675"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3240"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>Capturado</translation>
@@ -2619,122 +2722,122 @@ Versão %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1331"/>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;i&gt;Verificando...&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;Verificando...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1338"/>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
-        <translation>&lt;i&gt;Inacessível&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;Inacessível&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2651"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3216"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2653"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3218"/>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
         <translation>Hospedeiro para Convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2655"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3220"/>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
         <translation>Convidado para Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3222"/>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
         <translation>Bi-direcional</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="3457"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4109"/>
         <source>Select a directory</source>
         <translation>Selecione um diretório</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="3628"/>
+        <location filename="../src/VBoxGlobal.cpp" line="4312"/>
         <source>Select a file</source>
         <translation>Selecione um arquivo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1840"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2253"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation>Porta %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1848"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2261"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
         <translation>Desabilitada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1856"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2269"/>
         <source>Serial Ports</source>
         <comment>details report</comment>
         <translation>Portas Seriais</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1925"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2338"/>
         <source>USB</source>
         <comment>details report</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1935"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2348"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation>Pastas Compartilhadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1937"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2350"/>
         <source>%1</source>
         <comment>details report (shadef folders)</comment>
         <translation>%1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1941"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2354"/>
         <source>None</source>
         <comment>details report (shared folders)</comment>
         <translation>Nenhum</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1947"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2360"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
         <translation>Pastas Compartilhadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2536"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3109"/>
         <source>Stuck</source>
         <comment>MachineState</comment>
         <translation>Travada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2599"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3164"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>Desconectada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2601"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3166"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>Pipe no Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2603"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3168"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>Dispositivo no Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2677"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3242"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Definido pelo Usuário</translation>
@@ -2743,124 +2846,124 @@ Versão %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="2587"/>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
-        <translation>Disco Rígido Customizado</translation>
+        <translation type="obsolete">Disco Rígido Customizado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="438"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="454"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1533"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1945"/>
         <source>PAE/NX</source>
         <comment>details report</comment>
         <translation>PAE/NX</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="412"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="428"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>Habilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="413"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="429"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2064"/>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
         <translation>Habilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1657"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2064"/>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1755"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2168"/>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
         <translation>Driver do Hospedeiro </translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1758"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2171"/>
         <source>Controller</source>
         <comment>details report (audio)</comment>
         <translation>Controladora</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1876"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2289"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
         <translation>Porta %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1884"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2297"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1893"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2306"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
         <translation>Portas Paralelas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2553"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3127"/>
         <source>USB</source>
         <comment>DeviceType</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2554"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3128"/>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
         <translation>Pastas Compartilhadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2557"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3131"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2559"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3133"/>
         <source>SATA</source>
         <comment>StorageBus</comment>
         <translation>SATA</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2563"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3137"/>
         <source>Primary</source>
         <comment>StorageBusChannel</comment>
         <translation>Primário</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2565"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3139"/>
         <source>Secondary</source>
         <comment>StorageBusChannel</comment>
         <translation>Secundário</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2570"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3144"/>
         <source>Master</source>
         <comment>StorageBusDevice</comment>
         <translation>Master</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2571"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3145"/>
         <source>Slave</source>
         <comment>StorageBusDevice</comment>
         <translation>Slave</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2567"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3141"/>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
         <translation>Porta %1</translation>
@@ -2869,124 +2972,124 @@ Versão %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="2589"/>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
-        <translation>Imagem VHD</translation>
+        <translation type="obsolete">Imagem VHD</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2615"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3180"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
         <translation>Áudio do Solaris</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2625"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3190"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
         <translation>PulseAudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2628"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3193"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
         <translation>ICH AC97</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2630"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3195"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
         <translation>SoundBlaster 16</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2633"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3198"/>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2635"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3200"/>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2637"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3202"/>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2660"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3225"/>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2662"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3227"/>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2639"/>
+        <location filename="../src/VBoxGlobal.cpp" line="3204"/>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1413"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1843"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1418"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1848"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1423"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1853"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Revisão: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1428"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1858"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Produto: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1433"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1863"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Fabricante: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1438"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1868"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Número de Série.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1443"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1873"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Porta: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1450"/>
+        <location filename="../src/VBoxGlobal.cpp" line="1880"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Estado: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1789"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2202"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
         <translation>interface do hospedeiro, %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1792"/>
+        <location filename="../src/VBoxGlobal.cpp" line="2205"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
         <translation>rede interna, &apos;%1&apos;</translation>
@@ -2997,21 +3100,109 @@ Versão %1</translation>
         <comment>network</comment>
         <translation>Adaptador %1</translation>
     </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="322"/>
+        <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
+        <comment>hard disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="328"/>
+        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Conectado a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="329"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="337"/>
+        <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="355"/>
+        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="405"/>
+        <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="523"/>
+        <source>Checking...</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="527"/>
+        <source>Inaccessible</source>
+        <comment>medium</comment>
+        <translation type="unfinished">Inacessível</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="573"/>
+        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="592"/>
+        <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="1946"/>
+        <source>3D Acceleration</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2069"/>
+        <source>Enabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished">Habilitado</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="2069"/>
+        <source>Disabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="3115"/>
+        <source>Setting Up</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxGlobal.cpp" line="3154"/>
+        <source>Differencing</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished">Diferencial</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
-        <location filename="../src/VBoxGlobalSettings.cpp" line="117"/>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="121"/>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
         <translation>&apos;%1 (0x%2)&apos; é uma chave de hospedeiro inválida.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobalSettings.cpp" line="248"/>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="252"/>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
         <translation>O valor &apos;%1&apos; da chave &apos;%2&apos; não coincide com a restrição regexp &apos;%3&apos;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobalSettings.cpp" line="238"/>
+        <location filename="../src/VBoxGlobalSettings.cpp" line="242"/>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Não foi possível apagar a chave &apos;%1&apos;.</translation>
     </message>
@@ -3704,22 +3895,22 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="420"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="415"/>
         <source>Close the search panel</source>
         <translation>Fecha o painel de busca</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="422"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="417"/>
         <source>Find </source>
         <translation>Procurar </translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="423"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="418"/>
         <source>Enter a search string here</source>
         <translation>Entre o termo de busca aqui</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="425"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="420"/>
         <source>&amp;Previous</source>
         <translation>Anterior(&amp;P)</translation>
     </message>
@@ -3729,12 +3920,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="427"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="422"/>
         <source>Search for the previous occurrence of the string</source>
         <translation>Procura pela ocorrência anterior da frase</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="424"/>
         <source>&amp;Next</source>
         <translation>Próximo(&amp;N)</translation>
     </message>
@@ -3744,22 +3935,22 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Alt+N</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="431"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="426"/>
         <source>Search for the next occurrence of the string</source>
         <translation>Procura pela próxima ocorrência da frase</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="433"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="428"/>
         <source>C&amp;ase Sensitive</source>
         <translation>Sensível à C&amp;aixa</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="435"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="430"/>
         <source>Perform case sensitive search (when checked)</source>
         <translation>Realiza uma busca sensível à caixa (quando marcado)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="437"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="432"/>
         <source>String not found</source>
         <translation>Frase não encontrada</translation>
     </message>
@@ -3769,53 +3960,232 @@ to the system default language.&lt;/qt&gt;
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
         <source>&lt;no hard disk&gt;</source>
-        <translation>&lt;sem discos rígidos&gt;</translation>
+        <translation type="obsolete">&lt;sem discos rígidos&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
         <source>No hard disk</source>
-        <translation>Sem discos rígidos</translation>
+        <translation type="obsolete">Sem discos rígidos</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
+        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
+        <source>&lt;no media&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxMediaManagerDlg</name>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
+        <source>&amp;Actions</source>
+        <translation type="unfinished">&amp;Ações</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
+        <source>&amp;New...</source>
+        <translation type="unfinished">&amp;Novo...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Acrescentar...</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
+        <source>R&amp;emove</source>
+        <translation type="unfinished">R&amp;emover</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
+        <source>Re&amp;lease</source>
+        <translation type="unfinished">&amp;Liberar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">Atualizar (&amp;F)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
+        <source>Create a new virtual hard disk</source>
+        <translation type="unfinished">Criar um novo disco rígido virtual</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
+        <source>Add an existing medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
+        <source>Remove the selected medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
+        <source>Release the selected medium by detaching it from the machines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
+        <source>Refresh the media list</source>
+        <translation type="unfinished">Atualizar a lista de mídias</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
+        <source>Location</source>
+        <translation type="unfinished">Localização</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
+        <source>Type (Format)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
+        <source>Attached to</source>
+        <translation type="unfinished">Conectado a</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
+        <source>Checking accessibility</source>
+        <translation type="unfinished">Verificando acessibilidade</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
+        <source>&amp;Select</source>
+        <translation type="unfinished">&amp;Selecionar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
+        <source>All hard disk images (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
+        <source>All files (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
+        <source>Select a hard disk image file</source>
+        <translation type="unfinished">Selecione um arquivo de imagem de disco rígido</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
+        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <translation type="unfinished">Imagens de CD/DVD-ROM (*.iso);;Todos os arquivos (*)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
+        <source>Select a CD/DVD-ROM disk image file</source>
+        <translation type="unfinished">Selecione um arquivo de imagem de CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
+        <source>Floppy images (*.img);;All files (*)</source>
+        <translation type="unfinished">Imagens de disquete (*.img);;Todos os arquivos (*)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
+        <source>Select a floppy disk image file</source>
+        <translation type="unfinished">Selecione um arquivo de imagem de disquete</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
+        <source>Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
+        <source>Hard &amp;Disks</source>
+        <translation type="unfinished">Discos Rígidos (&amp;H)</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
+        <source>Name</source>
+        <translation type="unfinished">Nome</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Tamanho Virtual</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
+        <source>Actual Size</source>
+        <translation type="unfinished">Tamanho Real</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
+        <source>&amp;CD/DVD Images</source>
+        <translation type="unfinished">Imagens de &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
+        <source>Size</source>
+        <translation type="unfinished">Tamanho</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
+        <source>&amp;Floppy Images</source>
+        <translation type="unfinished">Imagens de Disquete (&amp;F)</translation>
     </message>
 </context>
 <context>
     <name>VBoxNIList</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="561"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="563"/>
         <source>VirtualBox Host Interface %1</source>
         <translation>Placa de Rede do Hospedeiro VirtualBox %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="622"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="624"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você deseja remover a placa de rede do hospedeiro selecionada &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Esta placa de rede pode estar em uso por um ou mais adaptadores de redes desta ou de outras MVs. Após a remoção, estes adaptadores não irão mais funcionar até que você corrija suas configurações, escolhendo um novo nome para a placa ou um tipo de conexão diferente.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="654"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
         <source>Host &amp;Interfaces</source>
         <translation>Placas de Rede do Hospede&amp;iro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="656"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="658"/>
         <source>Lists all available host interfaces.</source>
         <translation>Lista todas as placas de rede disponíveis no hospedeiro.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="659"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
         <source>A&amp;dd New Host Interface</source>
         <translation>Acrescentar Placa de Re&amp;de do Hospedeiro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="660"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
         <source>&amp;Remove Selected Host Interface</source>
         <translation>&amp;Remover Placa de Rede do Hospedeiro Selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="661"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="663"/>
         <source>Adds a new host interface.</source>
         <translation>Acrescenta uma nova placa de rede do hospedeiro.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="662"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="664"/>
         <source>Removes the selected host interface.</source>
         <translation>Remove a placa de rede do hospedeiro selecionada.</translation>
     </message>
@@ -3859,12 +4229,12 @@ aproximadamente o mesmo tamanho que o definido para o disco virtual.&lt;/p&gt;</
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Image Type</source>
-        <translation>Tipo de Imagem</translation>
+        <translation type="obsolete">Tipo de Imagem</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding image</source>
-        <translation>Imagem &amp;dinamicamente expansível</translation>
+        <translation type="obsolete">Imagem &amp;dinamicamente expansível</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -3874,7 +4244,7 @@ aproximadamente o mesmo tamanho que o definido para o disco virtual.&lt;/p&gt;</
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size image</source>
-        <translation>Imagem de tamanho &amp;fixo</translation>
+        <translation type="obsolete">Imagem de tamanho &amp;fixo</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -3884,7 +4254,7 @@ aproximadamente o mesmo tamanho que o definido para o disco virtual.&lt;/p&gt;</
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Virtual Disk Image Type</source>
-        <translation>Tipo de Imagem de Disco Virtual</translation>
+        <translation type="obsolete">Tipo de Imagem de Disco Virtual</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -3896,7 +4266,7 @@ que irá armazenar a imagem de disco virtual ou digite um nome de arquivo no cam
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Image File Name</source>
-        <translation>Nome do Arquivo de &amp;Imagem</translation>
+        <translation type="obsolete">Nome do Arquivo de &amp;Imagem</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -3913,7 +4283,7 @@ sistema operacional Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;<
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>Image &amp;Size</source>
-        <translation>Tamanho da Imagem (&amp;S)</translation>
+        <translation type="obsolete">Tamanho da Imagem (&amp;S)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="435"/>
@@ -3923,7 +4293,7 @@ sistema operacional Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;<
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation>Você irá criar uma nova imagem de disco rígido virtual com os seguintes parâmetros:</translation>
+        <translation type="obsolete">Você irá criar uma nova imagem de disco rígido virtual com os seguintes parâmetros:</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -3940,7 +4310,7 @@ sistema operacional Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;<
         <translation>Sumário</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="366"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="364"/>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</translation>
     </message>
@@ -3950,12 +4320,12 @@ sistema operacional Convidado com o tamanho do disco rígido virtual.&lt;/p&gt;<
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipo:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Localização:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tamanho:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="265"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="274"/>
         <source>Hard disk images (*.vdi)</source>
         <translation>Imagens de disco rígido (*.vdi)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="263"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="272"/>
         <source>Select a file for the new hard disk image file</source>
         <translation>Selecione um arquivo para a nova imagem de disco rígido</translation>
     </message>
@@ -3979,7 +4349,7 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este assistente irá ajudá-lo a criar um novo disco rígido virtual para sua máquina virtual.&lt;/p&gt;&lt;p&gt;Utilize o botão &lt;b&gt;Próximo&lt;/b&gt; para ir para a próxima página do assistente e o botão&lt;b&gt;Anterior&lt;/b&gt; para retornar à página anterior.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Este assistente irá ajudá-lo a criar um novo disco rígido virtual para sua máquina virtual.&lt;/p&gt;&lt;p&gt;Utilize o botão &lt;b&gt;Próximo&lt;/b&gt; para ir para a próxima página do assistente e o botão&lt;b&gt;Anterior&lt;/b&gt; para retornar à página anterior.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
@@ -3994,22 +4364,22 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleciona o tipo de imagem de disco virtual que você deseja criar.&lt;/p&gt;&lt;p&gt;Uma &lt;b&gt;imagem dinamicamente expansível&lt;/b&gt; ocupa inicialmente um espaço bempequeno no seu disco rígido físico e irá crescer dinamicamente (até o tamanho especificado)à medida em que o sistema operacional Convidado exigir mais espaço.&lt;/p&gt;&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não cresce. Ela é armazenada em um arquivo como  tamanho definido para o disco rígido virtual. A criação de uma imagem de tamanho fixo podedemorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu disco rígido físico.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Seleciona o tipo de imagem de disco virtual que você deseja criar.&lt;/p&gt;&lt;p&gt;Uma &lt;b&gt;imagem dinamicamente expansível&lt;/b&gt; ocupa inicialmente um espaço bempequeno no seu disco rígido físico e irá crescer dinamicamente (até o tamanho especificado)à medida em que o sistema operacional Convidado exigir mais espaço.&lt;/p&gt;&lt;p&gt;Uma &lt;b&gt;imagem de tamanho fixo&lt;/b&gt; não cresce. Ela é armazenada em um arquivo como  tamanho definido para o disco rígido virtual. A criação de uma imagem de tamanho fixo podedemorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu disco rígido físico.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pressione o botão &lt;b&gt;Selecionar&lt;/b&gt; para selecionar a localização e o nome do arquivoque irá armazenar a imagem de disco virtual ou digite um nome de arquivo no campo de entrada.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Pressione o botão &lt;b&gt;Selecionar&lt;/b&gt; para selecionar a localização e o nome do arquivoque irá armazenar a imagem de disco virtual ou digite um nome de arquivo no campo de entrada.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selecione o tamanho da imagem de disco virtual em megabytes. Este tamanho irá aparecer para osistema operacional Convidado como o tamanho do disco rígido virtual.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Selecione o tamanho da imagem de disco virtual em megabytes. Este tamanho irá aparecer para osistema operacional Convidado como o tamanho do disco rígido virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation>Se as configurações acima estiverem corretas, pressione o botão &lt;b&gt;Finalizar&lt;/b&gt;. Assim que pressioná-lo, uma nova imagem de disco rígido será criada.</translation>
+        <translation type="obsolete">Se as configurações acima estiverem corretas, pressione o botão &lt;b&gt;Finalizar&lt;/b&gt;. Assim que pressioná-lo, uma nova imagem de disco rígido será criada.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
@@ -4017,25 +4387,25 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
         <translation>&amp;Finalizar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="204"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="213"/>
         <source>Type</source>
         <comment>summary</comment>
         <translation>Tipo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="205"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="214"/>
         <source>Location</source>
         <comment>summary</comment>
         <translation>Localização</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="206"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="215"/>
         <source>Size</source>
         <comment>summary</comment>
         <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="207"/>
+        <location filename="../src/VBoxNewHDWzd.cpp" line="216"/>
         <source>Bytes</source>
         <comment>summary</comment>
         <translation>Bytes</translation>
@@ -4044,6 +4414,66 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
+        <source>Storage Type</source>
+        <translation type="unfinished">Tipo de Armazenamento</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4097,12 +4527,12 @@ do VirtualBox.&lt;/p&gt;</translation>
         <translation>Nome da MV e Tipo de Sistema</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="547"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="494"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selecione a quantidade de memória (RAM) em megabytes a ser alocada para a máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="585"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="532"/>
         <source>Base &amp;Memory Size</source>
         <translation>&amp;Memória Principal</translation>
     </message>
@@ -4122,12 +4552,12 @@ do VirtualBox.&lt;/p&gt;</translation>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="632"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="579"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="489"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="436"/>
         <source>Memory</source>
         <translation>Memória</translation>
     </message>
@@ -4152,20 +4582,20 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="873"/>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation>Disco Rígido de B&amp;oot (Primário Master)</translation>
+        <translation type="obsolete">Disco Rígido de B&amp;oot (Primário Master)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="882"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="832"/>
         <source>N&amp;ew...</source>
         <translation>Novo (&amp;E)...</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="889"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="839"/>
         <source>E&amp;xisting...</source>
         <translation>E&amp;xistente...</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="777"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="724"/>
         <source>Virtual Hard Disk</source>
         <translation>Disco Rígido Virtual</translation>
     </message>
@@ -4210,7 +4640,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
                             </translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1012"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="962"/>
         <source>Summary</source>
         <translation>Sumário</translation>
     </message>
@@ -4230,12 +4660,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disco Rígido de Boot:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="152"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="140"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>O tamanho recomendado para memória principal é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="155"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="143"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>O tamanho recomendado para o disco rígido de boot é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
@@ -4245,12 +4675,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>&lt;p&gt;Este assistente irá guiá-lo nos passos necessários para criar uma nova máquina virtual para o VirtualBox.&lt;/p&gt;&lt;p&gt;Utilize o botão &lt;b&gt;Próximo&lt;/b&gt; para ir para a próxima página do assistente eo botão &lt;b&gt;Anterior&lt;/b&gt; para retornar à página anterior.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1169"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1119"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; Voltar (&amp;B)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="968"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="918"/>
         <source>&amp;Next &gt;</source>
         <translation>Próximo(&amp;N) &gt;</translation>
     </message>
@@ -4262,109 +4692,142 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selecione uma imagem de disco rígido virtual para ser utilizada como disco rígido principal da máquina virtual. Você pode criar um novo disco rígido virtual com o botão &lt;b&gt;Novo&lt;/b&gt;, selecionar uma imagem de disco rígido virtual da lista ou pressionar o botão &lt;b&gt;Existente&lt;/b&gt; para abrir o diálogo do Gerenciador de Discos Virtuais.&lt;/p&gt;&lt;p&gt;Se você precisa de uma configuração mais complexa de discos rígidos, você pode pular este passo e conectar os discos rígidos posteriormente utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Selecione uma imagem de disco rígido virtual para ser utilizada como disco rígido principal da máquina virtual. Você pode criar um novo disco rígido virtual com o botão &lt;b&gt;Novo&lt;/b&gt;, selecionar uma imagem de disco rígido virtual da lista ou pressionar o botão &lt;b&gt;Existente&lt;/b&gt; para abrir o diálogo do Gerenciador de Discos Virtuais.&lt;/p&gt;&lt;p&gt;Se você precisa de uma configuração mais complexa de discos rígidos, você pode pular este passo e conectar os discos rígidos posteriormente utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1070"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1020"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você irá criar uma nova imagem de disco rígido virtual com os seguintes parâmetros:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1117"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1067"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Se a configuração cima estiver correta pressione o botão &lt;b&gt;Finalizar&lt;/b&gt;. Assim que pressioná-lo, uma nova máquina virtual será criada. &lt;/p&gt;&lt;p&gt;Você pode alterar estas e todas as outras configurações da máquina virtual criada a qualquer momento utilizando o diálogo &lt;b&gt;Preferências&lt;/b&gt;, acessível no menu da janela principal.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1176"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1126"/>
         <source>&amp;Finish</source>
         <translation>&amp;Finalizar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <source>MB</source>
         <comment>megabytes</comment>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="175"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="163"/>
         <source>Name</source>
         <comment>summary</comment>
         <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="176"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
         <source>OS Type</source>
         <comment>summary</comment>
         <translation>Tipo de Sistema</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="178"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="165"/>
         <source>Base Memory</source>
         <comment>summary</comment>
         <translation>Memória Principal</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="184"/>
+        <location filename="../src/VBoxNewVMWzd.cpp" line="171"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>Disco Rígido de Boot</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="1149"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>VBoxOSTypeSelectorWidget</name>
+    <message>
+        <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
+        <source>Operating &amp;System:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
+        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
+        <source>V&amp;ersion:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
+        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <translation type="unfinished">Mostra o tipo de sistema operacional que você planeja instalar nesta máquina virtual (chamado de sistema operacional convidado).</translation>
     </message>
 </context>
 <context>
     <name>VBoxProblemReporter</name>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="402"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="399"/>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Informação</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="406"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="403"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Pergunta</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="410"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="407"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Aviso</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="414"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="411"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Erro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="418"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="415"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - Erro Crítico</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="445"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="442"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
         <translation>Não mostrar esta mensagem novamente</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="572"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="569"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
         <translation>Falha ao abrir &lt;tt&gt;%1&lt;/tt&gt;. Certifique-se de que seu ambiente de trabalho consegue abrir URLs deste tipo.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="623"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="620"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao inicializar o COM ou para encontrar o servidor COM do VirtualBox. Provavelmente o servidor do VirtualBox não está sendo executado ou falhou ao iniciar.&lt;/p&gt;&lt;p&gt;A aplicação será finalizada.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="631"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="628"/>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao criar o objeto COM do VirtualBox.&lt;/p&gt;&lt;p&gt;A aplicação será finalizada.&lt;/p&gt;</translation>
     </message>
@@ -4379,27 +4842,27 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;Falha ao salvar a configuração global da GUI.&lt;p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="679"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="676"/>
         <source>Failed to set global VirtualBox properties.</source>
         <translation>Falha ao definir as propriedades globais do VirtualBox.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="693"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="690"/>
         <source>Failed to access the USB subsystem.</source>
         <translation>Falha ao acessar o sub-sistema USB.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="704"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="701"/>
         <source>Failed to create a new virtual machine.</source>
         <translation>Falha ao criar uma nova máquina virtual.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="717"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="714"/>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao criar uma nova máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="729"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="726"/>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao aplicar as configurações à máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4414,89 +4877,89 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Falha ao carregar as configurações da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="790"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="787"/>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao iniciar a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="802"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="799"/>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao pausar a execução da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="813"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="810"/>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao continuar a execução da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="850"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="847"/>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao salvar o estado da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="876"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="873"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao criar um snapshot da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="888"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="897"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao parar a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="900"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="909"/>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao remover a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="911"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="920"/>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao descartar o estado salvo da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="951"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="956"/>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Falha ao descartar o snapshot &lt;b&gt;%1&lt;/b&gt; da máquina virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="976"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="981"/>
         <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao descartar o estado atual da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1000"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1005"/>
         <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao descartar o snapshot atual e o estado atual da máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1011"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1016"/>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Não existe máquina virtual chamada &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1059"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1064"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você tem certeza de que deseja apagar permanentemente a máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operação não pode ser desfeita.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1072"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1077"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você tem certeza de que deseja desregistrar a máquina virtual inacessível &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Você não poderá mais registrá-la a partir da interface gráfica.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1088"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1093"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você tem certeza de que deseja descartar o estado salvo da máquina virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Esta operação é equivalente a reiniciar ou desligar a máquina sem desligá-la utilizando os meios fornecidos pelo sistema Convidado.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ao liberar esta imagem de mídia, esta será desconectada da(s) seguinte(s) máquina(s) virtual(is): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuar?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ao liberar esta imagem de mídia, esta será desconectada da(s) seguinte(s) máquina(s) virtual(is): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuar?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1113"/>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;O arquivo de imagem &lt;b&gt;%1&lt;/b&gt; já existe. Você não pode criar um novo disco rígido virtual que utilize este arquivo, pois ele pode já estar sendo utilizado por outro disco rígido virtual.&lt;/p&gt;&lt;p&gt;Por favor especifique um nome de arquivo diferente para a imagem.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;O arquivo de imagem &lt;b&gt;%1&lt;/b&gt; já existe. Você não pode criar um novo disco rígido virtual que utilize este arquivo, pois ele pode já estar sendo utilizado por outro disco rígido virtual.&lt;/p&gt;&lt;p&gt;Por favor especifique um nome de arquivo diferente para a imagem.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -4506,17 +4969,17 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1145"/>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Falha ao apagar a imagem de disco rígido virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Falha ao apagar a imagem de disco rígido virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Você deseja remover (desregistrar) o disco rígido virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Você deseja remover (desregistrar) o disco rígido virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1195"/>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Falha ao criar a imagem de disco rígido virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Falha ao criar a imagem de disco rígido virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -4531,30 +4994,30 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1252"/>
         <source>hard disk</source>
-        <translation>disco rígido</translation>
+        <translation type="obsolete">disco rígido</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1253"/>
         <source>CD/DVD image</source>
-        <translation>imagem de CD/DVD</translation>
+        <translation type="obsolete">imagem de CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1254"/>
         <source>floppy image</source>
-        <translation>imagem de disquete</translation>
+        <translation type="obsolete">imagem de disquete</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1243"/>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Falha ao registrar %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Falha ao registrar %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1261"/>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Falha ao desregistrar %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Falha ao desregistrar %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1273"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1317"/>
         <source>Failed to create a new session.</source>
         <translation>Falha ao criar uma nova sessão.</translation>
     </message>
@@ -4564,42 +5027,42 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Falha ao abrir uma sessão para a máquina virtual com UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1292"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1336"/>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao abrir uma sessão para a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1320"/>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation>Falha ao buscar o estado de acessibilidade da mídia &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Algumas das mídias registradas podem ter se tornado inacessíveis.</translation>
+        <translation type="obsolete">Falha ao buscar o estado de acessibilidade da mídia &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Algumas das mídias registradas podem ter se tornado inacessíveis.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1340"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1367"/>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao criar a placa de rede de hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1358"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1385"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao remover a placa de rede de hospedeiro &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1385"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1412"/>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Falha ao conectar o dispositivo USB &lt;b&gt;%1&lt;/b&gt; à máquina virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1411"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1438"/>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation>Falha ao desconectar o dispositivo USB &lt;b&gt;%1&lt;/b&gt; da máquina virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1464"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1491"/>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Falha ao criar a pasta compartilhada &lt;b&gt;%1&lt;/b&gt; (apontando para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) para a máquina virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1446"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1473"/>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Falha ao remover a pasta compartilhada &lt;b&gt;%1&lt;/b&gt; (apontando para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) da máquina virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
@@ -4619,12 +5082,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;A Máquina Virtual informa que o sistema operacional convidado suporta o recurso de &lt;b&gt;integração de ponteiro de mouse&lt;/b&gt;. Isto significa que você não precisa  &lt;i&gt;capturar&lt;/i&gt; o ponteiro do mouse para poder usá-lo em seu sistema operacional convidado -- todas as ações de mouse que você executar quando o ponteiro estiver em cima da janela da Máquina Virtual serão enviadas diretamente para o sistema operacional convidado. Se o mouse estiver capturado, ele será automaticamente liberado.&lt;/p&gt;&lt;p&gt;O ícone de mouse na barra de status irá ficar assim:&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;para informálo que a integração de ponteiro de mouse é suportada pelo sistema operacional convidado e que este recurso está ativo.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algumas aplicações podem se comportar de forma errônea no modo de integração de ponteiro de mouse. Se necessário, você pode desabilitar o recurso para a sessão atual (e habilitá-lo de novo) selecionando a ação correspondente na barra de menu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1755"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1782"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A Máquina Virtual informa que o sistema operacional convidado não suporta o recurso de &lt;b&gt;integração de ponteiro de mouse&lt;/b&gt; no modo de vídeo atual. Você precisa capturar o mouse (clicando na janela da MV ou pressionando a tecla de hospedeiro) para poder utilizar o mouse dentro do sistema operacional convidado.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1774"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1801"/>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and therefore does not accept any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A Máquina Virtual está em um estado &lt;b&gt;Pausado&lt;/b&gt; e portanto não irá aceitar nenhuma entrada de teclado ou mouse. Se você deseja continuar a trabalhar dentro da MV, você precisa continuar sua execução selecionando a ação correspondente na barra de menu.&lt;/p&gt;</translation>
     </message>
@@ -4639,112 +5102,112 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;A janela da máquina virtual será alternada para &lt;b&gt;tela cheia&lt;/b&gt;. Você pode voltar para o modo de janela a qualquer hora pressionando &lt;b&gt;%1&lt;/b&gt;. Note que a  &lt;i&gt;Tecla de Hospedeiro&lt;/i&gt; está atualmente definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1992"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2055"/>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível executar o VirtualBox em modo de &lt;i&gt;Seleção de MV&lt;/i&gt; devido a restrições locais.&lt;/p&gt;&lt;p&gt;A aplicação será finalizada.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2020"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2083"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Erro Fatal&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2026"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2089"/>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Erro Não-Fatal&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2032"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2095"/>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Aviso&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2053"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2116"/>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
         <translation>&lt;nobr&gt;Identificação do Erro: &lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2055"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2118"/>
         <source>Severity: </source>
         <comment>runtime error info</comment>
         <translation>Severidade: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2069"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2132"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
         <translation>&lt;p&gt;Um erro fatal ocorreu durante a execução da máquina virtual! A máquina virtual será desligada. Recomendamos que você copie a seguinte mensagem de erro para a área de transferência para examiná-la com detalhes:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2081"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2144"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Um erro ocorreu durante a execução da máquina virtual! Os detalhes do erro são mostrados abaixo. Você pode tentar corrigir o erro descrito e continuar a execução da máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2091"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2154"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A execução da máquina virtual pode ser abortada a qualquer momento com a condição de erro descrita abaixo. Você pode ignorar esta mensagem, mas recomendamos que você tome uma ação para garantir que o erro descrito não ocorra.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2189"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2268"/>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
         <translation>Código&amp;nbsp;de&amp;nbsp;Resultado: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2195"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2274"/>
         <source>Component: </source>
         <comment>error info</comment>
         <translation>Componente: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2203"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2282"/>
         <source>Interface: </source>
         <comment>error info</comment>
         <translation>Interface: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2212"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2291"/>
         <source>Callee: </source>
         <comment>error info</comment>
         <translation>Chamador: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="2220"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2299"/>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
         <translation>RC&amp;nbsp;do&amp;nbsp;Chamador: </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="602"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="599"/>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível encontrar um arquivo de linguagem para o idioma &lt;b&gt;%1&lt;/b&gt; no diretório &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;O idioma será temporariamente definido para o idioma padrão do sistema. Por favor abra o diálogo de &lt;b&gt;Preferências&lt;/b&gt; no menu &lt;b&gt;Arquivo&lt;/b&gt; da janela principal do VirtualBox window, e selecione um dos idiomas existentes na página &lt;b&gt;Idiomas&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="614"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="611"/>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível carregar o arquivo de linguagem &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;O idioma será temporariamente redefinido para Inglês (embutido). Por favor vá até o diálogo &lt;b&gt;Preferências&lt;/b&gt; a partir do menu &lt;b&gt;Arquivo&lt;/b&gt; na janela principal do VirtualBox, e selecione um dos idiomas existentes na página &lt;b&gt;Idiomas&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1553"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1580"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Os Adicionais para Convidado do VirtualBox instalados no Sistema Operacional Convidado são muito antigos: a versão instalada é %1, e a versão esperada é %2. Alguns recursos dos Adicionais para Convidado (integração de mouse, auto-redimensionamento de janela do convidado) provavelmente não irão funcionar corretamente.&lt;/p&gt;&lt;p&gt;Por favor atualize os Adicionais para Convidado para a versão atual usando a função  &lt;b&gt;Instalar Adicionais para Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1569"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1596"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Os Adicionais para Convidado do VirtualBox instalados no Sistema Operacional Convidado estão desatualizados: a versão instalada é %1, e a versão esperada é %2. Alguns recursos dos Adicionais para Convidado (integração de mouse, auto-redimensionamento de janela do convidado) podem não funcionar corretamente.&lt;/p&gt;&lt;p&gt;É recomendado que se atualize os Adicionais para Convidado para a versão atual  usando a função &lt;b&gt;Instalar Adicionais para Convidado&lt;/b&gt; no menu &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1585"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1612"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Os Adicionais para Convidado do VirtualBox instalados no Sistema Operacional Convidado são recentes demais para esta versão do VirtualBox: a versão instalada é %1, a versão esperada é %2.&lt;/p&gt;&lt;p&gt;O uso de uma versão mais nova dos Adicionais com uma versão mais antiga do VirtualBox não é suportado. Por favor instale a versão atual dos Adicionais para Convidado usando a função &lt;b&gt;Instalar Adicionais para Convidado&lt;/b&gt; do menu  &lt;b&gt;Dispositivos&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="923"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="932"/>
         <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Erro ao alterar o caminho do diretório de snapshots para a máquina virtual &lt;b&gt;%1&lt;b&gt; para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
@@ -4754,27 +5217,27 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;Não foi possível entrar no modo &quot;seamless&quot; devido à falta de memória de vídeo do sistema Convidado.&lt;/p&gt;&lt;p&gt;Você deve configurar a VM para ter pelo menos &lt;b&gt;%1&lt;/b&gt; de memória de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1484"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1511"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao remover a pasta compartilhada &lt;b&gt;%1&lt;/b&gt; (que aponta para &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) da máquina virtual &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Por favor feche todos os programas no sistema operacional Convidado que possam estar utilizando esta pasta compartilhada e tente novamente.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1498"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1525"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível encontrar o arquivo de imagem do CD dos Adicionais para Convidado em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ou &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Você deseja baixar esta imagem de CD da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1510"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao tentar baixar a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1520"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1547"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você tem certeza de que deseja baixar a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (tamanho %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1535"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1562"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;A imagem de CD dos Adicionais para Convidado do VirtualBox foi baixada com sucesso a partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salva localmente como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Você deseja registrar esta imagem de CD e montá-la no drive de CD/DVD virtual?&lt;/p&gt;</translation>
     </message>
@@ -4789,89 +5252,89 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;A janela da máquina virtual será alternada para o modo &lt;b&gt;Seamless&lt;/b&gt;. Você pode voltar ao modo de janela a qualquer momento pressionando &lt;b&gt;%1&lt;/b&gt;. A tecla de &lt;i&gt;Hospedeiro&lt;/i&gt; está definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A barra de menus principal estará oculta em modo &quot;seamless&quot;. Você pode acessá-la pressionando a combinação &lt;b&gt;Hospedeiro+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1913"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1976"/>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A janela da máquina virtual está otimizada para trabalhar com o modo de cores de &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt;, mas o modo de cores do monitor virtual está definido como &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Abra o diálogo de propriedades do monitor no sistema operacional convidado e selecione um modo de cores de &lt;b&gt;%3&amp;nbsp;bits&lt;/b&gt; se estiver disponível, de forma a obter a melhor performance possível do sub-sistema de vídeo virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alguns sistemas operacionais, como o OS/2, podem funcionar em modo de 32&amp;nbsp;bits de cor mas o reportam como 24&amp;nbsp;bits (16 milhões de cores). Você pode tentar selecionar um modo de cores diferente para satisfazer o que é pedido nesta mensagem, ou pode desabilitá-la agora se tiver certeza de que o modo de cor necessário (%4&amp;nbsp;bits) não está disponível no sistema operacional Convidado em uso.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1946"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Um erro crítico ocorreu enquanto a máquina virtual estava em execução e por isto a execução foi interrompida.&lt;/p&gt;&lt;p&gt;Para ajuda, consulte a seção Comunidade no endereço &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ou utilize os recursos disponibilizados por seu contrato de suporte. Por favor forneça o conteúdo do arquivo de log &lt;tt&gt;VBox.log&lt;/tt&gt; e o arquivo de imagem &lt;tt&gt;VBox.png&lt;/tt&gt;, os quais você pode encontrar no diretório &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, assim como uma descrição do que você estava fazendo no momento que este erro ocorreu. Você também pode acessar os arquivos acima selecionando a opção &lt;b&gt;Mostrar Log&lt;/b&gt; do menu &lt;b&gt;Máquina&lt;/b&gt; na janela principal do VirtualBox.&lt;/p&gt;&lt;p&gt;Pressione &lt;b&gt;OK&lt;/b&gt; se você deseja desligar a máquina virtual ou pressione &lt;b&gt;Ignorar&lt;/b&gt; se você deseja deixá-la no estado atual para depuração. Note que para depurar este problema são necessários conhecimentos específicos e ferramentas especiais, então recomendamos que você pressione &lt;b&gt;OK&lt;/b&gt; agora.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Um erro crítico ocorreu enquanto a máquina virtual estava em execução e por isto a execução foi interrompida.&lt;/p&gt;&lt;p&gt;Para ajuda, consulte a seção Comunidade no endereço &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ou utilize os recursos disponibilizados por seu contrato de suporte. Por favor forneça o conteúdo do arquivo de log &lt;tt&gt;VBox.log&lt;/tt&gt; e o arquivo de imagem &lt;tt&gt;VBox.png&lt;/tt&gt;, os quais você pode encontrar no diretório &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, assim como uma descrição do que você estava fazendo no momento que este erro ocorreu. Você também pode acessar os arquivos acima selecionando a opção &lt;b&gt;Mostrar Log&lt;/b&gt; do menu &lt;b&gt;Máquina&lt;/b&gt; na janela principal do VirtualBox.&lt;/p&gt;&lt;p&gt;Pressione &lt;b&gt;OK&lt;/b&gt; se você deseja desligar a máquina virtual ou pressione &lt;b&gt;Ignorar&lt;/b&gt; se você deseja deixá-la no estado atual para depuração. Note que para depurar este problema são necessários conhecimentos específicos e ferramentas especiais, então recomendamos que você pressione &lt;b&gt;OK&lt;/b&gt; agora.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1978"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2041"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você não conectou um disco rígido à nova máquina virtual. A máquina não conseguirá inicializar a menos que você conecte um disco rígido com um sistema operacional convidado instalado ou outra mídia inicializável utilizando o diálogo de preferências ou o Assistente de Primeira Execução.&lt;/p&gt;&lt;p&gt;Você deseja continuar?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="552"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="549"/>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Falha ao procurar arquivos de licença em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="562"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="559"/>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
         <translation>Falha ao abrir o arquivo de licença &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Verifique as permissões do arquivo.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="825"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="822"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Falha ao enviar o evento de Botão de Ligar/Desligar ACPI para a máquina virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1600"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Falha ao conectar ao serviço de registro online do VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Falha ao conectar ao serviço de registro online do VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1611"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1638"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
         <translation>&lt;p&gt;Parabéns! Você registrou-se com sucesso como usuário do VirtualBox.&lt;/p&gt;&lt;p&gt;Obrigado pelo tempo dispensado para preencher o formulário de registro!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1614"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao registrar o produto VirtualBox &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="644"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="641"/>
         <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao salvar as preferências globais do VirtualBox em &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="658"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="655"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao carregar a configuração global da GUI de &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A aplicação será finalizada.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="672"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="669"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao salvar a configuração global da GUI em &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A aplicação será finalizada.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="743"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="740"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Falha ao salvar as configurações da máquina virtual &lt;b&gt;%1&lt;/b&gt; em &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="765"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="762"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
         <translation>Falha ao carregar as configurações da máquina virtual &lt;b&gt;%1&lt;/b&gt; de &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1060"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1065"/>
         <source>Delete</source>
         <comment>machine</comment>
         <translation>Apagar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1073"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1078"/>
         <source>Unregister</source>
         <comment>machine</comment>
         <translation>Desregistrar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1095"/>
         <source>Discard</source>
         <comment>saved state</comment>
         <translation>Descartar</translation>
@@ -4880,32 +5343,32 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <location filename="../src/VBoxProblemReporter.cpp" line="1102"/>
         <source>Continue</source>
         <comment>detach image</comment>
-        <translation>Continuar</translation>
+        <translation type="obsolete">Continuar</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Você quer apagar o arquivo de imagem de disco rígido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se você selecionar &lt;b&gt;Apagar&lt;/b&gt; a imagem será permanentemente removido depois de desregistrar o disco rígido. Esta operação não pode ser desfeita.&lt;/p&gt;&lt;p&gt;Se você selecionar &lt;b&gt;Desregistrar&lt;/b&gt; então a imagem do disco rígido virtual será desregistrada e removida da lista, mas o arquivo de imagem continuará intacto em seu disco.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Você quer apagar o arquivo de imagem de disco rígido &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se você selecionar &lt;b&gt;Apagar&lt;/b&gt; a imagem será permanentemente removido depois de desregistrar o disco rígido. Esta operação não pode ser desfeita.&lt;/p&gt;&lt;p&gt;Se você selecionar &lt;b&gt;Desregistrar&lt;/b&gt; então a imagem do disco rígido virtual será desregistrada e removida da lista, mas o arquivo de imagem continuará intacto em seu disco.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>Delete</source>
         <comment>hard disk</comment>
-        <translation>Apagar</translation>
+        <translation type="obsolete">Apagar</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
         <source>Unregister</source>
         <comment>hard disk</comment>
-        <translation>Desregistrar</translation>
+        <translation type="obsolete">Desregistrar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1167"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1202"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Existem discos rígidos conectados às portas SATA desta máquina virtual. Se você desabilitar a controladora SATA, todos estes discos serão automaticamente desconectados.&lt;/p&gt;&lt;p&gt;Você tem certeza de que deseja desabilitar a controladora SATA?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1169"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1204"/>
         <source>Disable</source>
         <comment>hard disk</comment>
         <translation>Desabilitar</translation>
@@ -4913,33 +5376,33 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1208"/>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation>Falha ao conectar a imagem de disco rígido virtual com o UUID %1 ao slot de dispositivo %2 no canal %3 do barramento %4 na máquina &lt;b&gt;%5&lt;/b&gt;.</translation>
+        <translation type="obsolete">Falha ao conectar a imagem de disco rígido virtual com o UUID %1 ao slot de dispositivo %2 no canal %3 do barramento %4 na máquina &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1223"/>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation>Falha ao desconectar a imagem de disco rígido do slot de dispositivo %1 no canal %2 do barramento %3 da máquina &lt;b&gt;%4&lt;/b&gt;.</translation>
+        <translation type="obsolete">Falha ao desconectar a imagem de disco rígido do slot de dispositivo %1 no canal %2 do barramento %3 da máquina &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1522"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1549"/>
         <source>Download</source>
         <comment>additions</comment>
         <translation>Baixar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1564"/>
         <source>Mount</source>
         <comment>additions</comment>
         <translation>Montar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1702"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1729"/>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
         <translation>&lt;p&gt;A tecla de hospedeiro está atualmente definida como &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1674"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1701"/>
         <source>Capture</source>
         <comment>do input capture</comment>
         <translation>Capturar</translation>
@@ -4947,10 +5410,10 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Um ou mais dos discos rígidos virtuais, mídias de CD/DVD ou disquete registrados não estão acessíveis. Como conseqüência, você não poderá operar as máquinas virtuais que utilizam estas mídias até que elas estejam acessíveis posteriormente.&lt;/p&gt;&lt;p&gt;Pressione o botão &lt;b&gt;Verificar&lt;/b&gt; para abrir a janela do Gerenciador de Discos Virtuais e verificar quais mídias estão inacessíveis, ou pressione  o botão &lt;b&gt;Ignorar&lt;/b&gt; para ignorar esta mensagem.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Um ou mais dos discos rígidos virtuais, mídias de CD/DVD ou disquete registrados não estão acessíveis. Como conseqüência, você não poderá operar as máquinas virtuais que utilizam estas mídias até que elas estejam acessíveis posteriormente.&lt;/p&gt;&lt;p&gt;Pressione o botão &lt;b&gt;Verificar&lt;/b&gt; para abrir a janela do Gerenciador de Discos Virtuais e verificar quais mídias estão inacessíveis, ou pressione  o botão &lt;b&gt;Ignorar&lt;/b&gt; para ignorar esta mensagem.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1795"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1822"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Verificar</translation>
@@ -4958,16 +5421,16 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Os seguintes arquivos de configuração do VirtualBox foram automaticamente convertidos para o novo formato de arquivos de configuração (versão &lt;b&gt;%1&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;No entanto, os resultados desta conversão ainda não foram salvos no disco ainda. Por favor pressione:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salvar&lt;/b&gt; para salvar todos os arquivos convertidos para o novo formato agora (não será possível utilizar estes arquivos de configuração em versões anteriores do VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Gerar Cópia de Segurança&lt;/b&gt; para criar cópias de segurança dos arquivos de configuração no formato antigo antes de salvá-los no formato novo;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancelar&lt;/b&gt; para não salvar nenhum dos arquivos de configuração convertidos agora.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note que se selecionar &lt;b&gt;Cancelar&lt;/b&gt;, os arquivos de configuração convertidos serão implicitamente salvos no novo formato assim que você efetuar qualquer mudança ou iniciar uma máquina virtual, mas &lt;b&gt;nenhuma&lt;/b&gt; cópia de segurança será criada neste caso.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Os seguintes arquivos de configuração do VirtualBox foram automaticamente convertidos para o novo formato de arquivos de configuração (versão &lt;b&gt;%1&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;No entanto, os resultados desta conversão ainda não foram salvos no disco ainda. Por favor pressione:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salvar&lt;/b&gt; para salvar todos os arquivos convertidos para o novo formato agora (não será possível utilizar estes arquivos de configuração em versões anteriores do VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Gerar Cópia de Segurança&lt;/b&gt; para criar cópias de segurança dos arquivos de configuração no formato antigo antes de salvá-los no formato novo;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancelar&lt;/b&gt; para não salvar nenhum dos arquivos de configuração convertidos agora.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note que se selecionar &lt;b&gt;Cancelar&lt;/b&gt;, os arquivos de configuração convertidos serão implicitamente salvos no novo formato assim que você efetuar qualquer mudança ou iniciar uma máquina virtual, mas &lt;b&gt;nenhuma&lt;/b&gt; cópia de segurança será criada neste caso.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Salvar</translation>
+        <translation type="obsolete">&amp;Salvar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1839"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1901"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>Gerar Cópia de Segurança (&amp;B)</translation>
@@ -4976,174 +5439,354 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Cancelar</translation>
+        <translation type="obsolete">Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1862"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1925"/>
         <source>Switch</source>
         <comment>fullscreen</comment>
         <translation>Trocar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1884"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1947"/>
         <source>Switch</source>
         <comment>seamless</comment>
         <translation>Trocar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1962"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2025"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você realmente deseja reiniciar a máquina virtual?&lt;/p&gt;&lt;p&gt;Quando uma máquina virtual é reiniciada, todos dados não salvos das aplicações rodando dentro da máquina virtual são perdidos.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1964"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2027"/>
         <source>Reset</source>
         <comment>machine</comment>
         <translation>Reiniciar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1983"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2046"/>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
         <translation>Continuar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1984"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2047"/>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
         <translation>Voltar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="588"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="585"/>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
         <translation>Falha ao copiar o arquivo &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; para &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1180"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não existem discos rígidos não utilizados dispon[iveis para a nova conexão que você criou.&lt;/p&gt;&lt;p&gt;Pressione o botão &lt;b&gt;Criar&lt;/b&gt; para iniciar o assistente de configuração de&lt;i&gt;Novo Disco Virtual&lt;/i&gt;  e criar um novo disco rígido, ou pressione o botão &lt;b&gt;Selecionar&lt;/b&gt; para abrir o &lt;i&gt;Gerenciador de Discos Virtuais&lt;/i&gt; e selecionar a ação que deseja tomar.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Não existem discos rígidos não utilizados dispon[iveis para a nova conexão que você criou.&lt;/p&gt;&lt;p&gt;Pressione o botão &lt;b&gt;Criar&lt;/b&gt; para iniciar o assistente de configuração de&lt;i&gt;Novo Disco Virtual&lt;/i&gt;  e criar um novo disco rígido, ou pressione o botão &lt;b&gt;Selecionar&lt;/b&gt; para abrir o &lt;i&gt;Gerenciador de Discos Virtuais&lt;/i&gt; e selecionar a ação que deseja tomar.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1185"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1220"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
         <translation>&amp;Criar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1186"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1221"/>
         <source>Select</source>
         <comment>hard disk</comment>
         <translation>Selecionar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1026"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1031"/>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível entrar no modo seamless devido a memória de vídeo insuficiente no sistema Convidado.&lt;/p&gt;&lt;p&gt;Você deve configurar a máquina virtual para ter no mínimo &lt;b&gt;%1&lt;/b&gt; de memória de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1041"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1046"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível alternar para tela cheia devido a memória de vídeo insuficiente no sistema Convidado.&lt;/p&gt;&lt;p&gt;Você deve configurar a máquina virtual para ter no mínimo &lt;b&gt;%1&lt;/b&gt; de memória de vídeo.&lt;/p&gt;&lt;p&gt;Pressione &lt;b&gt;Ignorar&lt;/b&gt; para tentar alternar para tela cheia mesmo assim ou pressione &lt;b&gt;Cancelar&lt;/b&gt; para cancelar a operação.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível obter informações de versão devido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Não foi possível obter informações de versão devido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1668"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
         <translation>Você já possui a versão mais recente do VirtualBox. Por favor verifique mais tarde.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1667"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1694"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você &lt;b&gt;clicou o mouse&lt;/b&gt; dentro da tela da Máquina Virtual ou pressionou a &lt;b&gt;tecla de hospedeiro&lt;/b&gt;. Isto fará com que a Máquina Virtual &lt;b&gt;capture&lt;/b&gt; o ponteiro do mouse do computador hospedeiro (apenas se a integração de ponteiro de mouse não for suportada pelo sistema operacional convidado) e o teclado, tornando-os indisponíveis para outras aplicações que estejam rodando no computador hospedeiro.&lt;/p&gt;&lt;p&gt;Você pode pressionar a &lt;b&gt;tecla de hospedeiro&lt;/b&gt; a qualquer momento para &lt;b&gt;liberar&lt;/b&gt; o teclado e o mouse (se estiverem capturados) e retorná-los à sua operação normal. A tecla de hospedeiro atualmente definida é mostrada na barra de status na parte de baixo da janela da Máquina Virtual, próxima ao ícone&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Este ícone, juntamente com o ícone do mouse próximo a ele, indica o estado de captura do teclado e do mouse.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1700"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1727"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Você tem a opção &lt;b&gt;Auto-capturar teclado&lt;/b&gt; ligada. Isto fará com que a Máquina Virtual automaticamente &lt;b&gt;capture&lt;/b&gt; o teclado todas as vezes em que a janela da MV seja ativada, tornando-o indisponível para outras aplicações que estejam rodando em seu computador hospedeiro: quando o teclado é capturado, todas as teclas (incluindo teclas de sistema como Alt-Tab) serão direcionadas para a MV.&lt;/p&gt;&lt;p&gt;Você pode pressionar a &lt;b&gt;tecla de hospedeiro&lt;/b&gt; a qualquer hora para  &lt;b&gt;liberar&lt;/b&gt; o teclado e o mouse (se estiver capturado também) e retorná-los a sua operação normal. A tecla de hospedeiro atual é mostrada na barra de status na parte de baixo da janela da Máquina Virtual, próximo ao ícone&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Este ícone, juntamente com o ícone de mouse próximo a ele, indicam o estado de captura atual do teclado e do mouse.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1772"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A Máquina Virtual informa que o sistema operacional convidado suporta o recurso de &lt;b&gt;integração de ponteiro de mouse&lt;/b&gt;. Isto significa que você não precisa  &lt;i&gt;capturar&lt;/i&gt; o ponteiro do mouse para poder usá-lo em seu sistema operacional convidado -- todas as ações de mouse que você executar quando o ponteiro estiver em cima da janela da Máquina Virtual serão enviadas diretamente para o sistema operacional convidado. Se o mouse estiver capturado, ele será automaticamente liberado.&lt;/p&gt;&lt;p&gt;O ícone de mouse na barra de status irá ficar assim:&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;para informálo que a integração de ponteiro de mouse é suportada pelo sistema operacional convidado e que este recurso está ativo.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algumas aplicações podem se comportar de forma errônea no modo de integração de ponteiro de mouse. Se necessário, você pode desabilitar o recurso para a sessão atual (e habilitá-lo de novo) selecionando a ação correspondente na barra de menu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1922"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A janela da máquina virtual será redimensionada para o modo &lt;b&gt;tela cheia&lt;/b&gt;. Você pode retornar ao modo de janela a qualquer momento pressionando &lt;b&gt;%1&lt;/b&gt;. A tecla de &lt;i&gt;Hospedeiro&lt;/i&gt; está definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A barra de menus principal ficará oculta no modo de tela cheia. Você pode acessá-la pressionando a combinação &lt;b&gt;Hospedeiro+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1881"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1944"/>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A janela da máquina virtual será alternada para o modo &lt;b&gt;Seamless&lt;/b&gt;. Você pode voltar ao modo de janela a qualquer momento pressionando &lt;b&gt;%1&lt;/b&gt;. A tecla de &lt;i&gt;Hospedeiro&lt;/i&gt; está definida como &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A barra de menus principal estará oculta em modo &quot;seamless&quot;. Você pode acessá-la pressionando a combinação &lt;b&gt;Hospedeiro+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="266"/>
         <source>&amp;Contents...</source>
         <translation>&amp;Conteúdo...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="272"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>Show the online help contents</source>
         <translation>Mostrar o conteúdo da ajuda on-line</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="274"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="271"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>Site do &amp;VirtualBox na Web...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="276"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="273"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation>Abre o navegador e vai para o site do VirtualBox na web </translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="278"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="275"/>
         <source>&amp;Reset All Warnings</source>
         <translation>&amp;Reinicializa Todos os Avisos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="280"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="277"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
         <translation>Faz com que todos os avisos e mensagens desabilitados sejam mostrados novamente</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="282"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="279"/>
         <source>R&amp;egister VirtualBox...</source>
         <translation>R&amp;egistrar o VirtualBox...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="284"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="281"/>
         <source>Open VirtualBox registration form</source>
         <translation>Abrir o formulário de registro do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="286"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="283"/>
         <source>C&amp;heck for Updates...</source>
         <translation>Verificar por atualizações (&amp;H)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="288"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="285"/>
         <source>Check for a new VirtualBox version</source>
         <translation>Verifica se existe uma nova versão do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="290"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="287"/>
         <source>&amp;About VirtualBox...</source>
         <translation>Sobre o Virtu&amp;alBox...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="292"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="289"/>
         <source>Show a dialog with product information</source>
         <translation>Mostra um diálogo com informações de produto</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1625"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1652"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uma nova versão do VirtualBox foi lançada! A versão &lt;b&gt;%1&lt;/b&gt; está disponível em &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Você pode baixá-la diretamente através deste link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation type="unfinished">Liberar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
+        <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished">Remover</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation type="unfinished">Apagar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1215"/>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1230"/>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1257"/>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1347"/>
+        <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1627"/>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished">Sair (&amp;x)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="unfinished">disco rígido</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="unfinished">imagem de CD/DVD</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="unfinished">imagem de disquete</translation>
     </message>
 </context>
 <context>
@@ -5159,27 +5802,27 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;p&gt;Por favor preencha este formulário de registro para que possamos saber que você utiliza o VirtualBox, e opcionalmente permitir que o informemos sobre notícias e updates do VirtualBox.&lt;/p&gt;&lt;p&gt;Entre com o seu nome completo usando caracteres Latinos (sem acentos e símbolos) e o seu endereço de e-mail nos campos abaixo. A innotek se compromete a utilizar estas informações apenas para coletar estatísticas de uso do produto e para enviar boletins informativos sobre o VirtualBox. Especificamente, a innotek nunca irá repassar seus dados para terceiros. Informações detalhadas sobre como utilizamos os seus dados pessoais podem ser encontradas na seção  &lt;b&gt;Política de Privacidade&lt;/b&gt; do Manual do VirtualBox ou na página &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Política de Privacidade&lt;/a&gt; do site do VirtualBox na web .&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="143"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="140"/>
         <source>&amp;Name</source>
         <translation>&amp;Nome</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="153"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="150"/>
         <source>Enter your full name using Latin characters.</source>
         <translation>Entre com o seu nome completo em caracteres Latinos (sem acentos ou símbolos).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="160"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="157"/>
         <source>&amp;E-mail</source>
         <translation>&amp;E-mail</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="170"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="167"/>
         <source>Enter your valid e-mail address.</source>
         <translation>Entre com o seu endereço de e-mail válido.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="180"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
         <source>&amp;Please do not use this information to contact me</source>
         <translation>&amp;Por favor não utilizar estas informações para me contactar</translation>
     </message>
@@ -5189,7 +5832,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Marque esta opção caso não deseje receber mensagens da innotek no endereço de e-mail especificado acima.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="66"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="63"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
         <translation>Bem-vindo ao Formulário de Registro do VirtualBox!</translation>
     </message>
@@ -5201,35 +5844,35 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="366"/>
         <source>Connection timed out.</source>
-        <translation>Tempo para conexão excedido.</translation>
+        <translation type="obsolete">Tempo para conexão excedido.</translation>
     </message>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="376"/>
         <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation>Não foi possível localizar o formulário de registro no servidor (resposta: %1).</translation>
+        <translation type="obsolete">Não foi possível localizar o formulário de registro no servidor (resposta: %1).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxRegistrationDlg.cpp" line="400"/>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="336"/>
         <source>Could not perform connection handshake.</source>
         <translation>Não foi possível estabelecer negociação da conexão.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="115"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="112"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Por favor, preencha este formulário de registro para informar-nos que você utiliza o VirtualBox e opcionalmente receber notícias e informações sobre atualizações.&lt;/p&gt;&lt;p&gt;Informe o seu nome completo utilizando apenas caracteres Latinos e o seu endereço de e-mail nos campos abaixo. A Sun MicroSystems irá utilizar esta informação apenas para fins de obter estatísticas de uso do produto e para enviar mensagens informativas sobre o VirtualBox. A Sun MicroSystems nunca irá fornecer seusw dados para terceiros. Informações detalhadas sobre como utilizamos seus dados pessoais podem ser encontradas na seção &lt;b&gt;Política de Privacidade&lt;/b&gt; do Manual de Uso do VirtualBox ou na &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;página &quot;Política de Privacidade&quot;&lt;/a&gt; no site do VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="177"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="174"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation>Marque esta opção se não deseja receber mensagens da Sun Microsystems no endereço de e-mail fornecido acima.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="215"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="212"/>
         <source>C&amp;onfirm</source>
         <translation>C&amp;onfirmar</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="238"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
@@ -5237,7 +5880,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
 <context>
     <name>VBoxSFDialog</name>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="3490"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="3721"/>
         <source>Shared Folders</source>
         <translation>Pastas Compartilhadas</translation>
     </message>
@@ -5265,7 +5908,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1111"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1227"/>
         <source>VirtualBox OSE</source>
         <translation>VirtualBox OSE</translation>
     </message>
@@ -5275,14 +5918,14 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1116"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1232"/>
         <source>&amp;Details</source>
         <translation>&amp;Detalhes</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1123"/>
         <source>Virtual &amp;Disk Manager...</source>
-        <translation>Gerenciador de &amp;Discos Virtuais...</translation>
+        <translation type="obsolete">Gerenciador de &amp;Discos Virtuais...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1170"/>
@@ -5292,10 +5935,10 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1125"/>
         <source>Display the Virtual Disk Manager dialog</source>
-        <translation>Mostrar o Gerenciador de Discos Virtuais</translation>
+        <translation type="obsolete">Mostrar o Gerenciador de Discos Virtuais</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1145"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1261"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
         <translation>&amp;Preferências...</translation>
@@ -5306,12 +5949,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1148"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1264"/>
         <source>Display the global settings dialog</source>
         <translation>Mostrar o diálogo de configurações globais</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1150"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1266"/>
         <source>E&amp;xit</source>
         <translation>Sair (&amp;x)</translation>
     </message>
@@ -5321,12 +5964,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+Q</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1152"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1268"/>
         <source>Close application</source>
         <translation>Fechar a aplicação</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1154"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1270"/>
         <source>&amp;New...</source>
         <translation>&amp;Novo...</translation>
     </message>
@@ -5341,12 +5984,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+N</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1156"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1272"/>
         <source>Create a new virtual machine</source>
         <translation>Criar uma nova máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1160"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
         <source>&amp;Settings...</source>
         <translation>Configuraçõe&amp;s...</translation>
     </message>
@@ -5361,12 +6004,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+S</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1162"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1278"/>
         <source>Configure the selected virtual machine</source>
         <translation>Configurar a máquina virtual selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1166"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1282"/>
         <source>&amp;Delete</source>
         <translation>Apagar (&amp;D)</translation>
     </message>
@@ -5376,12 +6019,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Apagar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1167"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1283"/>
         <source>Delete the selected virtual machine</source>
         <translation>Apagar a máquina virtual selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1171"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1287"/>
         <source>D&amp;iscard</source>
         <translation>Descartar (&amp;I)</translation>
     </message>
@@ -5391,12 +6034,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Descartar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1173"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1289"/>
         <source>Discard the saved state of the selected virtual machine</source>
         <translation>Descartar o estado salvo da máquina virtual selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1175"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1295"/>
         <source>&amp;Refresh</source>
         <translation>Atualiza&amp;r</translation>
     </message>
@@ -5411,7 +6054,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+R</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1178"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1298"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>Atualizar o estado de acessibilidade da máquina virtual selecionada</translation>
     </message>
@@ -5461,32 +6104,32 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Faz com que todos os avisos e mensagens ocultos sejam mostrados novamente</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1187"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1308"/>
         <source>&amp;File</source>
         <translation>Arquivo (&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1189"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1310"/>
         <source>&amp;Help</source>
         <translation>Ajuda (&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1336"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1462"/>
         <source>&amp;Snapshots</source>
         <translation>&amp;Snapshots</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1340"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1466"/>
         <source>D&amp;escription</source>
         <translation>D&amp;escrição</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1237"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1363"/>
         <source>D&amp;escription *</source>
         <translation>D&amp;escrição *</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1255"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1381"/>
         <source>S&amp;how</source>
         <translation>Mostrar (&amp;h)</translation>
     </message>
@@ -5496,12 +6139,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Mostrar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1257"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1383"/>
         <source>Switch to the window of the selected virtual machine</source>
         <translation>Alterna para a janela da máquina virtual selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1350"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1476"/>
         <source>S&amp;tart</source>
         <translation>Iniciar (&amp;T)</translation>
     </message>
@@ -5511,7 +6154,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Iniciar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1352"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1478"/>
         <source>Start the selected virtual machine</source>
         <translation>Iniciar a máquina virtual selecionada</translation>
     </message>
@@ -5521,12 +6164,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;h3&gt;Bem-Vindo ao VirtualBox!&lt;/h3&gt;&lt;p&gt;A parte esquerda desta janela mostra uma lista de todas as máquinas virtuais disponíveis em seu computador. A lista está vazia agora porque você ainda não criou nenhuma máquina virtual ainda.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Para criar uma nova máquina virtual, pressione o botão &lt;b&gt;Novo&lt;/b&gt; na barra de ferramentas principal, localizada no topo da janela.&lt;/p&gt;&lt;p&gt;Você pode pressionar &lt;b&gt;F1&lt;/b&gt; para obter ajuda instantânea, ou visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; para obter informações e notícias sobre o VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1188"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1309"/>
         <source>&amp;Machine</source>
         <translation>&amp;Máquina</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1180"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1300"/>
         <source>Show &amp;Log...</source>
         <translation>Exibir &amp;Log...</translation>
     </message>
@@ -5541,7 +6184,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+L</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1183"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1304"/>
         <source>Show the log files of the selected virtual machine</source>
         <translation>Exibe os arquivos de log para a máquina virtual selecionada</translation>
     </message>
@@ -5556,12 +6199,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Abrir o formulário de registro do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1113"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
         <source>Sun xVM VirtualBox</source>
         <translation>Sun xVM VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1273"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1399"/>
         <source>R&amp;esume</source>
         <translation>Continuar (&amp;E)</translation>
     </message>
@@ -5576,12 +6219,12 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Ctrl+P</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1402"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>Continuar a execução da máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1283"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1409"/>
         <source>&amp;Pause</source>
         <translation>&amp;Pausar</translation>
     </message>
@@ -5591,20 +6234,36 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">Pausar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1286"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1412"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>Suspender a execução da máquina virtual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1455"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Bem-Vindo ao VirtualBox!&lt;/h3&gt;&lt;p&gt;A parte esquerda desta janela mostra uma lista de todas as máquinas virtuais disponíveis em seu computador. A lista está vazia agora porque você ainda não criou nenhuma máquina virtual ainda.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Para criar uma nova máquina virtual, pressione o botão &lt;b&gt;Novo&lt;/b&gt; na barra de ferramentas principal, localizada no topo da janela.&lt;/p&gt;&lt;p&gt;Você pode pressionar &lt;b&gt;F1&lt;/b&gt; para obter ajuda instantânea, ou visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; para obter informações e notícias sobre o VirtualBox.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
+        <source>Log</source>
+        <comment>icon text</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxSettingsDialog</name>
     <message>
-        <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
+        <location filename="../src/VBoxSettingsDialog.cpp" line="96"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
         <translation>&lt;i&gt;Selecione uma categoria de opções da lista do lado esquerdo e posicione o mouse sobre uma opção para obter maiores informações&lt;i&gt;.</translation>
     </message>
@@ -5614,9 +6273,14 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>Configurações inválidas detectadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialog.cpp" line="204"/>
+        <location filename="../src/VBoxSettingsDialog.cpp" line="254"/>
         <source>Settings</source>
         <translation>Configurações</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
+        <source>Non-optimal settings detected</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5860,7 +6524,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Descartar Snapshot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="674"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
         <source>&amp;Discard Snapshot</source>
         <translation>&amp;Descartar Snapshot</translation>
     </message>
@@ -5880,7 +6544,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Criar Snapshot</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="675"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
         <source>Take &amp;Snapshot</source>
         <translation>Criar &amp;Snapshot</translation>
     </message>
@@ -5910,7 +6574,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Descarta o Snapshot e o Estado Atual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="677"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
         <source>D&amp;iscard Current Snapshot and State</source>
         <translation>Descarta o Snapshot e o Estado Atual (&amp;I)</translation>
     </message>
@@ -5925,7 +6589,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Mostrar Detalhes</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="678"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="685"/>
         <source>S&amp;how Details</source>
         <translation>Mostrar Detalhe&amp;s</translation>
     </message>
@@ -5993,12 +6657,12 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation>%1 desde %2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="491"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="498"/>
         <source>Snapshot %1</source>
         <translation>Snapshot %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="680"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="687"/>
         <source>Discard the selected snapshot of the virtual machine</source>
         <translation>Descarta o snapshot selecionado para a máquina virtual</translation>
     </message>
@@ -6008,7 +6672,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="681"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="688"/>
         <source>Take a snapshot of the current virtual machine state</source>
         <translation>Cria um snapshot do estado atual da máquina virtual atual</translation>
     </message>
@@ -6018,7 +6682,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Reverte o estado para o Snapshot Atual</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="676"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
         <source>&amp;Revert to Current Snapshot</source>
         <translation>&amp;Reverte o estado para o Snapshot Atual</translation>
     </message>
@@ -6028,7 +6692,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="682"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="689"/>
         <source>Restore the virtual machine state from the state stored in the current snapshot</source>
         <translation>Restaura o estado da máquina virtual para o estado armazenado no snapshot atual</translation>
     </message>
@@ -6038,12 +6702,12 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="683"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="690"/>
         <source>Discard the current snapshot and revert the machine to the state it had before the snapshot was taken</source>
         <translation>Descarta o snapshot atual e reverte a máquina para o estado em que se encontrava antes do snapshot ser criado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="684"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="691"/>
         <source>Show details of the selected snapshot</source>
         <translation>Mostra detalhes sobre o snapshot selecionado</translation>
     </message>
@@ -6056,12 +6720,12 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5512"/>
         <source>Disable</source>
         <translation>Desabilitar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4718"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5512"/>
         <source>Enable</source>
         <translation>Habilitar</translation>
     </message>
@@ -6112,6 +6776,35 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <location filename="" line="1647262769"/>
         <source>Cancel</source>
         <translation type="obsolete">Cancelar</translation>
+    </message>
+</context>
+<context>
+    <name>VBoxTrayIcon</name>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
+        <source>Show Selector Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
+        <source>Show the selector window assigned to this menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
+        <source>Hide Tray Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
+        <source>Remove this icon from the system tray</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
+        <source>&amp;Other Machines...</source>
+        <comment>tray menu</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6292,13 +6985,13 @@ qualquer valor.&lt;/qt&gt;</translation>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4648"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5442"/>
         <source>&lt;no available devices&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;nenhum dispositivo disponivel&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="4651"/>
+        <location filename="../src/VBoxGlobal.cpp" line="5445"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Nenhum dispositivo suportado está conectado ao PC hospedeiro</translation>
@@ -6307,87 +7000,87 @@ qualquer valor.&lt;/qt&gt;</translation>
 <context>
     <name>VBoxUpdateDlg</name>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="80"/>
         <source>1 day</source>
         <translation>1 dia</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="81"/>
         <source>2 days</source>
         <translation>2 dias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="82"/>
         <source>3 days</source>
         <translation>3 dias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="83"/>
         <source>4 days</source>
         <translation>4 dias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
         <source>5 days</source>
         <translation>5 dias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
         <source>6 days</source>
         <translation>6 dias</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="88"/>
         <source>1 week</source>
         <translation>1 semana</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="89"/>
         <source>2 weeks</source>
         <translation>2 semanas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="94"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="90"/>
         <source>3 weeks</source>
         <translation>3 semanas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="97"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="93"/>
         <source>1 month</source>
         <translation>1 mês</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="139"/>
         <source>Never</source>
         <translation>Nunca</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
         <source>Connection timed out.</source>
-        <translation>Tempo para conexão excedido.</translation>
+        <translation type="obsolete">Tempo para conexão excedido.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation>Não foi possível localizar a lista com as últimas versões no servidor (resposta: %1).</translation>
+        <translation type="obsolete">Não foi possível localizar a lista com as últimas versões no servidor (resposta: %1).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="191"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="267"/>
         <source>Chec&amp;k</source>
         <translation>Verificar (&amp;k)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="390"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="271"/>
         <source>&amp;Close</source>
         <translation>Fe&amp;char</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="264"/>
         <source>VirtualBox Update Wizard</source>
         <translation>Assistente de Atualização do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="266"/>
         <source>Check for Updates</source>
         <translation>Verificar por atualizações</translation>
     </message>
@@ -6396,50 +7089,55 @@ qualquer valor.&lt;/qt&gt;</translation>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este assistente irá conectar ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Este assistente irá conectar ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;
 &lt;p&gt;Utilize o botão &lt;b&gt;Verificar&lt;/b&gt; para verificar se uma nova versão agora ou o botão &lt;b&gt;Cancelar&lt;/b&gt; se você não deseja realizar esta verificação.&lt;/p&gt;
 &lt;p&gt;Você pode executar este assistente a qualquer momento escolhendo a opção &lt;b&gt;Verificar por Atualizações...&lt;/b&gt; no menu de &lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="217"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="268"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="238"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="270"/>
         <source>Summary</source>
         <translation>Sumário</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="292"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="286"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Uma nova versão do VirtualBox foi lançada! A versão &lt;b&gt;%1&lt;/b&gt; está disponível em &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Você pode baixá-la diretamente através deste link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="314"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="289"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Não foi possível obter informações de versão devido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="336"/>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="292"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
         <translation>Você já possui a versão mais recente do VirtualBox. Por favor verifique mais tarde.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMDescriptionPage</name>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="325"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="323"/>
         <source>No description. Press the Edit button below to add it.</source>
         <translation>Sem descrição. Pressione o botão Editar para acrescentar uma.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="327"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="325"/>
         <source>Edit</source>
         <translation>Editar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="329"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="327"/>
         <source>Edit (Ctrl+E)</source>
         <translation>Editar (Ctrl+E)</translation>
     </message>
@@ -6452,7 +7150,7 @@ qualquer valor.&lt;/qt&gt;</translation>
 <context>
     <name>VBoxVMDetailsView</name>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="189"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="191"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation>A máquina virtual selecionada está &lt;i&gt;inacessível&lt;/i&gt;. Por favor verifique a mensagem de erro mostrada abaixo e pressione o botão &lt;b&gt;Atualizar&lt;/b&gt; se desejar repetir o teste de acessibilidade:</translation>
     </message>
@@ -6560,17 +7258,17 @@ qualquer valor.&lt;/qt&gt;</translation>
         <translation>Sumário</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="94"/>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
         <source>CD/DVD-ROM Device</source>
         <translation>Dispositivo de CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="96"/>
         <source>Floppy Device</source>
         <translation>Dispositivo de Disquete</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="98"/>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="99"/>
         <source>Host Drive %1</source>
         <translation>Drive do Hospedeiro %1</translation>
     </message>
@@ -6635,13 +7333,13 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Finalizar</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="106"/>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Type</source>
         <comment>summary</comment>
         <translation>Tipo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
+        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="108"/>
         <source>Source</source>
         <comment>summary</comment>
         <translation>Origem</translation>
@@ -6665,47 +7363,47 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Fe&amp;char</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="155"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="166"/>
         <source>%1 - Session Information</source>
         <translation>%1 - Informações sobre a Sessão</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMInformationDlg.ui" line="44"/>
+        <location filename="../ui/VBoxVMInformationDlg.ui" line="41"/>
         <source>&amp;Details</source>
         <translation>&amp;Detalhes</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMInformationDlg.ui" line="79"/>
+        <location filename="../ui/VBoxVMInformationDlg.ui" line="76"/>
         <source>&amp;Runtime</source>
         <translation>Tempo de execução (&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="203"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="214"/>
         <source>DMA Transfers</source>
         <translation>Transferências de DMA</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="174"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="185"/>
         <source>PIO Transfers</source>
         <translation>Transferências de PIO</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="205"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="216"/>
         <source>Data Read</source>
         <translation>Dados Lidos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="207"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="218"/>
         <source>Data Written</source>
         <translation>Dados Gravados</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="243"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="254"/>
         <source>Data Transmitted</source>
         <translation>Dados Transmitidos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="245"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="256"/>
         <source>Data Received</source>
         <translation>Dados Recebidos</translation>
     </message>
@@ -6720,12 +7418,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="436"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="452"/>
         <source>Runtime Attributes</source>
         <translation>Atributos de Tempo de Execução</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="437"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="453"/>
         <source>Screen Resolution</source>
         <translation>Resolução da Tela</translation>
     </message>
@@ -6740,12 +7438,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Estatísticas de Disco Rígido IDE</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="493"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="509"/>
         <source>CD/DVD-ROM Statistics</source>
         <translation>Estatísticas de CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="503"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="519"/>
         <source>Network Adapter Statistics</source>
         <translation>Estatísticas de Placa de Rede</translation>
     </message>
@@ -6800,62 +7498,62 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Secundário Slave</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="420"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="436"/>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
         <translation>Versão %1.%2</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="421"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="437"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
         <translation>Não Detectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="424"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="440"/>
         <source>Not Detected</source>
         <comment>guest os type</comment>
         <translation>Não Detectado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="440"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="456"/>
         <source>Guest Additions</source>
         <translation>Adicionais Para Convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="441"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="457"/>
         <source>Guest OS Type</source>
         <translation>Tipo de Sistema Operacional Convidado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="449"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="465"/>
         <source>Hard Disk Statistics</source>
         <translation>Estatísticas de Disco Rígido</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="486"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="502"/>
         <source>No Hard Disks</source>
         <translation>Nenhum Disco Rígido</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="520"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="536"/>
         <source>No Network Adapters</source>
         <translation>Nenhuma Placa de Rede</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="431"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
         <translation>Habilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="415"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="431"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
         <translation>Desabilitado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="439"/>
+        <location filename="../src/VBoxVMInformationDlg.cpp" line="455"/>
         <source>Nested Paging</source>
         <translation>Paginação Aninhada</translation>
     </message>
@@ -6888,21 +7586,61 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMListView</name>
     <message>
-        <location filename="../src/VBoxVMListView.cpp" line="151"/>
+        <location filename="../src/VBoxVMListView.cpp" line="153"/>
         <source>Inaccessible</source>
         <translation>Inacessível</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMListView.cpp" line="171"/>
+        <location filename="../src/VBoxVMListView.cpp" line="173"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 desde %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sessão %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMListView.cpp" line="182"/>
+        <location filename="../src/VBoxVMListView.cpp" line="184"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inacessível desde %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
+        <source>S&amp;how</source>
+        <translation type="unfinished">Mostrar (&amp;h)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation type="unfinished">Alterna para a janela da máquina virtual selecionada</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
+        <source>S&amp;tart</source>
+        <translation type="unfinished">Iniciar (&amp;T)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
+        <source>Start the selected virtual machine</source>
+        <translation type="unfinished">Iniciar a máquina virtual selecionada</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
+        <source>R&amp;esume</source>
+        <translation type="unfinished">Continuar (&amp;E)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
+        <source>Resume the execution of the virtual machine</source>
+        <translation type="unfinished">Continuar a execução da máquina virtual</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
+        <source>&amp;Pause</source>
+        <translation type="unfinished">&amp;Pausar</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation type="unfinished">Suspender a execução da máquina virtual</translation>
     </message>
 </context>
 <context>
@@ -6913,7 +7651,7 @@ p, li { white-space: pre-wrap; }
         <translation>Visualizador de Log</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="265"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="262"/>
         <source>&amp;Save</source>
         <translation>&amp;Salvar</translation>
     </message>
@@ -6923,7 +7661,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+S</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="264"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="261"/>
         <source>&amp;Refresh</source>
         <translation>Atualiza&amp;r</translation>
     </message>
@@ -6943,17 +7681,17 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="261"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="258"/>
         <source>%1 - VirtualBox Log Viewer</source>
         <translation>%1 - Visualizador de Log do VirtualBox</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="193"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="190"/>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nenhum arquivo de log encontrado. Pressione o botão &lt;b&gt;Atualizar&lt;/b&gt; para ler novamente a pasta de logs em &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="225"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="222"/>
         <source>Save VirtualBox Log As</source>
         <translation>Salvar Log do VirtualBox Como</translation>
     </message>
@@ -6968,7 +7706,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="263"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="260"/>
         <source>&amp;Find</source>
         <translation>Procurar(&amp;F)</translation>
     </message>
@@ -6978,7 +7716,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Alt+F</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="266"/>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="263"/>
         <source>Close</source>
         <translation>Fechar</translation>
     </message>
@@ -7363,12 +8101,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsCD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsCD.cpp" line="174"/>
+        <location filename="../src/VBoxVMSettingsCD.cpp" line="175"/>
         <source>Host CD/DVD drive is not selected</source>
         <translation>O drive de CD/DVD do hospedeiro não foi selecionado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsCD.cpp" line="176"/>
+        <location filename="../src/VBoxVMSettingsCD.cpp" line="177"/>
         <source>CD/DVD image file is not selected</source>
         <translation>O arquivo de imagem de CD/DVD não foi selecionado</translation>
     </message>
@@ -7425,7 +8163,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation>Abre o Gerenciador de Discos Virtuais para selecionar uma imagem de CD/DVD para montar.</translation>
+        <translation type="obsolete">Abre o Gerenciador de Discos Virtuais para selecionar uma imagem de CD/DVD para montar.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
+        <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8343,7 +9086,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="370"/>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
-        <translation>%1 na página &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation type="obsolete">%1 na página &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="" line="1647262769"/>
@@ -8612,85 +9355,90 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation type="obsolete">USBActionGroup</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="411"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="412"/>
         <source>General</source>
         <translation>Geral</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="414"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="415"/>
         <source>Storage</source>
         <translation>Armazenamento</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="417"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="418"/>
         <source>Hard Disks</source>
         <translation>Discos Rígidos</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="420"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="421"/>
         <source>CD/DVD-ROM</source>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="423"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="424"/>
         <source>Floppy</source>
         <translation>Disquete</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="426"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="427"/>
         <source>Audio</source>
         <translation>Áudio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="429"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="430"/>
         <source>Network</source>
         <translation>Rede</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="434"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="435"/>
         <source>Ports</source>
         <translation>Portas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="437"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="438"/>
         <source>Serial Ports</source>
         <translation>Portas Seriais</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="442"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="443"/>
         <source>Parallel Ports</source>
         <translation>Portas Paralelas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="447"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="448"/>
         <source>USB</source>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="450"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="451"/>
         <source>Shared Folders</source>
         <translation>Pastas Compartilhadas</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="453"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="454"/>
         <source>Remote Display</source>
         <translation>Tela Remota</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="474"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="475"/>
         <source>%1 - %2</source>
         <translation>%1 - %2</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
+        <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsFD.cpp" line="172"/>
+        <location filename="../src/VBoxVMSettingsFD.cpp" line="173"/>
         <source>Host floppy drive is not selected</source>
         <translation>O drive de disquete do hospedeiro não foi selecionado</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsFD.cpp" line="174"/>
+        <location filename="../src/VBoxVMSettingsFD.cpp" line="175"/>
         <source>Floppy image file is not selected</source>
         <translation>A imagem de disquete não foi selecionada</translation>
     </message>
@@ -8737,18 +9485,23 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation>Abre o Gerenciador de Discos Virtuais para selecionar uma imagem de disquete a ser montada.</translation>
+        <translation type="obsolete">Abre o Gerenciador de Discos Virtuais para selecionar uma imagem de disquete a ser montada.</translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
+        <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="351"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="440"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="379"/>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="468"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation>Mostra o caminho onde os snapshots desta máquina virtual serão armazenados. Note que estes snapshots podem ocupar bastante espaço em disco.</translation>
     </message>
@@ -8763,242 +9516,267 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <translation>Identificação</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="74"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="75"/>
         <source>&amp;Name:</source>
         <translation>&amp;Nome:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="87"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="88"/>
         <source>Displays the name of the virtual machine.</source>
         <translation>Mostra o nome da máquina virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
         <source>OS &amp;Type:</source>
-        <translation>&amp;Tipo de Sistema Operacional:</translation>
+        <translation type="obsolete">&amp;Tipo de Sistema Operacional:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>Mostra o tipo de sistema operacional que você planeja instalar nesta máquina virtual (chamado de sistema operacional convidado).</translation>
+        <translation type="obsolete">Mostra o tipo de sistema operacional que você planeja instalar nesta máquina virtual (chamado de sistema operacional convidado).</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="125"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="104"/>
         <source>Base &amp;Memory Size</source>
         <translation>Tamanho da &amp;Memória Principal</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="251"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="230"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation>Controla a quantidade de memória disponibilizada para a máquina virtual. Se você alocar memória demais, a máquina virtual pode não conseguir ser inicializada.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="370"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="349"/>
         <source>&lt;</source>
         <translation>&lt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="396"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="375"/>
         <source>&gt;</source>
         <translation>&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="439"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="418"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="300"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="279"/>
         <source>&amp;Video Memory Size</source>
         <translation>Memória de &amp;Vídeo</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="426"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="405"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation>Controla a quantidade de memória de vídeo alocada para a máquina virtual.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="483"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="462"/>
         <source>&amp;Advanced</source>
         <translation>&amp;Avançado</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="489"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="468"/>
         <source>Boo&amp;t Order:</source>
         <translation>Ordem de Boo&amp;t:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="543"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="522"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>Define a ordem de boot dos dispositivos. Utilize as caixas do lado esquerdo para habilitar ou desabilitar dispositivos de boot individuais. Mova os itens para baixo ou para cima para alterar a ordem de boot.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="541"/>
         <source>[device]</source>
         <translation>[dispositivo]</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="583"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="562"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation>Mover para Cima (Ctrl-Seta para Cima)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="586"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="565"/>
         <source>Moves the selected boot device up.</source>
         <translation>Move o dispositivo de boot selecionado para cima.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="605"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="584"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation>Mover para Baixo (Ctrl-Seta para Baixo)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="608"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="587"/>
         <source>Moves the selected boot device down.</source>
         <translation>Move o dispositivo de boot selecionado para baixo.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="624"/>
         <source>Extended Features:</source>
         <translation>Recursos Estendidos:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="666"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="645"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Quando selecionado, a máquina virtual irá suportar a Interface Avançada de Configuração e Gerenciamento de Energia (Advanced Configuration and Power Management Interface, ou ACPI). &lt;b&gt;Nota:&lt;/b&gt; não desabilite esta opção após ter instalado um sistema operacional convidado do tipo Windows!</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="669"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="648"/>
         <source>Enable A&amp;CPI</source>
         <translation>Habilitar A&amp;CPI</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="682"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="661"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>Quando selecionado, a máquina virtual irá suportar o recurso de Input Output APIC (IO APIC), o que deve diminuir levemente a performance da MV. &lt;b&gt;Nota:&lt;/b&gt; não desabilite esta opção após instalar um sistema operacional do tipo Windows!</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="685"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="664"/>
         <source>Enable IO A&amp;PIC</source>
         <translation>Habilitar IO A&amp;PIC</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="698"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="677"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
         <translation>Quando selecionado, a máquina virtual irá tentar utilizar as extensões de hardware de virtualização da CPU do hospedeiro, tais como Intel VT-x e AMD-V.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="701"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="680"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation>Habilitar &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="714"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="693"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
         <translation>Quando selecionado, o recurso de Extensão Física de Endereçamento ou Physical Address Extension (PAE) da CPU do hospedeiro será exposta à máquina virtual.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="717"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="696"/>
         <source>Enable PA&amp;E/NX</source>
         <translation>Habilitar PA&amp;E/NX</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="726"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="721"/>
         <source>&amp;Shared Clipboard:</source>
         <translation>Área de Tran&amp;sferência Compartilhada:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="749"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="744"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Define o modo de compartilhamento da área de transferência entre o sistema operacional convidado e o sistema operacional hospedeiro. Note que este recurso requer a instalação dos Adicionais para Convidado no sistema operacional convidado.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="762"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="757"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation>Define o tipo da controladora IDE virtual. Dependendo do que for informado aqui, o VirtualBox irá prover uma controladora de modelo e fabricante diferentes para a máquina virtual.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="789"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="784"/>
         <source>&amp;IDE Controller Type:</source>
         <translation>Tipo de Controladora &amp;IDE:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="802"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="797"/>
         <source>S&amp;napshot Folder:</source>
         <translation>Pasta de S&amp;napshots:</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="839"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="834"/>
         <source>&amp;Description</source>
         <translation>&amp;Descrição</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="845"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="840"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation>Mostra a descrição da máquina virtual. O campo de descrição é útil para comentar detalhes de configuração do sistema operacional convidado que foi instalado.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="856"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="851"/>
         <source>&amp;Other</source>
         <translation>Ou&amp;tros</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="891"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="886"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>Se estiver marcado, qualquer mudança às mídias de CD/DVD e Disquete realizadas durante a execução da máquina serão salvas no arquivo de configuração para preservar o estado das mídias entre execuções.</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="894"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="889"/>
         <source>&amp;Remember Mounted Media</source>
         <translation>Lembra&amp;r Mídias Montadas Durante a Execução</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="873"/>
         <source>Runtime:</source>
         <translation>Tempo de execução:</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
+        <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="385"/>
+        <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
+        <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>
+        <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
+        <source>Enable &amp;3D Acceleration</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsHD</name>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="608"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="742"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation>Nenhum disco rígido foi selecionado para &lt;i&gt;%1&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="620"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="754"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1&lt;/i&gt; utiliza o disco rígido que já está conectado a  &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="640"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="775"/>
         <source>&amp;Add Attachment</source>
         <translation>&amp;Acrescentar Conexão</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="641"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="776"/>
         <source>&amp;Remove Attachment</source>
         <translation>&amp;Remover Conexão</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="642"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="777"/>
         <source>&amp;Select Hard Disk</source>
         <translation>&amp;Selecionar Disco Rígido</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="651"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="786"/>
         <source>Adds a new hard disk attachment.</source>
         <translation>Cria uma nova conexão de disco rígido.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="652"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="787"/>
         <source>Removes the highlighted hard disk attachment.</source>
         <translation>Remove a conexão de disco rígido selecionada.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="655"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Abre o Gerenciador de Discos Virtuais para selecionar o disco rígido que será conectado ao slot destacado.</translation>
+        <translation type="obsolete">Abre o Gerenciador de Discos Virtuais para selecionar o disco rígido que será conectado ao slot destacado.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
@@ -9019,6 +9797,21 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
         <translation>Lista todos os discos rígidos conectados a esta máquina. Utilize um clique de mouse ou a tecla &lt;tt&gt;Barra de Espaço&lt;/tt&gt; no item destacado para ativar a lista de opções e escolher o valor desejado. Utilize o menu de contexto ou os botões à direita para acrescentar ou remover conexões de discos rígidos.</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
+        <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="114"/>
+        <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="117"/>
+        <source>&amp;Show Differencing Hard Disks</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9152,12 +9945,12 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
 <context>
     <name>VBoxVMSettingsNetworkPage</name>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="808"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="810"/>
         <source>No host network interface is selected</source>
         <translation>Nenhuma interface de rede do hospedeiro foi selecionada</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="815"/>
+        <location filename="../src/VBoxVMSettingsNetwork.cpp" line="817"/>
         <source>Internal network name is not set</source>
         <translation>O nome da rede interna não foi definido</translation>
     </message>
@@ -9363,7 +10156,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
 <context>
     <name>VBoxVMSettingsSerial</name>
     <message>
-        <location filename="../src/VBoxVMSettingsSerial.cpp" line="127"/>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="130"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation>Porta %1</translation>
@@ -9442,17 +10235,17 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
 <context>
     <name>VBoxVMSettingsSerialPage</name>
     <message>
-        <location filename="../src/VBoxVMSettingsSerial.cpp" line="258"/>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="261"/>
         <source>Duplicate port number is selected </source>
         <translation>Um número de porta duplicado foi selecionado </translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSerial.cpp" line="276"/>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="279"/>
         <source>Port path is not specified </source>
         <translation>O caminho da porta não foi especificado </translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsSerial.cpp" line="277"/>
+        <location filename="../src/VBoxVMSettingsSerial.cpp" line="280"/>
         <source>Duplicate port path is entered </source>
         <translation>Um caminho de porta duplicado foi informado </translation>
     </message>
@@ -9460,67 +10253,67 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
 <context>
     <name>VBoxVMSettingsUSB</name>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="235"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Acrescentar Filtro Vazio</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="236"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
         <source>A&amp;dd Filter From Device</source>
         <translation>Acrescentar Filtro a Partir de &amp;Dispositivo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="237"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="241"/>
         <source>&amp;Edit Filter</source>
         <translation>&amp;Editar Filtro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="238"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="242"/>
         <source>&amp;Remove Filter</source>
         <translation>&amp;Remover Filtro</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="239"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="243"/>
         <source>&amp;Move Filter Up</source>
         <translation>&amp;Mover Filtro Para Cima</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="240"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="244"/>
         <source>M&amp;ove Filter Down</source>
         <translation>M&amp;over Filtro Para Baixo</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="258"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation>Acrescenta um novo filtro USB com todos os campos definidos inicialmente para valores vazios. Um filtro criado desta maneira irá englobar qualquer dispositivo USB conectado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="261"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation>Acrescenta um novo filtro USB com todos os campos definidos para os valores do dispositivo USB selecionado conectado ao PC hospedeiro.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="266"/>
         <source>Edits the selected USB filter.</source>
         <translation>Edita o filtro USB selecionado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="263"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
         <source>Removes the selected USB filter.</source>
         <translation>Removes o filtro USB selecionado.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="264"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="268"/>
         <source>Moves the selected USB filter up.</source>
         <translation>Move o filtro USB selecionado para cima.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="269"/>
         <source>Moves the selected USB filter down.</source>
         <translation>Move o filtro USB selecionado para baixo.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
+        <location filename="../src/VBoxVMSettingsUSB.cpp" line="271"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation>Novo Filtro %1</translation>
