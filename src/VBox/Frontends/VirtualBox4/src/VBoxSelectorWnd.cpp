@@ -1688,13 +1688,9 @@ void VBoxTrayIcon::retranslateUi ()
     if (!mActive)
         return;
 
-    QFont fontBold;
-    fontBold.setBold (true);
-
     mShowSelectorAction->setText (tr ("Show Selector Window"));
     mShowSelectorAction->setStatusTip (tr (
         "Show the selector window assigned to this menu"));
-    mShowSelectorAction->setFont (fontBold);
 
     mHideSystrayMenuAction->setText (tr ("Hide Tray Icon"));
     mHideSystrayMenuAction->setStatusTip (tr (
@@ -1872,6 +1868,7 @@ void VBoxTrayIcon::refresh ()
     int iCurItemCount = 0;
 
     mTrayIconMenu->addAction (mShowSelectorAction);
+    mTrayIconMenu->setDefaultAction (mShowSelectorAction);
 
     if (mVMModel->rowCount() > 0)
         mTrayIconMenu->addSeparator();
