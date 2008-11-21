@@ -672,13 +672,27 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                      *       completed, the another thread must call
                      *
                      *           g_pHelpers->pfnCallComplete (callHandle, rc);
+                     *
+                     * The operation is async.
+                     * fAsynchronousProcessing = true;
                      */
 
-                    /* Operation is async. */
-                    fAsynchronousProcessing = true;
+                    /* Here the operation must be posted to another thread. At the moment it is not implemented.
+                     * Until it is implemented, try to perform the operation without waiting.
+                     */
+                    flags &= ~SHFL_LOCK_WAIT;
 
-                    /* Here the operation must be posted to another thread. At the moment it is not implemented. */
-                    rc = VERR_NOT_SUPPORTED;
+                    /* Execute the function. */
+                    if ((flags & SHFL_LOCK_MODE_MASK) == SHFL_LOCK_CANCEL)
+                        rc = vbsfUnlock(pClient, root, Handle, offset, length, flags);
+                    else
+                        rc = vbsfLock(pClient, root, Handle, offset, length, flags);
+
+                    if (VBOX_SUCCESS(rc))
+                    {
+                        /* Update parameters.*/
+                        /* none */
+                    }
                 }
                 else
                 {
