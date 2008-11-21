@@ -420,7 +420,6 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 /*      int dropsocket = 0; */
         int iss = 0;
         u_long tiwin;
-        int ret;
 /*      int ts_present = 0; */
         int mbuf_freed = 0;
 
