@@ -463,6 +463,10 @@ VBoxC_LIBS += \
 	$(LIB_VMM) \
 	$(LIB_REM)
 
+ifdef VBOX_WITH_NETFLT
+ VBoxC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib
+endif
+
 VBoxC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H)
