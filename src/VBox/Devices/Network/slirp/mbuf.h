@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)mbuf.h	8.3 (Berkeley) 1/21/94
+ *      @(#)mbuf.h      8.3 (Berkeley) 1/21/94
  * mbuf.h,v 1.9 1994/11/14 13:54:20 bde Exp
  */
 
@@ -40,15 +40,15 @@
 #define m_freem m_free
 
 
-#define MINCSIZE 4096	/* Amount to increase mbuf if too small */
+#define MINCSIZE 4096   /* Amount to increase mbuf if too small */
 
 /*
  * Macros for type conversion
- * mtod(m,t) -	convert mbuf pointer to data pointer of correct type
- * dtom(x) -	convert data pointer within mbuf to mbuf pointer (XXX)
+ * mtod(m,t) -  convert mbuf pointer to data pointer of correct type
+ * dtom(x) -    convert data pointer within mbuf to mbuf pointer (XXX)
  */
-#define mtod(m,t)	((t)(m)->m_data)
-/* #define	dtom(x)		((struct mbuf *)((int)(x) & ~(M_SIZE-1))) */
+#define mtod(m,t)       ((t)(m)->m_data)
+/* #define      dtom(x)         ((struct mbuf *)((int)(x) & ~(M_SIZE-1))) */
 
 /* XXX About mbufs for slirp:
  * Only one mbuf is ever used in a chain, for each "cell" of data.
@@ -61,17 +61,17 @@
 /* XXX should union some of these! */
 /* header at beginning of each mbuf: */
 struct m_hdr {
-	struct	mbuf *mh_next;		/* Linked list of mbufs */
-	struct	mbuf *mh_prev;
-	struct	mbuf *mh_nextpkt;	/* Next packet in queue/record */
-	struct	mbuf *mh_prevpkt; /* Flags aren't used in the output queue */
-	int	mh_flags;	  /* Misc flags */
+        struct  mbuf *mh_next;          /* Linked list of mbufs */
+        struct  mbuf *mh_prev;
+        struct  mbuf *mh_nextpkt;       /* Next packet in queue/record */
+        struct  mbuf *mh_prevpkt; /* Flags aren't used in the output queue */
+        int     mh_flags;         /* Misc flags */
 
-	int	mh_size;		/* Size of data */
-	struct	socket *mh_so;
+        int     mh_size;                /* Size of data */
+        struct  socket *mh_so;
 
-	caddr_t	mh_data;		/* Location of data */
-	int	mh_len;			/* Amount of data in this mbuf */
+        caddr_t mh_data;                /* Location of data */
+        int     mh_len;                 /* Amount of data in this mbuf */
 #ifdef VBOX_WITH_BSD_REASS
         void *header;                   /*XXX: in real BSD sources this field lays in pkthdr structure*/
 #endif
@@ -81,9 +81,9 @@ struct m_hdr {
  * How much room is in the mbuf, from m_data to the end of the mbuf
  */
 #define M_ROOM(m) ((m->m_flags & M_EXT)? \
-			(((m)->m_ext + (m)->m_size) - (m)->m_data) \
-		   : \
-			(((m)->m_dat + (m)->m_size) - (m)->m_data))
+                        (((m)->m_ext + (m)->m_size) - (m)->m_data) \
+                   : \
+                        (((m)->m_dat + (m)->m_size) - (m)->m_data))
 
 /*
  * How much free room there is
@@ -92,24 +92,24 @@ struct m_hdr {
 #define M_TRAILINGSPACE M_FREEROOM
 
 struct mbuf {
-	struct	m_hdr m_hdr;
-	union M_dat {
-		char	m_dat_[1]; /* ANSI don't like 0 sized arrays */
-		char	*m_ext_;
-	} M_dat;
+        struct  m_hdr m_hdr;
+        union M_dat {
+                char    m_dat_[1]; /* ANSI don't like 0 sized arrays */
+                char    *m_ext_;
+        } M_dat;
 };
 
-#define m_next		m_hdr.mh_next
-#define m_prev		m_hdr.mh_prev
-#define m_nextpkt	m_hdr.mh_nextpkt
-#define m_prevpkt	m_hdr.mh_prevpkt
-#define m_flags		m_hdr.mh_flags
-#define	m_len		m_hdr.mh_len
-#define	m_data		m_hdr.mh_data
-#define m_size		m_hdr.mh_size
-#define m_dat		M_dat.m_dat_
-#define m_ext		M_dat.m_ext_
-#define m_so		m_hdr.mh_so
+#define m_next          m_hdr.mh_next
+#define m_prev          m_hdr.mh_prev
+#define m_nextpkt       m_hdr.mh_nextpkt
+#define m_prevpkt       m_hdr.mh_prevpkt
+#define m_flags         m_hdr.mh_flags
+#define m_len           m_hdr.mh_len
+#define m_data          m_hdr.mh_data
+#define m_size          m_hdr.mh_size
+#define m_dat           M_dat.m_dat_
+#define m_ext           M_dat.m_ext_
+#define m_so            m_hdr.mh_so
 
 #define ifq_prev m_prev
 #define ifq_next m_next
@@ -117,11 +117,11 @@ struct mbuf {
 #define ifs_next m_nextpkt
 #define ifq_so m_so
 
-#define M_EXT			0x01	/* m_ext points to more (malloced) data */
-#define M_FREELIST		0x02	/* mbuf is on free list */
-#define M_USEDLIST		0x04	/* XXX mbuf is on used list (for dtom()) */
-#define M_DOFREE		0x08	/* when m_free is called on the mbuf, free()
-					 * it rather than putting it on the free list */
+#define M_EXT                   0x01    /* m_ext points to more (malloced) data */
+#define M_FREELIST              0x02    /* mbuf is on free list */
+#define M_USEDLIST              0x04    /* XXX mbuf is on used list (for dtom()) */
+#define M_DOFREE                0x08    /* when m_free is called on the mbuf, free()
+                                         * it rather than putting it on the free list */
 #ifdef VBOX_WITH_BSD_REASS
 #define M_FRAG                  0x0800  /* packet is a fragment of a larger packet */
 #define M_FIRSTFRAG             0x1000  /* paket is first fragment */
@@ -133,11 +133,11 @@ struct mbuf {
  */
 
 struct mbstat {
-	int mbs_alloced;		/* Number of mbufs allocated */
+        int mbs_alloced;                /* Number of mbufs allocated */
 
 };
 
-extern struct	mbstat mbstat;
+extern struct   mbstat mbstat;
 extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;

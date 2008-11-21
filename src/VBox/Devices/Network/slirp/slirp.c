@@ -226,7 +226,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
         WSAStartup(MAKEWORD(2,0), &Data);
     }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
+        pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 #endif
 
@@ -364,13 +364,13 @@ static void updtime(PNATState pData)
 #else
 static void updtime(PNATState pData)
 {
-	gettimeofday(&tt, 0);
+        gettimeofday(&tt, 0);
 
-	curtime = (u_int)tt.tv_sec * (u_int)1000;
-	curtime += (u_int)tt.tv_usec / (u_int)1000;
+        curtime = (u_int)tt.tv_sec * (u_int)1000;
+        curtime += (u_int)tt.tv_usec / (u_int)1000;
 
-	if ((tt.tv_usec % 1000) >= 500)
-	   curtime++;
+        if ((tt.tv_usec % 1000) >= 500)
+           curtime++;
 }
 #endif
 
@@ -392,18 +392,18 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     STAM_REL_PROFILE_START(&pData->StatFill, a);
 
     nfds = *pnfds;
-	/*
-	 * First, TCP sockets
-	 */
-	do_slowtimo = 0;
-	if (link_up) {
-		/*
-		 * *_slowtimo needs calling if there are IP fragments
-		 * in the fragment queue, or there are TCP connections active
-		 */
+        /*
+         * First, TCP sockets
+         */
+        do_slowtimo = 0;
+        if (link_up) {
+                /*
+                 * *_slowtimo needs calling if there are IP fragments
+                 * in the fragment queue, or there are TCP connections active
+                 */
 #ifndef VBOX_WITH_BSD_REASS
-		do_slowtimo = ((tcb.so_next != &tcb) ||
-			       ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
+                do_slowtimo = ((tcb.so_next != &tcb) ||
+                               ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
 #else /* !VBOX_WITH_BSD_REASS */
     /* XXX: triggering of fragment expiration should be the same but use
      * new macroses
@@ -420,34 +420,34 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 STAM_REL_COUNTER_RESET(&pData->StatTCP);
                 STAM_REL_COUNTER_RESET(&pData->StatTCPHot);
 
-		for (so = tcb.so_next; so != &tcb; so = so_next) {
-			so_next = so->so_next;
+                for (so = tcb.so_next; so != &tcb; so = so_next) {
+                        so_next = so->so_next;
 
                         STAM_REL_COUNTER_INC(&pData->StatTCP);
 
-			/*
-			 * See if we need a tcp_fasttimo
-			 */
-			if (time_fasttimo == 0 && so->so_tcpcb->t_flags & TF_DELACK)
-			   time_fasttimo = curtime; /* Flag when we want a fasttimo */
+                        /*
+                         * See if we need a tcp_fasttimo
+                         */
+                        if (time_fasttimo == 0 && so->so_tcpcb->t_flags & TF_DELACK)
+                           time_fasttimo = curtime; /* Flag when we want a fasttimo */
 
-			/*
-			 * NOFDREF can include still connecting to local-host,
-			 * newly socreated() sockets etc. Don't want to select these.
-	 		 */
-			if (so->so_state & SS_NOFDREF || so->s == -1)
-			   continue;
+                        /*
+                         * NOFDREF can include still connecting to local-host,
+                         * newly socreated() sockets etc. Don't want to select these.
+                         */
+                        if (so->so_state & SS_NOFDREF || so->s == -1)
+                           continue;
 
-			/*
-			 * Set for reading sockets which are accepting
-			 */
-			if (so->so_state & SS_FACCEPTCONN) {
+                        /*
+                         * Set for reading sockets which are accepting
+                         */
+                        if (so->so_state & SS_FACCEPTCONN) {
                                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
                                 FD_SET(so->s, readfds);
-				UPD_NFDS(so->s);
+                                UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+                                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
                                 if (rc == SOCKET_ERROR)
                                 {
 socket_error:
@@ -455,110 +455,110 @@ socket_error:
                                     LogRel(("WSAEventSelector error %d (so=%x, socket=%s, event=%x)\n", error, so, so->s, VBOX_SOCKET_EVENT));
                                 }
 #endif
-				continue;
-			}
+                                continue;
+                        }
 
-			/*
-			 * Set for writing sockets which are connecting
-			 */
-			if (so->so_state & SS_ISFCONNECTING) {
+                        /*
+                         * Set for writing sockets which are connecting
+                         */
+                        if (so->so_state & SS_ISFCONNECTING) {
                                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-				FD_SET(so->s, writefds);
-				UPD_NFDS(so->s);
+                                FD_SET(so->s, writefds);
+                                UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+                                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
                                 if (rc == SOCKET_ERROR)
                                     goto socket_error;
 #endif
-				continue;
-			}
+                                continue;
+                        }
 
-			/*
-			 * Set for writing if we are connected, can send more, and
-			 * we have something to send
-			 */
-			if (CONN_CANFSEND(so) && so->so_rcv.sb_cc) {
+                        /*
+                         * Set for writing if we are connected, can send more, and
+                         * we have something to send
+                         */
+                        if (CONN_CANFSEND(so) && so->so_rcv.sb_cc) {
                                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-				FD_SET(so->s, writefds);
-				UPD_NFDS(so->s);
+                                FD_SET(so->s, writefds);
+                                UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+                                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
                                 if (rc == SOCKET_ERROR)
                                     goto socket_error;
-				continue; /*XXX: we're using the widest mask for event*/
+                                continue; /*XXX: we're using the widest mask for event*/
 #endif
-			}
+                        }
 
-			/*
-			 * Set for reading (and urgent data) if we are connected, can
-			 * receive more, and we have room for it XXX /2 ?
-			 */
-			if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2))) {
+                        /*
+                         * Set for reading (and urgent data) if we are connected, can
+                         * receive more, and we have room for it XXX /2 ?
+                         */
+                        if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2))) {
                                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-				FD_SET(so->s, readfds);
-				FD_SET(so->s, xfds);
-				UPD_NFDS(so->s);
+                                FD_SET(so->s, readfds);
+                                FD_SET(so->s, xfds);
+                                UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
+                                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
                                 if (rc == SOCKET_ERROR)
                                     goto socket_error;
-				continue; /*XXX: we're using the widest mask for event*/
+                                continue; /*XXX: we're using the widest mask for event*/
 #endif
-			}
+                        }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEventSelect(so->s, NULL, 0);
+                        rc = WSAEventSelect(so->s, NULL, 0);
                         if (rc == SOCKET_ERROR)
                             goto socket_error;
 #endif
-		}
+                }
 
-		/*
-		 * UDP sockets
-		 */
+                /*
+                 * UDP sockets
+                 */
                 STAM_REL_COUNTER_RESET(&pData->StatUDP);
                 STAM_REL_COUNTER_RESET(&pData->StatUDPHot);
 
-		for (so = udb.so_next; so != &udb; so = so_next) {
-			so_next = so->so_next;
+                for (so = udb.so_next; so != &udb; so = so_next) {
+                        so_next = so->so_next;
 
                         STAM_REL_COUNTER_INC(&pData->StatUDP);
 
-			/*
-			 * See if it's timed out
-			 */
-			if (so->so_expire) {
-				if (so->so_expire <= curtime) {
-					udp_detach(pData, so);
-					continue;
-				} else
-					do_slowtimo = 1; /* Let socket expire */
-			}
+                        /*
+                         * See if it's timed out
+                         */
+                        if (so->so_expire) {
+                                if (so->so_expire <= curtime) {
+                                        udp_detach(pData, so);
+                                        continue;
+                                } else
+                                        do_slowtimo = 1; /* Let socket expire */
+                        }
 
-			/*
-			 * When UDP packets are received from over the
-			 * link, they're sendto()'d straight away, so
-			 * no need for setting for writing
-			 * Limit the number of packets queued by this session
-			 * to 4.  Note that even though we try and limit this
-			 * to 4 packets, the session could have more queued
-			 * if the packets needed to be fragmented
-			 * (XXX <= 4 ?)
-			 */
-			if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4) {
+                        /*
+                         * When UDP packets are received from over the
+                         * link, they're sendto()'d straight away, so
+                         * no need for setting for writing
+                         * Limit the number of packets queued by this session
+                         * to 4.  Note that even though we try and limit this
+                         * to 4 packets, the session could have more queued
+                         * if the packets needed to be fragmented
+                         * (XXX <= 4 ?)
+                         */
+                        if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4) {
                                 STAM_REL_COUNTER_INC(&pData->StatUDPHot);
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-				FD_SET(so->s, readfds);
-				UPD_NFDS(so->s);
+                                FD_SET(so->s, readfds);
+                                UPD_NFDS(so->s);
 #else
-				rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
+                                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
                                 if (rc == SOCKET_ERROR)
                                     goto socket_error;
-				continue;
+                                continue;
 #endif
-			}
+                        }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
                         else
                         {
@@ -567,42 +567,42 @@ socket_error:
                                 goto socket_error;
                         }
 #endif
-		}
-	}
+                }
+        }
 
-	/*
-	 * Setup timeout to use minimum CPU usage, especially when idle
-	 */
+        /*
+         * Setup timeout to use minimum CPU usage, especially when idle
+         */
 
-	/*
-	 * First, see the timeout needed by *timo
-	 */
-	timeout.tv_sec = 0;
-	timeout.tv_usec = -1;
-	/*
-	 * If a slowtimo is needed, set timeout to 500ms from the last
-	 * slow timeout. If a fast timeout is needed, set timeout within
-	 * 200ms of when it was requested.
-	 */
-	if (do_slowtimo) {
-		/* XXX + 10000 because some select()'s aren't that accurate */
-		timeout.tv_usec = ((500 - (curtime - last_slowtimo)) * 1000) + 10000;
-		if (timeout.tv_usec < 0)
-		   timeout.tv_usec = 0;
-		else if (timeout.tv_usec > 510000)
-		   timeout.tv_usec = 510000;
+        /*
+         * First, see the timeout needed by *timo
+         */
+        timeout.tv_sec = 0;
+        timeout.tv_usec = -1;
+        /*
+         * If a slowtimo is needed, set timeout to 500ms from the last
+         * slow timeout. If a fast timeout is needed, set timeout within
+         * 200ms of when it was requested.
+         */
+        if (do_slowtimo) {
+                /* XXX + 10000 because some select()'s aren't that accurate */
+                timeout.tv_usec = ((500 - (curtime - last_slowtimo)) * 1000) + 10000;
+                if (timeout.tv_usec < 0)
+                   timeout.tv_usec = 0;
+                else if (timeout.tv_usec > 510000)
+                   timeout.tv_usec = 510000;
 
-		/* Can only fasttimo if we also slowtimo */
-		if (time_fasttimo) {
-			tmp_time = (200 - (curtime - time_fasttimo)) * 1000;
-			if (tmp_time < 0)
-			   tmp_time = 0;
+                /* Can only fasttimo if we also slowtimo */
+                if (time_fasttimo) {
+                        tmp_time = (200 - (curtime - time_fasttimo)) * 1000;
+                        if (tmp_time < 0)
+                           tmp_time = 0;
 
-			/* Choose the smallest of the 2 */
-			if (tmp_time < timeout.tv_usec)
-			   timeout.tv_usec = (u_int)tmp_time;
-		}
-	}
+                        /* Choose the smallest of the 2 */
+                        if (tmp_time < timeout.tv_usec)
+                           timeout.tv_usec = (u_int)tmp_time;
+                }
+        }
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
         *pnfds = nfds;
 #else
@@ -617,56 +617,56 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     struct socket *so, *so_next;
     int ret;
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	WSANETWORKEVENTS NetworkEvents;
-	int rc;
+        WSANETWORKEVENTS NetworkEvents;
+        int rc;
         int error;
-	int timer_update = (readfds == NULL && writefds == NULL && xfds == NULL);
+        int timer_update = (readfds == NULL && writefds == NULL && xfds == NULL);
 #endif
         STAM_REL_PROFILE_START(&pData->StatPoll, a);
 
-	/* Update time */
-	updtime(pData);
+        /* Update time */
+        updtime(pData);
 
-	/*
-	 * See if anything has timed out
-	 */
-	if (link_up) {
-		if (time_fasttimo && ((curtime - time_fasttimo) >= 2)) {
+        /*
+         * See if anything has timed out
+         */
+        if (link_up) {
+                if (time_fasttimo && ((curtime - time_fasttimo) >= 2)) {
                         STAM_REL_PROFILE_START(&pData->StatFastTimer, a);
-			tcp_fasttimo(pData);
-			time_fasttimo = 0;
+                        tcp_fasttimo(pData);
+                        time_fasttimo = 0;
                         STAM_REL_PROFILE_STOP(&pData->StatFastTimer, a);
-		}
-		if (do_slowtimo && ((curtime - last_slowtimo) >= 499)) {
+                }
+                if (do_slowtimo && ((curtime - last_slowtimo) >= 499)) {
                         STAM_REL_PROFILE_START(&pData->StatSlowTimer, a);
-			ip_slowtimo(pData);
-			tcp_slowtimo(pData);
-			last_slowtimo = curtime;
+                        ip_slowtimo(pData);
+                        tcp_slowtimo(pData);
+                        last_slowtimo = curtime;
                         STAM_REL_PROFILE_STOP(&pData->StatSlowTimer, a);
-		}
-	}
+                }
+        }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-	if (timer_update) return;
+        if (timer_update) return;
 #endif
 
-	/*
-	 * Check sockets
-	 */
-	if (link_up) {
-		/*
-		 * Check TCP sockets
-		 */
-		for (so = tcb.so_next; so != &tcb; so = so_next) {
-			so_next = so->so_next;
+        /*
+         * Check sockets
+         */
+        if (link_up) {
+                /*
+                 * Check TCP sockets
+                 */
+                for (so = tcb.so_next; so != &tcb; so = so_next) {
+                        so_next = so->so_next;
 
-			/*
-			 * FD_ISSET is meaningless on these sockets
-			 * (and they can crash the program)
-			 */
-			if (so->so_state & SS_NOFDREF || so->s == -1)
-			   continue;
+                        /*
+                         * FD_ISSET is meaningless on these sockets
+                         * (and they can crash the program)
+                         */
+                        if (so->so_state & SS_NOFDREF || so->s == -1)
+                           continue;
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
+                        rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
                         if (rc == SOCKET_ERROR)
                         {
                             error = WSAGetLastError();
@@ -675,54 +675,54 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         }
 #endif
 
-			/*
-			 * Check for URG data
-			 * This will soread as well, so no need to
-			 * test for readfds below if this succeeds
-			 */
+                        /*
+                         * Check for URG data
+                         * This will soread as well, so no need to
+                         * test for readfds below if this succeeds
+                         */
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-			if (FD_ISSET(so->s, xfds))
+                        if (FD_ISSET(so->s, xfds))
 #else
                         /* out-of-band data */
-			if ((NetworkEvents.lNetworkEvents & FD_OOB) && NetworkEvents.iErrorCode[FD_OOB_BIT] == 0)
+                        if ((NetworkEvents.lNetworkEvents & FD_OOB) && NetworkEvents.iErrorCode[FD_OOB_BIT] == 0)
 #endif
-			   sorecvoob(pData, so);
-			/*
-			 * Check sockets for reading
-			 */
+                           sorecvoob(pData, so);
+                        /*
+                         * Check sockets for reading
+                         */
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-			else if (FD_ISSET(so->s, readfds)) {
+                        else if (FD_ISSET(so->s, readfds)) {
 #else
-			else if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
+                        else if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
 #endif
-				/*
-				 * Check for incoming connections
-				 */
-				if (so->so_state & SS_FACCEPTCONN) {
-					tcp_connect(pData, so);
-					continue;
-				} /* else */
-				ret = soread(pData, so);
+                                /*
+                                 * Check for incoming connections
+                                 */
+                                if (so->so_state & SS_FACCEPTCONN) {
+                                        tcp_connect(pData, so);
+                                        continue;
+                                } /* else */
+                                ret = soread(pData, so);
 
-				/* Output it if we read something */
-				if (ret > 0)
-				   tcp_output(pData, sototcpcb(so));
-			}
+                                /* Output it if we read something */
+                                if (ret > 0)
+                                   tcp_output(pData, sototcpcb(so));
+                        }
 
-			/*
-			 * Check sockets for writing
-			 */
+                        /*
+                         * Check sockets for writing
+                         */
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-			if (FD_ISSET(so->s, writefds)) {
+                        if (FD_ISSET(so->s, writefds)) {
 #else
-			if ((NetworkEvents.lNetworkEvents & FD_WRITE) && (NetworkEvents.iErrorCode[FD_WRITE_BIT] == 0)) {
+                        if ((NetworkEvents.lNetworkEvents & FD_WRITE) && (NetworkEvents.iErrorCode[FD_WRITE_BIT] == 0)) {
 #endif
-			  /*
-			   * Check for non-blocking, still-connecting sockets
-			   */
-			  if (so->so_state & SS_ISFCONNECTING) {
-			    /* Connected */
-			    so->so_state &= ~SS_ISFCONNECTING;
+                          /*
+                           * Check for non-blocking, still-connecting sockets
+                           */
+                          if (so->so_state & SS_ISFCONNECTING) {
+                            /* Connected */
+                            so->so_state &= ~SS_ISFCONNECTING;
 
                 /*
                  * This should be probably guarded by PROBE_CONN too. Anyway,
@@ -731,83 +731,83 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  * after it has been opened and connected.
                  */
 #ifndef RT_OS_OS2
-			    ret = send(so->s, (const char *)&ret, 0, 0);
-			    if (ret < 0) {
-			      /* XXXXX Must fix, zero bytes is a NOP */
-			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				  errno == EINPROGRESS || errno == ENOTCONN) {
-				continue;
-			      }
+                            ret = send(so->s, (const char *)&ret, 0, 0);
+                            if (ret < 0) {
+                              /* XXXXX Must fix, zero bytes is a NOP */
+                              if (errno == EAGAIN || errno == EWOULDBLOCK ||
+                                  errno == EINPROGRESS || errno == ENOTCONN) {
+                                continue;
+                              }
 
-			      /* else failed */
-			      so->so_state = SS_NOFDREF;
-			    }
-			    /* else so->so_state &= ~SS_ISFCONNECTING; */
+                              /* else failed */
+                              so->so_state = SS_NOFDREF;
+                            }
+                            /* else so->so_state &= ~SS_ISFCONNECTING; */
 #endif
 
-			    /*
-			     * Continue tcp_input
-			     */
-			    tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-			    /* continue; */
-			  } else
-			    ret = sowrite(pData, so);
-			  /*
-			   * XXXXX If we wrote something (a lot), there
-			   * could be a need for a window update.
-			   * In the worst case, the remote will send
-			   * a window probe to get things going again
-			   */
-			}
+                            /*
+                             * Continue tcp_input
+                             */
+                            tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+                            /* continue; */
+                          } else
+                            ret = sowrite(pData, so);
+                          /*
+                           * XXXXX If we wrote something (a lot), there
+                           * could be a need for a window update.
+                           * In the worst case, the remote will send
+                           * a window probe to get things going again
+                           */
+                        }
 
-			/*
-			 * Probe a still-connecting, non-blocking socket
-			 * to check if it's still alive
-	 	 	 */
+                        /*
+                         * Probe a still-connecting, non-blocking socket
+                         * to check if it's still alive
+                         */
 #ifdef PROBE_CONN
-			if (so->so_state & SS_ISFCONNECTING) {
-			  ret = recv(so->s, (char *)&ret, 0,0);
+                        if (so->so_state & SS_ISFCONNECTING) {
+                          ret = recv(so->s, (char *)&ret, 0,0);
 
-			  if (ret < 0) {
-			    /* XXX */
-			    if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				errno == EINPROGRESS || errno == ENOTCONN) {
-			      continue; /* Still connecting, continue */
-			    }
+                          if (ret < 0) {
+                            /* XXX */
+                            if (errno == EAGAIN || errno == EWOULDBLOCK ||
+                                errno == EINPROGRESS || errno == ENOTCONN) {
+                              continue; /* Still connecting, continue */
+                            }
 
-			    /* else failed */
-			    so->so_state = SS_NOFDREF;
+                            /* else failed */
+                            so->so_state = SS_NOFDREF;
 
-			    /* tcp_input will take care of it */
-			  } else {
-			    ret = send(so->s, &ret, 0,0);
-			    if (ret < 0) {
-			      /* XXX */
-			      if (errno == EAGAIN || errno == EWOULDBLOCK ||
-				  errno == EINPROGRESS || errno == ENOTCONN) {
-				continue;
-				}
-			      /* else failed */
-			      so->so_state = SS_NOFDREF;
-			    } else
-			      so->so_state &= ~SS_ISFCONNECTING;
+                            /* tcp_input will take care of it */
+                          } else {
+                            ret = send(so->s, &ret, 0,0);
+                            if (ret < 0) {
+                              /* XXX */
+                              if (errno == EAGAIN || errno == EWOULDBLOCK ||
+                                  errno == EINPROGRESS || errno == ENOTCONN) {
+                                continue;
+                                }
+                              /* else failed */
+                              so->so_state = SS_NOFDREF;
+                            } else
+                              so->so_state &= ~SS_ISFCONNECTING;
 
-			  }
-			  tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
-			} /* SS_ISFCONNECTING */
+                          }
+                          tcp_input((struct mbuf *)NULL, sizeof(struct ip),so);
+                        } /* SS_ISFCONNECTING */
 #endif
-		}
+                }
 
-		/*
-		 * Now UDP sockets.
-		 * Incoming packets are sent straight away, they're not buffered.
-		 * Incoming UDP data isn't buffered either.
-		 */
-		for (so = udb.so_next; so != &udb; so = so_next) {
-			so_next = so->so_next;
+                /*
+                 * Now UDP sockets.
+                 * Incoming packets are sent straight away, they're not buffered.
+                 * Incoming UDP data isn't buffered either.
+                 */
+                for (so = udb.so_next; so != &udb; so = so_next) {
+                        so_next = so->so_next;
 
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-			rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
+                        rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
                         if (rc == SOCKET_ERROR)
                         {
                             error = WSAGetLastError();
@@ -816,20 +816,20 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         }
 #endif
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-			if (so->s != -1 && FD_ISSET(so->s, readfds)) {
+                        if (so->s != -1 && FD_ISSET(so->s, readfds)) {
 #else
-			if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
+                        if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)) {
 #endif
                             sorecvfrom(pData, so);
                         }
-		}
-	}
+                }
+        }
 
-	/*
-	 * See if we can start outputting
-	 */
-	if (if_queued && link_up)
-	   if_start(pData);
+        /*
+         * See if we can start outputting
+         */
+        if (if_queued && link_up)
+           if_start(pData);
 
         STAM_REL_PROFILE_STOP(&pData->StatPoll, a);
 }
@@ -837,34 +837,34 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #define ETH_ALEN 6
 #define ETH_HLEN 14
 
-#define ETH_P_IP	0x0800		/* Internet Protocol packet	*/
-#define ETH_P_ARP	0x0806		/* Address Resolution packet	*/
+#define ETH_P_IP        0x0800          /* Internet Protocol packet     */
+#define ETH_P_ARP       0x0806          /* Address Resolution packet    */
 
-#define	ARPOP_REQUEST	1		/* ARP request			*/
-#define	ARPOP_REPLY	2		/* ARP reply			*/
+#define ARPOP_REQUEST   1               /* ARP request                  */
+#define ARPOP_REPLY     2               /* ARP reply                    */
 
 struct ethhdr
 {
-	unsigned char	h_dest[ETH_ALEN];	/* destination eth addr	*/
-	unsigned char	h_source[ETH_ALEN];	/* source ether addr	*/
-	unsigned short	h_proto;		/* packet type ID field	*/
+        unsigned char   h_dest[ETH_ALEN];       /* destination eth addr */
+        unsigned char   h_source[ETH_ALEN];     /* source ether addr    */
+        unsigned short  h_proto;                /* packet type ID field */
 };
 
 struct arphdr
 {
-	unsigned short	ar_hrd;		/* format of hardware address	*/
-	unsigned short	ar_pro;		/* format of protocol address	*/
-	unsigned char	ar_hln;		/* length of hardware address	*/
-	unsigned char	ar_pln;		/* length of protocol address	*/
-	unsigned short	ar_op;		/* ARP opcode (command)		*/
+        unsigned short  ar_hrd;         /* format of hardware address   */
+        unsigned short  ar_pro;         /* format of protocol address   */
+        unsigned char   ar_hln;         /* length of hardware address   */
+        unsigned char   ar_pln;         /* length of protocol address   */
+        unsigned short  ar_op;          /* ARP opcode (command)         */
 
-	 /*
-	  *	 Ethernet looks like this : This bit is variable sized however...
-	  */
-	unsigned char		ar_sha[ETH_ALEN];	/* sender hardware address	*/
-	unsigned char		ar_sip[4];		/* sender IP address		*/
-	unsigned char		ar_tha[ETH_ALEN];	/* target hardware address	*/
-	unsigned char		ar_tip[4];		/* target IP address		*/
+         /*
+          *      Ethernet looks like this : This bit is variable sized however...
+          */
+        unsigned char           ar_sha[ETH_ALEN];       /* sender hardware address      */
+        unsigned char           ar_sip[4];              /* sender IP address            */
+        unsigned char           ar_tha[ETH_ALEN];       /* target hardware address      */
+        unsigned char           ar_tip[4];              /* target IP address            */
 };
 
 static
@@ -932,9 +932,9 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         arp_input(pData, pkt, pkt_len);
         break;
     case ETH_P_IP:
-	/* Update time. Important if the network is very quiet, as otherwise
+        /* Update time. Important if the network is very quiet, as otherwise
          * the first outgoing connection gets an incorrect timestamp. */
-	updtime(pData);
+        updtime(pData);
 
         m = m_get(pData);
         if (!m)
@@ -1004,11 +1004,11 @@ void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 HANDLE *slirp_get_events(PNATState pData)
 {
-	return pData->phEvents;
+        return pData->phEvents;
 }
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index)
 {
-	pData->phEvents[index] = hEvent;
+        pData->phEvents[index] = hEvent;
 }
 #endif
 

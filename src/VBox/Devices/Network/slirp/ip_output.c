@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ip_output.c	8.3 (Berkeley) 1/21/94
+ *      @(#)ip_output.c 8.3 (Berkeley) 1/21/94
  * ip_output.c,v 1.9 1994/11/16 10:17:10 jkh Exp
  */
 
@@ -54,149 +54,149 @@
 int
 ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 {
-	register struct ip *ip;
-	register struct mbuf *m = m0;
-	register int hlen = sizeof(struct ip );
-	int len, off, error = 0;
+        register struct ip *ip;
+        register struct mbuf *m = m0;
+        register int hlen = sizeof(struct ip );
+        int len, off, error = 0;
 
-	DEBUG_CALL("ip_output");
-	DEBUG_ARG("so = %lx", (long)so);
-	DEBUG_ARG("m0 = %lx", (long)m0);
+        DEBUG_CALL("ip_output");
+        DEBUG_ARG("so = %lx", (long)so);
+        DEBUG_ARG("m0 = %lx", (long)m0);
 
-	/* We do no options */
-/*	if (opt) {
- *		m = ip_insertoptions(m, opt, &len);
- *		hlen = len;
- *	}
+        /* We do no options */
+/*      if (opt) {
+ *              m = ip_insertoptions(m, opt, &len);
+ *              hlen = len;
+ *      }
  */
-	ip = mtod(m, struct ip *);
-	/*
-	 * Fill in IP header.
-	 */
-	ip->ip_v = IPVERSION;
-	ip->ip_off &= IP_DF;
-	ip->ip_id = htons(ip_currid++);
-	ip->ip_hl = hlen >> 2;
-	ipstat.ips_localout++;
+        ip = mtod(m, struct ip *);
+        /*
+         * Fill in IP header.
+         */
+        ip->ip_v = IPVERSION;
+        ip->ip_off &= IP_DF;
+        ip->ip_id = htons(ip_currid++);
+        ip->ip_hl = hlen >> 2;
+        ipstat.ips_localout++;
 
-	/*
-	 * Verify that we have any chance at all of being able to queue
-	 *      the packet or packet fragments
-	 */
-	/* XXX Hmmm... */
-/*	if (if_queued > if_thresh && towrite <= 0) {
- *		error = ENOBUFS;
- *		goto bad;
- *	}
+        /*
+         * Verify that we have any chance at all of being able to queue
+         *      the packet or packet fragments
+         */
+        /* XXX Hmmm... */
+/*      if (if_queued > if_thresh && towrite <= 0) {
+ *              error = ENOBUFS;
+ *              goto bad;
+ *      }
  */
 
-	/*
-	 * If small enough for interface, can just send directly.
-	 */
-	if ((u_int16_t)ip->ip_len <= if_mtu) {
-		ip->ip_len = htons((u_int16_t)ip->ip_len);
-		ip->ip_off = htons((u_int16_t)ip->ip_off);
-		ip->ip_sum = 0;
-		ip->ip_sum = cksum(m, hlen);
+        /*
+         * If small enough for interface, can just send directly.
+         */
+        if ((u_int16_t)ip->ip_len <= if_mtu) {
+                ip->ip_len = htons((u_int16_t)ip->ip_len);
+                ip->ip_off = htons((u_int16_t)ip->ip_off);
+                ip->ip_sum = 0;
+                ip->ip_sum = cksum(m, hlen);
 
-		if_output(pData, so, m);
-		goto done;
-	}
+                if_output(pData, so, m);
+                goto done;
+        }
 
-	/*
-	 * Too large for interface; fragment if possible.
-	 * Must be able to put at least 8 bytes per fragment.
-	 */
-	if (ip->ip_off & IP_DF) {
-		error = -1;
-		ipstat.ips_cantfrag++;
-		goto bad;
-	}
+        /*
+         * Too large for interface; fragment if possible.
+         * Must be able to put at least 8 bytes per fragment.
+         */
+        if (ip->ip_off & IP_DF) {
+                error = -1;
+                ipstat.ips_cantfrag++;
+                goto bad;
+        }
 
-	len = (if_mtu - hlen) &~ 7;       /* ip databytes per packet */
-	if (len < 8) {
-		error = -1;
-		goto bad;
-	}
+        len = (if_mtu - hlen) &~ 7;       /* ip databytes per packet */
+        if (len < 8) {
+                error = -1;
+                goto bad;
+        }
 
     {
-	int mhlen, firstlen = len;
-	struct mbuf **mnext = &m->m_nextpkt;
+        int mhlen, firstlen = len;
+        struct mbuf **mnext = &m->m_nextpkt;
 
-	/*
-	 * Loop through length of segment after first fragment,
-	 * make new header and copy data of each part and link onto chain.
-	 */
-	m0 = m;
-	mhlen = sizeof (struct ip);
-	for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len) {
-	  register struct ip *mhip;
-	  m = m_get(pData);
-	  if (m == 0) {
-	    error = -1;
-	    ipstat.ips_odropped++;
-	    goto sendorfree;
-	  }
-	  m->m_data += if_maxlinkhdr;
-	  mhip = mtod(m, struct ip *);
-	  *mhip = *ip;
+        /*
+         * Loop through length of segment after first fragment,
+         * make new header and copy data of each part and link onto chain.
+         */
+        m0 = m;
+        mhlen = sizeof (struct ip);
+        for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len) {
+          register struct ip *mhip;
+          m = m_get(pData);
+          if (m == 0) {
+            error = -1;
+            ipstat.ips_odropped++;
+            goto sendorfree;
+          }
+          m->m_data += if_maxlinkhdr;
+          mhip = mtod(m, struct ip *);
+          *mhip = *ip;
 
-		/* No options */
-/*		if (hlen > sizeof (struct ip)) {
- *			mhlen = ip_optcopy(ip, mhip) + sizeof (struct ip);
- *			mhip->ip_hl = mhlen >> 2;
- *		}
+                /* No options */
+/*              if (hlen > sizeof (struct ip)) {
+ *                      mhlen = ip_optcopy(ip, mhip) + sizeof (struct ip);
+ *                      mhip->ip_hl = mhlen >> 2;
+ *              }
  */
-	  m->m_len = mhlen;
-	  mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
-	  if (ip->ip_off & IP_MF)
-	    mhip->ip_off |= IP_MF;
-	  if (off + len >= (u_int16_t)ip->ip_len)
-	    len = (u_int16_t)ip->ip_len - off;
-	  else
-	    mhip->ip_off |= IP_MF;
-	  mhip->ip_len = htons((u_int16_t)(len + mhlen));
+          m->m_len = mhlen;
+          mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
+          if (ip->ip_off & IP_MF)
+            mhip->ip_off |= IP_MF;
+          if (off + len >= (u_int16_t)ip->ip_len)
+            len = (u_int16_t)ip->ip_len - off;
+          else
+            mhip->ip_off |= IP_MF;
+          mhip->ip_len = htons((u_int16_t)(len + mhlen));
 
-	  if (m_copy(m, m0, off, len) < 0) {
-	    error = -1;
-	    goto sendorfree;
-	  }
+          if (m_copy(m, m0, off, len) < 0) {
+            error = -1;
+            goto sendorfree;
+          }
 
-	  mhip->ip_off = htons((u_int16_t)mhip->ip_off);
-	  mhip->ip_sum = 0;
-	  mhip->ip_sum = cksum(m, mhlen);
-	  *mnext = m;
-	  mnext = &m->m_nextpkt;
-	  ipstat.ips_ofragments++;
-	}
-	/*
-	 * Update first fragment by trimming what's been copied out
-	 * and updating header, then send each fragment (in order).
-	 */
-	m = m0;
-	m_adj(m, hlen + firstlen - (u_int16_t)ip->ip_len);
-	ip->ip_len = htons((u_int16_t)m->m_len);
-	ip->ip_off = htons((u_int16_t)(ip->ip_off | IP_MF));
-	ip->ip_sum = 0;
-	ip->ip_sum = cksum(m, hlen);
+          mhip->ip_off = htons((u_int16_t)mhip->ip_off);
+          mhip->ip_sum = 0;
+          mhip->ip_sum = cksum(m, mhlen);
+          *mnext = m;
+          mnext = &m->m_nextpkt;
+          ipstat.ips_ofragments++;
+        }
+        /*
+         * Update first fragment by trimming what's been copied out
+         * and updating header, then send each fragment (in order).
+         */
+        m = m0;
+        m_adj(m, hlen + firstlen - (u_int16_t)ip->ip_len);
+        ip->ip_len = htons((u_int16_t)m->m_len);
+        ip->ip_off = htons((u_int16_t)(ip->ip_off | IP_MF));
+        ip->ip_sum = 0;
+        ip->ip_sum = cksum(m, hlen);
 sendorfree:
-	for (m = m0; m; m = m0) {
-		m0 = m->m_nextpkt;
-		m->m_nextpkt = 0;
-		if (error == 0)
-			if_output(pData, so, m);
-		else
-			m_freem(pData, m);
-	}
+        for (m = m0; m; m = m0) {
+                m0 = m->m_nextpkt;
+                m->m_nextpkt = 0;
+                if (error == 0)
+                        if_output(pData, so, m);
+                else
+                        m_freem(pData, m);
+        }
 
-	if (error == 0)
-		ipstat.ips_fragmented++;
+        if (error == 0)
+                ipstat.ips_fragmented++;
     }
 
 done:
-	return (error);
+        return (error);
 
 bad:
-	m_freem(pData, m0);
-	goto done;
+        m_freem(pData, m0);
+        goto done;
 }

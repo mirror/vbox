@@ -2,7 +2,7 @@
 
 #define TFTP_SESSIONS_MAX 3
 
-#define TFTP_SERVER	69
+#define TFTP_SERVER     69
 
 #define TFTP_RRQ    1
 #define TFTP_WRQ    2
