@@ -1610,9 +1610,9 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
     Assert (mShowSelectorAction);
     mShowSelectorAction->setIcon (VBoxGlobal::iconSet (
         ":/VirtualBox_16px.png"));
-    mExitSelectorAction = new QAction (this);
-    Assert (mExitSelectorAction);
-    mExitSelectorAction->setIcon (VBoxGlobal::iconSet (
+    mHideSystrayMenuAction = new QAction (this);
+    Assert (mHideSystrayMenuAction);
+    mHideSystrayMenuAction->setIcon (VBoxGlobal::iconSet (
         ":/exit_16px.png"));
 
     mVmConfigAction = new QAction (this);
@@ -1673,7 +1673,7 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
               settings.trayIconEnabled();
 
     connect (mShowSelectorAction, SIGNAL (triggered()), mParent, SLOT (showWindow()));
-    connect (mExitSelectorAction, SIGNAL (triggered()), mParent, SLOT (fileExit()));
+    connect (mHideSystrayMenuAction, SIGNAL (triggered()), this, SLOT (trayIconShow()));
 
     retranslateUi();
 }
@@ -1681,6 +1681,37 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 VBoxTrayIcon::~VBoxTrayIcon ()
 {
     hide();
+}
+
+void VBoxTrayIcon::retranslateUi ()
+{
+    if (!mActive)
+        return;
+
+    QFont fontBold;
+    fontBold.setBold (true);
+
+    mShowSelectorAction->setText (VBoxVMListView::tr ("Show Selector Window"));
+    mShowSelectorAction->setStatusTip (VBoxVMListView::tr ("Shows the selector window assigned to this menu"));
+    mShowSelectorAction->setFont(fontBold);
+
+    mHideSystrayMenuAction->setText (VBoxVMListView::tr ("Hide this menu"));
+    mHideSystrayMenuAction->setStatusTip (VBoxVMListView::tr ("Removes this menu from the systray"));
+
+    mVmConfigAction->setText (VBoxVMListView::tr ("&Settings..."));
+    mVmConfigAction->setStatusTip (VBoxVMListView::tr ("Configure the selected virtual machine"));
+
+    mVmDeleteAction->setText (VBoxVMListView::tr ("&Delete"));
+    mVmDeleteAction->setStatusTip (VBoxVMListView::tr ("Delete the selected virtual machine"));
+
+    mVmPauseAction->setText (VBoxVMListView::tr ("&Pause"));
+    mVmPauseAction->setStatusTip (VBoxVMListView::tr ("Suspend the execution of the virtual machine"));
+
+    mVmDiscardAction->setText (VBoxVMListView::tr ("D&iscard"));
+    mVmDiscardAction->setStatusTip (VBoxVMListView::tr ("Discard the saved state of the selected virtual machine"));
+
+    mVmShowLogsAction->setText (VBoxVMListView::tr ("Show &Log..."));
+    mVmShowLogsAction->setStatusTip (VBoxVMListView::tr ("Show the log files of the selected virtual machine"));
 }
 
 void VBoxTrayIcon::showSubMenu ()
@@ -1802,37 +1833,6 @@ void VBoxTrayIcon::showSubMenu ()
     pMenu->addAction (mVmPauseAction);
 }
 
-void VBoxTrayIcon::retranslateUi ()
-{
-    if (!mActive)
-        return;
-
-    QFont fontBold;
-    fontBold.setBold (true);
-
-    mShowSelectorAction->setText (VBoxVMListView::tr ("Show Selector Window"));
-    mShowSelectorAction->setStatusTip (VBoxVMListView::tr ("Shows the selector window assigned to this menu"));
-    mShowSelectorAction->setFont(fontBold);
-
-    mExitSelectorAction->setText (VBoxVMListView::tr ("Exit Selector Window"));
-    mExitSelectorAction->setStatusTip (VBoxVMListView::tr ("Exits the selector window assigned to this menu"));
-
-    mVmConfigAction->setText (VBoxVMListView::tr ("&Settings..."));
-    mVmConfigAction->setStatusTip (VBoxVMListView::tr ("Configure the selected virtual machine"));
-
-    mVmDeleteAction->setText (VBoxVMListView::tr ("&Delete"));
-    mVmDeleteAction->setStatusTip (VBoxVMListView::tr ("Delete the selected virtual machine"));
-
-    mVmPauseAction->setText (VBoxVMListView::tr ("&Pause"));
-    mVmPauseAction->setStatusTip (VBoxVMListView::tr ("Suspend the execution of the virtual machine"));
-
-    mVmDiscardAction->setText (VBoxVMListView::tr ("D&iscard"));
-    mVmDiscardAction->setStatusTip (VBoxVMListView::tr ("Discard the saved state of the selected virtual machine"));
-
-    mVmShowLogsAction->setText (VBoxVMListView::tr ("Show &Log..."));
-    mVmShowLogsAction->setStatusTip (VBoxVMListView::tr ("Show the log files of the selected virtual machine"));
-}
-
 void VBoxTrayIcon::hideSubMenu ()
 {
     VBoxVMItem* pItem = NULL;
@@ -1906,7 +1906,7 @@ void VBoxTrayIcon::refresh ()
     if (mVMModel->rowCount() > 0)
         mTrayIconMenu->addSeparator();
 
-    mTrayIconMenu->addAction (mExitSelectorAction);
+    mTrayIconMenu->addAction (mHideSystrayMenuAction);
 
     /* We're done constructing the menu, show it */
     setVisible (true);
@@ -1924,6 +1924,17 @@ VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 
     Assert (pItem);
     return pItem;
+}
+
+void VBoxTrayIcon::trayIconShow (bool aShow)
+{
+    mActive = aShow;
+    refresh();
+    setVisible (mActive);
+
+    VBoxGlobalSettings settings = vboxGlobal().settings();
+    settings.setTrayIconEnabled (mActive);
+    settings.save (vboxGlobal().virtualBox());
 }
 
 void VBoxTrayIcon::vmSettings()
