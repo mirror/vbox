@@ -377,7 +377,9 @@ int Service::validateName(const char *pszName, uint32_t cbName)
     if (RT_SUCCESS(rc))
         rc = RTStrValidateEncodingEx(pszName, RT_MIN(cbName, (uint32_t) MAX_NAME_LEN),
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
-
+    for (unsigned i = 0; RT_SUCCESS(rc) && i < cbName; ++i)
+        if (pszName[i] == '*' || pszName[i] == '?' || pszName[i] == '|')
+            rc = VERR_INVALID_PARAMETER;
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
