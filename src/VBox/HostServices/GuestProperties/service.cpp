@@ -401,7 +401,7 @@ int Service::validateValue(const char *pszValue, uint32_t cbValue)
      * a string terminator.
      */
     int rc = VINF_SUCCESS;
-    if (RT_SUCCESS(rc) && (cbValue < 2))
+    if (RT_SUCCESS(rc) && cbValue == 0)
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
         rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, (uint32_t) MAX_VALUE_LEN),
