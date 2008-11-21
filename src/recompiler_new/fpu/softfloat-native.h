@@ -2,13 +2,15 @@
 #include <math.h>
 
 #if (defined(_BSD) && !defined(__APPLE__)) || defined(HOST_SOLARIS)
-#include <ieeefp.h>
-#define fabsf(f) ((float)fabs(f))
+# include <ieeefp.h>
+# define fabsf(f) ((float)fabs(f))
 #elif defined(_MSC_VER)
-#include <fpieee.h>
-#define fabsf(f) ((float)fabs(f))
+# include <fpieee.h>
+# ifndef fabsf
+#  define fabsf(f) ((float)fabs(f))
+# endif
 #else
-#include <fenv.h>
+# include <fenv.h>
 #endif
 
 /*
