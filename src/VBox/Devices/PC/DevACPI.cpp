@@ -142,10 +142,6 @@ enum
 #define BAT_TECH_PRIMARY                        1
 #define BAT_TECH_SECONDARY                      2
 
-#define BAT_STATUS_DISCHARGING_MASK             RT_BIT(0)
-#define BAT_STATUS_CHARGING_MASK                RT_BIT(1)
-#define BAT_STATUS_CRITICAL_MASK                RT_BIT(2)
-
 #define STA_DEVICE_PRESENT_MASK                 RT_BIT(0)
 #define STA_DEVICE_ENABLED_MASK                 RT_BIT(1)
 #define STA_DEVICE_SHOW_IN_UI_MASK              RT_BIT(2)
