@@ -31,13 +31,18 @@
 #include <features.h>
 #if __GLIBC_PREREQ(2,6)
 
-/* glibc 2.6 fixed a serious bug in the mutex implementation
- * The external refernce to epoll_pwait is a hack which prevents
- * that we link against glibc < 2.6 */
-
+/*
+ * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
+ * linux specific event semaphores code in order to work around the bug. As it
+ * turns out, this code seems to have an unresolved issue (#2599), so we'll
+ * fall back on the pthread based implementation if glibc is known to contain
+ * the bug fix.
+ *
+ * The external refernce to epoll_pwait is a hack which prevents that we link
+ * against glibc < 2.6.
+ */
+#include "../posix/semevent-posix.cpp"
 asm volatile (".global epoll_pwait");
-
-#include "r3/posix/semevent-posix.cpp"
 
 #else /* glibc < 2.6 */
 
