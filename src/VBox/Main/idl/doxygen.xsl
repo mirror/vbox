@@ -236,7 +236,7 @@ owns the object will most likely fail or crash your application.
 </xsl:template>
 
 <!--
- *  comment for interfaces
+ *  comment for enums
 -->
 <xsl:template match="enum/desc">
   <xsl:text>/**&#x0A;</xsl:text>
@@ -254,6 +254,17 @@ owns the object will most likely fail or crash your application.
  *  comment for enum values
 -->
 <xsl:template match="enum/const/desc">
+  <xsl:text>/** @brief </xsl:text>
+  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
+  <xsl:apply-templates select="note"/>
+  <xsl:apply-templates select="see"/>
+  <xsl:text>&#x0A;*/&#x0A;</xsl:text>
+</xsl:template>
+
+<!--
+ *  comment for result codes
+-->
+<xsl:template match="result/desc">
   <xsl:text>/** @brief </xsl:text>
   <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
   <xsl:apply-templates select="note"/>
@@ -362,10 +373,51 @@ owns the object will most likely fail or crash your application.
  *  libraries
 -->
 <xsl:template match="library">
+  <!-- result codes -->
+  <xsl:text>
+/** @defgroup VirtualBox_COM_result_codes VirtualBox COM result codes
+ *
+ * This section describes all VirtualBox-specific COM result codes that may be
+ * returned by methods of VirtualBox COM interfaces in addition to standard COM
+ * result codes.
+ *
+ * Note that in addition to a result code, every VirtualBox method returns extended
+ * error information through the IVirtualBoxErrorInfo interface on failure. This
+ * interface is a preferred way to present the error to the end user because it
+ * contains a human readable description of the error. Raw result codes (both
+ * standard and described in this section) are intended to be used by programs
+ * to analyze the reason of a failure and select an appropriate action without
+ * involving the end user (for example, retry the operation later or make a
+ * different call).
+ *
+ * @todo List what standard codes may originate from our methods.
+ */
+/*@{*/
+  </xsl:text>
+  <xsl:for-each select="result">
+    <xsl:apply-templates select="."/>
+  </xsl:for-each>
+  <xsl:text>
+/*@}*/
+
+  </xsl:text>
   <!-- all enums go first -->
   <xsl:apply-templates select="enum | if/enum"/>
-  <!-- everything else but enums -->
-  <xsl:apply-templates select="*[not(self::enum) and not(self::if[enum])]"/>
+  <!-- everything else but result codes and enums -->
+  <xsl:apply-templates select="*[not(self::result or self::enum) and
+                                 not(self::if[result] or self::if[enum])]"/>
+</xsl:template>
+
+
+<!--
+ *  result codes
+-->
+<xsl:template match="result">
+  <xsl:apply-templates select="@if" mode="begin"/>
+  <xsl:apply-templates select="desc"/>
+  <xsl:value-of select="concat('const HRESULT ',@name,' = ',@value,';')"/>
+  <xsl:text>&#x0A;</xsl:text>
+  <xsl:apply-templates select="@if" mode="end"/>
 </xsl:template>
 
 
