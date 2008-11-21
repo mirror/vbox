@@ -73,6 +73,12 @@
 # include <linux/wireless.h>
 #endif
 
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
+# include <VBox/WinNetConfig.h>
+# include <Ntddndis.h>
+# include <devguid.h>
+#endif
+
 
 /*
  * VC++ 8 / amd64 has some serious trouble with this function.
@@ -1284,6 +1290,92 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     else
                     {
                         Log(("Failed to open wireless socket\n"));
+                    }
+# elif defined(RT_OS_WINDOWS)
+#  define DEVNAME_PREFIX L"\\\\.\\"
+                    INetCfg              *pNc;
+                    LPWSTR               lpszApp;
+                    HRESULT              hr;
+                    int rc = VERR_INTNET_FLT_IF_NOT_FOUND;
+
+                    /* we are getting the medium type via IOCTL_NDIS_QUERY_GLOBAL_STATS Io Control
+                     * there is a pretty long way till there though since we need to obtain the symbolic link name
+                     * for the adapter device we are going to query given the device Guid */
+                    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
+                                       L"VirtualBox",
+                                       &pNc,
+                                       &lpszApp );
+                    Assert(hr == S_OK);
+                    if(hr == S_OK)
+                    {
+                        /* get the adapter's INetCfgComponent*/
+                        INetCfgComponent *pAdaptorComponent;
+                        hr = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), &pAdaptorComponent);
+                        Assert(hr == S_OK);
+                        if(hr == S_OK)
+                        {
+                            /* now get the bind name */
+                            LPWSTR pName;
+                            hr = pAdaptorComponent->GetBindName(&pName);
+                            Assert(hr == S_OK);
+                            if(hr == S_OK)
+                            {
+                                /* prepend the "\\\\.\\" to the bind name to obtain the link name */
+                                wchar_t FileName[MAX_PATH];
+                                wcscpy(FileName, DEVNAME_PREFIX);
+                                wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pName);
+
+                                /* open the device */
+                                HANDLE hDevice = CreateFile(FileName,
+                                                            GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                            NULL,
+                                                            OPEN_EXISTING,
+                                                            FILE_ATTRIBUTE_NORMAL,
+                                                            NULL);
+                                Assert(hDevice != INVALID_HANDLE_VALUE);
+                                if (hDevice != INVALID_HANDLE_VALUE)
+                                {
+                                    /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
+                                    DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
+                                    NDIS_PHYSICAL_MEDIUM PhMedium;
+                                    DWORD cbResult;
+                                    if (DeviceIoControl(hDevice, IOCTL_NDIS_QUERY_GLOBAL_STATS, &Oid, sizeof(Oid), &PhMedium, sizeof(PhMedium), &cbResult, NULL))
+                                    {
+                                        /* that was simple, now examine PhMedium */
+                                        if(PhMedium == NdisPhysicalMediumWirelessWan
+                                                || PhMedium == NdisPhysicalMediumNative802_11
+                                                || PhMedium == NdisPhysicalMediumBluetooth
+                                                /*|| PhMedium == NdisPhysicalMediumWiMax*/
+                                                )
+                                        {
+                                            Log(("this is a wireles adapter"));
+                                            rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);    RC_CHECK();
+                                                                        Log(("Set SharedMacOnWire\n"));
+                                        }
+                                        else
+                                        {
+                                            Log(("this is NOT a wireles adapter"));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        AssertBreakpoint();
+                                        int winEr = GetLastError();
+                                        LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
+                                    }
+
+                                    CloseHandle(hDevice);
+                                }
+                                else
+                                {
+                                    int winEr = GetLastError();
+                                    LogRel(("Console::configConstructor: CreateFile failed, err (0x%x), ignoring\n", winEr));
+                                }
+                                CoTaskMemFree(pName);
+                            }
+                            VBoxNetCfgWinReleaseRef(pAdaptorComponent);
+                        }
+                        VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
                     }
 # else
                     /** @todo PORTME: wireless detection */
