@@ -38,6 +38,19 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The max size of the mapping cache (in pages). */
+#define PGMR0DYNMAP_MAX_PAGES               ((8*_1M) >> PAGE_SHIFT)
+/* * The max segment size. */
+/** @todo #define PGMR0DYNMAP_SEG_MAX_PAGES           (_1M >> PAGE_SHIFT) */
+/** The number of pages we reserve per CPU. */
+#define PGMR0DYNMAP_PAGES_PER_CPU           64
+/** Calcs the overload threshold. Current set at 50%. */
+#define PGMR0DYNMAP_CALC_OVERLOAD(cPages)   ((cPages) / 2)
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
@@ -58,12 +71,14 @@ typedef struct PGMR0DYNMAPSEG
     struct PGMR0DYNMAPSEG      *pNext;
     /** The memory object for the virtual address range that we're abusing. */
     RTR0MEMOBJ                  hMemObj;
-    /** The memory object for the page tables. */
-    RTR0MEMOBJ                  hMemObjPT;
     /** The start page in the cache. (I.e. index into the arrays.) */
-    uint32_t                    iPage;
+    uint16_t                    iPage;
     /** The number of pages this segment contributes. */
-    uint32_t                    cPages;
+    uint16_t                    cPages;
+    /** The number of page tables. */
+    uint16_t                    cPTs;
+    /** The memory objects for the page tables. */
+    RTR0MEMOBJ                  ahMemObjPT[1];
 } PGMR0DYNMAPSEG;
 /** Pointer to a ring-0 dynamic mapping cache segment. */
 typedef PGMR0DYNMAPSEG *PPGMR0DYNMAPSEG;
@@ -133,6 +148,8 @@ typedef struct PGMR0DYNMAP
     void                       *pvSavedPTEs;
     /** List of segments. */
     PPGMR0DYNMAPSEG             pSegHead;
+    /** The paging mode. */
+    SUPPAGINGMODE               enmPgMode;
 } PGMR0DYNMAP;
 /** Pointer to the ring-0 dynamic mapping cache */
 typedef PGMR0DYNMAP *PPGMR0DYNMAP;
@@ -175,8 +192,8 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
     PPGMR0DYNMAP pThis = (PPGMR0DYNMAP)RTMemAllocZ(sizeof(*pThis));
     AssertLogRelReturn(pThis, VERR_NO_MEMORY);
     int             rc = VINF_SUCCESS;
-    SUPPAGINGMODE   enmMode = SUPR0GetPagingMode();
-    switch (enmMode)
+    pThis->enmPgMode = SUPR0GetPagingMode();
+    switch (pThis->enmPgMode)
     {
         case SUPPAGINGMODE_32_BIT:
         case SUPPAGINGMODE_32_BIT_GLOBAL:
@@ -301,7 +318,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     pThis->cUsers++;
     if (pThis->cUsers == 1)
         rc = pgmR0DynMapSetup(pThis);
-    else if (pThis->cMaxLoad > pThis->cPages / 2)
+    else if (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(pThis->cPages))
         rc = pgmR0DynMapGrow(pThis);
     if (RT_FAILURE(rc))
         pThis->cUsers--;
@@ -391,6 +408,220 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
 
 
 /**
+ * Calculate the new cache size based on cMaxLoad statistics.
+ *
+ * @returns Number of pages.
+ * @param   pThis       The dynamic mapping cache instance.
+ */
+static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis)
+{
+    /*
+     * cCpus * PGMR0DYNMAP_PAGES_PER_CPU.
+     */
+    RTCPUID     cCpus = RTMpGetCount();
+    uint32_t    cPages = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
+
+    /* adjust against cMaxLoad. */
+    AssertMsg(pThis->cMaxLoad <= PGMR0DYNMAP_MAX_PAGES, ("%#x\n", pThis->cMaxLoad));
+    if (pThis->cMaxLoad > PGMR0DYNMAP_MAX_PAGES)
+        pThis->cMaxLoad = 0;
+
+    while (pThis->cMaxLoad < PGMR0DYNMAP_CALC_OVERLOAD(cPages))
+        cPages += PGMR0DYNMAP_PAGES_PER_CPU;
+
+    /* adjust against max size. */
+    if (cPages > PGMR0DYNMAP_MAX_PAGES)
+        cPages = PGMR0DYNMAP_MAX_PAGES;
+
+    return cPages;
+}
+
+
+/**
+ * Adds a new segment of the specified size.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The dynamic mapping cache instance.
+ * @param   cPages      The size of the new segment, give as a page count.
+ */
+static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
+{
+#if 0
+    int rc2;
+
+    /*
+     * Do the array rellocation first.
+     * (Too lazy to clean these up on failure.)
+     */
+    void *pv = RTMemRealloc(pThis->paPages, sizeof(pThis->paPages[0]) * (pThis->cPages + cPages));
+    if (!pv)
+        return VERR_NO_MEMORY;
+    pThis->paPages = (PPGMR0DYNMAPENTRY)pv;
+
+    pv = RTMemRealloc(pThis->pvSavedPTEs, (pThis->fLegacyMode ? sizeof(X86PGUINT) : sizeof(X86PGPAEUINT)) * (pThis->cPages + cPages));
+    if (!pv)
+        return VERR_NO_MEMORY;
+    pThis->pvSavedPTEs = pv;
+
+    /*
+     * Allocate the segment structure and pages memory.
+     */
+    uint32_t cPTs = cPages / (pThis->fLegacyMode ? X86_PG_ENTRIES : X86_PG_PAE_ENTRIES) + 2;
+    PPGMR0DYNMAPSEG pSeg = RTMemAllocZ(RT_UOFFSETOF(PGMR0DYNMAPSEG, ahMemObjPTs[cPTs]));
+    if (!pSeg)
+        return VERR_NO_MEMORY;
+    pSeg->pNext  = NULL;
+    pSeg->cPages = cPages;
+    pSeg->iPage  = pThis->cPages;
+    pSeg->cPTs   = 0;
+    int rc = RTR0MemObjAllocPage(&pSeg->hMemObj, cPages << PAGE_SHIFT, false);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Walk the paging hierarchy and map the relevant page tables.
+         */
+        uint8_t    *pbPage = RTR0MemObjAddress(pSeg->hMemObj);
+        AssertMsg(VALID_PTR(pbPage) && !((uintptr_t)pbPage & PAGE_OFFSET_MASK), ("%p\n", pbPage));
+        uint32_t    iPage = pThis->cPages;
+        uint32_t    iEndPage = iPage + cPages;
+        struct
+        {
+            RTHCPHYS        HCPhys;     /**< The entry that's currently mapped */
+            RTHCPHYS        fPhysMask;  /**< Mask for extracting HCPhys from uEntry. */
+            RTR0MEMOBJ      hMemObj;
+            RTR0MEMOBJ      hMapObj;
+            uint64_t        fPtrMask;
+            uint32_t        fPtrShift;
+            uint64_t        fAndMask;
+            uint64_t        fResMask;
+            union
+            {
+                void   *pv;
+            } u;
+        }           a[4];
+        RTCCUINTREG cr4 = ASMGetCR4();
+        uint32_t    cLevels;
+        switch (pThis->enmPgMode)
+        {
+            case SUPPAGINGMODE_32_BIT:
+            case SUPPAGINGMODE_32_BIT_GLOBAL:
+                cLevels = 2;
+                a[0].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+                a[0].fResMask = X86_PDE_P | X86_PDE_RW;
+                a[0].fPtrMask  = X86_PD_MASK;
+                a[0].fPtrShift = X86_PD_SHIFT;
+                a[1].fAndMask = X86_PTE_P | X86_PTE_RW;
+                a[1].fResMask = X86_PTE_P | X86_PTE_RW;
+                a[1].fPtrMask  = X86_PT_MASK;
+                a[1].fPtrShift = X86_PT_SHIFT;
+                break;
+
+            case SUPPAGINGMODE_PAE:
+            case SUPPAGINGMODE_PAE_GLOBAL:
+            case SUPPAGINGMODE_PAE_NX:
+            case SUPPAGINGMODE_PAE_GLOBAL_NX:
+                cLevels = 3;
+                a[0].fAndMask = X86_PDPE_P;
+                a[0].fResMask = X86_PDPE_P;
+                a[0].fPtrMask  = X86_PDPT_MASK_PAE;
+                a[0].fPtrShift = X86_PDPT_SHIFT;
+                a[1].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+                a[1].fResMask = X86_PDE_P | X86_PDE_RW;
+                a[1].fPtrMask  = X86_PD_MASK;
+                a[1].fPtrShift = X86_PD_SHIFT;
+                a[2].fAndMask = X86_PTE_P | X86_PTE_RW;
+                a[2].fResMask = X86_PTE_P | X86_PTE_RW;
+                a[2].fPtrMask  = X86_PT_MASK;
+                a[2].fPtrShift = X86_PT_SHIFT;
+                break;
+
+            case SUPPAGINGMODE_AMD64:
+            case SUPPAGINGMODE_AMD64_GLOBAL:
+            case SUPPAGINGMODE_AMD64_NX:
+            case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+                cLevels = 3;
+                a[0].fAndMask = X86_PML4E_P | X86_PML4E_RW;
+                a[0].fResMask = X86_PML4E_P | X86_PML4E_RW;
+                a[0].fPtrMask  = X86_PML4_MASK;
+                a[0].fPtrShift = X86_PML4_SHIFT;
+                a[1].fAndMask = X86_PDPE_P | X86_PDPE_RW /** @todo check for X86_PDPT_PS support. */;
+                a[1].fResMask = X86_PDPE_P | X86_PDPE_RW;
+                a[1].fPtrMask  = X86_PDPT_MASK_AMD64;
+                a[1].fPtrShift = X86_PDPT_SHIFT;
+                a[2].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+                a[2].fResMask = X86_PDE_P | X86_PDE_RW;
+                a[2].fPtrMask  = X86_PD_MASK;
+                a[2].fPtrShift = X86_PD_SHIFT;
+                a[3].fAndMask = X86_PTE_P | X86_PTE_RW;
+                a[3].fResMask = X86_PTE_P | X86_PTE_RW;
+                a[3].fPtrMask  = X86_PT_MASK;
+                a[3].fPtrShift = X86_PT_SHIFT;
+                break;
+            default:
+                cLevels = 0;
+                break;
+        }
+        for (uint32_t i = 0; i < RT_ELEMENTS(a); i++)
+        {
+            a[i].HCPhys = NIL_RTHCPHYS;
+            a[i].hMapObj = a[i].hMemObj = NIL_RTR0MEMOBJ;
+            a[i].u.pv = NULL;
+        }
+
+        for (; iPage < iEndPage && RT_SUCCESS(rc); iPage++, pbPage += PAGE_SIZE)
+        {
+            /* Initialize it */
+            pThis->paPages[iPage].HCPhys = NIL_RTHCPHYS;
+            pThis->paPages[iPage].pvPage = pbPage;
+            pThis->paPages[iPage].cRefs  = 0;
+            pThis->paPages[iPage].uPte.pPae = NULL;
+            RTCpuSetFill(&pThis->paPages[iPage].PendingSet);
+
+            /*
+             * Map its page table.
+             *
+             * This is a bit ASSUMPTIVE, it should really do a clean run thru
+             * the tables everything something was mapped and disable preemption
+             * or/and interrupts.
+             */
+            X86PGPAEUINT uEntry = ASMGetCR3();
+            for (unsigned i = 0; i < cLevels && RT_SUCCESS(rc); i++)
+            {
+                RTHCPHYS HCPhys = uEntry & a[i].fPhysMask;
+                if (a[i].HCPhys != HCPhys)
+                {
+                    if (i + 1 != cLevels)
+                    {
+                        RTR0MemObjFree(a[i].hMemObj, true /* fFreeMappings */);
+                        a[i].hMemObj = a[i].hMapObj = NIL_RTR0MEMOBJ;
+                    }
+                    rc = RTR0MemObjEnterPhys(&a[i].hMemObj, HCPhys, PAGE_SIZE);
+                    if (RT_SUCCESS(rc))
+                        rc = RTR0MemObjMapKernel(&a[i].hMapObj, a[i].hMemObj, &a[i].u.pv, 0, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+
+            }
+
+
+        } /* for each page */
+
+        for (iPage = 0; i < cLevels; )
+
+        rc2 = RTR0MemObjFree(hMemObjCR3, true /* fFreeMappings */); AssertRC(rc2);
+
+        rc2 = RTR0MemObjFree(pSeg->hMemObj, true /* fFreeMappings */); AssertRC(rc2);
+    }
+    RTMemFree(pSeg);
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+
+/**
  * Called by PGMR0DynMapInitVM under the init lock.
  *
  * @returns VBox status code.
@@ -398,7 +629,12 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
  */
 static int pgmR0DynMapSetup(PPGMR0DYNMAP pThis)
 {
-    return VINF_SUCCESS;
+    /*
+     * Calc the size and add a segment of that size.
+     */
+    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis);
+    AssertReturn(cPages, VERR_INTERNAL_ERROR);
+    return pgmR0DynMapAddSeg(pThis, cPages);
 }
 
 
@@ -410,7 +646,15 @@ static int pgmR0DynMapSetup(PPGMR0DYNMAP pThis)
  */
 static int pgmR0DynMapGrow(PPGMR0DYNMAP pThis)
 {
-    return VINF_SUCCESS;
+    /*
+     * Calc the new target size and add a segment of the appropriate size.
+     */
+    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis);
+    if (pThis->cPages >= cPages)
+        return VINF_SUCCESS;
+
+    uint32_t cAdd = cPages - pThis->cPages;
+    return pgmR0DynMapAddSeg(pThis, cAdd);
 }
 
 
@@ -492,14 +736,18 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
         PPGMR0DYNMAPSEG pSeg = pThis->pSegHead;
         pThis->pSegHead = pSeg->pNext;
 
-        int rc;
-        rc = RTR0MemObjFree(pSeg->hMemObjPT, true /* fFreeMappings */); AssertRC(rc);
-        pSeg->hMemObjPT = NIL_RTR0MEMOBJ;
+        uint32_t iPT = pSeg->cPTs;
+        while (iPT-- > 0)
+        {
+            rc = RTR0MemObjFree(pSeg->ahMemObjPT[iPT], true /* fFreeMappings */); AssertRC(rc);
+            pSeg->ahMemObjPT[iPT] = NIL_RTR0MEMOBJ;
+        }
         rc = RTR0MemObjFree(pSeg->hMemObj,   true /* fFreeMappings */); AssertRC(rc);
         pSeg->hMemObj   = NIL_RTR0MEMOBJ;
         pSeg->pNext     = NULL;
-        pSeg->iPage     = UINT32_MAX;
+        pSeg->iPage     = UINT16_MAX;
         pSeg->cPages    = 0;
+        pSeg->cPTs      = 0;
         RTMemFree(pSeg);
     }
 
