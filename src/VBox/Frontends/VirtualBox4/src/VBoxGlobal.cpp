@@ -2542,8 +2542,11 @@ bool VBoxGlobal::showVirtualBoxLicense()
 /**
  * Checks if any of the settings files were auto-converted and informs the user
  * if so. Returns @c false if the user select to exit the application.
+ *
+ * @param aAfterRefresh @c true to suppress the first simple dialog aExit
+ *                      button. Used when calling after the VM refresh.
  */
-bool VBoxGlobal::checkForAutoConvertedSettings()
+bool VBoxGlobal::checkForAutoConvertedSettings (bool aAfterRefresh /*= false*/)
 {
     QString formatVersion = mVBox.GetSettingsFormatVersion();
 
@@ -2570,14 +2573,17 @@ bool VBoxGlobal::checkForAutoConvertedSettings()
         }
     }
 
-    version = mVBox.GetSettingsFileVersion();
-    if (version != formatVersion)
+    if (!aAfterRefresh)
     {
-        isGlobalConverted = true;
-        fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
-                             "</td><td><nobr><i>%2</i></nobr></td></tr>")
-            .arg (mVBox.GetSettingsFilePath())
-            .arg (version);
+        version = mVBox.GetSettingsFileVersion();
+        if (version != formatVersion)
+        {
+            isGlobalConverted = true;
+            fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
+                                 "</td><td><nobr><i>%2</i></nobr></td></tr>")
+                .arg (mVBox.GetSettingsFilePath())
+                .arg (version);
+        }
     }
 
     if (!fileList.isNull())
@@ -2586,7 +2592,8 @@ bool VBoxGlobal::checkForAutoConvertedSettings()
                             .arg (fileList);
 
         int rc = vboxProblem()
-            .warnAboutAutoConvertedSettings (formatVersion, fileList);
+            .warnAboutAutoConvertedSettings (formatVersion, fileList,
+                                             aAfterRefresh);
 
         if (rc == QIMessageBox::Cancel)
             return false;
