@@ -117,6 +117,11 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxVMM.so \
 	VBoxXPCOM.so \
 	VBoxXPCOMIPCD \
+	$(if $(VBOX_WITH_CROGL),\
+	  VBoxOGLhostcrutil.so \
+	  VBoxOGLhosterrorspu.so \
+	  VBoxOGLrenderspu.so \
+	  VBoxSharedCrOpenGL.so) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	VBoxTunctl \
 	components/VBoxC.so \
