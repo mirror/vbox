@@ -15,12 +15,14 @@
 #define qemu_snprintf RTStrPrintf
 #endif
 #define qemu_vsnprintf(pszBuf, cbBuf, pszFormat, args) \
-                            RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
+                               RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
 #define qemu_vprintf(pszFormat, args) \
-                            RTLogPrintfV((pszFormat), (args))
-#define qemu_printf         RTLogPrintf
-#define qemu_malloc(cb)     RTMemAlloc(cb)
-#define qemu_mallocz(cb)    RTMemAllocZ(cb)
+                               RTLogPrintfV((pszFormat), (args))
+#define qemu_printf            RTLogPrintf
+#define qemu_malloc(cb)        RTMemAlloc(cb)
+#define qemu_mallocz(cb)       RTMemAllocZ(cb)
+#define qemu_realloc(ptr, cb)  RTMemRealloc(ptr, cb)
+
 #define qemu_free(pv)       RTMemFree(pv)
 #define qemu_strdup(psz)    RTStrDup(psz)
 

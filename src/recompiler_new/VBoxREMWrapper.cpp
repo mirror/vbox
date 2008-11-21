@@ -798,6 +798,22 @@ static const REMPARMDESC g_aArgsPGMR3PhysWriteU64[] =
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
 };
+static const REMPARMDESC g_aArgsPGMR3DbgR3Ptr2GCPhys[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void*), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPHYS), NULL }   
+};
+static const REMPARMDESC g_aArgsPGMHandlerIsAddressMonitored[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR), NULL }
+};
+static const REMPARMDESC g_aArgsRTMemRealloc[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(void*), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t) }
+};
 static const REMPARMDESC g_aArgsSSMR3GetGCPtr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
@@ -1131,6 +1147,8 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMR3PhysWriteU16",                      (void *)(uintptr_t)&PGMR3PhysWriteU16,              &g_aArgsPGMR3PhysWriteU16[0],               RT_ELEMENTS(g_aArgsPGMR3PhysWriteU16),                 REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "PGMR3PhysWriteU32",                      (void *)(uintptr_t)&PGMR3PhysWriteU32,              &g_aArgsPGMR3PhysWriteU32[0],               RT_ELEMENTS(g_aArgsPGMR3PhysWriteU32),                 REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "PGMR3PhysWriteU64",                      (void *)(uintptr_t)&PGMR3PhysWriteU64,              &g_aArgsPGMR3PhysWriteU64[0],               RT_ELEMENTS(g_aArgsPGMR3PhysWriteU32),                 REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "PGMR3DbgR3Ptr2GCPhys",                   (void *)(uintptr_t)&PGMR3DbgR3Ptr2GCPhys,              &g_aArgsPGMR3DbgR3Ptr2GCPhys[0],               RT_ELEMENTS(g_aArgsPGMR3DbgR3Ptr2GCPhys),                 REMFNDESC_FLAGS_RET_INT,   sizeof(uint64_t),                  NULL },
+    { "PGMHandlerIsAddressMonitored",          (void *)(uintptr_t)&PGMHandlerIsAddressMonitored,              &g_aArgsPGMHandlerIsAddressMonitored[0],               RT_ELEMENTS(g_aArgsPGMHandlerIsAddressMonitored),                 REMFNDESC_FLAGS_RET_INT,   sizeof(bool),                  NULL },
     { "SSMR3GetGCPtr",                          (void *)(uintptr_t)&SSMR3GetGCPtr,                  &g_aArgsSSMR3GetGCPtr[0],                   RT_ELEMENTS(g_aArgsSSMR3GetGCPtr),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "SSMR3GetMem",                            (void *)(uintptr_t)&SSMR3GetMem,                    &g_aArgsSSMR3GetMem[0],                     RT_ELEMENTS(g_aArgsSSMR3GetMem),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "SSMR3GetU32",                            (void *)(uintptr_t)&SSMR3GetU32,                    &g_aArgsSSMR3GetU32[0],                     RT_ELEMENTS(g_aArgsSSMR3GetU32),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
@@ -1161,7 +1179,7 @@ static REMFNDESC g_aVMMImports[] =
     { "VMMR3Unlock",                            (void *)(uintptr_t)&VMMR3Unlock,                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqCall",                            (void *)(uintptr_t)&VMR3ReqCall,                    &g_aArgsVMR3ReqCall[0],                     RT_ELEMENTS(g_aArgsVMR3ReqCall),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqFree",                            (void *)(uintptr_t)&VMR3ReqFree,                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
-    { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },    
     { "VMR3GetVMCPUNativeThread",               (void *)(uintptr_t)&VMR3GetVMCPUNativeThread,       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
 //    { "",                        (void *)(uintptr_t)&,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
 };
@@ -1183,7 +1201,10 @@ static REMFNDESC g_aRTImports[] =
     { "RTLogLoggerExV",                         (void *)(uintptr_t)&RTLogLoggerExV,                 &g_aArgsRTLogLoggerExV[0],                  RT_ELEMENTS(g_aArgsRTLogLoggerExV),                    REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_VALIST, 0, NULL },
     { "RTLogPrintf",                            (void *)(uintptr_t)&RTLogPrintf,                    &g_aArgsRTLogPrintf[0],                     RT_ELEMENTS(g_aArgsRTLogPrintf),                       REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemAlloc",                             (void *)(uintptr_t)&RTMemAlloc,                     &g_aArgsSIZE_T[0],                          RT_ELEMENTS(g_aArgsSIZE_T),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "RTMemAllocZ",                            (void *)(uintptr_t)&RTMemAllocZ,                     &g_aArgsSIZE_T[0],                          RT_ELEMENTS(g_aArgsSIZE_T),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "RTMemRealloc",                           (void *)(uintptr_t)&RTMemRealloc,                     &g_aArgsRTMemRealloc[0],                          RT_ELEMENTS(g_aArgsRTMemRealloc),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "RTMemExecAlloc",                         (void *)(uintptr_t)&RTMemExecAlloc,                 &g_aArgsSIZE_T[0],                          RT_ELEMENTS(g_aArgsSIZE_T),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+
     { "RTMemExecFree",                          (void *)(uintptr_t)&RTMemExecFree,                  &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemFree",                              (void *)(uintptr_t)&RTMemFree,                      &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemPageAlloc",                         (void *)(uintptr_t)&RTMemPageAlloc,                 &g_aArgsSIZE_T[0],                          RT_ELEMENTS(g_aArgsSIZE_T),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },

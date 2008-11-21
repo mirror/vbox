@@ -248,6 +248,8 @@ typedef union {
  */
 
 #ifdef VBOX
+void remAbort(int rc, const char *pszTip) __attribute__((__noreturn__));
+
 #ifndef VBOX_WITH_NEW_PHYS_CODE
 void     remR3GrowDynRange(unsigned long physaddr);
 #endif
