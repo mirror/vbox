@@ -49,6 +49,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
                             Icon aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal)
     : QIDialog (aParent)
+    , mWasDone (false)
 {
 #ifdef Q_WS_MAC
     /* Sheets are broken if the window is in fullscreen mode. So make it a
@@ -141,7 +142,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     mButtonBox->setCenterButtons (true);
     layout->addWidget (mButtonBox);
 
-    mButtonEsc = 0;
+    mButtonEsc = NULL;
 
     mButton0PB = createButton (aButton0);
     if (mButton0PB)
@@ -341,7 +342,7 @@ void QIMessageBox::setDetailsShown (bool aShown)
 QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
 {
     QIcon icon;
-    switch (aIcon) 
+    switch (aIcon)
     {
         case QIMessageBox::Information:
             icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxInformation, this);
@@ -367,5 +368,22 @@ QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
         return icon.pixmap (size, size);
     }else
         return QPixmap();
+}
+
+void QIMessageBox::closeEvent (QCloseEvent *e)
+{
+    if (mWasDone)
+        e->accept();
+    else
+        e->ignore();
+}
+
+void QIMessageBox::reject()
+{
+    if (mButtonEsc != NULL)
+    {
+        QDialog::reject();
+        setResult (mButtonEsc & ButtonMask);
+    }
 }
 

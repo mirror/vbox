@@ -34,6 +34,7 @@ class QILabel;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
+class QCloseEvent;
 
 class QIDialogButtonBox;
 
@@ -89,17 +90,15 @@ private:
 
     QPushButton *createButton (int aButton);
 
+    void closeEvent (QCloseEvent *e);
+
 private slots:
 
-    void done0() { done (mButton0 & ButtonMask); }
-    void done1() { done (mButton1 & ButtonMask); }
-    void done2() { done (mButton2 & ButtonMask); }
+    void done0() { mWasDone = true; done (mButton0 & ButtonMask); }
+    void done1() { mWasDone = true; done (mButton1 & ButtonMask); }
+    void done2() { mWasDone = true; done (mButton2 & ButtonMask); }
 
-    void reject() {
-        QDialog::reject();
-        if (mButtonEsc)
-            setResult (mButtonEsc & ButtonMask);
-    }
+    void reject();
 
 private:
 
@@ -112,6 +111,7 @@ private:
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
     QIDialogButtonBox *mButtonBox;
+    bool mWasDone : 1;
 };
 
 #endif
