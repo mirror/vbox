@@ -59,6 +59,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     guiFeatures = QString::null;
     languageId  = QString::null;
     maxGuestRes = "auto";
+    trayIconEnabled = true;
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
@@ -68,6 +69,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     guiFeatures = that.guiFeatures;
     languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
+    trayIconEnabled = that.trayIconEnabled;
 }
 
 VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
@@ -81,7 +83,8 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
          autoCapture == that.autoCapture &&
          guiFeatures == that.guiFeatures &&
          languageId  == that.languageId &&
-         maxGuestRes == that.maxGuestRes);
+         maxGuestRes == that.maxGuestRes &&
+         trayIconEnabled == that.trayIconEnabled);
 }
 
 /** @class VBoxGlobalSettings
@@ -102,11 +105,12 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKey",      "hostKey",      "\\d*[1-9]\\d*", true },
-    { "GUI/Input/AutoCapture",  "autoCapture",  "true|false", true },
-    { "GUI/Customizations",     "guiFeatures",  "\\S+", true },
-    { "GUI/LanguageID",         "languageId",   gVBoxLangIDRegExp, true },
-    { "GUI/MaxGuestResolution", "maxGuestRes",  "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true }
+    { "GUI/Input/HostKey",       "hostKey",         "\\d*[1-9]\\d*", true },
+    { "GUI/Input/AutoCapture",   "autoCapture",     "true|false", true },
+    { "GUI/Customizations",      "guiFeatures",     "\\S+", true },
+    { "GUI/LanguageID",          "languageId",      gVBoxLangIDRegExp, true },
+    { "GUI/MaxGuestResolution",  "maxGuestRes",     "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
+    { "GUI/TrayIcon/Enabled",    "trayIconEnabled", "true|false", true }
 };
 
 void VBoxGlobalSettings::setHostKey (int key)
