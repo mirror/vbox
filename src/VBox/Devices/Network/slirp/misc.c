@@ -28,28 +28,7 @@ inet_aton(cp, ia)
 void
 getouraddr(PNATState pData)
 {
-        char buff[256];
-        struct hostent *he = NULL;
-
-        if (gethostname(buff,256) == 0)
-        {
-            he = gethostbyname(buff);
-            if (he)
-            {
-                uint32_t ipv4_addr;
-                ipv4_addr = ntohl((*(struct in_addr*)he->h_addr).s_addr);
-                LogRel(("NAT: host is '%s' => %u.%u.%u.%u\n",
-                        buff,
-                        ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff,
-                        (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
-            }
-            else
-                LogRel(("NAT: host name is '%s' (using 127.0.0.1)\n", buff));
-        }
-        if (he)
-            our_addr = *(struct in_addr *)he->h_addr;
-        if (our_addr.s_addr == 0)
-            our_addr.s_addr = loopback_addr.s_addr;
+        our_addr.s_addr = loopback_addr.s_addr;
 }
 
 #if SIZEOF_CHAR_P == 8
