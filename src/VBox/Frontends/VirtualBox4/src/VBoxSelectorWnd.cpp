@@ -1606,14 +1606,10 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
     Assert (mShowSelectorAction);
     mShowSelectorAction->setIcon (VBoxGlobal::iconSet (
         ":/VirtualBox_16px.png"));
-    mShowSelectorAction->setText (VBoxVMListView::tr ("Show Selector Window"));
-    mShowSelectorAction->setStatusTip (VBoxVMListView::tr ("Shows the selector window assigned to this menu"));
     mExitSelectorAction = new QAction (this);
     Assert (mExitSelectorAction);
     mExitSelectorAction->setIcon (VBoxGlobal::iconSet (
         ":/exit_16px.png"));
-    mExitSelectorAction->setText (VBoxVMListView::tr ("Exit Selector Window"));
-    mExitSelectorAction->setStatusTip (VBoxVMListView::tr ("Exits the selector window assigned to this menu"));
 
     mVmConfigAction = new QAction (this);
     Assert (mVmConfigAction);
@@ -1670,7 +1666,7 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 
     VBoxGlobalSettings settings = vboxGlobal().settings();
     mActive = QSystemTrayIcon::isSystemTrayAvailable() &&
-              !settings.isFeatureActive ("noSystrayMenu");
+              settings.trayIconEnabled();
 
     connect (mShowSelectorAction, SIGNAL (triggered()), mParent, SLOT (showWindow()));
     connect (mExitSelectorAction, SIGNAL (triggered()), mParent, SLOT (fileExit()));
@@ -1800,13 +1796,22 @@ void VBoxTrayIcon::showSubMenu ()
     /* Build sub menu entries (add rest of sub menu entries later here). */
     pMenu->addAction (mVmStartAction);
     pMenu->addAction (mVmPauseAction);
-    pMenu->addAction (mVmDeleteAction);
 }
 
 void VBoxTrayIcon::retranslateUi ()
 {
     if (!mActive)
         return;
+
+    QFont fontBold;
+    fontBold.setBold (true);
+
+    mShowSelectorAction->setText (VBoxVMListView::tr ("Show Selector Window"));
+    mShowSelectorAction->setStatusTip (VBoxVMListView::tr ("Shows the selector window assigned to this menu"));
+    mShowSelectorAction->setFont(fontBold);
+
+    mExitSelectorAction->setText (VBoxVMListView::tr ("Exit Selector Window"));
+    mExitSelectorAction->setStatusTip (VBoxVMListView::tr ("Exits the selector window assigned to this menu"));
 
     mVmConfigAction->setText (VBoxVMListView::tr ("&Settings..."));
     mVmConfigAction->setStatusTip (VBoxVMListView::tr ("Configure the selected virtual machine"));
@@ -1862,6 +1867,9 @@ void VBoxTrayIcon::refresh ()
 
     mTrayIconMenu->addAction (mShowSelectorAction);
 
+    if (mVMModel->rowCount() > 0)
+        mTrayIconMenu->addSeparator();
+
     for (int i = 0; i < mVMModel->rowCount(); i++, iCurItemCount++)
     {
         pItem = mVMModel->itemByRow(i);
@@ -1890,6 +1898,9 @@ void VBoxTrayIcon::refresh ()
         connect (pSubMenu, SIGNAL (aboutToHide()), this, SLOT (hideSubMenu()));
         pCurMenu->addMenu (pSubMenu);
     }
+
+    if (mVMModel->rowCount() > 0)
+        mTrayIconMenu->addSeparator();
 
     mTrayIconMenu->addAction (mExitSelectorAction);
 

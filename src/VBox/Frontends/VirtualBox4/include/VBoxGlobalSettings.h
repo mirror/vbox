@@ -46,6 +46,7 @@ private:
     QString guiFeatures;
     QString languageId;
     QString maxGuestRes;
+    bool trayIconEnabled;
 
     friend class VBoxGlobalSettings;
 };
@@ -60,6 +61,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
+    Q_PROPERTY (bool trayIconEnabled READ trayIconEnabled WRITE setTrayIconEnabled)
 
 public:
 
@@ -100,6 +102,11 @@ public:
     void setMaxGuestRes (const QString &aMaxGuestRes)
     {
         mData()->maxGuestRes = aMaxGuestRes;
+    }
+
+    bool trayIconEnabled() const { return data()->trayIconEnabled; }
+    void setTrayIconEnabled (bool enabled) {
+        mData()->trayIconEnabled = enabled;
     }
 
     //
