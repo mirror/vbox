@@ -84,7 +84,5 @@ void VBoxGLSettingsGeneral::retranslateUi()
     mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
                                "provides authentication for Remote Display "
                                "(VRDP) clients."));
-    mCbCheckTrayIcon->setWhatsThis (tr ("When checked, the application will provide "
-                                        "an icon with a context menu in the system tray."));
 }
 
