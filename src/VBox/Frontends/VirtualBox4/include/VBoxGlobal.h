@@ -740,7 +740,10 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    bool checkForAutoConvertedSettings();
+    bool checkForAutoConvertedSettings (bool aAfterRefresh = false);
+
+    void checkForAutoConvertedSettingsAfterRefresh()
+    { checkForAutoConvertedSettings (true); }
 
     CSession openSession (const QUuid &aId, bool aExisting = false);
 

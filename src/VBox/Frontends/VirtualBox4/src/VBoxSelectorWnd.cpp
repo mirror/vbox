@@ -897,13 +897,14 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    /* We always get here when mVMListView emits the activated() signal,
-     * so we must explicitly check if the action is enabled or not. */
-   if (aUuid.isNull() && vmStartAction)  /* If Uuid is NULL, this function is called from the mVMListView activated() signal. */
-   {
-       if (!vmStartAction->isEnabled())
-           return;
-   }
+    /* Are we called from the mVMListView's activated() signal? */
+    if (aUuid.isNull())
+    {
+        /* We always get here when mVMListView emits the activated() signal,
+         * so we must explicitly check if the action is enabled or not. */
+        if (!vmStartAction->isEnabled())
+            return;
+    }
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
@@ -1045,10 +1046,15 @@ void VBoxSelectorWnd::vmRefresh (const QUuid &aUuid /*= QUuid_null*/)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
+    bool oldAccessible = item->accessible();
+
     refreshVMItem (item->id(),
                    true /* aDetails */,
                    true /* aSnapshot */,
                    true /* aDescription */);
+
+    if (!oldAccessible && item->accessible())
+        vboxGlobal().checkForAutoConvertedSettingsAfterRefresh();
 }
 
 void VBoxSelectorWnd::vmShowLogs (const QUuid &aUuid /*= QUuid_null*/)

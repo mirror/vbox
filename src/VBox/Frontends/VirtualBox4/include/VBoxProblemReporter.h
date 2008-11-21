@@ -349,7 +349,8 @@ public:
     bool remindAboutPausedVMInput();
 
     int warnAboutAutoConvertedSettings (const QString &aFormatVersion,
-                                        const QString &aFileList);
+                                        const QString &aFileList,
+                                        bool aAfterRefresh);
 
     bool remindAboutInaccessibleMedia();
 
