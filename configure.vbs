@@ -50,7 +50,7 @@ dim g_blnDisableCOM, g_strDisableCOM
 g_blnDisableCOM = False
 g_strDisableCOM = ""
 
-' The internal mode is primarily for skipping the xerces and xalan monsters.
+' The internal mode is primarily for skipping some large libraries.
 dim g_blnInternalMode
 g_blnInternalMode = False
 
@@ -1281,7 +1281,7 @@ sub CheckForMidl()
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "Xerces", "Skipped (" & g_strDisableCOM & ")"
+      PrintResult "Midl", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
@@ -1609,192 +1609,154 @@ function CheckForlibSDLSub(strPathlibSDL)
 end function
 
 
-dim g_strXercesVer
-g_strXercesVer = ""
-
 ''
-' Checks for xerces.
-sub CheckForXerces(strOptXerces)
-   dim strPathXerces, str
-   PrintHdr "Xerces"
+' Checks for libxml2.
+sub CheckForXml2(strOptXml2)
+   dim strPathXml2, str
+   PrintHdr "libxml2"
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "Xerces", "Skipped (" & g_strDisableCOM & ")"
+      PrintResult "libxml2", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
    '
-   ' Try find some xerces dll/lib.
+   ' Try find some xml2 dll/lib.
    '
-   strPathXerces = ""
-   if (strPathXerces = "") And (strOptXerces <> "") then
-      if CheckForXercesSub(strOptXerces) then strPathXerces = strOptXerces
+   strPathXml2 = ""
+   if (strPathXml2 = "") And (strOptXml2 <> "") then
+      if CheckForXml2Sub(strOptXml2) then strPathXml2 = strOptXml2
    end if
 
-   if strPathXerces = "" Then
-      str = Which("xerces-c_2_9.lib")
-      if str = "" then str = Which("xerces-c_2_8.lib")
-      if str = "" then str = Which("xerces-c_2_7.lib")
-      if str = "" then str = Which("xerces-c_2_6.lib")
+   if strPathXml2 = "" Then
+      str = Which("libxml2.lib")
       if str <> "" Then
          str = PathParent(PathStripFilename(str))
-         if CheckForXercesSub(str) then strPathXerces = str
-      end if
-   end if
-
-   if strPathXerces = "" Then
-      str = Which("xerces-c_2_9.dll")
-      if str = "" then str = Which("xerces-c_2_8.dll")
-      if str = "" then str = Which("xerces-c_2_7.dll")
-      if str = "" then str = Which("xerces-c_2_6.dll")
-      if str <> "" Then
-         str = PathParent(PathStripFilename(str))
-         if CheckForXercesSub(str) then strPathXerces = str
+         if CheckForXml2Sub(str) then strPathXml2 = str
       end if
    end if
 
    ' Ignore failure if we're in 'internal' mode.
-   if (strPathXerces = "") and g_blnInternalMode then
-      PrintResult "Xerces", "ignored (internal mode)"
+   if (strPathXml2 = "") and g_blnInternalMode then
+      PrintResult "libxml2", "ignored (internal mode)"
       exit sub
    end if
 
    ' Success?
-   if strPathXerces = "" then
-      if strOptXerces = "" then
-         MsgError "Can't locate Xerces. Try specify the path with the --with-xerces=<path> argument. " _
+   if strPathXml2 = "" then
+      if strOptXml2 = "" then
+         MsgError "Can't locate libxml2. Try specify the path with the --with-libxml2=<path> argument. " _
                 & "If still no luck, consult the configure.log and the build requirements."
       else
-         MsgError "Can't locate Xerces. Please consult the configure.log and the build requirements."
+         MsgError "Can't locate libxml2. Please consult the configure.log and the build requirements."
       end if
       exit sub
    end if
 
-   strPathXerces = UnixSlashes(PathAbs(strPathXerces))
-   CfgPrint "SDK_VBOX_XERCES_INCS  := " & strPathXerces & "/include"
-   CfgPrint "SDK_VBOX_XERCES_LIBS  := " & strPathXerces & "/lib/xerces-c_" & Left(g_strXercesVer, 1) & ".lib"
-   CfgPrint "DLL_SDK_VBOX_XERCES_XERCES := " & strPathXerces & "/bin/xerces-c_" & g_strXercesVer & ".dll"
+   strPathXml2 = UnixSlashes(PathAbs(strPathXml2))
+   CfgPrint "SDK_VBOX_LIBXML2_INCS  := " & strPathXml2 & "/include"
+   CfgPrint "SDK_VBOX_LIBXML2_LIBS  := " & strPathXml2 & "/lib/libxml2.lib"
 
-   PrintResult "Xerces", strPathXerces
+   PrintResult "libxml2", strPathXml2
 end sub
 
 ''
-' Checks if the specified path points to an usable libSDL or not.
-function CheckForXercesSub(strPathXerces)
+' Checks if the specified path points to an usable libxml2 or not.
+function CheckForXml2Sub(strPathXml2)
    dim str
 
-   CheckForXercersSub = False
-   LogPrint "trying: strPathXerces=" & strPathXerces
-   if   LogFileExists(strPathXerces, "include/xercesc/dom/DOM.hpp") _
-    And LogFileExists(strPathXerces, "include/xercesc/validators/datatype/DatatypeValidator.hpp") _
+   CheckForXml2Sub = False
+   LogPrint "trying: strPathXml2=" & strPathXml2
+   if   LogFileExists(strPathXml2, "include/libxml/xmlexports.h") _
+    And LogFileExists(strPathXml2, "include/libxml/xmlreader.h") _
       then
-      ' The version is encoded in the dll/lib name, so try first
-      ' to find the dll and then a matching lib.
-      str = LogFindFile(strPathXerces, "bin/xerces-c_*.dll")
+      str = LogFindFile(strPathXml2, "bin/libxml2.dll")
       if str <> "" then
-         g_strXercesVer = Mid(str, Len("xerces-c_") + 1, Len(str) - Len("xerces-c_.dll"))
-         ' the library omits the minor version (in the current distro).
-         if LogFileExists(strPathXerces, "lib/xerces-c_" & Left(g_strXercesVer, 1) & ".lib") then
-            CheckForXercesSub = True
+         if LogFindFile(strPathXml2, "lib/libxml2.lib") then
+            CheckForXml2Sub = True
          end if
       end if
    end if
 end function
 
 
-dim g_strXalanVer
-g_strXalanVer = ""
-
 ''
-' Checks for Xalan.
-sub CheckForXalan(strOptXalan)
-   dim strPathXalan, str
-   PrintHdr "Xalan"
+' Checks for libxslt.
+sub CheckForXslt(strOptXslt)
+   dim strPathXslt, str
+   PrintHdr "libxslt"
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "Xalan", "Skipped (" & g_strDisableCOM & ")"
+      PrintResult "libxslt", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
    '
-   ' Try find some Xalan dll/lib.
+   ' Try find some libxslt dll/lib.
    '
-   strPathXalan = ""
-   if (strPathXalan = "") And (strOptXalan <> "") then
-      if CheckForXalanSub(strOptXalan) then strPathXalan = strOptXalan
+   strPathXslt = ""
+   if (strPathXslt = "") And (strOptXslt <> "") then
+      if CheckForXsltSub(strOptXslt) then strPathXslt = strOptXslt
    end if
 
-   if strPathXalan = "" Then
-      str = Which("Xalan-c_1_12.lib")
-      if str = "" then str = Which("Xalan-c_1_11.lib")
-      if str = "" then str = Which("Xalan-c_1_10.lib")
-      if str = "" then str = Which("Xalan-c_1_9.lib")
+   if strPathXslt = "" Then
+      str = Which("libxslt.lib")
       if str <> "" Then
          str = PathParent(PathStripFilename(str))
-         if CheckForXalanSub(str) then strPathXalan = str
+         if CheckForXsltSub(str) then strPathXslt = str
       end if
    end if
 
-   if strPathXalan = "" Then
-      str = Which("Xalan-c_1_12.dll")
-      if str = "" then str = Which("Xalan-c_1_11.dll")
-      if str = "" then str = Which("Xalan-c_1_10.dll")
-      if str = "" then str = Which("Xalan-c_1_9.dll")
+   if strPathXslt = "" Then
+      str = Which("libxslt.dll")
       if str <> "" Then
          str = PathParent(PathStripFilename(str))
-         if CheckForXalanSub(str) then strPathXalan = str
+         if CheckForXsltSub(str) then strPathXslt = str
       end if
    end if
 
    ' Ignore failure if we're in 'internal' mode.
-   if (strPathXalan = "") and g_blnInternalMode then
-      PrintResult "Xalan", "ignored (internal mode)"
+   if (strPathXslt = "") and g_blnInternalMode then
+      PrintResult "libxslt", "ignored (internal mode)"
       exit sub
    end if
 
    ' Success?
-   if strPathXalan = "" then
-      if strOptXalan = "" then
-         MsgError "Can't locate Xalan. Try specify the path with the --with-Xalan=<path> argument. " _
+   if strPathXslt = "" then
+      if strOptXslt = "" then
+         MsgError "Can't locate libxslt. Try specify the path with the --with-libxslt=<path> argument. " _
                 & "If still no luck, consult the configure.log and the build requirements."
       else
-         MsgError "Can't locate Xalan. Please consult the configure.log and the build requirements."
+         MsgError "Can't locate libxslt. Please consult the configure.log and the build requirements."
       end if
       exit sub
    end if
 
-   strPathXalan = UnixSlashes(PathAbs(strPathXalan))
-   CfgPrint "SDK_VBOX_XALAN_INCS   := " & strPathXalan & "/include"
-   CfgPrint "SDK_VBOX_XALAN_LIBS   := " & strPathXalan & "/lib/Xalan-C_" & Left(g_strXalanVer, 1) & ".lib"
-   CfgPrint "DLL_SDK_VBOX_XALAN_XALAN := " & strPathXalan & "/bin/Xalan-C_" & g_strXalanVer & ".dll"
-   CfgPrint "DLL_SDK_VBOX_XALAN_XALAN-MESSAGES := " & strPathXalan & "/bin/XalanMessages_" & g_strXalanVer & ".dll"
+   strPathXslt = UnixSlashes(PathAbs(strPathXslt))
+   CfgPrint "SDK_VBOX_LIBXSLT_INCS   := " & strPathXslt & "/include"
+   CfgPrint "SDK_VBOX_LIBXSLT_LIBS   := " & strPathXslt & "/lib/libxslt.lib"
 
-   PrintResult "Xalan", strPathXalan
+   PrintResult "libxslt", strPathXslt
 end sub
 
 ''
-' Checks if the specified path points to an usable Xalan or not.
-function CheckForXalanSub(strPathXalan)
+' Checks if the specified path points to an usable libxslt or not.
+function CheckForXsltSub(strPathXslt)
    dim str
 
-   CheckForXercersSub = False
-   LogPrint "trying: strPathXalan=" & strPathXalan
+   CheckForXsltSub = False
+   LogPrint "trying: strPathXslt=" & strPathXslt
 
-   if   LogFileExists(strPathXalan, "include/xalanc/DOMSupport/DOMSupport.hpp") _
-    And LogFileExists(strPathXalan, "include/xalanc/XalanDOM/XalanText.hpp") _
+   if   LogFileExists(strPathXslt, "include/libxslt/namespaces.h") _
+    And LogFileExists(strPathXslt, "include/libxslt/xsltutils.h") _
       then
-      ' The version is encoded in the dll/lib name, so try first
-      ' to find the dll and then a matching lib.
-      str = LogFindFile(strPathXalan, "bin/Xalan-C_*.dll")
+      str = LogFindFile(strPathXslt, "lib/libxslt.dll")
       if str <> "" then
-         g_strXalanVer = Mid(str, Len("Xalan-C_") + 1, Len(str) - Len("Xalan-C_.dll"))
-         ' the library omits the minor version (in the current distro).
-         if   LogFileExists(strPathXalan, "bin/XalanMessages_" & g_strXalanVer & ".dll") _
-          And LogFileExists(strPathXalan, "lib/Xalan-C_" & Left(g_strXalanVer, 1) & ".lib") _
+         if   LogFileExists(strPathXslt, "lib/libxslt.lib") _
             then
-            CheckForXalanSub = True
+            CheckForXsltSub = True
          end if
       end if
    end if
@@ -1998,8 +1960,8 @@ sub usage
    Print "  --with-VC-Common=PATH "
    Print "  --with-VC-Express-Edition"
    Print "  --with-W32API=PATH    "
-   Print "  --with-Xalan=PATH     "
-   Print "  --with-Xerces=PATH    "
+   Print "  --with-libxml3=PATH   "
+   Print "  --with-libxslt=PATH   "
 end sub
 
 
@@ -2030,8 +1992,8 @@ Sub Main
    strOptVCCommon = ""
    blnOptVCExpressEdition = False
    strOptW32API = ""
-   blnOptXalan = ""
-   blnOptXerces = ""
+   blnOptXml2 = ""
+   blnOptXslt = ""
    blnOptDisableCOM = False
    for i = 1 to Wscript.Arguments.Count
       dim str, strArg, strPath
@@ -2071,10 +2033,10 @@ Sub Main
             blnOptVCExpressEdition = True
          case "--with-w32api"
             strOptW32API = strPath
-         case "--with-xalan"
-            strOptXalan = strPath
-         case "--with-xerces"
-            strOptXerces = strPath
+         case "--with-libxml2"
+            strOptXml2 = strPath
+         case "--with-libxslt"
+            strOptXslt = strPath
          case "--disable-com"
             blnOptDisableCOM = True
          case "--enable-com"
@@ -2127,8 +2089,8 @@ Sub Main
    CheckForDirectXSDK strOptDXSDK
    CheckForMingW strOptMingw, strOptW32API
    CheckForlibSDL strOptlibSDL
-   CheckForXerces strOptXerces
-   CheckForXalan strOptXalan
+   CheckForXml2 strOptXml2
+   CheckForXslt strOptXslt
    CheckForQt strOptQt
    if g_blnInternalMode then
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
