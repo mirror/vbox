@@ -375,7 +375,7 @@ OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aI
 
 OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
 {
-    if (aInUserData)
+    if (!aInUserData)
         return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
 
     UInt32 eventClass = ::GetEventClass (aInEvent);
@@ -423,7 +423,9 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             HISize s;
             if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
                 return noErr;
+            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
             SizeWindow (w, s.width, s.height, true);
+            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
             return noErr;
         }
     }
