@@ -193,6 +193,7 @@ signals:
 
 public slots:
 
+    void trayIconShow (bool aShow = false);
 
 private slots:
 
@@ -218,7 +219,7 @@ private:
     QMenu *mTrayIconMenu;
 
     QAction *mShowSelectorAction;
-    QAction *mExitSelectorAction;
+    QAction *mHideSystrayMenuAction;
     QAction *mVmConfigAction;
     QAction *mVmDeleteAction;
     QAction *mVmStartAction;
