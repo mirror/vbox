@@ -1288,6 +1288,10 @@ void VBoxSelectorWnd::retranslateUi()
     vmDiscardAction->setStatusTip (
         tr ("Discard the saved state of the selected virtual machine"));
 
+    vmPauseAction->setText (tr ("&Pause"));
+    vmPauseAction->setStatusTip (
+        tr ("Suspend the execution of the virtual machine"));
+
     vmRefreshAction->setText (tr ("&Refresh"));
     vmRefreshAction->setShortcut (QKeySequence ("Ctrl+R"));
     vmRefreshAction->setStatusTip (
