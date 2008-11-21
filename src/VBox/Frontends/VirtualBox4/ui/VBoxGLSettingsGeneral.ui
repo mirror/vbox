@@ -39,7 +39,7 @@
    <property name="bottomMargin" >
     <number>0</number>
    </property>
-   <item row="0" column="0" >
+   <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="mLbHardDisk" >
      <property name="text" >
       <string>Default &amp;Hard Disk Folder:</string>
@@ -52,7 +52,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" >
+   <item row="0" column="2" >
     <widget class="VBoxFilePathSelectorWidget" name="mPsHardDisk" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -62,7 +62,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="1" column="0" colspan="2">
     <widget class="QLabel" name="mLbMach" >
      <property name="text" >
       <string>Default &amp;Machine Folder:</string>
@@ -75,7 +75,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" >
+   <item row="1" column="2" >
     <widget class="VBoxFilePathSelectorWidget" name="mPsMach" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -85,14 +85,14 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2" >
+   <item row="2" column="0" colspan="3" >
     <widget class="Line" name="mLnSeparator" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="3" column="0" >
+   <item row="3" column="0" colspan="2">
     <widget class="QLabel" name="mLbVRDP" >
      <property name="text" >
       <string>V&amp;RDP Authentication Library:</string>
@@ -105,7 +105,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="1" >
+   <item row="3" column="2" >
     <widget class="VBoxFilePathSelectorWidget" name="mPsVRDP" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -115,14 +115,14 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2" >
+   <item row="4" column="0" colspan="3" >
     <widget class="Line" name="mLnSeparator" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="4" >
+   <item row="5" column="1" colspan="2" >
     <widget class="QCheckBox" name="mCbCheckTrayIcon" >
      <property name="whatsThis" >
       <string>When checked, the application will provide an icon with the context menu in the system tray.</string>
@@ -135,7 +135,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2" >
+   <item row="6" column="0" colspan="3" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
