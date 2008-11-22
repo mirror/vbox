@@ -998,7 +998,7 @@ ip_dooptions(m)
 bad:
         /* ip->ip_len -= ip->ip_hl << 2;   XXX icmp_error adds in hdr length */
 
-/* Not yet */
+        /* Not yet */
         icmp_error(m, type, code, 0, 0);
 
         ipstat.ips_badoptions++;
