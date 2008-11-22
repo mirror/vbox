@@ -818,10 +818,10 @@ ip_dooptions(m)
         register u_char *cp;
         register struct ip_timestamp *ipt;
         register struct in_ifaddr *ia;
-/*      int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0; */
+        /*      int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0; */
         int opt, optlen, cnt, off, code, type, forward = 0;
         struct in_addr *sin, dst;
-typedef u_int32_t n_time;
+        typedef u_int32_t n_time;
         n_time ntime;
 
         dst = ip->ip_dst;
