@@ -710,6 +710,7 @@ ip_freef(PNATState pData, struct ipqhead *fhp, struct ipq_t *fp) {
 }
 #endif /* VBOX_WITH_BSD_REASS */
 
+#ifndef VBOX_WITH_BSD_REASS
 /*
  * Put an ip fragment on a reassembly chain.
  * Like insque, but pointers in middle of structure.
@@ -737,6 +738,7 @@ ip_deq(PNATState pData, register struct ipasfrag *p)
         prev->ipf_next = p->ipf_next;
         next->ipf_prev = p->ipf_prev;
 }
+#endif /* !VBOX_WITH_BSD_REASS */
 
 /*
  * IP timer processing;
