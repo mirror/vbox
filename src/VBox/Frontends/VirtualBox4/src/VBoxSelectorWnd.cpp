@@ -676,6 +676,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    mTrayIcon->trayIconShow (settings.trayIconEnabled());
+#endif
 }
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
@@ -734,6 +738,14 @@ void VBoxSelectorWnd::fileSettings()
         dlg->putBackTo();
 
     delete dlg;
+
+    /* Reload settings. */
+    settings = vboxGlobal().settings();
+
+    /* Update GUI settings. */
+#ifdef VBOX_GUI_WITH_SYSTRAY    
+    mTrayIcon->trayIconShow (settings.trayIconEnabled());
+#endif
 }
 
 void VBoxSelectorWnd::fileExit()
@@ -1656,14 +1668,11 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
     setIcon (QIcon (":/VirtualBox_16px.png"));
     setContextMenu (mTrayIconMenu);
 
-    VBoxGlobalSettings settings = vboxGlobal().settings();
-    mActive = QSystemTrayIcon::isSystemTrayAvailable() &&
-              settings.trayIconEnabled();
-
     connect (mShowSelectorAction, SIGNAL (triggered()), mParent, SLOT (showWindow()));
     connect (mHideSystrayMenuAction, SIGNAL (triggered()), this, SLOT (trayIconShow()));
 
-    retranslateUi();
+    VBoxGlobalSettings settings = vboxGlobal().settings();
+    trayIconShow (settings.trayIconEnabled());
 }
 
 VBoxTrayIcon::~VBoxTrayIcon ()
@@ -1917,8 +1926,15 @@ VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 
 void VBoxTrayIcon::trayIconShow (bool aShow)
 {
-    mActive = aShow;
-    refresh();
+    if (false == QSystemTrayIcon::isSystemTrayAvailable())
+        return;
+
+    mActive = aShow;    
+    if (mActive)
+    {
+        refresh();
+        retranslateUi();
+    }
     setVisible (mActive);
 
     VBoxGlobalSettings settings = vboxGlobal().settings();
