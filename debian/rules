@@ -138,7 +138,7 @@ debian/modules-stamp: debian/build-stamp
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f debian/$(package).init debian/vboxdrv.init debian/vboxnet.init
+	rm -f debian/$(package).init debian/vboxdrv.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh debian/preinst
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -rf $(builddir) $(moddir)
@@ -181,7 +181,6 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	rm $(archdir)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
-	mv $(archdir)/VBoxAddIF.sh $(prefix)/usr/bin/VBoxTAP
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
@@ -214,8 +213,6 @@ endif
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
-	    usr/bin/VBoxTAP                     usr/bin/VBoxAddIF \
-	    usr/bin/VBoxTAP                     usr/bin/VBoxDeleteIF \
 	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
 	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver)
 	dh_desktop
@@ -225,11 +222,7 @@ endif
 	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge ucs1.3,$(debrel)),yes,)|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
 	    src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
-	sed \
-	    -e 's|%NOLSB%|$(if $(filter _Debian_sarge,$(debrel)),yes,)|g' \
-	    src/VBox/Installer/linux/vboxnet.sh.in > debian/vboxnet.init
 	dh_installinit --name=vboxdrv
-	dh_installinit --name=vboxnet
 	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
 	if [ "$(debrel)" = "_Ubuntu_dapper" -o "$(debrel)" = "_Debian_sarge" ]; then \
 	    cat debian/postrm.dapper > debian/postrm; fi
