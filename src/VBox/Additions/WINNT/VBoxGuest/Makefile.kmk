@@ -51,15 +51,8 @@ VBoxGuest_LIBS        = \
 # VBoxGuestNT - NT version of the driver (x86 only).
 #
 SYSMODS.x86 += VBoxGuestNT
-$(warning Try out VBoxGuestNT_EXTENDS again!)
-## @todo check this out!!!
-ifeq (kBuild,0.1.4) # This doesn't work because of the VBoxGuest_NOINST stuff above. ## @todo kBuild: change the NOINST test from ifdef to ifneq ($(strip $($(target)_NOINST)),)
 VBoxGuestNT_EXTENDS   = VBoxGuest
-else
-VBoxGuestNT_TEMPLATE  = VBOXGUESTR0
-VBoxGuestNT_INCS      = $(VBoxGuest_INCS)
-VBoxGuestNT_LDFLAGS.x86 = $(VBoxGuest_LDFLAGS.x86)
-endif
+VBoxGuestNT_NOINST    = $(NO_SUCH_VARIABLE)
 VBoxGuestNT_DEFS      = $(VBoxGuest_DEFS) TARGET_NT4
 VBoxGuestNT_SOURCES   = \
 	VBoxGuest.cpp \
