@@ -33,8 +33,9 @@
 #include <iprt/cpuset.h>
 #include <iprt/memobj.h>
 #include <iprt/mp.h>
-#include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+#include <iprt/spinlock.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -78,7 +79,7 @@ typedef struct PGMR0DYNMAPSEG
     /** The number of page tables. */
     uint16_t                    cPTs;
     /** The memory objects for the page tables. */
-    RTR0MEMOBJ                  ahMemObjPT[1];
+    RTR0MEMOBJ                  ahMemObjPTs[1];
 } PGMR0DYNMAPSEG;
 /** Pointer to a ring-0 dynamic mapping cache segment. */
 typedef PGMR0DYNMAPSEG *PPGMR0DYNMAPSEG;
@@ -106,6 +107,8 @@ typedef struct PGMR0DYNMAPENTRY
         PX86PTE                 pLegacy;
         /** PTE pointer, PAE version. */
         PX86PTEPAE              pPae;
+        /** PTE pointer, the void version. */
+        void                   *pv;
     } uPte;
     /** CPUs that haven't invalidated this entry after it's last update. */
     RTCPUSET                    PendingSet;
@@ -156,6 +159,35 @@ typedef PGMR0DYNMAP *PPGMR0DYNMAP;
 
 /** PGMR0DYNMAP::u32Magic. (Jens Christian Bugge Wesseltoft) */
 #define PGMR0DYNMAP_MAGIC       0x19640201
+
+
+/**
+ * Paging level data.
+ */
+typedef struct PGMR0DYNMAPPGLVL
+{
+    uint32_t            cLevels;    /**< The number of levels. */
+    struct
+    {
+        RTHCPHYS        HCPhys;     /**< The address of the page for the current level,
+                                     *  i.e. what hMemObj/hMapObj is currently mapping. */
+        RTHCPHYS        fPhysMask;  /**< Mask for extracting HCPhys from uEntry. */
+        RTR0MEMOBJ      hMemObj;    /**< Memory object for HCPhys, PAGE_SIZE. */
+        RTR0MEMOBJ      hMapObj;    /**< Mapping object for hMemObj. */
+        uint32_t        fPtrShift;  /**< The pointer shift count. */
+        uint64_t        fPtrMask;   /**< The mask to apply to the shifted pointer to get the table index. */
+        uint64_t        fAndMask;   /**< And mask to check entry flags. */
+        uint64_t        fResMask;   /**< The result from applying fAndMask. */
+        union
+        {
+            void        *pv;        /**< hMapObj address. */
+            PX86PGUINT   paLegacy;  /**< Legacy table view. */
+            PX86PGPAEUINT paPae;    /**< PAE/AMD64 table view. */
+        } u;
+    } a[4];
+} PGMR0DYNMAPPGLVL;
+/** Pointer to paging level data. */
+typedef PGMR0DYNMAPPGLVL *PPGMR0DYNMAPPGLVL;
 
 
 /*******************************************************************************
@@ -438,6 +470,177 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis)
 
 
 /**
+ * Initializes the paging level data.
+ *
+ * @param   pThis       The dynamic mapping cache instance.
+ * @param   pPgLvl      The paging level data.
+ */
+void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
+{
+    RTCCUINTREG     cr4 = ASMGetCR4();
+    switch (pThis->enmPgMode)
+    {
+        case SUPPAGINGMODE_32_BIT:
+        case SUPPAGINGMODE_32_BIT_GLOBAL:
+            pPgLvl->cLevels = 2;
+            pPgLvl->a[0].fPhysMask = X86_CR3_PAGE_MASK;
+            pPgLvl->a[0].fAndMask  = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+            pPgLvl->a[0].fResMask  = X86_PDE_P | X86_PDE_RW;
+            pPgLvl->a[0].fPtrMask  = X86_PD_MASK;
+            pPgLvl->a[0].fPtrShift = X86_PD_SHIFT;
+
+            pPgLvl->a[1].fPhysMask = X86_PDE_PG_MASK;
+            pPgLvl->a[1].fAndMask  = X86_PTE_P | X86_PTE_RW;
+            pPgLvl->a[1].fResMask  = X86_PTE_P | X86_PTE_RW;
+            pPgLvl->a[1].fPtrMask  = X86_PT_MASK;
+            pPgLvl->a[1].fPtrShift = X86_PT_SHIFT;
+            break;
+
+        case SUPPAGINGMODE_PAE:
+        case SUPPAGINGMODE_PAE_GLOBAL:
+        case SUPPAGINGMODE_PAE_NX:
+        case SUPPAGINGMODE_PAE_GLOBAL_NX:
+            pPgLvl->cLevels = 3;
+            pPgLvl->a[0].fPhysMask = X86_CR3_PAE_PAGE_MASK;
+            pPgLvl->a[0].fPtrMask  = X86_PDPT_MASK_PAE;
+            pPgLvl->a[0].fPtrShift = X86_PDPT_SHIFT;
+            pPgLvl->a[0].fAndMask  = X86_PDPE_P;
+            pPgLvl->a[0].fResMask  = X86_PDPE_P;
+
+            pPgLvl->a[1].fPhysMask = X86_PDPE_PG_MASK;
+            pPgLvl->a[1].fPtrMask  = X86_PD_MASK;
+            pPgLvl->a[1].fPtrShift = X86_PD_SHIFT;
+            pPgLvl->a[1].fAndMask  = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+            pPgLvl->a[1].fResMask  = X86_PDE_P | X86_PDE_RW;
+
+            pPgLvl->a[2].fPhysMask = X86_PDE_PAE_PG_MASK;
+            pPgLvl->a[2].fPtrMask  = X86_PT_MASK;
+            pPgLvl->a[2].fPtrShift = X86_PT_SHIFT;
+            pPgLvl->a[2].fAndMask  = X86_PTE_P | X86_PTE_RW;
+            pPgLvl->a[2].fResMask  = X86_PTE_P | X86_PTE_RW;
+            break;
+
+        case SUPPAGINGMODE_AMD64:
+        case SUPPAGINGMODE_AMD64_GLOBAL:
+        case SUPPAGINGMODE_AMD64_NX:
+        case SUPPAGINGMODE_AMD64_GLOBAL_NX:
+            pPgLvl->cLevels = 3;
+            pPgLvl->a[0].fPhysMask = X86_CR3_AMD64_PAGE_MASK;
+            pPgLvl->a[0].fPtrMask  = X86_PML4_MASK;
+            pPgLvl->a[0].fPtrShift = X86_PML4_SHIFT;
+            pPgLvl->a[0].fAndMask  = X86_PML4E_P | X86_PML4E_RW;
+            pPgLvl->a[0].fResMask  = X86_PML4E_P | X86_PML4E_RW;
+
+            pPgLvl->a[1].fPhysMask = X86_PML4E_PG_MASK;
+            pPgLvl->a[1].fPtrMask  = X86_PDPT_MASK_AMD64;
+            pPgLvl->a[1].fPtrShift = X86_PDPT_SHIFT;
+            pPgLvl->a[1].fAndMask  = X86_PDPE_P | X86_PDPE_RW /** @todo check for X86_PDPT_PS support. */;
+            pPgLvl->a[1].fResMask  = X86_PDPE_P | X86_PDPE_RW;
+
+            pPgLvl->a[2].fPhysMask = X86_PDPE_PG_MASK;
+            pPgLvl->a[2].fPtrMask  = X86_PD_MASK;
+            pPgLvl->a[2].fPtrShift = X86_PD_SHIFT;
+            pPgLvl->a[2].fAndMask  = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
+            pPgLvl->a[2].fResMask  = X86_PDE_P | X86_PDE_RW;
+
+            pPgLvl->a[3].fPhysMask = X86_PDE_PAE_PG_MASK;
+            pPgLvl->a[3].fPtrMask  = X86_PT_MASK;
+            pPgLvl->a[3].fPtrShift = X86_PT_SHIFT;
+            pPgLvl->a[3].fAndMask  = X86_PTE_P | X86_PTE_RW;
+            pPgLvl->a[3].fResMask  = X86_PTE_P | X86_PTE_RW;
+            break;
+
+        default:
+            AssertFailed();
+            pPgLvl->cLevels = 0;
+            break;
+    }
+
+    for (uint32_t i = 0; i < 4; i++) /* ASSUMING array size. */
+    {
+        pPgLvl->a[i].HCPhys = NIL_RTHCPHYS;
+        pPgLvl->a[i].hMapObj = NIL_RTR0MEMOBJ;
+        pPgLvl->a[i].hMemObj = NIL_RTR0MEMOBJ;
+        pPgLvl->a[i].u.pv = NULL;
+    }
+}
+
+
+static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl, void *pvPage,
+                                        PPGMR0DYNMAPSEG pSeg, uint32_t cMaxPTs, void **ppvPTE)
+{
+    void           *pvEntry = NULL;
+    X86PGPAEUINT    uEntry = ASMGetCR3();
+    for (uint32_t i = 0; i < pPgLvl->cLevels; i++)
+    {
+        RTHCPHYS HCPhys = uEntry & pPgLvl->a[i].fPhysMask;
+        if (pPgLvl->a[i].HCPhys != HCPhys)
+        {
+            /*
+             * Need to remap this level.
+             * The final level, the PT, will not be freed since that is what it's all about.
+             */
+            ASMIntEnable();
+            if (i + 1 == pPgLvl->cLevels)
+                AssertReturn(pSeg->cPTs < cMaxPTs, VERR_INTERNAL_ERROR);
+            else
+            {
+                int rc2 = RTR0MemObjFree(pPgLvl->a[i].hMemObj, true /* fFreeMappings */); AssertRC(rc2);
+                pPgLvl->a[i].hMemObj = pPgLvl->a[i].hMapObj = NIL_RTR0MEMOBJ;
+            }
+
+            int rc = RTR0MemObjEnterPhys(&pPgLvl->a[i].hMemObj, HCPhys, PAGE_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj, &pPgLvl->a[i].u.pv, 0, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+                if (RT_SUCCESS(rc))
+                {
+                    pPgLvl->a[i].HCPhys = HCPhys;
+                    if (i + 1 == pPgLvl->cLevels)
+                        pSeg->ahMemObjPTs[pSeg->cPTs++] = pPgLvl->a[i].hMemObj;
+                    ASMIntDisable();
+                    return VERR_TRY_AGAIN;
+                }
+
+                pPgLvl->a[i].hMapObj = NIL_RTR0MEMOBJ;
+            }
+            else
+                pPgLvl->a[i].hMemObj = NIL_RTR0MEMOBJ;
+            pPgLvl->a[i].HCPhys = NIL_RTHCPHYS;
+            AssertReturn(rc != VERR_TRY_AGAIN, VERR_INTERNAL_ERROR);
+            return rc;
+        }
+
+        /*
+         * The next level.
+         */
+        uint32_t iEntry = ((uintptr_t)pvPage >> pPgLvl->a[i].fPtrShift) & pPgLvl->a[i].fPtrMask;
+        if (pThis->fLegacyMode)
+        {
+            pvEntry = &pPgLvl->a[i].u.paLegacy[iEntry];
+            uEntry  = pPgLvl->a[i].u.paLegacy[iEntry];
+        }
+        else
+        {
+            pvEntry = &pPgLvl->a[i].u.paPae[iEntry];
+            uEntry  = pPgLvl->a[i].u.paPae[iEntry];
+        }
+
+        if ((uEntry & pPgLvl->a[i].fAndMask) != pPgLvl->a[i].fResMask)
+        {
+            LogRel(("PGMR0DynMap: internal error - iPgLvl=%u cLevels=%u uEntry=%#llx fAnd=%#llx fRes=%#llx got=%#llx\n",
+                    i, pPgLvl->cLevels, uEntry, pPgLvl->a[i].fAndMask, pPgLvl->a[i].fResMask, uEntry & pPgLvl->a[i].fAndMask));
+            return VERR_INTERNAL_ERROR;
+        }
+    }
+
+    /* made it thru without needing to remap anything. */
+    *ppvPTE = pvEntry;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Adds a new segment of the specified size.
  *
  * @returns VBox status code.
@@ -446,28 +649,42 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis)
  */
 static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
 {
-#if 0
     int rc2;
+    AssertReturn(ASMGetFlags() & X86_EFL_IF, VERR_PREEMPT_DISABLED);
 
     /*
      * Do the array rellocation first.
-     * (Too lazy to clean these up on failure.)
+     * (The pages array has to be replaced behind the spinlock of course.)
      */
-    void *pv = RTMemRealloc(pThis->paPages, sizeof(pThis->paPages[0]) * (pThis->cPages + cPages));
-    if (!pv)
+    void *pvSavedPTEs = RTMemRealloc(pThis->pvSavedPTEs, (pThis->fLegacyMode ? sizeof(X86PGUINT) : sizeof(X86PGPAEUINT)) * (pThis->cPages + cPages));
+    if (!pvSavedPTEs)
         return VERR_NO_MEMORY;
-    pThis->paPages = (PPGMR0DYNMAPENTRY)pv;
+    pThis->pvSavedPTEs = pvSavedPTEs;
 
-    pv = RTMemRealloc(pThis->pvSavedPTEs, (pThis->fLegacyMode ? sizeof(X86PGUINT) : sizeof(X86PGPAEUINT)) * (pThis->cPages + cPages));
-    if (!pv)
+    void *pvPages = RTMemAllocZ(sizeof(pThis->paPages[0]) * (pThis->cPages + cPages));
+    if (!pvPages)
+    {
+        pvSavedPTEs = RTMemRealloc(pThis->pvSavedPTEs, (pThis->fLegacyMode ? sizeof(X86PGUINT) : sizeof(X86PGPAEUINT)) * pThis->cPages);
+        if (pvSavedPTEs)
+            pThis->pvSavedPTEs = pvSavedPTEs;
         return VERR_NO_MEMORY;
-    pThis->pvSavedPTEs = pv;
+    }
+
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
+    memcpy(pvPages, pThis->paPages, sizeof(pThis->paPages[0]) * pThis->cPages);
+    void *pvToFree = pThis->paPages;
+    pThis->paPages = (PPGMR0DYNMAPENTRY)pvPages;
+
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTMemFree(pvToFree);
 
     /*
      * Allocate the segment structure and pages memory.
      */
-    uint32_t cPTs = cPages / (pThis->fLegacyMode ? X86_PG_ENTRIES : X86_PG_PAE_ENTRIES) + 2;
-    PPGMR0DYNMAPSEG pSeg = RTMemAllocZ(RT_UOFFSETOF(PGMR0DYNMAPSEG, ahMemObjPTs[cPTs]));
+    uint32_t cMaxPTs = cPages / (pThis->fLegacyMode ? X86_PG_ENTRIES : X86_PG_PAE_ENTRIES) + 2;
+    PPGMR0DYNMAPSEG pSeg = (PPGMR0DYNMAPSEG)RTMemAllocZ(RT_UOFFSETOF(PGMR0DYNMAPSEG, ahMemObjPTs[cMaxPTs]));
     if (!pSeg)
         return VERR_NO_MEMORY;
     pSeg->pNext  = NULL;
@@ -477,147 +694,80 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
     int rc = RTR0MemObjAllocPage(&pSeg->hMemObj, cPages << PAGE_SHIFT, false);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Walk the paging hierarchy and map the relevant page tables.
-         */
-        uint8_t    *pbPage = RTR0MemObjAddress(pSeg->hMemObj);
+        uint8_t            *pbPage = (uint8_t *)RTR0MemObjAddress(pSeg->hMemObj);
         AssertMsg(VALID_PTR(pbPage) && !((uintptr_t)pbPage & PAGE_OFFSET_MASK), ("%p\n", pbPage));
-        uint32_t    iPage = pThis->cPages;
-        uint32_t    iEndPage = iPage + cPages;
-        struct
-        {
-            RTHCPHYS        HCPhys;     /**< The entry that's currently mapped */
-            RTHCPHYS        fPhysMask;  /**< Mask for extracting HCPhys from uEntry. */
-            RTR0MEMOBJ      hMemObj;
-            RTR0MEMOBJ      hMapObj;
-            uint64_t        fPtrMask;
-            uint32_t        fPtrShift;
-            uint64_t        fAndMask;
-            uint64_t        fResMask;
-            union
-            {
-                void   *pv;
-            } u;
-        }           a[4];
-        RTCCUINTREG cr4 = ASMGetCR4();
-        uint32_t    cLevels;
-        switch (pThis->enmPgMode)
-        {
-            case SUPPAGINGMODE_32_BIT:
-            case SUPPAGINGMODE_32_BIT_GLOBAL:
-                cLevels = 2;
-                a[0].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
-                a[0].fResMask = X86_PDE_P | X86_PDE_RW;
-                a[0].fPtrMask  = X86_PD_MASK;
-                a[0].fPtrShift = X86_PD_SHIFT;
-                a[1].fAndMask = X86_PTE_P | X86_PTE_RW;
-                a[1].fResMask = X86_PTE_P | X86_PTE_RW;
-                a[1].fPtrMask  = X86_PT_MASK;
-                a[1].fPtrShift = X86_PT_SHIFT;
-                break;
 
-            case SUPPAGINGMODE_PAE:
-            case SUPPAGINGMODE_PAE_GLOBAL:
-            case SUPPAGINGMODE_PAE_NX:
-            case SUPPAGINGMODE_PAE_GLOBAL_NX:
-                cLevels = 3;
-                a[0].fAndMask = X86_PDPE_P;
-                a[0].fResMask = X86_PDPE_P;
-                a[0].fPtrMask  = X86_PDPT_MASK_PAE;
-                a[0].fPtrShift = X86_PDPT_SHIFT;
-                a[1].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
-                a[1].fResMask = X86_PDE_P | X86_PDE_RW;
-                a[1].fPtrMask  = X86_PD_MASK;
-                a[1].fPtrShift = X86_PD_SHIFT;
-                a[2].fAndMask = X86_PTE_P | X86_PTE_RW;
-                a[2].fResMask = X86_PTE_P | X86_PTE_RW;
-                a[2].fPtrMask  = X86_PT_MASK;
-                a[2].fPtrShift = X86_PT_SHIFT;
-                break;
-
-            case SUPPAGINGMODE_AMD64:
-            case SUPPAGINGMODE_AMD64_GLOBAL:
-            case SUPPAGINGMODE_AMD64_NX:
-            case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-                cLevels = 3;
-                a[0].fAndMask = X86_PML4E_P | X86_PML4E_RW;
-                a[0].fResMask = X86_PML4E_P | X86_PML4E_RW;
-                a[0].fPtrMask  = X86_PML4_MASK;
-                a[0].fPtrShift = X86_PML4_SHIFT;
-                a[1].fAndMask = X86_PDPE_P | X86_PDPE_RW /** @todo check for X86_PDPT_PS support. */;
-                a[1].fResMask = X86_PDPE_P | X86_PDPE_RW;
-                a[1].fPtrMask  = X86_PDPT_MASK_AMD64;
-                a[1].fPtrShift = X86_PDPT_SHIFT;
-                a[2].fAndMask = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
-                a[2].fResMask = X86_PDE_P | X86_PDE_RW;
-                a[2].fPtrMask  = X86_PD_MASK;
-                a[2].fPtrShift = X86_PD_SHIFT;
-                a[3].fAndMask = X86_PTE_P | X86_PTE_RW;
-                a[3].fResMask = X86_PTE_P | X86_PTE_RW;
-                a[3].fPtrMask  = X86_PT_MASK;
-                a[3].fPtrShift = X86_PT_SHIFT;
-                break;
-            default:
-                cLevels = 0;
-                break;
-        }
-        for (uint32_t i = 0; i < RT_ELEMENTS(a); i++)
+        /*
+         * Walk thru the pages and set them up with a mapping of their PTE and everything.
+         */
+        ASMIntDisable();
+        PGMR0DYNMAPPGLVL    PgLvl;
+        pgmR0DynMapPagingArrayInit(pThis, &PgLvl);
+        uint32_t            iEndPage = pThis->cPages + cPages;
+        for (uint32_t iPage = pThis->cPages;
+             iPage < iEndPage;
+             iPage++, pbPage += PAGE_SIZE)
         {
-            a[i].HCPhys = NIL_RTHCPHYS;
-            a[i].hMapObj = a[i].hMemObj = NIL_RTR0MEMOBJ;
-            a[i].u.pv = NULL;
-        }
-
-        for (; iPage < iEndPage && RT_SUCCESS(rc); iPage++, pbPage += PAGE_SIZE)
-        {
-            /* Initialize it */
+            /* Initialize the page data. */
             pThis->paPages[iPage].HCPhys = NIL_RTHCPHYS;
             pThis->paPages[iPage].pvPage = pbPage;
             pThis->paPages[iPage].cRefs  = 0;
-            pThis->paPages[iPage].uPte.pPae = NULL;
+            pThis->paPages[iPage].uPte.pPae = 0;
             RTCpuSetFill(&pThis->paPages[iPage].PendingSet);
 
-            /*
-             * Map its page table.
-             *
-             * This is a bit ASSUMPTIVE, it should really do a clean run thru
-             * the tables everything something was mapped and disable preemption
-             * or/and interrupts.
-             */
-            X86PGPAEUINT uEntry = ASMGetCR3();
-            for (unsigned i = 0; i < cLevels && RT_SUCCESS(rc); i++)
-            {
-                RTHCPHYS HCPhys = uEntry & a[i].fPhysMask;
-                if (a[i].HCPhys != HCPhys)
-                {
-                    if (i + 1 != cLevels)
-                    {
-                        RTR0MemObjFree(a[i].hMemObj, true /* fFreeMappings */);
-                        a[i].hMemObj = a[i].hMapObj = NIL_RTR0MEMOBJ;
-                    }
-                    rc = RTR0MemObjEnterPhys(&a[i].hMemObj, HCPhys, PAGE_SIZE);
-                    if (RT_SUCCESS(rc))
-                        rc = RTR0MemObjMapKernel(&a[i].hMapObj, a[i].hMemObj, &a[i].u.pv, 0, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
+            /* Map its page table, retry until we've got a clean run (paranoia). */
+            do
+                rc = pgmR0DynMapPagingArrayMapPte(pThis, &PgLvl, pbPage, pSeg, cMaxPTs,
+                                                  &pThis->paPages[iPage].uPte.pv);
+            while (rc == VERR_TRY_AGAIN);
+            if (RT_FAILURE(rc))
+                break;
+            rc = VINF_SUCCESS;
 
-            }
-
-
+            /* Save the PTE. */
+            if (pThis->fLegacyMode)
+                ((PX86PGUINT)pThis->pvSavedPTEs)[iPage]    = pThis->paPages[iPage].uPte.pLegacy->u;
+            else
+                ((PX86PGPAEUINT)pThis->pvSavedPTEs)[iPage] = pThis->paPages[iPage].uPte.pPae->u;
         } /* for each page */
+        ASMIntEnable();
 
-        for (iPage = 0; i < cLevels; )
+        /* cleanup non-PT mappings */
+        for (uint32_t i = 0; i < PgLvl.cLevels - 1; i++)
+            RTR0MemObjFree(PgLvl.a[i].hMemObj, true /* fFreeMappings */);
 
-        rc2 = RTR0MemObjFree(hMemObjCR3, true /* fFreeMappings */); AssertRC(rc2);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo setup guard pages here later (strict builds should leave every
+             *        second page and the start/end pages not present).  */
 
-        rc2 = RTR0MemObjFree(pSeg->hMemObj, true /* fFreeMappings */); AssertRC(rc2);
+            /*
+             * Commit it by adding the segment to the list and updating the page count.
+             */
+            pSeg->pNext = pThis->pSegHead;
+            pThis->pSegHead = pSeg;
+            pThis->cPages += cPages;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Bail out.
+         */
+        while (pSeg->cPTs-- > 0)
+        {
+            rc2 = RTR0MemObjFree(pSeg->ahMemObjPTs[pSeg->cPTs], true /* fFreeMappings */);
+            AssertRC(rc2);
+            pSeg->ahMemObjPTs[pSeg->cPTs] = NIL_RTR0MEMOBJ;
+        }
+
+        rc2 = RTR0MemObjFree(pSeg->hMemObj, true /* fFreeMappings */);
+        AssertRC(rc2);
+        pSeg->hMemObj = NIL_RTR0MEMOBJ;
     }
     RTMemFree(pSeg);
+
+    /* Don't bother resizing the arrays, too layz. */
     return rc;
-#else
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
 
@@ -739,8 +889,8 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
         uint32_t iPT = pSeg->cPTs;
         while (iPT-- > 0)
         {
-            rc = RTR0MemObjFree(pSeg->ahMemObjPT[iPT], true /* fFreeMappings */); AssertRC(rc);
-            pSeg->ahMemObjPT[iPT] = NIL_RTR0MEMOBJ;
+            rc = RTR0MemObjFree(pSeg->ahMemObjPTs[iPT], true /* fFreeMappings */); AssertRC(rc);
+            pSeg->ahMemObjPTs[iPT] = NIL_RTR0MEMOBJ;
         }
         rc = RTR0MemObjFree(pSeg->hMemObj,   true /* fFreeMappings */); AssertRC(rc);
         pSeg->hMemObj   = NIL_RTR0MEMOBJ;
