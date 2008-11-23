@@ -408,6 +408,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_PROCESS_RUNNING                (-51)
 /** Retry the operation. */
 #define VERR_TRY_AGAIN                      (-52)
+/** Retry the operation. */
+#define VINF_TRY_AGAIN                      52
 /** Generic parse error. */
 #define VERR_PARSE_ERROR                    (-53)
 /** Value out of range. */

@@ -43,8 +43,9 @@
 *******************************************************************************/
 /** The max size of the mapping cache (in pages). */
 #define PGMR0DYNMAP_MAX_PAGES               ((8*_1M) >> PAGE_SHIFT)
-/* * The max segment size. */
-/** @todo #define PGMR0DYNMAP_SEG_MAX_PAGES           (_1M >> PAGE_SHIFT) */
+/** The small segment size that is adopted on out-of-memory conditions with a
+ * single big segment. */
+#define PGMR0DYNMAP_SMALL_SEG_PAGES         128
 /** The number of pages we reserve per CPU. */
 #define PGMR0DYNMAP_PAGES_PER_CPU           64
 /** Calcs the overload threshold. Current set at 50%. */
@@ -139,7 +140,7 @@ typedef struct PGMR0DYNMAP
     bool                        fLegacyMode;
     /** The current load. */
     uint32_t                    cLoad;
-    /** The max load.
+    /** The max load ever.
      * This is maintained to get trigger adding of more mapping space. */
     uint32_t                    cMaxLoad;
     /** Initialization / termination lock. */
@@ -202,7 +203,7 @@ static PPGMR0DYNMAP g_pPGMR0DynMap;
 *******************************************************************************/
 static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t cRefs);
 static int  pgmR0DynMapSetup(PPGMR0DYNMAP pThis);
-static int  pgmR0DynMapGrow(PPGMR0DYNMAP pThis);
+static int  pgmR0DynMapExpand(PPGMR0DYNMAP pThis);
 static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis);
 
 
@@ -319,6 +320,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
      * Initialize the auto sets.
      */
     VMCPUID idCpu = pVM->cCPUs;
+    AssertReturn(idCpu > 0 && idCpu <= VMCPU_MAX_CPU_COUNT, VERR_INTERNAL_ERROR);
     while (idCpu-- > 0)
     {
         PPGMMAPSET pSet = &pVM->aCpus[idCpu].pgm.s.AutoSet;
@@ -340,7 +342,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
         return VINF_SUCCESS;
 
     /*
-     * Reference and if necessary setup or grow the cache.
+     * Reference and if necessary setup or expand the cache.
      */
     PPGMR0DYNMAP pThis = g_pPGMR0DynMap;
     AssertPtrReturn(pThis, VERR_INTERNAL_ERROR);
@@ -351,8 +353,10 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     if (pThis->cUsers == 1)
         rc = pgmR0DynMapSetup(pThis);
     else if (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(pThis->cPages))
-        rc = pgmR0DynMapGrow(pThis);
-    if (RT_FAILURE(rc))
+        rc = pgmR0DynMapExpand(pThis);
+    if (RT_SUCCESS(rc))
+        pVM->pgm.s.pvR0DynMapUsed = pThis;
+    else
         pThis->cUsers--;
 
     RTSemFastMutexRelease(pThis->hInitLock);
@@ -401,19 +405,21 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
                  */
                 while (j-- > 0)
                 {
-                    int32_t cRefs = pSet->aEntries[j].cRefs;
+                    int32_t  cRefs = pSet->aEntries[j].cRefs;
                     uint32_t iPage = pSet->aEntries[j].iPage;
                     LogRel(("PGMR0DynMapTermVM: %d dangling refs to %#x\n", cRefs, iPage));
                     if (iPage < pThis->cPages && cRefs > 0)
                         pgmR0DynMapReleasePage(pThis, iPage, cRefs);
                     else
-                        AssertMsgFailed(("cRefs=%d iPage=%#x cPages=%u\n", cRefs, iPage, pThis->cPages));
+                        AssertLogRelMsgFailed(("cRefs=%d iPage=%#x cPages=%u\n", cRefs, iPage, pThis->cPages));
 
                     pSet->aEntries[j].iPage = UINT16_MAX;
                     pSet->aEntries[j].cRefs = 0;
                 }
                 pSet->cEntries = PGMMAPSET_CLOSED;
             }
+            else
+                AssertMsg(j == PGMMAPSET_CLOSED, ("cEntries=%#x\n", j));
 
             j = RT_ELEMENTS(pSet->aEntries);
             while (j-- > 0)
@@ -432,7 +438,7 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
             pgmR0DynMapTearDown(pThis);
     }
     else
-        AssertMsgFailed(("pvR0DynMapUsed=%p pThis=%p\n", pVM->pgm.s.pvR0DynMapUsed, pThis));
+        AssertLogRelMsgFailed(("pvR0DynMapUsed=%p pThis=%p\n", pVM->pgm.s.pvR0DynMapUsed, pThis));
 
     RTSemFastMutexRelease(pThis->hInitLock);
 #endif
@@ -444,14 +450,16 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
  *
  * @returns Number of pages.
  * @param   pThis       The dynamic mapping cache instance.
+ * @param   pcMinPages  The minimal size in pages.
  */
-static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis)
+static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
 {
-    /*
-     * cCpus * PGMR0DYNMAP_PAGES_PER_CPU.
-     */
-    RTCPUID     cCpus = RTMpGetCount();
-    uint32_t    cPages = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
+    Assert(pThis->cPages <= PGMR0DYNMAP_MAX_PAGES);
+
+    /* cCpus * PGMR0DYNMAP_PAGES_PER_CPU (/2). */
+    RTCPUID     cCpus     = RTMpGetCount();
+    uint32_t    cPages    = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
+    uint32_t    cMinPages = cCpus * (PGMR0DYNMAP_PAGES_PER_CPU / 2);
 
     /* adjust against cMaxLoad. */
     AssertMsg(pThis->cMaxLoad <= PGMR0DYNMAP_MAX_PAGES, ("%#x\n", pThis->cMaxLoad));
@@ -461,10 +469,21 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis)
     while (pThis->cMaxLoad < PGMR0DYNMAP_CALC_OVERLOAD(cPages))
         cPages += PGMR0DYNMAP_PAGES_PER_CPU;
 
-    /* adjust against max size. */
+    if (pThis->cMaxLoad > cMinPages)
+        cMinPages = pThis->cMaxLoad;
+
+    /* adjust against max and current size. */
+    if (cPages < pThis->cPages)
+        cPages = pThis->cPages;
     if (cPages > PGMR0DYNMAP_MAX_PAGES)
         cPages = PGMR0DYNMAP_MAX_PAGES;
 
+    if (cMinPages < pThis->cPages)
+        cMinPages = pThis->cPages;
+    if (cMinPages > PGMR0DYNMAP_MAX_PAGES)
+        cMinPages = PGMR0DYNMAP_MAX_PAGES;
+
+    *pcMinPages = cMinPages;
     return cPages;
 }
 
@@ -576,7 +595,7 @@ void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
  * currently running on, and go about this by running with interrupts disabled
  * and restarting from CR3 for every change.
  *
- * @returns VBox status code, VERR_TRY_AGAIN if we changed any mappings and had
+ * @returns VBox status code, VINF_TRY_AGAIN if we changed any mappings and had
  *          to re-enable interrupts.
  * @param   pThis       The dynamic mapping cache instance.
  * @param   pPgLvl      The paging level structure.
@@ -588,6 +607,8 @@ void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
 static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl, void *pvPage,
                                         PPGMR0DYNMAPSEG pSeg, uint32_t cMaxPTs, void **ppvPTE)
 {
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
+
     void           *pvEntry = NULL;
     X86PGPAEUINT    uEntry = ASMGetCR3();
     for (uint32_t i = 0; i < pPgLvl->cLevels; i++)
@@ -611,14 +632,15 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
             int rc = RTR0MemObjEnterPhys(&pPgLvl->a[i].hMemObj, HCPhys, PAGE_SIZE);
             if (RT_SUCCESS(rc))
             {
-                rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj, &pPgLvl->a[i].u.pv, 0, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
+                rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj, &pPgLvl->a[i].u.pv, 0 /* cbAlignment */,
+                                         RTMEM_PROT_WRITE | RTMEM_PROT_READ);
                 if (RT_SUCCESS(rc))
                 {
                     pPgLvl->a[i].HCPhys = HCPhys;
                     if (i + 1 == pPgLvl->cLevels)
                         pSeg->ahMemObjPTs[pSeg->cPTs++] = pPgLvl->a[i].hMemObj;
                     ASMIntDisable();
-                    return VERR_TRY_AGAIN;
+                    return VINF_TRY_AGAIN;
                 }
 
                 pPgLvl->a[i].hMapObj = NIL_RTR0MEMOBJ;
@@ -626,7 +648,6 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
             else
                 pPgLvl->a[i].hMemObj = NIL_RTR0MEMOBJ;
             pPgLvl->a[i].HCPhys = NIL_RTHCPHYS;
-            AssertReturn(rc != VERR_TRY_AGAIN, VERR_INTERNAL_ERROR);
             return rc;
         }
 
@@ -738,10 +759,9 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
             do
                 rc = pgmR0DynMapPagingArrayMapPte(pThis, &PgLvl, pbPage, pSeg, cMaxPTs,
                                                   &pThis->paPages[iPage].uPte.pv);
-            while (rc == VERR_TRY_AGAIN);
+            while (rc == VINF_TRY_AGAIN);
             if (RT_FAILURE(rc))
                 break;
-            rc = VINF_SUCCESS;
 
             /* Save the PTE. */
             if (pThis->fLegacyMode)
@@ -801,9 +821,29 @@ static int pgmR0DynMapSetup(PPGMR0DYNMAP pThis)
     /*
      * Calc the size and add a segment of that size.
      */
-    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis);
+    uint32_t cMinPages;
+    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis, &cMinPages);
     AssertReturn(cPages, VERR_INTERNAL_ERROR);
-    return pgmR0DynMapAddSeg(pThis, cPages);
+    int rc = pgmR0DynMapAddSeg(pThis, cPages);
+    if (rc == VERR_NO_MEMORY)
+    {
+        /*
+         * Try adding smaller segments.
+         */
+        do
+            rc = pgmR0DynMapAddSeg(pThis, PGMR0DYNMAP_SMALL_SEG_PAGES);
+        while (RT_SUCCESS(rc) && pThis->cPages < cPages);
+        if (rc == VERR_NO_MEMORY && pThis->cPages >= cMinPages)
+            rc = VINF_SUCCESS;
+        if (rc == VERR_NO_MEMORY)
+        {
+            if (pThis->cPages)
+                pgmR0DynMapTearDown(pThis);
+            rc = VERR_PGM_DYNMAP_SETUP_ERROR;
+        }
+    }
+    Assert(ASMGetFlags() & X86_EFL_IF);
+    return rc;
 }
 
 
@@ -813,17 +853,33 @@ static int pgmR0DynMapSetup(PPGMR0DYNMAP pThis)
  * @returns VBox status code.
  * @param   pThis       The dynamic mapping cache instance.
  */
-static int pgmR0DynMapGrow(PPGMR0DYNMAP pThis)
+static int pgmR0DynMapExpand(PPGMR0DYNMAP pThis)
 {
     /*
      * Calc the new target size and add a segment of the appropriate size.
      */
-    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis);
+    uint32_t cMinPages;
+    uint32_t cPages = pgmR0DynMapCalcNewSize(pThis, &cMinPages);
     if (pThis->cPages >= cPages)
         return VINF_SUCCESS;
 
     uint32_t cAdd = cPages - pThis->cPages;
-    return pgmR0DynMapAddSeg(pThis, cAdd);
+    int rc = pgmR0DynMapAddSeg(pThis, cAdd);
+    if (rc == VERR_NO_MEMORY)
+    {
+        /*
+         * Try adding smaller segments.
+         */
+        do
+            rc = pgmR0DynMapAddSeg(pThis, PGMR0DYNMAP_SMALL_SEG_PAGES);
+        while (RT_SUCCESS(rc) && pThis->cPages < cPages);
+        if (rc == VERR_NO_MEMORY && pThis->cPages >= cMinPages)
+            rc = VINF_SUCCESS;
+        if (rc == VERR_NO_MEMORY)
+            rc = VERR_PGM_DYNMAP_EXPAND_ERROR;
+    }
+    Assert(ASMGetFlags() & X86_EFL_IF);
+    return rc;
 }
 
 
@@ -911,7 +967,7 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
             rc = RTR0MemObjFree(pSeg->ahMemObjPTs[iPT], true /* fFreeMappings */); AssertRC(rc);
             pSeg->ahMemObjPTs[iPT] = NIL_RTR0MEMOBJ;
         }
-        rc = RTR0MemObjFree(pSeg->hMemObj,   true /* fFreeMappings */); AssertRC(rc);
+        rc = RTR0MemObjFree(pSeg->hMemObj, true /* fFreeMappings */); AssertRC(rc);
         pSeg->hMemObj   = NIL_RTR0MEMOBJ;
         pSeg->pNext     = NULL;
         pSeg->iPage     = UINT16_MAX;

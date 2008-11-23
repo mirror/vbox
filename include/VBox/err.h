@@ -418,6 +418,10 @@
 #define VERR_PGM_DYNMAP_FAILED                  (-1629)
 /** The auto usage cache for the dynamic mapping set is full. */
 #define VERR_PGM_DYNMAP_FULL_SET                (-1630)
+/** The initialization of the dynamic mapping cache failed. */
+#define VERR_PGM_DYNMAP_SETUP_ERROR             (-1631)
+/** The expanding of the dynamic mapping cache failed. */
+#define VERR_PGM_DYNMAP_EXPAND_ERROR            (-1632)
 
 /** @} */
 
