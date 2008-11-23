@@ -566,6 +566,25 @@ void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
 }
 
 
+/**
+ * Maps a PTE.
+ *
+ * This will update the segment structure when new PTs are mapped.
+ *
+ * It also assumes that we (for paranoid reasons) wish to establish a mapping
+ * chain from CR3 to the PT that all corresponds to the processor we're
+ * currently running on, and go about this by running with interrupts disabled
+ * and restarting from CR3 for every change.
+ *
+ * @returns VBox status code, VERR_TRY_AGAIN if we changed any mappings and had
+ *          to re-enable interrupts.
+ * @param   pThis       The dynamic mapping cache instance.
+ * @param   pPgLvl      The paging level structure.
+ * @param   pvPage      The page.
+ * @param   pSeg        The segment.
+ * @param   cMaxPTs     The max number of PTs expected in the segment.
+ * @param   ppvPTE      Where to store the PTE address.
+ */
 static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl, void *pvPage,
                                         PPGMR0DYNMAPSEG pSeg, uint32_t cMaxPTs, void **ppvPTE)
 {
