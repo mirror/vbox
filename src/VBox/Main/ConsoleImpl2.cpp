@@ -1343,6 +1343,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                     {
                                         /* that was simple, now examine PhMedium */
                                         if(PhMedium == NdisPhysicalMediumWirelessWan
+                                                || PhMedium == NdisPhysicalMediumWirelessLan
                                                 || PhMedium == NdisPhysicalMediumNative802_11
                                                 || PhMedium == NdisPhysicalMediumBluetooth
                                                 /*|| PhMedium == NdisPhysicalMediumWiMax*/
