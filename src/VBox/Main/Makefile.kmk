@@ -293,7 +293,8 @@ VBoxSVC_SOURCES = \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 
 VBoxSVC_SOURCES.darwin = \
-	darwin/iokit.cpp
+	darwin/iokit.cpp \
+	darwin/HostPowerDarwin.cpp
 
 VBoxSVC_SOURCES.win = \
 	win/svcmain.cpp \

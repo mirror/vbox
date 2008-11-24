@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,11 @@
 #include "MachineImpl.h"
 
 #include <vector>
+
+#ifdef RT_OS_DARWIN
+# include <IOKit/pwr_mgt/IOPMLib.h>
+# include <Carbon/Carbon.h>
+#endif /* RT_OS_DARWIN */
 
 class VirtualBox;
 
@@ -71,6 +76,31 @@ private:
     HWND        mHwnd;
     RTTHREAD    mThread;
 };
-# endif /* RT_OS_WINDOWS */
+# elif defined(RT_OS_DARWIN) /* RT_OS_WINDOWS */
+/**
+ * The Darwin hosted Power Service.
+ */
+class HostPowerServiceDarwin : public HostPowerService
+{
+public:
+
+    HostPowerServiceDarwin (VirtualBox *aVirtualBox);
+    virtual ~HostPowerServiceDarwin();
+
+private:
+
+    static DECLCALLBACK(int) powerChangeNotificationThread (RTTHREAD ThreadSelf, void *pInstance);
+    static void powerChangeNotificationHandler (void *pData, io_service_t service, natural_t messageType, void *pMessageArgument);
+    static OSErr lowPowerEventHandler (const AppleEvent * theAppleEvent, AppleEvent * replyAppleEvent, long refCon);
+
+    /* Private member vars */
+    RTTHREAD mThread; /* Our message thread. */
+
+    io_connect_t mRootPort; /* A reference to the Root Power Domain IOService */
+    IONotificationPortRef mNotifyPort; /* Notification port allocated by IORegisterForSystemPower */
+    io_object_t mNotifierObject; /* Notifier object, used to deregister later */
+    CFRunLoopRef mRunLoop; /* A reference to the local thread run loop */
+};
+# endif /* RT_OS_DARWIN */
 
 #endif /* !____H_HOSTPOWER */
