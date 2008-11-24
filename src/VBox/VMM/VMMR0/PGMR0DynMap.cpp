@@ -214,9 +214,6 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis);
  */
 VMMR0DECL(int) PGMR0DynMapInit(void)
 {
-#ifndef DEBUG_bird
-    return VINF_SUCCESS;
-#else
     Assert(!g_pPGMR0DynMap);
 
     /*
@@ -263,7 +260,6 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
     }
     RTMemFree(pThis);
     return rc;
-#endif
 }
 
 
@@ -272,7 +268,6 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
  */
 VMMR0DECL(void) PGMR0DynMapTerm(void)
 {
-#ifdef DEBUG_bird
     /*
      * Destroy the cache.
      *
@@ -301,7 +296,6 @@ VMMR0DECL(void) PGMR0DynMapTerm(void)
         pThis->u32Magic = UINT32_MAX;
         RTMemFree(pThis);
     }
-#endif
 }
 
 
@@ -452,6 +446,7 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
 
     /* cCpus * PGMR0DYNMAP_PAGES_PER_CPU (/2). */
     RTCPUID     cCpus     = RTMpGetCount();
+    AssertReturn(cCpus > 0 && cCpus <= RTCPUSET_MAX_CPUS, 0);
     uint32_t    cPages    = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
     uint32_t    cMinPages = cCpus * (PGMR0DYNMAP_PAGES_PER_CPU / 2);
 
@@ -460,7 +455,7 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
     if (pThis->cMaxLoad > PGMR0DYNMAP_MAX_PAGES)
         pThis->cMaxLoad = 0;
 
-    while (pThis->cMaxLoad < PGMR0DYNMAP_CALC_OVERLOAD(cPages))
+    while (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(cPages))
         cPages += PGMR0DYNMAP_PAGES_PER_CPU;
 
     if (pThis->cMaxLoad > cMinPages)
@@ -477,6 +472,7 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
     if (cMinPages > PGMR0DYNMAP_MAX_PAGES)
         cMinPages = PGMR0DYNMAP_MAX_PAGES;
 
+    Assert(cMinPages);
     *pcMinPages = cMinPages;
     return cPages;
 }
@@ -626,10 +622,13 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
             int rc = RTR0MemObjEnterPhys(&pPgLvl->a[i].hMemObj, HCPhys, PAGE_SIZE);
             if (RT_SUCCESS(rc))
             {
-                rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj, &pPgLvl->a[i].u.pv, 0 /* cbAlignment */,
+                rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj,
+                                         (void *)-1 /* pvFixed */, 0 /* cbAlignment */,
                                          RTMEM_PROT_WRITE | RTMEM_PROT_READ);
                 if (RT_SUCCESS(rc))
                 {
+                    pPgLvl->a[i].u.pv   = RTR0MemObjAddress(pPgLvl->a[i].hMapObj);
+                    AssertMsg(((uintptr_t)pPgLvl->a[i].u.pv & ~(uintptr_t)PAGE_OFFSET_MASK), ("%p\n", pPgLvl->a[i].u.pv));
                     pPgLvl->a[i].HCPhys = HCPhys;
                     if (i + 1 == pPgLvl->cLevels)
                         pSeg->ahMemObjPTs[pSeg->cPTs++] = pPgLvl->a[i].hMemObj;
@@ -854,6 +853,7 @@ static int pgmR0DynMapExpand(PPGMR0DYNMAP pThis)
      */
     uint32_t cMinPages;
     uint32_t cPages = pgmR0DynMapCalcNewSize(pThis, &cMinPages);
+    AssertReturn(cPages, VERR_INTERNAL_ERROR);
     if (pThis->cPages >= cPages)
         return VINF_SUCCESS;
 
