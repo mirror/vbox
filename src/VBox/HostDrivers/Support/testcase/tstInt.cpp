@@ -161,36 +161,6 @@ int main(int argc, char **argv)
                         RTPrintf("tstInt: SUPCallVMMR0Fast - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
                                  i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
 
-#ifdef VBOX_WITH_IDT_PATCHING
-                        /*
-                         * The fast path.
-                         */
-                        RTTimeNanoTS();
-                        StartTS = RTTimeNanoTS();
-                        StartTick = ASMReadTSC();
-                        MinTicks = UINT64_MAX;
-                        for (i = 0; i < 1000000; i++)
-                        {
-                            uint64_t OneStartTick = ASMReadTSC();
-                            rc = SUPCallVMMR0(pVMR0, VMMR0_DO_NOP, NULL);
-                            uint64_t Ticks = ASMReadTSC() - OneStartTick;
-                            if (Ticks < MinTicks)
-                                MinTicks = Ticks;
-
-                            if (RT_UNLIKELY(rc != VINF_SUCCESS))
-                            {
-                                RTPrintf("tstInt: SUPCallVMMR0/idt -> rc=%Rrc i=%d Expected VINF_SUCCESS!\n", rc, i);
-                                rcRet++;
-                                break;
-                            }
-                        }
-                        Ticks = ASMReadTSC() - StartTick;
-                        NanoSecs = RTTimeNanoTS() - StartTS;
-
-                        RTPrintf("tstInt: SUPCallVMMR0/idt - %d iterations in %llu ns / %llu ticks. %llu ns / %#llu ticks per iteration. Min %llu ticks.\n",
-                                 i, NanoSecs, Ticks, NanoSecs / i, Ticks / i, MinTicks);
-#endif /* VBOX_WITH_IDT_PATCHING */
-
                         /*
                          * The ordinary path.
                          */

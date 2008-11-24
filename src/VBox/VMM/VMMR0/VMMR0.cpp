@@ -474,7 +474,9 @@ static void vmmR0RecordRC(PVM pVM, int rc)
 
 
 /**
- * The Ring 0 entry point, called by the interrupt gate.
+ * Unused ring-0 entry point that used to be called from the interrupt gate.
+ *
+ * Will be removed one of the next times we do a major SUPDrv version bump.
  *
  * @returns VBox status code.
  * @param   pVM             The VM to operate on.
@@ -486,92 +488,6 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
 {
     switch (enmOperation)
     {
-#ifdef VBOX_WITH_IDT_PATCHING
-        /*
-         * Switch to GC.
-         * These calls return whatever the GC returns.
-         */
-        case VMMR0_DO_RAW_RUN:
-        {
-            /* Safety precaution as VMX disables the switcher. */
-            Assert(!pVM->vmm.s.fSwitcherDisabled);
-            if (pVM->vmm.s.fSwitcherDisabled)
-                return VERR_NOT_SUPPORTED;
-
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-            register int rc;
-            pVM->vmm.s.iLastGZRc = rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
-
-#ifdef VBOX_WITH_STATISTICS
-            vmmR0RecordRC(pVM, rc);
-#endif
-
-            /*
-             * We'll let TRPM change the stack frame so our return is different.
-             * Just keep in mind that after the call, things have changed!
-             */
-            if (    rc == VINF_EM_RAW_INTERRUPT
-                ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
-            {
-                /*
-                 * Don't trust the compiler to get this right.
-                 * gcc -fomit-frame-pointer screws up big time here. This works fine in 64-bit
-                 * mode too because we push the arguments on the stack in the IDT patch code.
-                 */
-# if defined(__GNUC__)
-                void *pvRet = (uint8_t *)__builtin_frame_address(0) + sizeof(void *);
-# elif defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
-                void *pvRet = (uint8_t *)_AddressOfReturnAddress();
-# elif defined(RT_ARCH_X86)
-                void *pvRet = (uint8_t *)&pVM - sizeof(pVM);
-# else
-#  error "huh?"
-# endif
-                if (    ((uintptr_t *)pvRet)[1] == (uintptr_t)pVM
-                    &&  ((uintptr_t *)pvRet)[2] == (uintptr_t)enmOperation
-                    &&  ((uintptr_t *)pvRet)[3] == (uintptr_t)pvArg)
-                    TRPMR0SetupInterruptDispatcherFrame(pVM, pvRet);
-                else
-                {
-# if defined(DEBUG) || defined(LOG_ENABLED)
-                    static bool  s_fHaveWarned = false;
-                    if (!s_fHaveWarned)
-                    {
-                         s_fHaveWarned = true;
-                         RTLogPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
-                         RTLogComPrintf("VMMR0.r0: The compiler can't find the stack frame!\n");
-                    }
-# endif
-                    TRPMR0DispatchHostInterrupt(pVM);
-                }
-            }
-            return rc;
-        }
-
-        /*
-         * Switch to GC to execute Hypervisor function.
-         */
-        case VMMR0_DO_CALL_HYPERVISOR:
-        {
-            /* Safety precaution as VMX disables the switcher. */
-            Assert(!pVM->vmm.s.fSwitcherDisabled);
-            if (pVM->vmm.s.fSwitcherDisabled)
-                return VERR_NOT_SUPPORTED;
-
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = pVM->vmm.s.pfnHostToGuestR0(pVM);
-            /** @todo dispatch interrupts? */
-            ASMSetFlags(fFlags);
-            return rc;
-        }
-
-        /*
-         * For profiling.
-         */
-        case VMMR0_DO_NOP:
-            return VINF_SUCCESS;
-#endif /* VBOX_WITH_IDT_PATCHING */
-
         default:
             /*
              * We're returning VERR_NOT_SUPPORT here so we've got something else

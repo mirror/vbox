@@ -132,12 +132,6 @@ PSUPDRVSESSION      g_pSession;
 /** R0 SUP Functions used for resolving referenced to the SUPR0 module. */
 static PSUPQUERYFUNCS g_pFunctions;
 
-#ifdef VBOX_WITH_IDT_PATCHING
-/** The negotiated interrupt number. */
-static uint8_t      g_u8Interrupt = 3;
-/** Pointer to the generated code fore calling VMMR0. */
-static PFNCALLVMMR0 g_pfnCallVMMR0;
-#endif
 /** VMMR0 Load Address. */
 static RTR0PTR      g_pvVMMR0 = NIL_RTR0PTR;
 /** PAGE_ALLOC support indicator. */
@@ -151,9 +145,6 @@ static uint32_t     g_u32FakeMode = ~0;
 *******************************************************************************/
 static int supInitFake(PSUPDRVSESSION *ppSession);
 static int supLoadModule(const char *pszFilename, const char *pszModule, const char *pszSrvReqHandler, void **ppvImageBase);
-#ifdef VBOX_WITH_IDT_PATCHING
-static int supInstallIDTE(void);
-#endif
 static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
 
 
@@ -462,9 +453,6 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         g_pSession = (PSUPDRVSESSION)(void *)g_pFunctions;
         if (ppSession)
             *ppSession = g_pSession;
-#ifdef VBOX_WITH_IDT_PATCHING
-        Assert(g_u8Interrupt == 3);
-#endif
 
         /* fake the GIP. */
         g_pSUPGlobalInfoPage = (PSUPGLOBALINFOPAGE)RTMemPageAllocZ(PAGE_SIZE);
@@ -514,9 +502,6 @@ SUPR3DECL(int) SUPTerm(bool fForced)
 
         g_u32Cookie         = 0;
         g_u32SessionCookie  = 0;
-#ifdef VBOX_WITH_IDT_PATCHING
-        g_u8Interrupt       = 3;
-#endif
         g_cInits            = 0;
     }
     else
@@ -645,10 +630,6 @@ SUPR3DECL(int) SUPCallVMMR0Ex(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
 
 SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
 {
-#if defined(VBOX_WITH_IDT_PATCHING)
-    return g_pfnCallVMMR0(pVMR0, uOperation, pvArg);
-
-#else
     /*
      * The following operations don't belong here.
      */
@@ -658,7 +639,6 @@ SUPR3DECL(int) SUPCallVMMR0(PVMR0 pVMR0, unsigned uOperation, void *pvArg)
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
     return SUPCallVMMR0Ex(pVMR0, uOperation, (uintptr_t)pvArg, NULL);
-#endif
 }
 
 
@@ -1235,22 +1215,7 @@ SUPR3DECL(int) SUPLoadModule(const char *pszFilename, const char *pszModule, voi
     rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
 #endif
     if (RT_SUCCESS(rc))
-    {
-        /*
-         * Load the module.
-         * If it's VMMR0.r0 we need to install the IDTE.
-         */
         rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
-#ifdef VBOX_WITH_IDT_PATCHING
-        if (    RT_SUCCESS(rc)
-            &&  !strcmp(pszModule, "VMMR0.r0"))
-        {
-            rc = supInstallIDTE();
-            if (RT_FAILURE(rc))
-                SUPFreeModule(*ppvImageBase);
-        }
-#endif /* VBOX_WITH_IDT_PATCHING */
-    }
     else
         LogRel(("SUPLoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
     return rc;
@@ -1270,217 +1235,11 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
     rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
 #endif
     if (RT_SUCCESS(rc))
-    {
-        /*
-         * Load the module.
-         * If it's VMMR0.r0 we need to install the IDTE.
-         */
         rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, ppvImageBase);
-    }
     else
         LogRel(("SUPR3LoadServiceModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
     return rc;
 }
-
-
-#ifdef VBOX_WITH_IDT_PATCHING
-/**
- * Generates the code for calling the interrupt gate.
- *
- * @returns VBox status code.
- *          g_pfnCallVMMR0 is changed on success.
- * @param   u8Interrupt     The interrupt number.
- */
-static int suplibGenerateCallVMMR0(uint8_t u8Interrupt)
-{
-    /*
-     * Allocate memory.
-     */
-    uint8_t *pb = (uint8_t *)RTMemExecAlloc(256);
-    AssertReturn(pb, VERR_NO_MEMORY);
-    memset(pb, 0xcc, 256);
-    Assert(!g_pfnCallVMMR0);
-    g_pfnCallVMMR0 = *(PFNCALLVMMR0*)&pb;
-
-    /*
-     * Generate the code.
-     */
-#ifdef RT_ARCH_AMD64
-    /*
-     * reg params:
-     *      <GCC>   <MSC>   <argument>
-     *      rdi     rcx     pVMR0
-     *      esi     edx     uOperation
-     *      rdx     r8      pvArg
-     *
-     *      eax     eax     [g_u32Gookie]
-     */
-    *pb++ = 0xb8;                       /* mov eax, <g_u32Cookie> */
-    *(uint32_t *)pb = g_u32Cookie;
-    pb += sizeof(uint32_t);
-
-    *pb++ = 0xcd;                       /* int <u8Interrupt> */
-    *pb++ = u8Interrupt;
-
-    *pb++ = 0xc3;                       /* ret */
-
-#else
-    /*
-     * x86 stack:
-     *          0   saved esi
-     *      0   4   ret
-     *      4   8   pVM
-     *      8   c   uOperation
-     *      c  10   pvArg
-     */
-    *pb++ = 0x56;                       /* push esi */
-
-    *pb++ = 0x8b;                       /* mov eax, [pVM] */
-    *pb++ = 0x44;
-    *pb++ = 0x24;
-    *pb++ = 0x08;                       /* esp+08h */
-
-    *pb++ = 0x8b;                       /* mov edx, [uOperation] */
-    *pb++ = 0x54;
-    *pb++ = 0x24;
-    *pb++ = 0x0c;                       /* esp+0ch */
-
-    *pb++ = 0x8b;                       /* mov ecx, [pvArg] */
-    *pb++ = 0x4c;
-    *pb++ = 0x24;
-    *pb++ = 0x10;                       /* esp+10h */
-
-    *pb++ = 0xbe;                       /* mov esi, <g_u32Cookie> */
-    *(uint32_t *)pb = g_u32Cookie;
-    pb += sizeof(uint32_t);
-
-    *pb++ = 0xcd;                       /* int <u8Interrupt> */
-    *pb++ = u8Interrupt;
-
-    *pb++ = 0x5e;                       /* pop esi */
-
-    *pb++ = 0xc3;                       /* ret */
-#endif
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Installs the IDTE patch.
- *
- * @return VBox status code.
- */
-static int supInstallIDTE(void)
-{
-    /* already installed? */
-    if (g_u8Interrupt != 3 || g_u32FakeMode)
-        return VINF_SUCCESS;
-
-    int rc = VINF_SUCCESS;
-    const RTCPUID cCpus = RTMpGetCount();
-    if (cCpus <= 1)
-    {
-        /* UNI */
-        SUPIDTINSTALL Req;
-        Req.Hdr.u32Cookie = g_u32Cookie;
-        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-        Req.Hdr.cbIn = SUP_IOCTL_IDT_INSTALL_SIZE_IN;
-        Req.Hdr.cbOut = SUP_IOCTL_IDT_INSTALL_SIZE_OUT;
-        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-        Req.Hdr.rc = VERR_INTERNAL_ERROR;
-        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_IDT_INSTALL, &Req, SUP_IOCTL_IDT_INSTALL_SIZE);
-        if (RT_SUCCESS(rc))
-            rc = Req.Hdr.rc;
-        if (RT_SUCCESS(rc))
-        {
-            g_u8Interrupt = Req.u.Out.u8Idt;
-            rc = suplibGenerateCallVMMR0(Req.u.Out.u8Idt);
-        }
-    }
-    else
-    {
-        /* SMP */
-        uint64_t        u64AffMaskSaved = RTThreadGetAffinity();
-        RTCPUSET        OnlineSet;
-        uint64_t        u64AffMaskPatched = RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) & u64AffMaskSaved;
-        unsigned        cCpusPatched = 0;
-        AssertLogRelReturn(cCpus < 64, VERR_INTERNAL_ERROR);
-
-        for (int i = 0; i < 64; i++)
-        {
-            /* Skip absent and inactive processors. */
-            uint64_t u64Mask = 1ULL << i;
-            if (!(u64Mask & u64AffMaskPatched))
-                continue;
-
-            /* Change CPU */
-            int rc2 = RTThreadSetAffinity(u64Mask);
-            if (RT_FAILURE(rc2))
-            {
-                u64AffMaskPatched &= ~u64Mask;
-                LogRel(("SUPLoadVMM: Failed to set affinity to cpu no. %d, rc=%Rrc.\n", i, rc2));
-                continue;
-            }
-
-            /* Patch the CPU. */
-            SUPIDTINSTALL Req;
-            Req.Hdr.u32Cookie = g_u32Cookie;
-            Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-            Req.Hdr.cbIn = SUP_IOCTL_IDT_INSTALL_SIZE_IN;
-            Req.Hdr.cbOut = SUP_IOCTL_IDT_INSTALL_SIZE_OUT;
-            Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-            Req.Hdr.rc = VERR_INTERNAL_ERROR;
-            rc2 = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_IDT_INSTALL, &Req, SUP_IOCTL_IDT_INSTALL_SIZE);
-            if (RT_SUCCESS(rc2))
-                rc2 = Req.Hdr.rc;
-            if (RT_SUCCESS(rc2))
-            {
-                if (!cCpusPatched)
-                {
-                    g_u8Interrupt = Req.u.Out.u8Idt;
-                    rc2 = suplibGenerateCallVMMR0(Req.u.Out.u8Idt);
-                    if (RT_FAILURE(rc2))
-                    {
-                        LogRel(("suplibGenerateCallVMMR0 failed with rc=%Rrc.\n", i, rc2));
-                        rc = rc2;
-                    }
-                }
-                else
-                    Assert(g_u8Interrupt == Req.u.Out.u8Idt);
-                cCpusPatched++;
-            }
-            else
-            {
-
-                LogRel(("SUPLoadVMM: Failed to patch cpu no. %d, rc=%Rrc.\n", i, rc2));
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-            }
-        }
-
-        /* Fail if no CPUs was patched! */
-        if (RT_SUCCESS(rc) && cCpusPatched <= 0)
-            rc = VERR_GENERAL_FAILURE;
-        /* Ignore failures if a CPU was patched. */
-        else if (RT_FAILURE(rc) && cCpusPatched > 0)
-            rc = VINF_SUCCESS;
-
-        /* Set/restore the thread affinity. */
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTThreadSetAffinity(u64AffMaskPatched);
-            AssertRC(rc);
-        }
-        else
-        {
-            int rc2 = RTThreadSetAffinity(u64AffMaskSaved);
-            AssertRC(rc2);
-        }
-    }
-    return rc;
-}
-#endif /* VBOX_WITH_IDT_PATCHING */
 
 
 /**
@@ -1871,42 +1630,9 @@ SUPR3DECL(int) SUPFreeModule(void *pvImageBase)
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
     {
-#ifdef VBOX_WITH_IDT_PATCHING
-        g_u8Interrupt = 3;
-        RTMemExecFree(*(void **)&g_pfnCallVMMR0);
-        g_pfnCallVMMR0 = NULL;
-#endif
         g_pvVMMR0 = NIL_RTR0PTR;
         return VINF_SUCCESS;
     }
-
-#ifdef VBOX_WITH_IDT_PATCHING
-    /*
-     * There is one special module. When this is freed we'll
-     * free the IDT entry that goes with it.
-     *
-     * Note that we don't keep count of VMMR0.r0 loads here, so the
-     *      first unload will free it.
-     */
-    if (    (RTR0PTR)pvImageBase == g_pvVMMR0
-        &&  g_u8Interrupt != 3)
-    {
-        SUPIDTREMOVE Req;
-        Req.Hdr.u32Cookie = g_u32Cookie;
-        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-        Req.Hdr.cbIn = SUP_IOCTL_IDT_REMOVE_SIZE_IN;
-        Req.Hdr.cbOut = SUP_IOCTL_IDT_REMOVE_SIZE_OUT;
-        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-        Req.Hdr.rc = VERR_INTERNAL_ERROR;
-        int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_IDT_REMOVE, &Req, SUP_IOCTL_IDT_REMOVE_SIZE);
-        if (RT_SUCCESS(rc))
-            rc = Req.Hdr.rc;
-        AssertRC(rc);
-        g_u8Interrupt = 3;
-        RTMemExecFree(*(void **)&g_pfnCallVMMR0);
-        g_pfnCallVMMR0 = NULL;
-    }
-#endif /* VBOX_WITH_IDT_PATCHING */
 
     /*
      * Free the requested module.

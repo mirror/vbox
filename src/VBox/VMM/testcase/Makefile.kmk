@@ -88,9 +88,6 @@ VBOX_PATH_VMM_SRC = $(PATH_ROOT)/src/VBox/VMM
 #
 tstVMStructGC_TEMPLATE  = VBOXGCEXE
 tstVMStructGC_DEFS      = IN_VMM_RC IN_DIS IN_RT_RC IN_RT_GC
-ifdef VBOX_WITH_IDT_PATCHING
-tstVMStructGC_DEFS     += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_R0_LOGGING
 tstVMStructGC_DEFS     += VBOX_WITH_R0_LOGGING
 endif
@@ -102,9 +99,6 @@ tstVMStructSize_DEFS    = IN_VMM_R3 IN_DIS
 tstVMStructSize_INCS    = $(VBOX_PATH_VMM_SRC) $(VBOX_PATH_VMM_SRC)/PATM $(VBOX_VMM_TESTCASE_OUT_DIR)
 tstVMStructSize_SOURCES = tstVMStructSize.cpp
 tstVMStructSize.cpp_DEPS= $(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructGC.h
-ifdef VBOX_WITH_IDT_PATCHING
-tstVMStructSize_DEFS   += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_R0_LOGGING
 tstVMStructSize_DEFS   += VBOX_WITH_R0_LOGGING
 endif
@@ -115,9 +109,6 @@ endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
 tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS
-ifdef VBOX_WITH_IDT_PATCHING
-tstAsmStructs_DEFS     += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_R0_LOGGING
 tstAsmStructs_DEFS     += VBOX_WITH_R0_LOGGING
 endif
@@ -126,9 +117,6 @@ tstAsmStructs_SOURCES   = tstAsmStructs.cpp
 
 tstAsmStructsGC_TEMPLATE= VBOXGCEXE
 tstAsmStructsGC_DEFS    = IN_VMM_RC IN_DIS IN_RT_RC IN_RT_GC
-ifdef VBOX_WITH_IDT_PATCHING
-tstAsmStructsGC_DEFS    += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_R0_LOGGING
 tstAsmStructsGC_DEFS   += VBOX_WITH_R0_LOGGING
 endif
