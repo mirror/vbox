@@ -56,6 +56,13 @@
 # define VBOX_SKB_MAC_HDR(skb) skb->mac.raw
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+# define VBOX_SKB_IS_GSO(skb) skb_is_gso(skb)
+# define VBOX_SKB_GSO_SEGMENT(skb) skb_gso_segment(skb, 0)
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
+# define VBOX_SKB_IS_GSO(skb) false
+# define VBOX_SKB_GSO_SEGMENT(skb) NULL
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -503,13 +510,13 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     pBuf = pCopy;
 #endif
 
-    Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
-          pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
+    //Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
+    //      pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
 
-    if (skb_is_gso(pBuf))
+    if (VBOX_SKB_IS_GSO(pBuf))
     {
         /* Need to segment the packet */
-        struct sk_buff *pSegments = skb_gso_segment(pBuf, 0); /* No features, very dumb device */
+        struct sk_buff *pSegments = VBOX_SKB_GSO_SEGMENT(pBuf); /* No features, very dumb device */
         pBuf->next = pSegments;
     }
     /*
