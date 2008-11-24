@@ -54,8 +54,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int VMMR0Init(PVM pVM, uint32_t uSvnRev);
-static int VMMR0Term(PVM pVM);
 __BEGIN_DECLS
 VMMR0DECL(int) ModuleInit(void);
 VMMR0DECL(void) ModuleTerm(void);

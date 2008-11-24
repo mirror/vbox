@@ -304,6 +304,8 @@ BEGINPROC vmmR0CallHostLongJmp
     ; Save the stack.
     ;
     mov     edi, [edx + VMMR0JMPBUF.pvSavedStack]
+    cmp     edi, 0                      ; darwin may set this to 0.
+    je      .nok
     mov     [edx + VMMR0JMPBUF.SpResume], esp
     mov     esi, esp
     mov     ecx, [edx + VMMR0JMPBUF.esp]
@@ -382,6 +384,8 @@ BEGINPROC vmmR0CallHostLongJmp
     ; Save the stack.
     ;
     mov     rdi, [rdx + VMMR0JMPBUF.pvSavedStack]
+    cmp     rdi, 0                      ; darwin may set this to 0.
+    je      .nok
     mov     [rdx + VMMR0JMPBUF.SpResume], rsp
     mov     rsi, rsp
     mov     rcx, [rdx + VMMR0JMPBUF.rsp]
