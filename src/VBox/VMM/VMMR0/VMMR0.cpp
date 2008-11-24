@@ -1177,7 +1177,7 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
  */
 DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
-#ifndef DEBUG_sandervl
+#if !defined(DEBUG_sandervl) && !defined(RT_OS_DARWIN)
     SUPR0Printf("\n!!R0-Assertion Failed!!\n"
                 "Expression: %s\n"
                 "Location  : %s(%d) %s\n",
@@ -1195,6 +1195,9 @@ DECLEXPORT(void) RTCALL AssertMsg1(const char *pszExpr, unsigned uLine, const ch
                     "Expression: %s\n"
                     "Location  : %s(%d) %s\n",
                     pszExpr, pszFile, uLine, pszFunction);
+#ifdef RT_OS_DARWIN
+    RTAssertMsg1(pszExpr, uLine, pszFile, pszFunction);
+#endif
 }
 
 
@@ -1206,7 +1209,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 {
     for (size_t i = 0; i < cbChars; i++)
     {
-#ifndef DEBUG_sandervl
+#if !defined(DEBUG_sandervl) && !defined(RT_OS_DARWIN)
         SUPR0Printf("%c", pachChars[i]);
 #endif
         LogAlways(("%c", pachChars[i]));
@@ -1218,10 +1221,11 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
 
 DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
 {
+    va_list va;
+
     PRTLOGGER pLog = RTLogDefaultInstance(); /** @todo we want this for release as well! */
     if (pLog)
     {
-        va_list va;
         va_start(va, pszFormat);
         RTLogFormatV(rtLogOutput, pLog, pszFormat, va);
         va_end(va);
@@ -1234,5 +1238,11 @@ DECLEXPORT(void) RTCALL AssertMsg2(const char *pszFormat, ...)
             va_end(va);
         }
     }
+
+#ifdef RT_OS_DARWIN
+    va_start(va, pszFormat);
+    RTAssertMsg2V(pszFormat, va);
+    va_end(va);
+#endif
 }
 
