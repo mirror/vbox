@@ -5036,11 +5036,13 @@ bool VBoxGlobal::event (QEvent *e)
             loadLanguage (static_cast<VBoxChangeGUILanguageEvent*> (e)->mLangId);
             return true;
         }
+#ifdef VBOX_GUI_WITH_SYSTRAY
         case VBoxDefs::ChangeGUITrayIconEventType:
         {
             emit systrayIconChanged (*(VBoxChangeGUITrayIconEvent *) e);
             return true;
         }
+#endif
 
         default:
             break;
