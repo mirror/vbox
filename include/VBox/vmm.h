@@ -117,6 +117,16 @@ PVMCPU              VMMGetCpu(PVM pVM);
 VMMDECL(PVMCPU)     VMMGetCpuEx(PVM pVM, RTCPUID idCpu);
 VMMDECL(uint32_t)   VMMGetSvnRev(void);
 
+/** @def VMMIsHwVirtExtForced
+ * Checks if forced to use the hardware assisted virtualization extensions.
+ *
+ * This is intended for making setup decisions where we can save resources when
+ * using hardware assisted virtualization.
+ *
+ * @returns true / false.
+ * @param   pVM     Pointer to the shared VM structure. */
+#define VMMIsHwVirtExtForced(pVM)   ((pVM)->fHwVirtExtForced)
+
 
 #ifdef IN_RING3
 /** @defgroup grp_vmm_r3    The VMM Host Context Ring 3 API

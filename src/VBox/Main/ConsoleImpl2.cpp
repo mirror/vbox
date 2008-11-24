@@ -204,14 +204,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
     else
         fHWVirtExEnabled = (hwVirtExEnabled == TSBool_True);
-#ifndef RT_OS_DARWIN /** @todo Implement HWVirtExt on darwin. See #1865. */
+#ifdef RT_OS_DARWIN
+    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled);      RC_CHECK();
+#else
+    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      0);                     RC_CHECK();
+#endif
     if (fHWVirtExEnabled)
     {
         PCFGMNODE pHWVirtExt;
         rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                     RC_CHECK();
-        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled", 1);                         RC_CHECK();
+        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
     }
-#endif
 
     /* Nested paging (VT-x/AMD-V) */
     BOOL fEnableNestedPaging = false;

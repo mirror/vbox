@@ -536,11 +536,12 @@ typedef struct VM
     /** CSAM enabled flag.
      * This is placed here for performance reasons. */
     bool                fCSAMEnabled;
-
     /** Hardware VM support is available and enabled.
      * This is placed here for performance reasons. */
     bool                fHWACCMEnabled;
-
+    /** Hardware VM support is required and non-optional.
+     * This is initialized together with the rest of the VM structure. */
+    bool                fHwVirtExtForced;
     /** PARAV enabled flag. */
     bool                fPARAVEnabled;
     /** @} */
