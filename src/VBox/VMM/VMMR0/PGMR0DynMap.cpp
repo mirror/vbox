@@ -332,8 +332,10 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     /*
      * Do we need the cache? Skip the last bit if we don't.
      */
+#if 1
     if (!HWACCMIsEnabled(pVM))
         return VINF_SUCCESS;
+#endif
 
     /*
      * Reference and if necessary setup or expand the cache.
@@ -345,7 +347,17 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
 
     pThis->cUsers++;
     if (pThis->cUsers == 1)
+    {
         rc = pgmR0DynMapSetup(pThis);
+#ifdef DEBUG
+        if (RT_SUCCESS(rc))
+        {
+            rc = pgmR0DynMapTest(pVM);
+            if (RT_FAILURE(rc))
+                pgmR0DynMapTearDown(pThis);
+        }
+#endif
+    }
     else if (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(pThis->cPages))
         rc = pgmR0DynMapExpand(pThis);
     if (RT_SUCCESS(rc))
@@ -354,14 +366,6 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
         pThis->cUsers--;
 
     RTSemFastMutexRelease(pThis->hInitLock);
-
-#ifdef DEBUG
-    /*
-     * Run some tests.
-     */
-    if (RT_SUCCESS(rc))
-        pgmR0DynMapTest(pVM);
-#endif
     return rc;
 }
 
@@ -527,14 +531,14 @@ void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
             pPgLvl->a[0].fResMask  = X86_PDPE_P;
 
             pPgLvl->a[1].fPhysMask = X86_PDPE_PG_MASK;
-            pPgLvl->a[1].fPtrMask  = X86_PD_MASK;
-            pPgLvl->a[1].fPtrShift = X86_PD_SHIFT;
+            pPgLvl->a[1].fPtrMask  = X86_PD_PAE_MASK;
+            pPgLvl->a[1].fPtrShift = X86_PD_PAE_SHIFT;
             pPgLvl->a[1].fAndMask  = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
             pPgLvl->a[1].fResMask  = X86_PDE_P | X86_PDE_RW;
 
             pPgLvl->a[2].fPhysMask = X86_PDE_PAE_PG_MASK;
-            pPgLvl->a[2].fPtrMask  = X86_PT_MASK;
-            pPgLvl->a[2].fPtrShift = X86_PT_SHIFT;
+            pPgLvl->a[2].fPtrMask  = X86_PT_PAE_MASK;
+            pPgLvl->a[2].fPtrShift = X86_PT_PAE_SHIFT;
             pPgLvl->a[2].fAndMask  = X86_PTE_P | X86_PTE_RW;
             pPgLvl->a[2].fResMask  = X86_PTE_P | X86_PTE_RW;
             break;
@@ -543,28 +547,28 @@ void pgmR0DynMapPagingArrayInit(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pPgLvl)
         case SUPPAGINGMODE_AMD64_GLOBAL:
         case SUPPAGINGMODE_AMD64_NX:
         case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-            pPgLvl->cLevels = 3;
+            pPgLvl->cLevels = 4;
             pPgLvl->a[0].fPhysMask = X86_CR3_AMD64_PAGE_MASK;
-            pPgLvl->a[0].fPtrMask  = X86_PML4_MASK;
             pPgLvl->a[0].fPtrShift = X86_PML4_SHIFT;
+            pPgLvl->a[0].fPtrMask  = X86_PML4_MASK;
             pPgLvl->a[0].fAndMask  = X86_PML4E_P | X86_PML4E_RW;
             pPgLvl->a[0].fResMask  = X86_PML4E_P | X86_PML4E_RW;
 
             pPgLvl->a[1].fPhysMask = X86_PML4E_PG_MASK;
-            pPgLvl->a[1].fPtrMask  = X86_PDPT_MASK_AMD64;
             pPgLvl->a[1].fPtrShift = X86_PDPT_SHIFT;
+            pPgLvl->a[1].fPtrMask  = X86_PDPT_MASK_AMD64;
             pPgLvl->a[1].fAndMask  = X86_PDPE_P | X86_PDPE_RW /** @todo check for X86_PDPT_PS support. */;
             pPgLvl->a[1].fResMask  = X86_PDPE_P | X86_PDPE_RW;
 
             pPgLvl->a[2].fPhysMask = X86_PDPE_PG_MASK;
-            pPgLvl->a[2].fPtrMask  = X86_PD_MASK;
-            pPgLvl->a[2].fPtrShift = X86_PD_SHIFT;
+            pPgLvl->a[2].fPtrShift = X86_PD_PAE_SHIFT;
+            pPgLvl->a[2].fPtrMask  = X86_PD_PAE_MASK;
             pPgLvl->a[2].fAndMask  = X86_PDE_P | X86_PDE_RW | (cr4 & X86_CR4_PSE ? X86_PDE_PS : 0);
             pPgLvl->a[2].fResMask  = X86_PDE_P | X86_PDE_RW;
 
             pPgLvl->a[3].fPhysMask = X86_PDE_PAE_PG_MASK;
-            pPgLvl->a[3].fPtrMask  = X86_PT_MASK;
-            pPgLvl->a[3].fPtrShift = X86_PT_SHIFT;
+            pPgLvl->a[3].fPtrShift = X86_PT_PAE_SHIFT;
+            pPgLvl->a[3].fPtrMask  = X86_PT_PAE_MASK;
             pPgLvl->a[3].fAndMask  = X86_PTE_P | X86_PTE_RW;
             pPgLvl->a[3].fResMask  = X86_PTE_P | X86_PTE_RW;
             break;
@@ -608,7 +612,6 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
                                         PPGMR0DYNMAPSEG pSeg, uint32_t cMaxPTs, void **ppvPTE)
 {
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-
     void           *pvEntry = NULL;
     X86PGPAEUINT    uEntry = ASMGetCR3();
     for (uint32_t i = 0; i < pPgLvl->cLevels; i++)
@@ -677,6 +680,7 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
                     pPgLvl->a[i].u.pv, pvPage, iEntry, pThis->fLegacyMode));
             return VERR_INTERNAL_ERROR;
         }
+        Log(("#%d: iEntry=%d uEntry=%#llx pvEntry=%p HCPhys=%RHp \n", i, iEntry, uEntry, pvEntry, pPgLvl->a[i].HCPhys));
     }
 
     /* made it thru without needing to remap anything. */
@@ -774,6 +778,21 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
                 ((PX86PGUINT)pThis->pvSavedPTEs)[iPage]    = pThis->paPages[iPage].uPte.pLegacy->u;
             else
                 ((PX86PGPAEUINT)pThis->pvSavedPTEs)[iPage] = pThis->paPages[iPage].uPte.pPae->u;
+
+#ifdef VBOX_STRICT
+            /* Check that we've got the right entry. */
+            RTHCPHYS HCPhysPage = RTR0MemObjGetPagePhysAddr(pSeg->hMemObj, iPage - pSeg->iPage);
+            RTHCPHYS HCPhysPte  = pThis->fLegacyMode
+                                ? pThis->paPages[iPage].uPte.pLegacy->u & X86_PTE_PG_MASK
+                                : pThis->paPages[iPage].uPte.pPae->u    & X86_PTE_PAE_PG_MASK;
+            if (HCPhysPage != HCPhysPte)
+            {
+                LogRel(("pgmR0DynMapAddSeg: internal error - page #%u HCPhysPage=%RHp HCPhysPte=%RHp pbPage=%p pvPte=%p\n",
+                        iPage - pSeg->iPage, HCPhysPage, HCPhysPte, pbPage, pThis->paPages[iPage].uPte.pv));
+                rc = VERR_INTERNAL_ERROR;
+                break;
+            }
+#endif
         } /* for each page */
         ASMIntEnable();
 
@@ -1430,19 +1449,50 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 
 
 #ifdef DEBUG
+/** For pgmR0DynMapTest3PerCpu. */
+typedef struct PGMR0DYNMAPTEST
+{
+    uint32_t            u32Expect;
+    uint32_t           *pu32;
+    uint32_t volatile   cFailures;
+} PGMR0DYNMAPTEST;
+typedef PGMR0DYNMAPTEST *PPGMR0DYNMAPTEST;
+
+/**
+ * Checks that the content of the page is the same on all CPUs, i.e. that there
+ * are no CPU specfic PTs or similar nasty stuff involved.
+ *
+ * @param   idCpu           The current CPU.
+ * @param   pvUser1         Pointer a PGMR0DYNMAPTEST structure.
+ * @param   pvUser2         Unused, ignored.
+ */
+static DECLCALLBACK(void) pgmR0DynMapTest3PerCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PPGMR0DYNMAPTEST    pTest = (PPGMR0DYNMAPTEST)pvUser1;
+    ASMInvalidatePage(pTest->pu32);
+    if (*pTest->pu32 != pTest->u32Expect)
+        ASMAtomicIncU32(&pTest->cFailures);
+    NOREF(pvUser2); NOREF(idCpu);
+}
+
+
 /**
  * Performs some basic tests in debug builds.
  */
 static int pgmR0DynMapTest(PVM pVM)
 {
+    LogRel(("pgmR0DynMapTest: ****** START ******\n"));
     PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
     PPGMMAPSET      pSet  = &pVM->aCpus[0].pgm.s.AutoSet;
+    uint32_t        i;
+    void           *pvR0DynMapUsedSaved = pVM->pgm.s.pvR0DynMapUsed;
+    pVM->pgm.s.pvR0DynMapUsed = pThis;
 
     /*
      * Simple test, map CR3 twice and check that we're getting the
      * same mapping address back.
      */
-    LogRel(("pgmR0DynMapTest: 1\n"));
+    LogRel(("Test #1\n"));
     ASMIntDisable();
     PGMDynMapStartAutoSet(&pVM->aCpus[0]);
 
@@ -1462,9 +1512,9 @@ static int pgmR0DynMapTest(PVM pVM)
          * Check that the simple set overflow code works by filling it
          * with more CR3 mappings.
          */
-        LogRel(("pgmR0DynMapTest: 2\n"));
+        LogRel(("Test #2\n"));
         ASMIntDisable();
-        for (uint32_t i = 0 ; i < UINT16_MAX*2 + RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 == pv; i++)
+        for (i = 0 ; i < UINT16_MAX*2 + RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 == pv; i++)
         {
             pv2 = (void *)(intptr_t)-4;
             rc = PGMDynMapHCPage(pVM, cr3, &pv2);
@@ -1472,8 +1522,8 @@ static int pgmR0DynMapTest(PVM pVM)
         ASMIntEnable();
         if (RT_FAILURE(rc) || pv != pv2)
         {
-            LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p\n", __LINE__, rc, pv, pv2));
-            if (RT_SUCCESS(rc2)) rc2 = VERR_INTERNAL_ERROR;
+            LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p i=%p\n", __LINE__, rc, pv, pv2, i));
+            if (RT_SUCCESS(rc)) rc = VERR_INTERNAL_ERROR;
         }
         else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries) / 2)
         {
@@ -1486,7 +1536,7 @@ static int pgmR0DynMapTest(PVM pVM)
                  || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 4].cRefs != 1)
         {
             LogRel(("failed(%d): bad set dist: ", __LINE__));
-            for (uint32_t i = 0; i < pSet->cEntries; i++)
+            for (i = 0; i < pSet->cEntries; i++)
                 LogRel(("[%d]=%d, ", i, pSet->aEntries[i].cRefs));
             LogRel(("\n"));
             rc = VERR_INTERNAL_ERROR;
@@ -1496,22 +1546,23 @@ static int pgmR0DynMapTest(PVM pVM)
             /*
              * Trigger an set optimization run (exactly).
              */
-            LogRel(("pgmR0DynMapTest: 2\n"));
+            LogRel(("Test #3\n"));
             ASMIntDisable();
-            for (uint32_t i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 != pv; i++)
+            pv2 = NULL;
+            for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 != pv; i++)
             {
                 pv2 = (void *)(intptr_t)(-5 - i);
-                rc = PGMDynMapHCPage(pVM, cr3 + (PAGE_SIZE * i), &pv2);
+                rc = PGMDynMapHCPage(pVM, cr3 + PAGE_SIZE * (i + 5), &pv2);
             }
             ASMIntEnable();
             if (RT_FAILURE(rc) || pv == pv2)
             {
-                LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p\n", __LINE__, rc, pv, pv2));
-                if (RT_SUCCESS(rc2)) rc2 = VERR_INTERNAL_ERROR;
+                LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p i=%d\n", __LINE__, rc, pv, pv2, i));
+                if (RT_SUCCESS(rc)) rc = VERR_INTERNAL_ERROR;
             }
-            else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries) / 2 + 3)
+            else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries))
             {
-                LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries) / 2 + 3));
+                LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
                 rc = VERR_INTERNAL_ERROR;
             }
         }
@@ -1524,14 +1575,58 @@ static int pgmR0DynMapTest(PVM pVM)
             rc = rc2;
     }
 
-    /* clean up */
-    LogRel(("pgmR0DynMapTest: cleanup\n"));
+    /*
+     * Check that everyone sees the same stuff.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("Test #4\n"));
+        ASMIntDisable();
+        RTHCPHYS  HCPhysPT = RTR0MemObjGetPagePhysAddr(pThis->pSegHead->ahMemObjPTs[0], 0);
+        rc  = PGMDynMapHCPage(pVM, HCPhysPT, &pv);
+        if (RT_SUCCESS(rc))
+        {
+            PGMR0DYNMAPTEST Test;
+            uint32_t       *pu32Real = &pThis->paPages[pThis->pSegHead->iPage].uPte.pLegacy->u;
+            Test.pu32       = (uint32_t *)((uintptr_t)pv | ((uintptr_t)pu32Real & PAGE_OFFSET_MASK));
+            Test.u32Expect  = *pu32Real;
+            ASMAtomicWriteU32(&Test.cFailures, 0);
+            ASMIntEnable();
+
+            rc = RTMpOnAll(pgmR0DynMapTest3PerCpu, &Test, NULL);
+            if (RT_FAILURE(rc))
+                LogRel(("failed(%d): RTMpOnAll rc=%Rrc\n", __LINE__, rc));
+            else if (Test.cFailures)
+            {
+                LogRel(("failed(%d): cFailures=%d pu32Real=%p pu32=%p u32Expect=%#x *pu32=%#x\n", __LINE__,
+                        Test.cFailures, pu32Real, Test.pu32, Test.u32Expect, *Test.pu32));
+                rc = VERR_INTERNAL_ERROR;
+            }
+            else
+                LogRel(("pu32Real=%p pu32=%p u32Expect=%#x *pu32=%#x\n",
+                        pu32Real, Test.pu32, Test.u32Expect, *Test.pu32));
+        }
+        else
+        {
+            ASMIntEnable();
+            LogRel(("failed(%d): rc=%Rrc\n", rc));
+        }
+    }
+
+    /*
+     * Clean up.
+     */
+    LogRel(("Cleanup.\n"));
     ASMIntDisable();
     PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
     PGMDynMapReleaseAutoSet(&pVM->aCpus[0]);
     ASMIntEnable();
 
-    LogRel(("Load=%u/%u/%u Set=%#x/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+    LogRel(("Result: rc=%Rrc Load=%u/%u/%u Set=%#x/%u\n", rc,
+            pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+    pVM->pgm.s.pvR0DynMapUsed = pvR0DynMapUsedSaved;
+    LogRel(("pgmR0DynMapTest: ****** END ******\n"));
     return rc;
 }
 #endif /* DEBUG */
+
