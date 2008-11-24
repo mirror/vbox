@@ -75,9 +75,6 @@ else
  SUPR3_TEMPLATE     = VBOXR3
 endif
 SUPR3_DEFS          = IN_SUP_R3 IN_RT_R3
-ifdef VBOX_WITH_IDT_PATCHING
- SUPR3_DEFS        += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_SUPSVC
  SUPR3_DEFS        += VBOX_WITH_SUPSVC
 endif
@@ -165,9 +162,6 @@ ifdef VBOX_SIGNING_MODE
  VBoxDrv_NOINST       = true
 endif
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
-ifdef VBOX_WITH_IDT_PATCHING
- VBoxDrv_DEFS        += VBOX_WITH_IDT_PATCHING
-endif
 VBoxDrv_DEFS.amd64    = RT_WITH_W64_UNWIND_HACK
 VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
@@ -219,9 +213,6 @@ ifeq ($(KBUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_NOINST        = true
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
-ifdef VBOX_WITH_IDT_PATCHING
-vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_LINUX_VERSION_2_4
 vboxdrv_DEFS         += EXPORT_SYMTAB
 endif
@@ -303,9 +294,6 @@ endif # real linux
 ifeq ($(KBUILD_TARGET),darwin)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_IDT_PATCHING
-VBoxDrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 VBoxDrv_DEFS         += DEBUG_DARWIN_GIP
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
 VBoxDrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
@@ -377,9 +365,6 @@ endif
 ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
-ifdef VBOX_WITH_IDT_PATCHING
-vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES      := \
@@ -396,11 +381,8 @@ endif # freebsd
 ifeq ($(KBUILD_TARGET),solaris)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
-ifdef VBOX_WITH_IDT_PATCHING
-vboxdrv_DEFS         += VBOX_WITH_IDT_PATCHING
-endif
 ifdef VBOX_WITH_NETFLT
- vboxdrv_DEFS         += VBOX_WITH_NETFLT
+ vboxdrv_DEFS        += VBOX_WITH_NETFLT
 endif
 vboxdrv_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)

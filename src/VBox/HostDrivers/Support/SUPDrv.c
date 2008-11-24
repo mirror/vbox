@@ -64,7 +64,7 @@
  * Logging assignments:
  *      Log     - useful stuff, like failures.
  *      LogFlow - program flow, except the really noisy bits.
- *      Log2    - Cleanup and IDTE
+ *      Log2    - Cleanup.
  *      Log3    - Loader flow noise.
  *      Log4    - Call VMMR0 flow noise.
  *      Log5    - Native yet-to-be-defined noise.
@@ -124,20 +124,13 @@
 *******************************************************************************/
 static int      supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession);
 static int      supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType);
-#ifdef VBOX_WITH_IDT_PATCHING
-static int      supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq);
-static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
-static int      supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
-static void     supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch);
-static void     supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry);
-#endif /* VBOX_WITH_IDT_PATCHING */
 static int      supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDROPEN pReq);
 static int      supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int      supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
 static int      supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int      supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
-static int      supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
-static void     supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt);
+static int      supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
+static void     supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
 static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage);
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
@@ -502,9 +495,6 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
  */
 void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 {
-#ifdef VBOX_WITH_IDT_PATCHING
-    PSUPDRVPATCH        pPatch;
-#endif
     PSUPDRVOBJ          pObj;
     PSUPDRVUSAGE        pUsage;
 
@@ -523,19 +513,6 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /*
      * Free lists.
      */
-#ifdef VBOX_WITH_IDT_PATCHING
-    /* patches */
-    /** @todo make sure we don't uninstall patches which has been patched by someone else. */
-    pPatch = pDevExt->pIdtPatchesFree;
-    pDevExt->pIdtPatchesFree = NULL;
-    while (pPatch)
-    {
-        void *pvFree = pPatch;
-        pPatch = pPatch->pNext;
-        RTMemExecFree(pvFree);
-    }
-#endif /* VBOX_WITH_IDT_PATCHING */
-
     /* objects. */
     pObj = pDevExt->pObjs;
 #if !defined(DEBUG_bird) || !defined(RT_OS_LINUX) /* breaks unloading, temporary, remove me! */
@@ -595,7 +572,6 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
             pSession->pDevExt           = pDevExt;
             pSession->u32Cookie         = BIRD_INV;
             /*pSession->pLdrUsage         = NULL;
-            pSession->pPatchUsage       = NULL;
             pSession->pVM               = NULL;
             pSession->pUsage            = NULL;
             pSession->pGip              = NULL;
@@ -671,13 +647,6 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
      * Remove logger instances related to this session.
      */
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pSession);
-
-#ifdef VBOX_WITH_IDT_PATCHING
-    /*
-     * Uninstall any IDT patches installed for this session.
-     */
-    supdrvIOCtl_IdtRemoveAll(pDevExt, pSession);
-#endif
 
     /*
      * Release object references made in this session.
@@ -1124,12 +1093,8 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_IDT_INSTALL);
 
             /* execute */
-#ifdef VBOX_WITH_IDT_PATCHING
-            pReq->Hdr.rc = supdrvIOCtl_IdtInstall(pDevExt, pSession, pReq);
-#else
             pReq->u.Out.u8Idt = 3;
             pReq->Hdr.rc = VERR_NOT_SUPPORTED;
-#endif
             return 0;
         }
 
@@ -1140,11 +1105,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_SIZES(SUP_IOCTL_IDT_REMOVE);
 
             /* execute */
-#ifdef VBOX_WITH_IDT_PATCHING
-            pReq->Hdr.rc = supdrvIOCtl_IdtRemoveAll(pDevExt, pSession);
-#else
             pReq->Hdr.rc = VERR_NOT_SUPPORTED;
-#endif
             return 0;
         }
 
@@ -3031,668 +2992,6 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
 }
 
 
-#ifdef VBOX_WITH_IDT_PATCHING
-/**
- * Install IDT for the current CPU.
- *
- * @returns One of the following IPRT status codes:
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_IDT_FAILED.
- * @retval  VERR_NO_MEMORY.
- * @param   pDevExt     The device extension.
- * @param   pSession    The session data.
- * @param   pReq        The request.
- */
-static int supdrvIOCtl_IdtInstall(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPIDTINSTALL pReq)
-{
-    PSUPDRVPATCHUSAGE   pUsagePre;
-    PSUPDRVPATCH        pPatchPre;
-    RTIDTR              Idtr;
-    PSUPDRVPATCH        pPatch;
-    RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    LogFlow(("supdrvIOCtl_IdtInstall\n"));
-
-    /*
-     * Preallocate entry for this CPU cause we don't wanna do
-     * that inside the spinlock!
-     */
-    pUsagePre = (PSUPDRVPATCHUSAGE)RTMemAlloc(sizeof(*pUsagePre));
-    if (!pUsagePre)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Take the spinlock and see what we need to do.
-     */
-    RTSpinlockAcquireNoInts(pDevExt->Spinlock, &SpinlockTmp);
-
-    /* check if we already got a free patch. */
-    if (!pDevExt->pIdtPatchesFree)
-    {
-        /*
-         * Allocate a patch - outside the spinlock of course.
-         */
-        RTSpinlockReleaseNoInts(pDevExt->Spinlock, &SpinlockTmp);
-
-        pPatchPre = (PSUPDRVPATCH)RTMemExecAlloc(sizeof(*pPatchPre));
-        if (!pPatchPre)
-            return VERR_NO_MEMORY;
-
-        RTSpinlockAcquireNoInts(pDevExt->Spinlock, &SpinlockTmp);
-    }
-    else
-    {
-        pPatchPre = pDevExt->pIdtPatchesFree;
-        pDevExt->pIdtPatchesFree = pPatchPre->pNext;
-    }
-
-    /* look for matching patch entry */
-    ASMGetIDTR(&Idtr);
-    pPatch = pDevExt->pIdtPatches;
-    while (pPatch && pPatch->pvIdt != (void *)Idtr.pIdt)
-        pPatch = pPatch->pNext;
-
-    if (!pPatch)
-    {
-        /*
-         * Create patch.
-         */
-        pPatch = supdrvIdtPatchOne(pDevExt, pPatchPre);
-        if (pPatch)
-            pPatchPre = NULL;           /* mark as used. */
-    }
-    else
-    {
-        /*
-         * Simply increment patch usage.
-         */
-        pPatch->cUsage++;
-    }
-
-    if (pPatch)
-    {
-        /*
-         * Increment and add if need be the session usage record for this patch.
-         */
-        PSUPDRVPATCHUSAGE   pUsage = pSession->pPatchUsage;
-        while (pUsage && pUsage->pPatch != pPatch)
-            pUsage = pUsage->pNext;
-
-        if (!pUsage)
-        {
-            /*
-             * Add usage record.
-             */
-            pUsagePre->cUsage     = 1;
-            pUsagePre->pPatch     = pPatch;
-            pUsagePre->pNext      = pSession->pPatchUsage;
-            pSession->pPatchUsage = pUsagePre;
-            pUsagePre = NULL;           /* mark as used. */
-        }
-        else
-        {
-            /*
-             * Increment usage count.
-             */
-            pUsage->cUsage++;
-        }
-    }
-
-    /* free patch - we accumulate them for paranoid saftly reasons. */
-    if (pPatchPre)
-    {
-        pPatchPre->pNext = pDevExt->pIdtPatchesFree;
-        pDevExt->pIdtPatchesFree = pPatchPre;
-    }
-
-    RTSpinlockReleaseNoInts(pDevExt->Spinlock, &SpinlockTmp);
-
-    /*
-     * Free unused preallocated buffers.
-     */
-    if (pUsagePre)
-        RTMemFree(pUsagePre);
-
-    pReq->u.Out.u8Idt = pDevExt->u8Idt;
-
-    return pPatch ? VINF_SUCCESS : VERR_IDT_FAILED;
-}
-
-
-/**
- * This creates a IDT patch entry.
- * If the first patch being installed it'll also determin the IDT entry
- * to use.
- *
- * @returns pPatch on success.
- * @returns NULL on failure.
- * @param   pDevExt     Pointer to globals.
- * @param   pPatch      Patch entry to use.
- *                      This will be linked into SUPDRVDEVEXT::pIdtPatches on
- *                      successful return.
- * @remark  Call must be owning the SUPDRVDEVEXT::Spinlock!
- */
-static PSUPDRVPATCH supdrvIdtPatchOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch)
-{
-    RTIDTR      Idtr;
-    PSUPDRVIDTE paIdt;
-    LogFlow(("supdrvIOCtl_IdtPatchOne: pPatch=%p\n", pPatch));
-
-    /*
-     * Get IDT.
-     */
-    ASMGetIDTR(&Idtr);
-    paIdt = (PSUPDRVIDTE)Idtr.pIdt;
-    /*
-     * Recent Linux kernels can be configured to 1G user /3G kernel.
-     */
-    if ((uintptr_t)paIdt < 0x40000000)
-    {
-        AssertMsgFailed(("bad paIdt=%p\n", paIdt));
-        return NULL;
-    }
-
-    if (!pDevExt->u8Idt)
-    {
-        /*
-         * Test out the alternatives.
-         *
-         * At the moment we do not support chaining thus we ASSUME that one of
-         * these 48 entries is unused (which is not a problem on Win32 and
-         * Linux to my knowledge).
-         */
-        /** @todo we MUST change this detection to try grab an entry which is NOT in use. This can be
-         * combined with gathering info about which guest system call gates we can hook up directly. */
-        unsigned    i;
-        uint8_t     u8Idt = 0;
-        static uint8_t au8Ints[] =
-        {
-#ifdef RT_OS_WINDOWS   /* We don't use 0xef and above because they are system stuff on linux (ef is IPI,
-                  * local apic timer, or some other frequently fireing thing). */
-            0xef, 0xee, 0xed, 0xec,
-#endif
-            0xeb, 0xea, 0xe9, 0xe8,
-            0xdf, 0xde, 0xdd, 0xdc,
-            0x7b, 0x7a, 0x79, 0x78,
-            0xbf, 0xbe, 0xbd, 0xbc,
-        };
-#if defined(RT_ARCH_AMD64) && defined(DEBUG)
-        static int  s_iWobble = 0;
-        unsigned    iMax = !(s_iWobble++ % 2) ? 0x80 : 0x100;
-        Log2(("IDT: Idtr=%p:%#x\n", (void *)Idtr.pIdt, (unsigned)Idtr.cbIdt));
-        for (i = iMax - 0x80; i*16+15 < Idtr.cbIdt && i < iMax; i++)
-        {
-            Log2(("%#x: %04x:%08x%04x%04x P=%d DPL=%d IST=%d Type1=%#x u32Reserved=%#x u5Reserved=%#x\n",
-                  i, paIdt[i].u16SegSel, paIdt[i].u32OffsetTop, paIdt[i].u16OffsetHigh, paIdt[i].u16OffsetLow,
-                  paIdt[i].u1Present, paIdt[i].u2DPL, paIdt[i].u3IST, paIdt[i].u5Type2,
-                  paIdt[i].u32Reserved, paIdt[i].u5Reserved));
-        }
-#endif
-        /* look for entries which are not present or otherwise unused. */
-        for (i = 0; i < sizeof(au8Ints) / sizeof(au8Ints[0]); i++)
-        {
-            u8Idt = au8Ints[i];
-            if (    u8Idt * sizeof(SUPDRVIDTE) < Idtr.cbIdt
-                &&  (   !paIdt[u8Idt].u1Present
-                     || paIdt[u8Idt].u5Type2 == 0))
-                break;
-            u8Idt = 0;
-        }
-        if (!u8Idt)
-        {
-            /* try again, look for a compatible entry .*/
-            for (i = 0; i < sizeof(au8Ints) / sizeof(au8Ints[0]); i++)
-            {
-                u8Idt = au8Ints[i];
-                if (    u8Idt * sizeof(SUPDRVIDTE) < Idtr.cbIdt
-                    &&  paIdt[u8Idt].u1Present
-                    &&  paIdt[u8Idt].u5Type2 == SUPDRV_IDTE_TYPE2_INTERRUPT_GATE
-                    &&  !(paIdt[u8Idt].u16SegSel & 3))
-                    break;
-                u8Idt = 0;
-            }
-            if (!u8Idt)
-            {
-                Log(("Failed to find appropirate IDT entry!!\n"));
-                return NULL;
-            }
-        }
-        pDevExt->u8Idt = u8Idt;
-        LogFlow(("supdrvIOCtl_IdtPatchOne: u8Idt=%x\n", u8Idt));
-    }
-
-    /*
-     * Prepare the patch
-     */
-    memset(pPatch, 0, sizeof(*pPatch));
-    pPatch->pvIdt                       = paIdt;
-    pPatch->cUsage                      = 1;
-    pPatch->pIdtEntry                   = &paIdt[pDevExt->u8Idt];
-    pPatch->SavedIdt                    = paIdt[pDevExt->u8Idt];
-    pPatch->ChangedIdt.u16OffsetLow     = (uint32_t)((uintptr_t)&pPatch->auCode[0] & 0xffff);
-    pPatch->ChangedIdt.u16OffsetHigh    = (uint32_t)((uintptr_t)&pPatch->auCode[0] >> 16);
-#ifdef RT_ARCH_AMD64
-    pPatch->ChangedIdt.u32OffsetTop     = (uint32_t)((uintptr_t)&pPatch->auCode[0] >> 32);
-#endif
-    pPatch->ChangedIdt.u16SegSel        = ASMGetCS();
-#ifdef RT_ARCH_AMD64
-    pPatch->ChangedIdt.u3IST            = 0;
-    pPatch->ChangedIdt.u5Reserved       = 0;
-#else /* x86 */
-    pPatch->ChangedIdt.u5Reserved       = 0;
-    pPatch->ChangedIdt.u3Type1          = 0;
-#endif /* x86 */
-    pPatch->ChangedIdt.u5Type2          = SUPDRV_IDTE_TYPE2_INTERRUPT_GATE;
-    pPatch->ChangedIdt.u2DPL            = 3;
-    pPatch->ChangedIdt.u1Present        = 1;
-
-    /*
-     * Generate the patch code.
-     */
-  {
-#ifdef RT_ARCH_AMD64
-    union
-    {
-        uint8_t    *pb;
-        uint32_t   *pu32;
-        uint64_t   *pu64;
-    } u, uFixJmp, uFixCall, uNotNested;
-    u.pb = &pPatch->auCode[0];
-
-    /* check the cookie */
-    *u.pb++ = 0x3d;                     //  cmp     eax, GLOBALCOOKIE
-    *u.pu32++ = pDevExt->u32Cookie;
-
-    *u.pb++ = 0x74;                     //  jz      @VBoxCall
-    *u.pb++ = 2;
-
-    /* jump to forwarder code. */
-    *u.pb++ = 0xeb;
-    uFixJmp = u;
-    *u.pb++ = 0xfe;
-
-                                        //  @VBoxCall:
-    *u.pb++ = 0x0f;                     //  swapgs
-    *u.pb++ = 0x01;
-    *u.pb++ = 0xf8;
-
-    /*
-     * Call VMMR0Entry
-     *      We don't have to push the arguments here, but we have top
-     *      reserve some stack space for the interrupt forwarding.
-     */
-# ifdef RT_OS_WINDOWS
-    *u.pb++ = 0x50;                     //  push    rax                             ; alignment filler.
-    *u.pb++ = 0x41;                     //  push    r8                              ; uArg
-    *u.pb++ = 0x50;
-    *u.pb++ = 0x52;                     //  push    rdx                             ; uOperation
-    *u.pb++ = 0x51;                     //  push    rcx                             ; pVM
-# else
-    *u.pb++ = 0x51;                     //  push    rcx                             ; alignment filler.
-    *u.pb++ = 0x52;                     //  push    rdx                             ; uArg
-    *u.pb++ = 0x56;                     //  push    rsi                             ; uOperation
-    *u.pb++ = 0x57;                     //  push    rdi                             ; pVM
-# endif
-
-    *u.pb++ = 0xff;                     //  call    qword [pfnVMMR0EntryInt wrt rip]
-    *u.pb++ = 0x15;
-    uFixCall = u;
-    *u.pu32++ = 0;
-
-    *u.pb++ = 0x48;                     //  add     rsp, 20h                        ; remove call frame.
-    *u.pb++ = 0x81;
-    *u.pb++ = 0xc4;
-    *u.pu32++ = 0x20;
-
-    *u.pb++ = 0x0f;                     // swapgs
-    *u.pb++ = 0x01;
-    *u.pb++ = 0xf8;
-
-    /* Return to R3. */
-    uNotNested = u;
-    *u.pb++ = 0x48;                     //  iretq
-    *u.pb++ = 0xcf;
-
-    while ((uintptr_t)u.pb & 0x7)       //  align 8
-        *u.pb++ = 0xcc;
-
-    /* Pointer to the VMMR0Entry. */    //  pfnVMMR0EntryInt dq StubVMMR0Entry
-    *uFixCall.pu32 = (uint32_t)(u.pb - uFixCall.pb - 4);                uFixCall.pb = NULL;
-    pPatch->offVMMR0EntryFixup = (uint16_t)(u.pb - &pPatch->auCode[0]);
-    *u.pu64++ = pDevExt->pvVMMR0 ? (uint64_t)pDevExt->pfnVMMR0EntryInt : (uint64_t)u.pb + 8;
-
-    /* stub entry. */                   //  StubVMMR0Entry:
-    pPatch->offStub = (uint16_t)(u.pb - &pPatch->auCode[0]);
-    *u.pb++ = 0x33;                     //  xor     eax, eax
-    *u.pb++ = 0xc0;
-
-    *u.pb++ = 0x48;                     //  dec     rax
-    *u.pb++ = 0xff;
-    *u.pb++ = 0xc8;
-
-    *u.pb++ = 0xc3;                     //  ret
-
-    /* forward to the original handler using a retf. */
-    *uFixJmp.pb = (uint8_t)(u.pb - uFixJmp.pb - 1);                     uFixJmp.pb = NULL;
-
-    *u.pb++ = 0x68;                     //  push    <target cs>
-    *u.pu32++ = !pPatch->SavedIdt.u5Type2 ? ASMGetCS() : pPatch->SavedIdt.u16SegSel;
-
-    *u.pb++ = 0x68;                     //  push    <low target rip>
-    *u.pu32++ = !pPatch->SavedIdt.u5Type2
-              ? (uint32_t)(uintptr_t)uNotNested.pb
-              : (uint32_t)pPatch->SavedIdt.u16OffsetLow
-              | (uint32_t)pPatch->SavedIdt.u16OffsetHigh << 16;
-
-    *u.pb++ = 0xc7;                     //  mov     dword [rsp + 4], <high target rip>
-    *u.pb++ = 0x44;
-    *u.pb++ = 0x24;
-    *u.pb++ = 0x04;
-    *u.pu32++ = !pPatch->SavedIdt.u5Type2
-              ? (uint32_t)((uint64_t)uNotNested.pb >> 32)
-              : pPatch->SavedIdt.u32OffsetTop;
-
-    *u.pb++ = 0x48;                     //  retf        ; does this require prefix?
-    *u.pb++ = 0xcb;
-
-#else /* RT_ARCH_X86 */
-
-    union
-    {
-        uint8_t    *pb;
-        uint16_t   *pu16;
-        uint32_t   *pu32;
-    } u, uFixJmpNotNested, uFixJmp, uFixCall, uNotNested;
-    u.pb = &pPatch->auCode[0];
-
-    /* check the cookie */
-    *u.pb++ = 0x81;                     //  cmp     esi, GLOBALCOOKIE
-    *u.pb++ = 0xfe;
-    *u.pu32++ = pDevExt->u32Cookie;
-
-    *u.pb++ = 0x74;                     //  jz      VBoxCall
-    uFixJmp = u;
-    *u.pb++ = 0;
-
-    /* jump (far) to the original handler / not-nested-stub. */
-    *u.pb++ = 0xea;                     //  jmp far NotNested
-    uFixJmpNotNested = u;
-    *u.pu32++ = 0;
-    *u.pu16++ = 0;
-
-    /* save selector registers. */      // VBoxCall:
-    *uFixJmp.pb = (uint8_t)(u.pb - uFixJmp.pb - 1);
-    *u.pb++ = 0x0f;                     //  push    fs
-    *u.pb++ = 0xa0;
-
-    *u.pb++ = 0x1e;                     //  push    ds
-
-    *u.pb++ = 0x06;                     //  push    es
-
-    /* call frame */
-    *u.pb++ = 0x51;                     //  push    ecx
-
-    *u.pb++ = 0x52;                     //  push    edx
-
-    *u.pb++ = 0x50;                     //  push    eax
-
-    /* load ds, es and perhaps fs before call. */
-    *u.pb++ = 0xb8;                     //  mov     eax, KernelDS
-    *u.pu32++ = ASMGetDS();
-
-    *u.pb++ = 0x8e;                     //  mov     ds, eax
-    *u.pb++ = 0xd8;
-
-    *u.pb++ = 0x8e;                     //  mov     es, eax
-    *u.pb++ = 0xc0;
-
-#ifdef RT_OS_WINDOWS
-    *u.pb++ = 0xb8;                     //  mov     eax, KernelFS
-    *u.pu32++ = ASMGetFS();
-
-    *u.pb++ = 0x8e;                     //  mov     fs, eax
-    *u.pb++ = 0xe0;
-#endif
-
-    /* do the call. */
-    *u.pb++ = 0xe8;                     //  call    _VMMR0Entry / StubVMMR0Entry
-    uFixCall = u;
-    pPatch->offVMMR0EntryFixup = (uint16_t)(u.pb - &pPatch->auCode[0]);
-    *u.pu32++ = 0xfffffffb;
-
-    *u.pb++ = 0x83;                     //  add     esp, 0ch   ; cdecl
-    *u.pb++ = 0xc4;
-    *u.pb++ = 0x0c;
-
-    /* restore selector registers. */
-    *u.pb++ = 0x07;                     //  pop     es
-                                        //
-    *u.pb++ = 0x1f;                     //  pop     ds
-
-    *u.pb++ = 0x0f;                     //  pop     fs
-    *u.pb++ = 0xa1;
-
-    uNotNested = u;                     // NotNested:
-    *u.pb++ = 0xcf;                     //  iretd
-
-    /* the stub VMMR0Entry. */          // StubVMMR0Entry:
-    pPatch->offStub = (uint16_t)(u.pb - &pPatch->auCode[0]);
-    *u.pb++ = 0x33;                     //  xor     eax, eax
-    *u.pb++ = 0xc0;
-
-    *u.pb++ = 0x48;                     //  dec     eax
-
-    *u.pb++ = 0xc3;                     //  ret
-
-    /* Fixup the VMMR0Entry call. */
-    if (pDevExt->pvVMMR0)
-        *uFixCall.pu32 = (uint32_t)pDevExt->pfnVMMR0EntryInt - (uint32_t)(uFixCall.pu32 + 1);
-    else
-        *uFixCall.pu32 = (uint32_t)&pPatch->auCode[pPatch->offStub] - (uint32_t)(uFixCall.pu32 + 1);
-
-    /* Fixup the forward / nested far jump. */
-    if (!pPatch->SavedIdt.u5Type2)
-    {
-        *uFixJmpNotNested.pu32++ = (uint32_t)uNotNested.pb;
-        *uFixJmpNotNested.pu16++ = ASMGetCS();
-    }
-    else
-    {
-        *uFixJmpNotNested.pu32++ = ((uint32_t)pPatch->SavedIdt.u16OffsetHigh << 16) | pPatch->SavedIdt.u16OffsetLow;
-        *uFixJmpNotNested.pu16++ = pPatch->SavedIdt.u16SegSel;
-    }
-#endif /* RT_ARCH_X86 */
-    Assert(u.pb <= &pPatch->auCode[sizeof(pPatch->auCode)]);
-#if 0
-    /* dump the patch code */
-    Log2(("patch code: %p\n", &pPatch->auCode[0]));
-    for (uFixCall.pb = &pPatch->auCode[0]; uFixCall.pb < u.pb; uFixCall.pb++)
-        Log2(("0x%02x,\n", *uFixCall.pb));
-#endif
-  }
-
-    /*
-     * Install the patch.
-     */
-    supdrvIdtWrite(pPatch->pIdtEntry, &pPatch->ChangedIdt);
-    AssertMsg(!memcmp((void *)pPatch->pIdtEntry, &pPatch->ChangedIdt, sizeof(pPatch->ChangedIdt)), ("The stupid change code didn't work!!!!!\n"));
-
-    /*
-     * Link in the patch.
-     */
-    pPatch->pNext = pDevExt->pIdtPatches;
-    pDevExt->pIdtPatches = pPatch;
-
-    return pPatch;
-}
-
-
-/**
- * Removes the sessions IDT references.
- * This will uninstall our IDT patch if we left unreferenced.
- *
- * @returns VINF_SUCCESS.
- * @param   pDevExt     Device globals.
- * @param   pSession    Session data.
- */
-static int supdrvIOCtl_IdtRemoveAll(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
-{
-    PSUPDRVPATCHUSAGE   pUsage;
-    RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    LogFlow(("supdrvIOCtl_IdtRemoveAll: pSession=%p\n", pSession));
-
-    /*
-     * Take the spinlock.
-     */
-    RTSpinlockAcquireNoInts(pDevExt->Spinlock, &SpinlockTmp);
-
-    /*
-     * Walk usage list, removing patches as their usage count reaches zero.
-     */
-    pUsage = pSession->pPatchUsage;
-    while (pUsage)
-    {
-        if (pUsage->pPatch->cUsage <= pUsage->cUsage)
-            supdrvIdtRemoveOne(pDevExt, pUsage->pPatch);
-        else
-            pUsage->pPatch->cUsage -= pUsage->cUsage;
-
-        /* next */
-        pUsage = pUsage->pNext;
-    }
-
-    /*
-     * Empty the usage chain and we're done inside the spinlock.
-     */
-    pUsage = pSession->pPatchUsage;
-    pSession->pPatchUsage = NULL;
-
-    RTSpinlockReleaseNoInts(pDevExt->Spinlock, &SpinlockTmp);
-
-    /*
-     * Free usage entries.
-     */
-    while (pUsage)
-    {
-        void *pvToFree = pUsage;
-        pUsage->cUsage = 0;
-        pUsage->pPatch = NULL;
-        pUsage = pUsage->pNext;
-        RTMemFree(pvToFree);
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Remove one patch.
- *
- * Worker for supdrvIOCtl_IdtRemoveAll.
- *
- * @param   pDevExt     Device globals.
- * @param   pPatch      Patch entry to remove.
- * @remark  Caller must own SUPDRVDEVEXT::Spinlock!
- */
-static void supdrvIdtRemoveOne(PSUPDRVDEVEXT pDevExt, PSUPDRVPATCH pPatch)
-{
-    LogFlow(("supdrvIdtRemoveOne: pPatch=%p\n", pPatch));
-
-    pPatch->cUsage = 0;
-
-    /*
-     * If the IDT entry was changed it have to kick around for ever!
-     * This will be attempted freed again, perhaps next time we'll succeed :-)
-     */
-    if (memcmp((void *)pPatch->pIdtEntry, &pPatch->ChangedIdt, sizeof(pPatch->ChangedIdt)))
-    {
-        AssertMsgFailed(("The hijacked IDT entry has CHANGED!!!\n"));
-        return;
-    }
-
-    /*
-     * Unlink it.
-     */
-    if (pDevExt->pIdtPatches != pPatch)
-    {
-        PSUPDRVPATCH pPatchPrev = pDevExt->pIdtPatches;
-        while (pPatchPrev)
-        {
-            if (pPatchPrev->pNext == pPatch)
-            {
-                pPatchPrev->pNext = pPatch->pNext;
-                break;
-            }
-            pPatchPrev = pPatchPrev->pNext;
-        }
-        Assert(!pPatchPrev);
-    }
-    else
-        pDevExt->pIdtPatches = pPatch->pNext;
-    pPatch->pNext = NULL;
-
-
-    /*
-     * Verify and restore the IDT.
-     */
-    AssertMsg(!memcmp((void *)pPatch->pIdtEntry, &pPatch->ChangedIdt, sizeof(pPatch->ChangedIdt)), ("The hijacked IDT entry has CHANGED!!!\n"));
-    supdrvIdtWrite(pPatch->pIdtEntry, &pPatch->SavedIdt);
-    AssertMsg(!memcmp((void *)pPatch->pIdtEntry, &pPatch->SavedIdt,   sizeof(pPatch->SavedIdt)),   ("The hijacked IDT entry has CHANGED!!!\n"));
-
-    /*
-     * Put it in the free list.
-     * (This free list stuff is to calm my paranoia.)
-     */
-    pPatch->pvIdt     = NULL;
-    pPatch->pIdtEntry = NULL;
-
-    pPatch->pNext = pDevExt->pIdtPatchesFree;
-    pDevExt->pIdtPatchesFree = pPatch;
-}
-
-
-/**
- * Write to an IDT entry.
- *
- * @param   pvIdtEntry      Where to write.
- * @param   pNewIDTEntry    What to write.
- */
-static void supdrvIdtWrite(volatile void *pvIdtEntry, const SUPDRVIDTE *pNewIDTEntry)
-{
-    RTR0UINTREG   uCR0;
-    RTR0UINTREG   uFlags;
-
-    /*
-     * On SMP machines (P4 hyperthreading included) we must preform a
-     * 64-bit locked write when updating the IDT entry.
-     *
-     * The F00F bugfix for linux (and probably other OSes) causes
-     * the IDT to be pointing to an readonly mapping. We get around that
-     * by temporarily turning of WP. Since we're inside a spinlock at this
-     * point, interrupts are disabled and there isn't any way the WP bit
-     * flipping can cause any trouble.
-     */
-
-    /* Save & Clear interrupt flag; Save & clear WP. */
-    uFlags = ASMGetFlags();
-    ASMSetFlags(uFlags & ~(RTR0UINTREG)(1 << 9)); /*X86_EFL_IF*/
-    Assert(!(ASMGetFlags() & (1 << 9)));
-    uCR0 = ASMGetCR0();
-    ASMSetCR0(uCR0 & ~(RTR0UINTREG)(1 << 16));    /*X86_CR0_WP*/
-
-    /* Update IDT Entry */
-#ifdef RT_ARCH_AMD64
-    ASMAtomicXchgU128((volatile uint128_t *)pvIdtEntry, *(uint128_t *)(uintptr_t)pNewIDTEntry);
-#else
-    ASMAtomicXchgU64((volatile uint64_t *)pvIdtEntry, *(uint64_t *)(uintptr_t)pNewIDTEntry);
-#endif
-
-    /* Restore CR0 & Flags */
-    ASMSetCR0(uCR0);
-    ASMSetFlags(uFlags);
-}
-#endif /* VBOX_WITH_IDT_PATCHING */
-
-
 /**
  * Opens an image. If it's the first time it's opened the call must upload
  * the bits using the supdrvIOCtl_LdrLoad() / SUPDRV_IOCTL_LDR_LOAD function.
@@ -3918,8 +3217,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
             rc = VINF_SUCCESS;
             break;
         case SUPLDRLOADEP_VMMR0:
-            rc = supdrvLdrSetR0EP(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
-                                  pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
+            rc = supdrvLdrSetVMMR0EPs(pDevExt, pReq->u.In.EP.VMMR0.pvVMMR0, pReq->u.In.EP.VMMR0.pvVMMR0EntryInt,
+                                      pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
             break;
         case SUPLDRLOADEP_SERVICE:
             pImage->pfnServiceReqHandler = pReq->u.In.EP.Service.pfnServiceReq;
@@ -3940,7 +3239,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         rc = pImage->pfnModuleInit();
 #endif
         if (rc && pDevExt->pvVMMR0 == pImage->pvImage)
-            supdrvLdrUnsetR0EP(pDevExt);
+            supdrvLdrUnsetVMMR0EPs(pDevExt);
     }
 
     if (rc)
@@ -4215,8 +3514,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
 
 
 /**
- * Updates the IDT patches to point to the specified VMM R0 entry
- * point (i.e. VMMR0Enter()).
+ * Updates the VMMR0 entry point pointers.
  *
  * @returns IPRT status code.
  * @param   pDevExt             Device globals.
@@ -4227,7 +3525,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
  * @param   pvVMMR0EntryEx      VMMR0EntryEx address.
  * @remark  Caller must own the loader mutex.
  */
-static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
+static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryInt, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx)
 {
     int rc = VINF_SUCCESS;
     LogFlow(("supdrvLdrSetR0EP pvVMMR0=%p pvVMMR0EntryInt=%p\n", pvVMMR0, pvVMMR0EntryInt));
@@ -4238,28 +3536,10 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
      */
     if (!pDevExt->pvVMMR0)
     {
-#ifdef VBOX_WITH_IDT_PATCHING
-        PSUPDRVPATCH pPatch;
-#endif
-
-        /*
-         * Set it and update IDT patch code.
-         */
         pDevExt->pvVMMR0            = pvVMMR0;
         pDevExt->pfnVMMR0EntryInt   = pvVMMR0EntryInt;
         pDevExt->pfnVMMR0EntryFast  = pvVMMR0EntryFast;
         pDevExt->pfnVMMR0EntryEx    = pvVMMR0EntryEx;
-#ifdef VBOX_WITH_IDT_PATCHING
-        for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
-        {
-# ifdef RT_ARCH_AMD64
-            ASMAtomicXchgU64((volatile uint64_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup], (uint64_t)pvVMMR0);
-# else /* RT_ARCH_X86 */
-            ASMAtomicXchgU32((volatile uint32_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
-                             (uint32_t)pvVMMR0 - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
-# endif
-        }
-#endif /* VBOX_WITH_IDT_PATCHING */
     }
     else
     {
@@ -4280,33 +3560,16 @@ static int supdrvLdrSetR0EP(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0E
 
 
 /**
- * Unsets the R0 entry point installed by supdrvLdrSetR0EP.
+ * Unsets the VMMR0 entry point installed by supdrvLdrSetR0EP.
  *
  * @param   pDevExt     Device globals.
  */
-static void supdrvLdrUnsetR0EP(PSUPDRVDEVEXT pDevExt)
+static void supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt)
 {
-#ifdef VBOX_WITH_IDT_PATCHING
-    PSUPDRVPATCH pPatch;
-#endif
-
     pDevExt->pvVMMR0            = NULL;
     pDevExt->pfnVMMR0EntryInt   = NULL;
     pDevExt->pfnVMMR0EntryFast  = NULL;
     pDevExt->pfnVMMR0EntryEx    = NULL;
-
-#ifdef VBOX_WITH_IDT_PATCHING
-    for (pPatch = pDevExt->pIdtPatches; pPatch; pPatch = pPatch->pNext)
-    {
-# ifdef RT_ARCH_AMD64
-        ASMAtomicXchgU64((volatile uint64_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
-                         (uint64_t)&pPatch->auCode[pPatch->offStub]);
-# else /* RT_ARCH_X86 */
-        ASMAtomicXchgU32((volatile uint32_t *)&pPatch->auCode[pPatch->offVMMR0EntryFixup],
-                         (uint32_t)&pPatch->auCode[pPatch->offStub] - (uint32_t)&pPatch->auCode[pPatch->offVMMR0EntryFixup + 4]);
-# endif
-    }
-#endif /* VBOX_WITH_IDT_PATCHING */
 }
 
 
@@ -4381,9 +3644,9 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     else
         pDevExt->pLdrImages = pImage->pNext;
 
-    /* check if this is VMMR0.r0 and fix the Idt patches if it is. */
+    /* check if this is VMMR0.r0 unset its entry point pointers. */
     if (pDevExt->pvVMMR0 == pImage->pvImage)
-        supdrvLdrUnsetR0EP(pDevExt);
+        supdrvLdrUnsetVMMR0EPs(pDevExt);
 
     /* check for objects with destructors in this image. (Shouldn't happen.) */
     if (pDevExt->pObjs)

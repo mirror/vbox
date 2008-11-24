@@ -57,9 +57,6 @@ SUPUninstall_LIBS     = $(LIB_RUNTIME)
 tstInt_TEMPLATE       = VBOXR3EXE
 tstInt_SOURCES        = tstInt.cpp
 tstInt_LIBS           = $(LIB_RUNTIME)
-ifdef VBOX_WITH_IDT_PATCHING
-tstInt_DEFS          += VBOX_WITH_IDT_PATCHING
-endif
 
 tstContiguous_TEMPLATE= VBOXR3TSTEXE
 tstContiguous_SOURCES = tstContiguous.cpp

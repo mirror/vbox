@@ -297,96 +297,6 @@ __END_DECLS
 /** Pointer to the device extension. */
 typedef struct SUPDRVDEVEXT *PSUPDRVDEVEXT;
 
-#ifdef VBOX_WITH_IDT_PATCHING
-
-/**
- * An IDT Entry.
- */
-typedef struct SUPDRVIDTE
-{
-    /** Low offset word. */
-    uint32_t    u16OffsetLow : 16;
-    /** Segment Selector. */
-    uint32_t    u16SegSel : 16;
-#ifdef RT_ARCH_AMD64
-    /** Interrupt Stack Table index. */
-    uint32_t    u3IST : 3;
-    /** Reserved, ignored. */
-    uint32_t    u5Reserved : 5;
-#else
-    /** Reserved. */
-    uint32_t    u5Reserved : 5;
-    /** IDT Type part one (not used for task gate). */
-    uint32_t    u3Type1 : 3;
-#endif
-    /** IDT Type part two. */
-    uint32_t    u5Type2 : 5;
-    /** Descriptor Privilege level. */
-    uint32_t    u2DPL : 2;
-    /** Present flag. */
-    uint32_t    u1Present : 1;
-    /** High offset word. */
-    uint32_t    u16OffsetHigh : 16;
-#ifdef RT_ARCH_AMD64
-    /** The upper top part of the address. */
-    uint32_t    u32OffsetTop;
-    /** Reserved dword for qword (aligning the struct), ignored. */
-    uint32_t    u32Reserved;
-#endif
-} SUPDRVIDTE, *PSUPDRVIDTE;
-
-/** The u5Type2 value for an interrupt gate. */
-#define SUPDRV_IDTE_TYPE2_INTERRUPT_GATE    0x0e
-
-
-/**
- * Patch code.
- */
-typedef struct SUPDRVPATCH
-{
-#define SUPDRV_PATCH_CODE_SIZE  0x50
-    /** Patch code. */
-    uint8_t                         auCode[SUPDRV_PATCH_CODE_SIZE];
-    /** Changed IDT entry (for parnoid UnpatchIdt()). */
-    SUPDRVIDTE                      ChangedIdt;
-    /** Saved IDT entry. */
-    SUPDRVIDTE                      SavedIdt;
-    /** Pointer to the IDT.
-     * We ASSUME the IDT is not re(al)located after bootup and use this as key
-     * for the patches rather than processor number. This prevents some
-     * stupid nesting stuff from happening in case of processors sharing the
-     * IDT.
-     * We're fucked if the processors have different physical mapping for
-     * the(se) page(s), but we'll find that out soon enough in VBOX_STRICT mode.
-     */
-    void                           *pvIdt;
-    /** Pointer to the IDT entry. */
-    SUPDRVIDTE volatile            *pIdtEntry;
-    /** Usage counter. */
-    uint32_t volatile               cUsage;
-    /** The offset into auCode of the VMMR0Entry fixup. */
-    uint16_t                        offVMMR0EntryFixup;
-    /** The offset into auCode of the stub function. */
-    uint16_t                        offStub;
-    /** Pointer to the next patch. */
-    struct SUPDRVPATCH * volatile pNext;
-} SUPDRVPATCH, *PSUPDRVPATCH;
-
-/**
- * Usage record for a patch.
- */
-typedef struct SUPDRVPATCHUSAGE
-{
-    /** Next in the chain. */
-    struct SUPDRVPATCHUSAGE * volatile pNext;
-    /** The patch this usage applies to. */
-    PSUPDRVPATCH                    pPatch;
-    /** Usage count. */
-    uint32_t volatile               cUsage;
-} SUPDRVPATCHUSAGE, *PSUPDRVPATCHUSAGE;
-
-#endif /* VBOX_WITH_IDT_PATCHING */
-
 
 /**
  * Memory reference types.
@@ -565,10 +475,6 @@ typedef struct SUPDRVSESSION
 
     /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
     PSUPDRVLDRUSAGE volatile        pLdrUsage;
-#ifdef VBOX_WITH_IDT_PATCHING
-    /** Patch usage records. (protected by SUPDRVDEVEXT::SpinLock) */
-    PSUPDRVPATCHUSAGE volatile      pPatchUsage;
-#endif
     /** The VM associated with the session. */
     PVM                             pVM;
     /** List of generic usage records. (protected by SUPDRVDEVEXT::SpinLock) */
@@ -618,13 +524,6 @@ typedef struct SUPDRVDEVEXT
     /** Spinlock to serialize the initialization,
      * usage counting and destruction of the IDT entry override and objects. */
     RTSPINLOCK                      Spinlock;
-
-#ifdef VBOX_WITH_IDT_PATCHING
-    /** List of patches. */
-    PSUPDRVPATCH volatile           pIdtPatches;
-    /** List of patches Free. */
-    PSUPDRVPATCH volatile           pIdtPatchesFree;
-#endif
 
     /** List of registered objects. Protected by the spinlock. */
     PSUPDRVOBJ volatile             pObjs;
