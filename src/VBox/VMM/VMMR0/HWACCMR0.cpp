@@ -958,11 +958,9 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
     rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);
 
-#ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
     AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVCpu->hwaccm.s.idEnteredCpu, (int)idCpu));
     pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
-#endif
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
     return rc;
