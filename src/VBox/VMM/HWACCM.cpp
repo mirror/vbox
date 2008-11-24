@@ -1108,6 +1108,8 @@ VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
         case VERR_VMX_INVALID_VMCS_PTR:
             LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
             LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.ulVMCSRevision));
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Entered Cpu %d\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.idEnteredCpu));
+            LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current Cpu %d\n", i, pVM->aCpus[i].hwaccm.s.vmx.lasterror.idCurrentCpu));
             break;
 
         case VERR_VMX_UNABLE_TO_START_VM:

@@ -860,7 +860,7 @@ ResumeExecution:
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
              * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
              * force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
-             * break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
+             * break the guest. Sounds very unlikely, but such timing sensitive problems are not as rare as you might think.
              */
             VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
             /* Irq inhibition is no longer active; clear the corresponding SVM state. */
