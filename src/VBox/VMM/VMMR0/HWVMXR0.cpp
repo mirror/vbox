@@ -1820,7 +1820,7 @@ ResumeExecution:
             /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here.
              * Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
              * force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
-             * break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
+             * break the guest. Sounds very unlikely, but such timing sensitive problems are not as rare as you might think.
              */
             VM_FF_CLEAR(pVM, VM_FF_INHIBIT_INTERRUPTS);
             /* Irq inhibition is no longer active; clear the corresponding VMX state. */
@@ -3021,6 +3021,8 @@ end:
     {
         VMXGetActivateVMCS(&pVCpu->hwaccm.s.vmx.lasterror.u64VMCSPhys);
         pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
+        pVCpu->hwaccm.s.vmx.lasterror.idEnteredCpu   = pVCpu->hwaccm.s.idEnteredCpu;
+        pVCpu->hwaccm.s.vmx.lasterror.idCurrentCpu   = RTMpCpuId();
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);

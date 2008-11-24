@@ -408,6 +408,8 @@ typedef struct HWACCMCPU
             uint32_t                ulVMCSRevision;
             uint32_t                ulInstrError;
             uint32_t                ulExitReason;
+            RTCPUID                 idEnteredCpu;
+            RTCPUID                 idCurrentCpu;
             uint32_t                padding;
         } lasterror;
 
