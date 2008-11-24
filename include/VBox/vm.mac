@@ -71,7 +71,9 @@ struc VM
     .fRawR0Enabled      resb 1
     .fPATMEnabled       resb 1
     .fCSAMEnabled       resb 1
-    .fHWACCMEnabled     resb 3
+    .fHWACCMEnabled     resb 1
+    .fHwVirtExtForced   resb 1
+    .fPARAVEnabled      resb 1
 
     alignb 8
 

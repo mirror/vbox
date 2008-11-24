@@ -525,6 +525,10 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         rc = CFGMR3Init(pVM, pfnCFGMConstructor, pvUserCFGM);
         if (RT_SUCCESS(rc))
         {
+            rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "fHwVirtExtForced", &pVM->fHwVirtExtForced, false);
+            if (RT_SUCCESS(rc) && pVM->fHwVirtExtForced)
+                pVM->fHWACCMEnabled = true;
+
             /*
              * If executing in fake suplib mode disable RR3 and RR0 in the config.
              */
@@ -540,14 +544,17 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
             /*
              * Make sure the CPU count in the config data matches.
              */
-            uint32_t cCPUsCfg;
-            rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &cCPUsCfg, 1);
-            AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
-            if (RT_SUCCESS(rc) && cCPUsCfg != cCPUs)
+            if (RT_SUCCESS(rc))
             {
-                AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCPUs=%RU32 does not match!\n",
-                                       cCPUsCfg, cCPUs));
-                rc = VERR_INVALID_PARAMETER;
+                uint32_t cCPUsCfg;
+                rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "NumCPUs", &cCPUsCfg, 1);
+                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
+                if (RT_SUCCESS(rc) && cCPUsCfg != cCPUs)
+                {
+                    AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCPUs=%RU32 does not match!\n",
+                                           cCPUsCfg, cCPUs));
+                    rc = VERR_INVALID_PARAMETER;
+                }
             }
             if (RT_SUCCESS(rc))
             {
