@@ -177,6 +177,9 @@ private:
     USBProxyService *mUSBProxyService;
 #endif /* VBOX_WITH_USB */
 
+    /* Features that can be queried with GetProcessorFeature */
+    bool fVTxAMDVSupported, fLongModeSupported, fPAESupported;
+
     HostPowerService *mHostPowerService;
 };
 
