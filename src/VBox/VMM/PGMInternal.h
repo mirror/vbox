@@ -2161,7 +2161,7 @@ typedef struct PGM
      * Even though these are 4 pointers, what they point at is a single table.
      * Thus, it's possible to walk the 2048 entries starting where apHCPaePDs[0] points. */
     R3PTRTYPE(PX86PDPAE)            apShwPaePDsR3[4];
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** The four PDs for the low 4GB - R0 Ptr.
      * Same kind of mapping as apHCPaePDs. */
     R0PTRTYPE(PX86PDPAE)            apShwPaePDsR0[4];
