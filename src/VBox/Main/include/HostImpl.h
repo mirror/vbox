@@ -178,7 +178,7 @@ private:
 #endif /* VBOX_WITH_USB */
 
     /* Features that can be queried with GetProcessorFeature */
-    bool fVTxAMDVSupported, fLongModeSupported, fPAESupported;
+    BOOL fVTxAMDVSupported, fLongModeSupported, fPAESupported;
 
     HostPowerService *mHostPowerService;
 };
