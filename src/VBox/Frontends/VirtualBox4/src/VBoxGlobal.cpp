@@ -3824,30 +3824,35 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
  *  Formats the given \a size value in bytes to a human readable string
  *  in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
  *
- *  The \a mode parameter is used for resulting numbers that get a fractional
- *  part after converting the \a size to KB, MB etc:
+ *  The \a mode parameter is used for rounding the resulting number
+ *  after converting the \a size to KB, MB etc:
  *  <ul>
- *  <li>When \a mode is 0, the result is rounded to the closest number
- *      containing two decimal digits.
+ *  <li>When \a mode is FormatSize_Round, the result is rounded to the
+ *      closest number containing \a decimal number of digits.
  *  </li>
- *  <li>When \a mode is -1, the result is rounded to the largest two decimal
- *      digit number that is not greater than the result. This guarantees that
- *      converting the resulting string back to the integer value in bytes
- *      will not produce a value greater that the initial \a size parameter.
+ *  <li>When \a mode is FormatSize_RoundDown, the result is rounded to the
+ *      largest \a decimal number of digits that is not greater than the
+ *      result. This guarantees that converting the resulting string back
+ *      to the integer value in bytes will not produce a value greater that
+ *      the initial \a size parameter.
  *  </li>
- *  <li>When \a mode is 1, the result is rounded to the smallest two decimal
- *      digit number that is not less than the result. This guarantees that
- *      converting the resulting string back to the integer value in bytes
- *      will not produce a value less that the initial \a size parameter.
+ *  <li>When \a mode is FormatSize_RoundUp, the result is rounded to the
+ *      smallest \a decimal number of digits that is not less than the
+ *      result. This guarantees that converting the resulting string back
+ *      to the integer value in bytes will not produce a value less that
+ *      the initial \a size parameter.
  *  </li>
  *  </ul>
  *
- *  @param  aSize   size value in bytes
- *  @param  aMode   convertion mode (-1, 0 or 1)
- *  @return         human-readable size string
+ *  @param  aSize    size value in bytes
+ *  @param  aMode    convertion mode (FormatSize_Round, FormatSize_RoundDown,
+ *                                                      FormatSize_RoundUp)
+ *  @param  aDecimal the number of decimal digits in result
+ *  @return          human-readable size string
  */
 /* static */
-QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
+QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
+                                VBoxDefs::FormatSize aMode /* = FormatSize_Round */)
 {
     static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL };
 
@@ -3886,25 +3891,29 @@ QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
     }
 
     quint64 intg = aSize / denom;
-    quint64 hund = aSize % denom;
+    quint64 decm = aSize % denom;
+    quint64 mult = 1;
+    for (uint i = 0; i < aDecimal; ++ i) mult *= 10;
 
     QString number;
     if (denom > 1)
     {
-        if (hund)
+        if (decm)
         {
-            hund *= 100;
+            decm *= mult;
             /* not greater */
-            if (aMode < 0) hund = hund / denom;
+            if (aMode == VBoxDefs::FormatSize_RoundDown)
+                decm = decm / denom;
             /* not less */
-            else if (aMode > 0) hund = (hund + denom - 1) / denom;
+            else if (aMode == VBoxDefs::FormatSize_RoundUp)
+                decm = (decm + denom - 1) / denom;
             /* nearest */
-            else hund = (hund + denom / 2) / denom;
+            else decm = (decm + denom / 2) / denom;
         }
         /* check for the fractional part overflow due to rounding */
-        if (hund == 100)
+        if (decm == mult)
         {
-            hund = 0;
+            decm = 0;
             ++ intg;
             /* check if we've got 1024 XB after rounding and scale down if so */
             if (intg == 1024 && Suffixes [suffix + 1] != NULL)
@@ -3913,8 +3922,9 @@ QString VBoxGlobal::formatSize (quint64 aSize, int aMode /* = 0 */)
                 ++ suffix;
             }
         }
-        number = QString ("%1%2%3").arg (intg).arg (decimalSep())
-                                   .arg (QString::number (hund).rightJustified (2, '0'));
+        number = QString::number (intg);
+        if (aDecimal) number += QString ("%1%2").arg (decimalSep())
+            .arg (QString::number (decm).rightJustified (aDecimal, '0'));
     }
     else
     {

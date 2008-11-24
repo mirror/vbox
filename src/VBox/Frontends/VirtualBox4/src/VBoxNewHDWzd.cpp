@@ -127,8 +127,8 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
         }
     }
     mSliderScale = qMax (mSliderScale, 8);
-    mLeName->setValidator (new QRegExpValidator (QRegExp( ".+" ), this));
-    mLeSize->setValidator (new QRegExpValidator (QRegExp(vboxGlobal().sizeRegexp()), this));
+    mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
+    mLeSize->setValidator (new QRegExpValidator (QRegExp (vboxGlobal().sizeRegexp()), this));
     mLeSize->setAlignment (Qt::AlignRight);
     mWValNameAndSize = new QIWidgetValidator (mPageNameAndSize, this);
     connect (mWValNameAndSize, SIGNAL (validityChanged (const QIWidgetValidator *)),
