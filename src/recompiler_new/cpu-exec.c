@@ -108,7 +108,11 @@ static void cpu_exec_nocache(int max_cycles, TranslationBlock *orig_tb)
                      max_cycles);
     env->current_tb = tb;
     /* execute the generated code */
+#if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
+    tcg_qemu_tb_exec(tb->tc_ptr, next_tb);
+#else
     next_tb = tcg_qemu_tb_exec(tb->tc_ptr);
+#endif
 
     if ((next_tb & 3) == 2) {
         /* Restore PC.  This may happen if async event occurs before
@@ -472,7 +476,11 @@ int cpu_exec(CPUState *env1)
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
                     RAWEx_ProfileStart(env, STATS_QEMU_RUN_EMULATED_CODE);
+#if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
+                    tcg_qemu_tb_exec(tc_ptr, next_tb); 
+#else
                     next_tb = tcg_qemu_tb_exec(tc_ptr);
+#endif
                     RAWEx_ProfileStop(env, STATS_QEMU_RUN_EMULATED_CODE);
                     env->current_tb = NULL;
                      if ((next_tb & 3) == 2) {
