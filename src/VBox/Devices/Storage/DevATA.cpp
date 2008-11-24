@@ -2280,7 +2280,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         atapiReadSectors(s, iATAPILBA, cSectors, 2352);
                         break;
                     default:
-                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM sector format not supported\n", s->iLUN));
+                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM sector format not supported (%#x)\n", s->iLUN, pbPacket[9] & 0xf8));
                         atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                         break;
                 }
