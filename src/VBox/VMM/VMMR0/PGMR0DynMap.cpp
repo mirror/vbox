@@ -1565,8 +1565,36 @@ static int pgmR0DynMapTest(PVM pVM)
                 LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
                 rc = VERR_INTERNAL_ERROR;
             }
+            LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Trigger an overflow error.
+                 */
+                LogRel(("Test #4\n"));
+                ASMIntDisable();
+                for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 - 3 + 1 && RT_SUCCESS(rc) && pv2 != pv; i++)
+                    rc = PGMDynMapHCPage(pVM, cr3 + PAGE_SIZE * -(i + 5), &pv2);
+                ASMIntEnable();
+                if (rc == VERR_PGM_DYNMAP_FULL_SET)
+                {
+                    rc = VINF_SUCCESS;
+
+                    /* flush the set. */
+                    ASMIntDisable();
+                    PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
+                    PGMDynMapReleaseAutoSet(&pVM->aCpus[0]);
+                    PGMDynMapStartAutoSet(&pVM->aCpus[0]);
+                    ASMIntEnable();
+                }
+                else
+                {
+                    LogRel(("failed(%d): rc=%Rrc, wanted %d ; pv2=%p Set=%u/%u\n", __LINE__,
+                            rc, VERR_PGM_DYNMAP_FULL_SET, pv2, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+                    if (RT_SUCCESS(rc)) rc = VERR_INTERNAL_ERROR;
+                }
+            }
         }
-        LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
     }
     else
     {
@@ -1580,7 +1608,7 @@ static int pgmR0DynMapTest(PVM pVM)
      */
     if (RT_SUCCESS(rc))
     {
-        LogRel(("Test #4\n"));
+        LogRel(("Test #5\n"));
         ASMIntDisable();
         RTHCPHYS  HCPhysPT = RTR0MemObjGetPagePhysAddr(pThis->pSegHead->ahMemObjPTs[0], 0);
         rc  = PGMDynMapHCPage(pVM, HCPhysPT, &pv);
