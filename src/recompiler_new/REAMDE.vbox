@@ -1,0 +1,3 @@
+QEMU is based on r5495 of SVN repository. Modified parts related to calls 
+of external functions, to allow loading recompiler library as regular shared object
+in high memory on 64-bit systems and MSVC compilation fixes.
