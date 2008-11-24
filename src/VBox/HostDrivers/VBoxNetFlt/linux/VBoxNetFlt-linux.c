@@ -56,6 +56,10 @@
 # define VBOX_SKB_MAC_HDR(skb) skb->mac.raw
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+# define CHECKSUM_PARTIAL CHECKSUM_HW
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) */
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 # define VBOX_SKB_IS_GSO(skb) skb_is_gso(skb)
                                         /* No features, very dumb device */
