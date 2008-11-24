@@ -398,6 +398,14 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogPrintfV",                           (void *)UNWIND_WRAP(RTLogPrintfV) },
     { "AssertMsg1",                             (void *)UNWIND_WRAP(AssertMsg1) },
     { "AssertMsg2",                             (void *)AssertMsg2 }, /** @todo replace this by RTAssertMsg2V */
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+    { "RTR0AssertPanicSystem",                  (void *)RTR0AssertPanicSystem },
+#endif
+#if defined(RT_OS_DARWIN)
+    { "RTAssertMsg1",                           (void *)RTAssertMsg1 },
+    { "RTAssertMsg2",                           (void *)RTAssertMsg2 },
+    { "RTAssertMsg2V",                          (void *)RTAssertMsg2V },
+#endif
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
