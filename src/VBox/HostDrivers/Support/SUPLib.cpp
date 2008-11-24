@@ -406,6 +406,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTR0MemObjAllocPage",                    0xefef0012 },
         { "RTR0MemObjAllocPhysNC",                  0xefef0013 },
         { "RTR0MemObjAllocLow",                     0xefef0014 },
+        { "RTR0MemObjEnterPhys",                    0xefef0014 },
         { "RTR0MemObjFree",                         0xefef0015 },
         { "RTR0MemObjGetPagePhysAddr",              0xefef0016 },
         { "RTR0MemObjMapUser",                      0xefef0017 },
