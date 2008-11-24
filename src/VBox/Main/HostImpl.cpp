@@ -1175,6 +1175,83 @@ STDMETHODIMP Host::GetProcessorDescription(ULONG cpuId, BSTR *description)
     return E_NOTIMPL;
 }
 
+/**
+ * Returns whether a host processor feature is supported or not
+ *
+ * @returns COM status code
+ * @param   Feature to query.
+ * @param   address of supported bool result variable
+ */
+STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T feature, BOOL *supported)
+{
+    if (!supported)
+        return E_POINTER;
+    AutoWriteLock alock (this);
+    CHECK_READY();
+
+    bool fVTxAMDVSupported = false;
+    bool fLongModeSupported = false;
+    bool fPAESupported = false;
+
+    if (ASMHasCpuId())
+    {
+        uint32_t u32FeaturesECX;
+        uint32_t u32Dummy;
+        uint32_t u32FeaturesEDX;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
+
+        ASMCpuId (0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        ASMCpuId (1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
+        /* Query AMD features. */
+        ASMCpuId (0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+
+        fLongModeSupported = !!(u32AMDFeatureEDX & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE);
+        fPAESupported      = !!(u32FeaturesEDX & X86_CPUID_FEATURE_EDX_PAE);
+
+        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
+           )
+        {
+            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+                fVTxAMDVSupported = true;
+        }
+        else
+        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
+           )
+        {
+            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+                fVTxAMDVSupported = true;
+        }
+    }
+
+    switch (feature)
+    {
+    case ProcessorFeature_HWVirtEx:
+        *supported = fVTxAMDVSupported;
+        break;
+
+    case ProcessorFeature_PAE:
+        *supported = fPAESupported;
+        break;
+
+    case ProcessorFeature_LongMode:
+        *supported = fLongModeSupported;
+        break;
+
+    default:
+        return E_NOTIMPL;
+    }
+    return S_OK;
+}
 
 /**
  * Returns the amount of installed system memory in megabytes

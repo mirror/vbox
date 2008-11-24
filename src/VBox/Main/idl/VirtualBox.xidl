@@ -610,6 +610,19 @@
     <const name="HostDriveCaptured" value="3"/>
   </enum>
 
+  <enum
+    name="ProcessorFeature"
+    uuid="b8353b35-705d-4796-9967-ebfb7ba54af4"
+  >
+    <desc>
+      CPU features.
+    </desc>
+
+    <const name="HWVirtEx"        value="0"/>
+    <const name="PAE"             value="1"/>
+    <const name="LongMode"        value="2"/>
+  </enum>
+
 
   <!--
   // IVirtualBoxErrorInfo
@@ -5031,7 +5044,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="489fb370-c227-4d43-9761-ceb28484fd9f"
+     uuid="4be2e85f-a54c-4bc7-8bf6-f070f9113940"
      wsmap="managed"
      >
     <desc>
@@ -5118,6 +5131,20 @@
         <desc>
           Speed value. 0 is returned if value is not known or @a cpuId is
           invalid.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getProcessorFeature">
+      <desc>Query whether a CPU feature is supported or not.</desc>
+      <param name="feature" type="ProcessorFeature" dir="in">
+        <desc>
+          CPU Feature identifier.
+        </desc>
+      </param>
+      <param name="supported" type="boolean" dir="return">
+        <desc>
+          Feature is supported or not.
         </desc>
       </param>
     </method>
