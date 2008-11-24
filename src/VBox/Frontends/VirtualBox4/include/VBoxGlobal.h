@@ -843,7 +843,8 @@ public:
     static QString sizeRegexp();
 
     static quint64 parseSize (const QString &);
-    static QString formatSize (quint64, int aMode = 0);
+    static QString formatSize (quint64 aSize, uint aDecimal = 2,
+                               VBoxDefs::FormatSize aMode = VBoxDefs::FormatSize_Round);
 
     static quint64 requiredVideoMemory (CMachine *aMachine = 0);
 

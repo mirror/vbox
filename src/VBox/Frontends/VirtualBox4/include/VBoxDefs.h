@@ -123,6 +123,14 @@ struct VBoxDefs
         AddVDMUrlsEventType
     };
 
+    /** Size formatting types. */
+    enum FormatSize
+    {
+        FormatSize_Round,
+        FormatSize_RoundDown,
+        FormatSize_RoundUp
+    };
+
     static const char* GUI_LastWindowPosition;
     static const char* GUI_LastWindowPosition_Max;
     static const char* GUI_Fullscreen;
