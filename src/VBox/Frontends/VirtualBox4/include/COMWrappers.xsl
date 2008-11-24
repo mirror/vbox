@@ -107,7 +107,7 @@
 /*
  *  DO NOT EDIT! This is a generated file.
  *
- *  Qt-based wrapper classes for VirualBox Main API (COM interfaces)
+ *  Qt-based wrapper classes for VirtualBox Main API (COM interfaces)
  *  generated from XIDL (XML interface definition).
  *
  *  Source    : src/VBox/Main/idl/VirtualBox.xidl

@@ -1888,7 +1888,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
             ""
             "Note that you can also access the above files by selecting "
             "<b>Show Log</b> from the <b>Machine</b> menu of the main "
-            "VirualBox window.</p>"
+            "VirtualBox window.</p>"
             ""
             "<p>Press <b>OK</b> if you want to power off the machine "
             "or press <b>Ignore</b> if you want to leave it as is for debugging. "

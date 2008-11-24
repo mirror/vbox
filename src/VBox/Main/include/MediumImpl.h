@@ -170,7 +170,7 @@ protected:
 
     HRESULT setStateError();
 
-    /** weak VirualBox parent */
+    /** weak VirtualBox parent */
     const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
 
     struct Data
