@@ -117,6 +117,9 @@ struct VBoxDefs
         ShowWindowEventType,
 #endif
         ChangeGUILanguageEventType,
+#if defined (VBOX_GUI_WITH_SYSTRAY)
+        ChangeGUITrayIconEventType,
+#endif
         AddVDMUrlsEventType
     };
 

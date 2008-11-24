@@ -389,6 +389,19 @@ public:
     const QString mLangId;
 };
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+class VBoxChangeGUITrayIconEvent : public QEvent
+{
+public:
+    VBoxChangeGUITrayIconEvent (bool aEnabled)
+        : QEvent ((QEvent::Type) VBoxDefs::ChangeGUITrayIconEventType)
+        , mEnabled (aEnabled)
+        {}
+
+    const bool mEnabled;
+};
+#endif
+
 class Process : public QProcess
 {
     Q_OBJECT;
@@ -914,7 +927,7 @@ signals:
     void mediumRemoved (VBoxDefs::MediaType, const QUuid &);
 
     /* signals emitted when the VirtualBox callback is called by the server
-     * (not that currently these signals are emitted only when the application
+     * (note that currently these signals are emitted only when the application
      * is the in the VM selector mode) */
 
     void machineStateChanged (const VBoxMachineStateChangeEvent &e);
@@ -922,6 +935,7 @@ signals:
     void machineRegistered (const VBoxMachineRegisteredEvent &e);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
+    void systrayIconChanged (const VBoxChangeGUITrayIconEvent& e);
 
     void canShowRegDlg (bool aCanShow);
     void canShowUpdDlg (bool aCanShow);

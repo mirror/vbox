@@ -830,6 +830,10 @@ public:
                 }
                 if (sKey == "GUI/LanguageID")
                     QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
+            #ifdef VBOX_GUI_WITH_SYSTRAY
+                if (sKey == "GUI/TrayIcon/Enabled")
+                    QApplication::postEvent (&mGlobal, new VBoxChangeGUITrayIconEvent ((sVal.toLower() == "true") ? true : false));
+            #endif
 
                 mMutex.lock();
                 mGlobal.gset.setPublicProperty (sKey, sVal);
@@ -5030,6 +5034,11 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::ChangeGUILanguageEventType:
         {
             loadLanguage (static_cast<VBoxChangeGUILanguageEvent*> (e)->mLangId);
+            return true;
+        }
+        case VBoxDefs::ChangeGUITrayIconEventType:
+        {
+            emit systrayIconChanged (*(VBoxChangeGUITrayIconEvent *) e);
             return true;
         }
 

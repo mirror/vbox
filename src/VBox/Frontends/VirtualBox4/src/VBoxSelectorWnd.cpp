@@ -673,6 +673,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
              this, SLOT (sessionStateChanged (const VBoxSessionStateChangeEvent &)));
     connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent &)));
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    connect (&vboxGlobal(), SIGNAL (systrayIconChanged (const VBoxChangeGUITrayIconEvent &)),
+             this, SLOT (systrayIconChanged (const VBoxChangeGUITrayIconEvent &)));
+#endif
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
@@ -738,14 +742,6 @@ void VBoxSelectorWnd::fileSettings()
         dlg->putBackTo();
 
     delete dlg;
-
-    /* Reload settings. */
-    settings = vboxGlobal().settings();
-
-    /* Update GUI settings. */
-#ifdef VBOX_GUI_WITH_SYSTRAY    
-    mTrayIcon->trayIconShow (settings.trayIconEnabled());
-#endif
 }
 
 void VBoxSelectorWnd::fileExit()
@@ -1616,6 +1612,11 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
+void VBoxSelectorWnd::systrayIconChanged (const VBoxChangeGUITrayIconEvent &aEvent)
+{
+    mTrayIcon->trayIconShow (aEvent.mEnabled);
+}
+
 VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 {
     mParent = aParent;
@@ -1936,12 +1937,6 @@ void VBoxTrayIcon::trayIconShow (bool aShow)
         retranslateUi();
     }
     setVisible (mActive);
-
-    VBoxGlobalSettings settings = vboxGlobal().settings();
-    settings.setTrayIconEnabled (mActive);
-
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    settings.save (vbox);
 }
 
 void VBoxTrayIcon::vmSettings()
