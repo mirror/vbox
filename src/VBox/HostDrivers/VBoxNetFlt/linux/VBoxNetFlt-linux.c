@@ -59,8 +59,12 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 # define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(skb)
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) */
-# define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(skb, 0)
 # define CHECKSUM_PARTIAL CHECKSUM_HW
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 10)
+#  define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(skb, 0)
+# else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 10) */
+#  define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(&skb, 0)
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 10) */
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
@@ -521,8 +525,8 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     {
         /* Need to segment the packet */
         struct sk_buff *pNext, *pSegment;
-        Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
-              pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
+        //Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
+        //      pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
 
         for (pSegment = VBOX_SKB_GSO_SEGMENT(pBuf); pSegment; pSegment = pNext)
         {
