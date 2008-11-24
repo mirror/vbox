@@ -189,6 +189,8 @@ HRESULT Host::init (VirtualBox *aParent)
 
 #if defined (RT_OS_WINDOWS)
     mHostPowerService = new HostPowerServiceWin (mParent);
+#elif defined (RT_OS_DARWIN)
+    mHostPowerService = new HostPowerServiceDarwin (mParent);
 #else
     mHostPowerService = new HostPowerService (mParent);
 #endif
