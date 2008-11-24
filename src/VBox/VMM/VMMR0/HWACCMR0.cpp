@@ -780,9 +780,8 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-#ifdef VBOX_STRICT
         pVCpu->hwaccm.s.idEnteredCpu              = NIL_RTCPUID;
-#endif
+
         /* Invalidate the last cpu we were running on. */
         pVCpu->hwaccm.s.idLastCpu                 = NIL_RTCPUID;
 
@@ -913,14 +912,12 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
 
-#ifdef VBOX_STRICT
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
     if (RT_SUCCESS(rc))
     {
         AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
         pVCpu->hwaccm.s.idEnteredCpu = idCpu;
     }
-#endif
     return rc;
 }
 
