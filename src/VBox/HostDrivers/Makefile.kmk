@@ -37,6 +37,17 @@ ifndef VBOX_ONLY_DOCS
    include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
   endif
  endif
+
+ ifeq ($(KBUILD_TARGET),linux)
+  #
+  # Install the Makefile for module compliation on Linux hosts
+  #
+  INSTALLS += HostDrivers-src
+  HostDrivers-src_INST    = bin/src/
+  HostDrivers-src_MODE    = a+r,u+w
+  HostDrivers-src_SOURCES = linux/Makefile
+ endif
+
 endif # !VBOX_ONLY_DOCS
 
 # Let kBuild generate the rules.
