@@ -28,7 +28,7 @@ include $(KBUILD_PATH)/subheader.kmk
 if1of (win.amd64, $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
  REM_MOD              += VBoxREM2
  SYSMODS              += VBoxREM2
- DLLS                 += VBoxREM
+
 else
  REM_MOD              += VBoxREM
 endif
@@ -47,6 +47,11 @@ ifeq ($(KBUILD_TARGET), win)
  $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
 
  IMPORT_LIBS          += VBoxREMImp
+ DLLS                 += VBoxREM
+
+ VBoxREM_LIBS           =   \
+	$(LIB_VMM)          \
+	$(LIB_RUNTIME)
 else
  $(REM_MOD)_TEMPLATE  = VBOXR3NP
 
@@ -120,9 +125,6 @@ VBoxREM_DEFS           = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 VBoxREM_SOURCES        =   \
 	VBoxREMWrapper.cpp \
 	VBoxREMWrapperA.asm
-VBoxREM_LIBS           =   \
-	$(LIB_VMM)         \
-	$(LIB_RUNTIME)
 
 $(REM_MOD)_TEMPLATE        = VBOXNOCRTGAS
 $(REM_MOD)_DEFS           += LOG_USE_C99 $(ARCH_BITS_DEFS)
