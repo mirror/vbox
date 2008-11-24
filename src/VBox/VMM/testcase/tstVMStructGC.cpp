@@ -496,6 +496,8 @@ int main()
     GEN_CHECK_OFF(PGM, pbDynPageMapBaseGC);
     GEN_CHECK_OFF(PGM, iDynPageMapLast);
     GEN_CHECK_OFF(PGM, aHCPhysDynPageMapCache);
+    GEN_CHECK_OFF(PGM, pvR0DynMapUsed);
+    GEN_CHECK_OFF(PGM, GCPhys4MBPSEMask);
     GEN_CHECK_OFF(PGM, GCPhysA20Mask);
     GEN_CHECK_OFF(PGM, fA20Enabled);
     GEN_CHECK_OFF(PGM, fSyncFlags);
