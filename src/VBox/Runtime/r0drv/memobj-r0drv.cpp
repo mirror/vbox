@@ -669,10 +669,11 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
  */
 RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
-    /* sanity checks. */
     PRTR0MEMOBJINTERNAL pMemToMap;
     PRTR0MEMOBJINTERNAL pNew;
-    int rc;
+    int                 rc;
+
+    /* sanity checks. */
     AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertPtrReturn(MemObjToMap, VERR_INVALID_HANDLE);
