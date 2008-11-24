@@ -58,6 +58,7 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 # define VBOX_SKB_IS_GSO(skb) skb_is_gso(skb)
+                                        /* No features, very dumb device */
 # define VBOX_SKB_GSO_SEGMENT(skb) skb_gso_segment(skb, 0)
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
 # define VBOX_SKB_IS_GSO(skb) false
@@ -493,7 +494,6 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
 
 static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
 {
-    struct sk_buff *pNext, *pSegment = NULL;
     uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
 
 #ifndef VBOXNETFLT_SG_SUPPORT
@@ -510,24 +510,35 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     pBuf = pCopy;
 #endif
 
-    //Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
-    //      pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
-
     if (VBOX_SKB_IS_GSO(pBuf))
     {
         /* Need to segment the packet */
-        struct sk_buff *pSegments = VBOX_SKB_GSO_SEGMENT(pBuf); /* No features, very dumb device */
-        pBuf->next = pSegments;
+        struct sk_buff *pNext, *pSegment;
+        Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
+              pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
+
+        for (pSegment = VBOX_SKB_GSO_SEGMENT(pBuf); pSegment; pSegment = pNext)
+        {
+            pNext = pSegment->next;
+            pSegment->next = 0;
+            vboxNetFltLinuxForwardSegment(pThis, pSegment, fSrc);
+        }
+        dev_kfree_skb(pBuf);
+    }
+    else
+    {
+        if (pBuf->ip_summed == CHECKSUM_PARTIAL)
+            if (skb_checksum_help(pBuf))
+            {
+                LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
+                dev_kfree_skb(pBuf);
+                return;
+            }
+        vboxNetFltLinuxForwardSegment(pThis, pBuf, fSrc);
     }
     /*
      * Create a (scatter/)gather list for the sk_buff and feed it to the internal network.
      */
-    for (pSegment = pBuf; pSegment; pSegment = pNext)
-    {
-        pNext = pSegment->next;
-        pSegment->next = 0;
-        vboxNetFltLinuxForwardSegment(pThis, pSegment, fSrc);
-    }
 }
 
 static void vboxNetFltLinuxXmitTask(struct work_struct *pWork)
