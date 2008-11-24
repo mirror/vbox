@@ -372,13 +372,15 @@ QString QIHotKeyEdit::keyName (int aKeyVal)
     else
     {
 #if defined (Q_WS_WIN32)
-        /* stupid MapVirtualKey doesn't distinguish between right and left
-         * vkeys, even under XP, despite that it stated in msdn. do it by
-         * hand. */
+        /* Stupid MapVirtualKey doesn't distinguish between right and left
+         * vkeys, even under XP, despite that it stated in msdn. Do it by
+         * hands. Besides that it can't recognize such virtual keys as
+         * VK_DIVIDE & VK_PAUSE, this is also known bug. */
         int scan;
         switch (aKeyVal)
         {
             /* Processing special keys... */
+            case VK_PAUSE: scan = 0x45 << 16; break;
             case VK_RSHIFT: scan = 0x36 << 16; break;
             case VK_RCONTROL: scan = (0x1D << 16) | (1 << 24); break;
             case VK_RMENU: scan = (0x38 << 16) | (1 << 24); break;
@@ -386,7 +388,6 @@ QString QIHotKeyEdit::keyName (int aKeyVal)
             case VK_APPS:
             case VK_LWIN:
             case VK_RWIN:
-            case VK_PAUSE:
             case VK_NUMLOCK: scan = (::MapVirtualKey (aKeyVal, 0) | 256) << 16; break;
             default: scan = ::MapVirtualKey (aKeyVal, 0) << 16;
         }
