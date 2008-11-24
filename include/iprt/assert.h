@@ -32,6 +32,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 
 /** @defgroup grp_rt_assert     Assert - Assertions
  * @ingroup grp_rt
@@ -85,15 +86,34 @@ __BEGIN_DECLS
  * @param   uLine       Location line number.
  * @param   pszFile     Location file name.
  * @param   pszFunction Location function name.
- * @remark  This API exists in HC Ring-3 and GC.
+ */
+RTDECL(void)    RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
+/**
+ * Weak version of RTAssertMsg1
+ *
+ * @copydoc RTAssertMsg1
+ * @todo rename to AssertMsg1Weak
  */
 RTDECL(void)    AssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction);
 
 /**
  * The 2nd (optional) part of an assert message.
+ *
+ * @param   pszFormat   Printf like format string.
+ * @param   va          Arguments to that string.
+ */
+RTDECL(void)    RTAssertMsg2V(const char *pszFormat, va_list va);
+
+/**
+ * The 2nd (optional) part of an assert message.
+ *
  * @param   pszFormat   Printf like format string.
  * @param   ...         Arguments to that string.
- * @remark  This API exists in HC Ring-3 and GC.
+ */
+RTDECL(void)    RTAssertMsg2(const char *pszFormat, ...);
+/** Weak version of RTAssertMsg2
+ * @copydoc RTAssertMsg2
+ * @todo rename to AssertMsg2Weak
  */
 RTDECL(void)    AssertMsg2(const char *pszFormat, ...);
 
@@ -293,7 +313,7 @@ __END_DECLS
  * Raises an assertion panic appropriate to the current context.
  * @remarks This macro does not depend on RT_STRICT.
  */
-#if (defined(IN_RING0) && !defined(IN_RING0_AGNOSTIC)) \
+#if defined(IN_RING0) \
  && (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS))
 # define RTAssertDoPanic()      RTR0AssertPanicSystem()
 #else
