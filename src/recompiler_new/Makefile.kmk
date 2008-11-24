@@ -161,10 +161,9 @@ $(REM_MOD)_LDFLAGS.os2     = -Zomf
 $(REM_MOD)_LDFLAGS.debug   = -g
 $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
-#$(REM_MOD)_LIBS           = 	\
-	$(LIB_VMM) 		\
-	$(LIB_RUNTIME)
-
+# Temporary hack, to allow running with oldish GCC
+$(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
+ 
 #
 # The VBoxREM import library.
 #
