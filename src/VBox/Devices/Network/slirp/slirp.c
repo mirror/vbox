@@ -338,9 +338,6 @@ void slirp_term(PNATState pData)
          "\n"
          "\n"));
 #endif
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-    free(pData->phEvents);
-#endif
     free(pData);
 }
 
