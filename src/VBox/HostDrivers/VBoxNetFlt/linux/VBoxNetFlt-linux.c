@@ -325,6 +325,7 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         skb_push(pBuf, ETH_HLEN);
     }
     pSG->cbTotal = pBuf->len;
+#ifdef VBOXNETFLT_SG_SUPPORT
     pSG->aSegs[0].cb = skb_headlen(pBuf);
     pSG->aSegs[0].pv = pBuf->data;
     pSG->aSegs[0].Phys = NIL_RTHCPHYS;
@@ -334,9 +335,17 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
         pSG->aSegs[i+1].cb = pFrag->size;
         pSG->aSegs[i+1].pv = kmap(pFrag->page);
+        printk("%p = kmap()\n", pSG->aSegs[i+1].pv);
         pSG->aSegs[i+1].Phys = NIL_RTHCPHYS;
     }
     pSG->cSegsUsed = ++i;
+#else
+    pSG->aSegs[0].cb = pBuf->len;
+    pSG->aSegs[0].pv = pBuf->data;
+    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+    pSG->cSegsUsed = i = 1;
+#endif
+
 
 #ifdef PADD_RUNT_FRAMES_FROM_HOST
     /*
@@ -359,6 +368,11 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         pSG->cSegsUsed++;
     }
 #endif
+    Log2(("vboxNetFltLinuxSkBufToSG: allocated=%d, segments=%d frags=%d next=%p frag_list=%p pkt_type=%x fSrc=%x\n",
+          pSG->cSegsAlloc, pSG->cSegsUsed, skb_shinfo(pBuf)->nr_frags, pBuf->next, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, fSrc));
+    for (i = 0; i < pSG->cSegsUsed; i++)
+        Log2(("vboxNetFltLinuxSkBufToSG:   #%d: cb=%d pv=%p\n",
+              i, pSG->aSegs[i].cb, pSG->aSegs[i].pv));
 }
 
 /**
@@ -410,7 +424,11 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
 
 static unsigned vboxNetFltLinuxSGSegments(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
 {
+#ifdef VBOXNETFLT_SG_SUPPORT
     unsigned cSegs = 1 + skb_shinfo(pBuf)->nr_frags;
+#else
+    unsigned cSegs = 1;
+#endif
 #ifdef PADD_RUNT_FRAMES_FROM_HOST
     /*
      * Add a trailer if the frame is too small.
@@ -421,40 +439,25 @@ static unsigned vboxNetFltLinuxSGSegments(PVBOXNETFLTINS pThis, struct sk_buff *
     return cSegs;
 }
 
-
 /* WARNING! This function should only be called after vboxNetFltLinuxSkBufToSG()! */
 static void  vboxNetFltLinuxFreeSkBuff(struct sk_buff *pBuf, PINTNETSG pSG)
 {
+#ifdef VBOXNETFLT_SG_SUPPORT
     int i;
 
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
+    {
+        printk("kunmap(%p)\n", pSG->aSegs[i+1].pv);
         kunmap(pSG->aSegs[i+1].pv);
+    }
+#endif
             
     dev_kfree_skb(pBuf);
 }
 
-static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
+static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, uint32_t fSrc)
 {
-    bool fDropIt;
-    unsigned cSegs;
-    uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
-    /*
-     * Finalize out-bound packets since the stack puts off finalizing
-     * TCP/IP checksums as long as possible.
-     * ASSUMES this only applies to outbound IP packets.
-     *
-    if (    (fSrc & INTNETTRUNKDIR_HOST)
-        &&  eProtocol == PF_INET)
-    {
-        Assert(!pvFrame);
-        mbuf_outbound_finalize(pMBuf, eProtocol, sizeof(RTNETETHERHDR));
-    }*/
-
-    /*
-     * Create a (scatter/)gather list for the mbuf and feed it to the internal network.
-     */
-    fDropIt = false;
-    cSegs = vboxNetFltLinuxSGSegments(pThis, pBuf);
+    unsigned cSegs = vboxNetFltLinuxSGSegments(pThis, pBuf);
     if (cSegs < MAX_SKB_FRAGS)
     {
         uint8_t *pTmp;
@@ -462,7 +465,7 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
         if (!pSG)
         {
             Log(("VBoxNetFlt: Failed to allocate SG buffer.\n"));
-            return;
+            return VERR_NO_MEMORY;
         }
         vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc);
 
@@ -478,6 +481,46 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
         vboxNetFltLinuxFreeSkBuff(pBuf, pSG);
     }
 
+    return VINF_SUCCESS;
+}
+
+static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
+{
+    struct sk_buff *pNext, *pSegment = NULL;
+    uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
+
+#ifndef VBOXNETFLT_SG_SUPPORT
+    /*
+     * Get rid of fragmented packets, they cause too much trouble.
+     */
+    struct sk_buff *pCopy = skb_copy(pBuf, GFP_KERNEL);
+    kfree_skb(pBuf);
+    if (!pCopy)
+    {
+        LogRel(("VBoxNetFlt: Failed to allocate packet buffer, dropping the packet.\n"));
+        return;
+    }
+    pBuf = pCopy;
+#endif
+
+    Log2(("vboxNetFltLinuxForwardToIntNet: cb=%u gso_size=%u gso_segs=%u gso_type=%u\n",
+          pBuf->len, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type));
+
+    if (skb_is_gso(pBuf))
+    {
+        /* Need to segment the packet */
+        struct sk_buff *pSegments = skb_gso_segment(pBuf, 0); /* No features, very dumb device */
+        pBuf->next = pSegments;
+    }
+    /*
+     * Create a (scatter/)gather list for the sk_buff and feed it to the internal network.
+     */
+    for (pSegment = pBuf; pSegment; pSegment = pNext)
+    {
+        pNext = pSegment->next;
+        pSegment->next = 0;
+        vboxNetFltLinuxForwardSegment(pThis, pSegment, fSrc);
+    }
 }
 
 static void vboxNetFltLinuxXmitTask(struct work_struct *pWork)
@@ -697,7 +740,7 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     if (pDev)
     {
         /*
-         * Create a mbuf for the gather list and push it onto the wire.
+         * Create a sk_buff for the gather list and push it onto the wire.
          */
         if (fDst & INTNETTRUNKDIR_WIRE)
         {
@@ -718,7 +761,7 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
         }
 
         /*
-         * Create a mbuf for the gather list and push it onto the host stack.
+         * Create a sk_buff for the gather list and push it onto the host stack.
          */
         if (fDst & INTNETTRUNKDIR_HOST)
         {
@@ -796,13 +839,16 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             int err = 0;
             Assert(!pThis->u.s.fPromiscuousSet);
 
+#if 0
             /*
              * Try bring the interface up and running if it's down.
              */
             fIf = dev_get_flags(pDev);
             if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
             {
+                rtnl_lock();
                 err = dev_change_flags(pDev, fIf | IFF_UP);
+                rtnl_unlock();
                 fIf = dev_get_flags(pDev);
             }
 
@@ -813,6 +859,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             if ((fIf & (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING)
                 && !ASMAtomicReadBool(&pThis->u.s.fPromiscuousSet))
             {
+#endif
                 rtnl_lock();
                 dev_set_promiscuity(pDev, 1);
                 rtnl_unlock();
@@ -830,11 +877,13 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
                              pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
                 }
 #endif
+#if 0
             }
             else if (!err)
                 Log(("VBoxNetFlt: Waiting for the link to come up... (%d->%d)\n", cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
             if (err)
                 LogRel(("VBoxNetFlt: Failed to put '%s' into promiscuous mode, err=%d (%d->%d)\n", pThis->szName, err, cPromiscBefore, VBOX_GET_PCOUNT(pDev)));
+#endif
         }
         else
         {
