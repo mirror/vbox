@@ -448,6 +448,9 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTLogLoggerExV",                         0xefef0039 },
         { "AssertMsg1",                             0xefef003a },
         { "AssertMsg2",                             0xefef003b },
+        { "RTAssertMsg1",                           0xefef003c },
+        { "RTAssertMsg2",                           0xefef003d },
+        { "RTAssertMsg2V",                          0xefef003e },
     };
 
     /* fake r0 functions. */
