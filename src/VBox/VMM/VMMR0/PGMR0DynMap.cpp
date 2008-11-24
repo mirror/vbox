@@ -205,6 +205,9 @@ static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t 
 static int  pgmR0DynMapSetup(PPGMR0DYNMAP pThis);
 static int  pgmR0DynMapExpand(PPGMR0DYNMAP pThis);
 static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis);
+#ifdef DEBUG
+static int  pgmR0DynMapTest(PVM pVM);
+#endif
 
 
 /**
@@ -352,6 +355,13 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
 
     RTSemFastMutexRelease(pThis->hInitLock);
 
+#ifdef DEBUG
+    /*
+     * Run some tests.
+     */
+    if (RT_SUCCESS(rc))
+        pgmR0DynMapTest(pVM);
+#endif
     return rc;
 }
 
@@ -1039,7 +1049,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
      * Check if any of the first 5 pages are unreferenced since the caller
      * already has made sure they aren't matching.
      */
-    uint32_t const      cPages  = cPages;
+    uint32_t const      cPages  = pThis->cPages;
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
     uint32_t            iFreePage;
     if (!paPages[iPage].cRefs)
@@ -1123,7 +1133,7 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
      * To the cheap hits here and defer the tedious searching and inserting
      * to a helper function.
      */
-    uint32_t const      cPages  = cPages;
+    uint32_t const      cPages  = pThis->cPages;
     uint32_t            iPage   = (HCPhys >> PAGE_SHIFT) % cPages;
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
     if (paPages[iPage].HCPhys != HCPhys)
@@ -1163,12 +1173,19 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
     /*
      * Reference it, update statistics and get the return address.
      */
-    if (ASMAtomicIncS32(&paPages[iPage].cRefs) == 1)
+    int32_t cRefs = ASMAtomicIncS32(&paPages[iPage].cRefs);
+    if (cRefs == 1)
     {
         pThis->cLoad++;
         if (pThis->cLoad > pThis->cMaxLoad)
             pThis->cMaxLoad = pThis->cLoad;
         Assert(pThis->cLoad <= pThis->cPages);
+    }
+    else if (RT_UNLIKELY(cRefs <= 0))
+    {
+        ASMAtomicDecS32(&paPages[iPage].cRefs);
+        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        AssertLogRelMsgFailedReturn(("cRefs=%d iPage=%p HCPhys=%RHp\n", cRefs, iPage, HCPhys), NULL);
     }
     void *pvPage = paPages[iPage].pvPage;
 
@@ -1299,9 +1316,9 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
         {
             if (pSet->aEntries[j].iPage != iPage)
                 j++;
-            else
+            else if ((uint32_t)pSet->aEntries[i].cRefs + (uint32_t)pSet->aEntries[j].cRefs < UINT16_MAX)
             {
-                /* merge j with i removing j. */
+                /* merge j into i removing j. */
                 pSet->aEntries[i].cRefs += pSet->aEntries[j].cRefs;
                 pSet->cEntries--;
                 if (j < pSet->cEntries)
@@ -1316,6 +1333,15 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
                     pSet->aEntries[j].cRefs = 0;
                 }
             }
+            else
+            {
+                /* migrate the max number of refs from j into i and quit the inner loop. */
+                uint32_t cMigrate = UINT16_MAX - 1 - pSet->aEntries[i].cRefs;
+                Assert(pSet->aEntries[j].cRefs > cMigrate);
+                pSet->aEntries[j].cRefs -= cMigrate;
+                pSet->aEntries[i].cRefs = UINT16_MAX - 1;
+                break;
+            }
         }
     }
 }
@@ -1327,6 +1353,8 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Validate state.
      */
+    AssertPtr(ppv);
+    *ppv = NULL;
     AssertMsgReturn(pVM->pgm.s.pvR0DynMapUsed == g_pPGMR0DynMap,
                     ("%p != %p\n", pVM->pgm.s.pvR0DynMapUsed, g_pPGMR0DynMap),
                     VERR_ACCESS_DENIED);
@@ -1334,7 +1362,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     PVMCPU          pVCpu   = VMMGetCpu(pVM);
     PPGMMAPSET      pSet    = &pVCpu->pgm.s.AutoSet;
     AssertPtrReturn(pVCpu, VERR_INTERNAL_ERROR);
-    AssertMsgReturn(pSet->cEntries > RT_ELEMENTS(pSet->aEntries),
+    AssertMsgReturn(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries),
                     ("%#x (%u)\n", pSet->cEntries, pSet->cEntries), VERR_WRONG_ORDER);
 
     /*
@@ -1350,6 +1378,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
                     g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages));
         return VERR_PGM_DYNMAP_FAILED;
     }
+    *ppv = pvPage;
 
     /*
      * Add the page to the auto reference set.
@@ -1359,13 +1388,15 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     {
         pSet->aEntries[pSet->cEntries].cRefs = 1;
         pSet->aEntries[pSet->cEntries].iPage = iPage;
+        pSet->cEntries++;
     }
     else
     {
         Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
         int32_t     i = pSet->cEntries;
         while (i-- > 0)
-            if (pSet->aEntries[i].iPage)
+            if (    pSet->aEntries[i].iPage == iPage
+                &&  pSet->aEntries[i].cRefs < UINT16_MAX - 1)
             {
                 pSet->aEntries[i].cRefs++;
                 break;
@@ -1378,6 +1409,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
             {
                 pSet->aEntries[pSet->cEntries].cRefs = 1;
                 pSet->aEntries[pSet->cEntries].iPage = iPage;
+                pSet->cEntries++;
             }
             else
             {
@@ -1387,6 +1419,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
                 static uint32_t s_cBitched = 0;
                 if (++s_cBitched < 10)
                     LogRel(("PGMDynMapHCPage: set is full!\n"));
+                *ppv = NULL;
                 return VERR_PGM_DYNMAP_FULL_SET;
             }
         }
@@ -1395,3 +1428,110 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     return VINF_SUCCESS;
 }
 
+
+#ifdef DEBUG
+/**
+ * Performs some basic tests in debug builds.
+ */
+static int pgmR0DynMapTest(PVM pVM)
+{
+    PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+    PPGMMAPSET      pSet  = &pVM->aCpus[0].pgm.s.AutoSet;
+
+    /*
+     * Simple test, map CR3 twice and check that we're getting the
+     * same mapping address back.
+     */
+    LogRel(("pgmR0DynMapTest: 1\n"));
+    ASMIntDisable();
+    PGMDynMapStartAutoSet(&pVM->aCpus[0]);
+
+    uint64_t cr3 = ASMGetCR3() & ~(uint64_t)PAGE_OFFSET_MASK;
+    void    *pv  = (void *)(intptr_t)-1;
+    void    *pv2 = (void *)(intptr_t)-2;
+    int      rc  = PGMDynMapHCPage(pVM, cr3, &pv);
+    int      rc2 = PGMDynMapHCPage(pVM, cr3, &pv2);
+    ASMIntEnable();
+    if (    RT_SUCCESS(rc2)
+        &&  RT_SUCCESS(rc)
+        &&  pv == pv2)
+    {
+        LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+
+        /*
+         * Check that the simple set overflow code works by filling it
+         * with more CR3 mappings.
+         */
+        LogRel(("pgmR0DynMapTest: 2\n"));
+        ASMIntDisable();
+        for (uint32_t i = 0 ; i < UINT16_MAX*2 + RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 == pv; i++)
+        {
+            pv2 = (void *)(intptr_t)-4;
+            rc = PGMDynMapHCPage(pVM, cr3, &pv2);
+        }
+        ASMIntEnable();
+        if (RT_FAILURE(rc) || pv != pv2)
+        {
+            LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p\n", __LINE__, rc, pv, pv2));
+            if (RT_SUCCESS(rc2)) rc2 = VERR_INTERNAL_ERROR;
+        }
+        else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries) / 2)
+        {
+            LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries) / 2));
+            rc = VERR_INTERNAL_ERROR;
+        }
+        else if (   pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 1].cRefs != UINT16_MAX - 1
+                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 2].cRefs != UINT16_MAX - 1
+                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 3].cRefs != 2+2+3
+                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 4].cRefs != 1)
+        {
+            LogRel(("failed(%d): bad set dist: ", __LINE__));
+            for (uint32_t i = 0; i < pSet->cEntries; i++)
+                LogRel(("[%d]=%d, ", i, pSet->aEntries[i].cRefs));
+            LogRel(("\n"));
+            rc = VERR_INTERNAL_ERROR;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Trigger an set optimization run (exactly).
+             */
+            LogRel(("pgmR0DynMapTest: 2\n"));
+            ASMIntDisable();
+            for (uint32_t i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 != pv; i++)
+            {
+                pv2 = (void *)(intptr_t)(-5 - i);
+                rc = PGMDynMapHCPage(pVM, cr3 + (PAGE_SIZE * i), &pv2);
+            }
+            ASMIntEnable();
+            if (RT_FAILURE(rc) || pv == pv2)
+            {
+                LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p\n", __LINE__, rc, pv, pv2));
+                if (RT_SUCCESS(rc2)) rc2 = VERR_INTERNAL_ERROR;
+            }
+            else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries) / 2 + 3)
+            {
+                LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries) / 2 + 3));
+                rc = VERR_INTERNAL_ERROR;
+            }
+        }
+        LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+    }
+    else
+    {
+        LogRel(("failed(%d): rc=%Rrc rc2=%Rrc; pv=%p pv2=%p\n", __LINE__, rc, rc2, pv, pv2));
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    /* clean up */
+    LogRel(("pgmR0DynMapTest: cleanup\n"));
+    ASMIntDisable();
+    PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
+    PGMDynMapReleaseAutoSet(&pVM->aCpus[0]);
+    ASMIntEnable();
+
+    LogRel(("Load=%u/%u/%u Set=%#x/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+    return rc;
+}
+#endif /* DEBUG */
