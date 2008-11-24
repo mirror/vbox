@@ -284,9 +284,9 @@ VMMR0DECL(void) PGMR0DynMapTerm(void)
         AssertPtr(pThis);
         g_pPGMR0DynMap = NULL;
 
-        AssertLogRelMsg(!pThis->cUsers && !pThis->paPages && !pThis->cPages,
-                        ("cUsers=%d paPages=%p cPages=%#x\n",
-                         pThis->cUsers, pThis->paPages, pThis->cPages));
+        AssertLogRelMsg(!pThis->cUsers && !pThis->paPages && !pThis->pvSavedPTEs && !pThis->cPages,
+                        ("cUsers=%d paPages=%p pvSavedPTEs=%p cPages=%#x\n",
+                         pThis->cUsers, pThis->paPages, pThis->pvSavedPTEs, pThis->cPages));
 
         /* Free the associated resources. */
         RTSemFastMutexDestroy(pThis->hInitLock);
@@ -647,7 +647,7 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
         /*
          * The next level.
          */
-        uint32_t iEntry = ((uintptr_t)pvPage >> pPgLvl->a[i].fPtrShift) & pPgLvl->a[i].fPtrMask;
+        uint32_t iEntry = ((uint64_t)(uintptr_t)pvPage >> pPgLvl->a[i].fPtrShift) & pPgLvl->a[i].fPtrMask;
         if (pThis->fLegacyMode)
         {
             pvEntry = &pPgLvl->a[i].u.paLegacy[iEntry];
@@ -661,8 +661,10 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
 
         if ((uEntry & pPgLvl->a[i].fAndMask) != pPgLvl->a[i].fResMask)
         {
-            LogRel(("PGMR0DynMap: internal error - iPgLvl=%u cLevels=%u uEntry=%#llx fAnd=%#llx fRes=%#llx got=%#llx\n",
-                    i, pPgLvl->cLevels, uEntry, pPgLvl->a[i].fAndMask, pPgLvl->a[i].fResMask, uEntry & pPgLvl->a[i].fAndMask));
+            LogRel(("PGMR0DynMap: internal error - iPgLvl=%u cLevels=%u uEntry=%#llx fAnd=%#llx fRes=%#llx got=%#llx\n"
+                    "PGMR0DynMap: pv=%p pvPage=%p iEntry=%#x fLegacyMode=%RTbool\n",
+                    i, pPgLvl->cLevels, uEntry, pPgLvl->a[i].fAndMask, pPgLvl->a[i].fResMask, uEntry & pPgLvl->a[i].fAndMask,
+                    pPgLvl->a[i].u.pv, pvPage, iEntry, pThis->fLegacyMode));
             return VERR_INTERNAL_ERROR;
         }
     }
@@ -714,7 +716,7 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
     RTMemFree(pvToFree);
 
     /*
-     * Allocate the segment structure and pages memory.
+     * Allocate the segment structure and pages of memory, then touch all the pages (paranoia).
      */
     uint32_t cMaxPTs = cPages / (pThis->fLegacyMode ? X86_PG_ENTRIES : X86_PG_PAE_ENTRIES) + 2;
     PPGMR0DYNMAPSEG pSeg = (PPGMR0DYNMAPSEG)RTMemAllocZ(RT_UOFFSETOF(PGMR0DYNMAPSEG, ahMemObjPTs[cMaxPTs]));
@@ -729,6 +731,7 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
     {
         uint8_t            *pbPage = (uint8_t *)RTR0MemObjAddress(pSeg->hMemObj);
         AssertMsg(VALID_PTR(pbPage) && !((uintptr_t)pbPage & PAGE_OFFSET_MASK), ("%p\n", pbPage));
+        memset(pbPage, 0xfe, cPages << PAGE_SHIFT);
 
         /*
          * Walk thru the pages and set them up with a mapping of their PTE and everything.
@@ -798,7 +801,14 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
     }
     RTMemFree(pSeg);
 
-    /* Don't bother resizing the arrays, too layz. */
+    /* Don't bother resizing the arrays, but free them if we're the only user. */
+    if (!pThis->cPages)
+    {
+        RTMemFree(pThis->paPages);
+        pThis->paPages = NULL;
+        RTMemFree(pThis->pvSavedPTEs);
+        pThis->pvSavedPTEs = NULL;
+    }
     return rc;
 }
 
@@ -888,7 +898,7 @@ static DECLCALLBACK(void) pgmR0DynMapShootDownTlbs(RTCPUID idCpu, void *pvUser1,
 {
     Assert(!pvUser2);
     PPGMR0DYNMAP        pThis   = (PPGMR0DYNMAP)pvUser1;
-    AssertPtr(pThis == g_pPGMR0DynMap);
+    Assert(pThis == g_pPGMR0DynMap);
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
     uint32_t            iPage   = pThis->cPages;
     while (iPage-- > 0)
