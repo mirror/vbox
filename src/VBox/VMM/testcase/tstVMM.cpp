@@ -26,6 +26,7 @@
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
 #include <VBox/cpum.h>
+#include <VBox/pdm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -40,6 +41,15 @@
 #define TESTCASE    "tstVMM"
 
 VMMR3DECL(int) VMMDoTest(PVM pVM);
+
+/** PDMR3LdrEnumModules callback, see FNPDMR3ENUM. */
+static DECLCALLBACK(int)
+tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC, void *pvUser)
+{
+    NOREF(pVM); NOREF(pszFilename); NOREF(fGC); NOREF(pvUser);
+    RTPrintf("tstVMM: %RTptr %s\n", ImageBase, pszName);
+    return VINF_SUCCESS;
+}
 
 
 int main(int argc, char **argv)
@@ -56,6 +66,10 @@ int main(int argc, char **argv)
     int rc = VMR3Create(1, NULL, NULL, NULL, NULL, &pVM);
     if (RT_SUCCESS(rc))
     {
+        PDMR3LdrEnumModules(pVM, tstVMMLdrEnum, NULL);
+        RTStrmFlush(g_pStdOut);
+        RTThreadSleep(256);
+
         /*
          * Do testing.
          */

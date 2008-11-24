@@ -1132,7 +1132,8 @@ VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvA
                              pCur->szName,
                              pCur->ImageBase,
                              pCur->eType == PDMMOD_TYPE_RC ? RTLdrSize(pCur->hLdrMod) : 0,
-                             pCur->eType == PDMMOD_TYPE_RC);
+                             pCur->eType == PDMMOD_TYPE_RC,
+                             pvArg);
         if (RT_FAILURE(rc))
             return rc;
     }
