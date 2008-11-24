@@ -32,8 +32,19 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/cache.h>
+#include <iprt/tcp.h>
+
+/* All lwip header files are not C++ safe. So hack around this. */
+__BEGIN_DECLS
+#include <lwip/inet.h>
+#include <lwip/tcp.h>
+#include <lwip/sockets.h>
+__END_DECLS
 
 #include "Builtins.h"
+
+/* Small hack to get at lwIP initialized status */
+extern bool DevINIPConfigured(void);
 
 
 /*******************************************************************************
@@ -106,6 +117,10 @@ typedef struct VBOXDISK
     VDINTERFACE        VDIError;
     /** Callback table for error interface. */
     VDINTERFACEERROR   VDIErrorCallbacks;
+    /** Common structure for the supported TCP network stack interface. */
+    VDINTERFACE        VDITcpNet;
+    /** Callback table for TCP network stack interface. */
+    VDINTERFACETCPNET  VDITcpNetCallbacks;
     /** Common structure for the supported async I/O interface. */
     VDINTERFACE        VDIAsyncIO;
     /** Callback table for async I/O interface. */
@@ -310,6 +325,162 @@ static int drvvdCfgQueryStringDef(PVDCFGNODE pNode, const char *pszName, char *p
 static int drvvdCfgQueryBytes(PVDCFGNODE pNode, const char *pszName, void *pvData, size_t cbData)
 {
     return CFGMR3QueryBytes((PCFGMNODE)pNode, pszName, pvData, cbData);
+}
+
+
+/*******************************************************************************
+*   VD TCP network stack interface implementation - INIP case                  *
+*******************************************************************************/
+
+/** @copydoc VDINTERFACETCPNET::pfnClientConnect */
+static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
+{
+    int rc = VINF_SUCCESS;
+    /* First check whether lwIP is set up in this VM instance. */
+    if (!DevINIPConfigured())
+    {
+        LogRelFunc(("no IP stack\n"));
+        return VERR_NET_HOST_UNREACHABLE;
+    }
+    /* Resolve hostname. As there is no standard resolver for lwIP yet,
+     * just accept numeric IP addresses for now. */
+    struct in_addr ip;
+    if (!lwip_inet_aton(pszAddress, &ip))
+    {
+        LogRelFunc(("cannot resolve IP %s\n", pszAddress));
+        return VERR_NET_HOST_UNREACHABLE;
+    }
+    /* Create socket and connect. */
+    RTSOCKET Sock = lwip_socket(PF_INET, SOCK_STREAM, 0);
+    if (Sock != -1)
+    {
+        struct sockaddr_in InAddr = {0};
+        InAddr.sin_family = AF_INET;
+        InAddr.sin_port = htons(uPort);
+        InAddr.sin_addr = ip;
+        if (!lwip_connect(Sock, (struct sockaddr *)&InAddr, sizeof(InAddr)))
+        {
+            *pSock = Sock;
+            return VINF_SUCCESS;
+        }
+        rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
+        lwip_close(Sock);
+    }
+    else
+        rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
+    return rc;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnClientClose */
+static DECLCALLBACK(int) drvvdINIPClientClose(RTSOCKET Sock)
+{
+    lwip_close(Sock);
+    return VINF_SUCCESS; /** @todo real solution needed */
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSelectOne */
+static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, unsigned cMillies)
+{
+    fd_set fdsetR;
+    FD_ZERO(&fdsetR);
+    FD_SET(Sock, &fdsetR);
+    fd_set fdsetE = fdsetR;
+
+    int rc;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = lwip_select(Sock + 1, &fdsetR, NULL, &fdsetE, NULL);
+    else
+    {
+        struct timeval timeout;
+        timeout.tv_sec = cMillies / 1000;
+        timeout.tv_usec = (cMillies % 1000) * 1000;
+        rc = lwip_select(Sock + 1, &fdsetR, NULL, &fdsetE, &timeout);
+    }
+    if (rc > 0)
+        return VINF_SUCCESS;
+    if (rc == 0)
+        return VERR_TIMEOUT;
+    return VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnRead */
+static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+{
+    /* Do params checking */
+    if (!pvBuffer || !cbBuffer)
+    {
+        AssertMsgFailed(("Invalid params\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * Read loop.
+     * If pcbRead is NULL we have to fill the entire buffer!
+     */
+    size_t cbRead = 0;
+    size_t cbToRead = cbBuffer;
+    for (;;)
+    {
+        /** @todo this clipping here is just in case (the send function
+         * needed it, so I added it here, too). Didn't investigate if this
+         * really has issues. Better be safe than sorry. */
+        ssize_t cbBytesRead = lwip_recv(Sock, (char *)pvBuffer + cbRead,
+                                        RT_MIN(cbToRead, 32768), 0);
+        if (cbBytesRead < 0)
+            return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
+        if (cbBytesRead == 0 && errno)
+            return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
+        if (pcbRead)
+        {
+            /* return partial data */
+            *pcbRead = cbBytesRead;
+            break;
+        }
+
+        /* read more? */
+        cbRead += cbBytesRead;
+        if (cbRead == cbBuffer)
+            break;
+
+        /* next */
+        cbToRead = cbBuffer - cbRead;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnWrite */
+static DECLCALLBACK(int) drvvdINIPWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
+{
+    do
+    {
+        /** @todo lwip send only supports up to 65535 bytes in a single
+         * send (stupid limitation buried in the code), so make sure we
+         * don't get any wraparounds. This should be moved to DevINIP
+         * stack interface once that's implemented. */
+        ssize_t cbWritten = lwip_send(Sock, (void *)pvBuffer,
+                                      RT_MIN(cbBuffer, 32768), 0);
+        if (cbWritten < 0)
+            return VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
+        AssertMsg(cbBuffer >= (size_t)cbWritten, ("Wrote more than we requested!!! cbWritten=%d cbBuffer=%d\n",
+                                                  cbWritten, cbBuffer));
+        cbBuffer -= cbWritten;
+        pvBuffer = (const char *)pvBuffer + cbWritten;
+    } while (cbBuffer);
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnFlush */
+static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock)
+{
+    int fFlag = 1;
+    lwip_setsockopt(Sock, IPPROTO_TCP, TCP_NODELAY,
+                    (const char *)&fFlag, sizeof(fFlag));
+    fFlag = 0;
+    lwip_setsockopt(Sock, IPPROTO_TCP, TCP_NODELAY,
+                    (const char *)&fFlag, sizeof(fFlag));
+    return VINF_SUCCESS;
 }
 
 
@@ -628,7 +799,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->pDrvMediaAsyncPort = (PPDMIMEDIAASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MEDIA_ASYNC_PORT);
 
     /*
-     * Attach the async transport driver below of the device above us implements the
+     * Attach the async transport driver below if the device above us implements the
      * async interface.
      */
     if (pThis->pDrvMediaAsyncPort)
@@ -676,6 +847,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      * Validate configuration and find all parent images.
      * It's sort of up side down from the image dependency tree.
      */
+    bool        fHostIP = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfgHandle;
 
@@ -689,7 +861,18 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
              * open flags. Some might be converted to per-image flags later. */
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
-                                          "ReadOnly\0HonorZeroWrites\0");
+                                          "ReadOnly\0HonorZeroWrites\0"
+                                          "HostIPStack\0");
+
+            rc = CFGMR3QueryBool(pCfgHandle, "HostIPStack", &fHostIP);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                fHostIP = true;
+            else if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"HostIPStack\" as boolean failed"));
+                break;
+            }
         }
         else
         {
@@ -716,6 +899,37 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (RT_SUCCESS(rc))
     {
+        /* First of all figure out what kind of TCP networking stack interface
+         * to use. This is done unconditionally, as backends which don't need
+         * it will just ignore it. */
+        if (fHostIP)
+        {
+            pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
+            pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
+            pThis->VDITcpNetCallbacks.pfnClientConnect = RTTcpClientConnect;
+            pThis->VDITcpNetCallbacks.pfnClientClose = RTTcpClientClose;
+            pThis->VDITcpNetCallbacks.pfnSelectOne = RTTcpSelectOne;
+            pThis->VDITcpNetCallbacks.pfnRead = RTTcpRead;
+            pThis->VDITcpNetCallbacks.pfnWrite = RTTcpWrite;
+            pThis->VDITcpNetCallbacks.pfnFlush = RTTcpFlush;
+        }
+        else
+        {
+            pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
+            pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
+            pThis->VDITcpNetCallbacks.pfnClientConnect = drvvdINIPClientConnect;
+            pThis->VDITcpNetCallbacks.pfnClientClose = drvvdINIPClientClose;
+            pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdINIPSelectOne;
+            pThis->VDITcpNetCallbacks.pfnRead = drvvdINIPRead;
+            pThis->VDITcpNetCallbacks.pfnWrite = drvvdINIPWrite;
+            pThis->VDITcpNetCallbacks.pfnFlush = drvvdINIPFlush;
+        }
+        rc = VDInterfaceAdd(&pThis->VDITcpNet, "DrvVD_INIP",
+                            VDINTERFACETYPE_TCPNET,
+                            &pThis->VDITcpNetCallbacks, NULL,
+                            &pThis->pVDIfsDisk);
+        AssertRC(rc);
+
         rc = VDCreate(pThis->pVDIfsDisk, &pThis->pDisk);
         /* Error message is already set correctly. */
     }

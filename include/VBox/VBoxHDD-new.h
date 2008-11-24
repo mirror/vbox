@@ -215,6 +215,9 @@ typedef struct VBOXHDDRAW
 /** The backend uses the config interface. The caller needs to know how to
  * provide the mandatory configuration parts this way. */
 #define VD_CAP_CONFIG               RT_BIT(7)
+/** The backend uses the network stack interface. The caller has to provide
+ * the appropriate interface. */
+#define VD_CAP_TCPNET               RT_BIT(8)
 /** @}*/
 
 /**
@@ -232,6 +235,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_PROGRESS,
     /** Interface for configuration information. Per-image. */
     VDINTERFACETYPE_CONFIG,
+    /** Interface for TCP network stack. Per-disk. */
+    VDINTERFACETYPE_TCPNET,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -251,7 +256,7 @@ typedef struct VDINTERFACE
     VDINTERFACETYPE     enmInterface;
     /** Opaque user data which is passed on every call. */
     void               *pvUser;
-    /** Pointer to the function call table of the interface. 
+    /** Pointer to the function call table of the interface.
      *  As this is opaque this must be casted to the right interface
      *  struct defined below based on the interface type in enmInterface. */
     void               *pCallbacks;
@@ -287,7 +292,7 @@ DECLINLINE(PVDINTERFACE) VDInterfaceGet(PVDINTERFACE pVDIfs, VDINTERFACETYPE enm
         /* Sanity checks. */
         AssertMsgBreak(pVDIfs->cbSize == sizeof(VDINTERFACE),
                        ("cbSize=%u\n", pVDIfs->cbSize));
-                       
+
         if (pVDIfs->enmInterface == enmInterface)
             return pVDIfs;
         pVDIfs = pVDIfs->pNext;
@@ -394,7 +399,7 @@ DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
     return pInterfaceError;
 }
 
-/** 
+/**
  * Completion callback which is called by the interface owner
  * to inform the backend that a task finished.
  *
@@ -454,7 +459,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvBuf           Pointer to the bits need to be written.
      * @param   pcbWritten      Where to store how many bytes where actually written.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvUser, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pvUser, void *pStorage, uint64_t uOffset,
                                          size_t cbWrite, const void *pvBuf, size_t *pcbWritten));
 
     /**
@@ -468,7 +473,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pvBuf           Where to store the read bits.
      * @param   pcbRead         Where to store how many bytes where actually read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvUser, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pvUser, void *pStorage, uint64_t uOffset,
                                         size_t cbRead, void *pvBuf, size_t *pcbRead));
 
     /**
@@ -491,7 +496,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   cbRead         How many bytes to read.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (void *pvUser, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnPrepareRead, (void *pvUser, void *pStorage, uint64_t uOffset,
                                                void *pvBuf, size_t cbRead, void **ppTask));
 
     /**
@@ -505,7 +510,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   cbWrite        How many bytes to write.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (void *pvUser, void *pStorage, uint64_t uOffset, 
+    DECLR3CALLBACKMEMBER(int, pfnPrepareWrite, (void *pvUser, void *pStorage, uint64_t uOffset,
                                                 void *pvBuf, size_t cbWrite, void **ppTask));
 
     /**
@@ -549,7 +554,7 @@ DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
 
 /**
  * Progress notification interface
- * 
+ *
  * Per-operation. Optional.
  */
 typedef struct VDINTERFACEPROGRESS
@@ -686,7 +691,7 @@ typedef struct VDINTERFACECONFIG
  */
 DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(PVDINTERFACE pInterface)
 {
-    /* Check that the interface descriptor is a progress interface. */
+    /* Check that the interface descriptor is a config interface. */
     AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_CONFIG)
                     && (pInterface->cbSize == sizeof(VDINTERFACE)),
                     ("Not a config interface"), NULL);
@@ -704,8 +709,8 @@ DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(PVDINTERFACE pInterface)
 /**
  * Query configuration, validates that the values are within a set of valid names.
  *
- * @returns true if all names are found in pszzAllowed.
- * @returns false if not.
+ * @return  true if all names are found in pszzAllowed.
+ * @return  false if not.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       The node which values should be examined.
  * @param   pszzValid   List of valid names separated by '\\0' and ending with
@@ -720,7 +725,7 @@ DECLINLINE(bool) VDCFGAreValuesValid(PVDINTERFACECONFIG pCfgIf,
 
 /**
  * Query configuration, unsigned 64-bit integer value with default.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -737,7 +742,7 @@ DECLINLINE(int) VDCFGQueryU64Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
 
 /**
  * Query configuration, unsigned 32-bit integer value with default.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -763,7 +768,7 @@ DECLINLINE(int) VDCFGQueryU32Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
 
 /**
  * Query configuration, bool value with default.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -785,7 +790,7 @@ DECLINLINE(int) VDCFGQueryBoolDef(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
 /**
  * Query configuration, dynamically allocated (RTMemAlloc) zero terminated
  * character value.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -820,7 +825,7 @@ DECLINLINE(int) VDCFGQueryStringAlloc(PVDINTERFACECONFIG pCfgIf,
 /**
  * Query configuration, dynamically allocated (RTMemAlloc) zero terminated
  * character value with default.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -861,7 +866,7 @@ DECLINLINE(int) VDCFGQueryStringAllocDef(PVDINTERFACECONFIG pCfgIf,
 
 /**
  * Query configuration, dynamically allocated (RTMemAlloc) byte string value.
- * 
+ *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   pNode       Which node to search for pszName in.
@@ -894,6 +899,112 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
             rc = VERR_NO_MEMORY;
     }
     return rc;
+}
+
+
+/**
+ * TCP network stack interface
+ *
+ * Per-disk. Mandatory for backends which have the VD_CAP_TCPNET bit set.
+ */
+typedef struct VDINTERFACETCPNET
+{
+    /**
+     * Size of the configuration interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Connect as a client to a TCP port.
+     *
+     * @return  iprt status code.
+     * @param   pszAddress      The address to connect to.
+     * @param   uPort           The port to connect to.
+     * @param   pSock           Where to store the handle to the established connect
+ion.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnClientConnect, (const char *pszAddress, uint32_t uPort, PRTSOCKET pSock));
+
+    /**
+     * Close a TCP connection.
+     *
+     * @return  iprt status code.
+     * @param   Sock            Socket descriptor.
+ion.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnClientClose, (RTSOCKET Sock));
+
+    /**
+     * Socket I/O multiplexing.
+     * Checks if the socket is ready for reading.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   cMillies    Number of milliseconds to wait for the socket.
+     *                      Use RT_INDEFINITE_WAIT to wait for ever.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSelectOne, (RTSOCKET Sock, unsigned cMillies));
+
+    /**
+     * Receive data from a socket.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pvBuffer    Where to put the data we read.
+     * @param   cbBuffer    Read buffer size.
+     * @param   pcbRead     Number of bytes read.
+     *                      If NULL the entire buffer will be filled upon successful return.
+     *                      If not NULL a partial read can be done successfully.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRead, (RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
+
+    /**
+     * Send data from a socket.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pvBuffer    Buffer to write data to socket.
+     * @param   cbBuffer    How much to write.
+     * @param   pcbRead     Number of bytes read.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer));
+
+    /**
+     * Flush socket write buffers.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFlush, (RTSOCKET Sock));
+
+} VDINTERFACETCPNET, *PVDINTERFACETCPNET;
+
+/**
+ * Get TCP network stack interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pInterface Pointer to the interface descriptor.
+ */
+DECLINLINE(PVDINTERFACETCPNET) VDGetInterfaceTcpNet(PVDINTERFACE pInterface)
+{
+    /* Check that the interface descriptor is a TCP network stack interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_TCPNET)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not a TCP network stack interface"), NULL);
+
+    PVDINTERFACETCPNET pInterfaceTcpNet = (PVDINTERFACETCPNET)pInterface->pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceTcpNet->cbSize == sizeof(VDINTERFACETCPNET))
+                    && (pInterfaceTcpNet->enmInterface == VDINTERFACETYPE_TCPNET),
+                    ("A non TCP network stack callback table attached to a TCP network stack interface descriptor\n"), NULL);
+
+    return pInterfaceTcpNet;
 }
 
 
@@ -1494,7 +1605,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
  * @param   cSeg            Number of segments in the array.
  * @param   pvUser          User data which is passed on completion
  */
-VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead, 
+VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                               PPDMDATASEG paSeg, unsigned cSeg,
                               void *pvUser);
 
