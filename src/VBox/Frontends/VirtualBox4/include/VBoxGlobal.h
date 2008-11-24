@@ -935,7 +935,7 @@ signals:
     void machineRegistered (const VBoxMachineRegisteredEvent &e);
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
-    void systrayIconChanged (const VBoxChangeGUITrayIconEvent& e);
+    void systrayIconChanged (const VBoxChangeGUITrayIconEvent &e);
 
     void canShowRegDlg (bool aCanShow);
     void canShowUpdDlg (bool aCanShow);
