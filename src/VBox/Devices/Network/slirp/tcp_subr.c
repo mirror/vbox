@@ -194,9 +194,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
         memset((char *) tp, 0, sizeof(struct tcpcb));
 #ifndef VBOX_WITH_BSD_TCP_REASS
         tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
-#else  /* VBOX_WITH_BSD_TCP_REASS */
-        LIST_INSERT_HEAD(&pData->tcpcbhead, tp, t_list);
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* !VBOX_WITH_BSD_TCP_REASS */
         tp->t_maxseg = tcp_mssdflt;
 
         tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;

@@ -120,7 +120,6 @@ typedef struct NATState
     int tcp_reass_maxqlen;
     int tcp_reass_maxseg;
     int tcp_reass_overflows;
-    struct tcpcbhead tcpcbhead;
 #endif /* VBOX_WITH_BSD_TCP_REASS */
     /* Stuff from tftp.c */
     struct tftp_session tftp_sessions[TFTP_SESSIONS_MAX];
