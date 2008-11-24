@@ -85,6 +85,7 @@ public:
     STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);
     STDMETHOD(GetProcessorSpeed)(ULONG cpuId, ULONG *speed);
     STDMETHOD(GetProcessorDescription)(ULONG cpuId, BSTR *description);
+    STDMETHOD(GetProcessorFeature) (ProcessorFeature_T feature, BOOL *supported);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *size);
     STDMETHOD(COMGETTER(MemoryAvailable))(ULONG *available);
     STDMETHOD(COMGETTER(OperatingSystem))(BSTR *os);
