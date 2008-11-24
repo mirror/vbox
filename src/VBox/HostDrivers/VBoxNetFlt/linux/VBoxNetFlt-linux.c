@@ -56,7 +56,10 @@
 # define VBOX_SKB_MAC_HDR(skb) skb->mac.raw
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+# define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(skb)
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) */
+# define VBOX_SKB_CHECKSUM_HELP(skb) skb_checksum_help(skb, 0)
 # define CHECKSUM_PARTIAL CHECKSUM_HW
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) */
 
@@ -532,7 +535,7 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     else
     {
         if (pBuf->ip_summed == CHECKSUM_PARTIAL)
-            if (skb_checksum_help(pBuf))
+            if (VBOX_SKB_CHECKSUM_HELP(pBuf))
             {
                 LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
                 dev_kfree_skb(pBuf);
