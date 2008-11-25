@@ -549,6 +549,9 @@ Drivers_DEFS       = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
 Drivers_DEFS      += VBOX_WITH_NETFLT
 endif
+ifdef VBOX_WITH_SLIRP_MEMORY_CHECK
+Drivers_DEFS += VBOX_WITH_SLIRP_MEMORY_CHECK
+endif
 ifdef VBOX_WITH_BSD_REASS
 Drivers_DEFS      += VBOX_WITH_BSD_REASS
 endif
