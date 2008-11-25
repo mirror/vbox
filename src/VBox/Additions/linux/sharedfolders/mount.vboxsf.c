@@ -456,6 +456,7 @@ main (int argc, char **argv)
     mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
     mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
     mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
+    mntinf.length       = sizeof(mntinf);
 
     if (getuid ())
         panic ("Only root can mount shared folders from the host.\n");
