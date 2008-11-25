@@ -1345,11 +1345,6 @@ bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
  */
 VBoxSelectorWnd &VBoxGlobal::selectorWnd()
 {
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
-    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
-               ("Must NOT be a VM console process"));
-#endif
-
     Assert (mValid);
 
     if (!mSelectorWnd)
@@ -1419,11 +1414,11 @@ bool VBoxGlobal::trayIconInstall()
     if (false == QSystemTrayIcon::isSystemTrayAvailable())
         return false;
 
-    AssertMsg (vboxGlobal().mainWindow(),
-               ("Main window must not be null for systray!"));
+    AssertMsg (&vboxGlobal().selectorWnd(),
+               ("Selector window must not be null for systray!"));
 
     mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
-                        QString ("%1").arg ((qulonglong) vboxGlobal().mainWindow()->winId()));
+                        QString ("%1").arg ((qulonglong) vboxGlobal().selectorWnd().winId()));
 
     /* The first process which can grab this "mutex" will win ->
      * It will be the tray icon menu then. */
