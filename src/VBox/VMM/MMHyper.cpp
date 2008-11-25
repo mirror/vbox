@@ -971,6 +971,7 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
             *ppv = pvPages;
             Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
                   cb, uAlignment, *ppv));
+            MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
             return rc;
         }
         AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
