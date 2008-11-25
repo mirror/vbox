@@ -41,7 +41,7 @@ ifeq ($(KBUILD_TARGET), win)
  $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
  $(REM_MOD)_CFLAGS          = -Wall -g
  $(REM_MOD)_CFLAGS.debug    = -O0
- $(REM_MOD)_CFLAGS.release += -fomit-frame-pointer -fno-gcse -O2
+ $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
  $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
  $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
 
@@ -155,7 +155,7 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 # Temporary hack, to allow running with oldish GCC
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
- 
+
 #
 # The VBoxREM import library.
 #
