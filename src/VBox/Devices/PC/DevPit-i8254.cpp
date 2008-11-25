@@ -74,7 +74,7 @@
 /** @def FAKE_REFRESH_CLOCK
  * Define this to flip the 15usec refresh bit on every read.
  * If not defined, it will be flipped correctly. */
-//#define FAKE_REFRESH_CLOCK
+#define FAKE_REFRESH_CLOCK
 #ifdef DOXYGEN_RUNNING
 # define FAKE_REFRESH_CLOCK
 #endif
@@ -652,7 +652,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         pThis->dummy_refresh_clock ^= 1;
         const int fRefresh = pThis->dummy_refresh_clock;
 #else
-        const int fRefresh = (u64Now / 15085) & 1;
+        const int fRefresh = (u64Now / 15085 ) & 1;
 #endif
         /* bit 2,3 NMI / parity status stuff. */
         /* bit 1 - speaker data status */
