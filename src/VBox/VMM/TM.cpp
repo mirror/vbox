@@ -216,7 +216,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
 
     RTGCPTR GCPtr;
-    rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
+    rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to map GIP into GC, rc=%Rrc!\n", rc));
