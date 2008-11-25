@@ -43,7 +43,7 @@
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *poff)
 {
-    /** @todo cache last lookup this stuff ain't cheap! */
+    /** @todo cache last lookup, this stuff ain't cheap! */
     PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
     {
@@ -87,7 +87,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
         pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 
-    AssertMsgFailed(("R3Ptr=%p is not inside the hypervisor memory area!\n", R3Ptr));
+    AssertMsgFailed(("R3Ptr=%RHv is not inside the hypervisor memory area!\n", R3Ptr));
     return NULL;
 }
 
@@ -105,16 +105,52 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 {
     AssertCompile(sizeof(RTR0PTR) == sizeof(RTR3PTR));
 
-    /*
-     * Translate Ring-0 VM addresses into Ring-3 VM addresses before feeding it to mmHyperLookupR3.
-     */
-    /** @todo fix this properly; the ring 0 pVM address differs from the R3 one. (#1865) */
-    RTR0UINTPTR offVM = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pVM->pVMR0;
-    RTR3PTR R3Ptr = offVM < sizeof(*pVM)
-                  ? (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + offVM)
-                  : (RTR3PTR)R0Ptr;
+    /** @todo cache last lookup, this stuff ain't cheap! */
+    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
+    for (;;)
+    {
+        switch (pLookup->enmType)
+        {
+            case MMLOOKUPHYPERTYPE_LOCKED:
+            {
+                const uint32_t off = (RTR3UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.Locked.pvR0;
+                if (off < pLookup->cb && pLookup->u.Locked.pvR0)
+                {
+                    *poff = off;
+                    return pLookup;
+                }
+                break;
+            }
 
-    return mmHyperLookupR3(pVM, R3Ptr, poff);
+            case MMLOOKUPHYPERTYPE_HCPHYS:
+            {
+                const uint32_t off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.HCPhys.pvR0;
+                if (off < pLookup->cb && pLookup->u.HCPhys.pvR0)
+                {
+                    *poff = off;
+                    return pLookup;
+                }
+                break;
+            }
+
+            case MMLOOKUPHYPERTYPE_GCPHYS:  /* (for now we'll not allow these kind of conversions) */
+            case MMLOOKUPHYPERTYPE_MMIO2:
+            case MMLOOKUPHYPERTYPE_DYNAMIC:
+                break;
+
+            default:
+                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
+                break;
+        }
+
+        /* next */
+        if (pLookup->offNext ==  (int32_t)NIL_OFFSET)
+            break;
+        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
+    }
+
+    AssertMsgFailed(("R0Ptr=%RHv is not inside the hypervisor memory area!\n", R0Ptr));
+    return NULL;
 }
 
 
@@ -156,7 +192,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
         pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 
-    AssertMsgFailed(("GCPtr=%p is not inside the hypervisor memory area!\n", RCPtr));
+    AssertMsgFailed(("RCPtr=%RRv is not inside the hypervisor memory area!\n", RCPtr));
     return NULL;
 }
 
