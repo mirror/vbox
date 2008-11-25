@@ -1108,6 +1108,14 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
      */
     switch (MsgType)
     {
+#if 0
+        case RTNET_DHCP_MT_REQUEST:
+            /** @todo Check for valid non-broadcast requests w/ IP for any of the MACs we
+             *        know, and add the IP to the cache. */
+            break;
+#endif
+
+
         /*
          * Lookup the interface by its MAC address and insert the IPv4 address into the cache.
          * Delete the old client address first, just in case it changed in a renewal.
