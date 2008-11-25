@@ -466,7 +466,11 @@ DECLINLINE(void) gen_op_mov_v_reg(int ot, TCGv t0, int reg)
     switch(ot) {
     case OT_BYTE:
         if (reg < 4 X86_64_DEF( || reg >= 8 || x86_64_hregs)) {
+#ifndef VBOX
             goto std_case;
+#else
+            tcg_gen_ld8u_tl(t0, cpu_env, offsetof(CPUState, regs[reg]) + REG_B_OFFSET);
+#endif
         } else {
             tcg_gen_ld8u_tl(t0, cpu_env, offsetof(CPUState, regs[reg - 4]) + REG_H_OFFSET);
         }

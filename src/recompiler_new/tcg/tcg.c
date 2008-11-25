@@ -1974,6 +1974,7 @@ DECLINLINE(int) tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
         fprintf(logfile, "OP after la:\n");
         tcg_dump_ops(s, logfile);
         fprintf(logfile, "\n");
+        fsync(logfile);
     }
 #endif
 
