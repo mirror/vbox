@@ -643,27 +643,27 @@ typedef enum
 /** @name VMCS field encoding - 16 bits guest fields
  * @{
  */
-#define VMX_VMCS_GUEST_FIELD_VPID                               0x0
-#define VMX_VMCS_GUEST_FIELD_ES                                 0x800
-#define VMX_VMCS_GUEST_FIELD_CS                                 0x802
-#define VMX_VMCS_GUEST_FIELD_SS                                 0x804
-#define VMX_VMCS_GUEST_FIELD_DS                                 0x806
-#define VMX_VMCS_GUEST_FIELD_FS                                 0x808
-#define VMX_VMCS_GUEST_FIELD_GS                                 0x80A
-#define VMX_VMCS_GUEST_FIELD_LDTR                               0x80C
-#define VMX_VMCS_GUEST_FIELD_TR                                 0x80E
+#define VMX_VMCS16_GUEST_FIELD_VPID                               0x0
+#define VMX_VMCS16_GUEST_FIELD_ES                                 0x800
+#define VMX_VMCS16_GUEST_FIELD_CS                                 0x802
+#define VMX_VMCS16_GUEST_FIELD_SS                                 0x804
+#define VMX_VMCS16_GUEST_FIELD_DS                                 0x806
+#define VMX_VMCS16_GUEST_FIELD_FS                                 0x808
+#define VMX_VMCS16_GUEST_FIELD_GS                                 0x80A
+#define VMX_VMCS16_GUEST_FIELD_LDTR                               0x80C
+#define VMX_VMCS16_GUEST_FIELD_TR                                 0x80E
 /** @} */
 
 /** @name VMCS field encoding - 16 bits host fields
  * @{
  */
-#define VMX_VMCS_HOST_FIELD_ES                                  0xC00
-#define VMX_VMCS_HOST_FIELD_CS                                  0xC02
-#define VMX_VMCS_HOST_FIELD_SS                                  0xC04
-#define VMX_VMCS_HOST_FIELD_DS                                  0xC06
-#define VMX_VMCS_HOST_FIELD_FS                                  0xC08
-#define VMX_VMCS_HOST_FIELD_GS                                  0xC0A
-#define VMX_VMCS_HOST_FIELD_TR                                  0xC0C
+#define VMX_VMCS16_HOST_FIELD_ES                                  0xC00
+#define VMX_VMCS16_HOST_FIELD_CS                                  0xC02
+#define VMX_VMCS16_HOST_FIELD_SS                                  0xC04
+#define VMX_VMCS16_HOST_FIELD_DS                                  0xC06
+#define VMX_VMCS16_HOST_FIELD_FS                                  0xC08
+#define VMX_VMCS16_HOST_FIELD_GS                                  0xC0A
+#define VMX_VMCS16_HOST_FIELD_TR                                  0xC0C
 /** @}          */
 
 /** @name VMCS field encoding - 64 bits host fields
@@ -924,28 +924,28 @@ typedef enum
 /**  @name VMCS field encoding - 32 Bits guest state fields
  * @{
  */
-#define VMX_VMCS_GUEST_ES_LIMIT                                 0x4800
-#define VMX_VMCS_GUEST_CS_LIMIT                                 0x4802
-#define VMX_VMCS_GUEST_SS_LIMIT                                 0x4804
-#define VMX_VMCS_GUEST_DS_LIMIT                                 0x4806
-#define VMX_VMCS_GUEST_FS_LIMIT                                 0x4808
-#define VMX_VMCS_GUEST_GS_LIMIT                                 0x480A
-#define VMX_VMCS_GUEST_LDTR_LIMIT                               0x480C
-#define VMX_VMCS_GUEST_TR_LIMIT                                 0x480E
-#define VMX_VMCS_GUEST_GDTR_LIMIT                               0x4810
-#define VMX_VMCS_GUEST_IDTR_LIMIT                               0x4812
-#define VMX_VMCS_GUEST_ES_ACCESS_RIGHTS                         0x4814
-#define VMX_VMCS_GUEST_CS_ACCESS_RIGHTS                         0x4816
-#define VMX_VMCS_GUEST_SS_ACCESS_RIGHTS                         0x4818
-#define VMX_VMCS_GUEST_DS_ACCESS_RIGHTS                         0x481A
-#define VMX_VMCS_GUEST_FS_ACCESS_RIGHTS                         0x481C
-#define VMX_VMCS_GUEST_GS_ACCESS_RIGHTS                         0x481E
-#define VMX_VMCS_GUEST_LDTR_ACCESS_RIGHTS                       0x4820
-#define VMX_VMCS_GUEST_TR_ACCESS_RIGHTS                         0x4822
-#define VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE                   0x4824
-#define VMX_VMCS_GUEST_ACTIVITY_STATE                           0x4826
-#define VMX_VMCS_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
-#define VMX_VMCS_GUEST_PREEMPTION_TIMER_VALUE                   0x482E
+#define VMX_VMCS32_GUEST_ES_LIMIT                                 0x4800
+#define VMX_VMCS32_GUEST_CS_LIMIT                                 0x4802
+#define VMX_VMCS32_GUEST_SS_LIMIT                                 0x4804
+#define VMX_VMCS32_GUEST_DS_LIMIT                                 0x4806
+#define VMX_VMCS32_GUEST_FS_LIMIT                                 0x4808
+#define VMX_VMCS32_GUEST_GS_LIMIT                                 0x480A
+#define VMX_VMCS32_GUEST_LDTR_LIMIT                               0x480C
+#define VMX_VMCS32_GUEST_TR_LIMIT                                 0x480E
+#define VMX_VMCS32_GUEST_GDTR_LIMIT                               0x4810
+#define VMX_VMCS32_GUEST_IDTR_LIMIT                               0x4812
+#define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS                         0x4814
+#define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS                         0x4816
+#define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS                         0x4818
+#define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS                         0x481A
+#define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS                         0x481C
+#define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS                         0x481E
+#define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS                       0x4820
+#define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS                         0x4822
+#define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                   0x4824
+#define VMX_VMCS32_GUEST_ACTIVITY_STATE                           0x4826
+#define VMX_VMCS32_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
+#define VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE                   0x482E
 /** @} */
 
 
@@ -976,7 +976,7 @@ typedef enum
 /** @name VMCS field encoding - 32 Bits host state fields
  * @{
  */
-#define VMX_VMCS_HOST_SYSENTER_CS                               0x4C00
+#define VMX_VMCS32_HOST_SYSENTER_CS                             0x4C00
 /** @} */
 
 /** @name Natural width control fields
