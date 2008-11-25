@@ -167,14 +167,73 @@
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
+
+<!--
+ *  common comment prologue (handles group IDs)
+-->
+<xsl:template match="desc" mode="begin">
+  <xsl:text>/**&#x0A;</xsl:text>
+  <xsl:param name="id" select="@group | preceding::descGroup[1]/@id"/>
+  <xsl:if test="$id">
+    <xsl:value-of select="concat(' @ingroup ',$id,'&#x0A;')"/>
+  </xsl:if>
+</xsl:template>
+
+<!--
+ *  common brief comment prologue (handles group IDs)
+-->
+<xsl:template match="desc" mode="begin_brief">
+  <xsl:text>/**&#x0A;</xsl:text>
+  <xsl:param name="id" select="@group | preceding::descGroup[1]/@id"/>
+  <xsl:if test="$id">
+    <xsl:value-of select="concat(' @ingroup ',$id,'&#x0A;')"/>
+  </xsl:if>
+  <xsl:text> @brief&#x0A;</xsl:text>
+</xsl:template>
+
+<!--
+ *  common middle part of the comment block
+-->
+<xsl:template match="desc" mode="middle">
+  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
+  <xsl:apply-templates select="note"/>
+  <xsl:apply-templates select="see"/>
+</xsl:template>
+
+<!--
+ *  result part of the comment block
+-->
+<xsl:template match="desc" mode="results">
+  <xsl:if test="result">
+    <xsl:text>
+      @par Expected result codes:
+    </xsl:text>
+      <table>
+    <xsl:for-each select="result">
+      <tr>
+        <xsl:choose>
+          <xsl:when test="ancestor::library/result[@name=current()/@name]">
+            <td><xsl:value-of select=
+                  "concat('@link ::',@name,' ',@name,' @endlink')"/></td>
+          </xsl:when>
+          <xsl:otherwise>
+            <td><xsl:value-of select="@name"/></td>
+          </xsl:otherwise>
+        </xsl:choose>
+        <td><xsl:value-of select="text()"/></td>
+      </tr>
+    </xsl:for-each>
+      </table>
+  </xsl:if>
+</xsl:template>
+
+
 <!--
  *  comment for interfaces
 -->
 <xsl:template match="interface/desc">
-  <xsl:text>/**&#x0A;</xsl:text>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
-  <xsl:apply-templates select="note"/>
-  <xsl:apply-templates select="see"/>
+  <xsl:apply-templates select="." mode="begin"/>
+  <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
 <tt>{<xsl:call-template name="uppercase">
     <xsl:with-param name="str" select="../@uuid"/>
@@ -186,8 +245,9 @@
  *  comment for attributes
 -->
 <xsl:template match="attribute/desc">
-  <xsl:text>/**&#x0A;</xsl:text>
+  <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
+  <xsl:apply-templates select="." mode="results"/>
   <xsl:apply-templates select="note"/>
   <xsl:if test="../@mod='ptr'">
     <xsl:text>
@@ -205,11 +265,12 @@ owns the object will most likely fail or crash your application.
  *  comment for methods
 -->
 <xsl:template match="method/desc">
-  <xsl:text>/**&#x0A;</xsl:text>
+  <xsl:apply-templates select="." mode="begin"/>
   <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
   <xsl:for-each select="../param">
     <xsl:apply-templates select="desc"/>
   </xsl:for-each>
+  <xsl:apply-templates select="." mode="results"/>
   <xsl:apply-templates select="note"/>
   <xsl:apply-templates select="../param/desc/note"/>
   <xsl:if test="../param/@mod='ptr'">
@@ -239,10 +300,8 @@ owns the object will most likely fail or crash your application.
  *  comment for enums
 -->
 <xsl:template match="enum/desc">
-  <xsl:text>/**&#x0A;</xsl:text>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
-  <xsl:apply-templates select="note"/>
-  <xsl:apply-templates select="see"/>
+  <xsl:apply-templates select="." mode="begin"/>
+  <xsl:apply-templates select="." mode="middle"/>
 @par Interface ID:
 <tt>{<xsl:call-template name="uppercase">
     <xsl:with-param name="str" select="../@uuid"/>
@@ -254,10 +313,8 @@ owns the object will most likely fail or crash your application.
  *  comment for enum values
 -->
 <xsl:template match="enum/const/desc">
-  <xsl:text>/** @brief </xsl:text>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
-  <xsl:apply-templates select="note"/>
-  <xsl:apply-templates select="see"/>
+  <xsl:apply-templates select="." mode="begin_brief"/>
+  <xsl:apply-templates select="." mode="middle"/>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>
 </xsl:template>
 
@@ -265,12 +322,15 @@ owns the object will most likely fail or crash your application.
  *  comment for result codes
 -->
 <xsl:template match="result/desc">
-  <xsl:text>/** @brief </xsl:text>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
-  <xsl:apply-templates select="note"/>
-  <xsl:apply-templates select="see"/>
+  <xsl:apply-templates select="." mode="begin_brief"/>
+  <xsl:apply-templates select="." mode="middle"/>
   <xsl:text>&#x0A;*/&#x0A;</xsl:text>
 </xsl:template>
+
+<!--
+ *  ignore descGroups by default (processed in /idl)
+-->
+<xsl:template match="descGroup"/>
 
 <!--
 //  templates
@@ -298,46 +358,23 @@ owns the object will most likely fail or crash your application.
  *  DO NOT USE THIS HEADER IN ANY OTHER WAY!
  */
 
-/** @mainpage
- *
- *  Welcome to the <b>VirtualBox Main documentation.</b> This describes the
- *  so-called VirtualBox "Main API", which comprises all public COM interfaces
- *  and components provided by the VirtualBox server and by the VirtualBox client
- *  library.
- *
- *  VirtualBox employs a client-server design, meaning that whenever any part of
- *  VirtualBox is running -- be it the Qt GUI, the VBoxManage command-line
- *  interface or any virtual machine --, a background server process named
- *  VBoxSVC runs in the background. This allows multiple processes to cooperate
- *  without conflicts. Some of the COM objects described by this Main documentation
- *  "live" in that server process, others "live" in the local client process. In
- *  any case, processes that use the Main API are using inter-process communication
- *  to communicate with these objects, but the details of this are hidden by the COM API.
- *
- *  On Windows platforms, the VirtualBox Main API uses Microsoft COM, a native COM
- *  implementation. On all other platforms, Mozilla XPCOM, an open-source COM
- *  implementation, is used.
- *
- *  All the parts that a typical VirtualBox user interacts with (the Qt GUI,
- *  the VBoxManage command-line interface and the VBoxVRDP server) are technically
- *  front-ends to the Main API and only use the interfaces that are documented
- *  in this Main API documentation. This ensures that, with any given release
- *  version of VirtualBox, all capabilities of the product that could be useful
- *  to an external client program are always exposed by way of this API.
- *
- *  The complete API is described in a source IDL file, called VirtualBox.idl.
- *  This contains all public interfaces exposed by the Main API. Two interfaces
- *  are of supreme importance and will be needed in order for any front-end program
- *  to do anything useful: these are IVirtualBox and ISession. It is recommended
- *  to read the documentation of these interfaces first.
- *
- *  @note VirtualBox.idl is automatically generated from a generic internal file
- *  to define all interfaces in a platform-independent way for documentation
- *  purposes. This generated file is not a syntactically valid IDL file and
- *  <i>must not</i> be used for programming.
- */
-  <xsl:text>&#x0A;</xsl:text>
-  <xsl:apply-templates/>
+  <!-- general description -->
+  <xsl:text>/** @mainpage &#x0A;</xsl:text>
+  <xsl:apply-templates select="desc" mode="middle"/>
+  <xsl:text>&#x0A;*/&#x0A;</xsl:text>
+
+  <!-- group (module) definitions -->
+  <xsl:for-each select="//descGroup">
+    <xsl:if test="@id and (@title or desc)">
+      <xsl:value-of select="concat('/** @defgroup ',@id,' ',@title)"/>
+      <xsl:apply-templates select="desc" mode="middle"/>
+      <xsl:text>&#x0A;*/&#x0A;</xsl:text>
+    </xsl:if>
+  </xsl:for-each>
+
+  <!-- everything else -->
+  <xsl:apply-templates select="*[not(self::desc)]"/>
+
 </xsl:template>
 
 
@@ -374,33 +411,9 @@ owns the object will most likely fail or crash your application.
 -->
 <xsl:template match="library">
   <!-- result codes -->
-  <xsl:text>
-/** @defgroup VirtualBox_COM_result_codes VirtualBox COM result codes
- *
- * This section describes all VirtualBox-specific COM result codes that may be
- * returned by methods of VirtualBox COM interfaces in addition to standard COM
- * result codes.
- *
- * Note that in addition to a result code, every VirtualBox method returns extended
- * error information through the IVirtualBoxErrorInfo interface on failure. This
- * interface is a preferred way to present the error to the end user because it
- * contains a human readable description of the error. Raw result codes (both
- * standard and described in this section) are intended to be used by programs
- * to analyze the reason of a failure and select an appropriate action without
- * involving the end user (for example, retry the operation later or make a
- * different call).
- *
- * @todo List what standard codes may originate from our methods.
- */
-/*@{*/
-  </xsl:text>
   <xsl:for-each select="result">
     <xsl:apply-templates select="."/>
   </xsl:for-each>
-  <xsl:text>
-/*@}*/
-
-  </xsl:text>
   <!-- all enums go first -->
   <xsl:apply-templates select="enum | if/enum"/>
   <!-- everything else but result codes and enums -->
