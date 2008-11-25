@@ -83,6 +83,12 @@
 
 
 <!--
+ *  not explicitly matched elements and attributes
+-->
+<xsl:template match="*"/>
+
+
+<!--
  *  header
 -->
 <xsl:template match="/idl">
@@ -633,6 +639,14 @@
 
   <xsl:apply-templates select="@if" mode="end"/>
 
+</xsl:template>
+
+
+<!--
+ *  modules
+-->
+<xsl:template match="module">
+  <xsl:apply-templates select="class"/>
 </xsl:template>
 
 
