@@ -421,7 +421,6 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         int iss = 0;
         u_long tiwin;
 /*      int ts_present = 0; */
-        int mbuf_freed = 0;
 
         DEBUG_CALL("tcp_input");
         DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
@@ -1480,6 +1479,18 @@ step6:
 dodata:
 
         /*
+         * If this is a small packet, then ACK now - with Nagel
+         *      congestion avoidance sender won't send more until
+         *      he gets an ACK.
+         *
+         * See above.
+         */
+        if (ti->ti_len && (unsigned)ti->ti_len <= 5 &&
+            ((struct tcpiphdr_2 *)ti)->first_char == (char)27) {
+                tp->t_flags |= TF_ACKNOW;
+        }
+
+        /*
          * Process the segment text, merging it into the TCP sequencing queue,
          * and arranging for acknowledgment of receipt if necessary.
          * This process logically involves adjusting tp->rcv_wnd as data
@@ -1517,7 +1528,7 @@ dodata:
                  */
                 len = so->so_rcv.sb_datalen - (tp->rcv_adv - tp->rcv_nxt);
         } else {
-                mbuf_freed = 1; /* The mbuf must be freed, but only when its content is not needed anymore. */
+                m_free(pData, m);
                 tiflags &= ~TH_FIN;
         }
 
@@ -1585,28 +1596,6 @@ dodata:
                 }
         }
 
-        /*
-         * If this is a small packet, then ACK now - with Nagel
-         *      congestion avoidance sender won't send more until
-         *      he gets an ACK.
-         *
-         * See above.
-         */
-/*      if (ti->ti_len && (unsigned)ti->ti_len < tp->t_maxseg) {
- */
-/*      if ((ti->ti_len && (unsigned)ti->ti_len < tp->t_maxseg &&
- *              (so->so_iptos & IPTOS_LOWDELAY) == 0) ||
- *             ((so->so_iptos & IPTOS_LOWDELAY) &&
- *             ((struct tcpiphdr_2 *)ti)->first_char == (char)27)) {
- */
-        if (ti->ti_len && (unsigned)ti->ti_len <= 5 &&
-            ((struct tcpiphdr_2 *)ti)->first_char == (char)27) {
-                tp->t_flags |= TF_ACKNOW;
-        }
-
-        if (mbuf_freed) {
-                m_free(pData, m);
-        }
         /*
          * Return any desired output.
          */
