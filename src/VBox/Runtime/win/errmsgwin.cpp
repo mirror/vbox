@@ -48,6 +48,7 @@
 static const RTWINERRMSG  g_aStatusMsgs[] =
 {
 #include "errmsgcomdata.h"
+#include "errmsgvboxcomdata.h"
     { NULL, NULL, 0 }
 };
 

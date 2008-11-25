@@ -106,6 +106,8 @@ static const RTCOMERRMSG  g_aStatusMsgs[] =
     MY_ERR("NS_ERROR_FILE_ACCESS_DENIED",           "NS_ERROR_FILE_ACCESS_DENIED",                  UINT32_C(0x80520015)),
     MY_ERR("NS_SUCCESS_FILE_DIRECTORY_EMPTY",       "NS_SUCCESS_FILE_DIRECTORY_EMPTY",              UINT32_C(0x00520001)),
 
+#include "errmsgvboxcomdata.h"
+
     { NULL, NULL, 0 }
 #undef MY_ERR
 };

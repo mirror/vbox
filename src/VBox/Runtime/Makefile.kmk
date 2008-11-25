@@ -83,6 +83,7 @@ BLDDIRS += $(IPRT_OUT_DIR)
 OTHER_CLEAN += \
 	$(IPRT_OUT_DIR)/errmsgdata.h \
 	$(IPRT_OUT_DIR)/errmsgcomdata.h \
+	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt \
 	$(IPRT_OUT_DIR)/Doxyfile.iprt.dep \
 	$(IPRT_OUT_DIR)/docs.iprt
@@ -1432,7 +1433,10 @@ RuntimeEFCPP_SOURCES    = r3/alloc-ef-cpp.cpp
 common/err/errmsg.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
 common/err/errmsg.cpp_INCS = $(IPRT_OUT_DIR)
 
-win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgcomdata.h
+common/err/errmsgxpcom.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
+common/err/errmsgxpcom.cpp_INCS = $(IPRT_OUT_DIR)
+
+win/errmsgwin.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgcomdata.h $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 win/errmsgwin.cpp_INCS = $(IPRT_OUT_DIR)
 
 
@@ -1461,6 +1465,12 @@ $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
+$(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
+		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgvboxcom.xsl \
+		$(VBOX_PATH_RUNTIME_SRC)/../Main/idl/VirtualBox.xidl \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
+	$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
 
 #
 # Aliases for .cpp.h files so we can more easily do syntax checking from the editor.
