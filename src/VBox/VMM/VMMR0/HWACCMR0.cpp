@@ -160,12 +160,15 @@ VMMR0DECL(int) HWACCMR0Init(void)
     HWACCMR0Globals.pfnTermVM           = HWACCMR0DummyTermVM;
     HWACCMR0Globals.pfnSetupVM          = HWACCMR0DummySetupVM;
 
-#ifndef VBOX_WITH_HYBIRD_32BIT_KERNEL /* paranoia */
-
     /*
      * Check for VT-x and AMD-V capabilities
      */
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    if (    ASMHasCpuId()
+        &&  SUPR0GetPagingMode() < SUPPAGINGMODE_AMD64) /* VMON -> #UD in compatability mode; temporary hack. */
+#else
     if (ASMHasCpuId())
+#endif
     {
         uint32_t u32FeaturesECX;
         uint32_t u32Dummy;
@@ -351,8 +354,6 @@ VMMR0DECL(int) HWACCMR0Init(void)
     }
     else
         HWACCMR0Globals.lLastError = VERR_HWACCM_NO_CPUID;
-
-#endif /* !VBOX_WITH_HYBIRD_32BIT_KERNEL */
 
     if (HWACCMR0Globals.vmx.fSupported)
     {
