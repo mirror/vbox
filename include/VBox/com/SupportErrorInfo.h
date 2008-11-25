@@ -64,9 +64,9 @@ namespace com
  *
  * This way, error/warning objects are stacked together and form a chain of
  * errors where the most recent error is the first one retrieved by the
- * calling party, the preceeding error is what the
+ * calling party, the preceding error is what the
  * IVirtualBoxErrorInfo::next attribute of the first error points to, and so
- * on, upto the first error or warning occured which is the last in the
+ * on, up to the first error or warning occurred which is the last in the
  * chain. See IVirtualBoxErrorInfo documentation for more info.
  *
  * When the instance of the MultiResult class goes out of scope and gets
@@ -283,11 +283,11 @@ protected:
      * MultiResult for more information.
      *
      * @param  aResultCode  Result (error) code, must not be S_OK.
-     * @param  aIID         IID of the intrface that defines the error.
+     * @param  aIID         IID of the interface that defines the error.
      * @param  aComponent   Name of the component that sets the error (UTF8).
      * @param  aText        Error message in UTF8 (must not be NULL).
      *
-     * @return @a aResultCide argument, for convenience. If an error occurs
+     * @return @a aResultCode argument, for convenience. If an error occurs
      *         while setting error info itself, that error is returned instead
      *         of the @a aResultCode argument.
      */
@@ -300,7 +300,7 @@ protected:
 
     /**
      * Same as #setError() except that it makes sure that aResultCode doesn't
-     * have the error severty bit (31) set when passed down to the created
+     * have the error severity bit (31) set when passed down to the created
      * IVirtualBoxErrorInfo object.
      *
      * The error severity bit is always cleared by this call, thereof you can
