@@ -544,6 +544,8 @@ typedef enum
 #define VMX_ERROR_VMENTRY_INVALID_VM_EXEC_CTRL      25
 /** 26 VM entry with events blocked by MOV SS. */
 #define VMX_ERROR_VMENTRY_MOV_SS                    26
+/** 26 Invalid operand to INVEPT/INVVPID. */
+#define VMX_ERROR_INVEPTVPID_INVALID_OPERAND        28
 
 /** @} */
 
