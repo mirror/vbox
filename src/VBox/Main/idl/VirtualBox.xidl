@@ -1150,13 +1150,13 @@
       </desc>
     </attribute>
 
-		<attribute name="settingsFilePath" type="wstring" readonly="yes">
-			<desc>
-				Full name of the global settings file.
-				The value of this property corresponds to the value of
-				<link to="#homeFolder"/> plus <tt>/VirtualBox.xml</tt>.
-			</desc>
-		</attribute>
+    <attribute name="settingsFilePath" type="wstring" readonly="yes">
+      <desc>
+        Full name of the global settings file.
+        The value of this property corresponds to the value of
+        <link to="#homeFolder"/> plus <tt>/VirtualBox.xml</tt>.
+      </desc>
+    </attribute>
 
     <attribute name="settingsFileVersion" type="wstring" readonly="yes">
       <desc>
@@ -1172,7 +1172,7 @@
 
         The current version usually matches the value of the
         <link to="#settingsFormatVersion"/> attribute unless the
-				settings file was created by an older version of VirtualBox and there
+        settings file was created by an older version of VirtualBox and there
         was a change of the settings file format since then.
 
         Note that VirtualBox automatically converts settings files from older
@@ -2226,18 +2226,18 @@
       </param>
     </method>
 
-		<method name="saveSettings">
-			<desc>
-				Saves the global settings to the global settings file
-				(<link to="#settingsFilePath"/>).
+    <method name="saveSettings">
+      <desc>
+        Saves the global settings to the global settings file
+        (<link to="#settingsFilePath"/>).
 
-				This method is only useful for explicitly saving the global settings
-				file after it has been auto-converted from the old format to the most
-				recent format (see <link to="#settingsFileVersion"/> for details).
-				Normally, the global settings file is implicitly saved when a global
-				setting is changed.
-			</desc>
-		</method>
+        This method is only useful for explicitly saving the global settings
+        file after it has been auto-converted from the old format to the most
+        recent format (see <link to="#settingsFileVersion"/> for details).
+        Normally, the global settings file is implicitly saved when a global
+        setting is changed.
+      </desc>
+    </method>
 
     <method name="saveSettingsWithBackup">
       <desc>
