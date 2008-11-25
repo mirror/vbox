@@ -635,10 +635,9 @@ typedef struct MMLOOKUPHYPER
         /** Locked memory. */
         struct
         {
-            /** Host context pointer. */
+            /** Host context ring-3 pointer. */
             R3PTRTYPE(void *)       pvR3;
-            /** Host context ring-0 pointer. */
-            /** @todo #1865: Check if this actually works (doubt it) */
+            /** Host context ring-0 pointer. Optional. */
             RTR0PTR                 pvR0;
             /** Pointer to the locked mem record. */
             R3PTRTYPE(PMMLOCKEDMEM) pLockedMem;
@@ -647,10 +646,11 @@ typedef struct MMLOOKUPHYPER
         /** Contiguous physical memory. */
         struct
         {
-            /** Host context pointer. */
+            /** Host context ring-3 pointer. */
             R3PTRTYPE(void *)       pvR3;
-            /** @todo #1865: Add a pvR0 here! */
-            /** HC physical address corresponding to pvR3. */
+            /** Host context ring-0 pointer. Optional. */
+            RTR0PTR                 pvR0;
+            /** HC physical address corresponding to pvR3/pvR0. */
             RTHCPHYS                HCPhys;
         } HCPhys;
 

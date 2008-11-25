@@ -318,22 +318,23 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
  * @return VBox status code.
  *
  * @param   pVM         VM handle.
- * @param   pvR3        Host context address of the memory. Must be page
- *                      aligned!
+ * @param   pvR3        Ring-3 address of the memory. Must be page aligned!
+ * @param   pvR0        Optional ring-0 address of the memory.
  * @param   HCPhys      Host context physical address of the memory to be
  *                      mapped. Must be page aligned!
  * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     Description.
  * @param   pGCPtr      Where to store the GC address.
  */
-VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
+VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTR0PTR pvR0, RTHCPHYS HCPhys, size_t cb, const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvR3, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapHCPhys: pvR3=%p pvR0=%p HCPhys=%RHp cb=%d pszDesc=%p:{%s} pGCPtr=%p\n", pvR3, pvR0, HCPhys, (int)cb, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
      */
     AssertReturn(RT_ALIGN_P(pvR3, PAGE_SIZE) == pvR3, VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_T(pvR0, PAGE_SIZE, RTR0PTR) == pvR0, VERR_INVALID_PARAMETER);
     AssertReturn(RT_ALIGN_T(HCPhys, PAGE_SIZE, RTHCPHYS) == HCPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pszDesc && *pszDesc, VERR_INVALID_PARAMETER);
 
@@ -349,6 +350,7 @@ VMMR3DECL(int) MMR3HyperMapHCPhys(PVM pVM, void *pvR3, RTHCPHYS HCPhys, size_t c
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_HCPHYS;
         pLookup->u.HCPhys.pvR3   = pvR3;
+        pLookup->u.HCPhys.pvR0   = pvR0;
         pLookup->u.HCPhys.HCPhys = HCPhys;
 
         /*
@@ -1054,10 +1056,11 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
         switch (pLookup->enmType)
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
-                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv LOCKED  %-*s %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv %RHv LOCKED  %-*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
                                 pLookup->u.Locked.pvR3,
+                                pLookup->u.Locked.pvR0,
                                 sizeof(RTHCPTR) * 2,
                                 pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER_NOFREE  ? "nofree"
                                 : pLookup->u.Locked.pLockedMem->eType == MM_LOCKED_TYPE_HYPER       ? "autofree"
@@ -1068,10 +1071,12 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 break;
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
-                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv HCPHYS  %RHp %s\n",
+                pHlp->pfnPrintf(pHlp, "%RGv-%RGv %RHv %RHv HCPHYS  %RHp %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                pLookup->u.HCPhys.pvR3, pLookup->u.HCPhys.HCPhys,
+                                pLookup->u.HCPhys.pvR3,
+                                pLookup->u.HCPhys.pvR0,
+                                pLookup->u.HCPhys.HCPhys,
                                 pLookup->pszDesc);
                 break;
 
@@ -1079,7 +1084,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s GCPHYS  %RGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                sizeof(RTHCPTR) * 2, "",
+                                sizeof(RTHCPTR) * 2 * 2 + 1, "",
                                 pLookup->u.GCPhys.GCPhys, RT_ABS((int)(sizeof(RTHCPHYS) - sizeof(RTGCPHYS))) * 2, "",
                                 pLookup->pszDesc);
                 break;
@@ -1088,7 +1093,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s MMIO2   %RGp%*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                sizeof(RTHCPTR) * 2, "",
+                                sizeof(RTHCPTR) * 2 * 2 + 1, "",
                                 pLookup->u.MMIO2.off, RT_ABS((int)(sizeof(RTHCPHYS) - sizeof(RTGCPHYS))) * 2, "",
                                 pLookup->pszDesc);
                 break;
@@ -1097,7 +1102,7 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
                 pHlp->pfnPrintf(pHlp, "%RGv-%RGv %*s DYNAMIC %*s %s\n",
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC,
                                 pLookup->off + pVM->mm.s.pvHyperAreaGC + pLookup->cb,
-                                sizeof(RTHCPTR) * 2, "",
+                                sizeof(RTHCPTR) * 2 * 2 + 1, "",
                                 sizeof(RTHCPTR) * 2, "",
                                 pLookup->pszDesc);
                 break;
