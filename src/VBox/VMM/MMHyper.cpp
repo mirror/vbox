@@ -783,22 +783,16 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
     const uint32_t  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
     uint32_t const  cPages = cb >> PAGE_SHIFT;
-    int             rc;
-    void           *pv;
-    RTR0PTR         pvR0 = NIL_RTR0PTR;
-#if 0
-    PSUPPAGE        paPages = NULL;
-    rc = SUPPageAlloc(cbAligned >> PAGE_SHIFT, &pv); /** @todo #1865: heap allocation must be changed for osx (only). */
-#else /**@todo resume here. */
     PSUPPAGE        paPages = (PSUPPAGE)MMR3HeapAlloc(pVM, MM_TAG_MM, cPages * sizeof(paPages[0]));
     if (!paPages)
         return VERR_NO_MEMORY;
-    rc = SUPR3PageAllocEx(cPages,
-                          0 /*fFlags*/,
-                          &pv,
-                          VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
-                          paPages);
-#endif
+    void           *pv;
+    RTR0PTR         pvR0 = NIL_RTR0PTR;
+    int rc = SUPR3PageAllocEx(cPages,
+                              0 /*fFlags*/,
+                              &pv,
+                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+                              paPages);
     if (RT_SUCCESS(rc))
     {
         if (!VMMIsHwVirtExtForced(pVM))
@@ -838,7 +832,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
         *ppHeap = pHeap;
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cbAligned >> PAGE_SHIFT, rc));
+    AssertMsgFailed(("SUPR3PageAllocEx(%d,,,,) -> %Rrc\n", cbAligned >> PAGE_SHIFT, rc));
 
     *ppHeap = NULL;
     return rc;
@@ -944,15 +938,32 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
     }
 
     /*
-     * Allocate the pages and the HMA space.
+     * Allocate the pages and map them into HMA space.
      */
     cb = RT_ALIGN(cb, PAGE_SIZE);
-    void *pvPages;
-    int rc = SUPPageAlloc(cb >> PAGE_SHIFT, &pvPages);
+    uint32_t const  cPages = cb >> PAGE_SHIFT;
+    PSUPPAGE        paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(paPages[0]));
+    if (!paPages)
+        return VERR_NO_TMP_MEMORY;
+    void           *pvPages;
+    RTR0PTR         pvR0 = NIL_RTR0PTR;
+    int rc = SUPR3PageAllocEx(cPages,
+                              0 /*fFlags*/,
+                              &pvPages,
+                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+                              paPages);
     if (RT_SUCCESS(rc))
     {
+        if (!VMMIsHwVirtExtForced(pVM))
+            pvR0 = (uintptr_t)pvPages;
+        memset(pvPages, 0, cb);
+
         RTGCPTR GCPtr;
-        rc = MMR3HyperMapHCRam(pVM, pvPages, cb, true,
+        rc = MMR3HyperMapPages(pVM,
+                               pvPages,
+                               pvR0,
+                               cPages,
+                               paPages,
                                MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmR3GetTagName(enmTag)),
                                &GCPtr);
         if (RT_SUCCESS(rc))
@@ -963,7 +974,8 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
             return rc;
         }
         AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cb, rc));
-        SUPPageFree(pvPages, cb >> PAGE_SHIFT);
+        SUPR3PageFreeEx(pvPages, cPages);
+
 
         /*
          * HACK ALERT! Try allocate it off the heap so that we don't freak
