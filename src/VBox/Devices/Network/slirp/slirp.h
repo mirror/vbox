@@ -26,6 +26,9 @@ typedef int socklen_t;
 #endif
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #include <VBox/log.h>
+#ifdef VBOX_WITH_SLIRP_MEMORY_CHECK
+#define RTMEM_WRAP_TO_EF_APIS
+#endif /* VBOX_WITH_SLIRP_MEMORY_CHECK */
 #include <iprt/mem.h>
 #ifdef RT_OS_WINDOWS
 # include <windows.h>
