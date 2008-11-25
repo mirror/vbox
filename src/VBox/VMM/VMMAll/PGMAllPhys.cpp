@@ -2194,7 +2194,7 @@ VMMDECL(int) PGMPhysWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, const void *pvSrc, siz
     {
         /* Convert virtual to physical address */
         rc = PGMPhysGCPtr2GCPhys(pVM, GCPtrDst, &GCPhys);
-        AssertMsgRCReturn(rc, ("PGMPhysGCPtr2GCPhys failed for %VGv\n", GCPtrDst), rc);
+        AssertMsgRCReturn(rc, ("PGMPhysGCPtr2GCPhys failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
 
         /* mark the guest page as accessed and dirty. */
         rc = PGMGstModifyPage(pVM, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
