@@ -523,6 +523,58 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages);
 SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages);
 
 /**
+ * Locks down the physical memory backing a virtual memory
+ * range in the current process.
+ *
+ * @returns VBox status code.
+ * @param   pvStart         Start of virtual memory range.
+ *                          Must be page aligned.
+ * @param   cPages          Number of pages.
+ * @param   paPages         Where to store the physical page addresses returned.
+ *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
+ */
+SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
+
+/**
+ * Releases locked down pages.
+ *
+ * @returns VBox status code.
+ * @param   pvStart         Start of virtual memory range previously locked
+ *                          down by SUPPageLock().
+ */
+SUPR3DECL(int) SUPPageUnlock(void *pvStart);
+
+/**
+ * Allocate zero-filled, locked, pages with user and, optionally, kernel
+ * mappings.
+ *
+ * Use SUPR3PageFreeEx() to free memory allocated with this function.
+ *
+ * This SUPR3PageAllocEx and SUPR3PageFreeEx replaces SUPPageAllocLocked,
+ * SUPPageAllocLockedEx, SUPPageFreeLocked, SUPPageAlloc, SUPPageLock,
+ * SUPPageUnlock and SUPPageFree.
+ *
+ * @returns VBox status code.
+ * @param   cPages          The number of pages to allocate.
+ * @param   fFlags          Flags, reserved. Must be zero.
+ * @param   ppvPages        Where to store the address of the user mapping.
+ * @param   pR0Ptr          Where to store the address of the kernel mapping.
+ *                          NULL if no kernel mapping is desired.
+ * @param   paPages         Where to store the physical addresses of each page.
+ *                          Optional.
+ */
+SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages, PRTR0PTR pR0Ptr, PSUPPAGE paPages);
+
+/**
+ * Free pages allocated by SUPR3PageAllocEx.
+ *
+ * @returns VBox status code.
+ * @param   pvPages         The address of the user mapping.
+ * @param   cPages          The number of pages.
+ */
+SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages);
+
+/**
  * Allocate zero-filled locked pages.
  *
  * Use this to allocate a number of pages rather than using RTMem*() and mess with
@@ -559,28 +611,6 @@ SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paP
  * @param   cPages          Number of pages that was allocated.
  */
 SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages);
-
-/**
- * Locks down the physical memory backing a virtual memory
- * range in the current process.
- *
- * @returns VBox status code.
- * @param   pvStart         Start of virtual memory range.
- *                          Must be page aligned.
- * @param   cPages          Number of pages.
- * @param   paPages         Where to store the physical page addresses returned.
- *                          On entry this will point to an array of with cbMemory >> PAGE_SHIFT entries.
- */
-SUPR3DECL(int) SUPPageLock(void *pvStart, size_t cPages, PSUPPAGE paPages);
-
-/**
- * Releases locked down pages.
- *
- * @returns VBox status code.
- * @param   pvStart         Start of virtual memory range previously locked
- *                          down by SUPPageLock().
- */
-SUPR3DECL(int) SUPPageUnlock(void *pvStart);
 
 /**
  * Allocated memory with page aligned memory with a contiguous and locked physical
@@ -818,6 +848,7 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
 SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages);
 SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
+SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32_t fFlags, PRTR3PTR ppvR3, PRTR0PTR ppvR0, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);

@@ -134,8 +134,8 @@ static PSUPQUERYFUNCS g_pFunctions;
 
 /** VMMR0 Load Address. */
 static RTR0PTR      g_pvVMMR0 = NIL_RTR0PTR;
-/** PAGE_ALLOC support indicator. */
-static bool         g_fSupportsPageAllocLocked = true;
+/** PAGE_ALLOC_EX sans kernel mapping support indicator. */
+static bool         g_fSupportsPageAllocNoKernel = true;
 /** Fake mode indicator. (~0 at first, 0 or 1 after first test) */
 static uint32_t     g_u32FakeMode = ~0;
 
@@ -852,14 +852,46 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart)
 
 SUPR3DECL(int) SUPPageAllocLocked(size_t cPages, void **ppvPages)
 {
-    return SUPPageAllocLockedEx(cPages, ppvPages, NULL);
+    return SUPR3PageAllocEx(cPages, 0 /*fFlags*/, ppvPages, NULL /*pR0Ptr*/, NULL /*paPages*/);
+}
+
+
+SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages)
+{
+    return SUPR3PageAllocEx(cPages, 0 /*fFlags*/, ppvPages, NULL /*pR0Ptr*/, paPages);
+}
+
+
+SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages)
+{
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
+    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+
+    /*
+     * Check if we're employing the fallback or not to avoid the
+     * fuzzy handling of this in SUPR3PageFreeEx.
+     */
+    int rc;
+    if (g_fSupportsPageAllocNoKernel)
+        rc = SUPR3PageFreeEx(pvPages, cPages);
+    else
+    {
+        /* fallback */
+        rc = SUPPageUnlock(pvPages);
+        if (RT_SUCCESS(rc))
+            rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
+    }
+    return rc;
 }
 
 
 /**
  * Fallback for SUPPageAllocLockedEx on systems where RTR0MemObjPhysAllocNC isn't supported.
  */
-static int supPageAllocLockedFallback(size_t cPages, void **ppvPages, PSUPPAGE paPages)
+static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUPPAGE paPages)
 {
     int rc = suplibOsPageAlloc(&g_supLibData, cPages, ppvPages);
     if (RT_SUCCESS(rc))
@@ -874,56 +906,72 @@ static int supPageAllocLockedFallback(size_t cPages, void **ppvPages, PSUPPAGE p
 }
 
 
-SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages)
+SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages, PRTR0PTR pR0Ptr, PSUPPAGE paPages)
 {
     /*
      * Validate.
      */
     AssertPtrReturn(ppvPages, VERR_INVALID_POINTER);
     *ppvPages = NULL;
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pR0Ptr, VERR_INVALID_POINTER);
+    if (pR0Ptr)
+        *pR0Ptr = NIL_RTR0PTR;
+    AssertPtrNullReturn(paPages, VERR_INVALID_POINTER);
+    AssertMsgReturn(cPages > 0 && cPages < 16384, ("cPages=%zu\n", cPages), VERR_INVALID_PARAMETER);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
     {
-        *ppvPages = RTMemPageAllocZ((size_t)cPages * PAGE_SIZE);
-        if (!*ppvPages)
+        void *pv = RTMemPageAllocZ(cPages * PAGE_SIZE);
+        if (!pv)
             return VERR_NO_MEMORY;
+        *ppvPages = pv;
+        if (pR0Ptr)
+            *pR0Ptr = (RTR0PTR)pv;
         if (paPages)
             for (size_t iPage = 0; iPage < cPages; iPage++)
             {
                 paPages[iPage].uReserved = 0;
-                paPages[iPage].Phys = (iPage + 1234) << PAGE_SHIFT;
+                paPages[iPage].Phys = (iPage + 4321) << PAGE_SHIFT;
                 Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
             }
         return VINF_SUCCESS;
     }
 
-    /* use fallback? */
-    if (!g_fSupportsPageAllocLocked)
-        return supPageAllocLockedFallback(cPages, ppvPages, paPages);
+    /*
+     * Use fallback for non-R0 mapping?
+     */
+    if (    !pR0Ptr
+        &&  !g_fSupportsPageAllocNoKernel)
+        return supPagePageAllocNoKernelFallback(cPages, ppvPages, paPages);
 
     /*
      * Issue IOCtl to the SUPDRV kernel module.
      */
     int rc;
-    PSUPPAGEALLOC pReq = (PSUPPAGEALLOC)RTMemTmpAllocZ(SUP_IOCTL_PAGE_ALLOC_SIZE(cPages));
+    PSUPPAGEALLOCEX pReq = (PSUPPAGEALLOCEX)RTMemTmpAllocZ(SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages));
     if (pReq)
     {
         pReq->Hdr.u32Cookie = g_u32Cookie;
         pReq->Hdr.u32SessionCookie = g_u32SessionCookie;
-        pReq->Hdr.cbIn = SUP_IOCTL_PAGE_ALLOC_SIZE_IN;
-        pReq->Hdr.cbOut = SUP_IOCTL_PAGE_ALLOC_SIZE_OUT(cPages);
+        pReq->Hdr.cbIn = SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN;
+        pReq->Hdr.cbOut = SUP_IOCTL_PAGE_ALLOC_EX_SIZE_OUT(cPages);
         pReq->Hdr.fFlags = SUPREQHDR_FLAGS_MAGIC | SUPREQHDR_FLAGS_EXTRA_OUT;
         pReq->Hdr.rc = VERR_INTERNAL_ERROR;
         pReq->u.In.cPages = (uint32_t)cPages; AssertRelease(pReq->u.In.cPages == cPages);
-        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_ALLOC, pReq, SUP_IOCTL_PAGE_ALLOC_SIZE(cPages));
+        pReq->u.In.fKernelMapping = pR0Ptr != NULL;
+        pReq->u.In.fUserMapping = true;
+        pReq->u.In.fReserved0 = false;
+        pReq->u.In.fReserved1 = false;
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_ALLOC_EX, pReq, SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages));
         if (RT_SUCCESS(rc))
         {
             rc = pReq->Hdr.rc;
             if (RT_SUCCESS(rc))
             {
                 *ppvPages = pReq->u.Out.pvR3;
+                if (pR0Ptr)
+                    *pR0Ptr   = pReq->u.Out.pvR0;
                 if (paPages)
                     for (size_t iPage = 0; iPage < cPages; iPage++)
                     {
@@ -932,10 +980,11 @@ SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paP
                         Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
                     }
             }
-            else if (rc == VERR_NOT_SUPPORTED)
+            else if (   rc == VERR_NOT_SUPPORTED
+                     && !pR0Ptr)
             {
-                g_fSupportsPageAllocLocked = false;
-                rc = supPageAllocLockedFallback(cPages, ppvPages, paPages);
+                g_fSupportsPageAllocNoKernel = false;
+                rc = supPagePageAllocNoKernelFallback(cPages, ppvPages, paPages);
             }
         }
 
@@ -944,10 +993,11 @@ SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paP
     else
         rc = VERR_NO_TMP_MEMORY;
     return rc;
+
 }
 
 
-SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages)
+SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages)
 {
     /*
      * Validate.
@@ -963,29 +1013,29 @@ SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages)
     }
 
     /*
-     * Issue IOCtl to the SUPDRV kernel module.
+     * Try normal free first, then if it fails check if we're using the fallback                                            .
+     * for the allocations without kernel mappings and attempt unlocking it.
      */
-    int rc;
-    if (g_fSupportsPageAllocLocked)
+    NOREF(cPages);
+    SUPPAGEFREE Req;
+    Req.Hdr.u32Cookie = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn = SUP_IOCTL_PAGE_FREE_SIZE_IN;
+    Req.Hdr.cbOut = SUP_IOCTL_PAGE_FREE_SIZE_OUT;
+    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc = VERR_INTERNAL_ERROR;
+    Req.u.In.pvR3 = pvPages;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_FREE, &Req, SUP_IOCTL_PAGE_FREE_SIZE);
+    if (RT_SUCCESS(rc))
     {
-        SUPPAGEFREE Req;
-        Req.Hdr.u32Cookie = g_u32Cookie;
-        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-        Req.Hdr.cbIn = SUP_IOCTL_PAGE_FREE_SIZE_IN;
-        Req.Hdr.cbOut = SUP_IOCTL_PAGE_FREE_SIZE_OUT;
-        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-        Req.Hdr.rc = VERR_INTERNAL_ERROR;
-        Req.u.In.pvR3 = pvPages;
-        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_FREE, &Req, SUP_IOCTL_PAGE_FREE_SIZE);
-        if (RT_SUCCESS(rc))
-            rc = Req.Hdr.rc;
-    }
-    else
-    {
-        /* fallback */
-        rc = SUPPageUnlock(pvPages);
-        if (RT_SUCCESS(rc))
-            rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
+        rc = Req.Hdr.rc;
+        if (    rc == VERR_INVALID_PARAMETER
+            &&  !g_fSupportsPageAllocNoKernel)
+        {
+            int rc2 = SUPPageUnlock(pvPages);
+            if (RT_SUCCESS(rc2))
+                rc = suplibOsPageFree(&g_supLibData, pvPages, cPages);
+        }
     }
     return rc;
 }

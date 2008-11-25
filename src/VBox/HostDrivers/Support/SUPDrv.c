@@ -1379,6 +1379,29 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_ALLOC_EX):
+        {
+            /* validate */
+            PSUPPAGEALLOCEX pReq = (PSUPPAGEALLOCEX)pReqHdr;
+            REQ_CHECK_EXPR(SUP_IOCTL_PAGE_ALLOC_EX, pReq->Hdr.cbIn <= SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN);
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_PAGE_ALLOC_EX, SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN, SUP_IOCTL_PAGE_ALLOC_EX_SIZE_OUT(pReq->u.In.cPages));
+            REQ_CHECK_EXPR_FMT(pReq->u.In.fKernelMapping || pReq->u.In.fUserMapping,
+                               ("SUP_IOCTL_PAGE_ALLOC_EX: No mapping requested!\n"));
+            REQ_CHECK_EXPR_FMT(pReq->u.In.fUserMapping,
+                               ("SUP_IOCTL_PAGE_ALLOC_EX: Must have user mapping!\n"));
+            REQ_CHECK_EXPR_FMT(!pReq->u.In.fReserved0 && !pReq->u.In.fReserved1,
+                               ("SUP_IOCTL_PAGE_ALLOC_EX: fReserved0=%d fReserved1=%d\n", pReq->u.In.fReserved0, pReq->u.In.fReserved1));
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0PageAllocEx(pSession, pReq->u.In.cPages, 0 /* fFlags */,
+                                            pReq->u.In.fUserMapping   ? &pReq->u.Out.pvR3 : NULL,
+                                            pReq->u.In.fKernelMapping ? &pReq->u.Out.pvR0 : NULL,
+                                            &pReq->u.Out.aPages[0]);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
+        }
+
         case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_PAGE_FREE):
         {
             /* validate */
@@ -2322,7 +2345,9 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 
 /**
  * Allocates a chunk of memory with only a R3 mappings.
- * The memory is fixed and it's possible to query the physical addresses using SUPR0MemGetPhys().
+ *
+ * The memory is fixed and it's possible to query the physical addresses using
+ * SUPR0MemGetPhys().
  *
  * @returns IPRT status code.
  * @param   pSession    The session to associated the allocation with.
@@ -2332,6 +2357,29 @@ SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
  */
 SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages)
 {
+    AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
+    return SUPR0PageAllocEx(pSession, cPages, 0 /*fFlags*/, ppvR3, NULL, paPages);
+}
+
+
+/**
+ * Allocates a chunk of memory with a kernel or/and a user mode mapping.
+ *
+ * The memory is fixed and it's possible to query the physical addresses using
+ * SUPR0MemGetPhys().
+ *
+ * @returns IPRT status code.
+ * @param   pSession    The session to associated the allocation with.
+ * @param   cPages      The number of pages to allocate.
+ * @param   fFlags      Flags, reserved for the future. Must be zero.
+ * @param   ppvR3       Where to store the address of the Ring-3 mapping.
+ *                      NULL if no ring-3 mapping.
+ * @param   ppvR3       Where to store the address of the Ring-0 mapping.
+ *                      NULL if no ring-0 mapping.
+ * @param   paPages     Where to store the addresses of the pages. Optional.
+ */
+SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32_t fFlags, PRTR3PTR ppvR3, PRTR0PTR ppvR0, PRTHCPHYS paPages)
+{
     int             rc;
     SUPDRVMEMREF    Mem = { NIL_RTR0MEMOBJ, NIL_RTR0MEMOBJ, MEMREF_TYPE_UNUSED };
     LogFlow(("SUPR0PageAlloc: pSession=%p cb=%d ppvR3=%p\n", pSession, cPages, ppvR3));
@@ -2340,7 +2388,10 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR
      * Validate input. The allowed allocation size must be at least equal to the maximum guest VRAM size.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppvR3, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(ppvR3, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(ppvR0, VERR_INVALID_POINTER);
+    AssertReturn(ppvR3 || ppvR0, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     if (cPages < 1 || cPages > (128 * _1M)/PAGE_SIZE)
     {
         Log(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 128MB.\n", cPages));
@@ -2350,19 +2401,28 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR
     /*
      * Let IPRT do the work.
      */
-    rc = RTR0MemObjAllocPhysNC(&Mem.MemObj, (size_t)cPages * PAGE_SIZE, NIL_RTHCPHYS);
+    if (ppvR0)
+        rc = RTR0MemObjAllocPage(&Mem.MemObj, (size_t)cPages * PAGE_SIZE, true /* fExecutable */);
+    else
+        rc = RTR0MemObjAllocPhysNC(&Mem.MemObj, (size_t)cPages * PAGE_SIZE, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
         int rc2;
-        rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
-                               RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+        if (ppvR3)
+            rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0,
+                                   RTMEM_PROT_EXEC | RTMEM_PROT_WRITE | RTMEM_PROT_READ, RTR0ProcHandleSelf());
+        else
+            Mem.MapObjR3 = NIL_RTR0MEMOBJ;
         if (RT_SUCCESS(rc))
         {
-            Mem.eType = MEMREF_TYPE_LOCKED_SUP;
+            Mem.eType = MEMREF_TYPE_PAGE;
             rc = supdrvMemAdd(&Mem, pSession);
             if (!rc)
             {
-                *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
+                if (ppvR3)
+                    *ppvR3 = RTR0MemObjAddressR3(Mem.MapObjR3);
+                if (ppvR0)
+                    *ppvR0 = RTR0MemObjAddress(Mem.MemObj);
                 if (paPages)
                 {
                     uint32_t iPage = cPages;
@@ -2374,6 +2434,7 @@ SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR
                 }
                 return VINF_SUCCESS;
             }
+
             rc2 = RTR0MemObjFree(Mem.MapObjR3, false);
             AssertRC(rc2);
         }
@@ -2413,7 +2474,7 @@ static bool supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3
             unsigned i;
             for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
-                if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
+                if (    pBundle->aMem[i].eType == MEMREF_TYPE_PAGE
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
                     &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
@@ -2430,7 +2491,7 @@ static bool supdrvPageWasLockedByPageAlloc(PSUPDRVSESSION pSession, RTR3PTR pvR3
 
 
 /**
- * Get the physical addresses of memory allocated using SUPR0PageAlloc().
+ * Get the physical addresses of memory allocated using SUPR0PageAllocEx().
  *
  * This function will be removed along with the lock/unlock hacks when
  * we've cleaned up the ring-3 code properly.
@@ -2458,7 +2519,7 @@ static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPa
             unsigned i;
             for (i = 0; i < RT_ELEMENTS(pBundle->aMem); i++)
             {
-                if (    pBundle->aMem[i].eType == MEMREF_TYPE_LOCKED_SUP
+                if (    pBundle->aMem[i].eType == MEMREF_TYPE_PAGE
                     &&  pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     &&  pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
                     &&  RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3)
@@ -2481,17 +2542,18 @@ static int supdrvPageGetPhys(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPa
 
 
 /**
- * Free memory allocated by SUPR0PageAlloc().
+ * Free memory allocated by SUPR0PageAlloc() and SUPR0PageAllocEx().
  *
  * @returns IPRT status code.
  * @param   pSession        The session owning the allocation.
- * @param   pvR3             The Ring-3 address returned by SUPR0PageAlloc().
+ * @param   pvR3             The Ring-3 address returned by SUPR0PageAlloc() or
+ *                           SUPR0PageAllocEx().
  */
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3)
 {
     LogFlow(("SUPR0PageFree: pSession=%p pvR3=%p\n", pSession, (void *)pvR3));
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_LOCKED_SUP);
+    return supdrvMemRelease(pSession, (RTHCUINTPTR)pvR3, MEMREF_TYPE_PAGE);
 }
 
 
@@ -2971,12 +3033,12 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     pBundle->aMem[i].MapObjR3 = NIL_RTR0MEMOBJ;
                     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
 
-                    if (Mem.MapObjR3)
+                    if (Mem.MapObjR3 != NIL_RTR0MEMOBJ)
                     {
                         int rc = RTR0MemObjFree(Mem.MapObjR3, false);
                         AssertRC(rc); /** @todo figure out how to handle this. */
                     }
-                    if (Mem.MemObj)
+                    if (Mem.MemObj != NIL_RTR0MEMOBJ)
                     {
                         int rc = RTR0MemObjFree(Mem.MemObj, false);
                         AssertRC(rc); /** @todo figure out how to handle this. */

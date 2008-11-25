@@ -180,8 +180,14 @@ typedef SUPREQHDR *PSUPREQHDR;
 
 /** Current interface version.
  * The upper 16-bit is the major version, the the lower the minor version.
- * When incompatible changes are made, the upper major number has to be changed. */
-#define SUPDRV_IOC_VERSION                              0x000a0003
+ * When incompatible changes are made, the upper major number has to be changed.
+ *
+ * @todo Pending work on next major version change:
+ *          - Eliminate supdrvPageWasLockedByPageAlloc and supdrvPageGetPhys.
+ *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
+ *            and renaming the related IOCtls too.
+ */
+#define SUPDRV_IOC_VERSION                              0x000a0004
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -626,7 +632,7 @@ typedef struct SUPPAGEALLOC
 
 
 /** @name SUP_IOCTL_PAGE_FREE
- * Free memory allocated with SUP_IOCTL_PAGE_ALLOC.
+ * Free memory allocated with SUP_IOCTL_PAGE_ALLOC or SUP_IOCTL_PAGE_ALLOC_EX.
  * @{
  */
 #define SUP_IOCTL_PAGE_FREE                             SUP_CTL_CODE_SIZE(13, SUP_IOCTL_PAGE_FREE_SIZE_IN)
@@ -884,6 +890,53 @@ typedef struct SUPCALLSERVICE
     /** The request packet passed to SUP. */
     uint8_t                 abReqPkt[1];
 } SUPCALLSERVICE, *PSUPCALLSERVICE;
+/** @} */
+
+/** @name SUP_IOCTL_PAGE_ALLOC_EX
+ * Allocate memory and map it into kernel and/or user space. The memory is of
+ * course locked. This is an extended version of SUP_IOCTL_PAGE_ALLOC and the
+ * result should be freed using SUP_IOCTL_PAGE_FREE.
+ *
+ * @remarks Allocations without a kernel mapping may fail with
+ *          VERR_NOT_SUPPORTED on some platforms just like with
+ *          SUP_IOCTL_PAGE_ALLOC.
+ *
+ * @{
+ */
+#define SUP_IOCTL_PAGE_ALLOC_EX                     SUP_CTL_CODE_BIG(23)
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)        RT_UOFFSETOF(SUPPAGEALLOCEX, u.Out.aPages[cPages])
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_IN             (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPPAGEALLOCEX, u.In))
+#define SUP_IOCTL_PAGE_ALLOC_EX_SIZE_OUT(cPages)    SUP_IOCTL_PAGE_ALLOC_EX_SIZE(cPages)
+typedef struct SUPPAGEALLOCEX
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Number of pages to allocate */
+            uint32_t        cPages;
+            /** Whether it should have kernel mapping. */
+            bool            fKernelMapping;
+            /** Whether it should have a user mapping. */
+            bool            fUserMapping;
+            /** Reserved. Must be false. */
+            bool            fReserved0;
+            /** Reserved. Must be false. */
+            bool            fReserved1;
+        } In;
+        struct
+        {
+            /** Returned ring-3 address. */
+            RTR3PTR         pvR3;
+            /** Returned ring-0 address. */
+            RTR0PTR         pvR0;
+            /** The physical addresses of the allocated pages. */
+            RTHCPHYS        aPages[1];
+        } Out;
+    } u;
+} SUPPAGEALLOCEX, *PSUPPAGEALLOCEX;
 /** @} */
 
 
