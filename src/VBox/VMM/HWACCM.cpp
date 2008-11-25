@@ -790,6 +790,19 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
 {
     Log(("HWACCMR3Relocate to %RGv\n", MMHyperGetArea(pVM, 0)));
+
+    /* Fetch the current paging mode during the relocate callback during state loading. */
+    if (VMR3GetState(pVM) == VMSTATE_LOADING)
+    {
+        for (unsigned i=0;i<pVM->cCPUs;i++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            /* @todo SMP */
+            pVCpu->hwaccm.s.enmShadowMode        = PGMGetShadowMode(pVM);
+            pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMGetGuestMode(pVM);
+        }
+    }
+
     return;
 }
 
@@ -816,6 +829,10 @@ VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM)
  */
 VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
+    /* Ignore page mode changes during state loading. */
+    if (VMR3GetState(pVM) == VMSTATE_LOADING)
+        return;
+
     PVMCPU pVCpu = VMMGetCpu(pVM);
     pVCpu->hwaccm.s.enmShadowMode = enmShadowMode;
 
