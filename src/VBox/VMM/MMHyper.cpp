@@ -42,7 +42,7 @@
 *******************************************************************************/
 static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser);
 static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR pGCPtr, PMMLOOKUPHYPER *ppLookup);
-static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap);
+static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, PRTR0PTR pR0PtrHeap);
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
@@ -91,11 +91,9 @@ int mmR3HyperInit(PVM pVM)
      * (This must be done before we start adding memory to the
      * hypervisor static area because lookup records are allocated from it.)
      */
-    rc = mmR3HyperHeapCreate(pVM, cbHyperHeap, &pVM->mm.s.pHyperHeapR3);
+    rc = mmR3HyperHeapCreate(pVM, cbHyperHeap, &pVM->mm.s.pHyperHeapR3, &pVM->mm.s.pHyperHeapR0);
     if (RT_SUCCESS(rc))
     {
-        pVM->mm.s.pHyperHeapR0 = (uintptr_t)pVM->mm.s.pHyperHeapR3; /** @todo #1865: map into ring-0 / whatever. */
-
         /*
          * Make a small head fence to fend of accidental sequential access.
          */
@@ -698,11 +696,13 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
  * Allocates a new heap.
  *
  * @returns VBox status code.
- * @param   pVM     The VM handle.
- * @param   cb      The size of the new heap.
- * @param   ppHeap  Where to store the heap pointer on successful return.
+ * @param   pVM         The VM handle.
+ * @param   cb          The size of the new heap.
+ * @param   ppHeap      Where to store the heap pointer on successful return.
+ * @param   pR0PtrHeap  Where to store the ring-0 address of the heap on
+ *                      success.
  */
-static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
+static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, PRTR0PTR pR0PtrHeap)
 {
     /*
      * Allocate the hypervisor heap.
@@ -757,6 +757,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
         STAMR3Register(pVM, &pHeap->cbFree, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, "/MM/HyperHeap/cbFree",  STAMUNIT_BYTES, "The free space.");
 
         *ppHeap = pHeap;
+        *pR0PtrHeap = pvR0;
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("SUPR3PageAllocEx(%d,,,,) -> %Rrc\n", cbAligned >> PAGE_SHIFT, rc));
