@@ -26,6 +26,7 @@
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/EventQueue.h>
+#include <VBox/com/string.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/types.h>
@@ -111,6 +112,7 @@ typedef enum
 /*
  * Prototypes
  */
+/* VBoxManage.cpp */
 int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
 int errorArgument(const char *pszFormat, ...);
 
@@ -119,10 +121,27 @@ void printUsageInternal(USAGECATEGORY u64Cmd);
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 #endif /* !VBOX_ONLY_DOCS */
+
+/* VBoxManageGuestProp.cpp */
 extern void usageGuestProperty(void);
 #ifndef VBOX_ONLY_DOCS
 extern int handleGuestProperty(int argc, char *argv[],
                                ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+
+/* VBoxManageInfo.cpp */
+void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const com::Bstr &prefix = "", int level = 0);
+int handleShowVMInfo(int argc, char *argv[],
+                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
+                    ComPtr <IConsole> console = ComPtr <IConsole> (),
+                    VMINFO_DETAILS details = VMINFO_NONE);
+int handleList(int argc, char *argv[],
+               ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+
+/* VBoxManageVD.cpp */
+/* VBoxManageUSB.cpp */
+/* VBoxManageTODO.cpp */
+
 #endif /* !VBOX_ONLY_DOCS */
 unsigned long VBoxSVNRev();
 
