@@ -360,6 +360,16 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
             if (vboxGlobal().isVMConsoleProcess())
             {
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                /* Keep selector window in memory (hidden) because we need it for
+                 * the systray menu. */
+                vboxGlobal().selectorWnd();
+                if (   vboxGlobal().trayIconInstall()
+                    && vboxGlobal().isTrayIcon())
+                {
+                    /* Nothing to do here yet. */
+                }
+#endif
                 vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                     rc = a.exec();
