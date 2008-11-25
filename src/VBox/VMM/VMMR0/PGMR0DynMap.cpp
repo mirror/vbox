@@ -333,7 +333,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
      * Do we need the cache? Skip the last bit if we don't.
      */
 #if 1
-    if (!HWACCMIsEnabled(pVM))
+    if (!VMMIsHwVirtExtForced(pVM))
         return VINF_SUCCESS;
 #endif
 

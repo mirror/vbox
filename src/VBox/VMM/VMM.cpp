@@ -231,7 +231,7 @@ static int vmmR3InitStacks(PVM pVM)
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         /* MMHyperR3ToR0 returns R3 when not doing hardware assisted virtualization. */
-        if (!HWACCMIsEnabled(pVM))
+        if (!VMMIsHwVirtExtForced(pVM))
             pVM->vmm.s.CallHostR0JmpBuf.pvSavedStack = NIL_RTR0PTR;
         else
 #endif
