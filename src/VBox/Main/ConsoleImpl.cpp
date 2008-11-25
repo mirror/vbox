@@ -1532,9 +1532,9 @@ STDMETHODIMP Console::Resume()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Paused)
-        return setError (E_FAIL, tr ("Cannot resume the machine as it is "
-                                     "not paused (machine state: %d)"),
-                         mMachineState);
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot resume the machine as it is not paused "
+                "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1552,7 +1552,7 @@ STDMETHODIMP Console::Resume()
         vrc = VMR3Resume (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL,
+        setError (VBOX_E_VM_ERROR,
             tr ("Could not resume the machine execution (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
@@ -1570,9 +1570,9 @@ STDMETHODIMP Console::PowerButton()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot power off the machine as it is "
-                                     "not running (machine state: %d)"),
-                         mMachineState);
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot power off the machine as it is not running "
+                "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1589,7 +1589,7 @@ STDMETHODIMP Console::PowerButton()
     }
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL,
+        setError (VBOX_E_PDM_ERROR,
             tr ("Controlled power off failed (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));

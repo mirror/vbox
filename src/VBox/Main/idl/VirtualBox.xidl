@@ -184,6 +184,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_PDM_ERROR" value="0x80BB0006">
+    <desc>
+       Pluggable Device Manager error.
+    </desc>
+  </result>
+
   <!--
   // all common enums
   /////////////////////////////////////////////////////////////////////////
