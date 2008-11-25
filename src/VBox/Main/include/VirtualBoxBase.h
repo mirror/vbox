@@ -355,6 +355,107 @@ public:
 #define ComAssertComRCThrowRC(rc)                 \
     if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
 
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Checks that the pointer argument is not NULL and returns E_INVALIDARG +
+ * extended error info on failure.
+ * @param arg   Input pointer-type argument (strings, interace pointers...)
+ */
+#define CheckComArgNotNull(arg) \
+    do { \
+        if ((arg) == NULL) \
+            return setError (E_INVALIDARG, tr ("Argument %s is NULL"), #arg); \
+    } while (0)
+
+/**
+ * Checks that safe array argument is not NULL and returns E_INVALIDARG +
+ * extended error info on failure.
+ * @param arg   Input safe array argument (strings, interace pointers...)
+ */
+#define CheckComArgSafeArrayNotNull(arg) \
+    do { \
+        if (ComSafeArrayInIsNull (arg)) \
+            return setError (E_INVALIDARG, tr ("Argument %s is NULL"), #arg); \
+    } while (0)
+
+/**
+ * Checks that the string argument is not a NULL or empty string and returns
+ * E_INVALIDARG + extended error info on failure.
+ * @param arg   Input string argument (BSTR etc.).
+ */
+#define CheckComArgStrNotEmptyOrNull(arg) \
+    do { \
+        if ((arg) == NULL || *(arg) == '\0') \
+            return setError (E_INVALIDARG, \
+                tr ("Argument %s is emtpy or NULL"), #arg); \
+    } while (0)
+
+/**
+ * Checks that the given expression (that must involve the argument) is true and
+ * returns E_INVALIDARG + extended error info on failure.
+ * @param arg   Argument.
+ * @param expr  Expression to evaluate.
+ */
+#define CheckComArgExpr(arg, expr) \
+    do { \
+        if (!(expr)) \
+            return setError (E_INVALIDARG, \
+                tr ("Argument %s is invalid (must be %s)"), #arg, #expr); \
+    } while (0)
+
+/**
+ * Checks that the given expression (that must involve the argument) is true and
+ * returns E_INVALIDARG + extended error info on failure. The error message must
+ * be customized.
+ * @param arg   Argument.
+ * @param expr  Expression to evaluate.
+ * @param msg   Parenthesized printf-like expression (must start with a verb,
+ *              like "must be one of...", "is not within...").
+ */
+#define CheckComArgExprMsg(arg, expr, msg) \
+    do { \
+        if (!(expr)) \
+            return setError (E_INVALIDARG, tr ("Argument %s %s"), \
+                             #arg, Utf8StrFmt msg .raw()); \
+    } while (0)
+
+/**
+ * Checks that the given pointer to an output argument is valid and returns
+ * E_POINTER + extended error info otherwise.
+ * @param arg   Pointer argument.
+ */
+#define CheckComArgOutPointerValid(arg) \
+    do { \
+        if (!VALID_PTR (arg)) \
+            return setError (E_POINTER, \
+                tr ("Output argument %s points to invalid memory location (%p)"), \
+                #arg, (void *) (arg)); \
+    } while (0)
+
+/**
+ * Checks that the given pointer to an output safe array argument is valid and
+ * returns E_POINTER + extended error info otherwise.
+ * @param arg   Safe array argument.
+ */
+#define CheckComArgOutSafeArrayPointerValid(arg) \
+    do { \
+        if (ComSafeArrayOutIsNull (arg)) \
+            return setError (E_POINTER, \
+                tr ("Output argument %s points to invalid memory location (%p)"), \
+                #arg, (void *) (arg)); \
+    } while (0)
+
+/**
+ * Sets the extended error info and returns E_NOTIMIL.
+ * @param method    Method that is not implemented.
+ */
+#define ReturnComNotImplemented(method) \
+    do { \
+        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), #method); \
+    } while (0)
+
+////////////////////////////////////////////////////////////////////////////////
 
 /// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 /**
