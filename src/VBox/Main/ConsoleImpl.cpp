@@ -891,7 +891,7 @@ HRESULT Console::loadDataFromSavedState()
     }
 
     if (VBOX_FAILURE (vrc))
-        rc = setError (E_FAIL,
+        rc = setError (VBOX_E_FILE_ERROR,
             tr ("The saved state file '%ls' is invalid (%Rrc). "
                 "Discard the saved state and try again"),
                 savedStateFile.raw(), vrc);
@@ -1079,7 +1079,7 @@ HRESULT Console::doEnumerateGuestProperties (INPTR BSTR aPatterns,
 
     /*
      * Now things get slightly complicated.  Due to a race with the guest adding
-     * properties, there is no good way to know how much large a buffer to provide
+     * properties, there is no good way to know how much to enlarge a buffer for
      * the service to enumerate into.  We choose a decent starting size and loop a
      * few times, each time retrying with the size suggested by the service plus
      * one Kb.
@@ -1369,13 +1369,13 @@ STDMETHODIMP Console::PowerDown()
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Cannot power down a saved virtual machine"));
         else if (mMachineState == MachineState_Stopping)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Virtual machine is being powered down"));
         else
-            return setError(E_FAIL,
+            return setError(VBOX_E_INVALID_VM_STATE,
                 tr ("Invalid machine state: %d (must be Running, Paused "
                     "or Stuck)"),
                 mMachineState);
@@ -1409,13 +1409,13 @@ STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
     {
         /* extra nice error message for a common case */
         if (mMachineState == MachineState_Saved)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Cannot power down a saved virtual machine"));
         else if (mMachineState == MachineState_Stopping)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Virtual machine is being powered down."));
         else
-            return setError(E_FAIL,
+            return setError(VBOX_E_INVALID_VM_STATE,
                 tr ("Invalid machine state: %d (must be Running, Paused "
                     "or Stuck)"),
                 mMachineState);
@@ -1467,9 +1467,9 @@ STDMETHODIMP Console::Reset()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError(E_FAIL, tr ("Cannot reset the machine as it is "
-                                    "not running (machine state: %d)"),
-                        mMachineState);
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot reset the machine as it is not running "
+            "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1481,7 +1481,7 @@ STDMETHODIMP Console::Reset()
     int vrc = VMR3Reset (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL, tr ("Could not reset the machine (%Rrc)"), vrc);
+        setError (VBOX_E_VM_ERROR, tr ("Could not reset the machine (%Rrc)"), vrc);
 
     LogFlowThisFunc (("mMachineState=%d, rc=%08X\n", mMachineState, rc));
     LogFlowThisFuncLeave();
