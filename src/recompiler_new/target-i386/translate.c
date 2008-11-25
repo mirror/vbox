@@ -866,16 +866,6 @@ DECLINLINE(void) gen_op_st_T1_A0(int idx)
     gen_op_st_v(idx, cpu_T[1], cpu_A0);
 }
 
-#ifndef VBOX
-static inline void gen_jmp_im(target_ulong pc)
-#else /* VBOX */
-DECLINLINE(void) gen_jmp_im(target_ulong pc)
-#endif /* VBOX */
-{
-    tcg_gen_movi_tl(cpu_tmp0, pc);
-    tcg_gen_st_tl(cpu_tmp0, cpu_env, offsetof(CPUState, eip));
-}
-
 #ifdef VBOX
 static void gen_check_external_event()
 {
@@ -902,17 +892,32 @@ static void gen_check_external_event()
    gen_set_label(skip_label);
 }
 
+static void gen_check_external_event2()
+{
+    tcg_gen_helper_0_0(helper_check_external_event);
+}
+
+#endif
+
 #ifndef VBOX
-static inline void gen_update_eip(target_ulong pc)
+static inline void gen_jmp_im(target_ulong pc)
 #else /* VBOX */
-DECLINLINE(void) gen_update_eip(target_ulong pc)
+DECLINLINE(void) gen_jmp_im(target_ulong pc)
 #endif /* VBOX */
 {
+    tcg_gen_movi_tl(cpu_tmp0, pc);
+    tcg_gen_st_tl(cpu_tmp0, cpu_env, offsetof(CPUState, eip));
+}
+
+#ifdef VBOX
+DECLINLINE(void) gen_update_eip(target_ulong pc)
+{
     gen_jmp_im(pc);
-#if defined (VBOX) && defined(VBOX_DUMP_STATE)
+#ifdef VBOX_DUMP_STATE
      tcg_gen_helper_0_0(helper_dump_state);
 #endif
 }
+
 #endif
 
 #ifndef VBOX
@@ -1094,6 +1099,9 @@ static void gen_check_io(DisasContext *s, int ot, target_ulong cur_eip,
                            tcg_const_i32(svm_flags),
                            tcg_const_i32(next_eip - cur_eip));
     }
+#ifdef VBOX
+    gen_check_external_event2(s);
+#endif /* VBOX */
 }
 
 #ifndef VBOX
@@ -2678,15 +2686,15 @@ DECLINLINE(void) gen_jcc(DisasContext *s, int b,
 {
     int l1, l2, cc_op;
 
+#ifdef VBOX
+        gen_check_external_event(s);
+#endif /* VBOX */
     cc_op = s->cc_op;
     if (s->cc_op != CC_OP_DYNAMIC) {
         gen_op_set_cc_op(s->cc_op);
         s->cc_op = CC_OP_DYNAMIC;
     }
     if (s->jmp_opt) {
-#ifdef VBOX
-        gen_check_external_event(s);
-#endif /* VBOX */
         l1 = gen_new_label();
         gen_jcc1(s, cc_op, b, l1);
 
@@ -3127,9 +3135,6 @@ static void gen_eob(DisasContext *s)
 static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num)
 {
     if (s->jmp_opt) {
-#ifdef VBOX
-        gen_check_external_event(s);
-#endif /* VBOX */
         if (s->cc_op != CC_OP_DYNAMIC) {
             gen_op_set_cc_op(s->cc_op);
             s->cc_op = CC_OP_DYNAMIC;
@@ -3144,6 +3149,9 @@ static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num)
 
 static void gen_jmp(DisasContext *s, target_ulong eip)
 {
+#ifdef VBOX
+    gen_check_external_event(s);
+#endif /* VBOX */
     gen_jmp_tb(s, eip, 0);
 }
 

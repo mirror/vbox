@@ -396,7 +396,7 @@ do {\
 #define VBOX_STR(x) #x
 #define tcg_abort() \
 do {\
-    remAbort(-1, "TCG fatal error: "__FILE__":"VBOX_STR(__LINE__));\
+    remAbort(-1, "TCG fatal error: "__FILE__":"VBOX_STR(__LINE__));     \
 } while (0)
 extern void qemu_qsort(void* base, size_t nmemb, size_t size,
                        int(*compar)(const void*, const void*));
