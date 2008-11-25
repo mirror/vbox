@@ -408,11 +408,13 @@ $$(PATH_VirtualBox)/ui/vbox_image_collection.cpp: $$(PATH_VirtualBox)/ui/vbox_im
 #
 # Generate COM Wrappers
 #
-VirtualBox_BLDDIRS       += $(PATH_VirtualBox)/include
-VirtualBox_CLEAN         += $(PATH_VirtualBox)/include/COMWrappers.h
-VirtualBox_INTERMEDIATES += $(PATH_VirtualBox)/include/COMWrappers.h
+VirtualBox_COM_WRAPPERS   = $(PATH_VirtualBox)/include/COMWrappers.h
 
-$$(PATH_VirtualBox)/include/COMWrappers.h: \
+VirtualBox_BLDDIRS       += $(PATH_VirtualBox)/include
+VirtualBox_CLEAN         += $(VirtualBox_COM_WRAPPERS)
+VirtualBox_INTERMEDIATES += $(VirtualBox_COM_WRAPPERS)
+
+$$(VirtualBox_COM_WRAPPERS): \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
 		$(VBOX_PATH_VIRTUALBOX3_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
@@ -420,7 +422,7 @@ $$(PATH_VirtualBox)/include/COMWrappers.h: \
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_VIRTUALBOX3_SRC)/include/COMWrappers.xsl $<
 
 # alias for generating the COM Wrappers file.
-testwrappers:: $(PATH_VirtualBox)/include/COMWrappers.h
+testwrappers:: $$(VirtualBox_COM_WRAPPERS)
 
 
 ifeq ($(KBUILD_TARGET),win)
