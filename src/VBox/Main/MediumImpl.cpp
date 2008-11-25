@@ -949,7 +949,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, const BSTR aLoc
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -1002,7 +1002,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox,
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     HRESULT rc = S_OK;
 

@@ -54,7 +54,7 @@ HRESULT BIOSSettings::init (Machine *aParent)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     /* share the parent weakly */
     unconst (mParent) = aParent;
@@ -84,7 +84,7 @@ HRESULT BIOSSettings::init (Machine *aParent, BIOSSettings *that)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     mParent = aParent;
     mPeer = that;
@@ -112,7 +112,7 @@ HRESULT BIOSSettings::initCopy (Machine *aParent, BIOSSettings *that)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     mParent = aParent;
     // mPeer is left null

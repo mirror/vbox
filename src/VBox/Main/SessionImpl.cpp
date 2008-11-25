@@ -83,7 +83,7 @@ HRESULT Session::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     LogFlowThisFuncEnter();
 

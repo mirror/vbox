@@ -101,7 +101,7 @@ HRESULT PerformanceCollector::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     LogFlowThisFuncEnter();
 
@@ -293,7 +293,7 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
             }
             filteredMetrics.push_back(*it);
         }
-        
+
     com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
     int i = 0;
     for (it = filteredMetrics.begin();

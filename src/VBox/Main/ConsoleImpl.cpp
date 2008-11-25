@@ -299,7 +299,7 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aMachine=%p, aControl=%p\n", aMachine, aControl));

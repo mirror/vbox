@@ -365,7 +365,7 @@ public:
  *  (which prevents it from destruction).
  *
  *  When this object is not ready, the macro sets error info and returns
- *  E_UNEXPECTED (the translatable error message is defined in null context).
+ *  E_ACCESSDENIED (the translatable error message is defined in null context).
  *  Otherwise, the macro does nothing.
  *
  *  This macro <b>must</b> be used at the beginning of all interface methods
@@ -375,7 +375,7 @@ public:
 #define CHECK_READY() \
     do { \
         if (!isReady()) \
-            return setError (E_UNEXPECTED, tr ("The object is not ready")); \
+            return setError (E_ACCESSDENIED, tr ("The object is not ready")); \
     } while (0)
 
 /**
@@ -766,7 +766,7 @@ protected:
      * HRESULT Component::init()
      * {
      *     AutoInitSpan autoInitSpan (this);
-     *     AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+     *     AssertReturn (autoInitSpan.isOk(), E_FAIL);
      *     ...
      *     if (FAILED (rc))
      *         return rc;
@@ -862,7 +862,7 @@ protected:
      * HRESULT Component::reinit()
      * {
      *     AutoReinitSpan autoReinitSpan (this);
-     *     AssertReturn (autoReinitSpan.isOk(), E_UNEXPECTED);
+     *     AssertReturn (autoReinitSpan.isOk(), E_FAIL);
      *     ...
      *     if (FAILED (rc))
      *         return rc;

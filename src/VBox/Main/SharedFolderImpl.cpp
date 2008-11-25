@@ -70,7 +70,7 @@ HRESULT SharedFolder::init (Machine *aMachine,
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mMachine) = aMachine;
 
@@ -99,7 +99,7 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mMachine) = aMachine;
 
@@ -128,7 +128,7 @@ HRESULT SharedFolder::init (Console *aConsole,
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mConsole) = aConsole;
 
@@ -156,7 +156,7 @@ HRESULT SharedFolder::init (VirtualBox *aVirtualBox,
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mVirtualBox) = aVirtualBox;
 

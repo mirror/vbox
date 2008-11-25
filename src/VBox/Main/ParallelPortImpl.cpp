@@ -58,7 +58,7 @@ HRESULT ParallelPort::init (Machine *aParent, ULONG aSlot)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mParent) = aParent;
     /* mPeer is left null */
@@ -92,7 +92,7 @@ HRESULT ParallelPort::init (Machine *aParent, ParallelPort *aThat)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mParent) = aParent;
     unconst (mPeer) = aThat;
@@ -124,7 +124,7 @@ HRESULT ParallelPort::initCopy (Machine *aParent, ParallelPort *aThat)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mParent) = aParent;
     /* mPeer is left null */

@@ -394,7 +394,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -7688,7 +7688,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     /* create the interprocess semaphore */
 #if defined(RT_OS_WINDOWS)
@@ -10530,7 +10530,7 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     AssertReturn (aSessionMachine->isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -10658,7 +10658,7 @@ HRESULT SnapshotMachine::init (Machine *aMachine,
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     /* Don't need to lock aMachine when VirtualBox is starting up */
 

@@ -158,7 +158,7 @@ HRESULT Host::init (VirtualBox *aParent)
     ComAssertRet (aParent, E_INVALIDARG);
 
     AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    ComAssertRet (!isReady(), E_FAIL);
 
     mParent = aParent;
 
