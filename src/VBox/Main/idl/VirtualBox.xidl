@@ -172,6 +172,17 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_FILE_ERROR" value="0x80BB0004">
+    <desc>
+       File not accessible or erroneous file contents.
+    </desc>
+  </result>
+
+  <result name="VBOX_E_IPRT_ERROR" value="0x80BB0005">
+    <desc>
+       Runtime subsystem error.
+    </desc>
+  </result>
 
   <!--
   // all common enums
