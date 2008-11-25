@@ -122,6 +122,10 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                         defaultValue = pa->pDefaultValue->String.psz;
                     break;
                 }
+
+                default:
+                    AssertMsgFailed(("Invalid enm type %d!\n", pa->enmValueType));
+                    return E_INVALIDARG;
             }
 
             /// @todo add extendedFlags to Property when we reach the 32 bit
