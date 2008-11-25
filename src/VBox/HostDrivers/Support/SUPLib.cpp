@@ -850,12 +850,6 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart)
 }
 
 
-SUPR3DECL(int) SUPPageAllocLocked(size_t cPages, void **ppvPages)
-{
-    return SUPR3PageAllocEx(cPages, 0 /*fFlags*/, ppvPages, NULL /*pR0Ptr*/, NULL /*paPages*/);
-}
-
-
 SUPR3DECL(int) SUPPageAllocLockedEx(size_t cPages, void **ppvPages, PSUPPAGE paPages)
 {
     return SUPR3PageAllocEx(cPages, 0 /*fFlags*/, ppvPages, NULL /*pR0Ptr*/, paPages);

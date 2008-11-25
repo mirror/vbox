@@ -782,31 +782,37 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
      */
     const uint32_t  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
+    uint32_t const  cPages = cb >> PAGE_SHIFT;
     int             rc;
     void           *pv;
-    RTR0PTR         pvR0;
-#if 1
+    RTR0PTR         pvR0 = NIL_RTR0PTR;
+#if 0
+    PSUPPAGE        paPages = NULL;
     rc = SUPPageAlloc(cbAligned >> PAGE_SHIFT, &pv); /** @todo #1865: heap allocation must be changed for osx (only). */
-    pvR0 = (uintptr_t)pv;
 #else /**@todo resume here. */
-    if (VMMIsHwVirtExtForced(pVM))
-        rc = SUPPageAllocKernel((cbAligned >> PAGE_SHIFT, &pv, &pvR0, paPages);
-    else
-    {
-        rc = SUPPageAllocLocked((cbAligned >> PAGE_SHIFT, &pv, paPages);
-        pvR0 = (uintptr_t)pv;
-    }
+    PSUPPAGE        paPages = (PSUPPAGE)MMR3HeapAlloc(pVM, MM_TAG_MM, cPages * sizeof(paPages[0]));
+    if (!paPages)
+        return VERR_NO_MEMORY;
+    rc = SUPR3PageAllocEx(cPages,
+                          0 /*fFlags*/,
+                          &pv,
+                          VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+                          paPages);
 #endif
     if (RT_SUCCESS(rc))
     {
+        if (!VMMIsHwVirtExtForced(pVM))
+            pvR0 = (uintptr_t)pv;
+        memset(pv, 0, cbAligned);
+
         /*
          * Initialize the heap and first free chunk.
          */
         PMMHYPERHEAP pHeap = (PMMHYPERHEAP)pv;
         pHeap->u32Magic             = MMHYPERHEAP_MAGIC;
         pHeap->pbHeapR3             = (uint8_t *)pHeap + MMYPERHEAP_HDR_SIZE;
-        pHeap->pbHeapR0             = (uintptr_t)pHeap->pbHeapR3; /** @todo #1865: Map heap into ring-0 on darwin. */
-        //pHeap->pbHeapGC           = 0; // set by mmR3HyperHeapMap()
+        pHeap->pbHeapR0             = pvR0             + MMYPERHEAP_HDR_SIZE;
+        //pHeap->pbHeapRC           = 0; // set by mmR3HyperHeapMap()
         pHeap->pVMR3                = pVM;
         pHeap->pVMR0                = pVM->pVMR0;
         pHeap->pVMRC                = pVM->pVMRC;
@@ -816,6 +822,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
         //pHeap->offFreeTail        = 0;
         pHeap->offPageAligned       = pHeap->cbHeap;
         //pHeap->HyperHeapStatTree  = 0;
+        pHeap->paPages              = paPages;
 
         PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)pHeap->pbHeapR3;
         pFree->cb                   = pHeap->cbFree;
@@ -843,13 +850,24 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap)
  */
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
 {
-    int rc = MMR3HyperMapHCRam(pVM, pHeap, pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, true, "Heap", ppHeapGC);
+    Assert(RT_ALIGN_Z(pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, PAGE_SIZE) == pHeap->cbHeap + MMYPERHEAP_HDR_SIZE);
+    Assert(pHeap->paPages);
+    int rc = MMR3HyperMapPages(pVM,
+                               pHeap,
+                               pHeap->pbHeapR0 - MMYPERHEAP_HDR_SIZE,
+                               (pHeap->cbHeap + MMYPERHEAP_HDR_SIZE) >> PAGE_SHIFT,
+                               pHeap->paPages,
+                               "Heap", ppHeapGC);
     if (RT_SUCCESS(rc))
     {
         pHeap->pVMRC    = pVM->pVMRC;
         pHeap->pbHeapRC = *ppHeapGC + MMYPERHEAP_HDR_SIZE;
         /* Reserve a page for fencing. */
         MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+
+        /* We won't need these any more. */
+        MMR3HeapFree(pHeap->paPages);
+        pHeap->paPages = NULL;
     }
     return rc;
 }

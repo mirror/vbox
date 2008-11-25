@@ -676,6 +676,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
         rc = SUPPageAllocLockedEx(cPages, &pvPages, paPages);
     if (RT_SUCCESS(rc))
     {
+        memset(pvPages, 0, cPages * PAGE_SIZE);
+
         /*
          * Create the MMIO2 range record for it.
          */
