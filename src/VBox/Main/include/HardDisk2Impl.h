@@ -96,6 +96,11 @@ public:
     STDMETHOD(COMGETTER(LogicalSize)) (ULONG64 *aLogicalSize);
 
     // IHardDisk2 methods
+    STDMETHOD(GetProperty) (INPTR BSTR aName, BSTR *aValue);
+    STDMETHOD(SetProperty) (INPTR BSTR aName, INPTR BSTR aValue);
+    STDMETHOD(GetProperties) (INPTR BSTR aNames,
+                              ComSafeArrayOut (BSTR, aReturnNames),
+                              ComSafeArrayOut (BSTR, aReturnValues));
     STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(DeleteStorage) (IProgress **aProgress);
