@@ -56,7 +56,7 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     HRESULT hrc = aUSBDevice->COMGETTER(VendorId)(&unconst (mData.vendorId));
     ComAssertComRCRet (hrc, hrc);

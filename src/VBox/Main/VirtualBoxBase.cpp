@@ -106,7 +106,7 @@ RWLockHandle *VirtualBoxBaseProto::lockHandle() const
  * not.
  *
  * This method succeeeds (and increments the number of callers) only if the
- * current object's state is Ready. Otherwise, it will return E_UNEXPECTED
+ * current object's state is Ready. Otherwise, it will return E_ACCESSDENIED
  * to indicate that the object is not operational. There are two exceptions
  * from this rule:
  * <ol>
@@ -140,7 +140,7 @@ RWLockHandle *VirtualBoxBaseProto::lockHandle() const
  *                      the failure).
  * @param aLimited      |true| to add a limited caller.
  *
- * @return              S_OK on success or E_UNEXPECTED on failure.
+ * @return              S_OK on success or E_ACCESSDENIED on failure.
  *
  * @note It is preferrable to use the #addLimitedCaller() rather than
  *       calling this method with @a aLimited = |true|, for better
@@ -154,7 +154,7 @@ HRESULT VirtualBoxBaseProto::addCaller (State *aState /* = NULL */,
 {
     AutoWriteLock stateLock (mStateLock);
 
-    HRESULT rc = E_UNEXPECTED;
+    HRESULT rc = E_ACCESSDENIED;
 
     if (mState == Ready || (aLimited && mState == Limited))
     {
@@ -542,7 +542,7 @@ VirtualBoxBaseProto::AutoUninitSpan::~AutoUninitSpan()
  */
 VirtualBoxBaseProto::AutoMayUninitSpan::
 AutoMayUninitSpan (VirtualBoxBaseProto *aObj)
-    : mObj (aObj), mRC (E_UNEXPECTED), mAlreadyInProgress (false)
+    : mObj (aObj), mRC (E_FAIL), mAlreadyInProgress (false)
     , mAcceptUninit (false)
 {
     Assert (aObj);

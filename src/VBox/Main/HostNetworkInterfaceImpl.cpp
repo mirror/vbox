@@ -59,7 +59,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = aGuid;

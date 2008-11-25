@@ -55,7 +55,7 @@ HRESULT HardDisk2Attachment::init (HardDisk2 *aHD, StorageBus_T aBus, LONG aChan
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     m.hardDisk = aHD;
     unconst (m.bus) = aBus;

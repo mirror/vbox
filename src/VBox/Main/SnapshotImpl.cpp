@@ -73,7 +73,7 @@ HRESULT Snapshot::init (const Guid &aId, INPTR BSTR aName, INPTR BSTR aDescripti
     ComAssertRet (!aId.isEmpty() && aName && aMachine, E_INVALIDARG);
 
     AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    ComAssertRet (!isReady(), E_FAIL);
 
     mParent = aParent;
 

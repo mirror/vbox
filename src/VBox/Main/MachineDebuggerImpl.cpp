@@ -74,7 +74,7 @@ HRESULT MachineDebugger::init(Console *parent)
     ComAssertRet (parent, E_INVALIDARG);
 
     AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_UNEXPECTED);
+    ComAssertRet (!isReady(), E_FAIL);
 
     mParent = parent;
     singlestepQueued = ~0;

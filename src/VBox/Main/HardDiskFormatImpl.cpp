@@ -57,7 +57,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_UNEXPECTED);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     /* The ID of the backend */
     unconst (m.id) = aVDInfo->pszBackend;
