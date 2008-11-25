@@ -2265,7 +2265,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     return VINF_SUCCESS;
 }
 
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
 /**
  * Prepares for and executes VMRUN (64 bits guests from a 32 bits hosts).
  *
