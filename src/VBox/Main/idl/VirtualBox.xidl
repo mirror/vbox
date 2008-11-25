@@ -65,6 +65,56 @@
 
 <idl>
 
+<desc>
+  Welcome to the <b>VirtualBox Main API documentation</b>. This documentation
+  describes the so-called <i>VirtualBox Main API</i> which comprises all public
+  COM interfaces and components provided by the VirtualBox server and by the
+  VirtualBox client library.
+
+  VirtualBox employs a client-server design, meaning that whenever any part of
+  VirtualBox is running -- be it the Qt GUI, the VBoxManage command-line
+  interface or any virtual machine --, a dedicated server process named
+  VBoxSVC runs in the background. This allows multiple processes working with
+  VirtualBox to cooperate without conflicts. These processes communicate to each
+  other using inter-process communication facilities provided by the COM
+  implementation of the host computer.
+
+  On Windows platforms, the VirtualBox Main API uses Microsoft COM, a native COM
+  implementation. On all other platforms, Mozilla XPCOM, an open-source COM
+  implementation, is used.
+
+  All the parts that a typical VirtualBox user interacts with (the Qt GUI,
+  the VBoxManage command-line interface and the VBoxVRDP server) are technically
+  front-ends to the Main API and only use the interfaces that are documented
+  in this Main API documentation. This ensures that, with any given release
+  version of VirtualBox, all capabilities of the product that could be useful
+  to an external client program are always exposed by way of this API.
+
+  The VirtualBox Main API (also called the <i>VirtualBox COM library</i>)
+  contains two public component classes:
+  <tt>%VirtualBox.VirtualBox</tt> and <tt>%VirtualBox.Session</tt>, which
+  implement IVirtualBox and ISession interfaces respectively. These two classes
+  are of supreme importance and will be needed in order for any front-end
+  program to do anything useful. It is recommended to read the documentation of
+  the mentioned interfaces first.
+
+  The <tt>%VirtualBox.VirtualBox</tt> class is a singleton. This means that
+  there can be only one object of this class on the local machine at any given
+  time. This object is a parent of many other objects ih the VirtualBox COM
+  library and lives in the VBoxSVC process. In fact, when you create an instance
+  of the <tt>VirtualBox.VirtualBox</tt>, the COM subsystem checks if the VBoxSVC
+  process is already running, starts it if not, and returns you a reference to
+  the<tt>VirtualBox</tt> object created in this process. When the last reference
+  to this object is released, the VBoxSVC process ends (with a 5 second delay to
+  protect from too frequent restarts).
+
+  The <tt>%VirtualBox.Session</tt> class is a regular component. You can create
+  as many <tt>Session</tt> objects as you need but all of them will live in a
+  process which issues the object instantiation call. <tt>Session</tt> objects
+  represent virtual machine sessions which are used to configure virtual
+  machines and control their execution.
+</desc>
+
 <if target="midl">
   <cpp line="enum {"/>
   <cpp line="    kTypeLibraryMajorVersion = 1,"/>
@@ -154,6 +204,59 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <descGroup id="VirtualBox_COM_result_codes" title="VirtualBox COM result codes">
+    <desc>
+      This section describes all VirtualBox-specific COM result codes that may
+      be returned by methods of VirtualBox COM interfaces in addition to
+      standard COM result codes.
+
+      Note that along with the result code, every VirtualBox method returns
+      extended error information through the IVirtualBoxErrorInfo interface on
+      failure. This interface is a preferred way to present the error to the end
+      user because it contains a human readable description of the error. Raw
+      result codes, both standard and described in this section, are intended to
+      be used by programs to analyze the reason of a failure and select an
+      appropriate course of action without involving the end user (for example,
+      retry the operation later or make a different call).
+
+      The standard COM result codes that may originate from our methods include:
+
+      <table>
+      <tr><td>E_INVALIDARG</td>
+      <td>
+        Returned when the value of the method's argument is not within the range
+        of valid values. This should not be confused with situations when the
+        value is within the range but simply doesn't suit the current object
+        state and there is a possibility that it will be accepted later (in such
+        cases VirtualBox-specific codes are returned, for example,
+        <link to="VBOX_E_OBJECT_NOT_FOUND"/>).
+      </td>
+      </tr>
+      <tr><td>E_POINTER</td>
+      <td>
+        Returned if a memory pointer for the output argument is invalid (for
+        example, <tt>NULL</tt>). Note that when pointers representing input
+        arguments (such as strings) are invalid, E_INVALIDARG is returned.
+      </td>
+      </tr>
+      <tr><td>E_ACCESSDENIED</td>
+      <td>
+        Returned when the called object is not ready. Since the lifetime of a
+        public COM object cannot be fully controlled by the implementation,
+        VirtualBox maintains the readiness state for all objects it creates and
+        returns this code in response to any method call on the object that was
+        deactivated by VirtualBox and is not functioning any more.
+      </td>
+      </tr>
+      <tr><td>E_OUTOFMEMORY</td>
+      <td>
+        Returned when a memory allocation operation fails.
+      </td>
+      </tr>
+      </table>
+    </desc>
+  </descGroup>
+
   <result name="VBOX_E_OBJECT_NOT_FOUND" value="0x80BB0001">
     <desc>
        Object corresponding to the supplied arguments does not exist.
@@ -189,6 +292,8 @@
        Pluggable Device Manager error.
     </desc>
   </result>
+
+  <descGroup/>
 
   <!--
   // all common enums
@@ -6663,7 +6768,7 @@
 
   <interface
     name="IHardDisk2" extends="IMedium"
-    uuid="be30c487-3071-4067-8a03-8fed74a80708"
+    uuid="4fece1c1-2a75-43ce-ba82-76d2a89b9d5d"
     wsmap="managed"
   >
     <desc>
@@ -7059,6 +7164,91 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
       </desc>
     </attribute>
+
+    <!-- storage methods -->
+
+    <method name="getProperty">
+      <desc>
+        Returns the value of the custom hard disk property with the given name.
+
+        The list of all properties supported by the given hard disk format can
+        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+
+        Note that If <tt>null</tt> returned by this method as @a value, it
+        means that the requested property is supported but currently has not
+        assigned any value.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Requested property does not exist (not supported by the format).
+        </result>
+        <result name="E_INVALIDARG">@a name is NULL or empty.</result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the property to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Current property value.</desc>
+      </param>
+    </method>
+
+    <method name="setProperty">
+      <desc>
+        Sets the value of the custom hard disk property with the given name.
+
+        The list of all properties supported by the given hard disk format can
+        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+
+        Note that passing <tt>null</tt> as @a value will reset the value of the
+        property to nothing which may also be undertood as deleting the
+        property's value. For properties with no values, the format backend will
+        use a default value if such a value is defined for the given roperty.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Requested property does not exist (not supported by the format).
+        </result>
+        <result name="E_INVALIDARG">@a name is NULL or empty.</result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the property to set.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Property value to set.</desc>
+      </param>
+    </method>
+
+    <method name="getProperties">
+      <desc>
+        Returns values for a group of properties in one call.
+
+        The names of the properties to get are specified using the @a name
+        argument which is a list of comma-separated property names or
+        <tt>null</tt> if all properties are to be returned. Note that currently
+        the value of this argument is ignored and the method always returns all
+        existing properties.
+
+        The list of all properties supported by the given hard disk format can
+        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+
+        The method returns two arrays, the array of property names correspinding
+        to the @a names argument and the current values of these properties. Both
+        arrays
+
+        Note that for properties that don't have values assigned to them,
+        <tt>null</tt> is returned at the appropriate index in the @a returnValues
+        array.
+      </desc>
+      <param name="names" type="wstring" dir="in">
+        <desc>
+          Names of properties to get.
+        </desc>
+      </param>
+      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+        <desc>Names of returned properties.</desc>
+      </param>
+      <param name="returnValues" type="wstring" safearray="yes" dir="return">
+        <desc>Values of returned properties.</desc>
+      </param>
+    </method>
 
     <!-- storage methods -->
 

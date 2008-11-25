@@ -920,6 +920,37 @@ STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
 // IHardDisk2 methods
 ////////////////////////////////////////////////////////////////////////////////
 
+STDMETHODIMP HardDisk2::GetProperty (INPTR BSTR aName, BSTR *aValue)
+{
+//  CheckComArgStrNotEmptyOrNull (aName);
+//  CheckComArgOutPointerValid (aValue);
+//
+//  AutoCaller autoCaller (this);
+//  CheckComRCReturnRC (autoCaller.rc());
+//
+//  AutoReadLock alock (this);
+
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
+{
+//  CheckComArgStrNotEmptyOrNull (aName);
+//
+//  AutoWriteLock alock (this);
+
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
+                                       ComSafeArrayOut (BSTR, aReturnNames),
+                                       ComSafeArrayOut (BSTR, aReturnValues))
+{
+//  ComSafeArrayOutIsNull
+
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
                                               IProgress **aProgress)
 {
