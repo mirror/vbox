@@ -910,9 +910,6 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
-    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
-               ("Must NOT be a VM console process"));
-
     /* just switch to the VM window if it already exists */
     if (item->canSwitchTo())
     {
