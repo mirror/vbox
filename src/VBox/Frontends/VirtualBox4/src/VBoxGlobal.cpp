@@ -653,7 +653,11 @@ public:
 
     VBoxCallback (VBoxGlobal &aGlobal)
         : mGlobal (aGlobal)
-        , mIsRegDlgOwner (false), mIsUpdDlgOwner (false)
+        , mIsRegDlgOwner (false)
+        , mIsUpdDlgOwner (false)
+#ifdef VBOX_GUI_WITH_SYSTRAY
+        , mIsTrayIconOwner (false)
+#endif
     {
 #if defined (Q_OS_WIN32)
         refcnt = 0;
@@ -762,7 +766,23 @@ public:
                         *allowChange = TRUE;
                     return S_OK;
                 }
-
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                if (sKey == VBoxDefs::GUI_TrayIconWinID)
+                {
+                    if (mIsTrayIconOwner)
+                    {
+                        if (sVal.isEmpty() ||
+                            sVal == QString ("%1")
+                                .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
+                            *allowChange = TRUE;
+                        else
+                            *allowChange = FALSE;
+                    }
+                    else
+                        *allowChange = TRUE;
+                    return S_OK;
+                }
+#endif
                 /* try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs (false /* non-null */);
                 if (gs.setPublicProperty (sKey, sVal))
@@ -830,10 +850,26 @@ public:
                 }
                 if (sKey == "GUI/LanguageID")
                     QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
-            #ifdef VBOX_GUI_WITH_SYSTRAY
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                if (sKey == VBoxDefs::GUI_TrayIconWinID)
+                {
+                    if (sVal.isEmpty())
+                    {
+                        mIsTrayIconOwner = false;
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (true));
+                    }
+                    else if (sVal == QString ("%1")
+                             .arg ((qulonglong) vboxGlobal().mainWindow()->winId()))
+                    {
+                        mIsTrayIconOwner = true;
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (true));
+                    }
+                    else
+                        QApplication::postEvent (&mGlobal, new VBoxCanShowTrayIconEvent (false));
+                }
                 if (sKey == "GUI/TrayIcon/Enabled")
-                    QApplication::postEvent (&mGlobal, new VBoxChangeGUITrayIconEvent ((sVal.toLower() == "true") ? true : false));
-            #endif
+                    QApplication::postEvent (&mGlobal, new VBoxChangeTrayIconEvent ((sVal.toLower() == "true") ? true : false));
+#endif
 
                 mMutex.lock();
                 mGlobal.gset.setPublicProperty (sKey, sVal);
@@ -919,6 +955,9 @@ private:
 
     bool mIsRegDlgOwner;
     bool mIsUpdDlgOwner;
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    bool mIsTrayIconOwner;
+#endif
 
 #if defined (Q_OS_WIN32)
 private:
@@ -1188,6 +1227,9 @@ VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL), mConsoleWnd (NULL)
     , mMainWindow (NULL)
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    , mIsTrayIcon (false)
+#endif
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
 #endif
@@ -1356,6 +1398,45 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
 
     return *mConsoleWnd;
 }
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+
+/**
+ *  Returns true if the current instance is responsible of showing/handling
+ *  the tray icon.
+ */
+bool VBoxGlobal::isTrayIcon() const
+{
+    return mIsTrayIcon;
+}
+
+/**
+ *  Tries to install the tray icon using the current instance (singleton).
+ *  Returns true on success, false on failure.
+ */
+bool VBoxGlobal::trayIconInstall()
+{
+    if (false == QSystemTrayIcon::isSystemTrayAvailable())
+        return false;
+
+    AssertMsg (vboxGlobal().mainWindow(),
+               ("Main window must not be null for systray!"));
+
+    mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
+                        QString ("%1").arg ((qulonglong) vboxGlobal().mainWindow()->winId()));
+
+    /* The first process which can grab this "mutex" will win ->
+     * It will be the tray icon menu then. */
+    if (mVBox.isOk())
+    {
+        mIsTrayIcon = true;
+        emit trayIconChanged (*(new VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled())));
+    }
+
+    return mIsTrayIcon;
+}
+
+#endif
 
 /**
  *  Returns the list of few guest OS types, queried from
@@ -5047,13 +5128,17 @@ bool VBoxGlobal::event (QEvent *e)
             return true;
         }
 #ifdef VBOX_GUI_WITH_SYSTRAY
-        case VBoxDefs::ChangeGUITrayIconEventType:
+        case VBoxDefs::CanShowTrayIconEventType:
         {
-            emit systrayIconChanged (*(VBoxChangeGUITrayIconEvent *) e);
+            emit trayIconCanShow (*(VBoxCanShowTrayIconEvent *) e);
+            return true;
+        }
+        case VBoxDefs::ChangeTrayIconEventType:
+        {
+            emit trayIconChanged (*(VBoxChangeTrayIconEvent *) e);
             return true;
         }
 #endif
-
         default:
             break;
     }

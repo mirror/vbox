@@ -674,16 +674,14 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent &)));
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    connect (&vboxGlobal(), SIGNAL (systrayIconChanged (const VBoxChangeGUITrayIconEvent &)),
-             this, SLOT (systrayIconChanged (const VBoxChangeGUITrayIconEvent &)));
+    connect (&vboxGlobal(), SIGNAL (trayIconCanShow (const VBoxCanShowTrayIconEvent &)),
+             this, SLOT (trayIconCanShow (const VBoxCanShowTrayIconEvent &)));
+    connect (&vboxGlobal(), SIGNAL (trayIconChanged (const VBoxChangeTrayIconEvent &)),
+             this, SLOT (trayIconChanged (const VBoxChangeTrayIconEvent &)));
 #endif
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    mTrayIcon->trayIconShow (settings.trayIconEnabled());
-#endif
 }
 
 VBoxSelectorWnd::~VBoxSelectorWnd()
@@ -1084,7 +1082,8 @@ void VBoxSelectorWnd::refreshVMList()
     vmListViewCurrentChanged();
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    mTrayIcon->refresh();
+    if (vboxGlobal().isTrayIcon())
+        mTrayIcon->refresh();
 #endif
 }
 
@@ -1318,8 +1317,11 @@ void VBoxSelectorWnd::retranslateUi()
     mHelpMenu->setTitle (tr ("&Help"));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    mTrayIcon->retranslateUi();
-    mTrayIcon->refresh();
+    if (vboxGlobal().isTrayIcon())
+    {
+        mTrayIcon->retranslateUi();
+        mTrayIcon->refresh();
+    }
 #endif
 }
 
@@ -1612,7 +1614,12 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
-void VBoxSelectorWnd::systrayIconChanged (const VBoxChangeGUITrayIconEvent &aEvent)
+void VBoxSelectorWnd::trayIconCanShow (const VBoxCanShowTrayIconEvent &aEvent)
+{
+    emit trayIconChanged (VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled()));
+}
+
+void VBoxSelectorWnd::trayIconChanged (const VBoxChangeTrayIconEvent &aEvent)
 {
     mTrayIcon->trayIconShow (aEvent.mEnabled);
 }
@@ -1671,14 +1678,17 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 
     connect (mShowSelectorAction, SIGNAL (triggered()), mParent, SLOT (showWindow()));
     connect (mHideSystrayMenuAction, SIGNAL (triggered()), this, SLOT (trayIconShow()));
-
-    VBoxGlobalSettings settings = vboxGlobal().settings();
-    trayIconShow (settings.trayIconEnabled());
 }
 
 VBoxTrayIcon::~VBoxTrayIcon ()
 {
-    hide();
+    /* Erase dialog handle in config file. */
+    if (vboxGlobal().isTrayIcon())
+    {
+        vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_TrayIconWinID,
+                                                QString::null);
+        hide();
+    }
 }
 
 void VBoxTrayIcon::retranslateUi ()
@@ -1714,12 +1724,12 @@ void VBoxTrayIcon::retranslateUi ()
 
 void VBoxTrayIcon::showSubMenu ()
 {
+    if (!mActive)
+        return;
+
     VBoxVMItem* pItem = NULL;
     QMenu *pMenu = NULL;
     QVariant vID;
-
-    if (!mActive)
-        return;
 
     if ((pMenu = qobject_cast<QMenu*>(sender())))
     {
@@ -1833,11 +1843,11 @@ void VBoxTrayIcon::showSubMenu ()
 
 void VBoxTrayIcon::hideSubMenu ()
 {
-    VBoxVMItem* pItem = NULL;
-    QVariant vID;
-
     if (!mActive)
         return;
+
+    VBoxVMItem* pItem = NULL;
+    QVariant vID;
 
     if (QMenu *pMenu = qobject_cast<QMenu*>(sender()))
     {
@@ -1927,10 +1937,7 @@ VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 
 void VBoxTrayIcon::trayIconShow (bool aShow)
 {
-    if (false == QSystemTrayIcon::isSystemTrayAvailable())
-        return;
-
-    mActive = aShow;    
+    mActive = aShow;
     if (mActive)
     {
         refresh();
