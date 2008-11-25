@@ -67,7 +67,7 @@ int mmR3PagePoolInit(PVM pVM)
     /** @todo @bufref{1865},@bufref{3202}: mapping the page pool page into
      *        ring-0. Need to change the wasy we allocate it... */
     AssertReleaseReturn(sizeof(*pVM->mm.s.pPagePoolR3) + sizeof(*pVM->mm.s.pPagePoolLowR3) < PAGE_SIZE, VERR_INTERNAL_ERROR);
-    int rc = SUPPageAllocLocked(1, (void **)&pVM->mm.s.pPagePoolR3);
+    int rc = SUPPageAllocLockedEx(1, (void **)&pVM->mm.s.pPagePoolR3, NULL);
     if (RT_FAILURE(rc))
         return rc;
     memset(pVM->mm.s.pPagePoolR3, 0, PAGE_SIZE);

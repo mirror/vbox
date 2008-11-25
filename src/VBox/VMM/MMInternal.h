@@ -280,6 +280,12 @@ typedef struct MMHYPERHEAP
     /** Padding the structure to a 64-bit aligned size. */
     uint32_t                u32Padding0;
 #endif
+    /** The heap physical pages. */
+    R3PTRTYPE(PSUPPAGE)     paPages;
+#if HC_ARCH_BITS == 32
+    /** Padding the structure to a 64-bit aligned size. */
+    uint32_t                u32Padding1;
+#endif
 } MMHYPERHEAP;
 /** Pointer to the hypervisor heap. */
 typedef MMHYPERHEAP *PMMHYPERHEAP;
