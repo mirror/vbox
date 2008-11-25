@@ -166,6 +166,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_VM_ERROR" value="0x80BB0003">
+    <desc>
+       Virtual machine error occurred attempting the operation.
+    </desc>
+  </result>
+
 
   <!--
   // all common enums

@@ -1498,9 +1498,9 @@ STDMETHODIMP Console::Pause()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot pause the machine as it is "
-                                     "not running (machine state: %d)"),
-                         mMachineState);
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot pause the machine as it is not running "
+            "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1514,7 +1514,7 @@ STDMETHODIMP Console::Pause()
     int vrc = VMR3Suspend (mpVM);
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL,
+        setError (VBOX_E_VM_ERROR,
             tr ("Could not suspend the machine execution (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
@@ -3851,10 +3851,10 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
             mCallbackData.mpsc.shape = NULL;
         }
         if (mCallbackData.mpsc.shape == NULL)
-	{
+        {
             mCallbackData.mpsc.shape = (BYTE *) RTMemAllocZ (cb);
             AssertReturnVoid (mCallbackData.mpsc.shape);
-	}
+        }
         mCallbackData.mpsc.shapeSize = cb;
         memcpy (mCallbackData.mpsc.shape, pShape, cb);
     }
