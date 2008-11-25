@@ -153,13 +153,21 @@ void VBoxOSTypeSelectorWidget::onFamilyChanged (int aIndex)
     mCbType->blockSignals (true);
     mCbType->clear();
 
+    /* Check if host supports (AMD-V or VT-x) and long mode */
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    bool mSupportsHWVirtEx = host.GetProcessorFeature (KProcessorFeature_HWVirtEx);
+    bool mSupportsLongMode = host.GetProcessorFeature (KProcessorFeature_LongMode);
+
     /* Populate combo-box with OS Types related to currently selected Family ID */
     QString familyId (mCbFamily->itemData (aIndex, RoleTypeID).toString());
     QList <CGuestOSType> types (vboxGlobal().vmGuestOSTypeList (familyId));
     for (int i = 0; i < types.size(); ++ i)
     {
-        mCbType->insertItem (i, types [i].GetDescription());
-        mCbType->setItemData (i, types [i].GetId(), RoleTypeID);
+        if (types [i].GetIs64Bit() && (!mSupportsHWVirtEx || !mSupportsLongMode))
+            continue;
+        int index = mCbType->count();
+        mCbType->insertItem (index, types [i].GetDescription());
+        mCbType->setItemData (index, types [i].GetId(), RoleTypeID);
     }
 
     /* Select the most recently chosen item */
