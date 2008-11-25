@@ -592,27 +592,31 @@ int main(int argc, char *argv[])
 #endif
 
 #if 0
-    // find a registered hard disk by location
+    // find a registered hard disk by location and get properties
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IHardDisk> hd;
+        ComPtr <IHardDisk2> hd;
         static const wchar_t *Names[] =
         {
 #ifndef RT_OS_LINUX
-            L"E:/Develop/innotek/images/thinker/freedos.vdi",
-            L"E:/Develop/innotek/images/thinker/fReeDoS.vDI",
-            L"E:/Develop/innotek/images/vmdk/haiku.vmdk",
+            L"freedos.vdi",
+            L"MS-DOS.vmdk",
+            L"iscsi",
+            L"some/path/and/disk.vdi",
 #else
-            L"/mnt/host/common/Develop/innotek/images/maggot/freedos.vdi",
-            L"/mnt/host/common/Develop/innotek/images/maggot/fReeDoS.vDI",
+            L"xp.vdi",
+            L"Xp.vDI",
 #endif
         };
+
+        printf ("\n");
+
         for (size_t i = 0; i < RT_ELEMENTS (Names); ++ i)
         {
             Bstr src = Names [i];
             printf ("Searching for hard disk '%ls'...\n", src.raw());
-            rc = virtualBox->FindHardDisk (src, hd.asOutParam());
+            rc = virtualBox->FindHardDisk2 (src, hd.asOutParam());
             if (SUCCEEDED (rc))
             {
                 Guid id;
@@ -621,11 +625,28 @@ int main(int argc, char *argv[])
                 CHECK_ERROR_BREAK (hd, COMGETTER(Location) (location.asOutParam()));
                 printf ("Found, UUID={%Vuuid}, location='%ls'.\n",
                         id.raw(), location.raw());
+
+                com::SafeArray <BSTR> names;
+                com::SafeArray <BSTR> values;
+
+                CHECK_ERROR_BREAK (hd, GetProperties (NULL,
+                                                      ComSafeArrayAsOutParam (names),
+                                                      ComSafeArrayAsOutParam (values)));
+
+                printf ("Properties:\n");
+                for (size_t i = 0; i < names.size(); ++ i)
+                    printf (" %ls = %ls\n", names [i], values [i]);
+
+                if (names.size() == 0)
+                    printf (" <none>\n");
+
             }
             else
             {
-                PRINT_ERROR_INFO (com::ErrorInfo (virtualBox));
+                com::ErrorInfo info (virtualBox);
+                PRINT_ERROR_INFO (info);
             }
+            printf ("\n");
         }
     }
     while (FALSE);
@@ -1096,7 +1117,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
+#if 0 && defined (VBOX_WITH_RESOURCE_USAGE_API)
     do {
         // Get collector
         ComPtr <IPerformanceCollector> collector;

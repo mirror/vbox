@@ -34,6 +34,8 @@
 
 #include <VBox/VBoxHDD-new.h>
 
+#include <map>
+
 class Progress;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,6 +267,9 @@ private:
 
         HardDiskType_T type;
         uint64_t logicalSize;   /*< In MBytes. */
+
+        typedef std::map <Bstr, Bstr> PropertyMap;
+        PropertyMap properties;
 
         bool implicit : 1;
 
