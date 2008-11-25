@@ -260,6 +260,9 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
  */
 static int vmmR0TermVM(PVM pVM)
 {
+/** @todo @bugref{1865,3202}: Make these tail onto the VM object destruction
+ *        to make sure they are *always* executed and don't leave mess behind
+ *        when the process is killed. */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTermVM(pVM);
 #endif
