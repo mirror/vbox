@@ -441,7 +441,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IDEControllerType)(IDEControllerType_T aCon
         case IDEControllerType_PIIX4:
             break;
         default:
-            return setError (E_FAIL,
+            return setError (E_INVALIDARG,
                 tr("Invalid IDE controller type '%d'"),
                 aControllerType);
     }
@@ -714,7 +714,7 @@ void BIOSSettings::commit()
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and reshare it
+            // attach new data to the peer and re-share it
             AutoWriteLock peerlock (mPeer);
             mPeer->mData.attach (mData);
         }
