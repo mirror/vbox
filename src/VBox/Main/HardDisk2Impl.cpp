@@ -922,33 +922,68 @@ STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
 
 STDMETHODIMP HardDisk2::GetProperty (INPTR BSTR aName, BSTR *aValue)
 {
-//  CheckComArgStrNotEmptyOrNull (aName);
-//  CheckComArgOutPointerValid (aValue);
-//
-//  AutoCaller autoCaller (this);
-//  CheckComRCReturnRC (autoCaller.rc());
-//
-//  AutoReadLock alock (this);
+    CheckComArgStrNotEmptyOrNull (aName);
+    CheckComArgOutPointerValid (aValue);
 
-    return E_NOTIMPL;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    Data::PropertyMap::const_iterator it = mm.properties.find (Bstr (aName));
+    if (it == mm.properties.end())
+        return setError (VBOX_E_OBJECT_NOT_FOUND,
+            tr ("Property '%ls' does not exist"), aName);
+
+    it->second.cloneTo (aValue);
+
+    return S_OK;
 }
 
 STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
 {
-//  CheckComArgStrNotEmptyOrNull (aName);
-//
-//  AutoWriteLock alock (this);
+    CheckComArgStrNotEmptyOrNull (aName);
 
-    return E_NOTIMPL;
+    AutoWriteLock alock (this);
+
+    Data::PropertyMap::iterator it = mm.properties.find (Bstr (aName));
+    if (it == mm.properties.end())
+        return setError (VBOX_E_OBJECT_NOT_FOUND,
+            tr ("Property '%ls' does not exist"), aName);
+
+    it->second = aValue;
+
+    return S_OK;
 }
 
 STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
                                        ComSafeArrayOut (BSTR, aReturnNames),
                                        ComSafeArrayOut (BSTR, aReturnValues))
 {
-//  ComSafeArrayOutIsNull
+    CheckComArgOutSafeArrayPointerValid (aReturnNames);
+    CheckComArgOutSafeArrayPointerValid (aReturnValues);
 
-    return E_NOTIMPL;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    com::SafeArray <BSTR> names (mm.properties.size());
+    com::SafeArray <BSTR> values (mm.properties.size());
+    size_t i = 0;
+
+    for (Data::PropertyMap::const_iterator it = mm.properties.begin();
+          it != mm.properties.end(); ++ it)
+    {
+        it->first.cloneTo (&names [i]);
+        it->second.cloneTo (&values [i]);
+        ++ i;
+    }
+
+    names.detachTo (ComSafeArrayOutArg (aReturnNames));
+    values.detachTo (ComSafeArrayOutArg (aReturnValues));
+
+    return S_OK;
 }
 
 STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
@@ -2436,6 +2471,20 @@ HRESULT HardDisk2::setFormat (const BSTR aFormat)
          * uninitialization */
         HRESULT rc = mm.formatObj->addCaller();
         AssertComRCReturnRC (rc);
+
+        /* get properties (preinsert them as keys in the map). Note that the
+         * map doesn't grow over the object life time since the set of
+         * properties is meant to be constant. */
+
+        mm.properties.clear();
+
+        for (HardDiskFormat::PropertyList::const_iterator it =
+                mm.formatObj->properties().begin();
+             it != mm.formatObj->properties().end();
+             ++ it)
+        {
+            mm.properties.insert (std::make_pair (it->name, Bstr::Null));
+        }
     }
 
     unconst (mm.format) = aFormat;
