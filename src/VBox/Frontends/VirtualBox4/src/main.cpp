@@ -373,6 +373,13 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 /* pre-populate the media list before showing the main widget */
                 vboxGlobal().startEnumeratingMedia();
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                if (   vboxGlobal().trayIconInstall()
+                    && vboxGlobal().isTrayIcon())
+                {
+                    /* Nothing to do here yet. */
+                }
+#endif
                 vboxGlobal().selectorWnd().show();
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
                 vboxGlobal().showRegistrationDialog (false /* aForce */);

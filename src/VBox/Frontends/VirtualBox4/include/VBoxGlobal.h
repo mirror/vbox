@@ -390,11 +390,22 @@ public:
 };
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-class VBoxChangeGUITrayIconEvent : public QEvent
+class VBoxCanShowTrayIconEvent : public QEvent
 {
 public:
-    VBoxChangeGUITrayIconEvent (bool aEnabled)
-        : QEvent ((QEvent::Type) VBoxDefs::ChangeGUITrayIconEventType)
+    VBoxCanShowTrayIconEvent (bool aCanShow)
+        : QEvent ((QEvent::Type) VBoxDefs::CanShowTrayIconEventType)
+        , mCanShow (aCanShow)
+        {}
+
+    const bool mCanShow;
+};
+
+class VBoxChangeTrayIconEvent : public QEvent
+{
+public:
+    VBoxChangeTrayIconEvent (bool aEnabled)
+        : QEvent ((QEvent::Type) VBoxDefs::ChangeTrayIconEventType)
         , mEnabled (aEnabled)
         {}
 
@@ -469,8 +480,11 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
-
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    bool isTrayIcon() const;
+    bool trayIconInstall();
+#endif
     QUuid managedVMUuid() const { return vmUuid; }
 
     VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
@@ -937,7 +951,8 @@ signals:
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    void systrayIconChanged (const VBoxChangeGUITrayIconEvent &e);
+    void trayIconCanShow (const VBoxCanShowTrayIconEvent &e);
+    void trayIconChanged (const VBoxChangeTrayIconEvent &e);
 #endif
 
     void canShowRegDlg (bool aCanShow);
@@ -979,6 +994,9 @@ private:
 
     QUuid vmUuid;
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    bool mIsTrayIcon;           /* Is current instance responsible for tray icon? */
+#endif
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;
 

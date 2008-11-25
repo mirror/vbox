@@ -118,7 +118,8 @@ struct VBoxDefs
 #endif
         ChangeGUILanguageEventType,
 #if defined (VBOX_GUI_WITH_SYSTRAY)
-        ChangeGUITrayIconEventType,
+        CanShowTrayIconEventType,
+        ChangeTrayIconEventType,
 #endif
         AddVDMUrlsEventType
     };
@@ -151,6 +152,9 @@ struct VBoxDefs
     static const char* GUI_UpdateCheckCount;
     static const char* GUI_LastVMSelected;
     static const char* GUI_InfoDlgState;
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    static const char* GUI_TrayIconWinID;
+#endif
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)

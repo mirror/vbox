@@ -44,3 +44,6 @@ const char* VBoxDefs::GUI_UpdateDate = "GUI/UpdateDate";
 const char* VBoxDefs::GUI_UpdateCheckCount = "GUI/UpdateCheckCount";
 const char* VBoxDefs::GUI_LastVMSelected = "GUI/LastVMSelected";
 const char* VBoxDefs::GUI_InfoDlgState = "GUI/InfoDlgState";
+#ifdef VBOX_GUI_WITH_SYSTRAY
+const char* VBoxDefs::GUI_TrayIconWinID = "GUI/TrayIconWinID";
+#endif
