@@ -25,6 +25,7 @@ export DH_COMPAT=4
 #  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
 #                   VirtualBox.chm from $HOME
 #  NOMODS=1         don't build any module
+#  NOQT=1           don't build the Qt GUI
 #  HEADLESS=1       build the headless version
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 
@@ -39,6 +40,7 @@ arch     := $(shell dpkg --print-architecture)
 verfile  := $(builddir)/version-generated.mk
 ose      := 1
 NOMODS   ?= $(ose)
+NOQT     ?= $(HEADLESS)
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
@@ -73,6 +75,7 @@ configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
 	cd $(vboxroot) && ./configure --odir=$(current)/debian --disable-qt3 $(if \
+	    $(NOQT),--disable-qt,) $(if \
 	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
 	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
 	    $(shell test $(gccvmaj) -eq 4 -a $(gccvmin) -gt 2 -o $(gccvmaj) -gt 4 && echo "yes"),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
@@ -161,7 +164,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
-	$(if $(HEADLESS),,mv $(archdir)/VirtualBox.desktop \
+	$(if $(NOQT),,mv $(archdir)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -D -g 0 -o 0 -m 644 debian/lintian-override \
@@ -176,13 +179,13 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
 	mv $(archdir)/*.so.4 $(prefix)/usr/lib/$(package) || true
-	$(if $(HEADLESS),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
+	$(if $(NOQT),,mv $(archdir)/nls $(prefix)/usr/share/$(package))
 	mv $(archdir)/src  $(prefix)/usr/share/$(package)
 	rm $(archdir)/VBox.sh
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(HEADLESS),,VirtualBox) $(if $(ose),,VBoxVRDP) \
+	    $(if $(NOQT),,VirtualBox) $(if $(ose),,VBoxVRDP) \
 	    VBoxHeadless; do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
@@ -193,7 +196,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 		$$d/vboxnetflt.ko $(prefix)/lib/modules/$$(basename $$d)/misc/vboxnetflt.ko; \
 	    done)
 ifeq ($(ose),)
-	$(if $(HEADLESS),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
+	$(if $(NOQT),,mv $(archdir)/kchmviewer $(prefix)/usr/lib/$(package))
 	dh_installdocs \
 	    $(archdir)/UserManual*.pdf $(archdir)/VirtualBox*.chm \
 	    LICENSE
@@ -208,7 +211,7 @@ endif
 	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
-	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VirtualBox) \
+	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBox) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
