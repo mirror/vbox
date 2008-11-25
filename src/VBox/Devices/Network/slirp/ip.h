@@ -207,7 +207,11 @@ struct  ip_timestamp {
 #if SIZEOF_CHAR_P == 4
 typedef caddr_t caddr32_t;
 #else
+#if !defined(VBOX_WITH_BSD_REASS) && !defined(VBOX_WITH_BSD_TCP_REASS)
 typedef u_int32_t caddr32_t;
+#else /* !VBOX_WITH_BSD_REASS && !VBOX_WITH_BSD_TCP_REASS*/
+typedef caddr_t caddr32_t;
+#endif /* VBOX_WITH_BSD_REASS || VBOX_WITH_BSD_TCP_REASS*/
 #endif
 #endif
 
