@@ -2503,11 +2503,11 @@ typedef struct PDMIHGCMCONNECTOR
  */
 typedef enum PDMSCSIREQUESTTXDIR
 {
-    PDMSCSIREQUESTTXDIR_UNKNOWN = 0,
-    PDMSCSIREQUESTTXDIR_FROM_DEVICE,
-    PDMSCSIREQUESTTXDIR_TO_DEVICE,
-    PDMSCSIREQUESTTXDIR_NONE
-    /** @todo r=bird: 32-bit type size blowup? */
+    PDMSCSIREQUESTTXDIR_UNKNOWN     = 0x00,
+    PDMSCSIREQUESTTXDIR_FROM_DEVICE = 0x01,
+    PDMSCSIREQUESTTXDIR_TO_DEVICE   = 0x02,
+    PDMSCSIREQUESTTXDIR_NONE        = 0x03,
+    PDMSCSIREQUESTTXDIR_32BIT_HACK  = 0x7fffffff
 } PDMSCSIREQUESTTXDIR;
 
 /**
@@ -2516,27 +2516,27 @@ typedef enum PDMSCSIREQUESTTXDIR
 typedef struct PDMSCSIREQUEST
 {
     /** The logical unit. */
-    uint32_t    uLogicalUnit;
+    uint32_t               uLogicalUnit;
     /** Direction of the data flow. */
-    uint32_t    uDataDirection;         /**< @todo r=bird: why isn't this PDMSCSIREQUESTTXDIR? */
+    PDMSCSIREQUESTTXDIR    uDataDirection;
     /** Size of the SCSI CDB. */
-    uint32_t    cbCDB;
+    uint32_t               cbCDB;
     /** Pointer to the SCSI CDB. */
-    uint8_t    *paCDB;                  /**< @todo r=bird: array what? pbCDB perhaps? */
+    uint8_t               *pbCDB;
     /** Overall size of all scatter gather list elements
      *  for data transfer if any. */
-    uint32_t    cbScatterGather;
+    uint32_t               cbScatterGather;
     /** Number of elements in the scatter gather list. */
-    uint32_t    cScatterGatherEntries;
+    uint32_t               cScatterGatherEntries;
     /** Pointer to the head of the scatter gather list. */
-    PPDMDATASEG paScatterGatherHead;
+    PPDMDATASEG            paScatterGatherHead;
     /** Size of the sense buffer. */
-    uint32_t    cbSenseBuffer;
+    uint32_t               cbSenseBuffer;
     /** Pointer to the sense buffer. *
      * Current assumption that the sense buffer is not scattered. */
-    uint8_t    *pu8SenseBuffer;         /**< @todo r=bird: pbSenseBuffer is simpler */
+    uint8_t               *pbSenseBuffer;
     /** Opaque user data for use by the device. Left untouched by everything else! */
-    void       *pvUser;
+    void                  *pvUser;
 } PDMSCSIREQUEST, *PPDMSCSIREQUEST;
 /** Pointer to a const SCSI request structure. */
 typedef const PDMSCSIREQUEST *PCSCSIREQUEST;
@@ -2578,7 +2578,6 @@ typedef struct PDMISCSICONNECTOR
      * @returns VBox status code.
      * @param   pInterface    Pointer to this interface.
      * @param   pSCSIRequest  Pointer to the SCSI request to execute.
-     * @remark  pfnSetSimultaneousRequestsMax must be called before this function can be used.
      */
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
 
