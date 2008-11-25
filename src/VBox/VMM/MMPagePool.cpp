@@ -252,7 +252,7 @@ DECLINLINE(void *) mmR3PagePoolAlloc(PMMPAGEPOOL pPool)
                               &pSub->pvPages,
                               NULL,
                               paPhysPages);
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
             rc = VMSetError(pPool->pVM, rc, RT_SRC_POS,
                             N_("Failed to lock host %zd bytes of memory (out of memory)"), (size_t)cPages << PAGE_SHIFT);
     }
