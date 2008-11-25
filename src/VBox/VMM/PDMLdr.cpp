@@ -459,55 +459,65 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
         /*
          * Allocate space in the hypervisor.
          */
-        size_t cb = RTLdrSize(pModule->hLdrMod);
+        size_t      cb = RTLdrSize(pModule->hLdrMod);
         cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-        rc = SUPPageAlloc(cb >> PAGE_SHIFT, &pModule->pvBits);
-        if (RT_SUCCESS(rc))
+        uint32_t    cPages = cb >> PAGE_SHIFT;
+        PSUPPAGE    paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(paPages[0]));
+        if (paPages)
         {
-            RTGCPTR GCPtr;
-            rc = MMR3HyperMapHCRam(pVM, pModule->pvBits, cb, true, pModule->szName, &GCPtr);
+            rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pModule->pvBits, NULL /*pR0Ptr*/, paPages);
             if (RT_SUCCESS(rc))
             {
-                MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-
-                /*
-                 * Get relocated image bits.
-                 */
-                Assert(MMHyperR3ToRC(pVM, pModule->pvBits) == GCPtr);
-                pModule->ImageBase = GCPtr;
-                PDMGETIMPORTARGS Args;
-                Args.pVM = pVM;
-                Args.pModule = pModule;
-                rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmR3GetImportRC, &Args);
+                RTGCPTR GCPtr;
+                rc = MMR3HyperMapPages(pVM, pModule->pvBits, (uintptr_t)pModule->pvBits,
+                                       cPages, paPages, pModule->szName, &GCPtr);
                 if (RT_SUCCESS(rc))
                 {
+                    MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+
                     /*
-                     * Insert the module.
+                     * Get relocated image bits.
                      */
-                    PUVM pUVM = pVM->pUVM;
-                    if (pUVM->pdm.s.pModules)
+                    Assert(MMHyperR3ToRC(pVM, pModule->pvBits) == GCPtr);
+                    pModule->ImageBase = GCPtr;
+                    PDMGETIMPORTARGS Args;
+                    Args.pVM = pVM;
+                    Args.pModule = pModule;
+                    rc = RTLdrGetBits(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, pdmR3GetImportRC, &Args);
+                    if (RT_SUCCESS(rc))
                     {
-                        /* we don't expect this list to be very long, so rather save the tail pointer. */
-                        PPDMMOD pCur = pUVM->pdm.s.pModules;
-                        while (pCur->pNext)
-                            pCur = pCur->pNext;
-                        pCur->pNext = pModule;
+                        /*
+                         * Insert the module.
+                         */
+                        PUVM pUVM = pVM->pUVM;
+                        if (pUVM->pdm.s.pModules)
+                        {
+                            /* we don't expect this list to be very long, so rather save the tail pointer. */
+                            PPDMMOD pCur = pUVM->pdm.s.pModules;
+                            while (pCur->pNext)
+                                pCur = pCur->pNext;
+                            pCur->pNext = pModule;
+                        }
+                        else
+                            pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
+                        Log(("PDM: RC Module at %RRv %s (%s)\n", (RTRCPTR)pModule->ImageBase, pszName, pszFilename));
+                        RTMemTmpFree(pszFile);
+                        RTMemTmpFree(paPages);
+                        return VINF_SUCCESS;
                     }
-                    else
-                        pUVM->pdm.s.pModules = pModule; /* (pNext is zeroed by alloc) */
-                    Log(("PDM: RC Module at %RRv %s (%s)\n", (RTRCPTR)pModule->ImageBase, pszName, pszFilename));
-                    RTMemTmpFree(pszFile);
-                    return VINF_SUCCESS;
+                }
+                else
+                {
+                    AssertRC(rc);
+                    SUPR3PageFreeEx(pModule->pvBits, cPages);
                 }
             }
             else
-            {
-                AssertRC(rc);
-                SUPPageFree(pModule->pvBits, cb >> PAGE_SHIFT);
-            }
+                AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cPages, rc));
+            RTMemTmpFree(paPages);
         }
         else
-            AssertMsgFailed(("SUPPageAlloc(%d,) -> %Rrc\n", cb >> PAGE_SHIFT, rc));
+            rc = VERR_NO_TMP_MEMORY;
         int rc2 = RTLdrClose(pModule->hLdrMod);
         AssertRC(rc2);
     }
