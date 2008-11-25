@@ -1227,13 +1227,13 @@ VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL), mConsoleWnd (NULL)
     , mMainWindow (NULL)
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    , mIsTrayIcon (false)
-#endif
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
 #endif
     , mUpdDlg (NULL)
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    , mIsTrayIcon (false)
+#endif
     , mMediaEnumThread (NULL)
     , verString ("1.0")
     , vm_state_color (KMachineState_COUNT)
