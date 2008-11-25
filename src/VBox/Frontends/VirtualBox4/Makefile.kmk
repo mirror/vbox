@@ -425,16 +425,22 @@ endif
 #
 # Generate the COM wrappers.
 #
-VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
-VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
-VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_COM_WRAPPERS   = $(PATH_VirtualBox4)/include/COMWrappers.h
 
-$$(PATH_VirtualBox4)/include/COMWrappers.h: \
+VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
+VirtualBox4_INTERMEDIATES += $(VirtualBox4_COM_WRAPPERS)
+VirtualBox4_CLEAN         += $(VirtualBox4_COM_WRAPPERS)
+
+$$(VirtualBox4_COM_WRAPPERS): \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox4,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
+
+# alias for generating the COM Wrappers file.
+testwrappers:: $$(VirtualBox4_COM_WRAPPERS)
+
 
 #
 # Generate qrc file with branded icons.
@@ -462,9 +468,6 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 		-e 's;@VBOX_CUBE_42PX_PNG@;$(subst $(VBOX_DRIVE_HACK),,$(VBOX_BRAND_GUI_CUBE_42PX_PNG));g' \
 		--output $@ \
 		$<
-
-# alias for generating the COM Wrappers file.
-testwrappers:: $(VBOX_WRAPPERS_FILE4)
 
 
 ifeq ($(KBUILD_TARGET),win)
