@@ -673,7 +673,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
     void *pvPages;
     PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
     if (RT_SUCCESS(rc))
-        rc = SUPPageAllocLockedEx(cPages, &pvPages, paPages);
+        rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
     if (RT_SUCCESS(rc))
     {
         memset(pvPages, 0, cPages * PAGE_SIZE);
@@ -722,7 +722,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
             return VINF_SUCCESS;
         }
 
-        SUPPageFreeLocked(pvPages, cPages);
+        SUPR3PageFreeEx(pvPages, cPages);
     }
     RTMemTmpFree(paPages);
     MMR3AdjustFixedReservation(pVM, -(int32_t)cPages, pszDesc);
@@ -786,7 +786,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             /*
              * Free the memory.
              */
-            int rc2 = SUPPageFreeLocked(pCur->pvR3, pCur->RamRange.cb >> PAGE_SHIFT);
+            int rc2 = SUPR3PageFreeEx(pCur->pvR3, pCur->RamRange.cb >> PAGE_SHIFT);
             AssertRC(rc2);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
@@ -1726,42 +1726,17 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
      */
     size_t          cbRam = RT_OFFSETOF(PGMRAMRANGE, aPages[cb >> PAGE_SHIFT]);
     PPGMRAMRANGE    pNew;
-    RTRCPTR         RCPtrNew;
     int             rc = VERR_NO_MEMORY;
     if (cbRam > PAGE_SIZE / 2)
     {   /* large */
         cbRam = RT_ALIGN_Z(cbRam, PAGE_SIZE);
-        rc = SUPPageAlloc(cbRam >> PAGE_SHIFT, (void **)&pNew);
-        if (RT_SUCCESS(rc))
-        {
-            RTGCPTR GCPtrNew;
-            rc = MMR3HyperMapHCRam(pVM, pNew, cbRam, true,
-                                   MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "ram range (%s)", pszDesc),
-                                   &GCPtrNew);
-            if (RT_SUCCESS(rc))
-            {
-                RCPtrNew = GCPtrNew;
-                Assert(MMHyperR3ToRC(pVM, pNew) == GCPtrNew && RCPtrNew == GCPtrNew);
-                rc = MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-            }
-            else
-            {
-                AssertMsgFailed(("MMR3HyperMapHCRam(,,%#x,,,) -> %Rrc\n", cbRam, rc));
-                SUPPageFree(pNew, cbRam >> PAGE_SHIFT);
-            }
-        }
-        else
-            AssertMsgFailed(("SUPPageAlloc(%#x,,) -> %Rrc\n", cbRam >> PAGE_SHIFT, rc));
-
+        rc = MMR3HyperAllocOnceNoRel(pVM, cbRam, PAGE_SIZE, MM_TAG_PGM_PHYS, (void **)&pNew);
+        AssertMsgRC(rc, ("MMR3HyperAllocOnceNoRel(,%#x,,) -> %Rrc\n", cbRam, rc));
     }
-/** @todo Make VGA and VMMDev register their memory at init time before the hma size is fixated. */
-    if (RT_FAILURE(rc))
-    {   /* small + fallback (vga) */
+    else
+    {   /* small */
         rc = MMHyperAlloc(pVM, cbRam, 16, MM_TAG_PGM, (void **)&pNew);
-        if (RT_SUCCESS(rc))
-            RCPtrNew = MMHyperR3ToRC(pVM, pNew);
-        else
-            AssertMsgFailed(("MMHyperAlloc(,%#x,,,) -> %Rrc\n", cbRam, cb));
+        AssertMsgRC(rc, ("MMHyperAlloc(,%#x,,,) -> %Rrc\n", cbRam, rc));
     }
     if (RT_SUCCESS(rc))
     {
@@ -1821,13 +1796,13 @@ VMMR3DECL(int) PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t c
         {
             pPrev->pNextR3 = pNew;
             pPrev->pNextR0 = MMHyperCCToR0(pVM, pNew);
-            pPrev->pNextRC = RCPtrNew;
+            pPrev->pNextRC = MMHyperCCToRC(pVM, pNew);
         }
         else
         {
             pVM->pgm.s.pRamRangesR3 = pNew;
             pVM->pgm.s.pRamRangesR0 = MMHyperCCToR0(pVM, pNew);
-            pVM->pgm.s.pRamRangesRC = RCPtrNew;
+            pVM->pgm.s.pRamRangesRC = MMHyperCCToRC(pVM, pNew);
         }
         pgmUnlock(pVM);
     }
