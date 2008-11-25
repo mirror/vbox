@@ -469,7 +469,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
             if (RT_SUCCESS(rc))
             {
                 RTGCPTR GCPtr;
-                rc = MMR3HyperMapPages(pVM, pModule->pvBits, (uintptr_t)pModule->pvBits,
+                rc = MMR3HyperMapPages(pVM, pModule->pvBits, NIL_RTR0PTR,
                                        cPages, paPages, pModule->szName, &GCPtr);
                 if (RT_SUCCESS(rc))
                 {
