@@ -885,14 +885,14 @@ typedef enum
 /**  @name VMCS field encoding - 32 Bits read-only fields
  * @{
  */
-#define VMX_VMCS_RO_VM_INSTR_ERROR                              0x4400
-#define VMX_VMCS_RO_EXIT_REASON                                 0x4402
-#define VMX_VMCS_RO_EXIT_INTERRUPTION_INFO                      0x4404
-#define VMX_VMCS_RO_EXIT_INTERRUPTION_ERRCODE                   0x4406
-#define VMX_VMCS_RO_IDT_INFO                                    0x4408
-#define VMX_VMCS_RO_IDT_ERRCODE                                 0x440A
-#define VMX_VMCS_RO_EXIT_INSTR_LENGTH                           0x440C
-#define VMX_VMCS_RO_EXIT_INSTR_INFO                             0x440E
+#define VMX_VMCS32_RO_VM_INSTR_ERROR                              0x4400
+#define VMX_VMCS32_RO_EXIT_REASON                                 0x4402
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO                      0x4404
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE                   0x4406
+#define VMX_VMCS32_RO_IDT_INFO                                    0x4408
+#define VMX_VMCS32_RO_IDT_ERRCODE                                 0x440A
+#define VMX_VMCS32_RO_EXIT_INSTR_LENGTH                           0x440C
+#define VMX_VMCS32_RO_EXIT_INSTR_INFO                             0x440E
 /** @} */
 
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO
@@ -1542,13 +1542,13 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 {
 #if HC_ARCH_BITS == 64
     uint64_t uLastError = 0;
-    int rc = VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &uLastError);
+    int rc = VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
     return (uint32_t)uLastError;
 
 #else /* 32-bit host: */
     uint32_t uLastError = 0;
-    int rc = VMXReadVMCS32(VMX_VMCS_RO_VM_INSTR_ERROR, &uLastError);
+    int rc = VMXReadVMCS32(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
     return uLastError;
 #endif

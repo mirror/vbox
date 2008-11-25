@@ -65,7 +65,7 @@ static void VMXR0CheckError(PVM pVM, PVMCPU pVCpu, int rc)
     {
         RTCCUINTREG instrError;
 
-        VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
+        VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
         pVCpu->hwaccm.s.vmx.lasterror.ulInstrError = instrError;
     }
     pVM->hwaccm.s.lLastError = rc;
@@ -1992,17 +1992,17 @@ ResumeExecution:
     /* Success. Query the guest state and figure out what has happened. */
 
     /* Investigate why there was a VM-exit. */
-    rc  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
+    rc  = VMXReadVMCS(VMX_VMCS32_RO_EXIT_REASON, &exitReason);
     STAM_COUNTER_INC(&pVCpu->hwaccm.s.paStatExitReasonR0[exitReason & MASK_EXITREASON_STAT]);
 
     exitReason &= 0xffff;   /* bit 0-15 contain the exit code. */
-    rc |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
-    rc |= VMXReadVMCS(VMX_VMCS_RO_EXIT_INSTR_LENGTH, &cbInstr);
-    rc |= VMXReadVMCS(VMX_VMCS_RO_EXIT_INTERRUPTION_INFO, &val);
+    rc |= VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
+    rc |= VMXReadVMCS(VMX_VMCS32_RO_EXIT_INSTR_LENGTH, &cbInstr);
+    rc |= VMXReadVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &val);
     intInfo   = val;
-    rc |= VMXReadVMCS(VMX_VMCS_RO_EXIT_INTERRUPTION_ERRCODE, &val);
+    rc |= VMXReadVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE, &val);
     errCode   = val;    /* might not be valid; depends on VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID. */
-    rc |= VMXReadVMCS(VMX_VMCS_RO_EXIT_INSTR_INFO, &val);
+    rc |= VMXReadVMCS(VMX_VMCS32_RO_EXIT_INSTR_INFO, &val);
     instrInfo = val;
     rc |= VMXReadVMCS(VMX_VMCS_RO_EXIT_QUALIFICATION, &val);
     exitQualification = val;
@@ -2016,7 +2016,7 @@ ResumeExecution:
     Log2(("Raw exit reason %08x\n", exitReason));
 
     /* Check if an injected event was interrupted prematurely. */
-    rc = VMXReadVMCS(VMX_VMCS_RO_IDT_INFO,            &val);
+    rc = VMXReadVMCS(VMX_VMCS32_RO_IDT_INFO,            &val);
     AssertRC(rc);
     pVCpu->hwaccm.s.Event.intInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
     if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hwaccm.s.Event.intInfo)
@@ -2029,7 +2029,7 @@ ResumeExecution:
         /* Error code present? */
         if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hwaccm.s.Event.intInfo))
         {
-            rc = VMXReadVMCS(VMX_VMCS_RO_IDT_ERRCODE, &val);
+            rc = VMXReadVMCS(VMX_VMCS32_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
             pVCpu->hwaccm.s.Event.errCode  = val;
             Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
@@ -3214,8 +3214,8 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
         int         rc;
         RTCCUINTREG exitReason, instrError, val;
 
-        rc  = VMXReadVMCS(VMX_VMCS_RO_EXIT_REASON, &exitReason);
-        rc |= VMXReadVMCS(VMX_VMCS_RO_VM_INSTR_ERROR, &instrError);
+        rc  = VMXReadVMCS(VMX_VMCS32_RO_EXIT_REASON, &exitReason);
+        rc |= VMXReadVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {
