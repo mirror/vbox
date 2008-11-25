@@ -811,7 +811,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR4,               ASMGetCR4());
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_CR0 %08x\n", ASMGetCR0()));
-        Log2(("VMX_VMCS_HOST_CR3 %RHp\n", ASMGetCR3()));
+        Log2(("VMX_VMCS_HOST_CR3 %08x\n", ASMGetCR3()));
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
@@ -3246,7 +3246,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR3, &val);
-            Log(("VMX_VMCS_HOST_CR3 %RHp\n", val));
+            Log(("VMX_VMCS_HOST_CR3 %08x\n", val));
 
             VMXReadVMCS(VMX_VMCS_HOST_CR4, &val);
             Log(("VMX_VMCS_HOST_CR4 %08x\n", val));
