@@ -1,10 +1,12 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,57 +29,61 @@
 class Console;
 
 class ATL_NO_VTABLE MachineDebugger :
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <MachineDebugger, IMachineDebugger>,
     public VirtualBoxSupportTranslation <MachineDebugger>,
-    public VirtualBoxBase,
     public IMachineDebugger
 {
 public:
 
-    DECLARE_NOT_AGGREGATABLE(MachineDebugger)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (MachineDebugger)
+
+    DECLARE_NOT_AGGREGATABLE (MachineDebugger)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(MachineDebugger)
-        COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IMachineDebugger)
+        COM_INTERFACE_ENTRY (ISupportErrorInfo)
+        COM_INTERFACE_ENTRY (IMachineDebugger)
     END_COM_MAP()
 
     NS_DECL_ISUPPORTS
+
+    DECLARE_EMPTY_CTOR_DTOR (MachineDebugger)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Console *parent);
+    HRESULT init (Console *aParent);
     void uninit();
 
     // IMachineDebugger properties
-    STDMETHOD(COMGETTER(Singlestep))(BOOL *enabled);
-    STDMETHOD(COMSETTER(Singlestep))(BOOL enable);
-    STDMETHOD(COMGETTER(RecompileUser))(BOOL *enabled);
-    STDMETHOD(COMSETTER(RecompileUser))(BOOL enable);
-    STDMETHOD(COMGETTER(RecompileSupervisor))(BOOL *enabled);
-    STDMETHOD(COMSETTER(RecompileSupervisor))(BOOL enable);
-    STDMETHOD(COMGETTER(PATMEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(PATMEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER(CSAMEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(CSAMEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER(LogEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(LogEnabled))(BOOL enable);
-    STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *enabled);
-    STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled))(BOOL *enabled);
-    STDMETHOD(COMGETTER(HWVirtExVPIDEnabled))(BOOL *enabled);
-    STDMETHOD(COMGETTER(PAEEnabled))(BOOL *enabled);
-    STDMETHOD(COMGETTER(VirtualTimeRate))(ULONG *pct);
-    STDMETHOD(COMSETTER(VirtualTimeRate))(ULONG pct);
-    STDMETHOD(COMGETTER(VM))(ULONG64 *vm);
+    STDMETHOD(COMGETTER(Singlestep)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Singlestep)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(RecompileUser)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(RecompileUser)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(RecompileSupervisor)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(RecompileSupervisor)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(PATMEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(PATMEnabled)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(CSAMEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(CSAMEnabled)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(LogEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMSETTER(LogEnabled)) (BOOL aEnable);
+    STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMGETTER(HWVirtExVPIDEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMGETTER(PAEEnabled)) (BOOL *aEnabled);
+    STDMETHOD(COMGETTER(VirtualTimeRate)) (ULONG *aPct);
+    STDMETHOD(COMSETTER(VirtualTimeRate)) (ULONG aPct);
+    STDMETHOD(COMGETTER(VM)) (ULONG64 *aVm);
     STDMETHOD(InjectNMI)();
 
     // IMachineDebugger methods
-    STDMETHOD(ResetStats(INPTR BSTR aPattern));
-    STDMETHOD(DumpStats(INPTR BSTR aPattern));
-    STDMETHOD(GetStats(INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
+    STDMETHOD(ResetStats (INPTR BSTR aPattern));
+    STDMETHOD(DumpStats (INPTR BSTR aPattern));
+    STDMETHOD(GetStats (INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
 
 
     // "public-private methods"
@@ -87,17 +93,20 @@ public:
     static const wchar_t *getComponentName() { return L"MachineDebugger"; }
 
 private:
-    ComObjPtr <Console, ComWeakRef> mParent;
+    // private methods
+    bool queueSettings() const;
+
+    const ComObjPtr <Console, ComWeakRef> mParent;
     // flags whether settings have been queued because
     // they could not be sent to the VM (not up yet, etc.)
-    int singlestepQueued;
-    int recompileUserQueued;
-    int recompileSupervisorQueued;
-    int patmEnabledQueued;
-    int csamEnabledQueued;
+    int mSinglestepQueued;
+    int mRecompileUserQueued;
+    int mRecompileSupervisorQueued;
+    int mPatmEnabledQueued;
+    int mCsamEnabledQueued;
     int mLogEnabledQueued;
     uint32_t mVirtualTimeRateQueued;
-    bool fFlushMode;
+    bool mFlushMode;
 };
 
-#endif // ____H_MACHINEDEBUGGER
+#endif /* ____H_MACHINEDEBUGGER */
