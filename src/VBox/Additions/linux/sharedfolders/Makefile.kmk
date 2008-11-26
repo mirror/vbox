@@ -36,7 +36,9 @@ include $(PATH_SUB_CURRENT)/files_vboxvfs
 vboxvfs-mod_INST        = $(INST_ADDITIONS)src/vboxvfs/
 vboxvfs-mod_MODE        = a+r,u+w
 vboxvfs-mod_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
-vboxvfs-mod_SOURCES    += $(if $(VBOX_OSE),,$(PATH_vboxvfs-mod)/dkms.conf)
+vboxvfs-mod_SOURCES    += $(if $(VBOX_OSE),,\
+			    $(PATH_vboxvfs-mod)/dkms.conf \
+			    $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
 vboxvfs-mod_CLEAN      += $(PATH_vboxvfs-mod)/dkms.conf
 
 vboxvfs-sh_INST        = $(INST_ADDITIONS)src/vboxvfs/
@@ -92,7 +94,7 @@ mountvboxsf_SOURCES     = \
 ## Scripts needed for building kernel modules
 
 $$(PATH_vboxvfs-sh)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)

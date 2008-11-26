@@ -266,7 +266,8 @@ install_rpm: $(MODULE)
 
 endif # eq($(MAKECMDGOALS),clean)
 
+# important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
 clean:
 	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic math/gcc; \
 	    do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .vboxnetflt* .tmp_ver* vboxnetflt.* Module.symvers Modules.symvers modules.order
+	rm -rf .vboxnetflt* .tmp_ver* vboxnetflt.* Modules.symvers modules.order

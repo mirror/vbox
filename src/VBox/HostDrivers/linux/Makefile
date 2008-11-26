@@ -28,9 +28,11 @@
 # additional information or have any questions.
 #
 
+KBUILD_VERBOSE =
+
 all:
 	@echo "*** Building 'vboxdrv' module ***"
-	@$(MAKE) KBUILD_VERBOSE= -C vboxdrv
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv
 	@cp vboxdrv/vboxdrv.ko .
 	@echo
 	@if [ -d vboxnetflt ]; then \
@@ -38,7 +40,7 @@ all:
 	        cp vboxdrv/Module.symvers vboxnetflt; \
 	    fi; \
 	    echo "*** Building 'vboxnetflt' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE= -C vboxnetflt; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt; \
 	    cp vboxnetflt/vboxnetflt.ko .; \
 	fi
 

@@ -237,7 +237,9 @@ vboxdrv-mod_INST    = bin/src/vboxdrv/
 vboxdrv-mod_MODE    = a+r,u+w
 vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 vboxdrv-mod_SOURCES += \
-	$(if $(VBOX_OSE),,$(PATH_vboxdrv-mod)/dkms.conf) \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_vboxdrv-mod)/dkms.conf \
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers) \
 	$(PATH_vboxdrv-mod)/Makefile
 vboxdrv-mod_CLEAN   = \
 	$(PATH_vboxdrv-mod)/dkms.conf \
@@ -255,7 +257,7 @@ vboxdrv-sh_CLEAN    = \
 # Scripts needed for building the kernel modules
 
 $$(PATH_vboxdrv-sh)/build_in_tmp: \
-		$(PATH_SUB_CURRENT)/linux/build_in_tmp \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
