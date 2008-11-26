@@ -363,14 +363,17 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 /* Keep selector window in memory (hidden) because we need it for
                  * the systray menu. */
+                vboxGlobal().startEnumeratingMedia();
                 vboxGlobal().selectorWnd();
+                vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
                 if (   vboxGlobal().trayIconInstall()
                     && vboxGlobal().isTrayIcon())
                 {
                     /* Nothing to do here yet. */
                 }
-#endif
+#else
                 vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
+#endif
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                     rc = a.exec();
             }

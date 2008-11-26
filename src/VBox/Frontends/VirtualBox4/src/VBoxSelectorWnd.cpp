@@ -1680,7 +1680,7 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
 VBoxTrayIcon::~VBoxTrayIcon ()
 {
     /* Erase dialog handle in config file. */
-    if (vboxGlobal().isTrayIcon())
+    if (mActive)
     {
         vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_TrayIconWinID,
                                                 QString::null);

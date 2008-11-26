@@ -940,11 +940,13 @@ private:
 
     void postEvent (QEvent *e)
     {
-        // currently, we don't post events if we are in the VM execution
-        // console mode, to save some CPU ticks (so far, there was no need
-        // to handle VirtualBox callback events in the execution console mode)
-
+#ifndef VBOX_GUI_WITH_SYSTRAY
+        // If not using a systray menu, we don't post events if we are in the VM
+        // execution console mode, to save some CPU ticks (so far, there was no
+        // need to handle VirtualBox callback events in the execution console
+        // mode
         if (!mGlobal.isVMConsoleProcess())
+#endif
             QApplication::postEvent (&mGlobal, e);
     }
 
