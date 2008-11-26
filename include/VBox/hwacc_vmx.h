@@ -982,26 +982,26 @@ typedef enum
 /** @name Natural width control fields
  * @{
  */
-#define VMX_VMCS_CTRL_CR0_MASK                                  0x6000
-#define VMX_VMCS_CTRL_CR4_MASK                                  0x6002
-#define VMX_VMCS_CTRL_CR0_READ_SHADOW                           0x6004
-#define VMX_VMCS_CTRL_CR4_READ_SHADOW                           0x6006
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL0                           0x6008
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL1                           0x600A
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL2                           0x600C
-#define VMX_VMCS_CTRL_CR3_TARGET_VAL31                          0x600E
+#define VMX_VMCS64_CTRL_CR0_MASK                                  0x6000
+#define VMX_VMCS64_CTRL_CR4_MASK                                  0x6002
+#define VMX_VMCS64_CTRL_CR0_READ_SHADOW                           0x6004
+#define VMX_VMCS64_CTRL_CR4_READ_SHADOW                           0x6006
+#define VMX_VMCS64_CTRL_CR3_TARGET_VAL0                           0x6008
+#define VMX_VMCS64_CTRL_CR3_TARGET_VAL1                           0x600A
+#define VMX_VMCS64_CTRL_CR3_TARGET_VAL2                           0x600C
+#define VMX_VMCS64_CTRL_CR3_TARGET_VAL31                          0x600E
 /** @} */
 
 
 /** @name Natural width read-only data fields
  * @{
  */
-#define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
-#define VMX_VMCS_RO_IO_RCX                                      0x6402
-#define VMX_VMCS_RO_IO_RSX                                      0x6404
-#define VMX_VMCS_RO_IO_RDI                                      0x6406
-#define VMX_VMCS_RO_IO_RIP                                      0x6408
-#define VMX_VMCS_EXIT_GUEST_LINEAR_ADDR                         0x640A
+#define VMX_VMCS64_RO_EXIT_QUALIFICATION                          0x6400
+#define VMX_VMCS64_RO_IO_RCX                                      0x6402
+#define VMX_VMCS64_RO_IO_RSX                                      0x6404
+#define VMX_VMCS64_RO_IO_RDI                                      0x6406
+#define VMX_VMCS64_RO_IO_RIP                                      0x6408
+#define VMX_VMCS64_EXIT_GUEST_LINEAR_ADDR                         0x640A
 /** @} */
 
 
@@ -1123,26 +1123,26 @@ typedef enum
 /** @name VMCS field encoding - Natural width guest state fields
  * @{
  */
-#define VMX_VMCS_GUEST_CR0                                      0x6800
-#define VMX_VMCS_GUEST_CR3                                      0x6802
-#define VMX_VMCS_GUEST_CR4                                      0x6804
-#define VMX_VMCS_GUEST_ES_BASE                                  0x6806
-#define VMX_VMCS_GUEST_CS_BASE                                  0x6808
-#define VMX_VMCS_GUEST_SS_BASE                                  0x680A
-#define VMX_VMCS_GUEST_DS_BASE                                  0x680C
-#define VMX_VMCS_GUEST_FS_BASE                                  0x680E
-#define VMX_VMCS_GUEST_GS_BASE                                  0x6810
-#define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
-#define VMX_VMCS_GUEST_TR_BASE                                  0x6814
-#define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
-#define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
-#define VMX_VMCS_GUEST_DR7                                      0x681A
-#define VMX_VMCS_GUEST_RSP                                      0x681C
-#define VMX_VMCS_GUEST_RIP                                      0x681E
-#define VMX_VMCS_GUEST_RFLAGS                                   0x6820
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                         0x6822
-#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
+#define VMX_VMCS64_GUEST_CR0                                    0x6800
+#define VMX_VMCS64_GUEST_CR3                                    0x6802
+#define VMX_VMCS64_GUEST_CR4                                    0x6804
+#define VMX_VMCS64_GUEST_ES_BASE                                0x6806
+#define VMX_VMCS64_GUEST_CS_BASE                                0x6808
+#define VMX_VMCS64_GUEST_SS_BASE                                0x680A
+#define VMX_VMCS64_GUEST_DS_BASE                                0x680C
+#define VMX_VMCS64_GUEST_FS_BASE                                0x680E
+#define VMX_VMCS64_GUEST_GS_BASE                                0x6810
+#define VMX_VMCS64_GUEST_LDTR_BASE                              0x6812
+#define VMX_VMCS64_GUEST_TR_BASE                                0x6814
+#define VMX_VMCS64_GUEST_GDTR_BASE                              0x6816
+#define VMX_VMCS64_GUEST_IDTR_BASE                              0x6818
+#define VMX_VMCS64_GUEST_DR7                                    0x681A
+#define VMX_VMCS64_GUEST_RSP                                    0x681C
+#define VMX_VMCS64_GUEST_RIP                                    0x681E
+#define VMX_VMCS64_GUEST_RFLAGS                                 0x6820
+#define VMX_VMCS64_GUEST_DEBUG_EXCEPTIONS                       0x6822
+#define VMX_VMCS64_GUEST_SYSENTER_ESP                           0x6824  /**< MSR IA32_SYSENTER_ESP */
+#define VMX_VMCS64_GUEST_SYSENTER_EIP                           0x6826  /**< MSR IA32_SYSENTER_EIP */
 /** @} */
 
 
@@ -1384,15 +1384,6 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  *
  * @returns VBox status code
  * @param   idxField        VMCS index
- * @param   u64Val          16, 32 or 64 bits value
- */
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
-
-/**
- * Executes VMWRITE
- *
- * @returns VBox status code
- * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
 #if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
@@ -1440,21 +1431,33 @@ the_end:
 }
 #endif
 
+/**
+ * Executes VMWRITE
+ *
+ * @returns VBox status code
+ * @param   idxField        VMCS index
+ * @param   u64Val          16, 32 or 64 bits value
+ */
+#if HC_ARCH_BITS == 64
+DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+#else
+DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
+{
+    int rc;
+
+    rc  = VMXWriteVMCS32(idxField, u64Val);
+    rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL));
+    AssertRC(rc);
+    return rc;
+}
+#endif
+
 #if HC_ARCH_BITS == 64
 #define VMXWriteVMCS VMXWriteVMCS64
 #else
 #define VMXWriteVMCS VMXWriteVMCS32
 #endif /* HC_ARCH_BITS == 64 */
 
-
-/**
- * Executes VMREAD
- *
- * @returns VBox status code
- * @param   idxField        VMCS index
- * @param   pData           Ptr to store VM field value
- */
-DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 
 /**
  * Invalidate a page using invept
@@ -1523,6 +1526,29 @@ valid_vmcs:
 the_end:
     }
 # endif
+    return rc;
+}
+#endif
+
+#if HC_ARCH_BITS == 64
+/**
+ * Executes VMREAD
+ *
+ * @returns VBox status code
+ * @param   idxField        VMCS index
+ * @param   pData           Ptr to store VM field value
+ */
+DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+#else
+DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData)
+{
+    int rc;
+
+    uint32_t val_hi, val;
+    rc  = VMXReadVMCS32(idxField, &val);
+    rc |= VMXReadVMCS32(idxField + 1, &val_hi);
+    AssertRC(rc);
+    *pData = RT_MAKE_U64(val, val_hi);
     return rc;
 }
 #endif
