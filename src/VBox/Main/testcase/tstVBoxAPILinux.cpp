@@ -195,8 +195,8 @@ void createVM(IVirtualBox *virtualBox)
      */
     nsID VMuuid = {0};
     nsCOMPtr <IMachine> machine;
-    rc = virtualBox->CreateMachine(nsnull, NS_LITERAL_STRING("A brand new name").get(),
-                                   VMuuid, getter_AddRefs(machine));
+    rc = virtualBox->CreateMachine(NS_LITERAL_STRING("A brand new name").get(),
+                                   nsnull, nsnull, VMuuid, getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
         printf("Error: could not create machine! rc=%08X\n", rc);
