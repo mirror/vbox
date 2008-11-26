@@ -22,6 +22,7 @@
 #include "BIOSSettingsImpl.h"
 #include "MachineImpl.h"
 #include "Logging.h"
+#include "GuestOSTypeImpl.h"
 #include <iprt/cpputils.h>
 
 // constructor / destructor
@@ -727,5 +728,14 @@ void BIOSSettings::copyFrom (BIOSSettings *aThat)
 
     // this will back up current data
     mData.assignCopy (aThat->mData);
+}
+
+void BIOSSettings::applyDefaults (GuestOSType *aOsType)
+{
+    if (!aOsType)
+        return;
+
+    /* Initialize default BIOS settings here */
+    mData->mIOAPICEnabled = aOsType->recommendedIOAPIC();
 }
 

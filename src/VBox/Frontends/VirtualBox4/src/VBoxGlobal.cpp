@@ -5261,6 +5261,14 @@ void VBoxGlobal::init()
     if (osTypeCount > 0)
     {
         CGuestOSTypeEnumerator en = coll.Enumerate();
+
+        /* Here we assume 'Other' type is always the first, so we
+         * remember it and will append it to the list when finish */
+        CGuestOSType otherType (en.GetNext());
+        QString otherFamilyId (otherType.GetFamilyId());
+
+        /* Fill the lists with all the available OS Types except
+         * the 'Other' one type, it will be appended. */
         while (en.HasMore())
         {
             CGuestOSType os (en.GetNext());
@@ -5272,6 +5280,14 @@ void VBoxGlobal::init()
             }
             mTypes [mFamilyIDs.indexOf (familyId)].append (os);
         }
+
+        /* Append the 'Other' OS Type to the end of list */
+        if (!mFamilyIDs.contains (otherFamilyId))
+        {
+            mFamilyIDs << otherFamilyId;
+            mTypes << QList <CGuestOSType> ();
+        }
+        mTypes [mFamilyIDs.indexOf (otherFamilyId)].append (otherType);
     }
 
     /* Fill in OS type icon dictionary */

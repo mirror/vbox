@@ -57,7 +57,9 @@ public:
     HRESULT init (const char *aFamilyId, const char *aFamilyDescription,
                   const char *aId, const char *aDescription,
                   VBOXOSTYPE aOSType, bool aIs64Bit,
-                  uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize);
+                  bool aRecommendedIOAPIC, bool aRecommendedVirtEx,
+                  uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
+                  NetworkAdapterType_T aNetworkAdapterType);
     void uninit();
 
     // IGuestOSType properties
@@ -66,12 +68,19 @@ public:
     STDMETHOD(COMGETTER(Id)) (BSTR *aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMGETTER(Is64Bit)) (BOOL *aIs64Bit);
+    STDMETHOD(COMGETTER(RecommendedIOAPIC)) (BOOL *aRecommendedIOAPIC);
+    STDMETHOD(COMGETTER(RecommendedVirtEx)) (BOOL *aRecommendedVirtEx);
     STDMETHOD(COMGETTER(RecommendedRAM)) (ULONG *aRAMSize);
     STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *aVRAMSize);
     STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
+    STDMETHOD(COMGETTER(AdapterType)) (NetworkAdapterType_T *aNetworkAdapterType);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
+    bool is64Bit() const { return mIs64Bit; }
+    bool recommendedIOAPIC() const { return mRecommendedIOAPIC; }
+    bool recommendedVirtEx() const { return mRecommendedVirtEx; }
+    NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"GuestOSType"; }
@@ -84,10 +93,13 @@ private:
     const Bstr mDescription;
     const VBOXOSTYPE mOSType;
     const bool mIs64Bit;
+    const bool mRecommendedIOAPIC;
+    const bool mRecommendedVirtEx;
     const uint32_t mRAMSize;
     const uint32_t mVRAMSize;
     const uint32_t mHDDSize;
     const uint32_t mMonitorCount;
+    const NetworkAdapterType_T mNetworkAdapterType;
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION (GuestOSType)

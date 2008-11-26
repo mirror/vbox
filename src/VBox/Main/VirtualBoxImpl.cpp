@@ -267,9 +267,12 @@ HRESULT VirtualBox::init()
                                                Global::sOSTypes [i].description,
                                                Global::sOSTypes [i].osType,
                                                Global::sOSTypes [i].is64Bit,
+                                               Global::sOSTypes [i].recommendedIOAPIC,
+                                               Global::sOSTypes [i].recommendedVirtEx,
                                                Global::sOSTypes [i].recommendedRAM,
                                                Global::sOSTypes [i].recommendedVRAM,
-                                               Global::sOSTypes [i].recommendedHDD);
+                                               Global::sOSTypes [i].recommendedHDD,
+                                               Global::sOSTypes [i].networkAdapterType);
                     if (SUCCEEDED (rc))
                         mData.mGuestOSTypes.push_back (guestOSTypeObj);
                 }
@@ -750,8 +753,9 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 /////////////////////////////////////////////////////////////////////////////
 
 /** @note Locks mSystemProperties object for reading. */
-STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
-                                        INPTR BSTR aName,
+STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aName,
+                                        INPTR BSTR aOsTypeId,
+                                        INPTR BSTR aBaseFolder,
                                         INPTR GUIDPARAM aId,
                                         IMachine **aMachine)
 {
@@ -801,8 +805,22 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
         if (id.isEmpty())
             id.create();
 
+        /* Look for related GuestOsType */
+        AssertMsg (mData.mGuestOSTypes.size(), ("Guest OS types array must be filled"));
+        GuestOSTypeList::iterator it = mData.mGuestOSTypes.begin();
+        GuestOSType *osType = *it;
+        while (aOsTypeId && it != mData.mGuestOSTypes.end())
+        {
+            if ((*it)->id() == aOsTypeId)
+            {
+                osType = *it;
+                break;
+            }
+            ++ it;
+        }
+
         /* initialize the machine object */
-        rc = machine->init (this, settingsFile, Machine::Init_New, aName, TRUE, &id);
+        rc = machine->init (this, settingsFile, Machine::Init_New, aName, osType, TRUE, &id);
         if (SUCCEEDED (rc))
         {
             /* set the return value */
@@ -817,8 +835,9 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aBaseFolder,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aSettingsFile,
-                                              INPTR BSTR aName,
+STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
+                                              INPTR BSTR aOsTypeId,
+                                              INPTR BSTR aSettingsFile,
                                               INPTR GUIDPARAM aId,
                                               IMachine **aMachine)
 {
@@ -855,9 +874,23 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aSettingsFile,
         if (id.isEmpty())
             id.create();
 
+        /* Look for related GuestOsType */
+        AssertMsg (mData.mGuestOSTypes.size(), ("Guest OS types array must be filled"));
+        GuestOSTypeList::iterator it = mData.mGuestOSTypes.begin();
+        GuestOSType *osType = *it;
+        while (aOsTypeId && it != mData.mGuestOSTypes.end())
+        {
+            if ((*it)->id() == aOsTypeId)
+            {
+                osType = *it;
+                break;
+            }
+            ++ it;
+        }
+
         /* initialize the machine object */
         rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
-                            aName, FALSE /* aNameSync */, &id);
+                            aName, osType, FALSE /* aNameSync */, &id);
         if (SUCCEEDED (rc))
         {
             /* set the return value */
@@ -2993,7 +3026,7 @@ HRESULT VirtualBox::loadMachines (const settings::Key &aGlobal)
         {
             /* initialize the machine object and register it */
             rc = machine->init (this, src, Machine::Init_Registered,
-                                NULL, FALSE, &uuid);
+                                NULL, NULL, FALSE, &uuid);
             if (SUCCEEDED (rc))
                 rc = registerMachine (machine);
         }

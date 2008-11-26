@@ -365,6 +365,7 @@ void Machine::FinalRelease()
  *  @param aMode        Init_New, Init_Existing or Init_Registered
  *  @param aName        name for the machine when aMode is Init_New
  *                      (ignored otherwise)
+ *  @param aOsType      OS Type of this machine
  *  @param aNameSync    |TRUE| to automatically sync settings dir and file
  *                      name with the machine name. |FALSE| is used for legacy
  *                      machines where the file name is specified by the
@@ -380,6 +381,7 @@ void Machine::FinalRelease()
  */
 HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                        InitMode aMode, const BSTR aName /* = NULL */,
+                       GuestOSType *aOsType /* = NULL */,
                        BOOL aNameSync /* = TRUE */,
                        const Guid *aId /* = NULL */)
 {
@@ -491,6 +493,22 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                  * (note: depends on the name value set above!) */
                 rc = COMSETTER(SnapshotFolder) (NULL);
                 AssertComRC (rc);
+
+                if (aOsType)
+                {
+                    /* Store os type */
+                    mUserData->mOSTypeId = aOsType->id();
+
+                    /* Apply other machine defaults */
+                    mHWData->mHWVirtExEnabled = aOsType->recommendedVirtEx() ? TSBool_True : TSBool_False;
+
+                    /* Apply BIOS defaults */
+                    mBIOSSettings->applyDefaults (aOsType);
+                    
+                    /* Apply network adapters defaults */
+                    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++ slot)
+                        mNetworkAdapters [slot]->applyDefaults (aOsType);
+                }
             }
 
             /* commit all changes made during the initialization */

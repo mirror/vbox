@@ -26,6 +26,7 @@
 
 /* generated header */
 #include "SchemaDefs.h"
+#include "VirtualBox.h"
 
 #include <VBox/ostypes.h>
 
@@ -42,15 +43,18 @@ public:
     /** Represents OS Type <-> string mappings. */
     struct OSType
     {
-        const char       *familyId;          /* utf-8 */
-        const char       *familyDescription; /* utf-8 */
-        const char       *id;          /* utf-8 */
-        const char       *description; /* utf-8 */
-        const VBOXOSTYPE  osType;
-        const bool        is64Bit;
-        const uint32_t    recommendedRAM;
-        const uint32_t    recommendedVRAM;
-        const uint32_t    recommendedHDD;
+        const char                 *familyId;          /* utf-8 */
+        const char                 *familyDescription; /* utf-8 */
+        const char                 *id;          /* utf-8 */
+        const char                 *description; /* utf-8 */
+        const VBOXOSTYPE            osType;
+        const bool                  is64Bit;
+        const bool                  recommendedIOAPIC;
+        const bool                  recommendedVirtEx;
+        const uint32_t              recommendedRAM;
+        const uint32_t              recommendedVRAM;
+        const uint32_t              recommendedHDD;
+        const NetworkAdapterType_T  networkAdapterType;
     };
 
     static const OSType sOSTypes [SchemaDefs::OSTypeId_COUNT];

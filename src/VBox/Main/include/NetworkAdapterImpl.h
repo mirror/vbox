@@ -28,6 +28,7 @@
 #include "Collection.h"
 
 class Machine;
+class GuestOSType;
 
 class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBaseNEXT,
@@ -161,6 +162,7 @@ public:
     bool rollback();
     void commit();
     void copyFrom (NetworkAdapter *aThat);
+    void applyDefaults (GuestOSType *aOsType);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
