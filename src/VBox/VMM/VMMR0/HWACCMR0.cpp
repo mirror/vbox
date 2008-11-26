@@ -918,6 +918,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     {
         AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == NIL_RTCPUID, ("%d", (int)pVCpu->hwaccm.s.idEnteredCpu));
         pVCpu->hwaccm.s.idEnteredCpu = idCpu;
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        PGMDynMapMigrateAutoSet(pVCpu);
+#endif
     }
     return rc;
 }
@@ -975,6 +979,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
     CPUMCTX *pCtx;
     RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
+    int      rc;
 #ifdef VBOX_STRICT
     PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 #endif
@@ -984,9 +989,18 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     AssertReturn(!ASMAtomicReadBool(&HWACCMR0Globals.fSuspended), VERR_HWACCM_SUSPEND_PENDING);
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    PGMDynMapStartAutoSet(pVCpu);
+#endif
+
     pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
-    return HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
+    rc = HWACCMR0Globals.pfnRunGuestCode(pVM, pVCpu, pCtx);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    PGMDynMapReleaseAutoSet(pVCpu);
+#endif
+    return rc;
 }
 
 /**
