@@ -121,19 +121,25 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
   DEBUG_ARG("icmp_type = %d", icp->icmp_type);
   switch (icp->icmp_type) {
   case ICMP_ECHO:
+#ifndef VBOX_WITH_SLIRP_ICMP
     icp->icmp_type = ICMP_ECHOREPLY;
+#endif /* !VBOX_WITH_SLIRP_ICMP */
     ip->ip_len += hlen;              /* since ip_input subtracts this */
     if (ip->ip_dst.s_addr == alias_addr.s_addr) {
+#ifdef VBOX_WITH_SLIRP_ICMP
+      icp->icmp_type = ICMP_ECHOREPLY;
+#endif /* VBOX_WITH_SLIRP_ICMP */
       icmp_reflect(pData, m);
     } else {
       struct socket *so;
       struct sockaddr_in addr;
       if ((so = socreate()) == NULL) goto freeit;
 #ifndef VBOX_WITH_SLIRP_ICMP
-      if(udp_attach(pData, so) == -1) {
+      if(udp_attach(pData, so) == -1)
 #else
-      if(icmp_attach(pData, so) == -1) {
+      if(icmp_attach(pData, so) == -1)
 #endif
+      {
         DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
                     errno,strerror(errno)));
         sofree(pData, so);
@@ -166,6 +172,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         addr.sin_addr = so->so_faddr;
       }
       addr.sin_port = so->so_fport;
+#ifndef VBOX_WITH_SLIRP_ICMP
       if(sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
                 (struct sockaddr *)&addr, sizeof(addr)) == -1) {
         DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
@@ -173,6 +180,15 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
         udp_detach(pData, so);
       }
+#else /* !VBOX_WITH_SLIRP_ICMP */
+      if(sendto(so->s, icp, icmplen, 0,
+                (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                    errno,strerror(errno)));
+        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+      }
+
+#endif /* VBOX_WITH_SLIRP_ICMP */
     } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
     break;
   case ICMP_UNREACH:
