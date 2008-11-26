@@ -35,6 +35,8 @@
 
 #include <vector>
 #include <list>
+#include <cstdlib>
+#include <cctype>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/initterm.h>
