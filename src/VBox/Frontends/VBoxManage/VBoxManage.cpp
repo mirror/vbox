@@ -33,8 +33,6 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <stdlib.h>
-
 #include <vector>
 #include <list>
 #endif /* !VBOX_ONLY_DOCS */
@@ -6000,7 +5998,7 @@ int main(int argc, char *argv[])
         {
             /* Print version number, and do nothing else. */
             RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBoxSVNRev ());
-            exit(0);
+            return 0;
         }
         else if (strcmp(argv[i], "-dumpopts") == 0)
         {
