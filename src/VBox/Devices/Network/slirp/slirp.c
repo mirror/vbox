@@ -222,7 +222,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     memset(pData, '\0', sizeof(NATState));
     pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
-#if ARCH_BITS == 64
+#if ARCH_BITS == 64 && !defined(VBOX_WITH_BSD_REASS)
     pData->cpvHashUsed = 1;
 #endif
     tftp_prefix = pszTFTPPrefix;
