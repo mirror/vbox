@@ -52,6 +52,11 @@
 /** Calcs the overload threshold. Current set at 50%. */
 #define PGMR0DYNMAP_CALC_OVERLOAD(cPages)   ((cPages) / 2)
 
+/* Assertions causes panics if preemption is disabled, this can be used to work aroudn that. */
+/*#define RTSpinlockAcquire(a,b) do {} while (0)
+#define RTSpinlockRelease(a,b) do {} while (0) */
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -681,7 +686,7 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
                     pPgLvl->a[i].u.pv, pvPage, iEntry, pThis->fLegacyMode));
             return VERR_INTERNAL_ERROR;
         }
-        Log(("#%d: iEntry=%d uEntry=%#llx pvEntry=%p HCPhys=%RHp \n", i, iEntry, uEntry, pvEntry, pPgLvl->a[i].HCPhys));
+        Log(("#%d: iEntry=%4d uEntry=%#llx pvEntry=%p HCPhys=%RHp \n", i, iEntry, uEntry, pvEntry, pPgLvl->a[i].HCPhys));
     }
 
     /* made it thru without needing to remap anything. */
@@ -1126,7 +1131,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                               | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
-        Log6(("pgmR0DynMapPageSlow: #%x - %RHp %p %#llx\n", iFreePage, HCPhys, paPages[iFreePage].pvPage, uNew));
+        /*Log6(("pgmR0DynMapPageSlow: #%x - %RHp %p %#llx\n", iFreePage, HCPhys, paPages[iFreePage].pvPage, uNew));*/
     }
     return iFreePage;
 }
@@ -1200,7 +1205,7 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
         pThis->cLoad++;
         if (pThis->cLoad > pThis->cMaxLoad)
             pThis->cMaxLoad = pThis->cLoad;
-        Assert(pThis->cLoad <= pThis->cPages);
+        AssertMsg(pThis->cLoad <= pThis->cPages, ("%d/%d\n", pThis->cLoad, pThis->cPages));
     }
     else if (RT_UNLIKELY(cRefs <= 0))
     {
@@ -1240,7 +1245,6 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
  */
 VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 {
-    Log6(("PGMDynMapStartAutoSet\n"));
     Assert(pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED);
     pVCpu->pgm.s.AutoSet.cEntries = 0;
 }
@@ -1283,7 +1287,6 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
         Assert(pThis->cLoad <= pThis->cPages);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     }
-    Log6(("PGMDynMapReleaseAutoSet\n"));
 }
 
 
@@ -1324,7 +1327,6 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                 }
             }
         }
-        Log6(("PGMDynMapMigrateAutoSet\n"));
     }
 }
 
