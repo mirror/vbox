@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 
 /** @file
  *
@@ -41,7 +41,7 @@ class Progress;
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * The HardDisk2 component class implements the  IHardDisk2 interface.
+ * The HardDisk2 component class implements the IHardDisk2 interface.
  */
 class ATL_NO_VTABLE HardDisk2
     : public com::SupportErrorInfoDerived <MediumBase, HardDisk2, IHardDisk2>
