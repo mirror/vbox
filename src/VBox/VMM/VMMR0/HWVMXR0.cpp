@@ -412,44 +412,27 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertRC(rc);
 
         /* Init TSC offset to zero. */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, 0);
-#if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, 0);
-#endif
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, 0);
         AssertRC(rc);
 
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_A_FULL, 0);
-#if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_A_HIGH, 0);
-#endif
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_IO_BITMAP_A_FULL, 0);
         AssertRC(rc);
 
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_B_FULL, 0);
-#if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_IO_BITMAP_B_HIGH, 0);
-#endif
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_IO_BITMAP_B_FULL, 0);
         AssertRC(rc);
 
         /* Set the MSR bitmap address. */
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
             /* Optional */
-            rc  = VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVM->hwaccm.s.vmx.pMSRBitmapPhys);
-#if HC_ARCH_BITS == 32
-            rc |= VMXWriteVMCS(VMX_VMCS_CTRL_MSR_BITMAP_HIGH, pVM->hwaccm.s.vmx.pMSRBitmapPhys >> 32ULL);
-#endif
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_MSR_BITMAP_FULL, pVM->hwaccm.s.vmx.pMSRBitmapPhys);
             AssertRC(rc);
         }
 
         /* Clear MSR controls. */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, 0);
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL, 0);
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, 0);
-#if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_HIGH, 0);
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH, 0);
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_HIGH, 0);
-#endif
+        rc  = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_STORE_FULL, 0);
+        rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL, 0);
+        rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, 0);
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT, 0);
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT, 0);
         AssertRC(rc);
@@ -459,20 +442,12 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
             /* Optional */
             rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
-            rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
-#if HC_ARCH_BITS == 32
-            rc |= VMXWriteVMCS(VMX_VMCS_CTRL_VAPIC_PAGEADDR_HIGH, pVM->hwaccm.s.vmx.pAPICPhys >> 32ULL);
-#endif
+            rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
             AssertRC(rc);
         }
 
         /* Set link pointer to -1. Not currently used. */
-#if HC_ARCH_BITS == 32
-        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFF);
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_HIGH, 0xFFFFFFFF);
-#else
-        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFFFFFFFFFF);
-#endif
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFFFFFFFFFF);
         AssertRC(rc);
 
         /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
@@ -907,10 +882,7 @@ static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
         for (unsigned i=0;i<4;i++)
         {
             Pdpe = PGMGstGetPaePDPtr(pVM, i);
-            int rc = VMXWriteVMCS(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
-#if HC_ARCH_BITS == 32
-            rc    |= VMXWriteVMCS(VMX_VMCS_GUEST_PDPTR0_FULL + i*2 + 1, Pdpe.u >> 32ULL);
-#endif
+            int rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
             AssertRC(rc);
         }
     }
@@ -1288,10 +1260,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pVCpu->hwaccm.s.vmx.GCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
                                              | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_FULL, pVCpu->hwaccm.s.vmx.GCPhysEPTP);
-#if HC_ARCH_BITS == 32
-            rc = VMXWriteVMCS(VMX_VMCS_CTRL_EPTP_HIGH, (uint32_t)(pVCpu->hwaccm.s.vmx.GCPhysEPTP >> 32ULL));
-#endif
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_EPTP_FULL, pVCpu->hwaccm.s.vmx.GCPhysEPTP);
             AssertRC(rc);
 
             if (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
@@ -1358,8 +1327,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         /* IA32_DEBUGCTL MSR. */
-        rc  = VMXWriteVMCS(VMX_VMCS_GUEST_DEBUGCTL_FULL,    0);
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_DEBUGCTL_HIGH,    0);
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_DEBUGCTL_FULL,    0);
         AssertRC(rc);
 
         /** @todo do we really ever need this? */
@@ -1396,10 +1364,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (TMCpuTickCanUseRealTSC(pVM, &u64TSCOffset))
     {
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
-        rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
-#if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS_CTRL_TSC_OFFSET_HIGH, (uint32_t)(u64TSCOffset >> 32ULL));
-#endif
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
         AssertRC(rc);
 
         pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
@@ -2372,18 +2337,8 @@ ResumeExecution:
 
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-#if HC_ARCH_BITS == 64
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
+        rc = VMXReadVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
-#else
-        uint32_t val_hi;
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &val);
-        AssertRC(rc);
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_HIGH, &val_hi);
-        AssertRC(rc);
-        GCPhys = RT_MAKE_U64(val, val_hi);
-#endif
-
         Assert(((exitQualification >> 7) & 3) != 2);
 
         /* Determine the kind of violation. */
@@ -2434,17 +2389,8 @@ ResumeExecution:
 
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-#if HC_ARCH_BITS == 64
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
+        rc = VMXReadVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
-#else
-        uint32_t val_hi;
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &val);
-        AssertRC(rc);
-        rc = VMXReadVMCS(VMX_VMCS_EXIT_PHYS_ADDR_HIGH, &val_hi);
-        AssertRC(rc);
-        GCPhys = RT_MAKE_U64(val, val_hi);
-#endif
 
         Log(("VMX_EXIT_EPT_MISCONFIG for %VGp\n", GCPhys));
         break;

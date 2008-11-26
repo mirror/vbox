@@ -1384,15 +1384,6 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  *
  * @returns VBox status code
  * @param   idxField        VMCS index
- * @param   u64Val          16, 32 or 64 bits value
- */
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
-
-/**
- * Executes VMWRITE
- *
- * @returns VBox status code
- * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
 #if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
@@ -1440,21 +1431,33 @@ the_end:
 }
 #endif
 
+/** 
+ * Executes VMWRITE 
+ * 
+ * @returns VBox status code 
+ * @param   idxField        VMCS index 
+ * @param   u64Val          16, 32 or 64 bits value 
+ */ 
+#if HC_ARCH_BITS == 64 
+DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val); 
+#else 
+DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val) 
+{ 
+    int rc; 
+
+    rc  = VMXWriteVMCS32(idxField, u64Val); 
+ 	rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL)); 
+ 	AssertRC(rc); 
+ 	return rc; 
+} 
+#endif 
+
 #if HC_ARCH_BITS == 64
 #define VMXWriteVMCS VMXWriteVMCS64
 #else
 #define VMXWriteVMCS VMXWriteVMCS32
 #endif /* HC_ARCH_BITS == 64 */
 
-
-/**
- * Executes VMREAD
- *
- * @returns VBox status code
- * @param   idxField        VMCS index
- * @param   pData           Ptr to store VM field value
- */
-DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 
 /**
  * Invalidate a page using invept
@@ -1526,6 +1529,29 @@ the_end:
     return rc;
 }
 #endif
+
+#if HC_ARCH_BITS == 64 
+/** 
+ * Executes VMREAD 
+ * 
+ * @returns VBox status code 
+ * @param   idxField        VMCS index 
+ * @param   pData           Ptr to store VM field value 
+ */ 
+DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData); 
+#else 
+DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData) 
+{ 
+    int rc; 
+
+    uint32_t val_hi, val; 
+    rc  = VMXReadVMCS32(idxField, &val); 
+    rc |= VMXReadVMCS32(idxField + 1, &val_hi); 
+    AssertRC(rc); 
+    *pData = RT_MAKE_U64(val, val_hi); 
+    return rc; 
+} 
+#endif 
 
 #if HC_ARCH_BITS == 64
 # define VMXReadVMCS VMXReadVMCS64
