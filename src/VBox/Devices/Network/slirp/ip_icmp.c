@@ -65,6 +65,18 @@ static const int icmp_flush[19] = {
 /* ADDR MASK REPLY (18) */ 0
 };
 
+#ifdef VBOX_WITH_SLIRP_ICMP
+static int
+icmp_attach(PNATState pData, struct socket *so) {
+    AssertRelease(so != NULL);
+    if (pData->icmp_socket == 0)
+        pData->icmp_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    AssertRelease(pData->icmp_socket != -1);
+    so->s = pData->icmp_socket;
+    return (so->s);
+}
+#endif /* VBOX_WITH_SLIRP_ICMP */
+
 /*
  * Process a received ICMP message.
  */
@@ -117,7 +129,11 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
       struct socket *so;
       struct sockaddr_in addr;
       if ((so = socreate()) == NULL) goto freeit;
+#ifndef VBOX_WITH_SLIRP_ICMP
       if(udp_attach(pData, so) == -1) {
+#else
+      if(icmp_attach(pData, so) == -1) {
+#endif
         DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
                     errno,strerror(errno)));
         sofree(pData, so);
