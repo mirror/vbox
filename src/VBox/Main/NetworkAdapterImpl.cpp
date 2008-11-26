@@ -1301,12 +1301,17 @@ void NetworkAdapter::copyFrom (NetworkAdapter *aThat)
 
 void NetworkAdapter::applyDefaults (GuestOSType *aOsType)
 {
-    if (!aOsType)
-        return;
+    AssertReturnVoid (aOsType != NULL);
+
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock (this);
 
     bool e1000enabled = false;
 #ifdef VBOX_WITH_E1000
-    e1000enabled = true;   
+    e1000enabled = true;
 #endif // VBOX_WITH_E1000
 
     NetworkAdapterType_T defaultType = aOsType->networkAdapterType();

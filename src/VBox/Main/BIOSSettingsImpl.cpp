@@ -709,13 +709,24 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
 
 void BIOSSettings::commit()
 {
-    AutoWriteLock alock (this);
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller peerCaller (mPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
+
+    /* lock both for writing since we modify both (mPeer is "master" so locked
+     * first) */
+    AutoMultiWriteLock2 alock (mPeer, this);
+
     if (mData.isBackedUp())
     {
         mData.commit();
         if (mPeer)
         {
-            // attach new data to the peer and re-share it
+            /* attach new data to the peer and reshare it */
             AutoWriteLock peerlock (mPeer);
             mPeer->mData.attach (mData);
         }
@@ -724,16 +735,33 @@ void BIOSSettings::commit()
 
 void BIOSSettings::copyFrom (BIOSSettings *aThat)
 {
-    AutoWriteLock alock (this);
+    AssertReturnVoid (aThat != NULL);
 
-    // this will back up current data
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller thatCaller (aThat);
+    AssertComRCReturnVoid (thatCaller.rc());
+
+    /* peer is not modified, lock it for reading (aThat is "master" so locked
+     * first) */
+    AutoMultiLock2 alock (aThat->rlock(), this->wlock());
+
+    /* this will back up current data */
     mData.assignCopy (aThat->mData);
 }
 
 void BIOSSettings::applyDefaults (GuestOSType *aOsType)
 {
-    if (!aOsType)
-        return;
+    AssertReturnVoid (aOsType != NULL);
+
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock (this);
 
     /* Initialize default BIOS settings here */
     mData->mIOAPICEnabled = aOsType->recommendedIOAPIC();
