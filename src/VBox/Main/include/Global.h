@@ -26,7 +26,9 @@
 
 /* generated header */
 #include "SchemaDefs.h"
-#include "VirtualBox.h"
+
+/* interface definitions */
+#include "VBox/com/VirtualBox.h"
 
 #include <VBox/ostypes.h>
 
