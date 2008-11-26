@@ -398,7 +398,7 @@ typedef struct HWACCMCPU
         /** Real-mode emulation state. */
         struct
         {
-            X86RFLAGS                   rflags;
+            X86EFLAGS                   eflags;
             uint32_t                    fValid;
         } RealMode;
 
