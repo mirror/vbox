@@ -122,9 +122,13 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
          * Checksum extended UDP header and data.
          */
         if (udpcksum && uh->uh_sum) {
+#if !defined(VBOX_WITH_BSD_REASS)
           ((struct ipovly *)ip)->ih_next = 0;
           ((struct ipovly *)ip)->ih_prev = 0;
           ((struct ipovly *)ip)->ih_x1 = 0;
+#else
+          memset(((struct ipovly *)ip)->ih_x1, 0, 9);
+#endif
           ((struct ipovly *)ip)->ih_len = uh->uh_ulen;
           /* keep uh_sum for ICMP reply
            * uh->uh_sum = cksum(m, len + sizeof (struct ip));
@@ -264,8 +268,12 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
          * and addresses and length put into network format.
          */
         ui = mtod(m, struct udpiphdr *);
+#if !defined(VBOX_WITH_BSD_REASS)
         ui->ui_next = ui->ui_prev = 0;
         ui->ui_x1 = 0;
+#else
+        memset(ui->ui_x1, 0, 9);
+#endif
         ui->ui_pr = IPPROTO_UDP;
         ui->ui_len = htons(m->m_len - sizeof(struct ip)); /* + sizeof (struct udphdr)); */
         /* XXXXX Check for from-one-location sockets, or from-any-location sockets */

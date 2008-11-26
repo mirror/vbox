@@ -202,17 +202,17 @@ struct  ip_timestamp {
 #define IP_MSS          576             /* default maximum segment size */
 
 #ifdef HAVE_SYS_TYPES32_H  /* Overcome some Solaris 2.x junk */
-#include <sys/types32.h>
+# include <sys/types32.h>
 #else
-#if SIZEOF_CHAR_P == 4
+# if SIZEOF_CHAR_P == 4
 typedef caddr_t caddr32_t;
-#else
-#if !defined(VBOX_WITH_BSD_REASS) && !defined(VBOX_WITH_BSD_TCP_REASS)
+# else
+#  if !defined(VBOX_WITH_BSD_REASS) && !defined(VBOX_WITH_BSD_TCP_REASS)
 typedef u_int32_t caddr32_t;
-#else /* !VBOX_WITH_BSD_REASS && !VBOX_WITH_BSD_TCP_REASS*/
+#  else /* !VBOX_WITH_BSD_REASS && !VBOX_WITH_BSD_TCP_REASS*/
 typedef caddr_t caddr32_t;
-#endif /* VBOX_WITH_BSD_REASS || VBOX_WITH_BSD_TCP_REASS*/
-#endif
+#  endif /* VBOX_WITH_BSD_REASS || VBOX_WITH_BSD_TCP_REASS*/
+# endif
 #endif
 
 #if SIZEOF_CHAR_P == 4
@@ -227,8 +227,12 @@ typedef caddr32_t ipasfragp_32;
  * Overlay for ip header used by other protocols (tcp, udp).
  */
 struct ipovly {
+#if !defined(VBOX_WITH_BSD_REASS) && !defined(VBOX_WITH_BSD_TCP_REASS)
         caddr32_t       ih_next, ih_prev;       /* for protocol sequence q's */
         u_int8_t        ih_x1;                  /* (unused) */
+#else /* !VBOX_WITH_BSD_REASS && !VBOX_WITH_BSD_TCP_REASS */
+        u_int8_t        ih_x1[9];                  /* (unused) */
+#endif /* VBOX_WITH_BSD_REASS || VBOX_WITH_BSD_TCP_REASS */
         u_int8_t        ih_pr;                  /* protocol */
         u_int16_t       ih_len;                 /* protocol length */
         struct  in_addr ih_src;         /* source internet address */
