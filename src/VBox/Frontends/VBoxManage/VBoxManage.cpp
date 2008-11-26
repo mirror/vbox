@@ -4677,7 +4677,6 @@ static int handleUSBFilter (int argc, char *argv[],
         return errorSyntax(USAGE_USBFILTER, "Invalid parameter '%s'", argv[0]);
 
     /* which index? */
-    char *endptr = NULL;
     if (VINF_SUCCESS !=  RTStrToUInt32Full (argv[1], 10, &cmd.mIndex))
         return errorSyntax(USAGE_USBFILTER, "Invalid index '%s'", argv[1]);
 
