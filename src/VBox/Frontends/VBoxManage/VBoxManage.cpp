@@ -317,6 +317,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_CREATEVM)
     {
         RTPrintf("VBoxManage createvm         -name <name>\n"
+                 "                            [-ostype <ostype>]\n"
                  "                            [-register]\n"
                  "                            [-basefolder <path> | -settingsfile <path>]\n"
                  "                            [-uuid <uuid>]\n"
@@ -1344,6 +1345,7 @@ static int handleCreateVM(int argc, char *argv[],
     Bstr baseFolder;
     Bstr settingsFile;
     Bstr name;
+    Bstr osTypeId;
     RTUUID id;
     bool fRegister = false;
 
@@ -1370,6 +1372,13 @@ static int handleCreateVM(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             name = argv[i];
+        }
+        else if (strcmp(argv[i], "-ostype") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            osTypeId = argv[i];
         }
         else if (strcmp(argv[i], "-uuid") == 0)
         {
@@ -1398,10 +1407,10 @@ static int handleCreateVM(int argc, char *argv[],
 
         if (!settingsFile)
             CHECK_ERROR_BREAK(virtualBox,
-                CreateMachine(baseFolder, name, Guid(id), machine.asOutParam()));
+                CreateMachine(name, osTypeId, baseFolder, Guid(id), machine.asOutParam()));
         else
             CHECK_ERROR_BREAK(virtualBox,
-                CreateLegacyMachine(settingsFile, name, Guid(id), machine.asOutParam()));
+                CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id), machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
         if (fRegister)

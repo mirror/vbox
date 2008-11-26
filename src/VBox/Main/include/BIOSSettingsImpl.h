@@ -27,6 +27,7 @@
 #include "VirtualBoxBase.h"
 
 class Machine;
+class GuestOSType;
 
 class ATL_NO_VTABLE BIOSSettings :
     public VirtualBoxSupportErrorInfoImpl <BIOSSettings, IBIOSSettings>,
@@ -131,6 +132,7 @@ public:
     void rollback() { AutoWriteLock alock (this); mData.rollback(); }
     void commit();
     void copyFrom (BIOSSettings *aThat);
+    void applyDefaults (GuestOSType *aOsType);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"BIOSSettings"; }

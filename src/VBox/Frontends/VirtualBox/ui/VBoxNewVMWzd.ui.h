@@ -290,10 +290,15 @@ bool VBoxNewVMWzd::constructMachine()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
+    /* OS type */
+    CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
+    AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
+    QString typeId = type.GetId();
+
     /* create a machine with the default settings file location */
     if (mMachine.isNull())
     {
-        mMachine = vbox.CreateMachine (QString(), leName->text(), QUuid());
+        mMachine = vbox.CreateMachine (leName->text(), typeId, QString::null, QUuid());
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine (vbox, this);
@@ -307,38 +312,8 @@ bool VBoxNewVMWzd::constructMachine()
             mMachine.SetExtraData (VBoxDefs::GUI_FirstRun, "yes");
     }
 
-    /* name is set in CreateMachine() */
-
-    /* OS type */
-    CGuestOSType type = vboxGlobal().vmGuestOSType (cbOS->currentItem());
-    AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    QString typeId = type.GetId();
-    mMachine.SetOSTypeId (typeId);
-
-    if (typeId == "os2warp3"  ||
-        typeId == "os2warp4"  ||
-        typeId == "os2warp45" ||
-        typeId == "ecs")
-        mMachine.SetHWVirtExEnabled (KTSBool_True);
-
     /* RAM size */
     mMachine.SetMemorySize (slRAM->value());
-
-    /* add one network adapter (NAT) by default */
-    {
-        CNetworkAdapter cadapter = mMachine.GetNetworkAdapter (0);
-#ifdef VBOX_WITH_E1000
-        /* Default to e1k on solaris */
-        if (typeId == "solaris" ||
-            typeId == "opensolaris")
-            cadapter.SetAdapterType (KNetworkAdapterType_I82540EM);
-#endif /* VBOX_WITH_E1000 */
-        cadapter.SetEnabled (true);
-        cadapter.AttachToNAT();
-        cadapter.SetMACAddress (QString::null);
-        cadapter.SetCableConnected (true);
-
-    }
 
     /* register the VM prior to attaching hard disks */
     vbox.RegisterMachine (mMachine);

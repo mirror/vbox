@@ -29,8 +29,11 @@
 GuestOSType::GuestOSType()
     : mOSType (VBOXOSTYPE_Unknown)
     , mIs64Bit (false)
+    , mRecommendedIOAPIC (false)
+    , mRecommendedVirtEx (false)
     , mRAMSize (0), mVRAMSize (0)
     , mHDDSize (0), mMonitorCount (0)
+    , mNetworkAdapterType (NetworkAdapterType_Am79C973)
 {
 }
 
@@ -68,16 +71,22 @@ void GuestOSType::FinalRelease()
 HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription,
                            const char *aId, const char *aDescription,
                            VBOXOSTYPE aOSType, bool aIs64Bit,
-                           uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize)
+                           bool aRecommendedIOAPIC, bool aRecommendedVirtEx,
+                           uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
+                           NetworkAdapterType_T aNetworkAdapterType)
 {
     LogFlowThisFunc (("aFamilyId='%s', aFamilyDescription='%s', "
                       "aId='%s', aDescription='%s', "
                       "aType=%d, aIs64Bit=%d, "
-                      "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d\n",
+                      "aRecommendedIOAPIC=%d, aRecommendedVirtEx=%d, "
+                      "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d, "
+                      "aNetworkAdapterType=%d\n",
                       aFamilyId, aFamilyDescription,
                       aId, aDescription,
                       aOSType, aIs64Bit,
-                      aRAMSize, aVRAMSize, aHDDSize));
+                      aRecommendedIOAPIC, aRecommendedVirtEx,
+                      aRAMSize, aVRAMSize, aHDDSize,
+                      aNetworkAdapterType));
 
     ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
 
@@ -91,9 +100,12 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     unconst (mDescription) = aDescription;
     unconst (mOSType) = aOSType;
     unconst (mIs64Bit) = aIs64Bit;
+    unconst (mRecommendedIOAPIC) = aRecommendedIOAPIC;
+    unconst (mRecommendedVirtEx) = aRecommendedVirtEx;
     unconst (mRAMSize) = aRAMSize;
     unconst (mVRAMSize) = aVRAMSize;
     unconst (mHDDSize) = aHDDSize;
+    unconst (mNetworkAdapterType) = aNetworkAdapterType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -186,6 +198,34 @@ STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedIOAPIC) (BOOL *aRecommendedIOAPIC)
+{
+    if (!aRecommendedIOAPIC)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mRecommendedIOAPIC is constant during life time, no need to lock */
+    *aRecommendedIOAPIC = mRecommendedIOAPIC;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedVirtEx) (BOOL *aRecommendedVirtEx)
+{
+    if (!aRecommendedVirtEx)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mRecommendedVirtEx is constant during life time, no need to lock */
+    *aRecommendedVirtEx = mRecommendedVirtEx;
+
+    return S_OK;
+}
+
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
 {
     if (!aRAMSize)
@@ -224,6 +264,20 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
 
     /* mHDDSize is constant during life time, no need to lock */
     *aHDDSize = mHDDSize;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetworkAdapterType)
+{
+    if (!aNetworkAdapterType)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* mNetworkAdapterType is constant during life time, no need to lock */
+    *aNetworkAdapterType = mNetworkAdapterType;
 
     return S_OK;
 }

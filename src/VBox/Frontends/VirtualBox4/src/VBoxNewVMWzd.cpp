@@ -302,10 +302,15 @@ bool VBoxNewVMWzd::constructMachine()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
+    /* OS type */
+    CGuestOSType type = mOSTypeSelector->type();
+    AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
+    QString typeId = type.GetId();
+
     /* Create a machine with the default settings file location */
     if (mMachine.isNull())
     {
-        mMachine = vbox.CreateMachine (QString(), mLeName->text(), QUuid());
+        mMachine = vbox.CreateMachine (mLeName->text(), typeId, QString::null, QUuid());
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine (vbox, this);
@@ -319,41 +324,12 @@ bool VBoxNewVMWzd::constructMachine()
             mMachine.SetExtraData (VBoxDefs::GUI_FirstRun, "yes");
     }
 
-    /* OS type */
-    CGuestOSType type = mOSTypeSelector->type();
-    AssertMsg (!type.isNull(), ("vmGuestOSType() must return non-null type"));
-    QString typeId = type.GetId();
-    mMachine.SetOSTypeId (typeId);
-
-    /* Dsen: move it to Main when implementing 3002: GUI/Main enhancements for 64 bits guests */
-    if (typeId == "os2warp3"  ||
-        typeId == "os2warp4"  ||
-        typeId == "os2warp45" ||
-        typeId == "ecs")
-        mMachine.SetHWVirtExEnabled (KTSBool_True);
-    /* Dsen: move it to Main when implementing 3002: GUI/Main enhancements for 64 bits guests */
-
     /* RAM size */
     mMachine.SetMemorySize (mSlRAM->value());
 
     /* VRAM size - select maximum between recommended and minimum for fullscreen */
     mMachine.SetVRAMSize (qMax (type.GetRecommendedVRAM(),
                                 (ULONG) (VBoxGlobal::requiredVideoMemory() / _1M)));
-
-    /* Add one network adapter (NAT) by default */
-    {
-        CNetworkAdapter cadapter = mMachine.GetNetworkAdapter (0);
-#ifdef VBOX_WITH_E1000
-        /* Default to e1k on solaris */
-        if (typeId == "solaris" ||
-            typeId == "opensolaris")
-            cadapter.SetAdapterType (KNetworkAdapterType_I82540EM);
-#endif /* VBOX_WITH_E1000 */
-        cadapter.SetEnabled (true);
-        cadapter.AttachToNAT();
-        cadapter.SetMACAddress (QString::null);
-        cadapter.SetCableConnected (true);
-    }
 
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine (mMachine);

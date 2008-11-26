@@ -136,9 +136,9 @@ public:
 
     /* IVirtualBox methods */
 
-    STDMETHOD(CreateMachine) (INPTR BSTR aBaseFolder, INPTR BSTR aName,
+    STDMETHOD(CreateMachine) (INPTR BSTR aName, INPTR BSTR aOsTypeId, INPTR BSTR aBaseFolder,
                               INPTR GUIDPARAM aId, IMachine **aMachine);
-    STDMETHOD(CreateLegacyMachine) (INPTR BSTR aSettingsFile, INPTR BSTR aName,
+    STDMETHOD(CreateLegacyMachine) (INPTR BSTR aName, INPTR BSTR aOsTypeId, INPTR BSTR aSettingsFile,
                                     INPTR GUIDPARAM aId, IMachine **aMachine);
     STDMETHOD(OpenMachine) (INPTR BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine) (IMachine *aMachine);

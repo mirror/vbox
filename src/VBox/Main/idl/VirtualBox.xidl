@@ -1354,14 +1354,17 @@
           subfolder of the created machine directly.
         </note>
       </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Machine name.</desc>
+      </param>
+      <param name="osTypeId" type="wstring" dir="in">
+        <desc>Machine OS Type ID.</desc>
+      </param>
       <param name="baseFolder" type="wstring" dir="in">
         <desc>
           Name of the folder where to create the machine settings
           subfolder containing the settings file.
         </desc>
-      </param>
-      <param name="name" type="wstring" dir="in">
-        <desc>Machine name.</desc>
       </param>
       <param name="id" type="uuid" dir="in">
         <desc>
@@ -1423,6 +1426,9 @@
       </param>
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
+      </param>
+      <param name="osTypeId" type="wstring" dir="in">
+        <desc>Machine OS Type ID.</desc>
       </param>
       <param name="id" type="uuid" dir="in">
         <desc>
@@ -5744,6 +5750,14 @@
       <desc>Returns @c true if the given OS is 64-bit</desc>
     </attribute>
 
+    <attribute name="recommendedIOAPIC" type="boolean" readonly="yes">
+      <desc>Returns @c true if IO APIC recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedVirtEx" type="boolean" readonly="yes">
+      <desc>Returns @c true if VT-x or AMD-V recommended for this OS type.</desc>
+    </attribute>
+
     <attribute name="recommendedRAM" type="unsigned long" readonly="yes">
       <desc>Recommended RAM size in Megabytes.</desc>
     </attribute>
@@ -5754,6 +5768,10 @@
 
     <attribute name="recommendedHDD" type="unsigned long" readonly="yes">
       <desc>Recommended hard disk size in Megabytes.</desc>
+    </attribute>
+
+    <attribute name="adapterType" type="NetworkAdapterType" readonly="yes">
+      <desc>Returns recommended network adapter for this OS type.</desc>
     </attribute>
   </interface>
 

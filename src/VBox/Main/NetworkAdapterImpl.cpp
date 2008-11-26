@@ -22,6 +22,7 @@
 #include "NetworkAdapterImpl.h"
 #include "Logging.h"
 #include "MachineImpl.h"
+#include "GuestOSTypeImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpputils.h>
@@ -1296,6 +1297,35 @@ void NetworkAdapter::copyFrom (NetworkAdapter *aThat)
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
+}
+
+void NetworkAdapter::applyDefaults (GuestOSType *aOsType)
+{
+    if (!aOsType)
+        return;
+
+    bool e1000enabled = false;
+#ifdef VBOX_WITH_E1000
+    e1000enabled = true;   
+#endif // VBOX_WITH_E1000
+
+    NetworkAdapterType_T defaultType = aOsType->networkAdapterType();
+
+    /* Set default network adapter for this OS type */
+    if (defaultType == NetworkAdapterType_I82540EM ||
+        defaultType == NetworkAdapterType_I82543GC)
+    {
+        if (e1000enabled) mData->mAdapterType = defaultType;
+    }
+    else mData->mAdapterType = defaultType;
+
+    /* Enable and connect the first one adapter to the NAT */
+    if (mData->mSlot == 0)
+    {
+        mData->mEnabled = true;
+        mData->mAttachmentType = NetworkAttachmentType_NAT;
+        mData->mCableConnected = true;
+    }
 }
 
 // private methods
