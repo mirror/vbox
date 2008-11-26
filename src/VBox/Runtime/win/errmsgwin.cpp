@@ -48,7 +48,7 @@
 static const RTWINERRMSG  g_aStatusMsgs[] =
 {
 #include "errmsgcomdata.h"
-#ifdef VBOX
+#if defined(VBOX) && !defined(IN_GUEST)
 # include "errmsgvboxcomdata.h"
 #endif
     { NULL, NULL, 0 }
