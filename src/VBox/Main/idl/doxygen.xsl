@@ -172,8 +172,8 @@
  *  common comment prologue (handles group IDs)
 -->
 <xsl:template match="desc" mode="begin">
-  <xsl:text>/**&#x0A;</xsl:text>
   <xsl:param name="id" select="@group | preceding::descGroup[1]/@id"/>
+  <xsl:text>/**&#x0A;</xsl:text>
   <xsl:if test="$id">
     <xsl:value-of select="concat(' @ingroup ',$id,'&#x0A;')"/>
   </xsl:if>
@@ -183,8 +183,8 @@
  *  common brief comment prologue (handles group IDs)
 -->
 <xsl:template match="desc" mode="begin_brief">
-  <xsl:text>/**&#x0A;</xsl:text>
   <xsl:param name="id" select="@group | preceding::descGroup[1]/@id"/>
+  <xsl:text>/**&#x0A;</xsl:text>
   <xsl:if test="$id">
     <xsl:value-of select="concat(' @ingroup ',$id,'&#x0A;')"/>
   </xsl:if>
