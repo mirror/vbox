@@ -2411,7 +2411,7 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
             Log2(("Shadow page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, exitQualification , errCode));
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitReasonNPF);
 
             TRPMResetTrap(pVM);
 
