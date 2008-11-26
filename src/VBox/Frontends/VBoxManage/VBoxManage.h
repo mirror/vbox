@@ -140,6 +140,10 @@ HRESULT showVMInfo(ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
 int handleList(int argc, char *argv[],
                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
 
+/* VBoxManageMetrics.cpp */
+int handleMetrics(int argc, char *argv[],
+                  ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+
 /* VBoxManageVD.cpp */
 /* VBoxManageUSB.cpp */
 /* VBoxManageTODO.cpp */
