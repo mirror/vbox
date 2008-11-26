@@ -75,8 +75,12 @@ tcp_template(tp)
         struct socket *so = tp->t_socket;
         register struct tcpiphdr *n = &tp->t_template;
 
+#if !defined(VBOX_WITH_BSD_REASS)
         n->ti_next = n->ti_prev = 0;
         n->ti_x1 = 0;
+#else
+        memset(n->ti_x1, 0, 9);
+#endif
         n->ti_pr = IPPROTO_TCP;
         n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
         n->ti_src = so->so_faddr;
@@ -153,8 +157,12 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
         tlen += sizeof (struct tcpiphdr);
         m->m_len = tlen;
 
+#if !defined(VBOX_WITH_BSD_REASS)
         ti->ti_next = ti->ti_prev = 0;
         ti->ti_x1 = 0;
+#else
+        memset(ti->ti_x1, 0, 9);
+#endif
         ti->ti_seq = htonl(seq);
         ti->ti_ack = htonl(ack);
         ti->ti_x2 = 0;

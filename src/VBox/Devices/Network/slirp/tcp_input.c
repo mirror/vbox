@@ -469,8 +469,12 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
          * Checksum extended TCP header and data.
          */
         tlen = ((struct ip *)ti)->ip_len;
+#if !defined(VBOX_WITH_BSD_REASS)
         ti->ti_next = ti->ti_prev = 0;
         ti->ti_x1 = 0;
+#else
+        memset(ti->ti_x1, 0, 9);
+#endif
         ti->ti_len = htons((u_int16_t)tlen);
         len = sizeof(struct ip ) + tlen;
         /* keep checksum for ICMP reply
