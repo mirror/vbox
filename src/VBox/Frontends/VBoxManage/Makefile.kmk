@@ -43,6 +43,7 @@ else # !VBOX_ONLY_DOCS
  VBoxManage_SOURCES = \
  	VBoxManage.cpp \
  	VBoxManageInfo.cpp \
+ 	VBoxManageList.cpp \
  	VBoxInternalManage.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
  	VBoxManageSVN.cpp

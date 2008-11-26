@@ -128,13 +128,15 @@ extern void usageGuestProperty(void);
 extern int handleGuestProperty(int argc, char *argv[],
                                ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 
-/* VBoxManageInfo.cpp */
+/* VBoxManageVMInfo.cpp */
 void showSnapshots(ComPtr<ISnapshot> rootSnapshot, VMINFO_DETAILS details, const com::Bstr &prefix = "", int level = 0);
 int handleShowVMInfo(int argc, char *argv[],
                      ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
-HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
-                    ComPtr <IConsole> console = ComPtr <IConsole> (),
-                    VMINFO_DETAILS details = VMINFO_NONE);
+HRESULT showVMInfo(ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
+                   ComPtr <IConsole> console = ComPtr <IConsole> (),
+                   VMINFO_DETAILS details = VMINFO_NONE);
+
+/* VBoxManageList.cpp */
 int handleList(int argc, char *argv[],
                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
 
@@ -146,3 +148,4 @@ int handleList(int argc, char *argv[],
 unsigned long VBoxSVNRev();
 
 #endif /* !___H_VBOXMANAGE */
+
