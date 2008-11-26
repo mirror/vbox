@@ -22,6 +22,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/pgm.h>
 #include "../PGMInternal.h"
 #include <VBox/vm.h>
@@ -1111,7 +1112,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         X86PGUINT       uOld  = paPages[iFreePage].uPte.pLegacy->u;
         X86PGUINT       uOld2 = uOld; NOREF(uOld2);
         X86PGUINT       uNew  = (uOld & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
-                              | X86_PTE_P | X86_PTE_A | X86_PTE_D
+                              | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                               | (HCPhys & X86_PTE_PG_MASK);
         while (!ASMAtomicCmpXchgExU32(&paPages[iFreePage].uPte.pLegacy->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
@@ -1121,10 +1122,11 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         X86PGPAEUINT    uOld  = paPages[iFreePage].uPte.pPae->u;
         X86PGPAEUINT    uOld2 = uOld; NOREF(uOld2);
         X86PGPAEUINT    uNew  = (uOld & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
-                              | X86_PTE_P | X86_PTE_A | X86_PTE_D
+                              | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                               | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
+        Log6(("pgmR0DynMapPageSlow: #%x - %RHp %p %#llx\n", iFreePage, HCPhys, paPages[iFreePage].pvPage, uNew));
     }
     return iFreePage;
 }
@@ -1238,6 +1240,7 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
  */
 VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 {
+    Log6(("PGMDynMapStartAutoSet\n"));
     Assert(pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED);
     pVCpu->pgm.s.AutoSet.cEntries = 0;
 }
@@ -1254,12 +1257,12 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
 
     /* close the set */
-    uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
-    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%#x (%u)\n", i, i));
-    pVCpu->pgm.s.AutoSet.cEntries = PGMMAPSET_CLOSED;
+    uint32_t    i = pSet->cEntries;
+    AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
+    pSet->cEntries = PGMMAPSET_CLOSED;
 
     /* release any pages we're referencing. */
-    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries)))
+    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
     {
         PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
         RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
@@ -1280,11 +1283,13 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
         Assert(pThis->cLoad <= pThis->cPages);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     }
+    Log6(("PGMDynMapReleaseAutoSet\n"));
 }
 
 
 /**
- * Migrates the automatic mapping set of the current vCPU if necessary.
+ * Migrates the automatic mapping set of the current vCPU if it's active and
+ * necessary.
  *
  * This is called when re-entering the hardware assisted execution mode after a
  * nip down to ring-3.  We run the risk that the CPU might have change and we
@@ -1298,24 +1303,28 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
 VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
 {
     PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
-    uint32_t    i = pVCpu->pgm.s.AutoSet.cEntries;
-    AssertMsg(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries), ("%#x (%u)\n", i, i));
-    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pVCpu->pgm.s.AutoSet.aEntries)))
+    uint32_t    i = pSet->cEntries;
+    if (i != PGMMAPSET_CLOSED)
     {
-        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-        RTCPUID         idRealCpu = RTMpCpuId();
-
-        while (i-- > 0)
+        AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
+        if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
         {
-            Assert(pSet->aEntries[i].cRefs > 0);
-            uint32_t iPage = pSet->aEntries[i].iPage;
-            Assert(iPage < pThis->cPages);
-            if (RTCpuSetIsMember(&pThis->paPages[iPage].PendingSet, idRealCpu))
+            PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+            RTCPUID         idRealCpu = RTMpCpuId();
+
+            while (i-- > 0)
             {
-                RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
-                ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+                Assert(pSet->aEntries[i].cRefs > 0);
+                uint32_t iPage = pSet->aEntries[i].iPage;
+                Assert(iPage < pThis->cPages);
+                if (RTCpuSetIsMember(&pThis->paPages[iPage].PendingSet, idRealCpu))
+                {
+                    RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
+                    ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+                }
             }
         }
+        Log6(("PGMDynMapMigrateAutoSet\n"));
     }
 }
 
