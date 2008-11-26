@@ -186,7 +186,9 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-src_MODE    = a+r,u+w
  VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
  VBoxNetFlt-src_SOURCES+= \
- 	$(if $(VBOX_OSE),,$(PATH_VBoxNetFlt-src)/dkms.conf) \
+ 	$(if $(VBOX_OSE),,\
+	  $(PATH_VBoxNetFlt-src)/dkms.conf \
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers) \
 	$(PATH_VBoxNetFlt-src)/Makefile
  VBoxNetFlt-src_CLEAN   = \
 	$(PATH_VBoxNetFlt-src)/dkms.conf \
@@ -214,7 +216,7 @@ endif
 ## Scripts needed for building the kernel modules
 
 $$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/build_in_tmp \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)

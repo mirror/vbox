@@ -247,6 +247,7 @@ install: $(MODULE)
 
 endif # eq($(MAKECMDGOALS),clean)
 
+# important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
 clean:
 	for f in . linux r0drv r0drv/linux; do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .vboxvfs* .tmp_ver* vboxvfs.* Module.symvers Modules.symvers modules.order
+	rm -rf .vboxvfs* .tmp_ver* vboxvfs.* Modules.symvers modules.order
