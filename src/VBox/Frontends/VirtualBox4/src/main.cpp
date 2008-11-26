@@ -360,19 +360,13 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
             if (vboxGlobal().isVMConsoleProcess())
             {
-#ifdef VBOX_GUI_WITH_SYSTRAY
-                /* Keep selector window in memory (hidden) because we need it for
-                 * the systray menu. */
-                vboxGlobal().startEnumeratingMedia();
-                vboxGlobal().selectorWnd();
                 vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
+#ifdef VBOX_GUI_WITH_SYSTRAY
                 if (   vboxGlobal().trayIconInstall()
-                    && vboxGlobal().isTrayIcon())
+                    && vboxGlobal().hasTrayIcon())
                 {
                     /* Nothing to do here yet. */
                 }
-#else
-                vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
 #endif
                 if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
                     rc = a.exec();
@@ -388,12 +382,14 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 if (   vboxGlobal().trayIconInstall()
-                    && vboxGlobal().isTrayIcon())
+                    && vboxGlobal().hasTrayIcon())
                 {
                     /* Nothing to do here yet. */
                 }
+
+                if (false == vboxGlobal().isTrayMenu())
 #endif
-                vboxGlobal().selectorWnd().show();
+                    vboxGlobal().selectorWnd().show();
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
                 vboxGlobal().showRegistrationDialog (false /* aForce */);
 #endif
