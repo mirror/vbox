@@ -492,6 +492,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_END_OF_STRING                  (-83)
 /** End of string. */
 #define VINF_END_OF_STRING                  83
+/** A page count is ouf of range. */
+#define VERR_PAGE_COUNT_OUT_OF_RANGE        (-84)
 /** @} */
 
 

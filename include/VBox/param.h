@@ -37,6 +37,10 @@
  * @{
  */
 
+/** The maximum number of pages that can be allocated and mapped
+ * by various MM, PGM and SUP APIs. */
+#define VBOX_MAX_ALLOC_PAGE_COUNT   (128 * _1M / PAGE_SIZE)
+
 
 /** @defgroup   grp_vbox_param_mm  Memory Monitor Parameters
  * @ingroup grp_vbox_param
@@ -45,15 +49,15 @@
 
 /** Initial address of Hypervisor Memory Area.
  * MUST BE PAGE TABLE ALIGNED! */
-#define MM_HYPER_AREA_ADDRESS   0xa0000000
+#define MM_HYPER_AREA_ADDRESS       UINT32_C(0xa0000000)
 
 /** The max size of the hypervisor memory area. */
-#define MM_HYPER_AREA_MAX_SIZE (20 * _1M)
+#define MM_HYPER_AREA_MAX_SIZE      (20 * _1M)
 
 /** Maximum number of bytes we can dynamically map into the hypervisor region.
  * This must be a power of 2 number of pages!
  */
-#define MM_HYPER_DYNAMIC_SIZE   (8 * PAGE_SIZE)
+#define MM_HYPER_DYNAMIC_SIZE       (8 * PAGE_SIZE)
 
 /** @} */
 
@@ -64,7 +68,7 @@
  */
 
 /** VMM stack size. */
-#define VMM_STACK_SIZE    8192
+#define VMM_STACK_SIZE              8192
 
 /** @} */
 

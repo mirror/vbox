@@ -45,6 +45,7 @@
 #include <iprt/power.h>
 #include <iprt/cpuset.h>
 #include <iprt/uuid.h>
+#include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
@@ -2070,8 +2071,8 @@ SUPR0DECL(int) SUPR0ContAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR
     }
     if (cPages < 1 || cPages >= 256)
     {
-        Log(("Illegal request cPages=%d, must be greater than 0 and smaller than 256\n", cPages));
-        return VERR_INVALID_PARAMETER;
+        Log(("Illegal request cPages=%d, must be greater than 0 and smaller than 256.\n", cPages));
+        return VERR_PAGE_COUNT_OUT_OF_RANGE;
     }
 
     /*
@@ -2151,10 +2152,10 @@ SUPR0DECL(int) SUPR0LowAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR0PTR 
         return VERR_INVALID_PARAMETER;
 
     }
-    if (cPages < 1 || cPages > 256)
+    if (cPages < 1 || cPages >= 256)
     {
         Log(("Illegal request cPages=%d, must be greater than 0 and smaller than 256.\n", cPages));
-        return VERR_INVALID_PARAMETER;
+        return VERR_PAGE_COUNT_OUT_OF_RANGE;
     }
 
     /*
@@ -2392,10 +2393,10 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
     AssertPtrNullReturn(ppvR0, VERR_INVALID_POINTER);
     AssertReturn(ppvR3 || ppvR0, VERR_INVALID_PARAMETER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-    if (cPages < 1 || cPages > (128 * _1M)/PAGE_SIZE)
+    if (cPages < 1 || cPages > VBOX_MAX_ALLOC_PAGE_COUNT)
     {
         Log(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 128MB.\n", cPages));
-        return VERR_INVALID_PARAMETER;
+        return VERR_PAGE_COUNT_OUT_OF_RANGE;
     }
 
     /*

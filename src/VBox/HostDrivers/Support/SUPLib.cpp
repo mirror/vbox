@@ -726,7 +726,7 @@ SUPR3DECL(int) SUPPageAlloc(size_t cPages, void **ppvPages)
      */
     AssertPtrReturn(ppvPages, VERR_INVALID_POINTER);
     *ppvPages = NULL;
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -749,7 +749,7 @@ SUPR3DECL(int) SUPPageFree(void *pvPages, size_t cPages)
      * Validate.
      */
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -862,7 +862,7 @@ SUPR3DECL(int) SUPPageFreeLocked(void *pvPages, size_t cPages)
      * Validate.
      */
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /*
      * Check if we're employing the fallback or not to avoid the
@@ -911,7 +911,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
     if (pR0Ptr)
         *pR0Ptr = NIL_RTR0PTR;
     AssertPtrNullReturn(paPages, VERR_INVALID_POINTER);
-    AssertMsgReturn(cPages > 0 && cPages < 16384, ("cPages=%zu\n", cPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages <= VBOX_MAX_ALLOC_PAGE_COUNT, ("cPages=%zu\n", cPages), VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -997,7 +997,7 @@ SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages)
      * Validate.
      */
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -1098,7 +1098,7 @@ SUPR3DECL(int) SUPContFree(void *pv, size_t cPages)
     if (!pv)
         return VINF_SUCCESS;
     AssertPtrReturn(pv, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -1133,7 +1133,7 @@ SUPR3DECL(int) SUPLowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0, 
     AssertPtrReturn(ppvPages, VERR_INVALID_POINTER);
     *ppvPages = NULL;
     AssertPtrReturn(paPages, VERR_INVALID_POINTER);
-    AssertMsgReturn(cPages > 0 && cPages < 256, ("cPages=%d must be > 0 and < 256\n", cPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages < 256, ("cPages=%d must be > 0 and < 256\n", cPages), VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -1198,7 +1198,7 @@ SUPR3DECL(int) SUPLowFree(void *pv, size_t cPages)
     if (!pv)
         return VINF_SUCCESS;
     AssertPtrReturn(pv, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
