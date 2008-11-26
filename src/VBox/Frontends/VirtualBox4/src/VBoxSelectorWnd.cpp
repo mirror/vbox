@@ -713,6 +713,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* Delete systray menu object */
     delete mTrayIcon;
+    mTrayIcon = NULL;
 #endif
 
     /* Delete the items from our model */
@@ -910,6 +911,9 @@ void VBoxSelectorWnd::vmStart (const QUuid &aUuid /*= QUuid_null*/)
 
 #if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
 
+    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
+               ("Must NOT be a VM console process"));
+
     /* just switch to the VM window if it already exists */
     if (item->canSwitchTo())
     {
@@ -1079,7 +1083,7 @@ void VBoxSelectorWnd::refreshVMList()
     vmListViewCurrentChanged();
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    if (vboxGlobal().isTrayIcon())
+    if (vboxGlobal().hasTrayIcon())
         mTrayIcon->refresh();
 #endif
 }
@@ -1190,8 +1194,19 @@ bool VBoxSelectorWnd::event (QEvent *e)
 
 void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
 {
-    emit closing();
-    return QMainWindow::closeEvent (aEvent);
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    if (vboxGlobal().isTrayMenu())
+    {
+        hide();
+    }
+    else
+    {
+#endif
+        emit closing();
+        QMainWindow::closeEvent (aEvent);
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    }
+#endif
 }
 
 #if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
@@ -1314,7 +1329,7 @@ void VBoxSelectorWnd::retranslateUi()
     mHelpMenu->setTitle (tr ("&Help"));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    if (vboxGlobal().isTrayIcon())
+    if (vboxGlobal().hasTrayIcon())
     {
         mTrayIcon->retranslateUi();
         mTrayIcon->refresh();
@@ -1618,7 +1633,8 @@ void VBoxSelectorWnd::trayIconCanShow (const VBoxCanShowTrayIconEvent &aEvent)
 
 void VBoxSelectorWnd::trayIconChanged (const VBoxChangeTrayIconEvent &aEvent)
 {
-    mTrayIcon->trayIconShow (aEvent.mEnabled);
+    if (mTrayIcon)
+        mTrayIcon->trayIconShow (aEvent.mEnabled);
 }
 
 VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
@@ -1934,6 +1950,9 @@ VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 
 void VBoxTrayIcon::trayIconShow (bool aShow)
 {
+    if (!vboxGlobal().hasTrayIcon())
+        return;
+
     mActive = aShow;
     if (mActive)
     {
@@ -1941,6 +1960,9 @@ void VBoxTrayIcon::trayIconShow (bool aShow)
         retranslateUi();
     }
     setVisible (mActive);
+
+    if (!mActive && vboxGlobal().isTrayMenu())
+        mParent->fileExit();
 }
 
 void VBoxTrayIcon::vmSettings()

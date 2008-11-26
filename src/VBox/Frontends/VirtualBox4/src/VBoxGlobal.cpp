@@ -88,6 +88,16 @@
 #include <iprt/file.h>
 #include <iprt/ldr.h>
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+#include <iprt/process.h>
+
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+#define HOSTSUFF_EXE ".exe"
+#else /* !RT_OS_WINDOWS */
+#define HOSTSUFF_EXE ""
+#endif /* !RT_OS_WINDOWS */
+#endif
+
 #if defined (Q_WS_X11)
 #include <iprt/mem.h>
 #endif
@@ -940,13 +950,10 @@ private:
 
     void postEvent (QEvent *e)
     {
-#ifndef VBOX_GUI_WITH_SYSTRAY
-        // If not using a systray menu, we don't post events if we are in the VM
-        // execution console mode, to save some CPU ticks (so far, there was no
-        // need to handle VirtualBox callback events in the execution console
-        // mode
+        // currently, we don't post events if we are in the VM execution
+        // console mode, to save some CPU ticks (so far, there was no need
+        // to handle VirtualBox callback events in the execution console mode)
         if (!mGlobal.isVMConsoleProcess())
-#endif
             QApplication::postEvent (&mGlobal, e);
     }
 
@@ -1234,7 +1241,8 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , mUpdDlg (NULL)
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    , mIsTrayIcon (false)
+    , mHasTrayIcon (false)
+    , mIsTrayMenu (false)
 #endif
     , mMediaEnumThread (NULL)
     , verString ("1.0")
@@ -1347,6 +1355,11 @@ bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
  */
 VBoxSelectorWnd &VBoxGlobal::selectorWnd()
 {
+#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
+    AssertMsg (!vboxGlobal().isVMConsoleProcess(),
+               ("Must NOT be a VM console process"));
+#endif
+
     Assert (mValid);
 
     if (!mSelectorWnd)
@@ -1402,9 +1415,18 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
  *  Returns true if the current instance is responsible of showing/handling
  *  the tray icon.
  */
-bool VBoxGlobal::isTrayIcon() const
+bool VBoxGlobal::hasTrayIcon() const
 {
-    return mIsTrayIcon;
+    return mHasTrayIcon;
+}
+
+/**
+ *  Returns true if the current instance a systray menu only (started with
+ *  "-systray" parameter).
+ */
+bool VBoxGlobal::isTrayMenu() const
+{
+    return (mHasTrayIcon && mIsTrayMenu);
 }
 
 /**
@@ -1413,24 +1435,65 @@ bool VBoxGlobal::isTrayIcon() const
  */
 bool VBoxGlobal::trayIconInstall()
 {
-    if (false == QSystemTrayIcon::isSystemTrayAvailable())
-        return false;
+    bool bActive = mIsTrayMenu;
+    if (false == bActive)
+        bActive = vboxGlobal().settings().trayIconEnabled();
 
-    AssertMsg (&vboxGlobal().selectorWnd(),
-               ("Selector window must not be null for systray!"));
-
-    mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
-                        QString ("%1").arg ((qulonglong) vboxGlobal().selectorWnd().winId()));
-
-    /* The first process which can grab this "mutex" will win ->
-     * It will be the tray icon menu then. */
-    if (mVBox.isOk())
+    if (   bActive
+        && (false == QSystemTrayIcon::isSystemTrayAvailable())
+        && (false == mVBox.GetExtraData (VBoxDefs::GUI_TrayIconWinID).isEmpty()))
     {
-        mIsTrayIcon = true;
-        emit trayIconChanged (*(new VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled())));
+        return false;
     }
 
-    return mIsTrayIcon;
+    int rc = 0;
+    if (isVMConsoleProcess())
+    {
+        // Spawn new selector window instance
+
+        // Get the path to the executable
+        char path [RTPATH_MAX];
+        RTPathAppPrivateArch (path, RTPATH_MAX);
+        size_t sz = strlen (path);
+        path [sz++] = RTPATH_DELIMITER;
+        path [sz] = 0;
+        char *cmd = path + sz;
+        sz = RTPATH_MAX - sz;
+
+        RTPROCESS pid = NIL_RTPROCESS;
+        RTENV env = RTENV_DEFAULT;
+
+        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+        Assert (sz >= sizeof (VirtualBox_exe));
+        strcpy (cmd, VirtualBox_exe);
+# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+        const char * args[] = {path, "-systray", 0 };
+# else
+        const char * args[] = {path, "-systray", 0 };
+# endif
+        rc = RTProcCreate (path, args, env, 0, &pid);
+        if (RT_FAILURE (rc))
+        {
+            LogRel(("Failed to start systray window! rc=%Rrc\n", rc));
+            return false;
+        }
+    }
+    else
+    {
+        // Use this selector for displaying the tray icon
+        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
+                            QString ("%1").arg ((qulonglong) vboxGlobal().mainWindow()->winId()));
+
+        /* The first process which can grab this "mutex" will win ->
+         * It will be the tray icon menu then. */
+        if (mVBox.isOk())
+        {
+            mHasTrayIcon = true;
+            emit trayIconChanged (*(new VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled())));
+        }
+    }
+
+    return mHasTrayIcon;
 }
 
 #endif
@@ -5385,6 +5448,12 @@ void VBoxGlobal::init()
                 }
             }
         }
+#ifdef VBOX_GUI_WITH_SYSTRAY
+        else if (!::strcmp (arg, "-systray"))
+        {
+            mIsTrayMenu = true;
+        }
+#endif
         else if (!::strcmp (arg, "-comment"))
         {
             ++i;

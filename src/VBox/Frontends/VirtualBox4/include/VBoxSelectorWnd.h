@@ -60,8 +60,6 @@ public:
                      Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxSelectorWnd();
 
-    bool startMachine (const QUuid &aId);
-
 signals:
 
     void closing();

@@ -482,7 +482,8 @@ public:
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    bool isTrayIcon() const;
+    bool hasTrayIcon() const;
+    bool isTrayMenu() const;
     bool trayIconInstall();
 #endif
     QUuid managedVMUuid() const { return vmUuid; }
@@ -995,7 +996,8 @@ private:
     QUuid vmUuid;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    bool mIsTrayIcon;           /* Is current instance responsible for tray icon? */
+    bool mHasTrayIcon;          /* Is current instance responsible for tray icon? */
+    bool mIsTrayMenu;           /* Tray icon active/desired? */
 #endif
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;
