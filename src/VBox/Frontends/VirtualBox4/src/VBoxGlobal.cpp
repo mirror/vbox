@@ -3962,34 +3962,33 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 }
 
 /**
- *  Formats the given \a size value in bytes to a human readable string
- *  in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ * Formats the given @a aSize value in bytes to a human readable string
+ * in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
  *
- *  The \a mode parameter is used for rounding the resulting number
- *  after converting the \a size to KB, MB etc:
- *  <ul>
- *  <li>When \a mode is FormatSize_Round, the result is rounded to the
- *      closest number containing \a decimal number of digits.
- *  </li>
- *  <li>When \a mode is FormatSize_RoundDown, the result is rounded to the
- *      largest \a decimal number of digits that is not greater than the
- *      result. This guarantees that converting the resulting string back
- *      to the integer value in bytes will not produce a value greater that
- *      the initial \a size parameter.
- *  </li>
- *  <li>When \a mode is FormatSize_RoundUp, the result is rounded to the
- *      smallest \a decimal number of digits that is not less than the
- *      result. This guarantees that converting the resulting string back
- *      to the integer value in bytes will not produce a value less that
- *      the initial \a size parameter.
- *  </li>
- *  </ul>
+ * The @a aMode and @a aDecimal parameters are used for rounding the resulting
+ * number when converting the size value to KB, MB, etc gives a fractional part:
+ * <ul>
+ * <li>When \a aMode is FormatSize_Round, the result is rounded to the
+ *     closest number containing \a aDecimal decimal digits.
+ * </li>
+ * <li>When \a aMode is FormatSize_RoundDown, the result is rounded to the
+ *     largest number with \a aDecimal decimal digits that is not greater than
+ *     the result. This guarantees that converting the resulting string back to
+ *     the integer value in bytes will not produce a value greater that the
+ *     initial size parameter.
+ * </li>
+ * <li>When \a aMode is FormatSize_RoundUp, the result is rounded to the
+ *     smallest number with \a aDecimal decimal digits that is not less than the
+ *     result. This guarantees that converting the resulting string back to the
+ *     integer value in bytes will not produce a value less that the initial
+ *     size parameter.
+ * </li>
+ * </ul>
  *
- *  @param  aSize    size value in bytes
- *  @param  aMode    convertion mode (FormatSize_Round, FormatSize_RoundDown,
- *                                                      FormatSize_RoundUp)
- *  @param  aDecimal the number of decimal digits in result
- *  @return          human-readable size string
+ * @param aSize     Size value in bytes.
+ * @param aMode     Conversion mode.
+ * @param aDecimal  Number of decimal digits in result.
+ * @return          Human-readable size string.
  */
 /* static */
 QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
