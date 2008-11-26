@@ -106,8 +106,10 @@ static void makeTimeStr (char *s, int cb, int64_t millies)
 }
 
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
-   time. MSC 7.1/32 doesn't have any trouble with it. */
-#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
+   time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
+   sufficient to qualify for this hack as well since this code isn't performance
+   critical and probably won't gain much from the extra optimizing in real life. */
+#if defined(_MSC_VER)
 # pragma optimize("g", off)
 #endif
 
@@ -1849,6 +1851,10 @@ HRESULT showVMInfo (ComPtr <IVirtualBox> virtualBox, ComPtr<IMachine> machine,
         RTPrintf("\n");
     return S_OK;
 }
+
+#if defined(_MSC_VER)
+# pragma optimize("", on)
+#endif
 
 int handleShowVMInfo(int argc, char *argv[],
                      ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)

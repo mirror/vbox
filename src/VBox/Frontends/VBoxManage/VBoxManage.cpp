@@ -34,15 +34,15 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <stdlib.h>
-#include <stdarg.h>
 
 #include <vector>
 #include <list>
 #endif /* !VBOX_ONLY_DOCS */
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/stdarg.h>
 #include <iprt/asm.h>
 #include <iprt/uuid.h>
 #include <iprt/thread.h>
@@ -73,8 +73,7 @@ using namespace com;
 #endif
 
 /** command handler type */
-typedef DECLCALLBACK(int) FNHANDLER(int argc, char *argv[], ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
-typedef FNHANDLER *PFNHANDLER;
+typedef int (*PFNHANDLER)(int argc, char *argv[], ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 
 #ifdef USE_XPCOM_QUEUE
 /** A pointer to the event queue, set by main() before calling any handlers. */
@@ -1444,6 +1443,11 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
     errorArgument("Invalid %s number '%s'", name, psz);
     return 0;
 }
+
+/** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
+#if defined(_MSC_VER)
+# pragma optimize("g", off)
+#endif
 
 static int handleModifyVM(int argc, char *argv[],
                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
@@ -3253,6 +3257,11 @@ static int handleModifyVM(int argc, char *argv[],
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
+
+/** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
+#if defined(_MSC_VER)
+# pragma optimize("", on)
+#endif
 
 static int handleStartVM(int argc, char *argv[],
                          ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
