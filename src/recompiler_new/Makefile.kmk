@@ -51,6 +51,8 @@ ifeq ($(KBUILD_TARGET), win)
  VBoxREM_LIBS           =   \
 	$(LIB_VMM)          \
 	$(LIB_RUNTIME)
+
+ USE_REM_IMP = 1
 else
  $(REM_MOD)_TEMPLATE  = VBOXR3NP
 
@@ -156,6 +158,8 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 # Temporary hack, to allow running with oldish GCC
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
 
+
+ifdef USE_REM_IMP
 #
 # The VBoxREM import library.
 #
@@ -199,6 +203,7 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 		-e 's/^LIBRARY .*/LIBRARY VBoxREM INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
 		--output $@ \
 		$<
+endif
 
 #
 # The math testcase as a standalone program for testing and debugging purposes.
