@@ -32,7 +32,7 @@
  * 4. src/VBox/Main/webservice/*.xsl =>
  *    a bunch of WSDL and C++ files
  *    (VirtualBox web service sources and SOAP mappers;
- *    see src/VBox/Main/webservice/Makefile.kmk for details)
+ *     see src/VBox/Main/webservice/Makefile.kmk for details)
  *
  * 5. src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl =>
  *    out/<platform>/obj/src/VBox/Frontends/VirtualBox/VirtualBox/include/COMWrappers.h
@@ -50,7 +50,7 @@
  *
  * 8. src/VBox/Runtime/common/err/errmsgvboxcom.xsl =>
  *    out/<platform>/obj/src/VBox/Runtime/errmsgvboxcomdata.h
- *    (<result> extraction for %Rhrc the format specifier)
+ *    (<result> extraction for the %Rhrc format specifier)
  *
      Copyright (C) 2006-2007 Sun Microsystems, Inc.
 
@@ -6495,7 +6495,7 @@
         without the path specification.
 
         Note that as opposed to the <link to="#location"/> attribute, the name
-        name attribute will not necessary be unique for a list of media of the
+        attribute will not necessary be unique for a list of media of the
         given type and format.
       </desc>
     </attribute>
@@ -6752,7 +6752,7 @@
       The IHardDisk2Attachment interface represents a hard disk attachment of a
       virtual machine.
 
-      Every hard disk attachments specifies a slot of the virtual hard disk
+      Every hard disk attachment specifies a slot of the virtual hard disk
       controller and a virtual virtual hard disk attached to this slot.
 
       The array of hard disk attachments is returned by
@@ -7190,14 +7190,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
 
-        Note that If <tt>null</tt> returned by this method as @a value, it
-        means that the requested property is supported but currently has not
-        assigned any value.
+        Note that if this method returns a <tt>null</tt> @a value, the requested
+        property is supported but currently not assigned any value.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
         </result>
         <result name="E_INVALIDARG">@a name is NULL or empty.</result>
+        <result name="E_POINTER">@a value points to invalid memory.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the property to get.</desc>
@@ -7215,9 +7215,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
 
         Note that passing <tt>null</tt> as @a value will reset the value of the
-        property to nothing which may also be undertood as deleting the
+        property to nothing which may also be understood as deleting the
         property's value. For properties with no values, the format backend will
-        use a default value if such a value is defined for the given roperty.
+        use a default value if such a value is defined for the given property.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
