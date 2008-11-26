@@ -1381,6 +1381,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
         case VMMCALLHOST_REM_REPLAY_HANDLER_NOTIFICATIONS:
         {
             REMR3ReplayHandlerNotifications(pVM);
+            pVM->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
         }
 
@@ -1389,6 +1390,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          * tests in the loops.
          */
         case VMMCALLHOST_VMM_LOGGER_FLUSH:
+            pVM->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
 
         /*
@@ -1396,6 +1398,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          */
         case VMMCALLHOST_VM_SET_ERROR:
             VMR3SetErrorWorker(pVM);
+            pVM->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
 
         /*
@@ -1403,6 +1406,7 @@ static int vmmR3ServiceCallHostRequest(PVM pVM)
          */
         case VMMCALLHOST_VM_SET_RUNTIME_ERROR:
             VMR3SetRuntimeErrorWorker(pVM);
+            pVM->vmm.s.rcCallHost = VINF_SUCCESS;
             break;
 
         /*
