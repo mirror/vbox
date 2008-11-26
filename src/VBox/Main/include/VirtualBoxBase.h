@@ -304,25 +304,25 @@ public:
     do { ComAssertComRC (rc); if (!SUCCEEDED (rc)) return (rc); } while (0)
 
 
-/** Special version of ComAssert that evaulates eval and breaks if expr fails */
+/** Special version of ComAssert that evaluates eval and breaks if expr fails */
 #define ComAssertBreak(expr, eval)                \
     if (1) { ComAssert (expr); if (!(expr)) { eval; break; } } else do {} while (0)
-/** Special version of ComAssertMsg that evaulates eval and breaks if expr fails */
+/** Special version of ComAssertMsg that evaluates eval and breaks if expr fails */
 #define ComAssertMsgBreak(expr, a, eval)          \
     if (1)  { ComAssertMsg (expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
-/** Special version of ComAssertRC that evaulates eval and breaks if vrc does not succeed */
+/** Special version of ComAssertRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertRCBreak(vrc, eval)               \
     if (1)  { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
-/** Special version of ComAssertMsgRC that evaulates eval and breaks if vrc does not succeed */
+/** Special version of ComAssertMsgRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertMsgRCBreak(vrc, msg, eval)       \
     if (1)  { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
-/** Special version of ComAssertFailed that evaulates eval and breaks */
+/** Special version of ComAssertFailed that evaluates eval and breaks */
 #define ComAssertFailedBreak(eval)                \
     if (1)  { ComAssertFailed(); { eval; break; } } else do {} while (0)
-/** Special version of ComAssertMsgFailed that evaulates eval and breaks */
+/** Special version of ComAssertMsgFailed that evaluates eval and breaks */
 #define ComAssertMsgFailedBreak(msg, eval)        \
     if (1)  { ComAssertMsgFailed (msg); { eval; break; } } else do {} while (0)
-/** Special version of ComAssertComRC that evaulates eval and breaks if rc does not succeed */
+/** Special version of ComAssertComRC that evaluates eval and breaks if rc does not succeed */
 #define ComAssertComRCBreak(rc, eval)             \
     if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertComRC that just breaks if rc does not succeed */
@@ -330,25 +330,25 @@ public:
     if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
 
 
-/** Special version of ComAssert that evaulates eval and throws it if expr fails */
+/** Special version of ComAssert that evaluates eval and throws it if expr fails */
 #define ComAssertThrow(expr, eval)                \
     if (1) { ComAssert (expr); if (!(expr)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsg that evaulates eval and throws it if expr fails */
+/** Special version of ComAssertMsg that evaluates eval and throws it if expr fails */
 #define ComAssertMsgThrow(expr, a, eval)          \
     if (1)  { ComAssertMsg (expr, a); if (!(expr)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertRC that evaulates eval and throws it if vrc does not succeed */
+/** Special version of ComAssertRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertRCThrow(vrc, eval)               \
     if (1)  { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsgRC that evaulates eval and throws it if vrc does not succeed */
+/** Special version of ComAssertMsgRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertMsgRCThrow(vrc, msg, eval)       \
     if (1)  { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertFailed that evaulates eval and throws it */
+/** Special version of ComAssertFailed that evaluates eval and throws it */
 #define ComAssertFailedThrow(eval)                \
     if (1)  { ComAssertFailed(); { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertMsgFailed that evaulates eval and throws it */
+/** Special version of ComAssertMsgFailed that evaluates eval and throws it */
 #define ComAssertMsgFailedThrow(msg, eval)        \
     if (1)  { ComAssertMsgFailed (msg); { throw (eval); } } else do {} while (0)
-/** Special version of ComAssertComRC that evaulates eval and throws it if rc does not succeed */
+/** Special version of ComAssertComRC that evaluates eval and throws it if rc does not succeed */
 #define ComAssertComRCThrow(rc, eval)             \
     if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertComRC that just throws rc if rc does not succeed */
@@ -360,7 +360,7 @@ public:
 /**
  * Checks that the pointer argument is not NULL and returns E_INVALIDARG +
  * extended error info on failure.
- * @param arg   Input pointer-type argument (strings, interace pointers...)
+ * @param arg   Input pointer-type argument (strings, interface pointers...)
  */
 #define CheckComArgNotNull(arg) \
     do { \
@@ -371,7 +371,7 @@ public:
 /**
  * Checks that safe array argument is not NULL and returns E_INVALIDARG +
  * extended error info on failure.
- * @param arg   Input safe array argument (strings, interace pointers...)
+ * @param arg   Input safe array argument (strings, interface pointers...)
  */
 #define CheckComArgSafeArrayNotNull(arg) \
     do { \
@@ -447,7 +447,7 @@ public:
     } while (0)
 
 /**
- * Sets the extended error info and returns E_NOTIMIL.
+ * Sets the extended error info and returns E_NOTIMPL.
  * @param method    Method that is not implemented.
  */
 #define ReturnComNotImplemented(method) \
@@ -461,7 +461,7 @@ public:
 /**
  *  Checks whether this object is ready or not. Objects are typically ready
  *  after they are successfully created by their parent objects and become
- *  not ready when the respective parent itsef becomes not ready or gets
+ *  not ready when the respective parent itself becomes not ready or gets
  *  destroyed while a reference to the child is still held by the caller
  *  (which prevents it from destruction).
  *
@@ -480,14 +480,14 @@ public:
     } while (0)
 
 /**
- *  Declares an empty construtor and destructor for the given class.
+ *  Declares an empty constructor and destructor for the given class.
  *  This is useful to prevent the compiler from generating the default
  *  ctor and dtor, which in turn allows to use forward class statements
  *  (instead of including their header files) when declaring data members of
  *  non-fundamental types with constructors (which are always called implicitly
  *  by constructors and by the destructor of the class).
  *
- *  This macro is to be palced within (the public section of) the class
+ *  This macro is to be placed within (the public section of) the class
  *  declaration. Its counterpart, DEFINE_EMPTY_CTOR_DTOR, must be placed
  *  somewhere in one of the translation units (usually .cpp source files).
  *
@@ -496,7 +496,7 @@ public:
 #define DECLARE_EMPTY_CTOR_DTOR(cls) cls(); ~cls();
 
 /**
- *  Defines an empty construtor and destructor for the given class.
+ *  Defines an empty constructor and destructor for the given class.
  *  See DECLARE_EMPTY_CTOR_DTOR for more info.
  */
 #define DEFINE_EMPTY_CTOR_DTOR(cls) \
@@ -546,13 +546,13 @@ namespace stdx
  * of the particular component as a result of multiple inheritance.
  *
  * This makes it possible to have intermediate base classes used by several
- * components that implement some common interface fuctionality but still let
- * the final component classe choose what VirtualBoxBase variant it wants to
+ * components that implement some common interface functionality but still let
+ * the final component classes choose what VirtualBoxBase variant it wants to
  * use.
  *
  * Among the basic functionality implemented by this class is the primary object
  * state that indicates if the object is ready to serve the calls, and if not,
- * what stage it is currently at. Here is the pirmary state diagram:
+ * what stage it is currently at. Here is the primary state diagram:
  *
  *              +-------------------------------------------------------+
  *              |                                                       |
@@ -593,13 +593,13 @@ namespace stdx
  * all subclasses must:
  *
  * 1) Use the above Auto*Span classes to perform state transitions. See the
- *    individual class doescriptions for details.
+ *    individual class descriptions for details.
  *
  * 2) All public methods of subclasses (i.e. all methods that can be called
  *    directly, not only from within other methods of the subclass) must have a
  *    standard prolog as described in the AutoCaller and AutoLimitedCaller
  *    documentation. Alternatively, they must use addCaller()/releaseCaller()
- *    directly (and therefire have both the prolog and the epilog), but this is
+ *    directly (and therefore have both the prolog and the epilog), but this is
  *    not recommended.
  */
 class ATL_NO_VTABLE VirtualBoxBaseProto : public Lockable
@@ -667,7 +667,7 @@ public:
      *                  |true| if VirtualiBoxBase::addLimitedCaller() should be
      *                  used.
      *
-     * @note It is preferrable to use the AutoCaller and AutoLimitedCaller
+     * @note It is preferable to use the AutoCaller and AutoLimitedCaller
      *       classes than specify the @a aLimited argument, for better
      *       self-descriptiveness.
      */
@@ -855,7 +855,7 @@ protected:
      * to Result::Succeeded using #setSucceeded(), to to Result::Limited using
      * #setLimited() or to Result::Failed using #setFailed(). Please don't
      * forget to set the correct success status before getting the AutoInitSpan
-     * variable destryed (for example, by performing an early return from
+     * variable destroyed (for example, by performing an early return from
      * the init() method)!
      *
      * Note that if an instance of this class gets constructed when the object
@@ -1031,7 +1031,7 @@ protected:
      * {
      *     AutoUninitSpan autoUninitSpan (this);
      *     if (autoUninitSpan.uninitDone())
-     *         retrun;
+     *         return;
      *     ...
      * }
      * </code>
@@ -1220,7 +1220,7 @@ private:
         if (FAILED (rc)) \
         { \
             if (state == VirtualBoxBaseProto::Limited) \
-                rc = setError (rc, tr ("The object functonality is limited")); \
+                rc = setError (rc, tr ("The object functionality is limited")); \
             else \
                 rc = setError (rc, tr ("The object is not ready")); \
         } \
@@ -1253,9 +1253,9 @@ public:
     /**
      *  Virtual unintialization method. Called during parent object's
      *  uninitialization, if the given subclass instance is a dependent child of
-     *  a class dervived from VirtualBoxBaseWithChildren (@sa
+     *  a class derived from VirtualBoxBaseWithChildren (@sa
      *  VirtualBoxBaseWithChildren::addDependentChild). In this case, this
-     *  method's impelemtation must call setReady (false),
+     *  method's implementation must call setReady (false),
      */
     virtual void uninit() {}
 
@@ -1346,7 +1346,7 @@ public:
      *
      * @return Translated version of the source string in UTF-8 encoding, or
      *      the source string itself if the translation is not found in the
-     *      specifiecd context.
+     *      specified context.
      */
     inline static const char *tr (const char *aSourceText,
                                   const char *aComment = NULL)
@@ -1429,9 +1429,9 @@ protected:
      *
      * This way, error/warning objects are stacked together and form a chain of
      * errors where the most recent error is the first one retrieved by the
-     * calling party, the preceeding error is what the
+     * calling party, the preceding error is what the
      * IVirtualBoxErrorInfo::next attribute of the first error points to, and so
-     * on, upto the first error or warning occured which is the last in the
+     * on, up to the first error or warning occurred which is the last in the
      * chain. See IVirtualBoxErrorInfo documentation for more info.
      *
      * When the instance of the MultiResult class goes out of scope and gets
@@ -1440,14 +1440,14 @@ protected:
      * turned off and the thread switches back to single-error mode where every
      * next error or warning object overwrites the previous one.
      *
-     * Note that the caller of a COM methid uses a non-S_OK result code to
+     * Note that the caller of a COM method uses a non-S_OK result code to
      * decide if the method has returned an error (negative codes) or a warning
      * (positive non-zero codes) and will query extended error info only in
      * these two cases. However, since multi-error mode implies that the method
      * doesn't return control return to the caller immediately after the first
      * error or warning but continues its execution, the functionality provided
      * by the base com::FWResult class becomes very useful because it allows to
-     * preseve the error or the warning result code even if it is later assigned
+     * preserve the error or the warning result code even if it is later assigned
      * a S_OK value multiple times. See com::FWResult for details.
      *
      * Here is the typical usage pattern:
@@ -1502,7 +1502,7 @@ protected:
             /* We need this copy constructor only for GCC that wants to have
              * it in case of expressions like |MultiResult rc = E_FAIL;|. But
              * we assert since the optimizer should actually avoid the
-             * temporary and call the other constructor directly istead. */
+             * temporary and call the other constructor directly instead. */
             AssertFailed();
             init();
         }
@@ -1520,7 +1520,7 @@ protected:
             /* We need this copy constructor only for GCC that wants to have
              * it in case of expressions like |MultiResult rc = E_FAIL;|. But
              * we assert since the optimizer should actually avoid the
-             * temporary and call the other constructor directly istead. */
+             * temporary and call the other constructor directly instead. */
             AssertFailed();
             com::FWResult::operator= (aThat);
             return *this;
@@ -1671,14 +1671,14 @@ protected:
      *  #setError (HRESULT, const char *, ...) for an example.
      *
      *  @param  aResultCode result (error) code, must not be S_OK
-     *  @param  aIID        IID of the intrface that defines the error
+     *  @param  aIID        IID of the interface that defines the error
      *  @param  aComponent  name of the component that generates the error
      *  @param  aText       error message (must not be null), an RTStrPrintf-like
      *                      format string in UTF-8 encoding
      *  @param  ...         list of arguments for the format string
      *
      *  @return
-     *      the error argument, for convenience, If an error occures while
+     *      the error argument, for convenience, If an error occurs while
      *      creating error info itself, that error is returned instead of the
      *      error argument.
      */
@@ -1696,12 +1696,12 @@ protected:
 
     /**
      *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  aResultCode doesn't have the error severity bit (31) set when passed
      *  down to the created IVirtualBoxErrorInfo object.
      *
-     *  The error severity bit is always cleared by this call, thereofe you can
-     *  use ordinary E_XXX result code constancs, for convenience. However, this
-     *  behavior may be non-stanrard on some COM platforms.
+     *  The error severity bit is always cleared by this call, thereof you can
+     *  use ordinary E_XXX result code constants, for convenience. However, this
+     *  behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
                                const wchar_t *aComponent,
@@ -1750,12 +1750,12 @@ protected:
 
     /**
      *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  aResultCode doesn't have the error severity bit (31) set when passed
      *  down to the created IVirtualBoxErrorInfo object.
      *
-     *  The error severity bit is always cleared by this call, thereofe you can
-     *  use ordinary E_XXX result code constancs, for convenience. However, this
-     *  behavior may be non-stanrard on some COM platforms.
+     *  The error severity bit is always cleared by this call, thereof you can
+     *  use ordinary E_XXX result code constants, for convenience. However, this
+     *  behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarning (HRESULT aResultCode, const char *aText, ...)
     {
@@ -1786,12 +1786,12 @@ protected:
 
     /**
      *  This method is the same as #setErrorV() except that it makes sure @a
-     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  aResultCode doesn't have the error severity bit (31) set when passed
      *  down to the created IVirtualBoxErrorInfo object.
      *
-     *  The error severity bit is always cleared by this call, thereofe you can
-     *  use ordinary E_XXX result code constancs, for convenience. However, this
-     *  behavior may be non-stanrard on some COM platforms.
+     *  The error severity bit is always cleared by this call, thereof you can
+     *  use ordinary E_XXX result code constants, for convenience. However, this
+     *  behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarningV (HRESULT aResultCode, const char *aText,
                                 va_list aArgs)
@@ -1807,7 +1807,7 @@ protected:
      *  ID (taken from the I template argument) and the component name
      *  (a value of C::getComponentName()).
      *
-     *  This method is preferred iy you have a ready (translated and formatted)
+     *  This method is preferred if you have a ready (translated and formatted)
      *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
      *
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
@@ -1822,12 +1822,12 @@ protected:
 
     /**
      *  This method is the same as #setErrorBstr() except that it makes sure @a
-     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  aResultCode doesn't have the error severity bit (31) set when passed
      *  down to the created IVirtualBoxErrorInfo object.
      *
-     *  The error severity bit is always cleared by this call, thereofe you can
-     *  use ordinary E_XXX result code constancs, for convenience. However, this
-     *  behavior may be non-stanrard on some COM platforms.
+     *  The error severity bit is always cleared by this call, thereof you can
+     *  use ordinary E_XXX result code constants, for convenience. However, this
+     *  behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarningBstr (HRESULT aResultCode, const Bstr &aText)
     {
@@ -1858,12 +1858,12 @@ protected:
 
     /**
      *  This method is the same as #setError() except that it makes sure @a
-     *  aResultCode doesn't have the error severty bit (31) set when passed
+     *  aResultCode doesn't have the error severity bit (31) set when passed
      *  down to the created IVirtualBoxErrorInfo object.
      *
-     *  The error severity bit is always cleared by this call, thereofe you can
-     *  use ordinary E_XXX result code constancs, for convenience. However, this
-     *  behavior may be non-stanrard on some COM platforms.
+     *  The error severity bit is always cleared by this call, thereof you can
+     *  use ordinary E_XXX result code constants, for convenience. However, this
+     *  behavior may be non-standard on some COM platforms.
      */
     static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
                                const char *aText, ...)
@@ -1900,9 +1900,9 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Base class to track VirtualBoxBase chlidren of the component.
+ *  Base class to track VirtualBoxBase children of the component.
  *
- *  This class is a preferrable VirtualBoxBase replacement for components
+ *  This class is a preferable VirtualBoxBase replacement for components
  *  that operate with collections of child components. It gives two useful
  *  possibilities:
  *
@@ -2032,7 +2032,7 @@ private:
  *      child object. The returned pointer can be then safely casted to the
  *      actual class of the child object (to get access to its "internal"
  *      non-interface methods) provided that no other child components implement
- *      the same orignial COM interface IUnknown is queried from.
+ *      the same original COM interface IUnknown is queried from.
  * </li><li>
  *      When the parent object uninitializes itself, it can easily unintialize
  *      all its VirtualBoxBase derived children (using their
@@ -2052,8 +2052,8 @@ private:
  * Note that if the parent object does not call #uninitDependentChildren() when
  * it gets uninitialized, it must call uninit() methods of individual children
  * manually to disconnect them; a failure to do so will cause crashes in these
- * methods when chidren get destroyed. The same applies to children not calling
- * #removeDependentChild() when getting destrooyed.
+ * methods when children get destroyed. The same applies to children not calling
+ * #removeDependentChild() when getting destroyed.
  *
  * Note that children added by #addDependentChild() are <b>weakly</b> referenced
  * (i.e. AddRef() is not called), so when a child object is deleted externally
@@ -2070,7 +2070,7 @@ private:
  * Read individual method descriptions to get further information.
  *
  * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
- *       VirtualBoxBaseNEXT implementation. Will completely supercede
+ *       VirtualBoxBaseNEXT implementation. Will completely supersede
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
  */
@@ -2358,7 +2358,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Base class to track component's chlidren of the particular type.
+ * Base class to track component's children of the particular type.
  *
  * This class is similar to VirtualBoxBaseWithChildrenNEXT with the exception
  * that all children must be of the same type. For this reason, it's not
@@ -2378,7 +2378,7 @@ private:
  *          some interface).
  *
  * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
- *       VirtualBoxBaseNEXT implementation. Will completely supercede
+ *       VirtualBoxBaseNEXT implementation. Will completely supersede
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
  */
@@ -2507,7 +2507,7 @@ protected:
      * Note that this method will call uninit() methods of child objects. If
      * these methods need to call the parent object during uninitialization,
      * #uninitDependentChildren() must be called before the relevant part of the
-     * parent is uninitialized: usually at the begnning of the parent
+     * parent is uninitialized: usually at the beginning of the parent
      * uninitialization sequence.
      *
      * @note May lock something through the called children.
@@ -2828,7 +2828,7 @@ protected:
 #if defined VBOX_MAIN_SETTINGS_ADDONS
 
 /**
- * Settinsg API additions.
+ * Settings API additions.
  */
 namespace settings
 {
