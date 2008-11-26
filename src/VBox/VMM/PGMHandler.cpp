@@ -88,7 +88,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
                                             const char *pszModR0, const char *pszHandlerR0, RTR0PTR pvUserR0,
                                             const char *pszModRC, const char *pszHandlerRC, RTRCPTR pvUserRC, const char *pszDesc)
 {
-    LogFlow(("PGMR3HandlerPhysicalRegister: enmType=%d GCPhys=%RGp GCPhysLast=%RGp pfnHandlerR3=%RHv pvUserHC=%RHv pszModR0=%s pszHandlerR0=%s pszModRC=%s pvUserR0=%RHv pszHandlerRC=%s pvUser=%RRv pszDesc=%s\n",
+    LogFlow(("PGMR3HandlerPhysicalRegister: enmType=%d GCPhys=%RGp GCPhysLast=%RGp pfnHandlerR3=%RHv pvUserHC=%RHv pszModR0=%s pszHandlerR0=%s pvUserR0=%RHv pszModRC=%s pszHandlerRC=%s pvUser=%RRv pszDesc=%s\n",
              enmType, GCPhys, GCPhysLast, pfnHandlerR3, pvUserR3, pszModR0, pszHandlerR0, pvUserR0, pszHandlerRC, pszModRC, pvUserRC, pszDesc));
 
     /*
