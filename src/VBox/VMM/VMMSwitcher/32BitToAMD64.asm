@@ -167,8 +167,7 @@ htg_debug_regs_no:
     ; control registers.
     mov     eax, cr0
     mov     [edx + CPUMCPU.Host.cr0], eax
-    ;mov     eax, cr2                   ; assume host os don't stuff things in cr2. (safe)
-    ;mov     [edx + CPUMCPU.Host.cr2], eax
+    ;Skip cr2; assume host os don't stuff things in cr2. (safe)
     mov     eax, cr3
     mov     [edx + CPUMCPU.Host.cr3], eax
     mov     eax, cr4
