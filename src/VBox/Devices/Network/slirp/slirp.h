@@ -39,7 +39,7 @@ typedef int socklen_t;
 #include <iprt/dir.h>
 #include <VBox/types.h>
 
-# define malloc(a)       RTMemAllocZ(a)
+# define malloc(a)       RTMemAlloc(a)
 # define free(a)         RTMemFree(a)
 # define realloc(a,b)    RTMemRealloc(a, b)
 
