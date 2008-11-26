@@ -227,7 +227,7 @@ ifdef VBOX_ONLY_SDK
 endif
 
 ## Enable new TCG-based recompiler only for those platforms yet
-if1of ($(KBUILD_TARGET), linux win)
+if1of ($(KBUILD_TARGET), linux win solaris)
  VBOX_WITH_NEW_RECOMPILER = 1
 endif
 
