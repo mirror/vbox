@@ -760,17 +760,9 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aName,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc (("aBaseFolder='%ls', aName='%ls' aMachine={%p}\n",
-                      aBaseFolder, aName, aMachine));
 
-    if (!aName)
-        return E_INVALIDARG;
-    if (!aMachine)
-        return E_POINTER;
-
-    if (!*aName)
-        return setError (E_INVALIDARG,
-            tr ("Machine name cannot be empty"));
+    CheckComArgStrNotEmptyOrNull (aName);
+    CheckComArgOutPointerValid (aMachine);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -798,38 +790,45 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aName,
     /* create a new object */
     ComObjPtr <Machine> machine;
     rc = machine.createObject();
-    if (SUCCEEDED (rc))
-    {
-        /* Create UUID if an empty one was specified. */
-        Guid id = aId;
-        if (id.isEmpty())
-            id.create();
+    CheckComRCReturnRC (rc);
 
-        /* Look for related GuestOsType */
-        AssertMsg (mData.mGuestOSTypes.size(), ("Guest OS types array must be filled"));
-        GuestOSTypeList::iterator it = mData.mGuestOSTypes.begin();
-        GuestOSType *osType = *it;
-        while (aOsTypeId && it != mData.mGuestOSTypes.end())
+    /* Create UUID if an empty one was specified. */
+    Guid id = aId;
+    if (id.isEmpty())
+        id.create();
+
+    /* Look for a GuestOSType object */
+    AssertMsg (mData.mGuestOSTypes.size() != 0,
+               ("Guest OS types array must be filled"));
+
+    GuestOSType *osType = NULL;
+    if (aOsTypeId != NULL)
+    {
+        for (GuestOSTypeList::const_iterator it = mData.mGuestOSTypes.begin();
+             it != mData.mGuestOSTypes.end(); ++ it)
         {
             if ((*it)->id() == aOsTypeId)
             {
                 osType = *it;
                 break;
             }
-            ++ it;
         }
 
-        /* initialize the machine object */
-        rc = machine->init (this, settingsFile, Machine::Init_New, aName, osType, TRUE, &id);
-        if (SUCCEEDED (rc))
-        {
-            /* set the return value */
-            rc = machine.queryInterfaceTo (aMachine);
-            ComAssertComRC (rc);
-        }
+        if (osType == NULL)
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
+                tr ("Guest OS type '%ls' is invalid"), aOsTypeId);
     }
 
-    LogFlowThisFunc (("rc=%08X\n", rc));
+    /* initialize the machine object */
+    rc = machine->init (this, settingsFile, Machine::Init_New, aName, osType,
+                        TRUE /* aNameSync */, &id);
+    if (SUCCEEDED (rc))
+    {
+        /* set the return value */
+        rc = machine.queryInterfaceTo (aMachine);
+        AssertComRC (rc);
+    }
+
     LogFlowThisFuncLeave();
 
     return rc;
@@ -841,18 +840,9 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
                                               INPTR GUIDPARAM aId,
                                               IMachine **aMachine)
 {
-    /* null and empty strings are not allowed as path names */
-    if (!aSettingsFile || !(*aSettingsFile))
-        return E_INVALIDARG;
-
-    if (!aName)
-        return E_INVALIDARG;
-    if (!aMachine)
-        return E_POINTER;
-
-    if (!*aName)
-        return setError (E_INVALIDARG,
-            tr ("Machine name cannot be empty"));
+    CheckComArgStrNotEmptyOrNull (aName);
+    CheckComArgStrNotEmptyOrNull (aSettingsFile);
+    CheckComArgOutPointerValid (aMachine);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -867,37 +857,45 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
     /* create a new object */
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    if (SUCCEEDED (rc))
-    {
-        /* Create UUID if an empty one was specified. */
-        Guid id = aId;
-        if (id.isEmpty())
-            id.create();
+    CheckComRCReturnRC (rc);
 
-        /* Look for related GuestOsType */
-        AssertMsg (mData.mGuestOSTypes.size(), ("Guest OS types array must be filled"));
-        GuestOSTypeList::iterator it = mData.mGuestOSTypes.begin();
-        GuestOSType *osType = *it;
-        while (aOsTypeId && it != mData.mGuestOSTypes.end())
+    /* Create UUID if an empty one was specified. */
+    Guid id = aId;
+    if (id.isEmpty())
+        id.create();
+
+    /* Look for a GuestOSType object */
+    AssertMsg (mData.mGuestOSTypes.size() != 0,
+               ("Guest OS types array must be filled"));
+
+    GuestOSType *osType = NULL;
+    if (aOsTypeId != NULL)
+    {
+        for (GuestOSTypeList::const_iterator it = mData.mGuestOSTypes.begin();
+             it != mData.mGuestOSTypes.end(); ++ it)
         {
             if ((*it)->id() == aOsTypeId)
             {
                 osType = *it;
                 break;
             }
-            ++ it;
         }
 
-        /* initialize the machine object */
-        rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
-                            aName, osType, FALSE /* aNameSync */, &id);
-        if (SUCCEEDED (rc))
-        {
-            /* set the return value */
-            rc = machine.queryInterfaceTo (aMachine);
-            ComAssertComRC (rc);
-        }
+        if (osType == NULL)
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
+                tr ("Guest OS type '%ls' is invalid"), aOsTypeId);
     }
+
+    /* initialize the machine object */
+    rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
+                        aName, osType, FALSE /* aNameSync */, &id);
+    if (SUCCEEDED (rc))
+    {
+        /* set the return value */
+        rc = machine.queryInterfaceTo (aMachine);
+        AssertComRC (rc);
+    }
+
     return rc;
 }
 

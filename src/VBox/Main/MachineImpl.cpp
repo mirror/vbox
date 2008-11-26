@@ -418,7 +418,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
     Utf8Str configFileFull;
     int vrc = mParent->calculateFullPath (Utf8Str (aConfigFile), configFileFull);
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
             tr ("Invalid machine settings file name '%ls' (%Rrc)"),
             aConfigFile, vrc);
 
@@ -447,7 +447,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             int vrc = RTFileOpen (&f, configFileFull, RTFILE_O_READ);
             if (RT_SUCCESS (vrc) || vrc == VERR_SHARING_VIOLATION)
             {
-                rc = setError (E_FAIL,
+                rc = setError (VBOX_E_FILE_ERROR,
                     tr ("Machine settings file '%s' already exists"),
                     configFileFull.raw());
                 if (RT_SUCCESS (vrc))
@@ -456,7 +456,7 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
             else
             {
                 if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
-                    rc = setError (E_FAIL,
+                    rc = setError (VBOX_E_FILE_ERROR,
                         tr ("Invalid machine settings file name '%ls' (%Rrc)"),
                         mData->mConfigFileFull.raw(), vrc);
             }
@@ -496,15 +496,16 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
 
                 if (aOsType)
                 {
-                    /* Store os type */
+                    /* Store OS type */
                     mUserData->mOSTypeId = aOsType->id();
 
-                    /* Apply other machine defaults */
-                    mHWData->mHWVirtExEnabled = aOsType->recommendedVirtEx() ? TSBool_True : TSBool_False;
+                    /* Apply machine defaults */
+                    mHWData->mHWVirtExEnabled = aOsType->recommendedVirtEx() ?
+                                                TSBool_True : TSBool_False;
 
                     /* Apply BIOS defaults */
                     mBIOSSettings->applyDefaults (aOsType);
-                    
+
                     /* Apply network adapters defaults */
                     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++ slot)
                         mNetworkAdapters [slot]->applyDefaults (aOsType);
