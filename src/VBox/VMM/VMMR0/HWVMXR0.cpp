@@ -779,6 +779,8 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         RTSEL       SelTR;
         PX86DESCHC  pDesc;
         uintptr_t   trBase;
+        RTSEL       cs;
+        RTSEL       ss;
 
         /* Control registers */
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_CR0,               ASMGetCR0());
@@ -790,7 +792,16 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
-        rc  = VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_CS,          ASMGetCS());
+        cs = ASMGetCS();
+        ss = ASMGetSS();
+#ifdef RT_OS_DARWIN
+        /* VMX doesn't like LDT cs and ss, so switch to the GDT ones. Weird kernel. */
+        if (cs == 0x04)                 /* SYSENTER_CS & ~3 */
+            cs = 0x08;                  /* KERNEL_CS */
+        if (ss == 0x0c)                 /* (SYSENTER_CS & ~3) + 8 */
+            ss = 0x10;                  /* KERNEL_DS */
+#endif
+        rc  = VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_CS,          cs);
         /* Note: VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_DS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_ES,          0);
@@ -798,16 +809,16 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_FS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_GS,          0);
 #endif
-        rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_SS,          ASMGetSS());
+        rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_SS,          ss);
         SelTR = ASMGetTR();
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_TR,          SelTR);
         AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_FIELD_CS %08x\n", ASMGetCS()));
-        Log2(("VMX_VMCS_HOST_FIELD_DS %08x\n", ASMGetDS()));
-        Log2(("VMX_VMCS_HOST_FIELD_ES %08x\n", ASMGetES()));
-        Log2(("VMX_VMCS_HOST_FIELD_FS %08x\n", ASMGetFS()));
-        Log2(("VMX_VMCS_HOST_FIELD_GS %08x\n", ASMGetGS()));
-        Log2(("VMX_VMCS_HOST_FIELD_SS %08x\n", ASMGetSS()));
+        Log2(("VMX_VMCS_HOST_FIELD_CS %08x (%08x)\n", cs, ASMGetSS()));
+        Log2(("VMX_VMCS_HOST_FIELD_DS 00000000 (%08x)\n", ASMGetDS()));
+        Log2(("VMX_VMCS_HOST_FIELD_ES 00000000 (%08x)\n", ASMGetES()));
+        Log2(("VMX_VMCS_HOST_FIELD_FS 00000000 (%08x)\n", ASMGetFS()));
+        Log2(("VMX_VMCS_HOST_FIELD_GS 00000000 (%08x)\n", ASMGetGS()));
+        Log2(("VMX_VMCS_HOST_FIELD_SS %08x (%08x)\n", cs, ASMGetSS()));
         Log2(("VMX_VMCS_HOST_FIELD_TR %08x\n", ASMGetTR()));
 
         /* GDTR & IDTR */
