@@ -114,7 +114,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
     if (RT_SUCCESS(rc))
     {
         pCritSect->pVMR3 = pVM;
-        pCritSect->pVMR0 = (RTR0PTR)pVM;//pVM->pVMR0;
+        pCritSect->pVMR0 = pVM->pVMR0;
         pCritSect->pVMRC = pVM->pVMRC;
         pCritSect->pvKey = pvKey;
         pCritSect->EventToSignal = NIL_RTSEMEVENT;
