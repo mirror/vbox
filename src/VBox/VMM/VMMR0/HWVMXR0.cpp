@@ -447,7 +447,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         }
 
         /* Set link pointer to -1. Not currently used. */
-        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFFFFFFFFFF);
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_LINK_PTR_FULL, 0xFFFFFFFFFFFFFFFFULL);
         AssertRC(rc);
 
         /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
