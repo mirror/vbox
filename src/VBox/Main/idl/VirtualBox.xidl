@@ -1108,7 +1108,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="2aa11223-ba64-4610-84b8-066d2a89384f"
+    uuid="339abca2-f47a-4302-87f5-7bc324e6bbde"
     wsmap="managed"
   >
     <desc>
@@ -1296,28 +1296,41 @@
       <desc>
         Creates a new virtual machine.
 
-        The new machine will have "empty" default settings and will not
-        yet be registered. The typical sequence to create a virtual machine
-        is therefore something like this:
+        The new machine is created unregistered, with the initial configuration
+        set according to the specified guest OS type. A typical sequence of
+        actions to create a new virtual machine is as follows:
 
         <ol>
-           <li>Call this method (IVirtualBox::createMachine) to have a new
-           machine created. The machine object returned is "mutable", i.e.
-           automatically locked for the current session, as if
-           <link to="#openSession" /> had been called on it.</li>
+          <li>
+            Call this method to have a new machine created. The returned machine
+            object will be "mutable" allowing to change any machine property.
+          </li>
 
-           <li>Assign meaningful settings to the new machine by calling the
-           respective methods.</li>
+          <li>
+            Configure the machine using the appropriate attributes and methods.
+          </li>
 
-           <li>Call <link to="IMachine::saveSettings" /> to have the settings written
-           to the machine's XML settings file. The configuration of the newly
-           created machine will not be saved to disk (and the settings subfolder
-           and file, as described below, will not be created) until this method
-           is called.</li>
+          <li>
+            Call <link to="IMachine::saveSettings" /> to write the settings
+            to the machine's XML settings file. The configuration of the newly
+            created machine will not be saved to disk (and the settings subfolder
+            and file, as described below, will not be created) until this method
+            is called.
+          </li>
 
-           <li>Call <link to="#registerMachine" /> to have the
-           machine show up in the list of machines registered with VirtualBox.</li>
+          <li>
+            Call <link to="#registerMachine" /> to have the machine show up in
+            the list of machines registered with VirtualBox.
+          </li>
         </ol>
+
+        You should specify valid name for the newly created machine when calling
+        this method. See the <link to="IMachine::name"/> attribute description
+        for more details about the machine name.
+
+        The specified guest OS type identifier must match an ID of one of known
+        guest OS types listed in the <link to="IVirtualBox::guestOSTypes"/>
+        array.
 
         Every machine has a <i>settings file</i> that is used to store
         the machine configuration. This file is stored in the directory
@@ -1326,51 +1339,55 @@
         corresponds to the name of the virtual machine. You can specify
         where to create the machine settings subfolder using the @a
         baseFolder argument. The base folder can be absolute (full path)
-        or relative to the <link to="IVirtualBox::homeFolder">
-          VirtualBox home directory</link>.
+        or relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
+        directory</link>.
 
-        If a null or empty string is given as the base folder (which is
-        recommended), the <link to="ISystemProperties::defaultMachineFolder">
-          default machine settings folder</link> will be used as the base
-        folder to create the machine settings subfolder and file. In
-        any case, the full path to the settings file will look like:
+        If @a baseFolder is a null or empty string (which is recommended), the
+        <link to="ISystemProperties::defaultMachineFolder">default machine
+        settings folder</link> will be used as a base folder to create the
+        machine settings subfolder and file, otherwise the given folder will be
+        used. The full path to the resulting settings file will have the
+        following structure:
         <pre>
           &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
         </pre>
 
-        Optionally the UUID of the machine can be predefined. If this is
-        not desired (i.e. a new UUID should be generated), pass just an
-        empty or null UUID.
+        Note that if the resulting settings file already exists, this method
+        will fail.
 
-        You should also specify a valid name for the machine.
-        See the <link to="IMachine::name"/> property
-        description for more details about the machine name.
-
-        The created machine remains
-        unregistered until you call <link to="#registerMachine()"/>.
+        Optionally, you may specify an UUID of to assign to the created machine.
+        However, this is not recommended and you should normally pass an empty
+        (null) UUID to this method so that a new UUID will be automatically
+        generated.
 
         <note>
           There is no way to change the name of the settings file or
           subfolder of the created machine directly.
         </note>
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          @a osTypeId is invalid.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Resulting settings file name is invalid or the settings file already
+          exists or could not be created due to an I/O error.
+        </result>
+        <result name="E_INVALIDARG">
+          @a name is empty or null.
+        </result>
       </desc>
+
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
       </param>
       <param name="osTypeId" type="wstring" dir="in">
-        <desc>Machine OS Type ID.</desc>
+        <desc>Guest OS Type ID.</desc>
       </param>
       <param name="baseFolder" type="wstring" dir="in">
-        <desc>
-          Name of the folder where to create the machine settings
-          subfolder containing the settings file.
-        </desc>
+        <desc>Base machine folder (optional).</desc>
       </param>
       <param name="id" type="uuid" dir="in">
-        <desc>
-          UUID of the newly created VM, when non-null or non-empty.
-          Otherwise a UUID is automatically generated.
-        </desc>
+        <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
@@ -1379,24 +1396,18 @@
 
     <method name="createLegacyMachine">
       <desc>
-        Creates a new virtual machine in "legacy" mode, using the
-        specified settings file to store machine settings.
+        Creates a new virtual machine in "legacy" mode, using the specified
+        settings file to store machine settings.
 
         As opposed to machines created by <link to="#createMachine()"/>,
-        the settings file of the machine created in "legacy" mode
-        is not automatically renamed when the machine name is
-        changed -- it will always remain the same as specified in this
-        method call.
+        the settings file of the machine created in "legacy" mode is not
+        automatically renamed when the machine name is changed -- it will always
+        remain the same as specified in this method call.
 
-        The specified settings file name can be absolute
-        (full path) or relative to the <link to="IVirtualBox::homeFolder">
-          VirtualBox home directory</link>. If the file name doesn't
-        contain an extension, the default extension (.xml) will be
-        appended.
-
-        Optionally the UUID of the machine can be predefined. If this is
-        not desired (i.e. a new UUID should be generated), pass just an
-        empty or null UUID.
+        The specified settings file name can be absolute (full path) or relative
+        to the <link to="IVirtualBox::homeFolder">VirtualBox home
+        directory</link>. If the file name doesn't contain an extension, the
+        default extension (.xml) will be appended.
 
         Note that the configuration of the newly created machine is not
         saved to disk (and therefore no settings file is created)
@@ -1404,37 +1415,39 @@
         specified settings file already exists,
         <link to="IMachine::saveSettings()"/> will return an error.
 
-        You should also specify a valid name for the machine.
-        See the <link to="IMachine::name"/> property
-        description for more details about the machine name.
+        See <link to="#createMachine()"/> for more information.
 
-        The created machine remains
-        unregistered until you call <link to="#registerMachine()"/>.
-
-        @deprecated This method may be removed later. It is better
-        to use <link to="IVirtualBox::createMachine()"/>.
+        @deprecated This method may be removed later. Use <link
+        to="IVirtualBox::createMachine()"/> instead.
 
         <note>
           There is no way to change the name of the settings file
-          of the created machine.
+          of the machine created in "legacy" mode.
         </note>
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          @a osTypeId is invalid.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          @a settingsFile is invalid or the settings file already exists or
+          could not be created due to an I/O error.
+        </result>
+        <result name="E_INVALIDARG">
+          @a name or @a settingsFile is empty or null.
+        </result>
       </desc>
-      <param name="settingsFile" type="wstring" dir="in">
-        <desc>
-          Name of the file where to store machine settings.
-        </desc>
-      </param>
+
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
       </param>
       <param name="osTypeId" type="wstring" dir="in">
         <desc>Machine OS Type ID.</desc>
       </param>
+      <param name="settingsFile" type="wstring" dir="in">
+        <desc>Name of the machine settings file.</desc>
+      </param>
       <param name="id" type="uuid" dir="in">
-        <desc>
-          UUID of the newly created VM, when non-null or non-empty.
-          Otherwise a UUID is automatically generated.
-        </desc>
+        <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
@@ -5723,10 +5736,10 @@
   -->
 
   <interface
-     name="IGuestOSType" extends="$unknown"
-     uuid="da94f478-1f37-4726-b750-2235950dc2fe"
-     wsmap="struct"
-     >
+    name="IGuestOSType" extends="$unknown"
+    uuid="bc415228-eed0-402c-92f5-96fc4e2dd7e4"
+    wsmap="struct"
+  >
     <desc>
     </desc>
 
