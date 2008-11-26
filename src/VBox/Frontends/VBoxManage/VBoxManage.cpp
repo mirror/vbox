@@ -35,24 +35,23 @@
 
 #include <vector>
 #include <list>
-#include <cstdlib>
-#include <cctype>
 #endif /* !VBOX_ONLY_DOCS */
 
+#include <iprt/asm.h>
+#include <iprt/cidr.h>
+#include <iprt/ctype.h>
+#include <iprt/dir.h>
+#include <iprt/env.h>
+#include <VBox/err.h>
+#include <iprt/file.h>
 #include <iprt/initterm.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
-#include <iprt/asm.h>
-#include <iprt/uuid.h>
 #include <iprt/thread.h>
-#include <iprt/path.h>
-#include <iprt/param.h>
-#include <iprt/dir.h>
-#include <iprt/file.h>
-#include <iprt/env.h>
-#include <iprt/cidr.h>
-#include <VBox/err.h>
+#include <iprt/uuid.h>
 #include <VBox/version.h>
 #include <VBox/VBoxHDD.h>
 
@@ -330,8 +329,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage modifyvm         <uuid|name>\n"
                  "                            [-name <name>]\n"
                  "                            [-ostype <ostype>]\n"
-                 "                            [-memory <memorysize>]\n"
-                 "                            [-vram <vramsize>]\n"
+                 "                            [-memory <memorysize in MB>]\n"
+                 "                            [-vram <vramsize in MB>]\n"
                  "                            [-acpi on|off]\n"
                  "                            [-ioapic on|off]\n"
                  "                            [-pae on|off]\n"
@@ -380,7 +379,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                                            client <pipe>|\n"
                  "                                            <devicename>]\n"
 #ifdef VBOX_WITH_MEM_BALLOONING
-                 "                            [-guestmemoryballoon <balloonsize>]\n"
+                 "                            [-guestmemoryballoon <balloonsize in MB>]\n"
 #endif
                  "                            [-gueststatisticsinterval <seconds>]\n"
                  );
@@ -1244,7 +1243,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            port = atoi(argv[i]);
+            port = RTStrToUInt16(argv[i]);
         }
         else if (strcmp(argv[i], "-lun") == 0)
         {
@@ -1455,15 +1454,15 @@ static int handleModifyVM(int argc, char *argv[],
     HRESULT rc;
     Bstr name;
     Bstr ostype;
-    ULONG memorySize = 0;
-    ULONG vramSize = 0;
+    uint32_t memorySize = 0;
+    uint32_t vramSize = 0;
     char *acpi = NULL;
     char *hwvirtex = NULL;
     char *nestedpaging = NULL;
     char *vtxvpid = NULL;
     char *pae = NULL;
     char *ioapic = NULL;
-    int monitorcount = -1;
+    uint32_t monitorcount = ~0;
     char *accelerate3d = NULL;
     char *bioslogofadein = NULL;
     char *bioslogofadeout = NULL;
@@ -1558,14 +1557,14 @@ static int handleModifyVM(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            memorySize = atoi(argv[i]);
+            memorySize = RTStrToUInt32(argv[i]);
         }
         else if (strcmp(argv[i], "-vram") == 0)
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            vramSize = atoi(argv[i]);
+            vramSize = RTStrToUInt32(argv[i]);
         }
         else if (strcmp(argv[i], "-acpi") == 0)
         {
@@ -1614,7 +1613,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            monitorcount = atoi(argv[i]);
+            monitorcount = RTStrToUInt32(argv[i]);
         }
         else if (strcmp(argv[i], "-accelerate3d") == 0)
         {
@@ -1642,7 +1641,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            bioslogodisplaytime = atoi(argv[i]);
+            bioslogodisplaytime = RTStrToUInt32(argv[i]);
         }
         else if (strcmp(argv[i], "-bioslogoimagepath") == 0)
         {
@@ -1674,10 +1673,10 @@ static int handleModifyVM(int argc, char *argv[],
         }
         else if (strncmp(argv[i], "-boot", 5) == 0)
         {
-            ULONG n = 0;
+            uint32_t n = 0;
             if (!argv[i][5])
                 return errorSyntax(USAGE_MODIFYVM, "Missing boot slot number in '%s'", argv[i]);
-            if ((n = strtoul(&argv[i][5], NULL, 10)) < 1)
+            if (VINF_SUCCESS != RTStrToUInt32Full(&argv[i][5], 10, &n))
                 return errorSyntax(USAGE_MODIFYVM, "Invalid boot slot number in '%s'", argv[i]);
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
@@ -1933,7 +1932,7 @@ static int handleModifyVM(int argc, char *argv[],
             if (strcmp(argv[i], "default") == 0)
                 vrdpport = 0;
             else
-                vrdpport = atoi(argv[i]);
+                vrdpport = RTStrToUInt16(argv[i]);
         }
         else if (strcmp(argv[i], "-vrdpaddress") == 0)
         {
@@ -2293,7 +2292,7 @@ static int handleModifyVM(int argc, char *argv[],
                 break;
             }
         }
-        if (monitorcount != -1)
+        if (monitorcount != ~0U)
         {
             CHECK_ERROR(machine, COMSETTER(MonitorCount)(monitorcount));
         }
@@ -2868,7 +2867,7 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 uint32_t    u32LineSpeed;
 
-                u32LineSpeed = atoi(nicspeed[n]);
+                u32LineSpeed = RTStrToUInt32(nicspeed[n]);
 
                 if (u32LineSpeed < 1000 || u32LineSpeed > 4000000)
                 {
@@ -3454,8 +3453,8 @@ static int handleControlVM(int argc, char *argv[],
             int i;
             for (i = 1 + 1; i < argc && cScancodes < (int)RT_ELEMENTS(alScancodes); i++, cScancodes++)
             {
-                if (   isxdigit (argv[i][0])
-                    && isxdigit (argv[i][1])
+                if (   RT_C_IS_XDIGIT (argv[i][0])
+                    && RT_C_IS_XDIGIT (argv[i][1])
                     && argv[i][2] == 0)
                 {
                     uint8_t u8Scancode;
@@ -3590,12 +3589,12 @@ static int handleControlVM(int argc, char *argv[],
                 rc = E_FAIL;
                 break;
             }
-            uint32_t xres = atoi(argv[2]);
-            uint32_t yres = atoi(argv[3]);
-            uint32_t bpp  = atoi(argv[4]);
+            uint32_t xres = RTStrToUInt32(argv[2]);
+            uint32_t yres = RTStrToUInt32(argv[3]);
+            uint32_t bpp  = RTStrToUInt32(argv[4]);
             uint32_t displayIdx = 0;
             if (argc == 6)
-                displayIdx = atoi(argv[5]);
+                displayIdx = RTStrToUInt32(argv[5]);
 
             ComPtr<IDisplay> display;
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
@@ -4679,8 +4678,7 @@ static int handleUSBFilter (int argc, char *argv[],
 
     /* which index? */
     char *endptr = NULL;
-    cmd.mIndex = strtoul (argv[1], &endptr, 10);
-    if (!endptr || *endptr)
+    if (VINF_SUCCESS !=  RTStrToUInt32Full (argv[1], 10, &cmd.mIndex))
         return errorSyntax(USAGE_USBFILTER, "Invalid index '%s'", argv[1]);
 
     switch (cmd.mAction)
@@ -5502,8 +5500,8 @@ static int handleMetricsSetup(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
-            period = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !period)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
+                || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-samples") == 0)
@@ -5511,7 +5509,7 @@ static int handleMetricsSetup(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
-            samples = strtoul (argv[++i], &endptr, 10);
+            if (VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples))
             if (!endptr || *endptr)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
@@ -5669,8 +5667,8 @@ static int handleMetricsCollect(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
-            period = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !period)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
+                || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-samples") == 0)
@@ -5678,8 +5676,8 @@ static int handleMetricsCollect(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             char *endptr = NULL;
-            samples = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !samples)
+            if (    VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples)
+                 || !samples)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-list") == 0)
