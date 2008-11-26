@@ -240,17 +240,17 @@ typedef struct NATState
 #define udp_last_so pData->udp_last_so
 
 #ifdef VBOX_WITH_BSD_REASS
+
 #define maxfragsperpacket pData->maxfragsperpacket
 #define maxnipq pData->maxnipq
 #define nipq pData->nipq
-#endif /* VBOX_WITH_BSD_REASS */
 
-#ifdef VBOX_WITH_BSD_REASS
 #define tcp_reass_qsize pData->tcp_reass_qsize
 #define tcp_reass_maxqlen pData->tcp_reass_maxqlen
 #define tcp_reass_maxseg pData->tcp_reass_maxseg
 #define tcp_reass_overflows pData->tcp_reass_overflows
-#endif /* VBOX_WITH_BSD_REASS */
+
+#else /* ! VBOX_WITH_BSD_REASS */
 
 #if SIZEOF_CHAR_P != 4
     extern void     VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint);
@@ -273,6 +273,8 @@ typedef struct NATState
         Assert(pv || !i);
         return pv;
     }
+#endif
+
 #endif
 
 
