@@ -7236,7 +7236,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns values for a group of properties in one call.
 
-        The names of the properties to get are specified using the @a name
+        The names of the properties to get are specified using the @a names
         argument which is a list of comma-separated property names or
         <tt>null</tt> if all properties are to be returned. Note that currently
         the value of this argument is ignored and the method always returns all
@@ -7245,13 +7245,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
 
-        The method returns two arrays, the array of property names correspinding
-        to the @a names argument and the current values of these properties. Both
-        arrays
+        The method returns two arrays, the array of property names corresponding
+        to the @a names argument and the current values of these properties.
+        <!-- FIXME: Both arrays [sentence was cut off here. Complete. -->
 
         Note that for properties that don't have values assigned to them,
         <tt>null</tt> is returned at the appropriate index in the @a returnValues
         array.
+
+        <result name="E_POINTER">@a returnNames or @a returnValues points to
+          invalid memory.
+        </result>
+        <result name="E_ACCESSDENIED">Access to object is denied.</result>
       </desc>
       <param name="names" type="wstring" dir="in">
         <desc>
