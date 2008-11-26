@@ -351,11 +351,11 @@ void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
 int ip_output _P((PNATState, struct socket *, struct mbuf *));
 
 /* tcp_input.c */
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
 int tcp_reass _P((PNATState, register struct tcpcb *, register struct tcpiphdr *, struct mbuf *));
-#else /* !VBOX_WITH_BSD_TCP_REASS */
+#else /* !VBOX_WITH_BSD_REASS */
 int tcp_reass _P((PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *));
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 void tcp_input _P((PNATState, register struct mbuf *, int, struct socket *));
 void tcp_dooptions _P((PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *));
 void tcp_xmit_timer _P((PNATState, register struct tcpcb *, int));

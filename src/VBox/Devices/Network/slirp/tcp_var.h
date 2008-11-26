@@ -37,9 +37,9 @@
 #ifndef _TCP_VAR_H_
 #define _TCP_VAR_H_
 
-#ifdef VBOX_WITH_BSD_TCP_REASS
+#ifdef VBOX_WITH_BSD_REASS
 #include "queue.h"
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 
 #include "tcpip.h"
 #include "tcp_timer.h"
@@ -54,19 +54,19 @@
 # include <iprt/types.h>
 # include <iprt/assert.h>
 
-#if defined(VBOX_WITH_BSD_TCP_REASS) && defined(VBOX_WITH_BSD_REASS)
+#if defined(VBOX_WITH_BSD_REASS)
 # define u32ptr_done(pData, u32, ptr)  do {} while (0)
 # define ptr_to_u32(pData, ptr)        (ptr)
 # define u32_to_ptr(pData, u32, type)  ((type)(u32))
-#else /* VBOX_WITH_BSD_REASS && VBOX_WITH_BSD_TCP_REASS */
+#else /* !VBOX_WITH_BSD_REASS */
 # define u32ptr_done(pData, u32, ptr) VBoxU32PtrDone((pData), (ptr), (u32))
 # define ptr_to_u32(pData, ptr)       VBoxU32PtrHash((pData), (ptr))
 # define u32_to_ptr(pData, u32, type) ((type)VBoxU32PtrLookup((pData), (u32)))
-#endif /* !VBOX_WITH_BSD_REASS || !VBOX_WITH_BSD_TCP_REASS*/
+#endif /* !VBOX_WITH_BSD_REASS */
 
 #endif
 
-#ifdef VBOX_WITH_BSD_TCP_REASS
+#ifdef VBOX_WITH_BSD_REASS
 /* TCP segment queue entry */
 struct tseg_qent {
         LIST_ENTRY(tseg_qent) tqe_q;
@@ -81,14 +81,14 @@ LIST_HEAD(tsegqe_head, tseg_qent);
  * Tcp control block, one per tcp; fields:
  */
 struct tcpcb {
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
         tcpiphdrp_32 seg_next;  /* sequencing queue */
         tcpiphdrp_32 seg_prev;
-#else  /* VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
         LIST_ENTRY(tcpcb) t_list;
         struct  tsegqe_head t_segq;     /* segment reassembly queue */
         int     t_segqlen;              /* segment reassembly queue length */
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
         short   t_state;                /* state of this connection */
         short   t_timer[TCPT_NTIMERS];  /* tcp timers */
         short   t_rxtshift;             /* log(2) of rexmt exp. backoff */
@@ -175,9 +175,9 @@ struct tcpcb {
 
 };
 
-#ifdef VBOX_WITH_BSD_TCP_REASS
+#ifdef VBOX_WITH_BSD_REASS
 LIST_HEAD(tcpcbhead, tcpcb);
-#endif /*VBOX_WITH_BSD_TCP_REASS*/
+#endif /* VBOX_WITH_BSD_REASS */
 
 #define sototcpcb(so)   ((so)->so_tcpcb)
 
@@ -291,9 +291,9 @@ struct tcpstat_t {
         u_long  tcps_preddat;           /* times hdr predict ok for data pkts */
         u_long  tcps_socachemiss;       /* tcp_last_so misses */
         u_long  tcps_didnuttin;         /* Times tcp_output didn't do anything XXX */
-#ifdef VBOX_WITH_BSD_TCP_REASS
+#ifdef VBOX_WITH_BSD_REASS
         u_long tcps_rcvmemdrop;
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 };
 
 
