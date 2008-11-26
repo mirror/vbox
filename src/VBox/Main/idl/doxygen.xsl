@@ -246,7 +246,7 @@
 -->
 <xsl:template match="attribute/desc">
   <xsl:apply-templates select="." mode="begin"/>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
+  <xsl:apply-templates select="text() | *[not(self::note or self::see or self::result)]"/>
   <xsl:apply-templates select="." mode="results"/>
   <xsl:apply-templates select="note"/>
   <xsl:if test="../@mod='ptr'">
@@ -266,7 +266,7 @@ owns the object will most likely fail or crash your application.
 -->
 <xsl:template match="method/desc">
   <xsl:apply-templates select="." mode="begin"/>
-  <xsl:apply-templates select="text() | *[not(self::note or self::see)]"/>
+  <xsl:apply-templates select="text() | *[not(self::note or self::see or self::result)]"/>
   <xsl:for-each select="../param">
     <xsl:apply-templates select="desc"/>
   </xsl:for-each>
