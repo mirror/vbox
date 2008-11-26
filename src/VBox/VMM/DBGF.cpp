@@ -77,6 +77,7 @@
 #include <VBox/selm.h>
 #include <VBox/rem.h>
 #include <VBox/em.h>
+#include <VBox/hwaccm.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
@@ -88,6 +89,7 @@
 #include <iprt/time.h>
 #include <iprt/assert.h>
 #include <iprt/stream.h>
+#include <iprt/env.h>
 
 
 /*******************************************************************************
@@ -240,7 +242,12 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
 # if !defined(DEBUG) || defined(DEBUG_sandervl) || defined(DEBUG_frank)
     int cWait = 10;
 # else
-    int cWait = 150;
+    int cWait = HWACCMIsEnabled(pVM)
+             && (   enmEvent == DBGFEVENT_ASSERTION_HYPER
+                 || enmEvent == DBGFEVENT_FATAL_ERROR)
+             && !RTEnvExist("VBOX_DBGF_WAIT_FOR_ATTACH")
+              ? 10
+              : 150;
 # endif
     RTStrmPrintf(g_pStdErr, "DBGF: No debugger attached, waiting %d second%s for one to attach (event=%d)\n",
                  cWait / 10, cWait != 10 ? "s" : "", enmEvent);
