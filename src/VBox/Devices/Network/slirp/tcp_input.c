@@ -52,7 +52,7 @@
 #define TSTMP_LT(a,b)   ((int)((a)-(b)) < 0)
 #define TSTMP_GEQ(a,b)  ((int)((a)-(b)) >= 0)
 
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
 /*
  * Insert segment ti into reassembly queue of tcp with
  * control block tp.  Return TH_FIN if reassembly now includes
@@ -220,7 +220,7 @@ present:
         return (flags);
 }
 
-#else /* VBOX_WITH_BSD_TCP_REASS */
+#else /* VBOX_WITH_BSD_REASS */
 
 #ifndef TCP_ACK_HACK
 #define DELAY_ACK(tp, ti)                           \
@@ -399,7 +399,7 @@ present:
         } while (q && q->tqe_th->th_seq == tp->rcv_nxt);
         return (flags);
 }
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
 
 /*
  * TCP input routine, follows pages 65-76 of the
@@ -722,11 +722,11 @@ findso:
                                 return;
                         }
                 } else if (ti->ti_ack == tp->snd_una &&
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
                     u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
-#else  /* VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
                     LIST_FIRST(&tp->t_segq) &&
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
                     ti->ti_len <= sbspace(&so->so_rcv)) {
                         /*
                          * this is a pure, in-sequence data packet
@@ -926,12 +926,12 @@ findso:
  *                              tp->rcv_scale = tp->request_r_scale;
  *                      }
  */
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
                         (void) tcp_reass(pData, tp, (struct tcpiphdr *)0,
                                 (struct mbuf *)0);
-#else  /* VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
                         (void) tcp_reass(pData, tp, (struct tcphdr *)0, NULL, (struct mbuf *)0);
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
                         /*
                          * if we didn't have to retransmit the SYN,
                          * use its rtt as our initial srtt & rtt var.
@@ -1186,11 +1186,11 @@ trimthenstep6:
  *                      tp->rcv_scale = tp->request_r_scale;
  *              }
  */
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
                 (void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (struct mbuf *)0);
-#else  /* VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
                 (void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
-#endif /*VBOX_WITH_BSD_TCP_REASS*/
+#endif /*VBOX_WITH_BSD_REASS*/
                 tp->snd_wl1 = ti->ti_seq - 1;
                 /* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
                 goto synrx_to_est;
@@ -1504,9 +1504,9 @@ dodata:
          */
         if ((ti->ti_len || (tiflags&TH_FIN)) &&
             TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-#ifndef VBOX_WITH_BSD_TCP_REASS
+#ifndef VBOX_WITH_BSD_REASS
                 TCP_REASS(pData, tp, ti, m, so, tiflags);
-#else  /* VBOX_WITH_BSD_TCP_REASS */
+#else  /* VBOX_WITH_BSD_REASS */
                 if (ti->ti_seq == tp->rcv_nxt
                 && LIST_EMPTY(&tp->t_segq)
                 && tp->t_state == TCPS_ESTABLISHED) {
@@ -1524,7 +1524,7 @@ dodata:
                     tiflags = tcp_reass(pData, tp, &ti->ti_t, &tlen, m);
                     tiflags |= TF_ACKNOW;
                 }
-#endif /* VBOX_WITH_BSD_TCP_REASS */
+#endif /* VBOX_WITH_BSD_REASS */
                 /*
                  * Note the amount of data that peer has sent into
                  * our window, in order to estimate the sender's
