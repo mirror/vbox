@@ -1466,11 +1466,12 @@ $(IPRT_OUT_DIR)/errmsgcomdata.h: \
 	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
 
 $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
-		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgvboxcom.xsl \
+		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
 		$(VBOX_PATH_RUNTIME_SRC)/../Main/idl/VirtualBox.xidl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
 	$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
+
 
 #
 # Aliases for .cpp.h files so we can more easily do syntax checking from the editor.
