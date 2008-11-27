@@ -1875,7 +1875,7 @@ PGM_BTH_DECL(int, SyncPage)(PVM pVM, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned 
     Assert(pPDDst);
     PdeDst = pPDDst->a[iPDDst];
 # endif
-    Assert(PdeDst.n.u1Present);
+    AssertMsg(PdeDst.n.u1Present, ("#llx\n", (uint64_t)PdeDst.u));
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPageByHCPhys(pVM, PdeDst.u & SHW_PDE_PG_MASK);
     PSHWPT pPTDst = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
 
@@ -3165,7 +3165,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 #  if PGM_GST_TYPE == PGM_TYPE_32BIT
     PGSTPD      pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
     Assert(pPDSrc);
-#   ifndef IN_RC
+#   if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 #   endif
 #  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
@@ -3226,7 +3226,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
         {
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-            if (!(iPD & (X86_PG_PAE_ENTRIES - 1))) /* Start of new PD. */
+            if ((iPD & 255) == 0) /* Start of new PD. */
                 pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)iPD << GST_PD_SHIFT);
 #  endif
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
