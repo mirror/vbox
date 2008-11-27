@@ -74,7 +74,7 @@
  * API only during the given API call unless explicitly stated otherwise. If
  * necessary, the API will make a copy of the supplied string.
  *
- * Error reprting is perfomed using C++ exceptions. All exceptions thrown by
+ * Error reporting is perfomed using C++ exceptions. All exceptions thrown by
  * this API are derived from settings::Error. This doesn't cover exceptions
  * that may be thrown by third-party library calls made by this API.
  *
@@ -183,7 +183,7 @@
     }
     catch (const XmlTreeBackend::Error &err)
     {
-        // this is an XmlTreeBackend specific exception exception that may
+        // this is an XmlTreeBackend specific exception that may
         // happen in case of XML parse or validation errors
         printf ("Could not load the settings file '%s'.\n%s"),
                 file.uri(), err.what() ? err.what() : "Unknown error");
@@ -196,6 +196,7 @@
         // above)
         AssertMsgFailed ("Unexpected exception '%s' (%s)\n",
                          typeid (err).name(), err.what());
+    }
     catch (...)
     {
         // this is even more unexpected, and no any useful info here
@@ -209,7 +210,7 @@
  * Key::stringValue() method but often it's simpler and better to use the
  * templated Key::value<>() method that can convert the string to a value of
  * the given type for you (and throw exceptions when the converison is not
- * possible). Similarly, the Key::setStringValue() methid is used to set a raw
+ * possible). Similarly, the Key::setStringValue() method is used to set a raw
  * string value and there is a templated Key::setValue<>() method to set a
  * typed value which will implicitly convert it to a string.
  *
@@ -1316,7 +1317,7 @@ class XmlKeyBackend;
  * fully reentrant. To "fix" this, the XmlTreeBackend backend serializes access
  * to such non-reentrant parts using a global mutex so that only one thread can
  * use non-reentrant code at a time. Currently, this relates to the #rawRead()
- * method (and to #read() as a consequence). This menas that only one thread can
+ * method (and to #read() as a consequence). This means that only one thread can
  * parse an XML stream at a time; other threads trying to parse same or
  * different streams using different XmlTreeBackend and Input instances
  * will have to wait.
