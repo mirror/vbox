@@ -1886,8 +1886,8 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-# ifdef VBOX_WITH_LIBHAL  /* Linux, load libhal statically */
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_LIBHAL)
+/* Linux, load libhal statically */
 
 /** Helper function for setting up a libhal context */
 bool hostInitLibHal(DBusConnection **pDBusConnection,
@@ -2064,7 +2064,8 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
     return halSuccess;
 }
 
-# elif defined VBOX_USE_LIBHAL  /* Solaris hosts, loading libhal at runtime */
+# elif defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
+/* Solaris hosts, loading libhal at runtime */
 
 /**
  * Helper function to query the hal subsystem for information about DVD drives attached to the
@@ -2377,7 +2378,9 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
     }
     return halSuccess;
 }
-# endif  /* VBOX_USE_HAL defined */
+#endif  /* VBOX_WITH_HAL and VBOX_USE_HAL */
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 
 /**
  * Helper function to parse the given mount file and add found entries
