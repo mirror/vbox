@@ -37,17 +37,13 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 #
 VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 
-ifndef VBOX_ONLY_SDK
- VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(1))
-else
+ifdef VBOX_ONLY_SDK
  # used by some rules
  PATH_VBoxCOM    = $(PATH_TARGET)/VBoxCOM
  BLDDIRS        += $(PATH_VBoxCOM) $(PATH_BIN)/components
  # I'm Evil! Dr. Evil.
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
- # on Wine Z: is always FS root
- VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
 endif #!VBOX_ONLY_SDK
 
 
