@@ -299,6 +299,8 @@ VBOX_WITH_E1000 = 1
 VBOX_WITH_ALSA = 1
 # Enable Pulse support for Linux
 VBOX_WITH_PULSE = 1
+# Enable libhal support for Linux and Solaris
+VBOX_WITH_LIBHAL = 1
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
 # Disable VMI BIOS (not yet ready)
@@ -359,6 +361,10 @@ VBOX_WITH_AHCI = 1
 VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
+# Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_LIBHAL.
+ifdef VBOX_WITH_LIBHAL
+# VBOX_USB_WITH_SYSFS=1
+endif
 # Use the new VBI module on Solaris.
 VBOX_WITH_SOLARIS_VBI = 1
 # Enable 64 bits guest pointers.
@@ -1331,6 +1337,15 @@ endif
 
 # 32bit X11 LIBPATH for building 32bit guest additions
 VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
+
+# libhal settings for Linux
+ifeq ($(KBUILD_TARGET),linux)
+ ifdef $(VBOX_WITH_LIBHAL)
+  VBOX_LIBHAL_CFLAGS ?= $(shell pkg-config hal --cflags)
+  VBOX_LIBHAL_CXXFLAGS ?= VBOX_LIBHAL_CFLAGS
+  VBOX_LIBHAL_LDFLAGS ?= $(shell pkg-config hal --libs)
+ endif
+endif
 
 #
 # Macros dealing with the darwin version we're targeting.
