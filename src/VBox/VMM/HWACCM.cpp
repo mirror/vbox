@@ -782,7 +782,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     if (    pVM->fHWACCMEnabled
         &&  CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE))
     {
-        rc  = VMMR3InitSwitcher3264(pVM);
+        rc  = VMMR3InitSwitcher(pVM, VMMSWITCHER_32_TO_AMD64);
         if (VBOX_FAILURE(rc))
         {
             LogRel(("WARNING: Unable to map the VM structure into the intermediate page table; disabling long mode support\n"));

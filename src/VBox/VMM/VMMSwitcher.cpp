@@ -952,14 +952,17 @@ VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 }
 
 /**
- * Setup the 32->64 world switcher
+ * Setup the specified world switcher
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
+ * @param   enmSwitcher     Switcher
  */
-VMMR3DECL(int) VMMR3InitSwitcher3264(PVM pVM)
+VMMR3DECL(int) VMMR3InitSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 {
     int rc;
+
+    AssertReturn(enmSwitcher == VMMSWITCHER_32_TO_AMD64, VERR_INVALID_PARAMETER);
 
     uint32_t cPages = RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT;
 
