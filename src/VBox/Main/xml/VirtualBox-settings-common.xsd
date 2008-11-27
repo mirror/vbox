@@ -260,6 +260,12 @@
 <xsd:complexType name="TDiffHardDisk2">
   <xsd:sequence>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
+    <xsd:element name="Property" minOccurs="0" maxOccurs="unbounded">
+      <xsd:complexType>
+        <xsd:attribute name="name" type="xsd:token" use="required"/>
+        <xsd:attribute name="value" type="xsd:string" use="required"/>
+      </xsd:complexType>
+    </xsd:element>
     <xsd:element name="HardDisk" type="TDiffHardDisk2" minOccurs="0" maxOccurs="unbounded"/>
   </xsd:sequence>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
