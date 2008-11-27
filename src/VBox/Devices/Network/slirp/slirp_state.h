@@ -128,9 +128,6 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
-#ifdef VBOX_WITH_SLIRP_ICMP
-    int icmp_socket;
-#endif
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
