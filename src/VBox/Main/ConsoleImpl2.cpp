@@ -1335,7 +1335,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                             OPEN_EXISTING,
                                                             FILE_ATTRIBUTE_NORMAL,
                                                             NULL);
-                                Assert(hDevice != INVALID_HANDLE_VALUE);
                                 if (hDevice != INVALID_HANDLE_VALUE)
                                 {
                                     /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
@@ -1363,9 +1362,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                     }
                                     else
                                     {
-                                        AssertBreakpoint();
                                         int winEr = GetLastError();
                                         LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
+                                        AssertBreakpoint();
                                     }
 
                                     CloseHandle(hDevice);
@@ -1374,6 +1373,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                 {
                                     int winEr = GetLastError();
                                     LogRel(("Console::configConstructor: CreateFile failed, err (0x%x), ignoring\n", winEr));
+                                    AssertBreakpoint();
                                 }
                                 CoTaskMemFree(pName);
                             }
