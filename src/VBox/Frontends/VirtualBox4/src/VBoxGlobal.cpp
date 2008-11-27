@@ -1439,9 +1439,10 @@ bool VBoxGlobal::trayIconInstall()
     if (false == bActive)
         bActive = vboxGlobal().settings().trayIconEnabled();
 
-    if (   bActive
-        && (false == QSystemTrayIcon::isSystemTrayAvailable())
-        && (false == mVBox.GetExtraData (VBoxDefs::GUI_TrayIconWinID).isEmpty()))
+    QString strTrayWinID = virtualBox().GetExtraData (VBoxDefs::GUI_TrayIconWinID);
+    if (   (bActive == false)
+        || (QSystemTrayIcon::isSystemTrayAvailable() == false)
+        || (strTrayWinID.isEmpty() == false))
     {
         return false;
     }
@@ -1474,7 +1475,7 @@ bool VBoxGlobal::trayIconInstall()
         rc = RTProcCreate (path, args, env, 0, &pid);
         if (RT_FAILURE (rc))
         {
-            LogRel(("Failed to start systray window! rc=%Rrc\n", rc));
+            LogRel(("Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
             return false;
         }
     }
