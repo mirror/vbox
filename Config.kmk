@@ -301,7 +301,7 @@ VBOX_WITH_ALSA = 1
 VBOX_WITH_PULSE = 1
 # Enable statically linked libhal support for Linux
 ifeq ($(KBUILD_TARGET),linux)
-# VBOX_WITH_LIBHAL = 1
+ VBOX_WITH_LIBHAL = 1
 endif
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
@@ -1342,10 +1342,10 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 
 # libhal settings for Linux
 ifeq ($(KBUILD_TARGET),linux)
- ifdef $(VBOX_WITH_LIBHAL)
-  VBOX_LIBHAL_CFLAGS ?= $(shell pkg-config hal --cflags)
-  VBOX_LIBHAL_CXXFLAGS ?= VBOX_LIBHAL_CFLAGS
-  VBOX_LIBHAL_LDFLAGS ?= $(shell pkg-config hal --libs)
+ ifdef VBOX_WITH_LIBHAL
+  VBOX_LIBHAL_CFLAGS := $(shell pkg-config hal --cflags)
+  VBOX_LIBHAL_CXXFLAGS := $(VBOX_LIBHAL_CFLAGS)
+  VBOX_LIBHAL_LDFLAGS := $(shell pkg-config hal --libs)
  endif
 endif
 

@@ -22,7 +22,6 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-
 #
 # Include sub-makefile(s).
 #
