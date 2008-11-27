@@ -80,7 +80,7 @@ EOF
         # don't abort the installation!
       else
         echo "** Compiling vboxnetflt" >> /var/log/vbox-install.log
-        if ! /usr/share/virtualbox/src/vboxdrv/build_in_tmp \
+        if ! /usr/share/virtualbox/src/vboxnetflt/build_in_tmp \
             --use-module-symvers /tmp/vboxdrv-Module.symvers \
             --no-print-directory KBUILD_VERBOSE= \
             install >> /var/log/vbox-install.log 2>&1; then
