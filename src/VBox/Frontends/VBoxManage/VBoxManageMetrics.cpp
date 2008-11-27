@@ -25,36 +25,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/com/com.h>
-#include <VBox/com/string.h>
-#include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
-#include <VBox/com/EventQueue.h>
-
 #include <VBox/com/VirtualBox.h>
 
-#include <stdlib.h>
-#include <stdarg.h>
-
-#include <vector>
-#include <list>
-
-#include <iprt/runtime.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/asm.h>
-#include <iprt/uuid.h>
+#include <iprt/time.h>
 #include <iprt/thread.h>
-#include <iprt/path.h>
-#include <iprt/param.h>
-#include <iprt/dir.h>
-#include <iprt/file.h>
-#include <iprt/env.h>
-#include <iprt/cidr.h>
-#include <VBox/err.h>
-#include <VBox/version.h>
-#include <VBox/VBoxHDD.h>
+#include <VBox/log.h>
 
 #include "VBoxManage.h"
 using namespace com;
