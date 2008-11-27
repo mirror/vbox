@@ -671,7 +671,7 @@ static int emR3Debug(PVM pVM, int rc)
              * Guru meditation.
              */
             case VERR_VMM_RING0_ASSERTION: /** @todo Make a guru meditation event! */
-                rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_VMM_RING0_ASSERTION", 0, NULL, NULL);
+                rc = DBGFR3EventSrc(pVM, DBGFEVENT_FATAL_ERROR, "VERR_VMM_RING0_ASSERTION", 0, NULL, NULL);
                 break;
             case VERR_REM_TOO_MANY_TRAPS: /** @todo Make a guru meditation event! */
                 rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, "VERR_REM_TOO_MANY_TRAPS", 0, NULL, NULL);
