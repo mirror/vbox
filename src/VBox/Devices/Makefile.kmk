@@ -860,11 +860,11 @@ ifdef VBOX_WITH_USB
 	USB/USBProxyDevice.cpp \
 	USB/darwin/USBProxyDevice-darwin.cpp
 
- Drivers_DEFS.linux   += VUSB_HAVE_USBPROXY_DEVICE
- ifdef VBOX_WITHOUT_LINUX_COMPILER_H
-  Drivers_DEFS.linux  += VBOX_WITHOUT_LINUX_COMPILER_H
- endif
- Drivers_SOURCES.linux+= \
+ Drivers_DEFS.linux    += \
+	VUSB_HAVE_USBPROXY_DEVICE \
+	$(if $(VBOX_WITHOUT_LINUX_COMPILER_H),VBOX_WITHOUT_LINUX_COMPILER_H,) \
+	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
+ Drivers_SOURCES.linux += \
 	USB/USBProxyDevice.cpp \
 	USB/linux/USBProxyDevice-linux.cpp
 

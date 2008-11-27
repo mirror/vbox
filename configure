@@ -23,6 +23,27 @@ PATH="$PATH:/opt/gnome/bin"
 PATH="/usr/xpg4/bin:/usr/ucb:$PATH:/usr/local/bin:/usr/sfw/bin:/usr/ccs/bin"
 ORGPATH=$PATH
 
+# Wrapper for ancient /usr/bin/which on darwin that always returns 0
+which_wrapper()
+{
+  if [ -z "$have_ancient_which" ]; then
+    if which /bin/___cErTaINly_a_nOn_eXisTing_fIle___ 2> /dev/null > /dev/null; then
+      have_ancient_which="yes"
+    else
+      have_ancient_which="no"
+    fi
+  fi
+  if [ "$have_ancient_which" = "yes" ]; then
+    retval=`which $* 2>/dev/null`
+    echo "$retval"
+    test -n "$retval" -a -x "$retval"
+    unset retval
+  else
+    which $* 2> /dev/null
+  fi
+}
+
+
 #
 # Defaults
 #
@@ -41,6 +62,7 @@ WITH_SDL_TTF=1
 WITH_X11=1
 WITH_ALSA=1
 WITH_PULSE=1
+WITH_LIBHAL=1
 WITH_KMODS=1
 WITH_HARDENING=1
 CC="gcc"
@@ -68,6 +90,12 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
+PKGCONFIG="`which_wrapper pkg-config`"
+if [ -n $PKGCONFIG ]; then
+  FLAGSHAL="`$PKGCONFIG hal --cflags 2>/dev/null`"
+  LIBDIRHAL="`$PKGCONFIG hal --libs-only-L 2>/dev/null`"
+  LIBHAL="`$PKGCONFIG hal --libs-only-l 2>/dev/null`"
+fi
 PYTHONDIR="/usr /usr/local"
 QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
 QT3DIR="$QT3DIR /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
@@ -163,27 +191,6 @@ prefix_I()
 {
   echo "$1"|$KBUILD_SED 's|^\/|-I/|g; s| \/| -I/|g'
 }
-
-# Wrapper for ancient /usr/bin/which on darwin that always returns 0
-which_wrapper()
-{
-  if [ -z "$have_ancient_which" ]; then
-    if which /bin/___cErTaINly_a_nOn_eXisTing_fIle___ 2> /dev/null > /dev/null; then
-      have_ancient_which="yes"
-    else
-      have_ancient_which="no"
-    fi
-  fi
-  if [ "$have_ancient_which" = "yes" ]; then
-    retval=`which $* 2>/dev/null`
-    echo "$retval"
-    test -n "$retval" -a -x "$retval"
-    unset retval
-  else
-    which $* 2> /dev/null
-  fi
-}
-
 
 check_avail()
 {
@@ -1157,6 +1164,25 @@ EOF
 
 
 #
+# Check for libhal
+#
+check_libhal()
+{
+  test_header "libhal"
+  cat > .tmp_src.cc << EOF
+#include <libhal.h>
+extern "C" int main(void)
+{
+  return 0;
+}
+EOF
+  if [ -n $PKGCONFIG ] && test_compile "$FLAGSHAL $LIBDIRHAL $LIBHAL" libhal libhal; then
+    log_success "found"
+  fi
+}
+
+
+#
 # Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
 #
 check_xcursor()
@@ -1759,6 +1785,7 @@ Configuration:
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-alsa           disable the ALSA sound backend
   --disable-pulse          disable the PulseAudio backend
+  --disable-libhal         don't use hal for hardware detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
@@ -1857,6 +1884,9 @@ for option in $*; do
       ;;
     --disable-pulse)
       WITH_PULSE=0
+      ;;
+    --disable-libhal)
+      WITH_LIBHAL=0
       ;;
     --disable-kmods)
       WITH_KMODS=0
@@ -2050,6 +2080,11 @@ if [ "$OS" = "linux" ]; then
     check_pulse
   else
     cnf_append "VBOX_WITH_PULSE" ""
+  fi
+  if [ $WITH_LIBHAL -eq 1 ]; then
+    check_libhal
+  else
+    cnf_append "VBOX_WITH_LIBHAL" ""
   fi
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
