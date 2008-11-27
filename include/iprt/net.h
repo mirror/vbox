@@ -366,6 +366,11 @@ typedef RTNETDHCPOPT const *PCRTNETDHCPOPT;
 #define RTNET_DHCP_MT_INFORM        8
 /** @} */
 
+/** @name DHCP Flags
+ * @{ */
+#define RTNET_DHCP_FLAG_BROADCAST   0x8000
+/** @} */
+
 RTDECL(bool) RTNetIPv4IsDHCPValid(PCRTNETUDP pUdpHdr, PCRTNETBOOTP pDhcp, size_t cbDhcp, uint8_t *pMsgType);
 
 
