@@ -1564,24 +1564,7 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
     {
         /* Check if there are some machines alive - else quit, since
          * we're not needed as a systray menu anymore. */
-        int machinesAlive = 0;
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachineVector vec = vbox.GetMachines2();
-        for (CMachineVector::ConstIterator m = vec.begin();
-            m != vec.end(); ++ m)
-        {
-            switch ((*m).GetState())
-            {
-                case MachineState_Running:
-                case MachineState_Paused:
-                {
-                    machinesAlive++;
-                    break;
-                }
-            }
-        }
-
-        if (machinesAlive == 0)
+        if (vboxGlobal().machinesAlive() == 0)
         {
             fileExit();
             return;
