@@ -5595,6 +5595,8 @@ void VBoxGlobal::cleanup()
     if (c < 0)
         c = 0;   /* Clean up the mess. */
     mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, (c > 0) ? QString ("%1").arg (c) : NULL);
+    if (c == 0)
+        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
 #endif
 
     /* ensure CGuestOSType objects are no longer used */
