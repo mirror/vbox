@@ -425,13 +425,11 @@ endif
 #
 # Generate the COM wrappers.
 #
-VirtualBox4_COM_WRAPPERS   = $(PATH_VirtualBox4)/include/COMWrappers.h
-
 VirtualBox4_BLDDIRS       += $(PATH_VirtualBox4)/include
-VirtualBox4_INTERMEDIATES += $(VirtualBox4_COM_WRAPPERS)
-VirtualBox4_CLEAN         += $(VirtualBox4_COM_WRAPPERS)
+VirtualBox4_INTERMEDIATES += $(PATH_VirtualBox4)/include/COMWrappers.h
+VirtualBox4_CLEAN         += $(PATH_VirtualBox4)/include/COMWrappers.h
 
-$$(VirtualBox4_COM_WRAPPERS): \
+$$(PATH_VirtualBox4)/include/COMWrappers.h: \
 		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
@@ -439,7 +437,7 @@ $$(VirtualBox4_COM_WRAPPERS): \
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
 
 # alias for generating the COM Wrappers file.
-testwrappers:: $$(VirtualBox4_COM_WRAPPERS)
+testwrappers:: $$(PATH_VirtualBox4)/include/COMWrappers.h
 
 
 #
