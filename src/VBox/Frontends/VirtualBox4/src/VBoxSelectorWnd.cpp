@@ -1204,6 +1204,12 @@ void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
     if (vboxGlobal().isTrayMenu())
     {
         hide();
+        if (vboxGlobal().machinesAlive() == 0)
+        {
+            emit closing();
+            QMainWindow::closeEvent (aEvent);
+        }
+        else aEvent->ignore();
     }
     else
     {
