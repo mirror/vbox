@@ -3422,7 +3422,7 @@ DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
     if (RT_FAILURE(rc))
     {
         X86PDE ZeroPde = {0};
@@ -3446,7 +3446,7 @@ DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
     AssertRCReturn(rc, 0);
     return &pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 #else
@@ -3465,7 +3465,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPD);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
     AssertRCReturn(rc, 0);
     return pGuestPD;
 #else
@@ -3485,7 +3485,7 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPDPT);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPDPT);
     AssertRCReturn(rc, 0);
     return pGuestPDPT;
 #else
@@ -3508,7 +3508,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPDPT);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPDPT);
     AssertRCReturn(rc, 0);
     return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
 #else
@@ -3696,7 +3696,7 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
     AssertRCReturn(rc, NULL);
     return pGuestPml4;
 #else
@@ -3717,7 +3717,7 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
     AssertRCReturn(rc, NULL);
     return &pGuestPml4->a[iPml4];
 #else
@@ -3738,7 +3738,7 @@ DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)pGuestPml4);
+    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
     if (RT_FAILURE(rc))
     {
         X86PML4E ZeroPml4e = {0};
