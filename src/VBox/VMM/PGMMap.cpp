@@ -582,7 +582,7 @@ static int pgmR3MapIntermediateCheckOne(PVM pVM, uintptr_t uAddress, unsigned cP
 
     /*
      * Check that the ranges are available.
-     * (This codes doesn't have to be fast.)
+     * (This code doesn't have to be fast.)
      */
     while (cPages > 0)
     {
