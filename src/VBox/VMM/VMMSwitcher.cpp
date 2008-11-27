@@ -960,7 +960,7 @@ VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
  */
 VMMR3DECL(int) VMMR3InitSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     AssertReturn(enmSwitcher == VMMSWITCHER_32_TO_AMD64, VERR_INVALID_PARAMETER);
 
