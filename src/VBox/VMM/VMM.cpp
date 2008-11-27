@@ -737,6 +737,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
                                   RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
             AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
             pR0LoggerR3->fCreated = true;
+            pR0LoggerR3->fFlushingDisabled = false;
         }
 
         rc = RTLogCopyGroupsAndFlags(&pR0LoggerR3->Logger, NULL /* default */, pVM->vmm.s.pRCLoggerR3->fFlags, RTLOGFLAGS_BUFFERED);
