@@ -244,7 +244,7 @@ static int handleMetricsSetup(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
-    ULONG period = 1, samples = 1;
+    uint32_t period = 1, samples = 1;
     bool listMatches = false;
     int i;
 
@@ -254,18 +254,16 @@ static int handleMetricsSetup(int argc, char *argv[],
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            char *endptr = NULL;
-            period = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !period)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
+                || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-samples") == 0)
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            char *endptr = NULL;
-            samples = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples)
+                || !samples)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-list") == 0)
@@ -412,7 +410,7 @@ static int handleMetricsCollect(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeArray<BSTR>          baseMetrics;
     com::SafeIfaceArray<IUnknown> objects;
-    ULONG period = 1, samples = 1;
+    uint32_t period = 1, samples = 1;
     bool isDetached = false, listMatches = false;
     int i;
     for (i = 1; i < argc; i++)
@@ -421,18 +419,16 @@ static int handleMetricsCollect(int argc, char *argv[],
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            char *endptr = NULL;
-            period = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !period)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &period)
+                || !period)
                 return errorArgument("Invalid value for 'period' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-samples") == 0)
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
-            char *endptr = NULL;
-            samples = strtoul (argv[++i], &endptr, 10);
-            if (!endptr || *endptr || !samples)
+            if (   VINF_SUCCESS != RTStrToUInt32Full(argv[++i], 10, &samples)
+                || !samples)
                 return errorArgument("Invalid value for 'samples' parameter: '%s'", argv[i]);
         }
         else if (strcmp(argv[i], "-list") == 0)
