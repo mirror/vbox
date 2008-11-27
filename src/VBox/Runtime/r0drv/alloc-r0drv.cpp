@@ -230,7 +230,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
                          ("pHdr=%p pv=%p cb=%zu\n"
                           "fence:    %.*Rhxs\n"
                           "expected: %.*Rhxs\n",
-                          pHdr, pv, pHdr->cb, pv,
+                          pHdr, pv, pHdr->cb,
                           RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdr + 1) + pHdr->cb,
                           RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
