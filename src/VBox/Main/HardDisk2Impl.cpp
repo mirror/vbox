@@ -625,6 +625,15 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
     rc = setFormat (format);
     CheckComRCReturnRC (rc);
 
+    /* properties (note: after setting the format as it populates the map) */
+    Key::List properties = aNode.keys ("Property");
+    for (Key::List::const_iterator it = properties.begin();
+         it != properties.end(); ++ it)
+    {
+        mm.properties [Bstr (it->stringValue ("name"))] =
+            Bstr (it->stringValue ("value"));
+    }
+
     /* required */
     Bstr location = aNode.stringValue ("location");
     rc = setLocation (location);
@@ -946,7 +955,17 @@ STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
 
-    AutoWriteLock alock (this);
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mVirtualBox, this);
+
+    switch (m.state)
+    {
+        case MediaState_Created:
+        case MediaState_Inaccessible:
+            break;
+        default:
+            return setStateError();
+    }
 
     Data::PropertyMap::iterator it = mm.properties.find (Bstr (aName));
     if (it == mm.properties.end())
@@ -955,7 +974,9 @@ STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
 
     it->second = aValue;
 
-    return S_OK;
+    HRESULT rc = mVirtualBox->saveSettings();
+
+    return rc;
 }
 
 STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
@@ -969,6 +990,9 @@ STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoReadLock alock (this);
+
+    /// @todo make use of aNames according to the documentation
+    NOREF (aNames);
 
     com::SafeArray <BSTR> names (mm.properties.size());
     com::SafeArray <BSTR> values (mm.properties.size());
@@ -1338,6 +1362,19 @@ HRESULT HardDisk2::saveSettings (settings::Key &aParentNode)
     {
         Key descNode = diskNode.createKey ("Description");
         descNode.setKeyValue <Bstr> (m.description);
+    }
+
+    /* optional properties */
+    for (Data::PropertyMap::const_iterator it = mm.properties.begin();
+         it != mm.properties.end(); ++ it)
+    {
+        /* only save properties that have non-default values */
+        if (!it->second.isNull())
+        {
+            Key propNode = diskNode.appendKey ("Property");
+            propNode.setValue <Bstr> ("name", it->first);
+            propNode.setValue <Bstr> ("value", it->second);
+        }
     }
 
     /* only for base hard disks */
@@ -2329,7 +2366,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
                    mm.format.isNull() && mm.formatObj.isNull()),
                   E_FAIL);
 
-    /* are we dealing with a hard disk opened from the existing path? */
+    /* are we dealing with a hard disk just opened from the existing path? */
     bool isNew = mm.format.isNull();
 
     if (isNew ||
@@ -2478,7 +2515,7 @@ HRESULT HardDisk2::setFormat (const BSTR aFormat)
          * map doesn't grow over the object life time since the set of
          * properties is meant to be constant. */
 
-        mm.properties.clear();
+        Assert (mm.properties.empty());
 
         for (HardDiskFormat::PropertyList::const_iterator it =
                 mm.formatObj->properties().begin();
