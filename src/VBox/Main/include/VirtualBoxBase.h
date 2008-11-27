@@ -451,7 +451,7 @@ public:
  */
 #define ReturnComNotImplemented() \
     do { \
-        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), __func__); \
+        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), __FUNCTION__); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
