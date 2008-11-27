@@ -1027,26 +1027,30 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
                 Assert(hr == S_OK || hr == S_FALSE);
                 while( hr == S_OK )
                 {
-                    hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
-                    Assert(hr == S_OK);
-                    if ( hr == S_OK )
+                    /* S_OK == enabled, S_FALSE == disabled */
+                    if(pBp->IsEnabled() == S_OK)
                     {
-                        hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
+                        hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
                         Assert(hr == S_OK);
-                        while(hr == S_OK)
+                        if ( hr == S_OK )
                         {
-                            hr = pBi->GetLowerComponent( &pMpNcc );
+                            hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
                             Assert(hr == S_OK);
-                            if(hr == S_OK)
+                            while(hr == S_OK)
                             {
-                                vboxNetWinAddComponent(&list, pMpNcc);
-                                VBoxNetCfgWinReleaseRef( pMpNcc );
-                            }
-                            VBoxNetCfgWinReleaseRef(pBi);
+                                hr = pBi->GetLowerComponent( &pMpNcc );
+                                Assert(hr == S_OK);
+                                if(hr == S_OK)
+                                {
+                                    vboxNetWinAddComponent(&list, pMpNcc);
+                                    VBoxNetCfgWinReleaseRef( pMpNcc );
+                                }
+                                VBoxNetCfgWinReleaseRef(pBi);
 
-                            hr = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
+                                hr = VBoxNetCfgWinGetNextBindingInterface(pEnumBi, &pBi);
+                            }
+                            VBoxNetCfgWinReleaseRef(pEnumBi);
                         }
-                        VBoxNetCfgWinReleaseRef(pEnumBi);
                     }
                     VBoxNetCfgWinReleaseRef(pBp);
 

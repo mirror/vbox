@@ -106,8 +106,12 @@ VBoxNetFlt-inf_SOURCES += \
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys: $$(TARGET_VBoxNetFlt) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
+$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll: $$(TARGET_VBoxNetFltNotify) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.sys \
+		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltNotify.dll \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt_m.inf \
 		$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat
@@ -126,7 +130,6 @@ WinNetConfig_SOURCES  = \
 	win/WinNetConfig.cpp
 
 PROGRAMS.win  += NetFltInstall NetFltUninstall
-
 #
 # NetFltInstall
 #
@@ -142,6 +145,53 @@ NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
 NetFltUninstall_SOURCES  = win/NetFltUninstall.cpp
 NetFltUninstall_LIBS   += $(PATH_LIB)/WinNetConfig.lib
 
+ ifeq ($(KBUILD_TARGET), win)
+#
+# VBoxNetFltNotify
+#
+DLLS.win += VBoxNetFltNotify
+PATH_VBoxNetFltNotifyCOM    = $(PATH_TARGET)/VBoxNetFltNotifyCOM
+
+VBOXNETFLT_NOTIFY_GENERATES = $(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_i.c \
+	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_p.c \
+	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.h \
+	$(PATH_VBoxNetFltNotifyCOM)/dlldata.c \
+	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.tlb
+
+VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
+	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
+	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
+	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
+	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
+
+VBoxNetFltNotify_TEMPLATE   = VBOXR3STATIC
+VBoxNetFltNotify_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
+VBoxNetFltNotify_INCS      += \
+	$(PATH_VBoxNetFltNotifyCOM)
+VBoxNetFltNotify_SOURCES    = \
+	win/notifyobj/VBoxNetFltNotify.cpp \
+	win/notifyobj/VBoxNetFltNotify.def \
+	win/notifyobj/VBoxNetFltNotify.rc
+VBoxNetFltNotify_DEPS      += $(VBOXNETFLT_NOTIFY_GENERATES)
+#VBoxNetFltNotify_INTERMEDIATES      += $(VBOXNETFLT_NOTIFY_GENERATES)
+VBoxNetFltNotify_DEFS      += _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
+VBoxNetFltNotify_LIBS      += \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
+VBoxNetFltNotify_CLEAN     += $(VBOXNETFLT_NOTIFY_GENERATES)
+#VBoxNetFltNotify_DIRS     += $(PATH_VBoxNetFltNotifyCOM)
+
+$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_i.c \
++ $(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_p.c \
++ $(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.h \
++ $(PATH_VBoxNetFltNotifyCOM)/dlldata.c \
++ $(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.tlb: $(PATH_SUB_CURRENT)/win/notifyobj/VBoxNetFltNotifyn.idl
+	$(MKDIR) -p $(PATH_VBoxNetFltNotifyCOM)
+	$(VBOXNETFLT_NOTIFY_IDL) /nologo \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxNetFltNotifyCOM)) \
+		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
+		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
+		$(call VBOX_FN_MAKE_WIN_PATH,$<)
+ endif #ifeq ($(KBUILD_TARGET), win) 
 else if1of ($(KBUILD_TARGET), linux solaris)
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.
