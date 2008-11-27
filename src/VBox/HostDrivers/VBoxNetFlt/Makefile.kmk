@@ -160,8 +160,8 @@ DLLS.win += VBoxNetFltNotify
 VBoxNetFltNotify_TEMPLATE   = VBOXR3STATIC
 VBoxNetFltNotify_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
 VBoxNetFltNotify_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
-VBoxNetFltNotify_INCS      += \
-	$(PATH_VBoxNetFltNotifyCOM)
+VBoxNetFltNotify_INCS       = \
+	$(PATH_VBoxNetFltNotify)
 VBoxNetFltNotify_SOURCES    = \
 	win/notifyobj/VBoxNetFltNotify.cpp \
 	win/notifyobj/VBoxNetFltNotify.def \
@@ -170,11 +170,11 @@ VBoxNetFltNotify_LIBS       = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls.lib
 #VBoxNetFltNotify_INTERMEDIATES =
 VBoxNetFltNotify_DEPS       = \
-	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_i.c \
-	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_p.c \
-	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.h \
-	$(PATH_VBoxNetFltNotifyCOM)/dlldata.c \
-	$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.tlb
+	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
+	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_p.c \
+	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.h \
+	$(PATH_VBoxNetFltNotify)/dlldata.c \
+	$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.tlb
 VBoxNetFltNotify_CLEAN      = $(VBoxNetFltNotify_DEPS)
 
 VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
@@ -183,15 +183,15 @@ VBOXNETFLT_NOTIFY_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(f
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
-$$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_i.c \
-+ $$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn_p.c \
-+ $$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.h \
-+ $$(PATH_VBoxNetFltNotifyCOM)/dlldata.c \
-+ $$(PATH_VBoxNetFltNotifyCOM)/VBoxNetFltNotifyn.tlb: \
+$$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
++ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_p.c \
++ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.h \
++ $$(PATH_VBoxNetFltNotify)/dlldata.c \
++ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn.tlb: \
 		$(PATH_SUB_CURRENT)/win/notifyobj/VBoxNetFltNotifyn.idl \
 		| $$(dir $$@)
 	$(VBOXNETFLT_NOTIFY_IDL) /nologo \
-		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxNetFltNotifyCOM)) \
+		/out $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_VBoxNetFltNotify)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
