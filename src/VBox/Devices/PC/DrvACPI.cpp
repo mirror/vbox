@@ -40,6 +40,12 @@
 # include <stdio.h>
 #endif
 
+#ifdef RT_OS_DARWIN
+# include <Carbon/Carbon.h>
+# include <IOKit/ps/IOPowerSources.h>
+# include <IOKit/ps/IOPSKeys.h>
+#endif
+
 #include "Builtins.h"
 
 
@@ -178,7 +184,47 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
         }
         fclose(statusFile);
     }
-#else /* !RT_OS_LINUX either - what could this be? */
+#elif defined (RT_OS_DARWIN) /* !RT_OS_LINUX */
+    *pPowerSource = PDM_ACPI_POWER_SOURCE_UNKNOWN;
+
+    CFTypeRef pBlob = IOPSCopyPowerSourcesInfo();
+    CFArrayRef pSources = IOPSCopyPowerSourcesList(pBlob);
+
+    CFDictionaryRef pSource = NULL;
+    const void *psValue;
+    bool result;
+
+    if (CFArrayGetCount(pSources) > 0)
+    {
+        for(int i = 0; i < CFArrayGetCount(pSources); ++i)
+        {
+            pSource = IOPSGetPowerSourceDescription(pBlob, CFArrayGetValueAtIndex(pSources, i));
+            /* If the source is empty skip over to the next one. */
+            if(!pSource)
+                continue;
+            /* Skip all power sources which are currently not present like a
+             * second battery. */
+            if (CFDictionaryGetValue(pSource, CFSTR(kIOPSIsPresentKey)) == kCFBooleanFalse)
+                continue;
+            /* Only internal power types are of interest. */
+            result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSTransportTypeKey), &psValue);
+            if (result &&
+                CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSInternalType), 0) == kCFCompareEqualTo)
+            {
+                /* Check which power source we are connect on. */
+                result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSPowerSourceStateKey), &psValue);
+                if (result &&
+                    CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSACPowerValue), 0) == kCFCompareEqualTo)
+                    *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
+                else if (result &&
+                         CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSBatteryPowerValue), 0) == kCFCompareEqualTo)
+                    *pPowerSource = PDM_ACPI_POWER_SOURCE_BATTERY;
+            }
+        }
+    }
+    CFRelease(pBlob);
+    CFRelease(pSources);
+#else /* !RT_OS_DARWIN either - what could this be? */
     *pPowerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
 #endif /* !RT_OS_WINDOWS */
     return VINF_SUCCESS;
@@ -412,7 +458,110 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
                                                       * PDM_ACPI_BAT_CAPACITY_MAX);
         *pu32PresentRate = (uint32_t)(((float)presentRateTotal / (float)maxCapacityTotal) * 1000);
     }
-#endif /* RT_OS_LINUX */
+#elif defined(RT_OS_DARWIN)
+    CFTypeRef pBlob = IOPSCopyPowerSourcesInfo();
+    CFArrayRef pSources = IOPSCopyPowerSourcesList(pBlob);
+
+    CFDictionaryRef pSource = NULL;
+    const void *psValue;
+    bool result;
+
+    if (CFArrayGetCount(pSources) > 0)
+    {
+        for(int i = 0; i < CFArrayGetCount(pSources); ++i)
+        {
+            pSource = IOPSGetPowerSourceDescription(pBlob, CFArrayGetValueAtIndex(pSources, i));
+            /* If the source is empty skip over to the next one. */
+            if(!pSource)
+                continue;
+            /* Skip all power sources which are currently not present like a
+             * second battery. */
+            if (CFDictionaryGetValue(pSource, CFSTR(kIOPSIsPresentKey)) == kCFBooleanFalse)
+                continue;
+            /* Only internal power types are of interest. */
+            result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSTransportTypeKey), &psValue);
+            if (result &&
+                CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSInternalType), 0) == kCFCompareEqualTo)
+            {
+                PDMACPIPOWERSOURCE powerSource = PDM_ACPI_POWER_SOURCE_UNKNOWN;
+                /* First check which power source we are connect on. */
+                result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSPowerSourceStateKey), &psValue);
+                if (result &&
+                    CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSACPowerValue), 0) == kCFCompareEqualTo)
+                    powerSource = PDM_ACPI_POWER_SOURCE_OUTLET;
+                else if (result &&
+                         CFStringCompare((CFStringRef)psValue, CFSTR(kIOPSBatteryPowerValue), 0) == kCFCompareEqualTo)
+                    powerSource = PDM_ACPI_POWER_SOURCE_BATTERY;
+
+                /* At this point the power source is present. */
+                *pfPresent = true;
+                *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGED;
+
+                int curCapacity = 0;
+                int maxCapacity = 1;
+                float remCapacity = 0.0f;
+
+                /* Fetch the current capacity value of the power source */
+                result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSCurrentCapacityKey), &psValue);
+                if (result)
+                    CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &curCapacity);
+                /* Fetch the maximum capacity value of the power source */
+                result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSMaxCapacityKey), &psValue);
+                if (result)
+                    CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &maxCapacity);
+
+                /* Calculate the remaining capacity in percent */
+                remCapacity = ((float)curCapacity/(float)maxCapacity * PDM_ACPI_BAT_CAPACITY_MAX);
+                *penmRemainingCapacity = (PDMACPIBATCAPACITY)remCapacity;
+
+                if (powerSource == PDM_ACPI_POWER_SOURCE_BATTERY)
+                {
+                    /* If we are on battery power we are discharging in every
+                     * case */
+                    *penmBatteryState = PDM_ACPI_BAT_STATE_DISCHARGING;
+                    int timeToEmpty = -1;
+                    /* Get the time till the battery source will be empty */
+                    result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSTimeToEmptyKey), &psValue);
+                    if (result)
+                        CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &timeToEmpty);
+                    if (timeToEmpty != -1)
+                        /* 0...1000 */
+                        *pu32PresentRate = (uint32_t)roundf((remCapacity / ((float)timeToEmpty/60.0)) * 10.0);
+                }
+
+                if (powerSource == PDM_ACPI_POWER_SOURCE_OUTLET &&
+                    CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSIsChargingKey), &psValue))
+                {
+                    /* We are running on an AC power source, but we also have a
+                     * battery power source present. */
+                    if (CFBooleanGetValue((CFBooleanRef)psValue) > 0)
+                    {
+                        /* This means charging. */
+                        *penmBatteryState = PDM_ACPI_BAT_STATE_CHARGING;
+                        int timeToFull = -1;
+                        /* Get the time till the battery source will be charged */
+                        result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSTimeToFullChargeKey), &psValue);
+                        if (result)
+                            CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &timeToFull);
+                        if (timeToFull != -1)
+                            /* 0...1000 */
+                            *pu32PresentRate = (uint32_t)roundf((100.0-(float)remCapacity) / ((float)timeToFull/60.0)) * 10.0;
+                    }
+                }
+
+                /* Check for critical */
+                int criticalValue = 20;
+                result = CFDictionaryGetValueIfPresent(pSource, CFSTR(kIOPSDeadWarnLevelKey), &psValue);
+                if (result)
+                    CFNumberGetValue((CFNumberRef)psValue, kCFNumberSInt32Type, &criticalValue);
+                if (remCapacity < criticalValue)
+                    *penmBatteryState = (PDMACPIBATSTATE)(*penmBatteryState | PDM_ACPI_BAT_STATE_CRITICAL);
+            }
+        }
+    }
+    CFRelease(pBlob);
+    CFRelease(pSources);
+#endif /* RT_OS_DARWIN */
     return VINF_SUCCESS;
 }
 
