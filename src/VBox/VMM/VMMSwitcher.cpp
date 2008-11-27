@@ -212,7 +212,6 @@ int vmmR3SwitcherInit(PVM pVM)
     return rc;
 }
 
-
 /**
  * Relocate the switchers, called by VMMR#Relocate.
  *
@@ -634,7 +633,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
 #endif
                 break;
             }
-
+#endif
             /*
              * 64-bit HC pointer to the CPUM instance data (no argument).
              */
@@ -644,7 +643,6 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 *uSrc.pu64 = pVM->pVMR0 + RT_OFFSETOF(VM, cpum);
                 break;
             }
-#endif
 
             /*
              * 32-bit ID pointer to (ID) target within the code (32-bit offset).
@@ -951,6 +949,33 @@ VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
     }
 
     return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * Setup the 32->64 world switcher
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM handle.
+ */
+VMMR3DECL(int) VMMR3InitSwitcher3264(PVM pVM)
+{
+    int rc;
+
+    uint32_t cPages = RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT;
+
+    /* Map the entire VM structure into the intermediate page tables as we need to have access
+     * to them in the 32->64 switcher.
+     */
+    for (unsigned i=0;i<cPages;i++)
+    {
+        rc = PGMR3MapIntermediate(pVM, pVM->pVMR0 + i*PAGE_SIZE, pVM->paVMPagesR3[i].Phys, PAGE_SIZE);
+        if (VBOX_FAILURE(rc))
+        {
+            Log(("PGMR3MapIntermediate %RHv %RHp failed with %Rrc\n", pVM->pVMR0 + i*PAGE_SIZE, pVM->paVMPagesR3[i].Phys, rc));
+            break;
+        }
+    }
+    return rc;
 }
 
 
