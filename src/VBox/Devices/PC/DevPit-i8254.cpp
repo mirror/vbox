@@ -74,7 +74,7 @@
 /** @def FAKE_REFRESH_CLOCK
  * Define this to flip the 15usec refresh bit on every read.
  * If not defined, it will be flipped correctly. */
-#define FAKE_REFRESH_CLOCK
+/* #define FAKE_REFRESH_CLOCK */
 #ifdef DOXYGEN_RUNNING
 # define FAKE_REFRESH_CLOCK
 #endif

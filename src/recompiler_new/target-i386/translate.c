@@ -911,6 +911,9 @@ DECLINLINE(void) gen_jmp_im(target_ulong pc)
 {
     tcg_gen_movi_tl(cpu_tmp0, pc);
     tcg_gen_st_tl(cpu_tmp0, cpu_env, offsetof(CPUState, eip));
+#ifdef VBOX
+    gen_check_external_event2();
+#endif
 }
 
 #ifdef VBOX
@@ -1103,9 +1106,6 @@ static void gen_check_io(DisasContext *s, int ot, target_ulong cur_eip,
                            tcg_const_i32(svm_flags),
                            tcg_const_i32(next_eip - cur_eip));
     }
-#ifdef VBOX
-    gen_check_external_event2(s);
-#endif /* VBOX */
 }
 
 #ifndef VBOX
@@ -2690,15 +2690,15 @@ DECLINLINE(void) gen_jcc(DisasContext *s, int b,
 {
     int l1, l2, cc_op;
 
-#ifdef VBOX
-        gen_check_external_event(s);
-#endif /* VBOX */
     cc_op = s->cc_op;
     if (s->cc_op != CC_OP_DYNAMIC) {
         gen_op_set_cc_op(s->cc_op);
         s->cc_op = CC_OP_DYNAMIC;
     }
     if (s->jmp_opt) {
+#ifdef VBOX
+        gen_check_external_event(s);
+#endif /* VBOX */
         l1 = gen_new_label();
         gen_jcc1(s, cc_op, b, l1);
 
