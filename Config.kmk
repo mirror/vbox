@@ -1206,15 +1206,13 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 VBOX_LIB_SUPHARDENED = $(PATH_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
 
-# For windows systems define the macro for win path conversion.
-ifeq ($(KBUILD_TARGET),win)
- ifndef VBOX_ONLY_SDK
+# Define the macro for win path conversion.
+ifndef VBOX_ONLY_SDK
   VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(1))
- else
+else
   # on Wine Z: is always FS root
   VBOX_FN_MAKE_WIN_PATH = $(subst /,\\,$(patsubst /%,Z:/%,$(1)))
- endif #!VBOX_ONLY_SDK
-endif #ifeq ($(KBUILD_TARGET),win)
+endif #!VBOX_ONLY_SDK
 
 # The kprofile build automagically links with kProfile.
 ifeq ($(KBUILD_TYPE),kprofile)
