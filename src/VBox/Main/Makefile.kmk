@@ -197,6 +197,7 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITHOUT_LINUX_COMPILER_H),VBOX_WITHOUT_LINUX_COMPILER_H,) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),VBOX_WITH_RESOURCE_USAGE_API,) \
 	$(if $(VBOX_WITH_PDM_ASYNC_COMPLETION),VBOX_WITH_PDM_ASYNC_COMPLETION,) \
+	$(if $(VBOX_WITH_LIBHAL),VBOX_WITH_LIBHAL,) \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
 
 ifdef VBOX_WITH_USB
@@ -299,9 +300,6 @@ VBoxSVC_SOURCES.win = \
 	win/svchlp.cpp \
         win/HostPowerWin.cpp \
 	win/VBoxSVC.rc
-
-VBoxSVC_SOURCES.linux = \
-	linux/vbox-libhal.cpp
 
 VBoxSVC_SOURCES.solaris = \
 	linux/vbox-libhal.cpp \
