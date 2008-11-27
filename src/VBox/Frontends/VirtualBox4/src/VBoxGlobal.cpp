@@ -1439,7 +1439,8 @@ bool VBoxGlobal::trayIconInstall()
     if (false == bActive)
         bActive = vboxGlobal().settings().trayIconEnabled();
 
-    QString strTrayWinID = virtualBox().GetExtraData (VBoxDefs::GUI_TrayIconWinID);
+    /* Is there already a tray icon or is tray icon not active? */
+    QString strTrayWinID = mVBox.GetExtraData (VBoxDefs::GUI_TrayIconWinID);
     if (   (bActive == false)
         || (QSystemTrayIcon::isSystemTrayAvailable() == false)
         || (strTrayWinID.isEmpty() == false))
@@ -3182,30 +3183,13 @@ bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
 }
 
 /**
- *  Returns the number of current running VMs.
+ *  Returns the number of current running Fe/Qt4 main windows.
  *
- *  @return Number of running VMs.
+ *  @return Number of running main windows.
  */
-int VBoxGlobal::machinesAlive () const
+int VBoxGlobal::mainWindowCount ()
 {
-    int machinesAlive = 0;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CMachineVector vec = vbox.GetMachines2();
-    for (CMachineVector::ConstIterator m = vec.begin();
-        m != vec.end(); ++ m)
-    {
-        switch ((*m).GetState())
-        {
-            case MachineState_Running:
-            case MachineState_Paused:
-            {
-                machinesAlive++;
-                break;
-            }
-        }
-    }
-
-    return machinesAlive;
+    return mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt();
 }
 
 /**
@@ -5281,6 +5265,14 @@ void VBoxGlobal::init()
         return;
     }
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    /* Increase open Fe/Qt4 windows reference count. */
+    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
+    AssertMsg ((c>=0) || (mVBox.isOk()),
+        ("Something went wrong with the window reference count!"));
+    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
+#endif
+
     /* Initialize guest OS Type list */
     CGuestOSTypeCollection coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.GetCount();
@@ -5592,6 +5584,16 @@ void VBoxGlobal::cleanup()
         delete mConsoleWnd;
     if (mSelectorWnd)
         delete mSelectorWnd;
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    /* Decrease open Fe/Qt4 windows reference count. */
+    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
+    AssertMsg ((c>=0) || (mVBox.isOk()),
+        ("Something went wrong with the window reference count!"));
+    if (c < 0)
+        c = 0;   /* Clean up the mess. */
+    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, (c > 0) ? QString ("%1").arg (c) : NULL);
+#endif
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();
