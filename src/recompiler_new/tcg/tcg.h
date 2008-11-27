@@ -394,15 +394,16 @@ do {\
 } while (0)
 #else
 #define VBOX_STR(x) #x
+#define VBOX_XSTR(x) VBOX_STR(x)
 #define tcg_abort() \
 do {\
-    remAbort(-1, "TCG fatal error: "__FILE__":"VBOX_STR(__LINE__));     \
+    remAbort(-1, "TCG fatal error: "__FILE__":"VBOX_XSTR(__LINE__));     \
 } while (0)
 extern void qemu_qsort(void* base, size_t nmemb, size_t size,
                        int(*compar)(const void*, const void*));
 #define tcg_exit(status) \
 do {\
-    remAbort(-1, "TCG exit: "__FILE__":"VBOX_STR(__LINE__));\
+    remAbort(-1, "TCG exit: "__FILE__":"VBOX_XSTR(__LINE__));\
 } while (0)
 #endif
 
