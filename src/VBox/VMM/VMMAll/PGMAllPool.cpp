@@ -156,7 +156,7 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             return NULL;
     }
     void *pv;
-    int rc = PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
+    int rc = PGMDynMapHCPage(pVM, HCPhys, &pv);
     AssertReleaseRC(rc);
     return pv;
 # endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
