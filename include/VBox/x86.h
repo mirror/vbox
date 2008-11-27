@@ -970,23 +970,43 @@ typedef X86PGPAEUINT *PX86PGPAEUINT;
  * @{
  */
 /** Bit 0 -  P  - Present bit. */
-#define X86_PTE_P                           RT_BIT(0)
+#define X86_PTE_BIT_P                       0
 /** Bit 1 - R/W - Read (clear) / Write (set) bit. */
-#define X86_PTE_RW                          RT_BIT(1)
+#define X86_PTE_BIT_RW                      1)
 /** Bit 2 - U/S - User (set) / Supervisor (clear) bit. */
-#define X86_PTE_US                          RT_BIT(2)
+#define X86_PTE_BIT_US                      2
 /** Bit 3 - PWT - Page level write thru bit. */
-#define X86_PTE_PWT                         RT_BIT(3)
+#define X86_PTE_BIT_PWT                     3
 /** Bit 4 - PCD - Page level cache disable bit. */
-#define X86_PTE_PCD                         RT_BIT(4)
+#define X86_PTE_BIT_PCD                     4
 /** Bit 5 -  A  - Access bit. */
-#define X86_PTE_A                           RT_BIT(5)
+#define X86_PTE_BIT_A                       5
 /** Bit 6 -  D  - Dirty bit. */
-#define X86_PTE_D                           RT_BIT(6)
+#define X86_PTE_BIT_D                       6
 /** Bit 7 - PAT - Page Attribute Table index bit. Reserved and 0 if not supported. */
-#define X86_PTE_PAT                         RT_BIT(7)
+#define X86_PTE_BIT_PAT                     7
 /** Bit 8 -  G  - Global flag. */
+#define X86_PTE_BIT_G                       8
+
+/** Bit 0 -  P  - Present bit mask. */
+#define X86_PTE_P                           RT_BIT(0)
+/** Bit 1 - R/W - Read (clear) / Write (set) bit mask. */
+#define X86_PTE_RW                          RT_BIT(1)
+/** Bit 2 - U/S - User (set) / Supervisor (clear) bit mask. */
+#define X86_PTE_US                          RT_BIT(2)
+/** Bit 3 - PWT - Page level write thru bit mask. */
+#define X86_PTE_PWT                         RT_BIT(3)
+/** Bit 4 - PCD - Page level cache disable bit mask. */
+#define X86_PTE_PCD                         RT_BIT(4)
+/** Bit 5 -  A  - Access bit mask. */
+#define X86_PTE_A                           RT_BIT(5)
+/** Bit 6 -  D  - Dirty bit mask. */
+#define X86_PTE_D                           RT_BIT(6)
+/** Bit 7 - PAT - Page Attribute Table index bit mask. Reserved and 0 if not supported. */
+#define X86_PTE_PAT                         RT_BIT(7)
+/** Bit 8 -  G  - Global bit mask. */
 #define X86_PTE_G                           RT_BIT(8)
+
 /** Bits 9-11 - - Available for use to system software. */
 #define X86_PTE_AVL_MASK                    (RT_BIT(9) | RT_BIT(10) | RT_BIT(11))
 /** Bits 12-31 - - Physical Page number of the next level. */
