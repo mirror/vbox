@@ -28,6 +28,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/VirtualBox.h>
 
+#include <iprt/asm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
