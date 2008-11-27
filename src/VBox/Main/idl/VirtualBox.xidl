@@ -1317,16 +1317,15 @@
           </li>
 
           <li>
-            Call <link to="IMachine::saveSettings" /> to write the settings
+            Call <link to="IMachine::saveSettings()" /> to write the settings
             to the machine's XML settings file. The configuration of the newly
-            created machine will not be saved to disk (and the settings subfolder
-            and file, as described below, will not be created) until this method
-            is called.
+            created machine will not be saved to disk until this method is
+            called.
           </li>
 
           <li>
-            Call <link to="#registerMachine" /> to have the machine show up in
-            the list of machines registered with VirtualBox.
+            Call <link to="#registerMachine()" /> to add the machine to the list
+            of machines known to VirtualBox.
           </li>
         </ol>
 
@@ -1339,32 +1338,31 @@
         array.
 
         Every machine has a <i>settings file</i> that is used to store
-        the machine configuration. This file is stored in the directory
-        called <i>machine settings subfolder</i>. Unless specified otherwise,
-        both the subfolder and the settings file will have a name that
-        corresponds to the name of the virtual machine. You can specify
-        where to create the machine settings subfolder using the @a
-        baseFolder argument. The base folder can be absolute (full path)
-        or relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
+        the machine configuration. This file is stored in a directory called the
+        <i>machine settings subfolder</i>. Both the settings subfolder and file
+        will have a name that corresponds to the name of the virtual machine.
+        You can specify where to create the machine setting subfolder using the
+        @a baseFolder argument. The base folder can be absolute (full path) or
+        relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
         directory</link>.
 
         If @a baseFolder is a null or empty string (which is recommended), the
         <link to="ISystemProperties::defaultMachineFolder">default machine
-        settings folder</link> will be used as a base folder to create the
-        machine settings subfolder and file, otherwise the given folder will be
-        used. The full path to the resulting settings file will have the
-        following structure:
+        settings folder</link> will be used as a base folder for the created
+        machine. Otherwise the given base folder will be used. In either case,
+        the full path to the resulting settings file has the following
+        structure:
         <pre>
           &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
         </pre>
 
         Note that if the resulting settings file already exists, this method
-        will fail.
+        will fail with <link to="VBOX_E_FILE_ERROR"/>.
 
         Optionally, you may specify an UUID of to assign to the created machine.
         However, this is not recommended and you should normally pass an empty
         (null) UUID to this method so that a new UUID will be automatically
-        generated.
+        generated for every created machine.
 
         <note>
           There is no way to change the name of the settings file or
@@ -1418,8 +1416,8 @@
         Note that the configuration of the newly created machine is not
         saved to disk (and therefore no settings file is created)
         until <link to="IMachine::saveSettings()"/> is called. If the
-        specified settings file already exists,
-        <link to="IMachine::saveSettings()"/> will return an error.
+        specified settings file already exists, this method
+        will fail with <link to="VBOX_E_FILE_ERROR"/>..
 
         See <link to="#createMachine()"/> for more information.
 
