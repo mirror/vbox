@@ -7378,7 +7378,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>#close()</see>
 
         <result name="VBOX_E_OBJECT_IN_USE">
-          Hard disk is still attached to a virtual machine.
+          Hard disk is attached to a virtual machine.
         </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
@@ -7406,10 +7406,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          The hard disk will be placed to <link to="MediaState::LockedRead"/>
+          The hard disk will be set to <link to="MediaState::LockedRead"/>
           state for the duration of this operation.
         </note>
-      </desc> <param name="target" type="IHardDisk2" dir="in">
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Hard disk not in NotCreated state.
+        </result>
+      </desc>
+      <param name="target" type="IHardDisk2" dir="in">
         <desc>Target hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">

@@ -1928,10 +1928,10 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  *
  * As opposed to the CreateDiffStorage() method, this method doesn't try to lock
  * this hard disk for reading assuming that the caller has already done so. This
- * is used when taking an online snaopshot (where all origial hard disks are
+ * is used when taking an online snaopshot (where all original hard disks are
  * locked for writing and must remain such). Note however that if @a aWait is
  * @c false and this method returns a success then the thread started by
- * this method will* unlock the hard disk (unless it is in
+ * this method will unlock the hard disk (unless it is in
  * MediaState_LockedWrite state) so make sure the hard disk is either in
  * MediaState_LockedWrite or call #LockRead() before calling this method! If @a
  * aWait is @c true then this method neither locks nor unlocks the hard disk, so
@@ -1939,7 +1939,7 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
  * progress object will be created and assigned to @a *aProgress on success,
- * otherwise the existing progress object is used. If Progress is NULL, then no
+ * otherwise the existing progress object is used. If @a aProgress is NULL, then no
  * progress object is created/used at all.
  *
  * When @a aWait is @c false, this method will create a thread to perform the
@@ -1954,7 +1954,7 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
  *
- * @note Locks this object and aTarget for writing.
+ * @note Locks this object and @a aTarget for writing.
  */
 HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
                                       ComObjPtr <Progress> *aProgress,
@@ -1999,7 +1999,7 @@ HRESULT HardDisk2::createDiffStorage (ComObjPtr <HardDisk2> &aTarget,
 
             if (it->snapshotIds.size() == 0)
             {
-                return setError (E_FAIL,
+                return setError (VBOX_E_OBJECT_IN_USE,
                     tr ("Hard disk '%ls' is attached to a virtual machine "
                         "with UUID {%RTuuid}. No differencing hard disks "
                         "based on it may be created until it is detached"),
