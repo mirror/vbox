@@ -3181,6 +3181,33 @@ bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
 }
 
 /**
+ *  Returns the number of current running VMs.
+ *
+ *  @return Number of running VMs.
+ */
+int VBoxGlobal::machinesAlive () const
+{
+    int machinesAlive = 0;
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CMachineVector vec = vbox.GetMachines2();
+    for (CMachineVector::ConstIterator m = vec.begin();
+        m != vec.end(); ++ m)
+    {
+        switch ((*m).GetState())
+        {
+            case MachineState_Running:
+            case MachineState_Paused:
+            {
+                machinesAlive++;
+                break;
+            }
+        }
+    }
+
+    return machinesAlive;
+}
+
+/**
  *  Native language name of the currently installed translation.
  *  Returns "English" if no translation is installed
  *  or if the translation file is invalid.

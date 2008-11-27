@@ -811,6 +811,9 @@ public:
         return medium;
     }
 
+    /* Returns the number of current running machines. */
+    int machinesAlive() const;
+
     /* various helpers */
 
     QString languageName() const;
