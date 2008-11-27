@@ -1023,7 +1023,6 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     PVMMR0LOGGER pR0Logger = (PVMMR0LOGGER)((uintptr_t)pLogger - RT_OFFSETOF(VMMR0LOGGER, Logger));
     if (    !VALID_PTR(pR0Logger)
         ||  !VALID_PTR(pR0Logger + 1)
-        ||  !VALID_PTR(pLogger)
         ||  pLogger->u32Magic != RTLOGGER_MAGIC)
     {
 #ifdef DEBUG
@@ -1031,6 +1030,8 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 #endif
         return;
     }
+    if (pR0Logger->fFlushingDisabled)
+        return; /* quietly */
 
     PVM pVM = pR0Logger->pVM;
     if (    !VALID_PTR(pVM)
@@ -1054,10 +1055,35 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 #ifdef DEBUG
         SUPR0Printf("vmmR0LoggerFlush: Jump buffer isn't armed!\n");
 #endif
-        pLogger->offScratch = 0;
         return;
     }
     VMMR0CallHost(pVM, VMMCALLHOST_VMM_LOGGER_FLUSH, 0);
+}
+
+
+/**
+ * Disables flushing of the ring-0 debug log.
+ *
+ * @param   pVCpu       The shared virtual cpu structure.
+ */
+VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->pVMR0;
+    if (pVM->vmm.s.pR0LoggerR0)
+        pVM->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
+}
+
+
+/**
+ * Enables flushing of the ring-0 debug log.
+ *
+ * @param   pVCpu       The shared virtual cpu structure.
+ */
+VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->pVMR0;
+    if (pVM->vmm.s.pR0LoggerR0)
+        pVM->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
 }
 
 
@@ -1068,6 +1094,9 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  */
 DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
 {
+#if 0
+    return true;
+#else
     PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
     {
@@ -1085,6 +1114,7 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
     return true;
 #else
     return false;
+#endif
 #endif
 }
 

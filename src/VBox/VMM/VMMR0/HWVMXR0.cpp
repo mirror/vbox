@@ -1901,6 +1901,9 @@ ResumeExecution:
 #ifdef VBOX_STRICT
     idCpuCheck = RTMpCpuId();
 #endif
+#ifdef LOG_LOGGING
+    VMMR0LogFlushDisable(pVCpu);
+#endif
     /* Save the host state first. */
     rc  = VMXR0SaveHostState(pVM, pVCpu);
     if (rc != VINF_SUCCESS)
@@ -1989,6 +1992,9 @@ ResumeExecution:
     AssertRC(rc);
 
     /* Note! NOW IT'S SAFE FOR LOGGING! */
+#ifdef LOG_LOGGING
+    VMMR0LogFlushEnable(pVCpu);
+#endif
     Log2(("Raw exit reason %08x\n", exitReason));
 
     /* Check if an injected event was interrupted prematurely. */
