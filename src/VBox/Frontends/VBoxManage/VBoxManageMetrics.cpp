@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - Metrics handling code.
+ * VBoxManage - The 'metrics' command.
  */
 
 /*
