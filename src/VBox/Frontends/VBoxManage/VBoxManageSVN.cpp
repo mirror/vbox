@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox frontends: VBoxManage (command-line interface):
- * SVN revision.
+ * VBoxManage - VBoxSVNRev(), separate file to speed up the build.
  */
 
 /*
@@ -25,10 +24,11 @@
 #include <VBox/version.h>
 
 /**
- * Return the SVN revision number. We put this function into a separate file
- * to speed up compilation if the revision number changes. We don't put this
- * function into VBoxSVC to save the overhead of starting the server if only
- * the version number is requested.
+ * Return the SVN revision number.
+ *
+ * We put this function into a separate file to speed up compilation if the
+ * revision number changes. We don't put this function into VBoxSVC to save the
+ * overhead of starting the server if only the version number is requested.
  */
 unsigned long VBoxSVNRev()
 {

@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - VirtualBox's command-line interface.
- * Metrics handling code.
+ * VBoxManage - Metrics handling code.
  */
 
 /*

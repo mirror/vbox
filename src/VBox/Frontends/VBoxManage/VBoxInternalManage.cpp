@@ -1,7 +1,6 @@
+/* $Id:$ */
 /** @file
- *
- * VBox frontends: VBoxManage (command-line interface):
- * VBoxInternalManage
+ * VBoxManage - The 'internalcommands' command.
  *
  * VBoxInternalManage used to be a second CLI for doing special tricks,
  * not intended for general usage, only for assisting VBox developers.
@@ -50,28 +49,28 @@
 
 /* Includes for the raw disk stuff. */
 #ifdef RT_OS_WINDOWS
-#include <windows.h>
-#include <winioctl.h>
+# include <windows.h>
+# include <winioctl.h>
 #elif defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
-#include <errno.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+# include <errno.h>
+# include <sys/ioctl.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# include <unistd.h>
 #endif
 #ifdef RT_OS_LINUX
-#include <sys/utsname.h>
-#include <linux/hdreg.h>
-#include <linux/fs.h>
+# include <sys/utsname.h>
+# include <linux/hdreg.h>
+# include <linux/fs.h>
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
-#include <sys/disk.h>
+# include <sys/disk.h>
 #endif /* RT_OS_DARWIN */
 #ifdef RT_OS_SOLARIS
-#include <stropts.h>
-#include <sys/dkio.h>
-#include <sys/vtoc.h>
+# include <stropts.h>
+# include <sys/dkio.h>
+# include <sys/vtoc.h>
 #endif /* RT_OS_SOLARIS */
 
 using namespace com;
@@ -1653,3 +1652,4 @@ int handleInternalCommands(int argc, char *argv[],
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(argv[0]).raw());
 }
+
