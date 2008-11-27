@@ -910,6 +910,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 typedef uint32_t X86PGUINT;
 /** Pointer to a page table/directory table entry as an unsigned integer. */
 typedef X86PGUINT *PX86PGUINT;
+/** Pointer to an const page table/directory table entry as an unsigned integer. */
+typedef X86PGUINT const *PCX86PGUINT;
 
 /** Number of entries in a 32-bit PT/PD. */
 #define X86_PG_ENTRIES                      1024
@@ -919,6 +921,8 @@ typedef X86PGUINT *PX86PGUINT;
 typedef uint64_t X86PGPAEUINT;
 /** Pointer to a PAE page table/page directory/pdpt/l4/l5 entry as an unsigned integer. */
 typedef X86PGPAEUINT *PX86PGPAEUINT;
+/** Pointer to an const PAE page table/page directory/pdpt/l4/l5 entry as an unsigned integer. */
+typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 
 /** Number of entries in a PAE PT/PD. */
 #define X86_PG_PAE_ENTRIES                  512
