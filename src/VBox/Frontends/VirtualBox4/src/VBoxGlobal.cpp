@@ -3182,6 +3182,7 @@ bool VBoxGlobal::findMedium (const CMedium &aObj, VBoxMedium &aMedium) const
     return false;
 }
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
 /**
  *  Returns the number of current running Fe/Qt4 main windows.
  *
@@ -3191,6 +3192,7 @@ int VBoxGlobal::mainWindowCount ()
 {
     return mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt();
 }
+#endif
 
 /**
  *  Native language name of the currently installed translation.
