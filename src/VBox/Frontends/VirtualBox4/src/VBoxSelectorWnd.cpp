@@ -1559,6 +1559,36 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
 
 void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
 {
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    if (vboxGlobal().isTrayMenu())
+    {
+        /* Check if there are some machines alive - else quit, since
+         * we're not needed anymore as a systray menu. */
+        int machinesAlive = 0;
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        CMachineVector vec = vbox.GetMachines2();
+        for (CMachineVector::ConstIterator m = vec.begin();
+            m != vec.end(); ++ m)
+        {
+            switch ((*m).GetState())
+            {
+                case MachineState_Running:
+                case MachineState_Paused:
+                {
+                    machinesAlive++;
+                    break;
+                }
+            }
+        }
+
+        if (machinesAlive == 0)
+        {
+            fileExit();
+            return;
+        }
+    }
+#endif
+
     refreshVMItem (e.id,
                    false /* aDetails */,
                    false /* aSnapshots */,
