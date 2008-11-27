@@ -39,17 +39,24 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The jump buffer. */
-static VMMR0JMPBUF  g_Jmp;
+static VMMR0JMPBUF          g_Jmp;
+/** The number of jumps we've done. */
+static unsigned volatile    g_cJmps;
 /** The saved stack. */
-static uint8_t      g_Stack[8192];
+static uint8_t              g_Stack[8192];
 
 
 int foo(int i, int iZero, int iMinusOne)
 {
-    char *pv = (char *)alloca(i + 32);
-    RTStrPrintf(pv, i + 32, "i=%d%*s\n", i, i+32, "");
+    /* allocate a buffer which we fill up to the end. */
+    size_t cb = (i % 5555) + 32;
+    char  *pv = (char *)alloca(cb);
+    RTStrPrintf(pv, cb, "i=%d%*s\n", i, cb, "");
+
+    /* Do long jmps every 7th time */
     if ((i % 7) == 0)
     {
+        g_cJmps++;
         int rc = vmmR0CallHostLongJmp(&g_Jmp, 42);
         if (!rc)
             return i + 10000;
@@ -83,7 +90,8 @@ DECLCALLBACK(int) tst2(intptr_t i, intptr_t i2)
 
 int tst(int iFrom, int iTo, int iInc)
 {
-    for (int i = iFrom; i < iTo; i += iInc)
+    g_cJmps = 0;
+    for (int i = iFrom; i != iTo; i += iInc)
     {
         int rc = vmmR0CallHostSetJmp(&g_Jmp, (PFNVMMR0SETJMP)tst2, (PVM)i, 0);
         if (rc != 0 && rc != 42)
@@ -91,6 +99,11 @@ int tst(int iFrom, int iTo, int iInc)
             RTPrintf("tstVMMR0CallHost-1: FAILURE - i=%d rc=%d setjmp\n", i, rc);
             return 1;
         }
+    }
+    if (!g_cJmps)
+    {
+        RTPrintf("tstVMMR0CallHost-1: FAILURE - no jumps!\n");
+        return 1;
     }
     return 0;
 }
@@ -102,15 +115,18 @@ int main()
      * Init.
      */
     RTR3Init();
-    RTPrintf("tstVMMR0CallHost-1: Testing...\n");
     g_Jmp.pvSavedStack = (RTR0PTR)&g_Stack[0];
 
     /*
      * Try about 1000 long jumps with increasing stack size..
      */
+    RTPrintf("tstVMMR0CallHost-1: Testing 1\n");
     int rc = tst(0, 7000, 1);
     if (!rc)
+    {
+        RTPrintf("tstVMMR0CallHost-1: Testing 2\n");
         rc = tst(7599, 0, -1);
+    }
 
     if (!rc)
         RTPrintf("tstVMMR0CallHost-1: SUCCESS\n");
