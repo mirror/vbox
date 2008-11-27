@@ -411,6 +411,19 @@ sorecvfrom(PNATState pData, struct socket *so)
                         errno,strerror(errno)));
             icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
           } else {
+#ifdef VBOX_WITH_SLIRP_ICMP
+            struct ip *ip;
+            uint32_t dst;
+            ip = mtod(so->so_m, struct ip *);
+            dst = ip->ip_src.s_addr;
+            memcpy(so->so_m->m_data, buff, len); /* ovveride ther tail of old packet */
+            /* the low level expects fields to be in host format so let's convert them*/
+            ip = mtod(so->so_m, struct ip *);
+            NTOHS(ip->ip_len);
+            NTOHS(ip->ip_off);
+            NTOHS(ip->ip_id);
+            ip->ip_dst.s_addr = dst;
+#endif
             icmp_reflect(pData, so->so_m);
             so->so_m = 0; /* Don't m_free() it again! */
           }

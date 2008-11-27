@@ -69,10 +69,8 @@ static const int icmp_flush[19] = {
 static int
 icmp_attach(PNATState pData, struct socket *so) {
     AssertRelease(so != NULL);
-    if (pData->icmp_socket == 0)
-        pData->icmp_socket = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-    AssertRelease(pData->icmp_socket != -1);
-    so->s = pData->icmp_socket;
+    so->s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    insque(pData, so, &udb); /*adding it udb queue*/
     return (so->s);
 }
 #endif /* VBOX_WITH_SLIRP_ICMP */
@@ -186,6 +184,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                     errno,strerror(errno)));
         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+        udp_detach(pData, so);
       }
 
 #endif /* VBOX_WITH_SLIRP_ICMP */
@@ -384,12 +383,14 @@ icmp_reflect(PNATState pData, struct mbuf *m)
   }
 
   ip->ip_ttl = MAXTTL;
+#ifndef VBOX_WITH_SLIRP_ICMP
   { /* swap */
     struct in_addr icmp_dst;
     icmp_dst = ip->ip_dst;
     ip->ip_dst = ip->ip_src;
     ip->ip_src = icmp_dst;
   }
+#endif
 
   (void ) ip_output(pData, (struct socket *)NULL, m);
 
