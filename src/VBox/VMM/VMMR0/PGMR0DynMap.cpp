@@ -1037,7 +1037,7 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
  */
 DECLINLINE(void) pgmR0DynMapReleasePageLocked(PPGMR0DYNMAP pThis, uint32_t iPage, int32_t cRefs)
 {
-    cRefs = ASMAtomicSubS32(&pThis->paPages[iPage].cRefs, cRefs);
+    cRefs -= ASMAtomicSubS32(&pThis->paPages[iPage].cRefs, cRefs);
     AssertMsg(cRefs >= 0, ("%d\n", cRefs));
     if (!cRefs)
         pThis->cLoad--;
