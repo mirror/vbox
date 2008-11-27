@@ -2187,7 +2187,7 @@
         </pre>
 
         where @c name is the property name and @c group, @c subgroup are zero
-        or or more property group specifiers. Each element (group or name) in
+        or more property group specifiers. Each element (group or name) in
         the property mask may be either a Latin string or an asterisk symbol
         (@c "*") which is used to match any string for the given element. A
         property mask that doesn't contain asterisk symbols represents a
@@ -6393,7 +6393,7 @@
       <link to="IVirtualBox::hardDisks2"/>,
       <link to="IVirtualBox::DVDImages"/> and
       <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found by by UUID using <link to="IVirtualBox::getHardDisk2()"/>
+      quickly found by UUID using <link to="IVirtualBox::getHardDisk2()"/>
       and similar methods or by location using
       <link to="IVirtualBox::findHardDisk2()"/> and similar methods.
 
@@ -6784,7 +6784,7 @@
       virtual machine.
 
       Every hard disk attachment specifies a slot of the virtual hard disk
-      controller and a virtual virtual hard disk attached to this slot.
+      controller and a virtual hard disk attached to this slot.
 
       The array of hard disk attachments is returned by
       <link to="IMachine::hardDisk2Attachments"/>.
@@ -7228,7 +7228,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Requested property does not exist (not supported by the format).
         </result>
         <result name="E_INVALIDARG">@a name is NULL or empty.</result>
-        <result name="E_POINTER">@a value points to invalid memory.</result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the property to get.</desc>
@@ -7284,10 +7283,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <tt>null</tt> is returned at the appropriate index in the @a returnValues
         array.
 
-        <result name="E_POINTER">@a returnNames or @a returnValues points to
-          invalid memory.
-        </result>
-        <result name="E_ACCESSDENIED">Access to object is denied.</result>
       </desc>
       <param name="names" type="wstring" dir="in">
         <desc>
@@ -7307,17 +7302,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createDynamicStorage">
       <desc>
         Starts creating a dynamically expanding hard disk storage unit in the
-        background. The previous storage unit created for this this object, if
-        any, must be first deleted using <link to="#deleteStorage"/>, otherwise
+        background. The previous storage unit created for this object, if
+        any, must first be deleted using <link to="#deleteStorage"/>, otherwise
         the operation will fail.
 
-        Before the operation starts, the hard disk is placed to
+        Before the operation starts, the hard disk is placed in
         <link to="MediaState::Creating"/> state. If the create operation
-        fails, the media will placed back to <link to="MediaState::NotCreated"/>
+        fails, the media will be placed back in <link to="MediaState::NotCreated"/>
         state.
 
-        After the returned progress object reports that the operation is
-        successfully complete, the media state will be set to <link
+        After the returned progress object reports that the operation has
+        successfully completed, the media state will be set to <link
         to="MediaState::Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
       </desc>
@@ -7332,7 +7327,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="createFixedStorage">
       <desc>
         Starts creating a fixed-size hard disk storage unit in the background.
-        The previous storage unit created for this this object, if
+        The previous storage unit created for this object, if
         any, must be first deleted using <link to="#deleteStorage"/>, otherwise
         the operation will fail.
 
