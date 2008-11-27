@@ -384,7 +384,12 @@ static inline target_ulong get_phys_addr_code(CPUState *env, target_ulong addr)
 target_ulong remR3PhysGetPhysicalAddressCode(CPUState *env, target_ulong addr, CPUTLBEntry *pTLBEntry);
 #  if !defined(REM_PHYS_ADDR_IN_TLB)
 target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
+#if 0
+bool         remR3IsVAMonitored(CPUState *env, RTGCPTR GCPtr);
+bool         remR3IsPAMonitored(CPUState *env, RTGCPHYS GCPhys);
+#else
 bool         remR3IsMonitored(CPUState *env, RTGCPTR GCPtr);
+#endif
 #  endif
 # endif
 /* NOTE: this function can trigger an exception */

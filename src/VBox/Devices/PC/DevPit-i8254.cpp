@@ -74,7 +74,7 @@
 /** @def FAKE_REFRESH_CLOCK
  * Define this to flip the 15usec refresh bit on every read.
  * If not defined, it will be flipped correctly. */
-#define FAKE_REFRESH_CLOCK
+/* #define FAKE_REFRESH_CLOCK */
 #ifdef DOXYGEN_RUNNING
 # define FAKE_REFRESH_CLOCK
 #endif
@@ -647,14 +647,15 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         /* bit 6,7 Parity error stuff. */
         /* bit 5 - mirrors timer 2 output condition. */
         const int fOut = pit_get_out(pThis, 2, u64Now);
-        /* bit 4 - toggled every with each (DRAM?) refresh request, every 15.085 µs. */
+        /* bit 4 - toggled with each (DRAM?) refresh request, every 15085 µs. 
+                   our timer resolution is around 100-1000 µs, thus we can just flip
+                   on every increase of quotient by 1
+         */
 #ifdef FAKE_REFRESH_CLOCK
         pThis->dummy_refresh_clock ^= 1;
         const int fRefresh = pThis->dummy_refresh_clock;
 #else
-        /* To make refresh info statistically correct */
-        const int freq = 15085;
-        const int fRefresh = ((u64Now % freq ) > (freq / 2)) ? 1 : 0;
+        const int fRefresh = (u64Now / 15085 ) & 1;
 #endif
         /* bit 2,3 NMI / parity status stuff. */
         /* bit 1 - speaker data status */
