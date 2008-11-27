@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxManage - VirtualBox's command-line interface.
+ * VBoxManage - The 'list' command.
  */
 
 /*

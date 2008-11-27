@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- * VBox frontends: VBoxManage (command-line interface):
- * VBoxManage header.
+ * VBoxManage - VirtualBox command-line interface, internal header file.
  */
 
 /*
