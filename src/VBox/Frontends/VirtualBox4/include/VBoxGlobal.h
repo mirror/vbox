@@ -811,8 +811,8 @@ public:
         return medium;
     }
 
-    /* Returns the number of current running machines. */
-    int machinesAlive() const;
+    /* Returns the number of current running Fe/Qt4 main windows. */
+    int mainWindowCount();
 
     /* various helpers */
 

@@ -154,6 +154,7 @@ struct VBoxDefs
     static const char* GUI_InfoDlgState;
 #ifdef VBOX_GUI_WITH_SYSTRAY
     static const char* GUI_TrayIconWinID;
+    static const char* GUI_MainWindowCount;
 #endif
 };
 

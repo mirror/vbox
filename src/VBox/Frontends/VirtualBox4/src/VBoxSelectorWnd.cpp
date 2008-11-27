@@ -1204,7 +1204,7 @@ void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
     if (vboxGlobal().isTrayMenu())
     {
         hide();
-        if (vboxGlobal().machinesAlive() == 0)
+        if (vboxGlobal().mainWindowCount() == 0)
         {
             emit closing();
             QMainWindow::closeEvent (aEvent);
@@ -1570,7 +1570,7 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
     {
         /* Check if there are some machines alive - else quit, since
          * we're not needed as a systray menu anymore. */
-        if (vboxGlobal().machinesAlive() == 0)
+        if (vboxGlobal().mainWindowCount() == 0)
         {
             fileExit();
             return;
