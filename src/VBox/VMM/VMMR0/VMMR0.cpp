@@ -976,8 +976,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
     {
         switch (enmOperation)
         {
-            case VMMR0_DO_VMMR0_INIT:
-            case VMMR0_DO_VMMR0_TERM:
             case VMMR0_DO_GMM_INITIAL_RESERVATION:
             case VMMR0_DO_GMM_UPDATE_RESERVATION:
             case VMMR0_DO_GMM_ALLOCATE_PAGES:
@@ -986,6 +984,11 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQHD
             case VMMR0_DO_GMM_DEFLATED_BALLOON:
             case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             case VMMR0_DO_GMM_SEED_CHUNK:
+                /* these might/will be called before VMMR3Init. */
+                if (!pVM->vmm.s.CallHostR0JmpBuf.pvSavedStack)
+                    break;
+            case VMMR0_DO_VMMR0_INIT:
+            case VMMR0_DO_VMMR0_TERM:
             {
                 /** @todo validate this EMT claim... GVM knows. */
                 VMMR0ENTRYEXARGS Args;
