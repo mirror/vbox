@@ -1563,7 +1563,7 @@ void VBoxSelectorWnd::machineStateChanged (const VBoxMachineStateChangeEvent &e)
     if (vboxGlobal().isTrayMenu())
     {
         /* Check if there are some machines alive - else quit, since
-         * we're not needed anymore as a systray menu. */
+         * we're not needed as a systray menu anymore. */
         int machinesAlive = 0;
         CVirtualBox vbox = vboxGlobal().virtualBox();
         CMachineVector vec = vbox.GetMachines2();
