@@ -128,12 +128,12 @@ STDMETHODIMP VirtualBoxErrorInfo::GetGUID (GUID *guid)
 
 STDMETHODIMP VirtualBoxErrorInfo::GetHelpContext (DWORD *pdwHelpContext)
 {
-    ReturnComNotImplemented();
+    return E_NOTIMPL;
 }
 
 STDMETHODIMP VirtualBoxErrorInfo::GetHelpFile (BSTR *pbstrHelpFile)
 {
-    ReturnComNotImplemented();
+    return E_NOTIMPL;
 }
 
 STDMETHODIMP VirtualBoxErrorInfo::GetSource (BSTR *source)
