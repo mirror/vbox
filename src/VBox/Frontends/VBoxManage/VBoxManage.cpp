@@ -3026,6 +3026,7 @@ static int handleModifyVM(int argc, char *argv[],
                 }
                 else
                 {
+                    CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
                     if (strcmp(uarts_mode[n], "server") == 0)
                     {
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostPipe), 1);
@@ -3040,7 +3041,6 @@ static int handleModifyVM(int argc, char *argv[],
                     {
                         CHECK_ERROR_RET(uart, COMSETTER(HostMode) (PortMode_HostDevice), 1);
                     }
-                    CHECK_ERROR_RET(uart, COMSETTER(Path) (Bstr(uarts_path[n])), 1);
                 }
             }
         }
