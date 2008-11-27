@@ -1453,7 +1453,7 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
 #ifndef REM_PHYS_ADDR_IN_TLB
 bool remR3IsMonitored(CPUState *env, RTGCPTR GCPtr)
 {
-    return PGMHandlerIsAddressMonitored(env->pVM, GCPtr);
+     return PGMHandlerIsAddressMonitored(env->pVM, GCPtr);
 }
 #endif
 
@@ -1559,6 +1559,7 @@ void remR3DmaRun(CPUState *env)
  */
 void remR3TimersRun(CPUState *env)
 {
+    LogFlow(("remR3TimersRun:\n"));
     remR3ProfileStop(STATS_QEMU_RUN_EMULATED_CODE);
     remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
     TMR3TimerQueuesDo(env->pVM);
@@ -3925,11 +3926,8 @@ REMR3DECL(void) REMR3NotifyInterruptSet(PVM pVM)
              (pVM->rem.s.Env.eflags & IF_MASK) && !(pVM->rem.s.Env.hflags & HF_INHIBIT_IRQ_MASK) ? "enabled" : "disabled"));
     if (pVM->rem.s.fInREM)
     {
-        if (VM_IS_EMT(pVM))
-            cpu_interrupt(cpu_single_env, CPU_INTERRUPT_HARD);
-        else
-            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                           CPU_INTERRUPT_EXTERNAL_HARD);
+        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_HARD);
     }
 }
 
@@ -3961,11 +3959,8 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM)
 #endif
     if (pVM->rem.s.fInREM)
     {
-        if (VM_IS_EMT(pVM))
-            cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
-        else
-            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                           CPU_INTERRUPT_EXTERNAL_TIMER);
+        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_TIMER);
     }
 }
 
@@ -3981,11 +3976,8 @@ REMR3DECL(void) REMR3NotifyDmaPending(PVM pVM)
     LogFlow(("REMR3NotifyDmaPending: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
-        if (VM_IS_EMT(pVM))
-            cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
-        else
-            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                           CPU_INTERRUPT_EXTERNAL_DMA);
+        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_DMA);
     }
 }
 
@@ -4001,11 +3993,8 @@ REMR3DECL(void) REMR3NotifyQueuePending(PVM pVM)
     LogFlow(("REMR3NotifyQueuePending: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
-        if (VM_IS_EMT(pVM))
-            cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
-        else
-            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                           CPU_INTERRUPT_EXTERNAL_EXIT);
+        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_EXIT);
     }
 }
 
@@ -4021,11 +4010,8 @@ REMR3DECL(void) REMR3NotifyFF(PVM pVM)
     LogFlow(("REMR3NotifyFF: fInRem=%d\n", pVM->rem.s.fInREM));
     if (pVM->rem.s.fInREM)
     {
-        if (VM_IS_EMT(pVM))
-            cpu_interrupt(cpu_single_env, CPU_INTERRUPT_EXIT);
-        else
-            ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
-                           CPU_INTERRUPT_EXTERNAL_EXIT);
+        ASMAtomicOrS32((int32_t volatile *)&cpu_single_env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_EXIT);
     }
 }
 

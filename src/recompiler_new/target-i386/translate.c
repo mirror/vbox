@@ -911,9 +911,6 @@ DECLINLINE(void) gen_jmp_im(target_ulong pc)
 {
     tcg_gen_movi_tl(cpu_tmp0, pc);
     tcg_gen_st_tl(cpu_tmp0, cpu_env, offsetof(CPUState, eip));
-#ifdef VBOX
-    gen_check_external_event2();
-#endif
 }
 
 #ifdef VBOX
@@ -2670,6 +2667,9 @@ DECLINLINE(void) gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
     /* NOTE: we handle the case where the TB spans two pages here */
     if ((pc & TARGET_PAGE_MASK) == (tb->pc & TARGET_PAGE_MASK) ||
         (pc & TARGET_PAGE_MASK) == ((s->pc - 1) & TARGET_PAGE_MASK))  {
+#ifdef VBOX
+        gen_check_external_event(s);
+#endif /* VBOX */
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tb_num);
         gen_jmp_im(eip);
@@ -2696,9 +2696,6 @@ DECLINLINE(void) gen_jcc(DisasContext *s, int b,
         s->cc_op = CC_OP_DYNAMIC;
     }
     if (s->jmp_opt) {
-#ifdef VBOX
-        gen_check_external_event(s);
-#endif /* VBOX */
         l1 = gen_new_label();
         gen_jcc1(s, cc_op, b, l1);
 
@@ -3119,6 +3116,9 @@ static void gen_debug(DisasContext *s, target_ulong cur_eip)
    if needed */
 static void gen_eob(DisasContext *s)
 {
+#ifdef VBOX
+    gen_check_external_event(s);
+#endif /* VBOX */
     if (s->cc_op != CC_OP_DYNAMIC)
         gen_op_set_cc_op(s->cc_op);
     if (s->tb->flags & HF_INHIBIT_IRQ_MASK) {
@@ -3153,9 +3153,6 @@ static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num)
 
 static void gen_jmp(DisasContext *s, target_ulong eip)
 {
-#ifdef VBOX
-    gen_check_external_event(s);
-#endif /* VBOX */
     gen_jmp_tb(s, eip, 0);
 }
 
