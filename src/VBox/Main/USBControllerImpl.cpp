@@ -415,7 +415,7 @@ STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -480,7 +480,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -549,7 +549,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 

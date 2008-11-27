@@ -128,7 +128,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(Singlestep) (BOOL *aEnabled)
     CheckComRCReturnRC (autoCaller.rc());
 
     /** @todo */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 /**
@@ -143,7 +143,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(Singlestep) (BOOL aEnable)
     CheckComRCReturnRC (autoCaller.rc());
 
     /** @todo */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 /**

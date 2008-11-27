@@ -3606,7 +3606,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
                                    ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aName))
         return E_INVALIDARG;
@@ -3674,7 +3674,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
 HRESULT Console::setGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aName))
         return E_INVALIDARG;
@@ -3752,7 +3752,7 @@ HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
                                            ComSafeArrayOut(BSTR, aFlags))
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
@@ -5795,7 +5795,7 @@ HRESULT Console::callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapD
     return S_OK;
 #else /* RT_OS_LINUX not defined */
     LogFlowThisFunc(("rc=E_NOTIMPL\n"));
-    return E_NOTIMPL;  /* not yet supported */
+    ReturnComNotImplemented();  /* not yet supported */
 #endif
 }
 

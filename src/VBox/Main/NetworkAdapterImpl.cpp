@@ -470,7 +470,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescript
     return S_OK;
 
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -510,7 +510,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPFileDescriptor)(LONG aTAPFileDescripto
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -531,7 +531,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -565,7 +565,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -586,7 +586,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -620,7 +620,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
