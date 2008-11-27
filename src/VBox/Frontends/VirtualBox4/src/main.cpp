@@ -377,8 +377,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
             else
             {
-                /* pre-populate the media list before showing the main widget */
-                vboxGlobal().startEnumeratingMedia();
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 if (   vboxGlobal().trayIconInstall()

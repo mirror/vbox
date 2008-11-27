@@ -622,8 +622,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* Update the list */
     refreshVMList();
+
     /* Reset to the first item */
     mVMListView->selectItemByRow (0);
+
     /* restore the position of vm selector */
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -631,6 +633,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
         mVMListView->selectItemById (QUuid (prevVMId));
     }
+
+    /* refresh the details et all (necessary for the case when the stored
+     * selection is still the first list item) */
+    vmListViewCurrentChanged();
 
     /* signals and slots connections */
     connect (mFileMediaMgrAction, SIGNAL (triggered()), this, SLOT (fileMediaMgr()));
