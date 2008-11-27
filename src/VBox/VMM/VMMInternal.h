@@ -100,6 +100,8 @@ typedef struct VMMR0LOGGER
     uint32_t                    cbLogger;
     /** Flag indicating whether we've create the logger Ring-0 instance yet. */
     bool                        fCreated;
+    /** Flag indicating whether we've disabled flushing (world switch) or not. */
+    bool                        fFlushingDisabled;
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Alignment;
 #endif
