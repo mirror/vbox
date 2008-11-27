@@ -500,8 +500,10 @@ HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
                     mUserData->mOSTypeId = aOsType->id();
 
                     /* Apply machine defaults */
-                    mHWData->mHWVirtExEnabled = aOsType->recommendedVirtEx() ?
-                                                TSBool_True : TSBool_False;
+                    if (aOsType->recommendedVirtEx())
+                        mHWData->mHWVirtExEnabled = TSBool_True;
+                    else
+                        mHWData->mHWVirtExEnabled = TSBool_False;
 
                     /* Apply BIOS defaults */
                     mBIOSSettings->applyDefaults (aOsType);
