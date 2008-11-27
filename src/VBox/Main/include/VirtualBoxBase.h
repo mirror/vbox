@@ -448,11 +448,10 @@ public:
 
 /**
  * Sets the extended error info and returns E_NOTIMPL.
- * @param method    Method that is not implemented.
  */
-#define ReturnComNotImplemented(method) \
+#define ReturnComNotImplemented() \
     do { \
-        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), #method); \
+        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), __func__); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////

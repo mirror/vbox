@@ -745,7 +745,7 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 
     return S_OK;
 #else /* !VBOX_WITH_RESOURCE_USAGE_API */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif /* !VBOX_WITH_RESOURCE_USAGE_API */
 }
 
@@ -1857,7 +1857,7 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
 STDMETHODIMP VirtualBox::WaitForPropertyChange (INPTR BSTR aWhat, ULONG aTimeout,
                                                 BSTR *aChanged, BSTR *aValues)
 {
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 STDMETHODIMP VirtualBox::SaveSettings()

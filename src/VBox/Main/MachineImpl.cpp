@@ -1428,7 +1428,7 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1495,7 +1495,7 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1515,7 +1515,7 @@ STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAControll
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that SATA is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -2980,7 +2980,7 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aName))
         return E_INVALIDARG;
@@ -3050,7 +3050,7 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTim
 STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     using namespace guestProp;
 
@@ -3174,7 +3174,7 @@ STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aName, INPTR BSTR aValue
 STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
@@ -8884,7 +8884,7 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
     mHWData->mPropertyServiceActive = true;
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -8942,7 +8942,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     mData->mRegistered = TRUE;
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -9008,7 +9008,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 
     return S_OK;
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 

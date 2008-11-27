@@ -93,7 +93,7 @@ STDMETHODIMP MediumBase::COMSETTER(Description) (INPTR BSTR aDescription)
     /// registries of portable VMs referring to this medium), this will also
     /// require to add the mRegistered flag to data
 
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 STDMETHODIMP MediumBase::COMGETTER(State) (MediaState_T *aState)
@@ -162,7 +162,7 @@ STDMETHODIMP MediumBase::COMSETTER(Location) (INPTR BSTR aLocation)
     /// the global registry (and local registries of portable VMs referring to
     /// this medium), this will also require to add the mRegistered flag to data
 
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 STDMETHODIMP MediumBase::COMGETTER(Name) (BSTR *aName)

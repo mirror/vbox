@@ -1110,7 +1110,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
 #else
     /* Not implemented / supported on this platform. */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1132,7 +1132,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1158,7 +1158,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1224,7 +1224,7 @@ STDMETHODIMP Host::GetProcessorDescription(ULONG cpuId, BSTR *description)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 /**
@@ -1256,7 +1256,7 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T feature, BOOL *support
         break;
 
     default:
-        return E_NOTIMPL;
+        ReturnComNotImplemented();
     }
     return S_OK;
 }
@@ -1320,7 +1320,7 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *os)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 /**
@@ -1336,7 +1336,7 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *version)
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 /**
@@ -1572,7 +1572,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1620,7 +1620,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -1675,7 +1675,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treting it as a failure), for example, as in OSE */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 

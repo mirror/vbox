@@ -758,7 +758,7 @@ STDMETHODIMP Progress::Cancel()
 //    return S_OK;
 
     ComAssertMsgFailed (("Not implemented!"));
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 // public methods only for internal purposes
@@ -1445,7 +1445,7 @@ STDMETHODIMP CombinedProgress::Cancel()
 //    return S_OK;
 
     ComAssertMsgFailed (("Not implemented!"));
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 }
 
 // private methods

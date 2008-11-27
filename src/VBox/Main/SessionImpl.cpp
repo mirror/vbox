@@ -701,7 +701,7 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, 
     else
         return mConsole->setGuestProperty (aName, aValue, aFlags);
 #else /* VBOX_WITH_GUEST_PROPS not defined */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
@@ -736,7 +736,7 @@ STDMETHODIMP Session::EnumerateGuestProperties (INPTR BSTR aPatterns,
                                               ComSafeArrayOutArg(aTimestamps),
                                               ComSafeArrayOutArg(aFlags));
 #else /* VBOX_WITH_GUEST_PROPS not defined */
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
