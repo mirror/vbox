@@ -299,7 +299,7 @@ VBOX_WITH_E1000 = 1
 VBOX_WITH_ALSA = 1
 # Enable Pulse support for Linux
 VBOX_WITH_PULSE = 1
-# Enable libhal support for Linux and Solaris
+# Enable libhal support for Linux
 VBOX_WITH_LIBHAL = 1
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
