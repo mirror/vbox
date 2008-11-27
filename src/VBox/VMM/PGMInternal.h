@@ -4363,7 +4363,7 @@ DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
      * Look up the page.
      */
     PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
-    AssertFatalMsg(pPage && pPage->enmKind != PGMPOOLKIND_FREE, ("HCPhys=%RHp pPage=%p type=%d\n", HCPhys, pPage, (pPage) ? pPage->enmKind : 0));
+    AssertFatalMsg(pPage && pPage->enmKind != PGMPOOLKIND_FREE, ("HCPhys=%RHp pPage=%p idx=%d\n", HCPhys, pPage, (pPage) ? pPage->idx : 0));
     return pPage;
 }
 
