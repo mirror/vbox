@@ -34,12 +34,11 @@
  *       standard byte order functions. */
 # define _LINUX_BYTEORDER_GENERIC_H
 # include <linux/cdrom.h>
-# ifdef VBOX_USE_LIBHAL
-// # include <libhal.h>
-// /* These are defined by libhal.h and by VBox header files. */
-// # undef TRUE
-// # undef FALSE
-#  include "vbox-libhal.h"
+# ifdef VBOX_WITH_LIBHAL
+#  include <libhal.h>
+/* These are defined by libhal.h and by VBox header files. */
+#  undef TRUE
+#  undef FALSE
 # endif
 # include <errno.h>
 # include <net/if.h>
@@ -67,6 +66,7 @@
 # include <sys/dkio.h>
 # include <sys/mnttab.h>
 # include <sys/mntent.h>
+/* Dynamic loading of libhal on Solaris hosts */
 # ifdef VBOX_USE_LIBHAL
 #  include "vbox-libhal.h"
 extern "C" char *getfullrawname(char *);
@@ -359,9 +359,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     }
 
 #elif defined(RT_OS_LINUX)
-#ifdef VBOX_USE_LIBHAL
+#ifdef VBOX_WITH_LIBHAL
     if (!getDVDInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
-#endif /* USE_LIBHAL defined */
+#endif /* VBOX_WITH_LIBHAL defined */
     // On Linux without hal, the situation is much more complex. We will take a
     // heuristical approach and also allow the user to specify a list of host
     // CDROMs using an environment variable.
@@ -467,9 +467,9 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     while (*p);
     delete[] hostDrives;
 #elif defined(RT_OS_LINUX)
-#ifdef VBOX_USE_LIBHAL
+#ifdef VBOX_WITH_LIBHAL
     if (!getFloppyInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
-#endif /* USE_LIBHAL defined */
+#endif /* VBOX_WITH_LIBHAL defined */
     // As with the CDROMs, on Linux we have to take a multi-level approach
     // involving parsing the mount tables. As this is not bulletproof, we'll
     // give the user the chance to override the detection by an environment
@@ -1887,7 +1887,185 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-# ifdef VBOX_USE_LIBHAL
+# ifdef VBOX_WITH_LIBHAL  /* Linux, load libhal statically */
+
+/** Helper function for setting up a libhal context */
+bool hostInitLibHal(DBusConnection **pDBusConnection,
+                    LibHalContext **pLibHalContext)
+{
+    bool halSuccess = true;
+    DBusError dbusError;
+
+    dbus_error_init (&dbusError);
+    DBusConnection *dbusConnection;
+    LibHalContext *libhalContext;
+    dbusConnection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbusError);
+    if (dbusConnection == NULL)
+        halSuccess = false;
+    if (dbusConnection == NULL && !dbus_error_is_set (&dbusError))
+        LogRelFunc (("Unresolved error getting DBus connection.\n"));
+    if (halSuccess)
+    {
+        libhalContext = libhal_ctx_new();
+        if (libhalContext == NULL)
+            halSuccess = false;
+    }
+    if (   halSuccess
+        && !libhal_ctx_set_dbus_connection (libhalContext, dbusConnection))
+        halSuccess = false;
+    if (   halSuccess
+        && !libhal_ctx_init (libhalContext, &dbusError))
+    {
+        halSuccess = false;
+        if (!dbus_error_is_set (&dbusError))
+            LogRelFunc (("Unresolved error initialising the libhal context.\n"));
+    }
+    if (halSuccess)
+    {
+        *pDBusConnection = dbusConnection;
+        *pLibHalContext = libhalContext;
+    }
+    return halSuccess;
+}
+
+/**
+ * Helper function to query the hal subsystem for information about DVD drives attached to the
+ * system.
+ *
+ * @returns true if information was successfully obtained, false otherwise
+ * @retval  list drives found will be attached to this list
+ */
+bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
+{
+    DBusConnection *dbusConnection;
+    LibHalContext *libhalContext;
+    int numDevices = 0;
+    char **halDevices = NULL;
+    bool halSuccess = hostInitLibHal (&dbusConnection, &libhalContext);
+    if (halSuccess)
+        halDevices = libhal_manager_find_device_string_match(libhalContext,
+                                                "storage.drive_type", "cdrom",
+                                                &numDevices, NULL);
+    /* Hal is installed and working, so if no devices are reported, assume
+       that there are none. */
+    for (int i = 0; halSuccess && i < numDevices; ++i)
+    {
+        char *devNode = libhal_device_get_property_string(libhalContext,
+                                halDevices[i], "block.device", NULL);
+        Utf8Str description;
+        char *vendor = NULL, *product = NULL;
+        if (devNode != NULL)
+        {
+            vendor = libhal_device_get_property_string(libhalContext,
+                            halDevices[i], "info.vendor", NULL);
+            product =  libhal_device_get_property_string(libhalContext,
+                            halDevices[i], "info.product", NULL);
+            if ((product != 0 && product[0] != 0))
+            {
+                if ((vendor != 0) && (vendor[0] != 0))
+                    description = Utf8StrFmt ("%s %s",
+                                              vendor, product);
+                else
+                    description = product;
+            }
+            ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+            hostDVDDriveObj.createObject();
+            if (!description.isNull ())
+                hostDVDDriveObj->init (Bstr (devNode),
+                                       Bstr (halDevices[i]),
+                                       Bstr (description));
+            else
+                hostDVDDriveObj->init (Bstr (devNode),
+                                       Bstr (halDevices[i]));
+            list.push_back (hostDVDDriveObj);
+            if (vendor != NULL)
+                libhal_free_string(vendor);
+            if (product != NULL)
+                libhal_free_string(product);
+            libhal_free_string(devNode);
+        }
+    }
+    if (halDevices != NULL)
+        libhal_free_string_array(halDevices);
+    if (halSuccess)
+        libhal_ctx_shutdown (libhalContext, NULL);
+    if (libhalContext != NULL)
+        libhal_ctx_free (libhalContext);
+    if (dbusConnection != NULL)
+        dbus_connection_unref (dbusConnection);
+    return halSuccess;
+}
+
+/**
+ * Helper function to query the hal subsystem for information about floppy drives attached to the
+ * system.
+ *
+ * @returns true if information was successfully obtained, false otherwise
+ * @retval  list drives found will be attached to this list
+ */
+bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
+{
+    DBusConnection *dbusConnection;
+    LibHalContext *libhalContext;
+    int numDevices = 0;
+    char **halDevices = NULL;
+    bool halSuccess = hostInitLibHal (&dbusConnection, &libhalContext);
+    if (halSuccess)
+        halDevices = libhal_manager_find_device_string_match(libhalContext,
+                                                "storage.drive_type", "floppy",
+                                                &numDevices, NULL);
+    /* Hal is installed and working, so if no devices are reported, assume
+       that there are none. */
+    for (int i = 0; halSuccess && i < numDevices; ++i)
+    {
+        char *devNode = libhal_device_get_property_string(libhalContext,
+                                halDevices[i], "block.device", NULL);
+        Utf8Str description;
+        char *vendor = NULL, *product = NULL;
+        if (devNode != NULL)
+        {
+            vendor = libhal_device_get_property_string(libhalContext,
+                            halDevices[i], "info.vendor", NULL);
+            product =  libhal_device_get_property_string(libhalContext,
+                            halDevices[i], "info.product", NULL);
+            if ((product != 0 && product[0] != 0))
+            {
+                if ((vendor != 0) && (vendor[0] != 0))
+                    description = Utf8StrFmt ("%s %s",
+                                              vendor, product);
+                else
+                    description = product;
+            }
+            ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
+            hostFloppyDriveObj.createObject();
+            if (!description.isNull ())
+                hostFloppyDriveObj->init (Bstr (devNode),
+                                          Bstr (halDevices[i]),
+                                          Bstr (description));
+            else
+                hostFloppyDriveObj->init (Bstr (devNode),
+                                          Bstr (halDevices[i]));
+            list.push_back (hostFloppyDriveObj);
+            if (vendor != NULL)
+                libhal_free_string(vendor);
+            if (product != NULL)
+                libhal_free_string(product);
+            libhal_free_string(devNode);
+        }
+    }
+    if (halDevices != NULL)
+        libhal_free_string_array(halDevices);
+    if (halSuccess)
+        libhal_ctx_shutdown (libhalContext, NULL);
+    if (libhalContext != NULL)
+        libhal_ctx_free (libhalContext);
+    if (dbusConnection != NULL)
+        dbus_connection_unref (dbusConnection);
+    return halSuccess;
+}
+
+# elif defined VBOX_USE_LIBHAL  /* Solaris hosts, loading libhal at runtime */
+
 /**
  * Helper function to query the hal subsystem for information about DVD drives attached to the
  * system.
