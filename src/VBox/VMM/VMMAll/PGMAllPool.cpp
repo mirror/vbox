@@ -431,8 +431,8 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
                 unsigned iGst     = off / sizeof(X86PDE);           // ASSUMING 32-bit guest paging!
-                unsigned iShwPdpt = iGst % 256;
-                unsigned iShw     = iGst / 2;
+                unsigned iShwPdpt = iGst / 256;
+                unsigned iShw     = (iGst % 256) * 2;
                 Assert(pPage->idx == PGMPOOL_IDX_PAE_PD);
                 PPGMPOOLPAGE pPage2 = pPage + 1 + iShwPdpt;
                 Assert(pPage2->idx == PGMPOOL_IDX_PAE_PD_0 + iShwPdpt);
