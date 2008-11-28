@@ -1394,7 +1394,7 @@ void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr)
     void* rv = NULL;
     int rc;
 
-    rc = PGMPhysGCPhys2HCPtr(env1->pVM, (RTGCPHYS)physAddr, 1, &rv);
+    rc = PGMPhysGCPhys2R3Ptr(env1->pVM, (RTGCPHYS)physAddr, 1, &rv);
     Assert (RT_SUCCESS(rc));
 
     return rv;
@@ -3570,7 +3570,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
         Assert(PGMGetGuestMode(env->pVM) < PGMMODE_AMD64);
 
         /* convert eip to physical address. */
-        rc = PGMPhysGCPtr2HCPtrByGstCR3(env->pVM,
+        rc = PGMPhysGCPtr2R3PtrByGstCR3(env->pVM,
                                         GCPtrPC,
                                         env->cr[3],
                                         env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE), /** @todo add longmode flag */
@@ -3586,7 +3586,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     else
     {
         /* physical address */
-        rc = PGMPhysGCPhys2HCPtr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16,
+        rc = PGMPhysGCPhys2R3Ptr(env->pVM, (RTGCPHYS)GCPtrPC, nrInstructions * 16,
                                  (void**)&pvPC);
         if (RT_FAILURE(rc))
             return false;
@@ -3671,7 +3671,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     if ((env->cr[0] & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG))
     {
         /* convert eip to physical address. */
-        int rc = PGMPhysGCPtr2HCPtrByGstCR3(pVM,
+        int rc = PGMPhysGCPtr2R3PtrByGstCR3(pVM,
                                             GCPtrPC,
                                             env->cr[3],
                                             env->cr[4] & (X86_CR4_PSE | X86_CR4_PAE),
@@ -3688,7 +3688,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     {
 
         /* physical address */
-        int rc = PGMPhysGCPhys2HCPtr(pVM, (RTGCPHYS)GCPtrPC, 16, (void**)&pvPC);
+        int rc = PGMPhysGCPhys2R3Ptr(pVM, (RTGCPHYS)GCPtrPC, 16, (void**)&pvPC);
         if (RT_FAILURE(rc))
             return false;
     }
@@ -4221,15 +4221,15 @@ void     cpu_apic_wrmsr(CPUX86State *env, uint32_t reg, uint64_t value)
     LogFlow(("cpu_apic_wrmsr: rc=%Rrc\n", rc)); NOREF(rc);
 }
 
-uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr) 
-{ 
-    return CPUMGetGuestMsr(env->pVM, msr); 
-} 
+uint64_t cpu_rdmsr(CPUX86State *env, uint32_t msr)
+{
+    return CPUMGetGuestMsr(env->pVM, msr);
+}
 
-void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val) 
-{ 
-    CPUMSetGuestMsr(env->pVM, msr, val); 
-} 
+void cpu_wrmsr(CPUX86State *env, uint32_t msr, uint64_t val)
+{
+    CPUMSetGuestMsr(env->pVM, msr, val);
+}
 /* -+- I/O Ports -+- */
 
 #undef LOG_GROUP

@@ -704,7 +704,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
 /** @todo @bugref{3202}: check up this path. */
     return PGMDynMapGCPageOff(pVM, GCPhys, ppv);
 # else
-    return PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1, ppv);
+    return PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1, (PRTR3PTR)ppv);
 # endif
 #endif
 }
@@ -849,7 +849,7 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 
 
 /**
- * Converts a GC physical address to a HC pointer.
+ * Converts a GC physical address to a HC ring-3 pointer.
  *
  * @returns VINF_SUCCESS on success.
  * @returns VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical
@@ -858,12 +858,13 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  *          GC physical address.
  * @returns VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY if the range crosses
  *          a dynamic ram chunk boundary
- * @param   pVM     The VM handle.
- * @param   GCPhys  The GC physical address to convert.
- * @param   cbRange Physical range
- * @param   pHCPtr  Where to store the HC pointer on success.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The GC physical address to convert.
+ * @param   cbRange     Physical range
+ * @param   pR3Ptr      Where to store the R3 pointer on success.
  */
-VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
+VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -899,13 +900,13 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
         unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* ASSUMES this is a rare occurence */
         PRTR3UINTPTR paChunkR3Ptrs = (PRTR3UINTPTR)MMHyperR3ToCC(pVM, pRam->paChunkR3Ptrs);
-        *pHCPtr = (RTHCPTR)(paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pR3Ptr = (RTR3PTR)(paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #else
-        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+        *pR3Ptr = (RTR3PTR)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
 #endif
     }
     else if (RT_LIKELY(pRam->pvR3))
-        *pHCPtr = (RTHCPTR)((RTR3UINTPTR)pRam->pvR3 + off);
+        *pR3Ptr = (RTR3PTR)((RTR3UINTPTR)pRam->pvR3 + off);
     else
         return VERR_PGM_PHYS_PAGE_RESERVED;
     return VINF_SUCCESS;
@@ -913,20 +914,20 @@ VMMDECL(int) PGMPhysGCPhys2HCPtr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTHC
 
 
 /**
- * PGMPhysGCPhys2HCPtr convenience for use with assertions.
+ * PGMPhysGCPhys2R3Ptr convenience for use with assertions.
  *
- * @returns The HCPtr, NIL_RTHCPTR on failure.
+ * @returns The R3Ptr, NIL_RTR3PTR on failure.
  * @param   pVM         The VM handle.
  * @param   GCPhys      The GC Physical addresss.
  * @param   cbRange     Physical range.
  */
-VMMDECL(RTHCPTR) PGMPhysGCPhys2HCPtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
+VMMDECL(RTR3PTR) PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
 {
-    RTHCPTR HCPtr;
-    int rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, cbRange, &HCPtr);
+    RTR3PTR R3Ptr;
+    int rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, cbRange, &R3Ptr);
     if (RT_SUCCESS(rc))
-        return HCPtr;
-    return NIL_RTHCPTR;
+        return R3Ptr;
+    return NIL_RTR3PTR;
 }
 
 
@@ -970,16 +971,16 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVM pVM, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 
 
 /**
- * Converts a guest pointer to a HC pointer.
+ * Converts a guest pointer to a R3 pointer.
  *
  * This uses the current CR3/CR0/CR4 of the guest.
  *
  * @returns VBox status code.
  * @param   pVM         The VM Handle
  * @param   GCPtr       The guest pointer to convert.
- * @param   pHCPtr      Where to store the HC virtual address.
+ * @param   pR3Ptr      Where to store the R3 virtual address.
  */
-VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
+VMMDECL(int) PGMPhysGCPtr2R3Ptr(PVM pVM, RTGCPTR GCPtr, PRTR3PTR pR3Ptr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -988,26 +989,27 @@ VMMDECL(int) PGMPhysGCPtr2HCPtr(PVM pVM, RTGCPTR GCPtr, PRTHCPTR pHCPtr) /** @to
     RTGCPHYS GCPhys;
     int rc = PGM_GST_PFN(GetPage,pVM)(pVM, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
     if (RT_SUCCESS(rc))
-        rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+        rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pR3Ptr);
     return rc;
 }
 
 
 /**
- * Converts a guest virtual address to a HC pointer by specfied CR3 and flags.
+ * Converts a guest virtual address to a HC ring-3 pointer by specfied CR3 and
+ * flags.
  *
  * @returns VBox status code.
  * @param   pVM         The VM Handle
  * @param   GCPtr       The guest pointer to convert.
  * @param   cr3         The guest CR3.
  * @param   fFlags      Flags used for interpreting the PD correctly: X86_CR4_PSE and X86_CR4_PAE
- * @param   pHCPtr      Where to store the HC pointer.
+ * @param   pR3Ptr      Where to store the R3 pointer.
  *
  * @remark  This function is used by the REM at a time where PGM could
  *          potentially not be in sync. It could also be used by a
  *          future DBGF API to cpu state independent conversions.
  */
-VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTHCPTR pHCPtr) /** @todo @bugref{1865}: HCPtr -> R3Ptr */
+VMMDECL(int) PGMPhysGCPtr2R3PtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTR3PTR pR3Ptr)
 {
 #ifdef VBOX_WITH_NEW_PHYS_CODE
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
@@ -1029,7 +1031,8 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
             {
                 if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
                 {   /* (big page) */
-                    rc = PGMPhysGCPhys2HCPtr(pVM, pgmGstGet4MBPhysPage(&pVM->pgm.s, Pde) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+                    rc = PGMPhysGCPhys2R3Ptr(pVM, pgmGstGet4MBPhysPage(&pVM->pgm.s, Pde) | ((RTGCUINTPTR)GCPtr & X86_PAGE_4M_OFFSET_MASK),
+                                             1 /* we always stay within one page */, pR3Ptr);
                 }
                 else
                 {   /* (normal page) */
@@ -1039,7 +1042,8 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
                     {
                         X86PTE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_SHIFT) & X86_PT_MASK];
                         if (Pte.n.u1Present)
-                            return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+                            return PGMPhysGCPhys2R3Ptr(pVM, (Pte.u & X86_PTE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK),
+                                                       1 /* we always stay within one page */, pR3Ptr);
                         rc = VERR_PAGE_NOT_PRESENT;
                     }
                 }
@@ -1069,7 +1073,8 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
                     {
                         if ((fFlags & X86_CR4_PSE) && Pde.b.u1Size)
                         {   /* (big page) */
-                            rc = PGMPhysGCPhys2HCPtr(pVM, (Pde.u & X86_PDE2M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_2M_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+                            rc = PGMPhysGCPhys2R3Ptr(pVM, (Pde.u & X86_PDE2M_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & X86_PAGE_2M_OFFSET_MASK),
+                                                     1 /* we always stay within one page */, pR3Ptr);
                         }
                         else
                         {   /* (normal page) */
@@ -1079,7 +1084,8 @@ VMMDECL(int) PGMPhysGCPtr2HCPtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, un
                             {
                                 X86PTEPAE Pte = pPT->a[((RTGCUINTPTR)GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK];
                                 if (Pte.n.u1Present)
-                                    return PGMPhysGCPhys2HCPtr(pVM, (Pte.u & X86_PTE_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pHCPtr);
+                                    return PGMPhysGCPhys2R3Ptr(pVM, (Pte.u & X86_PTE_PAE_PG_MASK) | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK),
+                                                               1 /* we always stay within one page */, pR3Ptr);
                                 rc = VERR_PAGE_NOT_PRESENT;
                             }
                         }

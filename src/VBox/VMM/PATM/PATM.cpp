@@ -603,7 +603,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
     {
         /** @note pPrivInstrHC is probably not valid anymore */
-        rc = PGMPhysGCPtr2HCPtr(pVM, pPatch->patch.pPrivInstrGC, (PRTHCPTR)&pPatch->patch.pPrivInstrHC);
+        rc = PGMPhysGCPtr2R3Ptr(pVM, pPatch->patch.pPrivInstrGC, (PRTR3PTR)&pPatch->patch.pPrivInstrHC);
         if (rc == VINF_SUCCESS)
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
@@ -789,7 +789,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
     {
         /** @note pPrivInstrHC is probably not valid anymore */
-        rc = PGMPhysGCPtr2HCPtr(pVM, pPatch->patch.pPrivInstrGC, (PRTHCPTR)&pPatch->patch.pPrivInstrHC);
+        rc = PGMPhysGCPtr2R3Ptr(pVM, pPatch->patch.pPrivInstrGC, (PRTR3PTR)&pPatch->patch.pPrivInstrHC);
         if (rc == VINF_SUCCESS)
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
@@ -994,7 +994,7 @@ R3PTRTYPE(uint8_t *) PATMGCVirtToHCVirt(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(ui
         return pPatch->cacheRec.pPatchLocStartHC + offset;
     }
 
-    rc = PGMPhysGCPtr2HCPtr(pVM, pGCPtr, (void **)&pHCPtr);
+    rc = PGMPhysGCPtr2R3Ptr(pVM, pGCPtr, (void **)&pHCPtr);
     if (rc != VINF_SUCCESS)
     {
         AssertMsg(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT, ("MMR3PhysGCVirt2HCVirtEx failed for %08X\n", pGCPtr));
@@ -4120,7 +4120,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         return VERR_PATCHING_REFUSED;
     }
     GCPhys = GCPhys + (pInstrGC & PAGE_OFFSET_MASK);
-    rc = PGMPhysGCPhys2HCPtr(pVM, GCPhys, MAX_INSTR_SIZE, (void **)&pInstrHC);
+    rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, MAX_INSTR_SIZE, (void **)&pInstrHC);
     AssertRCReturn(rc, rc);
 
     pPatchRec->patch.pPrivInstrHC = pInstrHC;
@@ -4401,7 +4401,7 @@ static uint32_t patmGetInstrSize(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     uint8_t *pInstrHC;
 
-    int rc = PGMPhysGCPtr2HCPtr(pVM, pInstrGC, (RTHCPTR *)&pInstrHC);
+    int rc = PGMPhysGCPtr2R3Ptr(pVM, pInstrGC, (PRTR3PTR)&pInstrHC);
     if (rc == VINF_SUCCESS)
     {
         DISCPUSTATE cpu;
@@ -4998,7 +4998,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
                 Assert(pPatch->cbPatchJump);
 
                 /** pPrivInstrHC is probably not valid anymore */
-                rc = PGMPhysGCPtr2HCPtr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTHCPTR)&pPatchRec->patch.pPrivInstrHC);
+                rc = PGMPhysGCPtr2R3Ptr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTR3PTR)&pPatchRec->patch.pPrivInstrHC);
                 if (rc == VINF_SUCCESS)
                 {
                     uint8_t temp[16];
@@ -5217,7 +5217,7 @@ VMMR3DECL(int) PATMR3EnablePatch(PVM pVM, RTRCPTR pInstrGC)
             {
                 Assert(!(pPatch->flags & PATMFL_PATCHED_GUEST_CODE));
                 /** @todo -> pPrivInstrHC is probably not valid anymore */
-                rc = PGMPhysGCPtr2HCPtr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTHCPTR)&pPatchRec->patch.pPrivInstrHC);
+                rc = PGMPhysGCPtr2R3Ptr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTR3PTR)&pPatchRec->patch.pPrivInstrHC);
                 if (rc == VINF_SUCCESS)
                 {
 #ifdef DEBUG

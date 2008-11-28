@@ -1532,7 +1532,7 @@ static int pgmR3InitPaging(PVM pVM)
                 pVM->pgm.s.aHCPhysPaePDs[0], pVM->pgm.s.aHCPhysPaePDs[1], pVM->pgm.s.aHCPhysPaePDs[2], pVM->pgm.s.aHCPhysPaePDs[3],
                 pVM->pgm.s.HCPhysShwPaePdpt,
                 pVM->pgm.s.HCPhysShwPaePml4));
-# endif 
+# endif
         LogRel(("Debug: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
                 pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
         LogRel(("Debug: apInterPTs={%RHp,%RHp} apInterPaePTs={%RHp,%RHp} apInterPaePDs={%RHp,%RHp,%RHp,%RHp} pInterPaePDPT64=%RHp\n",
@@ -2642,7 +2642,7 @@ static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *
      */
     PX86PD     pPDSrc = pVM->pgm.s.pGst32BitPdR3;
     Assert(pPDSrc);
-    Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
+    Assert(PGMPhysGCPhys2R3PtrAssert(pVM, (RTGCPHYS)(CPUMGetGuestCR3(pVM) & X86_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
 
     /*
      * Iterate the page directory.

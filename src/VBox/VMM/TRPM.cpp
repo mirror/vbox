@@ -1318,7 +1318,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
          * (This function checks for not-present pages.)
          */
         PVBOXIDTE   pIDTE;
-        int rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrIDTE, (void **)&pIDTE);
+        int rc = PGMPhysGCPtr2R3Ptr(pVM, GCPtrIDTE, (void **)&pIDTE);
         if (RT_SUCCESS(rc))
         {
             /*

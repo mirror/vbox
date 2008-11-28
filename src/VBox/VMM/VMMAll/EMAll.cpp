@@ -351,8 +351,8 @@ DECLINLINE(int) emRamWrite(PVM pVM, RTGCPTR GCDest, void *pSrc, uint32_t cb)
 }
 
 
-/* Convert sel:addr to a flat GC address */
-static RTGCPTR emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, POP_PARAMETER pParam, RTGCPTR pvAddr)
+/** Convert sel:addr to a flat GC address. */
+DECLINLINE(RTGCPTR) emConvertToFlatAddr(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu, POP_PARAMETER pParam, RTGCPTR pvAddr)
 {
     DIS_SELREG enmPrefixSeg = DISDetectSegReg(pCpu, pParam);
     return SELMToFlat(pVM, enmPrefixSeg, pRegFrame, pvAddr);
@@ -821,22 +821,6 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
         param2.size       = param1.size;
     }
 
-    /* The destination is always a virtual address */
-    AssertReturn(param1.type == PARMTYPE_ADDRESS, VERR_EM_INTERPRETER);
-
-    RTGCPTR GCPtrPar1 = param1.val.val64;
-    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
-#ifdef IN_RC
-    pvParam1  = (void *)GCPtrPar1;
-#else
-    rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
-    if (RT_FAILURE(rc))
-    {
-        AssertRC(rc);
-        return VERR_EM_INTERPRETER;
-    }
-#endif
-
 #ifdef IN_RC
     /* Safety check (in theory it could cross a page boundary and fault there though) */
     Assert(   TRPMHasTrap(pVM)
@@ -848,7 +832,20 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     AssertReturn(param2.type == PARMTYPE_IMMEDIATE, VERR_EM_INTERPRETER);
     RTGCUINTREG ValPar2 = param2.val.val64;
 
-    /* Try emulate it with a one-shot #PF handler in place. */
+    /* The destination is always a virtual address */
+    AssertReturn(param1.type == PARMTYPE_ADDRESS, VERR_EM_INTERPRETER);
+
+    RTGCPTR GCPtrPar1 = param1.val.val64;
+    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
+#ifdef IN_RC
+    pvParam1  = (void *)GCPtrPar1;
+#else
+    PGMPAGEMAPLOCK Lock;
+    rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+#endif
+
+    /* Try emulate it with a one-shot #PF handler in place. (RC) */
     Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pCpu), GCPtrPar1, pCpu->param2.size*8, ValPar2));
 
     RTGCUINTREG32 eflags = 0;
@@ -858,6 +855,8 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     rc = pfnEmulate(pvParam1, ValPar2, pCpu->param2.size, &eflags);
 #ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
+#else
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
 #endif
     if (RT_FAILURE(rc))
     {
@@ -1088,27 +1087,23 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     GCPtrPar1 = (GCPtrPar1 + ValPar2 / 8);
     ValPar2 &= 7;
 
-#ifdef IN_RC
     GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
-    pvParam1  = (void *)GCPtrPar1;
-#else
-    GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
-    rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
-    if (RT_FAILURE(rc))
-    {
-        AssertRC(rc);
-        return VERR_EM_INTERPRETER;
-    }
-#endif
-
-    Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pCpu), pvFault, GCPtrPar1, ValPar2));
-
 #ifdef IN_RC
     Assert(TRPMHasTrap(pVM));
     EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, VERR_EM_INTERPRETER);
 #endif
 
-    /* Try emulate it with a one-shot #PF handler in place. */
+#ifdef IN_RC
+    pvParam1  = (void *)GCPtrPar1;
+#else
+    PGMPAGEMAPLOCK Lock;
+    rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+#endif
+
+    Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pCpu), pvFault, GCPtrPar1, ValPar2));
+
+    /* Try emulate it with a one-shot #PF handler in place. (RC) */
     RTGCUINTREG32 eflags = 0;
 #ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
@@ -1116,6 +1111,8 @@ static int emInterpretLockBitTest(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegF
     rc = pfnEmulate(pvParam1, ValPar2, &eflags);
 #ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
+#else
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
 #endif
     if (RT_FAILURE(rc))
     {
@@ -1422,9 +1419,21 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
+    uint64_t valpar;
+    switch(param2.type)
+    {
+    case PARMTYPE_IMMEDIATE: /* register actually */
+        valpar = param2.val.val64;
+        break;
+
+    default:
+        return VERR_EM_INTERPRETER;
+    }
+
+    PGMPAGEMAPLOCK Lock;
     RTGCPTR  GCPtrPar1;
     void    *pvParam1;
-    uint64_t valpar, eflags;
+    uint64_t eflags;
 
     AssertReturn(pCpu->param1.size == pCpu->param2.size, VERR_EM_INTERPRETER);
     switch(param1.type)
@@ -1433,22 +1442,8 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
         GCPtrPar1 = param1.val.val64;
         GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
 
-        rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
-        if (RT_FAILURE(rc))
-        {
-            AssertRC(rc);
-            return VERR_EM_INTERPRETER;
-        }
-        break;
-
-    default:
-        return VERR_EM_INTERPRETER;
-    }
-
-    switch(param2.type)
-    {
-    case PARMTYPE_IMMEDIATE: /* register actually */
-        valpar = param2.val.val64;
+        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+        AssertRCReturn(rc, VERR_EM_INTERPRETER);
         break;
 
     default:
@@ -1469,6 +1464,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
                             | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
     *pcbSize = param2.size;
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
     return VINF_SUCCESS;
 }
 
@@ -1489,6 +1485,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
     RTGCPTR  GCPtrPar1;
     void    *pvParam1;
     uint64_t eflags;
+    PGMPAGEMAPLOCK Lock;
 
     AssertReturn(pCpu->param1.size == 8, VERR_EM_INTERPRETER);
     switch(param1.type)
@@ -1497,12 +1494,8 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
         GCPtrPar1 = param1.val.val64;
         GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, GCPtrPar1);
 
-        rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrPar1, &pvParam1);
-        if (RT_FAILURE(rc))
-        {
-            AssertRC(rc);
-            return VERR_EM_INTERPRETER;
-        }
+        rc = PGMPhysGCPtr2CCPtr(pVM, GCPtrPar1, &pvParam1, &Lock);
+        AssertRCReturn(rc, VERR_EM_INTERPRETER);
         break;
 
     default:
@@ -1523,6 +1516,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFra
                             | (eflags                &  (X86_EFL_ZF));
 
     *pcbSize = 8;
+    PGMPhysReleasePageMappingLock(pVM, &Lock);
     return VINF_SUCCESS;
 }
 

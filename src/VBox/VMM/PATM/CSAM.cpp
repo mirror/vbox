@@ -577,7 +577,7 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
         }
     }
 
-    rc = PGMPhysGCPtr2HCPtr(pVM, pGCPtr, &pHCPtr);
+    rc = PGMPhysGCPtr2R3Ptr(pVM, pGCPtr, &pHCPtr);
     if (rc != VINF_SUCCESS)
     {
 ////        AssertMsgRC(rc, ("MMR3PhysGCVirt2HCVirtEx failed for %RRv\n", pGCPtr));
@@ -1278,7 +1278,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
 
             Log(("Jump through jump table\n"));
 
-            rc2 = PGMPhysGCPtr2HCPtr(pVM, pJumpTableGC, (PRTHCPTR)&pJumpTableHC);
+            rc2 = PGMPhysGCPtr2R3Ptr(pVM, pJumpTableGC, (PRTHCPTR)&pJumpTableHC);
             if (rc2 == VINF_SUCCESS)
             {
                 for (uint32_t i=0;i<2;i++)
@@ -2327,8 +2327,8 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
      */
     if (PAGE_ADDRESS(GCPtrIDT) == PAGE_ADDRESS(GCPtrIDT+cGates*sizeof(VBOXIDTE)))
     {
-        /* Just convert the IDT address to a HC pointer. The whole IDT fits in one page. */
-        rc = PGMPhysGCPtr2HCPtr(pVM, GCPtrIDT, (PRTHCPTR)&pGuestIdte);
+        /* Just convert the IDT address to a R3 pointer. The whole IDT fits in one page. */
+        rc = PGMPhysGCPtr2R3Ptr(pVM, GCPtrIDT, (PRTR3PTR)&pGuestIdte);
         if (RT_FAILURE(rc))
         {
             AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
