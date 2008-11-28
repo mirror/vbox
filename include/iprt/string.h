@@ -956,7 +956,7 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * @param   pszValue    Pointer to the string value.
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu64        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase, uint64_t *pu64);
@@ -976,7 +976,7 @@ RTDECL(int) RTStrToUInt64Ex(const char *pszValue, char **ppszNext, unsigned uBas
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu64        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt64Full(const char *pszValue, unsigned uBase, uint64_t *pu64);
@@ -1026,7 +1026,7 @@ RTDECL(int) RTStrToUInt32Ex(const char *pszValue, char **ppszNext, unsigned uBas
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu32        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt32Full(const char *pszValue, unsigned uBase, uint32_t *pu32);
@@ -1076,7 +1076,7 @@ RTDECL(int) RTStrToUInt16Ex(const char *pszValue, char **ppszNext, unsigned uBas
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu16        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt16Full(const char *pszValue, unsigned uBase, uint16_t *pu16);
@@ -1126,7 +1126,7 @@ RTDECL(int) RTStrToUInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pu8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToUInt8Full(const char *pszValue, unsigned uBase, uint8_t *pu8);
@@ -1174,7 +1174,7 @@ RTDECL(int) RTStrToInt64Ex(const char *pszValue, char **ppszNext, unsigned uBase
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi64        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt64Full(const char *pszValue, unsigned uBase, int64_t *pi64);
@@ -1222,7 +1222,7 @@ RTDECL(int) RTStrToInt32Ex(const char *pszValue, char **ppszNext, unsigned uBase
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi32        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt32Full(const char *pszValue, unsigned uBase, int32_t *pi32);
@@ -1270,7 +1270,7 @@ RTDECL(int) RTStrToInt16Ex(const char *pszValue, char **ppszNext, unsigned uBase
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi16        Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt16Full(const char *pszValue, unsigned uBase, int16_t *pi16);
@@ -1318,7 +1318,7 @@ RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase,
  *
  * @param   pszValue    Pointer to the string value.
  * @param   uBase       The base of the representation used.
- *                      If the function will look for known prefixes before defaulting to 10.
+ *                      If 0 the function will look for known prefixes before defaulting to 10.
  * @param   pi8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8);
