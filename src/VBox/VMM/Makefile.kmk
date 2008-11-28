@@ -135,6 +135,7 @@ VMMR3_SOURCES.x86 += \
 	VMMSwitcher/32BitToPAE.asm \
         VMMSwitcher/32BitToAMD64.asm \
 	VMMSwitcher/PAETo32Bit.asm \
+        VMMSwitcher/PAEToAMD64.asm \
 	VMMSwitcher/PAEToPAE.asm
 VMMR3_SOURCES.amd64 = \
 	VMMSwitcher/AMD64To32Bit.asm \
