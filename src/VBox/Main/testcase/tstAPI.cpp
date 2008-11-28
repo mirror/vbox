@@ -640,11 +640,13 @@ int main(int argc, char *argv[])
                 if (names.size() == 0)
                     printf (" <none>\n");
 
+#if 0
                 Bstr name ("TargetAddress");
                 Bstr value = Utf8StrFmt ("lalala (%llu)", RTTimeMilliTS());
 
                 printf ("Settings property %ls to %ls...\n", name.raw(), value.raw());
                 CHECK_ERROR (hd, SetProperty (name, value));
+#endif
             }
             else
             {

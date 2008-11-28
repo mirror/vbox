@@ -315,6 +315,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_NOT_SUPPORTED" value="0x80BB0009">
+    <desc>
+       Requested operation is not supported.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -1601,6 +1607,17 @@
         Note that the format of the location string is storage format specific.
         See <link to="IMedium::location"/>, IHardDisk2 and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          @a format identifier is invalid. See
+          <link to="ISystemProperties::hardDiskFormats"/>.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          @a location is a not valid file name (for file-based formats only).
+        </result>
+        <result name="E_INVALIDARG">
+          @a format is a null or empty string.
+        </result>
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
@@ -7388,6 +7405,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         successfully completed, the media state will be set to <link
         to="MediaState::Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Dynamic storage creation operation is not supported. See <link
+          to="IHardDiskFormat::capabilities"/>.
+        </result>
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Maximum logical size of the hard disk in megabytes.</desc>
@@ -7413,6 +7435,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         successfully complete, the media state will be set to <link
         to="MediaState::Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Fixed storage creation operation is not supported. See
+          <link to="IHardDiskFormat::capabilities"/>.
+        </result>
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Logical size of the hard disk in megabytes.</desc>
@@ -7448,6 +7475,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <result name="VBOX_E_OBJECT_IN_USE">
           Hard disk is attached to a virtual machine.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Storage deletion is not allowed because neither of storage creation
+          operations are supported. See
+          <link to="IHardDiskFormat::capabilities"/>.
         </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">

@@ -438,6 +438,13 @@ HRESULT HardDisk2::FinalConstruct()
     mm.vdIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
     mm.vdIfCallsProgress.pfnProgress = vdProgressCall;
 
+    /* Initialize the callbacks of the VD config interface */
+    mm.vdIfCallsConfig.cbSize = sizeof (VDINTERFACEPROGRESS);
+    mm.vdIfCallsConfig.enmInterface = VDINTERFACETYPE_CONFIG;
+/// @todo later
+//  mm.vdIfCallsConfig.pfnAreValuesValid = ...;
+//  mm.vdIfCallsConfig.pfnQueryBytes = ...;
+
     /* Initialize the per-disk interface chain */
     int vrc;
     vrc = VDInterfaceAdd (&mm.vdIfError,
@@ -466,15 +473,19 @@ void HardDisk2::FinalRelease()
  * Initializes the hard disk object without creating or opening an associated
  * storage unit.
  *
+ * For hard disks that don't have the VD_CAP_CREATE_FIXED or
+ * VD_CAP_CREATE_DYNAMIC capability (and therefore cannot be created or deleted
+ * with the means of VirtualBox) the associated storage unit is assumed to be
+ * ready for use so the state of the hard disk object will be set to Created.
+ *
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
 HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
                          const BSTR aLocation)
 {
-    AssertReturn (aVirtualBox != NULL, E_INVALIDARG);
-    AssertReturn (aLocation != NULL, E_INVALIDARG);
-    AssertReturn (aFormat != NULL && *aFormat != '\0', E_INVALIDARG);
+    AssertReturn (aVirtualBox != NULL, E_FAIL);
+    AssertReturn (aFormat != NULL && *aFormat != '\0', E_FAIL);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -497,8 +508,40 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
     rc = setFormat (aFormat);
     CheckComRCReturnRC (rc);
 
-    rc = setLocation (aLocation);
-    CheckComRCReturnRC (rc);
+    if (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File)
+    {
+        rc = setLocation (aLocation);
+        CheckComRCReturnRC (rc);
+    }
+    else
+    {
+        rc = setLocation (aLocation);
+        CheckComRCReturnRC (rc);
+
+        /// @todo later we may want to use a pfnComposeLocation backend info
+        /// callback to generate a well-formed location value (based on the hard
+        /// disk properties we have) rather than allowing each caller to invent
+        /// its own (pseudo-)location.
+    }
+
+    if (!(mm.formatObj->capabilities() &
+          (HardDiskFormatCapabilities_CreateFixed |
+           HardDiskFormatCapabilities_CreateDynamic)))
+    {
+        /* storage for hard disks of this format can neither be explicitly
+         * created by VirtualBox nor deleted, so we place the hard disk to
+         * Created state here and also add it to the registry */
+        m.state = MediaState_Created;
+        unconst (m.id).create();
+        rc = mVirtualBox->registerHardDisk2 (this);
+
+        /// @todo later we may want to use a pfnIsConfigSufficient backend info
+        /// callback that would tell us when we have enough properties to work
+        /// with the hard disk and this information could be used to actually
+        /// move such hard disks from NotCreated to Created state. Instead of
+        /// pfnIsConfigSufficient we can use HardDiskFormat property
+        /// descriptions to see which properties are mandatory
+    }
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED (rc))
@@ -625,7 +668,11 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
     rc = setFormat (format);
     CheckComRCReturnRC (rc);
 
-    /* properties (note: after setting the format as it populates the map) */
+    /* properties (after setting the format as it populates the map). Note that
+     * if some properties are not supported but preseint in the settings file,
+     * they will still be read and accessible (for possible backward
+     * compatibility; we can also clean them up from the XML upon next
+     * XML format versino change if we wish) */
     Key::List properties = aNode.keys ("Property");
     for (Key::List::const_iterator it = properties.begin();
          it != properties.end(); ++ it)
@@ -1023,6 +1070,12 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
 
     AutoWriteLock alock (this);
 
+    if (!(mm.formatObj->capabilities() &
+          HardDiskFormatCapabilities_CreateDynamic))
+        return setError (VBOX_E_NOT_SUPPORTED,
+            tr ("Hard disk format '%ls' does not support dynamic storage "
+                "creation"), mm.format.raw());
+
     switch (m.state)
     {
         case MediaState_NotCreated:
@@ -1030,9 +1083,6 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
         default:
             return setStateError();
     }
-
-    /// @todo NEWMEDIA use backend capabilities to decide if dynamic storage
-    /// is supported
 
     ComObjPtr <Progress> progress;
     progress.createObject();
@@ -1075,6 +1125,12 @@ STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
     CheckComRCReturnRC (autoCaller.rc());
 
     AutoWriteLock alock (this);
+
+    if (!(mm.formatObj->capabilities() &
+          HardDiskFormatCapabilities_CreateFixed))
+        return setError (VBOX_E_NOT_SUPPORTED,
+            tr ("Hard disk format '%ls' does not support fixed storage "
+                "creation"), mm.format.raw());
 
     switch (m.state)
     {
@@ -1469,53 +1525,6 @@ Utf8Str HardDisk2::name()
     return name;
 }
 
-/// @todo NEWMEDIA remove, should not need anymore
-#if 0
-
-/**
- * Returns @c true if the given location is a file in the host's filesystem.
- *
- * @param aLocation     Location to check.
- */
-/*static*/
-bool HardDisk2::isFileLocation (const char *aLocation)
-{
-    /// @todo NEWMEDIA need some library that deals with URLs in a generic way
-
-    if (aLocation == NULL)
-        return false;
-
-    size_t len = strlen (aLocation);
-
-    /* unix-like paths */
-    if (len >= 1 && RTPATH_IS_SLASH (aLocation [0]))
-        return true;
-
-    /* dos-like paths */
-    if (len >= 2 && RTPATH_IS_VOLSEP (aLocation [1]) &&
-        ((aLocation [0] >= 'A' && aLocation [0] <= 'Z') ||
-         (aLocation [0] >= 'a' && aLocation [0] <= 'z')))
-        return true;
-
-    /* if there is a '<protocol>:' suffux which is not 'file:', return false */
-    const char *s = strchr (aLocation, ':');
-    if (s != NULL)
-    {
-        if (s - aLocation != 4)
-            return false;
-        if ((aLocation [0] != 'f' && aLocation [0] == 'F') ||
-            (aLocation [1] != 'i' && aLocation [1] == 'I') ||
-            (aLocation [2] != 'l' && aLocation [2] == 'L') ||
-            (aLocation [3] != 'e' && aLocation [3] == 'E'))
-            return false;
-    }
-
-    /* everything else is treaten as file */
-    return true;
-}
-
-#endif /* if 0 */
-
 /**
  * Checks that this hard disk may be discarded and performs necessary state
  * changes.
@@ -1834,6 +1843,13 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
     AutoWriteLock vboxLock (mVirtualBox);
 
     AutoWriteLock alock (this);
+
+    if (!(mm.formatObj->capabilities() &
+          (HardDiskFormatCapabilities_CreateDynamic |
+           HardDiskFormatCapabilities_CreateFixed)))
+        return setError (VBOX_E_NOT_SUPPORTED,
+            tr ("Hard disk format '%ls' does not support storage deletion "),
+            mm.format.raw());
 
     switch (m.state)
     {
@@ -2352,8 +2368,10 @@ void HardDisk2::cancelMergeTo (MergeChain *aChain)
  */
 HRESULT HardDisk2::setLocation (const BSTR aLocation)
 {
-    if (aLocation == NULL)
-        return E_INVALIDARG;
+    /// @todo so far, we assert but later it makes sense to support null
+    /// locations for hard disks that are not yet created fail to create a
+    /// storage unit instead
+    CheckComArgStrNotEmptyOrNull (aLocation);
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -2503,7 +2521,7 @@ HRESULT HardDisk2::setFormat (const BSTR aFormat)
         unconst (mm.formatObj)
             = mVirtualBox->systemProperties()->hardDiskFormat (aFormat);
         if (mm.formatObj.isNull())
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Invalid hard disk storage format '%ls'"), aFormat);
 
         /* reference the format permanently to prevent its unexpected
