@@ -135,7 +135,6 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PD:
             HCPhys = pVM->pgm.s.HCPhysShw32BitPD;
             break;
-        case PGMPOOL_IDX_PAE_PD:
         case PGMPOOL_IDX_PAE_PD_0:
             HCPhys = pVM->pgm.s.aHCPhysPaePDs[0];
             break;
@@ -151,6 +150,9 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PDPT:
             HCPhys = pVM->pgm.s.HCPhysShwPaePdpt;
             break;
+        case PGMPOOL_IDX_PAE_PD:
+            AssertReleaseMsgFailed(("PGMPOOL_IDX_PAE_PD is not usable in VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 context\n"));
+            return NULL;
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
@@ -2736,7 +2738,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
             break;
         case PGMPOOLKIND_ROOT_PAE_PD:
             Assert(pUser->iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
-            Assert(!(u.pau64[pUser->iUserTable] & PGM_PDFLAGS_MAPPING));
+            AssertMsg(!(u.pau64[pUser->iUserTable] & PGM_PDFLAGS_MAPPING), ("%llx %d\n", u.pau64[pUser->iUserTable], pUser->iUserTable));
             break;
         case PGMPOOLKIND_ROOT_PDPT:
             Assert(pUser->iUserTable < 4);
@@ -3579,7 +3581,6 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
             uint64_t *pau64;
             uint32_t *pau32;
         } u;
-        u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
         /*
          * Mark stuff not present.
@@ -3587,13 +3588,15 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
         switch (pPage->enmKind)
         {
             case PGMPOOLKIND_ROOT_32BIT_PD:
+                u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 for (unsigned iPage = 0; iPage < X86_PG_ENTRIES; iPage++)
                     if ((u.pau32[iPage] & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == X86_PDE_P)
                         u.pau32[iPage] = 0;
                 break;
 
-            case PGMPOOLKIND_ROOT_PAE_PD:
-                for (unsigned iPage = 0; iPage < X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES; iPage++)
+            case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+                u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+                for (unsigned iPage = 0; iPage < X86_PG_PAE_ENTRIES; iPage++)
                     if ((u.pau64[iPage] & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == X86_PDE_P)
                         u.pau64[iPage] = 0;
                 break;
@@ -3603,6 +3606,7 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
                 break;
 
             case PGMPOOLKIND_ROOT_NESTED:
+                u.pau64 = (uint64_t *)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 ASMMemZero32(u.pau64, PAGE_SIZE);
                 break;
         }
