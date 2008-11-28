@@ -4635,6 +4635,9 @@
         where the original powerDown() method will be removed. You will need to
         rename "powerDownAsync" to "powerDown" in your sources to make them
         build with version 2.1.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine must be Running, Paused or Stuck to be powered down.
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
