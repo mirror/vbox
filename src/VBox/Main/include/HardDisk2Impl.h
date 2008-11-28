@@ -284,6 +284,9 @@ private:
         VDINTERFACE vdIfProgress;
         VDINTERFACEPROGRESS vdIfCallsProgress;
 
+        VDINTERFACE vdIfConfig;
+        VDINTERFACECONFIG vdIfCallsConfig;
+
         PVDINTERFACE vdDiskIfaces;
     };
 

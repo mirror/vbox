@@ -1086,12 +1086,8 @@ STDMETHODIMP VirtualBox::CreateHardDisk2 (INPTR BSTR aFormat,
                                           INPTR BSTR aLocation,
                                           IHardDisk2 **aHardDisk)
 {
-    if (!aFormat)
-        return E_INVALIDARG;
-    if (!aLocation)
-        return E_INVALIDARG;
-    if (!aHardDisk)
-        return E_POINTER;
+    CheckComArgStrNotEmptyOrNull (aFormat);
+    CheckComArgOutPointerValid (aHardDisk);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
