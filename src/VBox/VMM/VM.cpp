@@ -525,7 +525,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMCons
         rc = CFGMR3Init(pVM, pfnCFGMConstructor, pvUserCFGM);
         if (RT_SUCCESS(rc))
         {
-            rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "fHwVirtExtForced", &pVM->fHwVirtExtForced, false);
+            rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "HwVirtExtForced", &pVM->fHwVirtExtForced, false);
             if (RT_SUCCESS(rc) && pVM->fHwVirtExtForced)
                 pVM->fHWACCMEnabled = true;
 
