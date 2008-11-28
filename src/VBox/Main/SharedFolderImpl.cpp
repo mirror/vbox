@@ -186,7 +186,7 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
     Utf8Str hostPath = Utf8Str (aHostPath);
     size_t hostPathLen = hostPath.length();
 
-    /* Remove the trailng slash unless it's a root directory
+    /* Remove the trailing slash unless it's a root directory
      * (otherwise the comparison with the RTPathAbs() result will fail at least
      * on Linux). Note that this isn't really necessary for the shared folder
      * itself, since adding a mapping eventually results into a
