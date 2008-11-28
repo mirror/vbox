@@ -260,7 +260,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x000a0000
-                                  ? 0x000a0004
+                                  ? 0x000a0005
                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -373,6 +373,16 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
     static const SUPFUNC s_aFakeFunctions[] =
     {
         /* name                                     function */
+        { "SUPR0AbsIs64bit",                        0 },
+        { "SUPR0Abs64bitKernelCS",                  0 },
+        { "SUPR0Abs64bitKernelSS",                  0 },
+        { "SUPR0Abs64bitKernelDS",                  0 },
+        { "SUPR0AbsKernelCS",                       8 },
+        { "SUPR0AbsKernelSS",                       16 },
+        { "SUPR0AbsKernelDS",                       16 },
+        { "SUPR0AbsKernelES",                       16 },
+        { "SUPR0AbsKernelFS",                       24 },
+        { "SUPR0AbsKernelGS",                       32 },
         { "SUPR0ComponentRegisterFactory",          0xefeefffd },
         { "SUPR0ComponentDeregisterFactory",        0xefeefffe },
         { "SUPR0ComponentQueryFactory",             0xefeeffff },
@@ -389,6 +399,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "SUPR0MemFree",                           0xefef000a },
         { "SUPR0Printf",                            0xefef000b },
         { "SUPR0GetPagingMode",                     0xefef000c },
+        { "SUPR0NativeEnableHwVirtExt",             0xefef000c },
         { "RTMemAlloc",                             0xefef000d },
         { "RTMemAllocZ",                            0xefef000e },
         { "RTMemFree",                              0xefef000f },
