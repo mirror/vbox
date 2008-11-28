@@ -2022,9 +2022,8 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     if (mMachineState != MachineState_Running &&
         mMachineState != MachineState_Paused)
         return setError (E_FAIL,
-            tr ("Cannot attach a USB device to the machine which is not running"
-                "(machine state: %d)"),
-            mMachineState);
+            tr ("Cannot attach a USB device to the machine which is not running "
+                "(machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
