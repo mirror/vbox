@@ -250,7 +250,7 @@
      PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
-     PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_EX
@@ -270,7 +270,7 @@
      PGMDynMapGCPageOff(pVM, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
-     PGMPhysGCPhys2HCPtr(pVM, GCPhys, 1 /* one page only */, (void **)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
 #endif
 
 /** @def PGM_INVL_PG
@@ -3181,7 +3181,8 @@ DECLINLINE(int) pgmPhysPageQueryTlbe(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGEMAPTLB
  * @param   GCPhys      The GC physical address.
  * @param   pHCPtr      Where to store the corresponding HC virtual address.
  *
- * @deprecated  This will be eliminated by PGMPhysGCPhys2CCPtr.
+ * @deprecated  This will be eliminated by PGMPhysGCPhys2CCPtr. Only user is
+ *              pgmPoolMonitorGCPtr2CCPtr.
  */
 DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
 {
@@ -3203,60 +3204,13 @@ DECLINLINE(int) pgmRamGCPhys2HCPtr(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
     }
     if (pRam->pvR3)
     {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off);
         return VINF_SUCCESS;
     }
     *pHCPtr = 0; /* Shut up silly GCC warnings. */
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
 }
 # endif /* !VBOX_WITH_NEW_PHYS_CODE */
-
-
-/**
- * Convert GC Phys to HC Virt.
- *
- * @returns VBox status.
- * @param   PVM         VM handle.
- * @param   pRam        Ram range
- * @param   GCPhys      The GC physical address.
- * @param   pHCPtr      Where to store the corresponding HC virtual address.
- *
- * @deprecated  This will be eliminated. Don't use it.
- */
-DECLINLINE(int) pgmRamGCPhys2HCPtrWithRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, PRTHCPTR pHCPtr)
-{
-    RTGCPHYS off = GCPhys - pRam->GCPhys;
-    Assert(off < pRam->cb);
-
-    if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
-    {
-        unsigned idx = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
-        /* Physical chunk in dynamically allocated range not present? */
-        if (RT_UNLIKELY(!pRam->paChunkR3Ptrs[idx]))
-        {
-#ifdef IN_RING3
-            int rc = pgmr3PhysGrowRange(pVM, GCPhys);
-#else
-            int rc = CTXALLMID(VMM, CallHost)(pVM, VMMCALLHOST_PGM_RAM_GROW_RANGE, GCPhys);
-#endif
-            if (rc != VINF_SUCCESS)
-            {
-                *pHCPtr = 0; /* GCC crap */
-                return rc;
-            }
-        }
-        *pHCPtr = (RTHCPTR)(pRam->paChunkR3Ptrs[idx] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
-        return VINF_SUCCESS;
-    }
-    if (pRam->pvR3)
-    {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
-        return VINF_SUCCESS;
-    }
-    *pHCPtr = 0; /* GCC crap */
-    return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-}
-
 #endif /* !IN_RC && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) */
 
 /**
@@ -3298,7 +3252,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPtrAndHCPhysWithFlags(PPGM pPGM, RTGCPHYS GCPhys,
     }
     if (pRam->pvR3)
     {
-        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off); /** @todo @bugref{1865,3202}: Code is converting R3 pointer and maybe using it in R0! */
+        *pHCPtr = (RTHCPTR)((RTHCUINTPTR)pRam->pvR3 + off);
         return VINF_SUCCESS;
     }
     *pHCPtr = 0;

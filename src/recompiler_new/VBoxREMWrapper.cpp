@@ -710,20 +710,20 @@ static const REMPARMDESC g_aArgsPGMInvalidatePage[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL }
 };
-static const REMPARMDESC g_aArgsPGMPhysGCPhys2HCPtr[] =
+static const REMPARMDESC g_aArgsPGMPhysGCPhys2R3Ptr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTHCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTR3PTR), NULL }
 };
-static const REMPARMDESC g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[] =
+static const REMPARMDESC g_aArgsPGMPhysGCPtr2R3PtrByGstCR3[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTHCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTR3PTR), NULL }
 };
 static const REMPARMDESC g_aArgsPGM3PhysGrowRange[] =
 {
@@ -802,7 +802,7 @@ static const REMPARMDESC g_aArgsPGMR3DbgR3Ptr2GCPhys[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(void*), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPHYS), NULL }   
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPHYS), NULL }
 };
 static const REMPARMDESC g_aArgsPGMHandlerIsAddressMonitored[] =
 {
@@ -1127,8 +1127,8 @@ static REMFNDESC g_aVMMImports[] =
     { "PGMGetGuestMode",                        (void *)(uintptr_t)&PGMGetGuestMode,                &g_aArgsPGMGetGuestMode[0],                 RT_ELEMENTS(g_aArgsPGMGetGuestMode),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMGstGetPage",                          (void *)(uintptr_t)&PGMGstGetPage,                  &g_aArgsPGMGstGetPage[0],                   RT_ELEMENTS(g_aArgsPGMGstGetPage),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMInvalidatePage",                      (void *)(uintptr_t)&PGMInvalidatePage,              &g_aArgsPGMInvalidatePage[0],               RT_ELEMENTS(g_aArgsPGMInvalidatePage),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PGMPhysGCPhys2HCPtr",                    (void *)(uintptr_t)&PGMPhysGCPhys2HCPtr,            &g_aArgsPGMPhysGCPhys2HCPtr[0],             RT_ELEMENTS(g_aArgsPGMPhysGCPhys2HCPtr),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "PGMPhysGCPtr2HCPtrByGstCR3",             (void *)(uintptr_t)&PGMPhysGCPtr2HCPtrByGstCR3,     &g_aArgsPGMPhysGCPtr2HCPtrByGstCR3[0],      RT_ELEMENTS(g_aArgsPGMPhysGCPtr2HCPtrByGstCR3),        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "PGMPhysGCPhys2R3Ptr",                    (void *)(uintptr_t)&PGMPhysGCPhys2R3Ptr,            &g_aArgsPGMPhysGCPhys2R3Ptr[0],             RT_ELEMENTS(g_aArgsPGMPhysGCPhys2R3Ptr),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "PGMPhysGCPtr2R3PtrByGstCR3",             (void *)(uintptr_t)&PGMPhysGCPtr2R3PtrByGstCR3,     &g_aArgsPGMPhysGCPtr2R3PtrByGstCR3[0],      RT_ELEMENTS(g_aArgsPGMPhysGCPtr2R3PtrByGstCR3),        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #ifndef VBOX_WITH_NEW_PHYS_CODE
     { "PGM3PhysGrowRange",                      (void *)(uintptr_t)&PGM3PhysGrowRange,              &g_aArgsPGM3PhysGrowRange[0],               RT_ELEMENTS(g_aArgsPGM3PhysGrowRange),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 #endif
@@ -1179,7 +1179,7 @@ static REMFNDESC g_aVMMImports[] =
     { "VMMR3Unlock",                            (void *)(uintptr_t)&VMMR3Unlock,                    &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqCall",                            (void *)(uintptr_t)&VMR3ReqCall,                    &g_aArgsVMR3ReqCall[0],                     RT_ELEMENTS(g_aArgsVMR3ReqCall),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqFree",                            (void *)(uintptr_t)&VMR3ReqFree,                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
-    { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },    
+    { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3GetVMCPUNativeThread",               (void *)(uintptr_t)&VMR3GetVMCPUNativeThread,       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
 //    { "",                        (void *)(uintptr_t)&,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
 };

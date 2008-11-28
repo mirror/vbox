@@ -581,7 +581,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
         pPatchRec->patch.pPrivInstrHC   = 0;
         /* The GC virtual ptr is fixed, but we must convert it manually again to HC. */
-        rc = PGMPhysGCPtr2HCPtr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTHCPTR)&pPatchRec->patch.pPrivInstrHC);
+        rc = PGMPhysGCPtr2R3Ptr(pVM, pPatchRec->patch.pPrivInstrGC, (PRTR3PTR)&pPatchRec->patch.pPrivInstrHC);
         /* Can fail due to page or page table not present. */
 
         /*

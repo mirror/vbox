@@ -3166,7 +3166,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PGSTPD      pPDSrc = pgmGstGet32bitPDPtr(&pVM->pgm.s);
     Assert(pPDSrc);
 #   if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    Assert(PGMPhysGCPhys2HCPtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == pPDSrc);
+    Assert(PGMPhysGCPhys2R3PtrAssert(pVM, (RTGCPHYS)(cr3 & GST_CR3_PAGE_MASK), sizeof(*pPDSrc)) == (RTR3PTR)pPDSrc);
 #   endif
 #  endif /* PGM_GST_TYPE == PGM_TYPE_32BIT */
 
