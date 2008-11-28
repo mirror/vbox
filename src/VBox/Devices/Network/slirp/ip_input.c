@@ -431,7 +431,6 @@ ip_reass(PNATState pData, struct mbuf* m) {
     struct ipq_t *fp = NULL;
     struct ipqhead *head;
     int i, hlen, next;
-    u_int8_t ecn, ecn0;
     u_short hash;
 
     /* If maxnipq or maxfragsperpacket are 0, never accept fragments. */
