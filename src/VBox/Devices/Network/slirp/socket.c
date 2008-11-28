@@ -347,7 +347,7 @@ sowrite(PNATState pData, struct socket *so)
         if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
                 return 0;
 
-        if (nn <= 0) {
+        if (nn < 0 || (nn == 0 && iov[0].iov_len > 0)) {
                 DEBUG_MISC((dfd, " --- sowrite disconnected, so->so_state = %x, errno = %d\n",
                         so->so_state, errno));
                 sofcantsendmore(so);
