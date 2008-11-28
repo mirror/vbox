@@ -4537,7 +4537,7 @@
     <method name="powerUp">
       <desc>
         Starts the virtual machine execution using the current machine
-        state (i.e. its current execution state, current settings and
+        state (that is, its current execution state, current settings and
         current hard disks).
 
         If the machine is powered off or aborted, the execution will
