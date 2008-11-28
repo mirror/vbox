@@ -170,4 +170,4 @@ const char *Global::OSTypeId (VBOXOSTYPE aOSType)
     AssertMsgFailed (("No record for VBOXOSTYPE %d\n", aOSType));
     return sOSTypes [0].id;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

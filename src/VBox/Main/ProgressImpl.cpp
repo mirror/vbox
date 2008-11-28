@@ -1533,4 +1533,4 @@ HRESULT CombinedProgress::checkProgress()
 
     return rc;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -202,4 +202,4 @@ bool ParsedRegexpFilter_base::isMatch (const Bstr &aValue) const
 }
 
 } /* namespace matching */
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

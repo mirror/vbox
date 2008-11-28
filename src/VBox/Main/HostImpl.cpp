@@ -3548,4 +3548,4 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
     aCollector->unregisterBaseMetricsFor (this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

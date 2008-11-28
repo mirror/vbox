@@ -669,4 +669,4 @@ STDMETHODIMP PerformanceMetric::COMGETTER(MaximumValue) (LONG *aMaxValue)
     *aMaxValue = m.max;
     return S_OK;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

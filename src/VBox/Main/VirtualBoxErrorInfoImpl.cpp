@@ -241,4 +241,4 @@ NS_IMPL_THREADSAFE_ISUPPORTS2 (VirtualBoxErrorInfo,
                                nsIException, IVirtualBoxErrorInfo)
 
 #endif // !defined (VBOX_WITH_XPCOM)
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

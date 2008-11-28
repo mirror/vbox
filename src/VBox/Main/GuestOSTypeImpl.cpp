@@ -281,3 +281,4 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetwork
 
     return S_OK;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

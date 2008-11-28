@@ -599,4 +599,4 @@ void RWLockHandle::TLSDestructor (internal::TLS *aTLS)
 
 
 } /* namespace util */
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

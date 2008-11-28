@@ -141,4 +141,4 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(Device) (LONG *aDevice)
 
     return S_OK;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

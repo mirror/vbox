@@ -439,3 +439,4 @@ void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath
     }
 }
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

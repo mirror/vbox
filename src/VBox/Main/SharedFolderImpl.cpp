@@ -324,3 +324,4 @@ STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
 
     return S_OK;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

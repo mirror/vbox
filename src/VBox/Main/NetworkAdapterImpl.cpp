@@ -1400,3 +1400,4 @@ void NetworkAdapter::generateMACAddress()
     LogFlowThisFunc (("generated MAC: '%s'\n", strMAC));
     mData->mMACAddress = strMAC;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

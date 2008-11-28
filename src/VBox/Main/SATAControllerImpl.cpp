@@ -521,4 +521,4 @@ void SATAController::copyFrom (SATAController *aThat)
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

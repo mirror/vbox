@@ -557,4 +557,4 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
 
     return S_OK;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
