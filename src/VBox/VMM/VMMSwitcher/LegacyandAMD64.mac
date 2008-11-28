@@ -23,8 +23,6 @@
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *
 ;*******************************************************************************
-;; Prefix all names.
-%define NAME_OVERLOAD(name) vmmR3Switcher32BitToAMD64_ %+ name
 
 
 ;*******************************************************************************
@@ -552,7 +550,7 @@ GLOBALNAME End
 ; The description string (in the text section).
 ;
 NAME(Description):
-    db "32-bits to/from AMD64", 0
+    db SWITCHER_DESCRIPTION, 0
 
 extern NAME(Relocate)
 
@@ -572,7 +570,7 @@ GLOBALNAME Def
         at VMMSWITCHERDEF.pvFixups,                     RTCCPTR_DEF NAME(Fixups)
         at VMMSWITCHERDEF.pszDesc,                      RTCCPTR_DEF NAME(Description)
         at VMMSWITCHERDEF.pfnRelocate,                  RTCCPTR_DEF NAME(Relocate)
-        at VMMSWITCHERDEF.enmType,                      dd VMMSWITCHER_32_TO_AMD64
+        at VMMSWITCHERDEF.enmType,                      dd SWITCHER_TYPE
         at VMMSWITCHERDEF.cbCode,                       dd NAME(End)                        - NAME(Start)
         at VMMSWITCHERDEF.offR0HostToGuest,             dd NAME(vmmR0HostToGuest)           - NAME(Start)
         at VMMSWITCHERDEF.offGCGuestToHost,             dd NAME(vmmGCGuestToHost)           - NAME(Start)
