@@ -26,8 +26,8 @@ include	$(KBUILD_PATH)/subheader.kmk
 # vditool - useful too for manipulating VDIs, but now pretty obsolete and
 # probably will go away soon. Testcase only now.
 #
-PROGRAMS += vditool
 ifdef VBOX_WITH_TESTCASES
+ PROGRAMS += vditool
  ifeq ($(KBUILD_TARGET),l4)
   vditool_TEMPLATE = VBOXLNXHOSTR3EXE
   vditool_LIBS     = \
