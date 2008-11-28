@@ -647,13 +647,13 @@ sw_window_is_behind(Window wnd, Window behind)
 	XQueryTree(g_display, RootWindowOfScreen(g_screen), &dummy1, &dummy2, &child_list,
 		   &num_children);
 
-	for (i = num_children - 1; i >= 0; i--)
+	for (i = num_children; i > 0; i--)
 	{
-		if (child_list[i] == behind)
+		if (child_list[i-1] == behind)
 		{
 			found_behind = True;
 		}
-		else if (child_list[i] == wnd)
+		else if (child_list[i-1] == wnd)
 		{
 			found_wnd = True;
 			break;
