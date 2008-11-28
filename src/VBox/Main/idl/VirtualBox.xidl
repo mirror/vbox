@@ -309,6 +309,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_HOST_ERROR" value="0x80BB0008">
+    <desc>
+       Host operating system related error.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -4561,6 +4567,15 @@
         </note>
 
         <see>#saveState</see>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine already running.
+        </result>
+        <result name="VBOX_E_HOST_ERROR">
+          Host interface does not exist or name not set.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid saved state file.
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
