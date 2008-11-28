@@ -4273,9 +4273,9 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     AutoWriteLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError(E_FAIL, tr ("Virtual machine is already running "
-                                    "(machine state: %d)"),
-                        mMachineState);
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr ("Virtual machine is already running "
+            "(machine state: %d)"), mMachineState);
 
     HRESULT rc = S_OK;
 
@@ -4301,7 +4301,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                 adapter->COMGETTER(HostInterface)(hostif.asOutParam());
                 if (!hostif)
                 {
-                    return setError (E_FAIL,
+                    return setError (VBOX_E_HOST_ERROR,
                         tr ("VM cannot start because host interface networking "
                             "requires a host interface name to be set"));
                 }
@@ -4314,7 +4314,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                 ComPtr<IHostNetworkInterface> hostInterface;
                 if (!SUCCEEDED(coll->FindByName(hostif, hostInterface.asOutParam())))
                 {
-                    return setError (E_FAIL,
+                    return setError (VBOX_E_HOST_ERROR,
                         tr ("VM cannot start because the host interface '%ls' "
                             "does not exist"),
                         hostif.raw());
@@ -4362,7 +4362,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
         ComAssertRet (!!savedStateFile, E_FAIL);
         int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile));
         if (VBOX_FAILURE (vrc))
-            return setError (E_FAIL,
+            return setError (VBOX_E_FILE_ERROR,
                 tr ("VM cannot start because the saved state file '%ls' is invalid (%Rrc). "
                     "Discard the saved state prior to starting the VM"),
                     savedStateFile.raw(), vrc);
@@ -7455,4 +7455,4 @@ const PDMDRVREG Console::DrvStatusReg =
     /* pfnDetach */
     NULL
 };
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
