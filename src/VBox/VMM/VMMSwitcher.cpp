@@ -54,10 +54,10 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
 #ifndef RT_ARCH_AMD64
     &vmmR3Switcher32BitTo32Bit_Def,
     &vmmR3Switcher32BitToPAE_Def,
-    NULL, //&vmmR3Switcher32BitToAMD64_Def - disabled because it causes assertions.
+    &vmmR3Switcher32BitToAMD64_Def,
     &vmmR3SwitcherPAETo32Bit_Def,
     &vmmR3SwitcherPAEToPAE_Def,
-    NULL, //&vmmR3SwitcherPAEToAMD64_Def - disabled because it causes assertions.
+    &vmmR3SwitcherPAEToAMD64_Def,
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
@@ -347,7 +347,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
              */
             case FIX_GC_2_ID_NEAR_REL:
             {
-                Assert(offSrc - pSwitcher->offGCCode < pSwitcher->cbGCCode);
+                AssertMsg(offSrc - pSwitcher->offGCCode < pSwitcher->cbGCCode, ("%x - %x < %x\n", offSrc, pSwitcher->offGCCode, pSwitcher->cbGCCode));
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offTrg - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
                 *uSrc.pu32 = (uint32_t)((u32IDCode + offTrg) - (GCPtrCode + offSrc + 4));
@@ -609,18 +609,6 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
 
 #if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
             /*
-             * 64-bit HC pointer fixup to (HC) target within the code (32-bit offset).
-             */
-            case FIX_HC_64BIT:
-            {
-                uint32_t offTrg = *u.pu32++;
-                Assert(offSrc < pSwitcher->cbCode);
-                Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
-                *uSrc.pu64 = R0PtrCode + offTrg;
-                break;
-            }
-
-            /*
              * 64-bit HC Code Selector (no argument).
              */
             case FIX_HC_64BIT_CS:
@@ -634,6 +622,18 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 break;
             }
 #endif
+            /*
+             * 64-bit HC pointer fixup to (HC) target within the code (32-bit offset).
+             */
+            case FIX_HC_64BIT:
+            {
+                uint32_t offTrg = *u.pu32++;
+                Assert(offSrc < pSwitcher->cbCode);
+                Assert(offTrg - pSwitcher->offHCCode0 < pSwitcher->cbHCCode0 || offTrg - pSwitcher->offHCCode1 < pSwitcher->cbHCCode1);
+                *uSrc.pu64 = R0PtrCode + offTrg;
+                break;
+            }
+
             /*
              * 64-bit HC pointer to the CPUM instance data (no argument).
              */
@@ -660,10 +660,11 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
              * 64-bit ID pointer to (ID) target within the code (32-bit offset).
              */
             case FIX_ID_64BIT:
+            case FIX_HC_64BIT_NOCHECK:
             {
                 uint32_t offTrg = *u.pu32++;
                 Assert(offSrc < pSwitcher->cbCode);
-                Assert(offTrg - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offTrg - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
+                Assert(u8 == FIX_HC_64BIT_NOCHECK || offTrg - pSwitcher->offIDCode0 < pSwitcher->cbIDCode0 || offTrg - pSwitcher->offIDCode1 < pSwitcher->cbIDCode1);
                 *uSrc.pu64 = u32IDCode + offTrg;
                 break;
             }
@@ -880,6 +881,15 @@ DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwit
 {
     vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
                                  SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), 0);
+}
+
+/**
+ * Relocator for the PAE to AMD64 world switcher.
+ */
+DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
+{
+    vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
+                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
 }
 
 
