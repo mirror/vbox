@@ -430,11 +430,13 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
-                unsigned iGst     = off / sizeof(X86PTE);           // ASSUMING 32-bit guest paging!
-                unsigned iShwPdpt = iGst & 3;
-                unsigned iShw     = iGst / 4;
+                unsigned iGst     = off / sizeof(X86PDE);           // ASSUMING 32-bit guest paging!
+                unsigned iShwPdpt = iGst % 256;
+                unsigned iShw     = iGst / 2;
                 Assert(pPage->idx == PGMPOOL_IDX_PAE_PD);
-                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage + 1 + iShwPdpt);
+                PPGMPOOLPAGE pPage2 = pPage + 1 + iShwPdpt;
+                Assert(pPage2->idx == PGMPOOL_IDX_PAE_PD_0 + iShwPdpt);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage2);
                 for (unsigned i = 0; i < 2; i++, iShw++)
                 {
                     if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
