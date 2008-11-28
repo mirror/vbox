@@ -318,9 +318,9 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_FEATURE_ECX_VMX   - not virtualized.
                                        //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
                                        //| X86_CPUID_FEATURE_ECX_TM2   - no thermal monitor 2.
+                                       //| X86_CPUID_FEATURE_ECX_SSSE3 - no SSSE3 support
                                        //| X86_CPUID_FEATURE_ECX_CNTXID - no L1 context id (MSR++).
-                                       /* ECX Bit 13 - CX16 - CMPXCHG16B. */
-                                       //| X86_CPUID_FEATURE_ECX_CX16
+                                       //| X86_CPUID_FEATURE_ECX_CX16  - no cmpxchg16b
                                        /* ECX Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
                                        //| X86_CPUID_FEATURE_ECX_TPRUPDATE
                                        /* ECX Bit 21 - x2APIC support - not yet. */
