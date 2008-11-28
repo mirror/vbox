@@ -8939,7 +8939,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="hostMode" type="PortMode">
-      <desc>How is this port connected to the host.</desc>
+      <desc>
+        How is this port connected to the host.
+        <note>
+          Changing this attribute may fail if the conditions for
+          <link to="#path"/> are not met.
+        </note>
+      </desc>
     </attribute>
 
     <attribute name="server" type="boolean">
