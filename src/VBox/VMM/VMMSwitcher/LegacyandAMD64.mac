@@ -162,7 +162,7 @@ htg_debug_regs_no:
     ;;
     ;; Load Intermediate memory context.
     ;;
-    FIXUP FIX_INTER_32BIT_CR3, 1
+    FIXUP SWITCHER_FIX_INTER_CR3_HC, 1
     mov     eax, 0ffffffffh
     mov     cr3, eax
     DEBUG_CHAR('?')
@@ -325,7 +325,7 @@ BEGINPROC VMMGCGuestToHostAsm
     FIXUP FIX_INTER_AMD64_CR3, 1
     mov     rax, 0ffffffffh
     mov     cr3, rax
-    ;; We're now in intermediate memory context!
+    ;; We're now in the intermediate memory context!
         
     ;;
     ;; Jump to identity mapped location
@@ -345,8 +345,8 @@ BITS 32
     mov     cr0, ebx
     DEBUG_CHAR('2')
 
-    ; 2. Load 32-bit intermediate page table.
-    FIXUP FIX_INTER_32BIT_CR3, 1
+    ; 2. Load intermediate page table.
+    FIXUP SWITCHER_FIX_INTER_CR3_HC, 1
     mov     edx, 0ffffffffh
     mov     cr3, edx
     DEBUG_CHAR('3')
@@ -359,11 +359,13 @@ BITS 32
     wrmsr
     DEBUG_CHAR('6')
 
+%ifndef NEED_PAE_ON_HOST
     ; 3b. Disable PAE.
     mov     eax, cr4
     and     eax, ~X86_CR4_PAE
     mov     cr4, eax
     DEBUG_CHAR('7')
+%endif
 
     ; 4. Enable paging.
     or      ebx, X86_CR0_PG
