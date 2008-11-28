@@ -1133,4 +1133,4 @@ HRESULT FloppyImage2::unregisterWithVirtualBox()
 {
     return mVirtualBox->unregisterFloppyImage (this);
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -320,3 +320,4 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
 
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

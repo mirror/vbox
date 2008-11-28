@@ -152,3 +152,4 @@ void HostPowerService::notify (HostPowerEvent aEvent)
         }
     }
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

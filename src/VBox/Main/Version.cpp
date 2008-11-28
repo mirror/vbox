@@ -32,3 +32,4 @@ unsigned long VBoxSVNRev ()
 {
     return VBOX_SVN_REV;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

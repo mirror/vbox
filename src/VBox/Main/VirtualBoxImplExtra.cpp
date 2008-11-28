@@ -171,4 +171,4 @@ const char *VirtualBox::SettingsTreeHelper::templateUri() const
 {
     return VBOX_XML_SETTINGS_CONVERTER;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

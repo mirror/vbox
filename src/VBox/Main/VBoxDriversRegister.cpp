@@ -72,4 +72,4 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
     return VINF_SUCCESS;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

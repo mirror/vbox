@@ -1373,4 +1373,4 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

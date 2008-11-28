@@ -818,4 +818,4 @@ bool MachineDebugger::queueSettings() const
     }
     return false;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

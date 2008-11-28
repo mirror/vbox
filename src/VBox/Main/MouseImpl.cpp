@@ -464,3 +464,4 @@ const PDMDRVREG Mouse::DrvReg =
     /* pfnDetach */
     NULL
 };
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

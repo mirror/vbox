@@ -28,6 +28,6 @@
 void __reference_stuff(void);
 void __reference_stuff(void)
 {
-    AssertReleaseMsgFailed(("Should never ever get here!!!\n"));
+    AssertReleaseMsgFailed(("Should never ever get here!\n"));
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

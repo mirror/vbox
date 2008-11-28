@@ -3620,4 +3620,4 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
     /// @todo ugly hack, fix ComAssert... later
     #undef setError
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

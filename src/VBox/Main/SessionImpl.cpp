@@ -1146,3 +1146,4 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
     return 0;
 }
 #endif
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

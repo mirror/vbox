@@ -613,3 +613,4 @@ void AudioAdapter::copyFrom (AudioAdapter *aThat)
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

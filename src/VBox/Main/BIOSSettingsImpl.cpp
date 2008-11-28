@@ -766,4 +766,4 @@ void BIOSSettings::applyDefaults (GuestOSType *aOsType)
     /* Initialize default BIOS settings here */
     mData->mIOAPICEnabled = aOsType->recommendedIOAPIC();
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

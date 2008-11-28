@@ -608,3 +608,4 @@ bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
     LogAleksey(("...no matches!\n"));
     return false;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

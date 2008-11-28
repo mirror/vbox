@@ -4576,4 +4576,4 @@ void *VirtualBox::CallbackEvent::handler()
 
     return NULL;
 }
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

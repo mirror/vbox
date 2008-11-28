@@ -2171,3 +2171,4 @@ IMPL_GETTER_SCALAR (ULONG,   EncryptionStyle,    VRDP_QI_ENCRYPTION_STYLE);
 
 #undef IMPL_GETTER_BSTR
 #undef IMPL_GETTER_SCALAR
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

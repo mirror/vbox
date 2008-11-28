@@ -695,3 +695,4 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
 
     return S_OK;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

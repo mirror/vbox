@@ -292,4 +292,4 @@ STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
-
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

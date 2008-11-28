@@ -360,3 +360,4 @@ void Guest::setSupportsGraphics (BOOL aSupportsGraphics)
 
     mData.mSupportsGraphics = aSupportsGraphics;
 }
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
