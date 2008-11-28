@@ -469,6 +469,7 @@ VMMR0DECL(int)      PGMR0DynMapInit(void);
 VMMR0DECL(void)     PGMR0DynMapTerm(void);
 VMMR0DECL(int)      PGMR0DynMapInitVM(PVM pVM);
 VMMR0DECL(void)     PGMR0DynMapTermVM(PVM pVM);
+VMMR0DECL(int)      PGMR0DynMapAssertIntegrity(void);
 # endif
 /** @} */
 #endif /* IN_RING0 */

@@ -49,13 +49,34 @@
 #define PGMR0DYNMAP_SMALL_SEG_PAGES         128
 /** The number of pages we reserve per CPU. */
 #define PGMR0DYNMAP_PAGES_PER_CPU           64
+/** The number of guard pages. */
+#if defined(VBOX_STRICT)
+# define PGMR0DYNMAP_GUARD_PAGES            7
+#else
+# define PGMR0DYNMAP_GUARD_PAGES            0
+#endif
+/** The dummy physical address of guard pages. */
+#define PGMR0DYNMAP_GUARD_PAGE_HCPHYS       UINT32_C(0x7777feed)
+/** The dummy reference count of guard pages. (Must be non-zero.) */
+#define PGMR0DYNMAP_GUARD_PAGE_REF_COUNT    INT32_C(0x7777feed)
+#if 0
+/** Define this to just clear the present bit on guard pages.
+ * The alternative is to replace the entire PTE with an bad not-present
+ * PTE. Either way, XNU will screw us. :-/   */
+#define PGMR0DYNMAP_GUARD_NP
+#endif
+/** The dummy PTE value for a page. */
+#define PGMR0DYNMAP_GUARD_PAGE_LEGACY_PTE   X86_PTE_PG_MASK
+/** The dummy PTE value for a page. */
+#define PGMR0DYNMAP_GUARD_PAGE_PAE_PTE      UINT64_MAX /*X86_PTE_PAE_PG_MASK*/
 /** Calcs the overload threshold. Current set at 50%. */
 #define PGMR0DYNMAP_CALC_OVERLOAD(cPages)   ((cPages) / 2)
 
+#if 0
 /* Assertions causes panics if preemption is disabled, this can be used to work aroudn that. */
-/*#define RTSpinlockAcquire(a,b) do {} while (0)
-#define RTSpinlockRelease(a,b) do {} while (0) */
-
+#define RTSpinlockAcquire(a,b) do {} while (0)
+#define RTSpinlockRelease(a,b) do {} while (0)
+#endif
 
 
 /*******************************************************************************
@@ -144,13 +165,16 @@ typedef struct PGMR0DYNMAP
     uint32_t                    cPages;
     /** Whether it's 32-bit legacy or PAE/AMD64 paging mode. */
     bool                        fLegacyMode;
-    /** The current load. */
+    /** The current load.
+     * This does not include guard pages. */
     uint32_t                    cLoad;
     /** The max load ever.
      * This is maintained to get trigger adding of more mapping space. */
     uint32_t                    cMaxLoad;
     /** Initialization / termination lock. */
     RTSEMFASTMUTEX              hInitLock;
+    /** The number of guard pages. */
+    uint32_t                    cGuardPages;
     /** The number of users (protected by hInitLock). */
     uint32_t                    cUsers;
     /** Array containing a copy of the original page tables.
@@ -364,7 +388,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
         }
 #endif
     }
-    else if (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(pThis->cPages))
+    else if (pThis->cMaxLoad > PGMR0DYNMAP_CALC_OVERLOAD(pThis->cPages - pThis->cGuardPages))
         rc = pgmR0DynMapExpand(pThis);
     if (RT_SUCCESS(rc))
         pVM->pgm.s.pvR0DynMapUsed = pThis;
@@ -398,6 +422,10 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
     if (pVM->pgm.s.pvR0DynMapUsed == pThis)
     {
         pVM->pgm.s.pvR0DynMapUsed = NULL;
+
+#ifdef VBOX_STRICT
+        PGMR0DynMapAssertIntegrity();
+#endif
 
         /*
          * Clean up and check the auto sets.
@@ -454,6 +482,45 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
 
 
 /**
+ * Shoots down the TLBs for all the cache pages, pgmR0DynMapTearDown helper.
+ *
+ * @param   idCpu           The current CPU.
+ * @param   pvUser1         The dynamic mapping cache instance.
+ * @param   pvUser2         Unused, NULL.
+ */
+static DECLCALLBACK(void) pgmR0DynMapShootDownTlbs(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    Assert(!pvUser2);
+    PPGMR0DYNMAP        pThis   = (PPGMR0DYNMAP)pvUser1;
+    Assert(pThis == g_pPGMR0DynMap);
+    PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
+    uint32_t            iPage   = pThis->cPages;
+    while (iPage-- > 0)
+        ASMInvalidatePage(paPages[iPage].pvPage);
+}
+
+
+/**
+ * Shoot down the TLBs for every single cache entry on all CPUs.
+ *
+ * @returns IPRT status code (RTMpOnAll).
+ * @param   pThis       The dynamic mapping cache instance.
+ */
+static int pgmR0DynMapTlbShootDown(PPGMR0DYNMAP pThis)
+{
+    int rc = RTMpOnAll(pgmR0DynMapShootDownTlbs, pThis, NULL);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        uint32_t iPage = pThis->cPages;
+        while (iPage-- > 0)
+            ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+    }
+    return rc;
+}
+
+
+/**
  * Calculate the new cache size based on cMaxLoad statistics.
  *
  * @returns Number of pages.
@@ -467,7 +534,7 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
     /* cCpus * PGMR0DYNMAP_PAGES_PER_CPU (/2). */
     RTCPUID     cCpus     = RTMpGetCount();
     AssertReturn(cCpus > 0 && cCpus <= RTCPUSET_MAX_CPUS, 0);
-    uint32_t    cPages    = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
+    uint32_t    cPages    = cCpus *  PGMR0DYNMAP_PAGES_PER_CPU;
     uint32_t    cMinPages = cCpus * (PGMR0DYNMAP_PAGES_PER_CPU / 2);
 
     /* adjust against cMaxLoad. */
@@ -484,11 +551,13 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
     /* adjust against max and current size. */
     if (cPages < pThis->cPages)
         cPages = pThis->cPages;
+    cPages *= PGMR0DYNMAP_GUARD_PAGES + 1;
     if (cPages > PGMR0DYNMAP_MAX_PAGES)
         cPages = PGMR0DYNMAP_MAX_PAGES;
 
     if (cMinPages < pThis->cPages)
         cMinPages = pThis->cPages;
+    cMinPages *= PGMR0DYNMAP_GUARD_PAGES + 1;
     if (cMinPages > PGMR0DYNMAP_MAX_PAGES)
         cMinPages = PGMR0DYNMAP_MAX_PAGES;
 
@@ -686,12 +755,35 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
                     pPgLvl->a[i].u.pv, pvPage, iEntry, pThis->fLegacyMode));
             return VERR_INTERNAL_ERROR;
         }
-        Log(("#%d: iEntry=%4d uEntry=%#llx pvEntry=%p HCPhys=%RHp \n", i, iEntry, uEntry, pvEntry, pPgLvl->a[i].HCPhys));
+        /*Log(("#%d: iEntry=%4d uEntry=%#llx pvEntry=%p HCPhys=%RHp \n", i, iEntry, uEntry, pvEntry, pPgLvl->a[i].HCPhys));*/
     }
 
     /* made it thru without needing to remap anything. */
     *ppvPTE = pvEntry;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets up a guard page.
+ *
+ * @param   pThis       The dynamic mapping cache instance.
+ * @param   pPage       The page.
+ */
+DECLINLINE(void) pgmR0DynMapSetupGuardPage(PPGMR0DYNMAP pThis, PPGMR0DYNMAPENTRY pPage)
+{
+    memset(pPage->pvPage, 0xfd, PAGE_SIZE);
+    pPage->cRefs  = PGMR0DYNMAP_GUARD_PAGE_REF_COUNT;
+    pPage->HCPhys = PGMR0DYNMAP_GUARD_PAGE_HCPHYS;
+#ifdef PGMR0DYNMAP_GUARD_NP
+    ASMAtomicBitClear(pPage->uPte.pv, X86_PTE_BIT_P);
+#else
+    if (pThis->fLegacyMode)
+        ASMAtomicWriteU32(&pPage->uPte.pLegacy->u, PGMR0DYNMAP_GUARD_PAGE_LEGACY_PTE);
+    else
+        ASMAtomicWriteU64(&pPage->uPte.pPae->u,    PGMR0DYNMAP_GUARD_PAGE_PAE_PTE);
+#endif
+    pThis->cGuardPages++;
 }
 
 
@@ -708,7 +800,7 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
     AssertReturn(ASMGetFlags() & X86_EFL_IF, VERR_PREEMPT_DISABLED);
 
     /*
-     * Do the array rellocation first.
+     * Do the array reallocations first.
      * (The pages array has to be replaced behind the spinlock of course.)
      */
     void *pvSavedPTEs = RTMemRealloc(pThis->pvSavedPTEs, (pThis->fLegacyMode ? sizeof(X86PGUINT) : sizeof(X86PGPAEUINT)) * (pThis->cPages + cPages));
@@ -759,7 +851,7 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
         ASMIntDisable();
         PGMR0DYNMAPPGLVL    PgLvl;
         pgmR0DynMapPagingArrayInit(pThis, &PgLvl);
-        uint32_t            iEndPage = pThis->cPages + cPages;
+        uint32_t const      iEndPage = pThis->cPages + cPages;
         for (uint32_t iPage = pThis->cPages;
              iPage < iEndPage;
              iPage++, pbPage += PAGE_SIZE)
@@ -808,8 +900,24 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
 
         if (RT_SUCCESS(rc))
         {
-            /** @todo setup guard pages here later (strict builds should leave every
-             *        second page and the start/end pages not present).  */
+#if PGMR0DYNMAP_GUARD_PAGES > 0
+            /*
+             * Setup guard pages.
+             * (Note: TLBs will be shot down later on.)
+             */
+            uint32_t iPage = pThis->cPages;
+            while (iPage < iEndPage)
+            {
+                for (uint32_t iGPg = 0; iGPg < PGMR0DYNMAP_GUARD_PAGES && iPage < iEndPage; iGPg++, iPage++)
+                    pgmR0DynMapSetupGuardPage(pThis, &pThis->paPages[iPage]);
+                iPage++; /* the guarded page */
+            }
+
+            /* Make sure the very last page is a guard page too. */
+            iPage = iEndPage - 1;
+            if (pThis->paPages[iPage].cRefs != PGMR0DYNMAP_GUARD_PAGE_REF_COUNT)
+                pgmR0DynMapSetupGuardPage(pThis, &pThis->paPages[iPage]);
+#endif /* PGMR0DYNMAP_GUARD_PAGES > 0 */
 
             /*
              * Commit it by adding the segment to the list and updating the page count.
@@ -881,6 +989,12 @@ static int pgmR0DynMapSetup(PPGMR0DYNMAP pThis)
         }
     }
     Assert(ASMGetFlags() & X86_EFL_IF);
+
+#if PGMR0DYNMAP_GUARD_PAGES > 0
+    /* paranoia */
+    if (RT_SUCCESS(rc))
+        pgmR0DynMapTlbShootDown(pThis);
+#endif
     return rc;
 }
 
@@ -918,26 +1032,13 @@ static int pgmR0DynMapExpand(PPGMR0DYNMAP pThis)
             rc = VERR_PGM_DYNMAP_EXPAND_ERROR;
     }
     Assert(ASMGetFlags() & X86_EFL_IF);
+
+#if PGMR0DYNMAP_GUARD_PAGES > 0
+    /* paranoia */
+    if (RT_SUCCESS(rc))
+        pgmR0DynMapTlbShootDown(pThis);
+#endif
     return rc;
-}
-
-
-/**
- * Shoots down the TLBs for all the cache pages, pgmR0DynMapTearDown helper.
- *
- * @param   idCpu           The current CPU.
- * @param   pvUser1         The dynamic mapping cache instance.
- * @param   pvUser2         Unused, NULL.
- */
-static DECLCALLBACK(void) pgmR0DynMapShootDownTlbs(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-    Assert(!pvUser2);
-    PPGMR0DYNMAP        pThis   = (PPGMR0DYNMAP)pvUser1;
-    Assert(pThis == g_pPGMR0DynMap);
-    PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
-    uint32_t            iPage   = pThis->cPages;
-    while (iPage-- > 0)
-        ASMInvalidatePage(paPages[iPage].pvPage);
 }
 
 
@@ -981,22 +1082,15 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
 
     /*
      * Shoot down the TLBs on all CPUs before freeing them.
-     * If RTMpOnAll fails, make sure the TLBs are invalidated on the current CPU at least.
      */
-    int rc = RTMpOnAll(pgmR0DynMapShootDownTlbs, pThis, NULL);
-    AssertRC(rc);
-    if (RT_FAILURE(rc))
-    {
-        iPage = pThis->cPages;
-        while (iPage-- > 0)
-            ASMInvalidatePage(paPages[iPage].pvPage);
-    }
+    pgmR0DynMapTlbShootDown(pThis);
 
     /*
      * Free the segments.
      */
     while (pThis->pSegHead)
     {
+        int             rc;
         PPGMR0DYNMAPSEG pSeg = pThis->pSegHead;
         pThis->pSegHead = pSeg->pNext;
 
@@ -1080,19 +1174,19 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     if (!paPages[iPage].cRefs)
         iFreePage = iPage;
     else if (!paPages[(iPage + 1) % cPages].cRefs)
-        iFreePage = iPage;
+        iFreePage = iPage + 1;
     else if (!paPages[(iPage + 2) % cPages].cRefs)
-        iFreePage = iPage;
+        iFreePage = iPage + 2;
     else if (!paPages[(iPage + 3) % cPages].cRefs)
-        iFreePage = iPage;
+        iFreePage = iPage + 3;
     else if (!paPages[(iPage + 4) % cPages].cRefs)
-        iFreePage = iPage;
+        iFreePage = iPage + 4;
     else
     {
         /*
          * Search for an unused or matching entry.
          */
-        iFreePage = (iPage + 5) % pThis->cPages;
+        iFreePage = (iPage + 5) % cPages;
         for (;;)
         {
             if (paPages[iFreePage].HCPhys == HCPhys)
@@ -1102,7 +1196,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 
             /* advance */
             iFreePage = (iFreePage + 1) % cPages;
-            if (RT_UNLIKELY(iFreePage != iPage))
+            if (RT_UNLIKELY(iFreePage == iPage))
                 return UINT32_MAX;
         }
     }
@@ -1110,6 +1204,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     /*
      * Setup the new entry.
      */
+    /*Log6(("pgmR0DynMapPageSlow: old - %RHp %#x %#llx\n", paPages[iFreePage].HCPhys, paPages[iFreePage].cRefs, paPages[iFreePage].uPte.pPae->u));*/
     paPages[iFreePage].HCPhys = HCPhys;
     RTCpuSetFill(&paPages[iFreePage].PendingSet);
     if (pThis->fLegacyMode)
@@ -1140,12 +1235,12 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 /**
  * Maps a page into the pool.
  *
- * @returns Pointer to the mapping.
+ * @returns Page index on success, UINT32_MAX on failure.
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
- * @param   piPage      Where to store the page index.
+ * @param   ppvPage      Where to the page address.
  */
-DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t *piPage)
+DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, void **ppvPage)
 {
     RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
@@ -1180,7 +1275,7 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
                         if (RT_UNLIKELY(iPage == UINT32_MAX))
                         {
                             RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-                            return NULL;
+                            return iPage;
                         }
                     }
                     else
@@ -1205,13 +1300,13 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
         pThis->cLoad++;
         if (pThis->cLoad > pThis->cMaxLoad)
             pThis->cMaxLoad = pThis->cLoad;
-        AssertMsg(pThis->cLoad <= pThis->cPages, ("%d/%d\n", pThis->cLoad, pThis->cPages));
+        AssertMsg(pThis->cLoad <= pThis->cPages - pThis->cGuardPages, ("%d/%d\n", pThis->cLoad, pThis->cPages - pThis->cGuardPages));
     }
     else if (RT_UNLIKELY(cRefs <= 0))
     {
         ASMAtomicDecS32(&paPages[iPage].cRefs);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-        AssertLogRelMsgFailedReturn(("cRefs=%d iPage=%p HCPhys=%RHp\n", cRefs, iPage, HCPhys), NULL);
+        AssertLogRelMsgFailedReturn(("cRefs=%d iPage=%p HCPhys=%RHp\n", cRefs, iPage, HCPhys), UINT32_MAX);
     }
     void *pvPage = paPages[iPage].pvPage;
 
@@ -1230,8 +1325,126 @@ DECLINLINE(void *) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t
      */
     ASMInvalidatePage(pvPage);
 
-    *piPage = iPage;
-    return pvPage;
+    *ppvPage = pvPage;
+    return iPage;
+}
+
+
+/**
+ * Assert the the integrity of the pool.
+ *
+ * @returns VBox status code.
+ */
+VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
+{
+    /*
+     * Basic pool stuff that doesn't require any lock, just assumes we're a user.
+     */
+    PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+    if (!pThis)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertReturn(pThis->u32Magic == PGMR0DYNMAP_MAGIC, VERR_INVALID_MAGIC);
+    if (!pThis->cUsers)
+        return VERR_INVALID_PARAMETER;
+
+
+    int             rc = VINF_SUCCESS;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+#define CHECK_RET(expr, a) \
+    do { \
+        if (!(expr)) \
+        { \
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp); \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertMsg2 a; \
+            return VERR_INTERNAL_ERROR; \
+        } \
+    } while (0)
+
+    /*
+     * Check that the PTEs are correct.
+     */
+    uint32_t            cGuard      = 0;
+    uint32_t            cLoad       = 0;
+    PPGMR0DYNMAPENTRY   paPages     = pThis->paPages;
+    uint32_t            iPage       = pThis->cPages;
+    if (pThis->fLegacyMode)
+    {
+        PCX86PGUINT     paSavedPTEs = (PCX86PGUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
+        while (iPage-- > 0)
+        {
+            CHECK_RET(!((uintptr_t)paPages[iPage].pvPage & PAGE_OFFSET_MASK), ("#%u: %p\n", iPage, paPages[iPage].pvPage));
+            if (    paPages[iPage].cRefs  == PGMR0DYNMAP_GUARD_PAGE_REF_COUNT
+                &&  paPages[iPage].HCPhys == PGMR0DYNMAP_GUARD_PAGE_HCPHYS)
+            {
+#ifdef PGMR0DYNMAP_GUARD_NP
+                CHECK_RET(paPages[iPage].uPte.pLegacy->u == (paSavedPTEs[iPage] & ~(X86PGUINT)X86_PTE_P),
+                          ("#%u: %#x %#x", iPage, paPages[iPage].uPte.pLegacy->u, paSavedPTEs[iPage]));
+#else
+                CHECK_RET(paPages[iPage].uPte.pLegacy->u == PGMR0DYNMAP_GUARD_PAGE_LEGACY_PTE,
+                          ("#%u: %#x", iPage, paPages[iPage].uPte.pLegacy->u));
+#endif
+                cGuard++;
+            }
+            else if (paPages[iPage].HCPhys != NIL_RTHCPHYS)
+            {
+                CHECK_RET(!(paPages[iPage].HCPhys & PAGE_OFFSET_MASK), ("#%u: %RHp\n", iPage, paPages[iPage].HCPhys));
+                X86PGUINT uPte = (paSavedPTEs[iPage] & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+                               | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
+                               | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
+                CHECK_RET(paPages[iPage].uPte.pLegacy->u == uPte,
+                          ("#%u: %#x %#x", iPage, paPages[iPage].uPte.pLegacy->u, uPte));
+                if (paPages[iPage].cRefs)
+                    cLoad++;
+            }
+            else
+                CHECK_RET(paPages[iPage].uPte.pLegacy->u == paSavedPTEs[iPage],
+                          ("#%u: %#x %#x", iPage, paPages[iPage].uPte.pLegacy->u, paSavedPTEs[iPage]));
+        }
+    }
+    else
+    {
+        PCX86PGPAEUINT  paSavedPTEs = (PCX86PGPAEUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
+        while (iPage-- > 0)
+        {
+            CHECK_RET(!((uintptr_t)paPages[iPage].pvPage & PAGE_OFFSET_MASK), ("#%u: %p\n", iPage, paPages[iPage].pvPage));
+            if (    paPages[iPage].cRefs  == PGMR0DYNMAP_GUARD_PAGE_REF_COUNT
+                &&  paPages[iPage].HCPhys == PGMR0DYNMAP_GUARD_PAGE_HCPHYS)
+            {
+#ifdef PGMR0DYNMAP_GUARD_NP
+                CHECK_RET(paPages[iPage].uPte.pPae->u == (paSavedPTEs[iPage] & ~(X86PGPAEUINT)X86_PTE_P),
+                          ("#%u: %#llx %#llx", iPage, paPages[iPage].uPte.pPae->u, paSavedPTEs[iPage]));
+#else
+                CHECK_RET(paPages[iPage].uPte.pPae->u == PGMR0DYNMAP_GUARD_PAGE_PAE_PTE,
+                          ("#%u: %#llx", iPage, paPages[iPage].uPte.pPae->u));
+#endif
+                cGuard++;
+            }
+            else if (paPages[iPage].HCPhys != NIL_RTHCPHYS)
+            {
+                CHECK_RET(!(paPages[iPage].HCPhys & PAGE_OFFSET_MASK), ("#%u: %RHp\n", iPage, paPages[iPage].HCPhys));
+                X86PGPAEUINT uPte = (paSavedPTEs[iPage] & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+                                  | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
+                                  | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
+                CHECK_RET(paPages[iPage].uPte.pPae->u == uPte,
+                          ("#%u: %#llx %#llx", iPage, paPages[iPage].uPte.pLegacy->u, uPte));
+                if (paPages[iPage].cRefs)
+                    cLoad++;
+            }
+            else
+                CHECK_RET(paPages[iPage].uPte.pPae->u == paSavedPTEs[iPage],
+                          ("#%u: %#llx %#llx", iPage, paPages[iPage].uPte.pPae->u, paSavedPTEs[iPage]));
+        }
+    }
+
+    CHECK_RET(cLoad == pThis->cLoad, ("%u %u\n", cLoad, pThis->cLoad));
+    CHECK_RET(cGuard == pThis->cGuardPages, ("%u %u\n", cGuard, pThis->cGuardPages));
+
+#undef CHECK_RET
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    return VINF_SUCCESS;
 }
 
 
@@ -1284,7 +1497,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
             pSet->aEntries[i].cRefs = 0;
         }
 
-        Assert(pThis->cLoad <= pThis->cPages);
+        Assert(pThis->cLoad <= pThis->cPages - pThis->cGuardPages);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     }
 }
@@ -1398,17 +1611,15 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Map it.
      */
-    uint32_t        iPage;
-    void           *pvPage  = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, &iPage);
-    if (RT_UNLIKELY(!pvPage))
+    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, ppv);
+    if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
         static uint32_t s_cBitched = 0;
         if (++s_cBitched < 10)
-            LogRel(("PGMDynMapHCPage: cLoad=%u/%u cPages=%u\n",
-                    g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages));
+            LogRel(("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
+                    g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages));
         return VERR_PGM_DYNMAP_FAILED;
     }
-    *ppv = pvPage;
 
     /*
      * Add the page to the auto reference set.
@@ -1496,6 +1707,15 @@ static int pgmR0DynMapTest(PVM pVM)
     PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
     PPGMMAPSET      pSet  = &pVM->aCpus[0].pgm.s.AutoSet;
     uint32_t        i;
+
+    /*
+     * Assert internal integrity first.
+     */
+    LogRel(("Test #0\n"));
+    int rc = PGMR0DynMapAssertIntegrity();
+    if (RT_FAILURE(rc))
+        return rc;
+
     void           *pvR0DynMapUsedSaved = pVM->pgm.s.pvR0DynMapUsed;
     pVM->pgm.s.pvR0DynMapUsed = pThis;
 
@@ -1510,14 +1730,15 @@ static int pgmR0DynMapTest(PVM pVM)
     uint64_t cr3 = ASMGetCR3() & ~(uint64_t)PAGE_OFFSET_MASK;
     void    *pv  = (void *)(intptr_t)-1;
     void    *pv2 = (void *)(intptr_t)-2;
-    int      rc  = PGMDynMapHCPage(pVM, cr3, &pv);
+    rc           = PGMDynMapHCPage(pVM, cr3, &pv);
     int      rc2 = PGMDynMapHCPage(pVM, cr3, &pv2);
     ASMIntEnable();
     if (    RT_SUCCESS(rc2)
         &&  RT_SUCCESS(rc)
         &&  pv == pv2)
     {
-        LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+        LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages - pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+        rc = PGMR0DynMapAssertIntegrity();
 
         /*
          * Check that the simple set overflow code works by filling it
@@ -1553,6 +1774,8 @@ static int pgmR0DynMapTest(PVM pVM)
             rc = VERR_INTERNAL_ERROR;
         }
         if (RT_SUCCESS(rc))
+            rc = PGMR0DynMapAssertIntegrity();
+        if (RT_SUCCESS(rc))
         {
             /*
              * Trigger an set optimization run (exactly).
@@ -1576,7 +1799,9 @@ static int pgmR0DynMapTest(PVM pVM)
                 LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
                 rc = VERR_INTERNAL_ERROR;
             }
-            LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+            LogRel(("Load=%u/%u/%u Set=%u/%u\n", pThis->cLoad, pThis->cMaxLoad, pThis->cPages - pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+            if (RT_SUCCESS(rc))
+                rc = PGMR0DynMapAssertIntegrity();
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1584,24 +1809,31 @@ static int pgmR0DynMapTest(PVM pVM)
                  */
                 LogRel(("Test #4\n"));
                 ASMIntDisable();
-                for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 - 3 + 1 && RT_SUCCESS(rc) && pv2 != pv; i++)
-                    rc = PGMDynMapHCPage(pVM, cr3 + PAGE_SIZE * -(i + 5), &pv2);
+                for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 - 3 + 1 && pv2 != pv; i++)
+                {
+                    rc = PGMDynMapHCPage(pVM, cr3 - PAGE_SIZE * (i + 5), &pv2);
+                    if (RT_SUCCESS(rc))
+                        rc = PGMR0DynMapAssertIntegrity();
+                    if (RT_FAILURE(rc))
+                        break;
+                }
                 ASMIntEnable();
                 if (rc == VERR_PGM_DYNMAP_FULL_SET)
                 {
-                    rc = VINF_SUCCESS;
-
                     /* flush the set. */
+                    LogRel(("Test #5\n"));
                     ASMIntDisable();
                     PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
                     PGMDynMapReleaseAutoSet(&pVM->aCpus[0]);
                     PGMDynMapStartAutoSet(&pVM->aCpus[0]);
                     ASMIntEnable();
+
+                    rc = PGMR0DynMapAssertIntegrity();
                 }
                 else
                 {
-                    LogRel(("failed(%d): rc=%Rrc, wanted %d ; pv2=%p Set=%u/%u\n", __LINE__,
-                            rc, VERR_PGM_DYNMAP_FULL_SET, pv2, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+                    LogRel(("failed(%d): rc=%Rrc, wanted %d ; pv2=%p Set=%u/%u; i=%d\n", __LINE__,
+                            rc, VERR_PGM_DYNMAP_FULL_SET, pv2, pSet->cEntries, RT_ELEMENTS(pSet->aEntries), i));
                     if (RT_SUCCESS(rc)) rc = VERR_INTERNAL_ERROR;
                 }
             }
@@ -1661,8 +1893,13 @@ static int pgmR0DynMapTest(PVM pVM)
     PGMDynMapReleaseAutoSet(&pVM->aCpus[0]);
     ASMIntEnable();
 
+    if (RT_SUCCESS(rc))
+        rc = PGMR0DynMapAssertIntegrity();
+    else
+        PGMR0DynMapAssertIntegrity();
+
     LogRel(("Result: rc=%Rrc Load=%u/%u/%u Set=%#x/%u\n", rc,
-            pThis->cLoad, pThis->cMaxLoad, pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
+            pThis->cLoad, pThis->cMaxLoad, pThis->cPages - pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
     pVM->pgm.s.pvR0DynMapUsed = pvR0DynMapUsedSaved;
     LogRel(("pgmR0DynMapTest: ****** END ******\n"));
     return rc;
