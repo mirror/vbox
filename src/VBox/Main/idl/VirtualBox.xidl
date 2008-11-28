@@ -4613,6 +4613,12 @@
         @deprecated This method will be removed in VirtualBox 2.1 where the
         powerDownAsync() method will take its name. Do not use this method in
         the code.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine must be Running, Paused or Stuck to be powered down.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Unable to power off or destroy virtual machine.
+        </result>
       </desc>
     </method>
 
