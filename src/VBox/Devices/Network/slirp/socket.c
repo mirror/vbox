@@ -159,7 +159,7 @@ soread(PNATState pData, struct socket *so)
         nn = recv(so->s, iov[0].iov_base, iov[0].iov_len,0);
 #endif
         if (nn <= 0) {
-                if (nn < 0 && (errno == EINTR || errno == EAGAIN))
+                if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
                         return 0;
                 else {
                         DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
@@ -344,7 +344,7 @@ sowrite(PNATState pData, struct socket *so)
         nn = send(so->s, iov[0].iov_base, iov[0].iov_len,0);
 #endif
         /* This should never happen, but people tell me it does *shrug* */
-        if (nn < 0 && (errno == EAGAIN || errno == EINTR))
+        if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
                 return 0;
 
         if (nn <= 0) {
