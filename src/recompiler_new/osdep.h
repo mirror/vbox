@@ -4,7 +4,7 @@
 #ifdef VBOX
 
 #include <iprt/alloc.h>
-#include <iprt/alloca.h>
+//#include <iprt/alloca.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
