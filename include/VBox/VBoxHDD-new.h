@@ -599,52 +599,6 @@ DECLINLINE(PVDINTERFACEPROGRESS) VDGetInterfaceProgress(PVDINTERFACE pInterface)
     return pInterfaceProgress;
 }
 
-/** Configuration node for configuration information interface. */
-typedef struct VDCFGNODE *PVDCFGNODE;
-
-/**
- * Configuration value type for configuration information interface.
- */
-typedef enum VDCFGVALUETYPE
-{
-    /** Integer value. */
-    VDCFGVALUETYPE_INTEGER = 1,
-    /** String value. */
-    VDCFGVALUETYPE_STRING,
-    /** Bytestring value. */
-    VDCFGVALUETYPE_BYTES
-} VDCFGVALUETYPE;
-/** Pointer to configuration value type for configuration information interface. */
-typedef VDCFGVALUETYPE *PVDCFGVALUETYPE;
-
-/**
- * Configuration value. This is not identical to CFGMVALUE.
- */
-typedef union VDCFGVALUE
-{
-    /** Integer value. */
-    struct VDCFGVALUE_INTEGER
-    {
-        /** The integer represented as 64-bit unsigned. */
-        uint64_t    u64;
-    } Integer;
-
-    /** String value. (UTF-8 of course) */
-    struct VDCFGVALUE_STRING
-    {
-        /** Pointer to the string. */
-        char        *psz;
-    } String;
-
-    /** Byte string value. */
-    struct VDCFGVALUE_BYTES
-    {
-        /** Length of byte string. (in bytes) */
-        RTUINT      cb;
-        /** Pointer to the byte string. */
-        void        *pv;
-    } Bytes;
-} VDCFGVALUE, *PVDCFGVALUE;
 
 /**
  * Configuration information interface
@@ -665,22 +619,39 @@ typedef struct VDINTERFACECONFIG
     VDINTERFACETYPE enmInterface;
 
     /**
-     * Validates that the values are within a set of valid names.
+     * Validates that the keys are within a set of valid names.
      *
-     * @return  true if all names are found in pszzAllowed.
+     * @return  true if all key names are found in pszzAllowed.
      * @return  false if not.
-     * @param   pNode           The node which values should be examined.
-     * @param   pszzValid       List of valid names separated by '\\0' and ending with
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszzValid       List of valid key names separated by '\\0' and ending with
      *                          a double '\\0'.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnAreValuesValid, (PVDCFGNODE pNode, const char *pszzValid));
-    DECLR3CALLBACKMEMBER(int, pfnQueryType, (PVDCFGNODE pNode, const char *pszName, PVDCFGVALUETYPE penmType));
-    DECLR3CALLBACKMEMBER(int, pfnQuerySize, (PVDCFGNODE pNode, const char *pszName, size_t *pcb));
-    DECLR3CALLBACKMEMBER(int, pfnQueryInteger, (PVDCFGNODE pNode, const char *pszName, uint64_t *pu64));
-    DECLR3CALLBACKMEMBER(int, pfnQueryIntegerDef, (PVDCFGNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def));
-    DECLR3CALLBACKMEMBER(int, pfnQueryString, (PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString));
-    DECLR3CALLBACKMEMBER(int, pfnQueryStringDef, (PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef));
-    DECLR3CALLBACKMEMBER(int, pfnQueryBytes, (PVDCFGNODE pNode, const char *pszName, void *pvData, size_t cbData));
+    DECLR3CALLBACKMEMBER(bool, pfnAreKeysValid, (void *pvUser, const char *pszzValid));
+
+    /**
+     * Retrieves the length of the string value associated with a key.
+     *
+     * @return  VBox status code.
+     *          VERR_CFGM_VALUE_NOT_FOUND means that the key is not known.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszName         Name of the key to query.
+     * @param   pcbValue        Where to store the value length. Non-NULL.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQuerySize, (void *pvUser, const char *pszName, size_t *pcbValue));
+
+    /**
+     * Query the string value associated with a key.
+     *
+     * @return  VBox status code.
+     *          VERR_CFGM_VALUE_NOT_FOUND means that the key is not known.
+     *          VERR_CFGM_NOT_ENOUGH_SPACE means that the buffer is not big enough.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszName         Name of the key to query.
+     * @param   pszValue        Pointer to buffer where to store value.
+     * @param   cchValue        Length of value buffer.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQuery, (void *pvUser, const char *pszName, char *pszValue, size_t cchValue));
 } VDINTERFACECONFIG, *PVDINTERFACECONFIG;
 
 /**
@@ -707,20 +678,19 @@ DECLINLINE(PVDINTERFACECONFIG) VDGetInterfaceConfig(PVDINTERFACE pInterface)
 }
 
 /**
- * Query configuration, validates that the values are within a set of valid names.
+ * Query configuration, validates that the keys are within a set of valid names.
  *
- * @return  true if all names are found in pszzAllowed.
+ * @return  true if all key names are found in pszzAllowed.
  * @return  false if not.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       The node which values should be examined.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszzValid   List of valid names separated by '\\0' and ending with
  *                      a double '\\0'.
  */
-DECLINLINE(bool) VDCFGAreValuesValid(PVDINTERFACECONFIG pCfgIf,
-                                     PVDCFGNODE pNode,
-                                     const char *pszzValid)
+DECLINLINE(bool) VDCFGAreKeysValid(PVDINTERFACECONFIG pCfgIf, void *pvUser,
+                                   const char *pszzValid)
 {
-    return pCfgIf->pfnAreValuesValid(pNode, pszzValid);
+    return pCfgIf->pfnAreKeysValid(pvUser, pszzValid);
 }
 
 /**
@@ -728,16 +698,27 @@ DECLINLINE(bool) VDCFGAreValuesValid(PVDINTERFACECONFIG pCfgIf,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an integer value
  * @param   pu64        Where to store the value. Set to default on failure.
  * @param   u64Def      The default value.
  */
-DECLINLINE(int) VDCFGQueryU64Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
+DECLINLINE(int) VDCFGQueryU64Def(PVDINTERFACECONFIG pCfgIf, void *pvUser,
                                  const char *pszName, uint64_t *pu64,
                                  uint64_t u64Def)
 {
-    return pCfgIf->pfnQueryIntegerDef(pNode, pszName, pu64, u64Def);
+    char aszBuf[32];
+    int rc = pCfgIf->pfnQuery(pvUser, pszName, aszBuf, sizeof(aszBuf));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrToUInt64Full(aszBuf, 0, pu64);
+    }
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        rc = VINF_SUCCESS;
+        *pu64 = u64Def;
+    }
+    return rc;
 }
 
 /**
@@ -745,18 +726,18 @@ DECLINLINE(int) VDCFGQueryU64Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an integer value
  * @param   pu32        Where to store the value. Set to default on failure.
  * @param   u32Def      The default value.
  */
-DECLINLINE(int) VDCFGQueryU32Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
+DECLINLINE(int) VDCFGQueryU32Def(PVDINTERFACECONFIG pCfgIf, void *pvUser,
                                  const char *pszName, uint32_t *pu32,
                                  uint32_t u32Def)
 {
     uint64_t u64;
-    int rc = pCfgIf->pfnQueryIntegerDef(pNode, pszName, &u64, u32Def);
-    if (VBOX_SUCCESS(rc))
+    int rc = VDCFGQueryU64Def(pCfgIf, pvUser, pszName, &u64, u32Def);
+    if (RT_SUCCESS(rc))
     {
         if (!(u64 & UINT64_C(0xffffffff00000000)))
             *pu32 = (uint32_t)u64;
@@ -771,18 +752,18 @@ DECLINLINE(int) VDCFGQueryU32Def(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an integer value
  * @param   pf          Where to store the value. Set to default on failure.
  * @param   fDef        The default value.
  */
-DECLINLINE(int) VDCFGQueryBoolDef(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
+DECLINLINE(int) VDCFGQueryBoolDef(PVDINTERFACECONFIG pCfgIf, void *pvUser,
                                   const char *pszName, bool *pf,
                                   bool fDef)
 {
     uint64_t u64;
-    int rc = pCfgIf->pfnQueryIntegerDef(pNode, pszName, &u64, fDef);
-    if (VBOX_SUCCESS(rc))
+    int rc = VDCFGQueryU64Def(pCfgIf, pvUser, pszName, &u64, fDef);
+    if (RT_SUCCESS(rc))
         *pf = u64 ? true : false;
     return rc;
 }
@@ -793,25 +774,24 @@ DECLINLINE(int) VDCFGQueryBoolDef(PVDINTERFACECONFIG pCfgIf, PVDCFGNODE pNode,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an zero terminated character value
  * @param   ppszString  Where to store the string pointer. Not set on failure.
  *                      Free this using RTMemFree().
  */
 DECLINLINE(int) VDCFGQueryStringAlloc(PVDINTERFACECONFIG pCfgIf,
-                                      PVDCFGNODE pNode,
-                                      const char *pszName,
+                                      void *pvUser, const char *pszName,
                                       char **ppszString)
 {
     size_t cch;
-    int rc = pCfgIf->pfnQuerySize(pNode, pszName, &cch);
-    if (VBOX_SUCCESS(rc))
+    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cch);
+    if (RT_SUCCESS(rc))
     {
         char *pszString = (char *)RTMemAlloc(cch);
         if (pszString)
         {
-            rc = pCfgIf->pfnQueryString(pNode, pszName, pszString, cch);
-            if (VBOX_SUCCESS(rc))
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cch);
+            if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
                 RTMemFree(pszString);
@@ -828,32 +808,36 @@ DECLINLINE(int) VDCFGQueryStringAlloc(PVDINTERFACECONFIG pCfgIf,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an zero terminated character value
  * @param   ppszString  Where to store the string pointer. Not set on failure.
  *                      Free this using RTMemFree().
  * @param   pszDef      The default value.
  */
 DECLINLINE(int) VDCFGQueryStringAllocDef(PVDINTERFACECONFIG pCfgIf,
-                                         PVDCFGNODE pNode,
-                                         const char *pszName,
+                                         void *pvUser, const char *pszName,
                                          char **ppszString,
                                          const char *pszDef)
 {
     size_t cch;
-    int rc = pCfgIf->pfnQuerySize(pNode, pszName, &cch);
+    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cch);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
     {
         cch = strlen(pszDef) + 1;
         rc = VINF_SUCCESS;
     }
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         char *pszString = (char *)RTMemAlloc(cch);
         if (pszString)
         {
-            rc = pCfgIf->pfnQueryStringDef(pNode, pszName, pszString, cch, pszDef);
-            if (VBOX_SUCCESS(rc))
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pszString, cch);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                memcpy(pszString, pszDef, cch);
+                rc = VINF_SUCCESS;
+            }
+            if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
                 RTMemFree(pszString);
@@ -869,25 +853,25 @@ DECLINLINE(int) VDCFGQueryStringAllocDef(PVDINTERFACECONFIG pCfgIf,
  *
  * @return  VBox status code.
  * @param   pCfgIf      Pointer to configuration callback table.
- * @param   pNode       Which node to search for pszName in.
+ * @param   pvUser      The opaque user data associated with this interface.
  * @param   pszName     Name of an zero terminated character value
  * @param   ppvData     Where to store the byte string pointer. Not set on failure.
  *                      Free this using RTMemFree().
  * @param   pcbData     Where to store the byte string length.
  */
 DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
-                                     PVDCFGNODE pNode, const char *pszName,
+                                     void *pvUser, const char *pszName,
                                      void **ppvData, size_t *pcbData)
 {
     size_t cb;
-    int rc = pCfgIf->pfnQuerySize(pNode, pszName, &cb);
-    if (VBOX_SUCCESS(rc))
+    int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cb);
+    if (RT_SUCCESS(rc))
     {
         char *pvData = (char *)RTMemAlloc(cb);
         if (pvData)
         {
-            rc = pCfgIf->pfnQueryBytes(pNode, pszName, pvData, cb);
-            if (VBOX_SUCCESS(rc))
+            rc = pCfgIf->pfnQuery(pvUser, pszName, pvData, cb);
+            if (RT_SUCCESS(rc))
             {
                 *ppvData = pvData;
                 *pcbData = cb;
@@ -1019,6 +1003,21 @@ DECLINLINE(PVDINTERFACETCPNET) VDGetInterfaceTcpNet(PVDINTERFACE pInterface)
 #define VD_CFGKEY_EXPERT            RT_BIT(1)
 /** @}*/
 
+
+/**
+ * Configuration value type for configuration information interface.
+ */
+typedef enum VDCFGVALUETYPE
+{
+    /** Integer value. */
+    VDCFGVALUETYPE_INTEGER = 1,
+    /** String value. */
+    VDCFGVALUETYPE_STRING,
+    /** Bytestring value. */
+    VDCFGVALUETYPE_BYTES
+} VDCFGVALUETYPE;
+
+
 /**
  * Structure describing configuration keys required/supported by a backend
  * through the config interface.
@@ -1029,7 +1028,7 @@ typedef struct VDCONFIGINFO
     const char *pszKey;
     /** Pointer to default value (descriptor). NULL if no useful default value
      * can be specified. */
-    const PVDCFGVALUE pDefaultValue;
+    const char *pszDefaultValue;
     /** Value type for this key. */
     VDCFGVALUETYPE enmValueType;
     /** Key handling flags (a combination of VD_CFGKEY_* flags). */

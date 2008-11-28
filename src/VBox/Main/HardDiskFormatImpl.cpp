@@ -94,22 +94,18 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                 {
                     dt = DataType_Int32;
                     /* If there is a default value get them in the right format */
-                    if (pa->pDefaultValue)
-                        defaultValue =
-                            Utf8StrFmt ("%d", pa->pDefaultValue->Integer.u64);
+                    if (pa->pszDefaultValue)
+                        defaultValue = pa->pszDefaultValue;
                     break;
                 }
                 case VDCFGVALUETYPE_BYTES:
                 {
                     dt = DataType_Int8;
                     /* If there is a default value get them in the right format */
-                    if (pa->pDefaultValue)
+                    if (pa->pszDefaultValue)
                     {
-                        /* Copy the bytes over */
-                        defaultValue.alloc (pa->pDefaultValue->Bytes.cb + 1);
-                        memcpy (defaultValue.mutableRaw(), pa->pDefaultValue->Bytes.pv,
-                                pa->pDefaultValue->Bytes.cb);
-                        defaultValue.mutableRaw() [defaultValue.length()] = 0;
+                        /* Copy the bytes over - treated simply as a string */
+                        defaultValue = pa->pszDefaultValue;
                         flags |= DataFlags_Array;
                     }
                     break;
@@ -118,8 +114,8 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                 {
                     dt = DataType_String;
                     /* If there is a default value get them in the right format */
-                    if (pa->pDefaultValue)
-                        defaultValue = pa->pDefaultValue->String.psz;
+                    if (pa->pszDefaultValue)
+                        defaultValue = pa->pszDefaultValue;
                     break;
                 }
 
