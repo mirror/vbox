@@ -4319,8 +4319,10 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
     src = pThis->vram_ptrR3;
     if (src) {
         for (col = 0; col < num_cols; ++col) pHlp->pfnPrintf(pHlp, "-"); pHlp->pfnPrintf(pHlp, "\n");
-        for (row = 0; row < num_rows; ++row) {
-            for (col = 0; col < num_cols; ++col) {
+        for (row = 0; row < num_rows; ++row)
+        {
+            for (col = 0; col < num_cols; ++col)
+            {
                 pHlp->pfnPrintf(pHlp, "%c", *src);
                 src += 8;   /* chars are spaced 8 bytes apart */
             }
