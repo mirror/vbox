@@ -288,47 +288,19 @@ static DECLCALLBACK(int) drvvdAsyncIOTasksSubmit(void *pvUser, void *apTasks[], 
 *   VD Configuration interface implementation                                  *
 *******************************************************************************/
 
-static bool drvvdCfgAreValuesValid(PVDCFGNODE pNode, const char *pszzValid)
+static bool drvvdCfgAreKeysValid(void *pvUser, const char *pszzValid)
 {
-    return CFGMR3AreValuesValid((PCFGMNODE)pNode, pszzValid);
+    return CFGMR3AreValuesValid((PCFGMNODE)pvUser, pszzValid);
 }
 
-static int drvvdCfgQueryType(PVDCFGNODE pNode, const char *pszName, PVDCFGVALUETYPE penmType)
+static int drvvdCfgQuerySize(void *pvUser, const char *pszName, size_t *pcb)
 {
-    Assert(VDCFGVALUETYPE_INTEGER == (VDCFGVALUETYPE)CFGMVALUETYPE_INTEGER);
-    Assert(VDCFGVALUETYPE_STRING == (VDCFGVALUETYPE)CFGMVALUETYPE_STRING);
-    Assert(VDCFGVALUETYPE_BYTES == (VDCFGVALUETYPE)CFGMVALUETYPE_BYTES);
-    return CFGMR3QueryType((PCFGMNODE)pNode, pszName, (PCFGMVALUETYPE)penmType);
+    return CFGMR3QuerySize((PCFGMNODE)pvUser, pszName, pcb);
 }
 
-static int drvvdCfgQuerySize(PVDCFGNODE pNode, const char *pszName, size_t *pcb)
+static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, size_t cchString)
 {
-    return CFGMR3QuerySize((PCFGMNODE)pNode, pszName, pcb);
-}
-
-static int drvvdCfgQueryInteger(PVDCFGNODE pNode, const char *pszName, uint64_t *pu64)
-{
-    return CFGMR3QueryInteger((PCFGMNODE)pNode, pszName, pu64);
-}
-
-static int drvvdCfgQueryIntegerDef(PVDCFGNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def)
-{
-    return CFGMR3QueryInteger((PCFGMNODE)pNode, pszName, pu64);
-}
-
-static int drvvdCfgQueryString(PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString)
-{
-    return CFGMR3QueryString((PCFGMNODE)pNode, pszName, pszString, cchString);
-}
-
-static int drvvdCfgQueryStringDef(PVDCFGNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
-{
-    return CFGMR3QueryStringDef((PCFGMNODE)pNode, pszName, pszString, cchString, pszDef);
-}
-
-static int drvvdCfgQueryBytes(PVDCFGNODE pNode, const char *pszName, void *pvData, size_t cbData)
-{
-    return CFGMR3QueryBytes((PCFGMNODE)pNode, pszName, pvData, cbData);
+    return CFGMR3QueryString((PCFGMNODE)pvUser, pszName, pszString, cchString);
 }
 
 
@@ -789,14 +761,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      * added later. No need to have separate callback tables. */
     pThis->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
     pThis->VDIConfigCallbacks.enmInterface          = VDINTERFACETYPE_CONFIG;
-    pThis->VDIConfigCallbacks.pfnAreValuesValid     = drvvdCfgAreValuesValid;
-    pThis->VDIConfigCallbacks.pfnQueryType          = drvvdCfgQueryType;
+    pThis->VDIConfigCallbacks.pfnAreKeysValid       = drvvdCfgAreKeysValid;
     pThis->VDIConfigCallbacks.pfnQuerySize          = drvvdCfgQuerySize;
-    pThis->VDIConfigCallbacks.pfnQueryInteger       = drvvdCfgQueryInteger;
-    pThis->VDIConfigCallbacks.pfnQueryIntegerDef    = drvvdCfgQueryIntegerDef;
-    pThis->VDIConfigCallbacks.pfnQueryString        = drvvdCfgQueryString;
-    pThis->VDIConfigCallbacks.pfnQueryStringDef     = drvvdCfgQueryStringDef;
-    pThis->VDIConfigCallbacks.pfnQueryBytes         = drvvdCfgQueryBytes;
+    pThis->VDIConfigCallbacks.pfnQuery              = drvvdCfgQuery;
 
     /* List of images is empty now. */
     pThis->pImages = NULL;

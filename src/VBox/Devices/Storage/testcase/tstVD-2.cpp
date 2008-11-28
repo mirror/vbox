@@ -86,32 +86,21 @@ static int tstVDBackendInfo(void)
                 switch (pa->enmValueType)
                 {
                     case VDCFGVALUETYPE_INTEGER:
-                        RTPrintf("integer default=");
-                        if (pa->pDefaultValue)
-                            RTPrintf("%RU64", pa->pDefaultValue->Integer.u64);
-                        else
-                            RTPrintf("<NONE>");
+                        RTPrintf("integer");
                         break;
                     case VDCFGVALUETYPE_STRING:
-                        RTPrintf("string default=");
-                        if (pa->pDefaultValue)
-                            RTPrintf("%s", pa->pDefaultValue->String.psz);
-                        else
-                            RTPrintf("<NONE>");
+                        RTPrintf("string");
                         break;
                     case VDCFGVALUETYPE_BYTES:
-                        RTPrintf("bytes default=");
-                        if (pa->pDefaultValue)
-                            RTPrintf("length=%RTuint %.*Rhxs",
-                                     pa->pDefaultValue->Bytes.cb,
-                                     pa->pDefaultValue->Bytes.cb,
-                                     pa->pDefaultValue->Bytes.pv);
-                        else
-                            RTPrintf("<NONE>");
+                        RTPrintf("bytes");
                         break;
                     default:
                         RTPrintf("INVALID!");
                 }
+                if (pa->pszDefaultValue)
+                    RTPrintf("%s", pa->pszDefaultValue);
+                else
+                    RTPrintf("<NONE>");
                 RTPrintf(" flags=");
                 if (!pa->uKeyFlags)
                     RTPrintf("none");
