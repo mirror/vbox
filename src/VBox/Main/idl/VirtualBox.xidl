@@ -4645,32 +4645,68 @@
     </method>
 
     <method name="reset">
-      <desc>Resets the virtual machine.</desc>
+      <desc>Resets the virtual machine.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Virtual machine error in reset operation.
+        </result>
+      </desc>
     </method>
 
     <method name="pause">
-      <desc>Pauses the virtual machine execution.</desc>
+      <desc>Pauses the virtual machine execution.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Virtual machine error in suspend operation.
+        </result>
+      </desc>
     </method>
 
     <method name="resume">
-      <desc>Resumes the virtual machine execution.</desc>
+      <desc>Resumes the virtual machine execution.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Paused state.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Virtual machine error in resume operation.
+        </result>
+      </desc>
     </method>
 
     <method name="powerButton">
-      <desc>Send the ACPI power button event to the guest.</desc>
+      <desc>Send the ACPI power button event to the guest.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+        <result name="VBOX_E_PDM_ERROR">
+          Controlled power off failed.
+        </result>
+      </desc>
     </method>
 
     <method name="sleepButton">
-      <desc>Send the ACPI sleep button event to the guest.</desc>
+      <desc>Sends the ACPI sleep button event to the guest.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+        <result name="VBOX_E_PDM_ERROR">
+          Sending sleep button event failed.
+        </result>
+      </desc>
     </method>
 
     <method name="getPowerButtonHandled">
-      <desc>Check if the last power button event was handled by guest.</desc>
+      <desc>Checks if the last power button event was handled by guest.
+      </desc>
       <param name="handled" type="boolean" dir="return"/>
     </method>
 
     <method name="getGuestEnteredACPIMode">
-      <desc>Check if the guest entered the ACPI mode G0 (working) or
+      <desc>Checks if the guest entered the ACPI mode G0 (working) or
         G1 (sleeping). If this method returns false, the guest will
         most likely not respond to external ACPI events.</desc>
       <param name="entered" type="boolean" dir="return"/>
