@@ -1629,7 +1629,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     }
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL,
+        setError (VBOX_E_PDM_ERROR,
             tr ("Checking if the ACPI Power Button event was handled by the "
                 "guest OS failed (%Rrc)"), vrc);
 
@@ -1654,7 +1654,9 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return E_FAIL;
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot get guest ACPI mode as it is "
+            "not running (machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1730,7 +1732,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     if (mMachineState != MachineState_Running &&
         mMachineState != MachineState_Paused)
     {
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot save the execution state as the machine "
                 "is not running (machine state: %d)"), mMachineState);
     }
@@ -1797,7 +1799,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
                 int vrc = RTDirCreateFullPath (dir, 0777);
                 if (VBOX_FAILURE (vrc))
                 {
-                    rc = setError (E_FAIL,
+                    rc = setError (VBOX_E_FILE_ERROR,
                         tr ("Could not create a directory '%s' to save the state to (%Rrc)"),
                         dir.raw(), vrc);
                     break;
