@@ -57,7 +57,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL, //&vmmR3Switcher32BitToAMD64_Def - disabled because it causes assertions.
     &vmmR3SwitcherPAETo32Bit_Def,
     &vmmR3SwitcherPAEToPAE_Def,
-    NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
+    NULL, //&vmmR3Switcher32BitToAMD64_Def - disabled because it causes assertions.
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
 # ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
@@ -949,36 +949,6 @@ VMMR3DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
     }
 
     return VERR_NOT_IMPLEMENTED;
-}
-
-/**
- * Setup the specified world switcher
- *
- * @returns VBox status code.
- * @param   pVM             VM handle.
- * @param   enmSwitcher     Switcher
- */
-VMMR3DECL(int) VMMR3InitSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
-{
-    int rc = VINF_SUCCESS;
-
-    AssertReturn(enmSwitcher == VMMSWITCHER_32_TO_AMD64, VERR_INVALID_PARAMETER);
-
-    uint32_t cPages = RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT;
-
-    /* Map the entire VM structure into the intermediate page tables as we need to have access
-     * to them in the 32->64 switcher.
-     */
-    for (unsigned i=0;i<cPages;i++)
-    {
-        rc = PGMR3MapIntermediate(pVM, pVM->pVMR0 + i*PAGE_SIZE, pVM->paVMPagesR3[i].Phys, PAGE_SIZE);
-        if (VBOX_FAILURE(rc))
-        {
-            Log(("PGMR3MapIntermediate %RHv %RHp failed with %Rrc\n", pVM->pVMR0 + i*PAGE_SIZE, pVM->paVMPagesR3[i].Phys, rc));
-            break;
-        }
-    }
-    return rc;
 }
 
 
