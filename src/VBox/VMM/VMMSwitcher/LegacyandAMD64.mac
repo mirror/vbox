@@ -140,12 +140,6 @@ BEGINPROC vmmR0HostToGuestAsm
     and     esi, ~CPUM_USED_FPU         ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
     mov     [edx + CPUMCPU.fUseFlags], esi
 
-    ; debug registers.
-    test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
-    jz      htg_debug_regs_no
-    jmp     htg_debug_regs_save_dr7and6
-htg_debug_regs_no:
-
     ; control registers.
     mov     eax, cr0
     mov     [edx + CPUMCPU.Host.cr0], eax
@@ -233,7 +227,7 @@ FIXUP FIX_HC_64BIT_CPUM, 0
 dq 0ffffffffffffffffh
 
     ;
-    ; When we arrive here we're at the 64 bit mode of intermediate context
+    ; When we arrive here we're in 64 bits mode in the intermediate context
     ;
 ALIGNCODE(16)
 GLOBALNAME ICEnterTarget     
@@ -250,22 +244,6 @@ GLOBALNAME ICEnterTarget
     mov     rax,  0666h
     jmp     NAME(VMMGCGuestToHostAsm)   ; rax = returncode.
 
-BITS 32
-;;
-; Detour for saving the host DR7 and DR6.
-; esi and edx must be preserved.
-htg_debug_regs_save_dr7and6:
-DEBUG_S_CHAR('s');
-    mov     eax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
-    mov     [edx + CPUMCPU.Host.dr7], eax
-    xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
-    mov     dr7, eax
-    mov     eax, dr6                    ; just in case we save the state register too.
-    mov     [edx + CPUMCPU.Host.dr6], eax
-    jmp     htg_debug_regs_no
-
-
-BITS 64
 ENDPROC vmmR0HostToGuestAsm
 
 
@@ -278,6 +256,7 @@ ENDPROC vmmR0HostToGuestAsm
 ; Push the address of this routine.
 ;
 ;
+BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmGCCallTrampoline
 %ifdef DEBUG_STUFF
@@ -289,10 +268,10 @@ BEGINPROC vmmGCCallTrampoline
 ENDPROC vmmGCCallTrampoline
 
 
-BITS 64
 ;;
 ; The C interface.
 ;
+BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmGCGuestToHost
 %ifdef DEBUG_STUFF
@@ -319,6 +298,7 @@ ENDPROC vmmGCGuestToHost
 ; @param    eax     Return code.
 ; @uses     eax, edx, ecx (or it may use them in the future)
 ;
+BITS 64
 ALIGNCODE(16)
 BEGINPROC VMMGCGuestToHostAsm
     CPUMCPU_FROM_CPUM(rdx)
@@ -440,25 +420,9 @@ GLOBALNAME ICExitTarget
     and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, ecx
 
-    FIXUP FIX_NO_FXSAVE_JMP, 0, gth_no_fxsave - NAME(Start) ; this will insert a jmp gth_no_fxsave if fxsave isn't supported.
     fxsave  [edx + CPUMCPU.Guest.fpu]
     fxrstor [edx + CPUMCPU.Host.fpu]
     jmp near gth_fpu_no
-
-gth_no_fxsave:
-    fnsave  [edx + CPUMCPU.Guest.fpu]
-    mov     eax, [edx + CPUMCPU.Host.fpu]     ; control word
-    not     eax                            ; 1 means exception ignored (6 LS bits)
-    and     eax, byte 03Fh                 ; 6 LS bits only
-    test    eax, [edx + CPUMCPU.Host.fpu + 4] ; status word
-    jz      gth_no_exceptions_pending
-
-    ; technically incorrect, but we certainly don't want any exceptions now!!
-    and     dword [edx + CPUMCPU.Host.fpu + 4], ~03Fh
-
-gth_no_exceptions_pending:
-    frstor  [edx + CPUMCPU.Host.fpu]
-    jmp short gth_fpu_no
 
 ALIGNCODE(16)
 gth_fpu_no:
@@ -473,13 +437,6 @@ gth_fpu_no:
     ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is waste of time.
     ;mov     cr2, ecx
 
-    ; restore debug registers (if modified) (esi must still be fUseFlags!)
-    ; (must be done after cr4 reload because of the debug extension.)
-    test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
-    jz short gth_debug_regs_no
-    jmp     gth_debug_regs_restore
-gth_debug_regs_no:
-
     ; restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
     mov     edi, [edx + CPUMCPU.Host.edi]
@@ -493,31 +450,6 @@ gth_debug_regs_no:
 ;    COM_S_CHAR '4'
 %endif
     retf
-
-;;
-; Detour for restoring the host debug registers.
-; edx and edi must be preserved.
-gth_debug_regs_restore:
-    DEBUG_S_CHAR('d')
-    xor     eax, eax
-    mov     dr7, eax                    ; paranoia or not?
-    test    esi, CPUM_USE_DEBUG_REGS
-    jz short gth_debug_regs_dr7
-    DEBUG_S_CHAR('r')
-    mov     eax, [edx + CPUMCPU.Host.dr0]
-    mov     dr0, eax
-    mov     ebx, [edx + CPUMCPU.Host.dr1]
-    mov     dr1, ebx
-    mov     ecx, [edx + CPUMCPU.Host.dr2]
-    mov     dr2, ecx
-    mov     eax, [edx + CPUMCPU.Host.dr3]
-    mov     dr3, eax
-gth_debug_regs_dr7:
-    mov     ebx, [edx + CPUMCPU.Host.dr6]
-    mov     dr6, ebx
-    mov     ecx, [edx + CPUMCPU.Host.dr7]
-    mov     dr7, ecx
-    jmp     gth_debug_regs_no
         
 ENDPROC VMMGCGuestToHostAsm
 
@@ -558,7 +490,8 @@ GLOBALNAME End
 ; The description string (in the text section).
 ;
 NAME(Description):
-    db SWITCHER_DESCRIPTION, 0
+    db SWITCHER_DESCRIPTION
+    db 0
 
 extern NAME(Relocate)
 
