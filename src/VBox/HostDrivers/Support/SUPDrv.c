@@ -276,6 +276,19 @@ DECLASM(void)  UNWIND_WRAP(AssertMsg1)(const char *pszExpr, unsigned uLine, cons
 static SUPFUNC g_aFunctions[] =
 {
     /* name                                     function */
+        /* Entries with absolute addresses determined at runtime, fixup
+           code makes ugly ASSUMPTIONS about the order here: */
+    { "SUPR0AbsIs64bit",                        (void *)0 },
+    { "SUPR0Abs64bitKernelCS",                  (void *)0 },
+    { "SUPR0Abs64bitKernelSS",                  (void *)0 },
+    { "SUPR0Abs64bitKernelDS",                  (void *)0 },
+    { "SUPR0AbsKernelCS",                       (void *)0 },
+    { "SUPR0AbsKernelSS",                       (void *)0 },
+    { "SUPR0AbsKernelDS",                       (void *)0 },
+    { "SUPR0AbsKernelES",                       (void *)0 },
+    { "SUPR0AbsKernelFS",                       (void *)0 },
+    { "SUPR0AbsKernelGS",                       (void *)0 },
+        /* Normal function pointers: */
     { "SUPR0ComponentRegisterFactory",          (void *)UNWIND_WRAP(SUPR0ComponentRegisterFactory) },
     { "SUPR0ComponentDeregisterFactory",        (void *)UNWIND_WRAP(SUPR0ComponentDeregisterFactory) },
     { "SUPR0ComponentQueryFactory",             (void *)UNWIND_WRAP(SUPR0ComponentQueryFactory) },
@@ -296,6 +309,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageFree",                          (void *)UNWIND_WRAP(SUPR0PageFree) },
     { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
+    { "SUPR0NativeEnableHwVirtExt",             (void *)SUPR0NativeEnableHwVirtExt },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -465,6 +479,32 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt)
                     if (RT_SUCCESS(rc))
                     {
                         pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
+
+                        /*
+                         * Fixup the absolute symbols.
+                         *
+                         * Because of the table indexing assumptions we'll do #ifdef orgy here rather
+                         * than distributing this to OS specific files. At least for now.
+                         */
+#ifdef RT_OS_DARWIN
+                        g_aFunctions[0].pfn = (void *)(SUPR0GetPagingMode() >= SUPPAGINGMODE_AMD64); /* SUPR0AbsIs64bit */
+                        g_aFunctions[1].pfn = (void *)0x80;                     /* KERNEL64_CS, seg.h */
+                        g_aFunctions[2].pfn = (void *)0x88;                     /* KERNEL64_SS, seg.h */
+                        g_aFunctions[3].pfn = (void *)0x88;                     /* KERNEL64_SS, seg.h */
+#elif ARCH_BITS == 64
+                        g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
+                        g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
+                        g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
+                        g_aFunctions[3].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0Abs64bitKernelDS */
+#elif ARCH_BITS == 32
+                        g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
+#endif
+                        g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
+                        g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
+                        g_aFunctions[6].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0AbsKernelDS */
+                        g_aFunctions[7].pfn = (void *)(uintptr_t)ASMGetES();    /* SUPR0AbsKernelES */
+                        g_aFunctions[8].pfn = (void *)(uintptr_t)ASMGetFS();    /* SUPR0AbsKernelFS */
+                        g_aFunctions[9].pfn = (void *)(uintptr_t)ASMGetGS();    /* SUPR0AbsKernelGS */
                         return VINF_SUCCESS;
                     }
 
@@ -3901,9 +3941,25 @@ SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
 
 
 /**
+ * Enables or disabled hardware virtualization extensions using native OS APIs.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_SUPPORTED if not supported by the native OS.
+ *
+ * @param   pSession        The calling session.
+ * @param   fEnable         Whether to enable or disable.
+ */
+SUPR0DECL(int) SUPR0NativeEnableHwVirtExt(PSUPDRVSESSION pSession, bool fEnable)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
  * Creates the GIP.
  *
- * @returns negative errno.
+ * @returns VBox status code.
  * @param   pDevExt     Instance data. GIP stuff may be updated.
  */
 static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)

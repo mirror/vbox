@@ -31,6 +31,10 @@
 LIBRARY SUPR0.dll
 
 EXPORTS
+    SUPR0AbsIs64bit
+    SUPR0Abs64bitKernelCS
+    SUPR0Abs64bitKernelSS
+    SUPR0Abs64bitKernelDS
     SUPR0ComponentRegisterFactory
     SUPR0ComponentDeregisterFactory
     SUPR0ComponentQueryFactory
@@ -49,7 +53,7 @@ EXPORTS
     SUPR0MemFree
     SUPR0Printf
     SUPR0GetPagingMode
-    RTMemAlloc
+    SUPR0NativeEnableHwVirtExt
     RTMemAllocZ
     RTMemFree
     RTMemRealloc
