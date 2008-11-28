@@ -137,22 +137,6 @@ BEGINPROC vmmR0HostToGuestAsm
     pushfd
     pop     dword [edx + CPUMCPU.Host.eflags]
 
-    FIXUP FIX_NO_SYSENTER_JMP, 0, htg_no_sysenter - NAME(Start) ; this will insert a jmp htg_no_sysenter if host doesn't use sysenter.
-    ; save MSR_IA32_SYSENTER_CS register.
-    mov     ecx, MSR_IA32_SYSENTER_CS
-    mov     ebx, edx                    ; save edx
-    rdmsr                               ; edx:eax <- MSR[ecx]
-    mov     [ebx + CPUMCPU.Host.SysEnter.cs], eax
-    mov     [ebx + CPUMCPU.Host.SysEnter.cs + 4], edx
-    xor     eax, eax                    ; load 0:0 to cause #GP upon sysenter
-    xor     edx, edx
-    wrmsr
-    xchg    ebx, edx                    ; restore edx
-    jmp short htg_no_sysenter
-
-ALIGNCODE(16)
-htg_no_sysenter:
-
     ;; handle use flags.
     mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
     and     esi, ~CPUM_USED_FPU         ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
@@ -172,6 +156,10 @@ htg_debug_regs_no:
     mov     [edx + CPUMCPU.Host.cr3], eax
     mov     eax, cr4
     mov     [edx + CPUMCPU.Host.cr4], eax
+
+    CPUM_FROM_CPUMCPU(edx)
+    ; Load new gdt so we can do far jump after going into 64 bits mode
+    lgdt    [edx + CPUM.Hyper.gdtr]
 
     ;;
     ;; Load Intermediate memory context.
@@ -437,22 +425,6 @@ GLOBALNAME ICExitTarget
     ; restore stack
     lss     esp, [edx + CPUMCPU.Host.esp]
 
-    FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
-    
-    ; restore MSR_IA32_SYSENTER_CS register.
-    mov     ecx, MSR_IA32_SYSENTER_CS
-    mov     eax, [edx + CPUMCPU.Host.SysEnter.cs]
-    mov     ebx, [edx + CPUMCPU.Host.SysEnter.cs + 4]
-    xchg    edx, ebx                    ; save/load edx
-    wrmsr                               ; MSR[ecx] <- edx:eax
-    xchg    edx, ebx                    ; restore edx
-    jmp short gth_sysenter_no
-
-ALIGNCODE(16)
-gth_sysenter_no:
-
-    ;; @todo AMD syscall
-
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
@@ -486,7 +458,7 @@ ALIGNCODE(16)
 gth_fpu_no:
 
     ; Control registers.
-    ; Would've liked to have these highere up in case of crashes, but
+    ; Would've liked to have these higher up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
     mov     ecx, [edx + CPUMCPU.Host.cr4]
     mov     cr4, ecx
