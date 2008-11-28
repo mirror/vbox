@@ -220,7 +220,10 @@
             <td><xsl:value-of select="@name"/></td>
           </xsl:otherwise>
         </xsl:choose>
-        <td><xsl:value-of select="text()"/></td>
+        <td>
+          <xsl:apply-templates select="text() | *[not(self::note or self::see or
+                                                  self::result)]"/>
+        </td>
       </tr>
     </xsl:for-each>
       </table>
