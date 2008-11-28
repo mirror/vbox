@@ -360,8 +360,12 @@ typedef struct CPUMCPU
     /* Offset to CPUM. (subtract from the pointer to get to CPUM) */
     uint32_t                ulOffCPUM;
 
-    /* Round to 16 byte size. */
+    /* Temporary storage for the return code of the function called in the 32-64 switcher. */
+    uint32_t                u32RetCode;
+
+    /* Round to 16 byte size.
     uint32_t                uPadding;
+     */
 } CPUMCPU, *PCPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;
