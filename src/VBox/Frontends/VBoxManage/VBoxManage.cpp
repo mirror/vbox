@@ -1205,15 +1205,11 @@ static int handleConvertDDImage(int argc, char *argv[])
 static int handleAddiSCSIDisk(int argc, char *argv[],
                               ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
 {
-#if 1
-    RTPrintf("Error: Create iSCSI hard disk operation is temporarily unavailable!\n");
-    return 1;
-#else
     HRESULT rc;
     Bstr server;
     Bstr target;
-    uint16_t port = UINT16_MAX;
-    uint64_t lun = UINT64_MAX;
+    Bstr port;
+    Bstr lun;
     Bstr username;
     Bstr password;
     Bstr comment;
@@ -1244,38 +1240,42 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            port = RTStrToUInt16(argv[i]);
+            port = argv[i];
         }
         else if (strcmp(argv[i], "-lun") == 0)
         {
+            /// @todo is the below todo still relevant? Note that we do a
+            /// strange string->int->string conversion here.
+
             /** @todo move the LUN encoding algorithm into IISCSIHardDisk, add decoding */
+
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             char *pszNext;
-            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
-            if (RT_FAILURE(rc) || *pszNext != '\0' || lun >= 16384)
+            uint64_t lunNum;
+            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lunNum);
+            if (RT_FAILURE(rc) || *pszNext != '\0' || lunNum >= 16384)
                 return errorArgument("Invalid LUN number '%s'", argv[i]);
-            if (lun <= 255)
+            if (lunNum <= 255)
             {
                 /* Assume bus identifier = 0. */
-                lun = (lun << 48); /* uses peripheral device addressing method */
+                lunNum = (lunNum << 48); /* uses peripheral device addressing method */
             }
             else
             {
                 /* Check above already limited the LUN to 14 bits. */
-                lun = (lun << 48) | RT_BIT_64(62); /* uses flat space addressing method */
+                lunNum = (lunNum << 48) | RT_BIT_64(62); /* uses flat space addressing method */
             }
+
+            lun = BstrFmt ("%llu", lunNum);
         }
         else if (strcmp(argv[i], "-encodedlun") == 0)
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            char *pszNext;
-            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lun);
-            if (RT_FAILURE(rc) || *pszNext != '\0')
-                return errorArgument("Invalid encoded LUN number '%s'", argv[i]);
+            lun = argv[i];
         }
         else if (strcmp(argv[i], "-username") == 0)
         {
@@ -1306,36 +1306,44 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
     if (!server || !target)
         return errorSyntax(USAGE_ADDISCSIDISK, "Parameters -server and -target are required");
 
-    ComPtr<IHardDisk> hardDisk;
-    CHECK_ERROR(aVirtualBox, CreateHardDisk(HardDiskStorageType_ISCSIHardDisk, hardDisk.asOutParam()));
-    if (SUCCEEDED(rc) && hardDisk)
+    do
     {
-        CHECK_ERROR(hardDisk, COMSETTER(Description)(comment));
-        ComPtr<IISCSIHardDisk> iSCSIDisk = hardDisk;
-        CHECK_ERROR(iSCSIDisk, COMSETTER(Server)(server));
-        if (port != UINT16_MAX)
-            CHECK_ERROR(iSCSIDisk, COMSETTER(Port)(port));
-        CHECK_ERROR(iSCSIDisk, COMSETTER(Target)(target));
-        if (lun != UINT64_MAX)
-            CHECK_ERROR(iSCSIDisk, COMSETTER(Lun)(lun));
-        CHECK_ERROR(iSCSIDisk, COMSETTER(UserName)(username));
-        CHECK_ERROR(iSCSIDisk, COMSETTER(Password)(password));
+        ComPtr<IHardDisk2> hardDisk;
+        CHECK_ERROR_BREAK (aVirtualBox,
+            CreateHardDisk2(Bstr ("iSCSI"),
+                            BstrFmt ("%ls/%ls", server.raw(), target.raw()),
+                            hardDisk.asOutParam()));
+        CheckComRCBreakRC (rc);
 
-        if (SUCCEEDED(rc))
-        {
-            CHECK_ERROR(aVirtualBox, RegisterHardDisk(hardDisk));
-        }
+        if (!comment.isNull())
+            CHECK_ERROR_BREAK(hardDisk, COMSETTER(Description)(comment));
 
-        if (SUCCEEDED(rc))
-        {
-            Guid guid;
-            CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
-            RTPrintf("iSCSI disk created. UUID: %s\n", guid.toString().raw());
-        }
+        if (!port.isNull())
+            server = BstrFmt ("%ls:%ls", server.raw(), port.raw());
+        CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("TargetAddress"), server));
+        CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("TargetName"), target));
+
+        if (!lun.isNull())
+            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("LUN"), lun));
+        if (!username.isNull())
+            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("InitiatorUsername"), username));
+        if (!password.isNull())
+            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("InitiatorSecret"), password));
+
+        /// @todo add -initiator option
+        CHECK_ERROR_BREAK(hardDisk,
+            SetProperty(Bstr("InitiatorName"),
+                        Bstr("iqn.2008-04.com.sun.virtualbox.initiator")));
+
+        /// @todo add -targetName and -targetPassword options
+
+        Guid guid;
+        CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
+        RTPrintf("iSCSI disk created. UUID: %s\n", guid.toString().raw());
     }
+    while (0);
 
     return SUCCEEDED(rc) ? 0 : 1;
-#endif
 }
 
 static int handleCreateVM(int argc, char *argv[],
