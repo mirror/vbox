@@ -4718,6 +4718,9 @@
 
     <method name="getPowerButtonHandled">
       <desc>Checks if the last power button event was handled by guest.
+        <result name="VBOX_E_PDM_ERROR">
+          Checking if the event was handled by the guest OS failed.
+        </result>
       </desc>
       <param name="handled" type="boolean" dir="return"/>
     </method>
@@ -4725,7 +4728,11 @@
     <method name="getGuestEnteredACPIMode">
       <desc>Checks if the guest entered the ACPI mode G0 (working) or
         G1 (sleeping). If this method returns false, the guest will
-        most likely not respond to external ACPI events.</desc>
+        most likely not respond to external ACPI events.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+      </desc>
       <param name="entered" type="boolean" dir="return"/>
     </method>
 
@@ -4750,7 +4757,7 @@
           <link to="IMachine::saveSettings()"/> to save all current machine
           settings (including runtime changes to the DVD drive, etc.).
           Together with the impossibility to change any VM settings when it is
-          in the Saved state, this guarantees the adequate hardware
+          in the Saved state, this guarantees adequate hardware
           configuration of the machine when it is restored from the saved
           state file.
         </note>
@@ -4759,6 +4766,12 @@
           The machine must be in the Running or Paused state, otherwise
           the operation will fail.
         </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither Running nor Paused.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Failed to create directory for saved state file.
+        </result>
 
         <see><link to="#takeSnapshot"/></see>
       </desc>
@@ -4776,7 +4789,7 @@
         continue execution from the place where the saved state file was
         created.
 
-        The specified saved state file path may be full or relative to the
+        The specified saved state file path may be absolute or relative to the
         folder the VM normally saves the state to (usually,
         <link to="IMachine::snapshotFolder"/>).
 
@@ -4787,6 +4800,9 @@
           etc.). If there is a mismatch, the behavior of the virtual machine
           is undefined.
         </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither PoweredOff nor Aborted.
+        </result>
       </desc>
       <param name="savedStateFile" type="wstring" dir="in">
         <desc>Path to the saved state file to adopt.</desc>
@@ -4802,6 +4818,9 @@
           This operation is equivalent to resetting or powering off
           the machine without doing a proper shutdown in the guest OS.
         </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in state Saved.
+        </result>
       </desc>
     </method>
 
