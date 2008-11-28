@@ -307,12 +307,12 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             PX86PDPT    pPDPT;
             PX86PML4    pPML4;
         } uShw;
-        uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
 
         switch (pPage->enmKind)
         {
             case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
             {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PTE);
                 if (uShw.pPT->a[iShw].n.u1Present)
                 {
@@ -330,6 +330,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             /* page/2 sized */
             case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 if (!((off ^ pPage->GCPhys) & (PAGE_SIZE / 2)))
                 {
                     const unsigned iShw = (off / sizeof(X86PTE)) & (X86_PG_PAE_ENTRIES - 1);
@@ -349,6 +350,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
             {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PTEPAE);
                 if (uShw.pPTPae->a[iShw].n.u1Present)
                 {
@@ -388,6 +390,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_32BIT_PD:
             {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PTE);         // ASSUMING 32-bit guest paging!
                 if (uShw.pPD->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
@@ -427,14 +430,18 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_ROOT_PAE_PD:
             {
-                unsigned iShw = (off / sizeof(X86PTE)) * 2;   // ASSUMING 32-bit guest paging!
+                unsigned iGst     = off / sizeof(X86PTE);           // ASSUMING 32-bit guest paging!
+                unsigned iShwPdpt = iGst & 3;
+                unsigned iShw     = iGst / 4;
+                Assert(pPage->idx == PGMPOOL_IDX_PAE_PD);
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage + 1 + iShwPdpt);
                 for (unsigned i = 0; i < 2; i++, iShw++)
                 {
                     if ((uShw.pPDPae->a[iShw].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                     {
                         Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                         VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw=%#x!\n", iShw));
+                        LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw=%#x!\n", iShwPdpt, iShw));
                     }
                     /* paranoia / a bit assumptive. */
                     else if (   pCpu
@@ -442,23 +449,23 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                              && (off & 3) + cbWrite > 4)
                     {
                         const unsigned iShw2 = iShw + 2;
-                        if (    iShw2 < RT_ELEMENTS(uShw.pPDPae->a)
+                        if (    iShw2 < RT_ELEMENTS(uShw.pPDPae->a) /** @todo was completely wrong, it's better now after #1865 but still wrong from cross PD. */
                             &&  (uShw.pPDPae->a[iShw2].u & (PGM_PDFLAGS_MAPPING | X86_PDE_P)) == (PGM_PDFLAGS_MAPPING | X86_PDE_P))
                         {
                             Assert(pgmMapAreMappingsEnabled(&pPool->CTX_SUFF(pVM)->pgm.s));
                             VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
-                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShw2=%#x!\n", iShw2));
+                            LogFlow(("pgmPoolMonitorChainChanging: Detected conflict at iShwPdpt=%#x iShw2=%#x!\n", iShwPdpt, iShw2));
                         }
                     }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
                     if (    uShw.pPDPae->a[iShw].n.u1Present
                         &&  !VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                     {
-                        LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX64 -> freeing it!\n", iShw, uShw.pPDPae->a[iShw].u));
+                        LogFlow(("pgmPoolMonitorChainChanging: iShwPdpt=%#x iShw=%#x: %RX64 -> freeing it!\n", iShwPdpt, iShw, uShw.pPDPae->a[iShw].u));
 # ifdef IN_RC           /* TLB load - we're pushing things a bit... */
                         ASMProbeReadByte(pvAddress);
 # endif
-                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw);
+                        pgmPoolFree(pPool->CTX_SUFF(pVM), uShw.pPDPae->a[iShw].u & X86_PDE_PAE_PG_MASK, pPage->idx, iShw + iShwPdpt * X86_PG_PAE_ENTRIES);
                         uShw.pPDPae->a[iShw].u = 0;
                     }
 #endif
@@ -468,6 +475,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
 
             case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
             {
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
@@ -533,6 +541,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                  * - touching unused parts of the page
                  * - messing with the bits of pd pointers without changing the physical address
                  */
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PDPE);
                 if (iShw < X86_PG_PAE_PDPE_ENTRIES)          /* don't use RT_ELEMENTS(uShw.pPDPT->a), because that's for long mode only */
                 {
@@ -566,6 +575,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
             {
                 Assert(pPage->enmKind == PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD);
 
+                uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                 const unsigned iShw = off / sizeof(X86PDEPAE);
                 if (uShw.pPDPae->a[iShw].u & PGM_PDFLAGS_MAPPING)
                 {
@@ -622,6 +632,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                  */
                 if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
+                    uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                     const unsigned iShw = off / sizeof(X86PDPE);
                     if (uShw.pPDPT->a[iShw].n.u1Present)
                     {
@@ -654,6 +665,7 @@ void pgmPoolMonitorChainChanging(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GC
                  */
                 if (!VM_FF_ISSET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3))
                 {
+                    uShw.pv = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                     const unsigned iShw = off / sizeof(X86PDPE);
                     if (uShw.pPML4->a[iShw].n.u1Present)
                     {
@@ -2711,11 +2723,23 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
 {
     Assert(pUser->iUser != NIL_PGMPOOL_IDX);
     Assert(pUser->iUser < pPool->cCurPages);
+    uint32_t iUserTable = pUser->iUserTable;
 
     /*
      * Map the user page.
      */
     PPGMPOOLPAGE pUserPage = &pPool->aPages[pUser->iUser];
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    if (pUserPage->enmKind == PGMPOOLKIND_ROOT_PAE_PD)
+    {
+        /* Must translate the fake 2048 entry PD to a 512 PD one since the R0 mapping is not linear. */
+        Assert(pUser->iUser == PGMPOOL_IDX_PAE_PD);
+        uint32_t iPdpt = iUserTable / X86_PG_PAE_ENTRIES;
+        iUserTable    %= X86_PG_PAE_ENTRIES;
+        pUserPage      = &pPool->aPages[PGMPOOL_IDX_PAE_PD_0 + iPdpt];
+        Assert(pUserPage->enmKind == PGMPOOLKIND_PAE_PD_FOR_PAE_PD);
+    }
+#endif
     union
     {
         uint64_t       *pau64;
@@ -2733,45 +2757,47 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     switch (pUserPage->enmKind)
     {
         case PGMPOOLKIND_ROOT_32BIT_PD:
-            Assert(pUser->iUserTable < X86_PG_ENTRIES);
-            Assert(!(u.pau32[pUser->iUserTable] & PGM_PDFLAGS_MAPPING));
+            Assert(iUserTable < X86_PG_ENTRIES);
+            Assert(!(u.pau32[iUserTable] & PGM_PDFLAGS_MAPPING));
             break;
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         case PGMPOOLKIND_ROOT_PAE_PD:
-            Assert(pUser->iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
-            AssertMsg(!(u.pau64[pUser->iUserTable] & PGM_PDFLAGS_MAPPING), ("%llx %d\n", u.pau64[pUser->iUserTable], pUser->iUserTable));
+            Assert(iUserTable < 2048 && pUser->iUser == PGMPOOL_IDX_PAE_PD);
+            AssertMsg(!(u.pau64[iUserTable] & PGM_PDFLAGS_MAPPING), ("%llx %d\n", u.pau64[iUserTable], iUserTable));
             break;
+# endif
         case PGMPOOLKIND_ROOT_PDPT:
-            Assert(pUser->iUserTable < 4);
-            Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
+            Assert(iUserTable < 4);
+            Assert(!(u.pau64[iUserTable] & PGM_PLXFLAGS_PERMANENT));
             break;
         case PGMPOOLKIND_PAE_PD_FOR_32BIT_PD:
         case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
-            Assert(!(u.pau64[pUser->iUserTable] & PGM_PDFLAGS_MAPPING));
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(!(u.pau64[iUserTable] & PGM_PDFLAGS_MAPPING));
             break;
         case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
-            Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(!(u.pau64[iUserTable] & PGM_PLXFLAGS_PERMANENT));
             break;
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
-            Assert(!(u.pau64[pUser->iUserTable] & PGM_PLXFLAGS_PERMANENT));
+            Assert(!(u.pau64[iUserTable] & PGM_PLXFLAGS_PERMANENT));
             /* GCPhys >> PAGE_SHIFT is the index here */
             break;
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
 
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
 
         case PGMPOOLKIND_ROOT_NESTED:
-            Assert(pUser->iUserTable < X86_PG_PAE_ENTRIES);
+            Assert(iUserTable < X86_PG_PAE_ENTRIES);
             break;
 
         default:
@@ -2787,7 +2813,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     {
         /* 32-bit entries */
         case PGMPOOLKIND_ROOT_32BIT_PD:
-            u.pau32[pUser->iUserTable] = 0;
+            u.pau32[iUserTable] = 0;
             break;
 
         /* 64-bit entries */
@@ -2798,12 +2824,14 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
         case PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4:
         case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         case PGMPOOLKIND_ROOT_PAE_PD:
+#endif
         case PGMPOOLKIND_ROOT_PDPT:
         case PGMPOOLKIND_ROOT_NESTED:
         case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
-            u.pau64[pUser->iUserTable] = 0;
+            u.pau64[iUserTable] = 0;
             break;
 
         default:
