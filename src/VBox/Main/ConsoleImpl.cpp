@@ -1687,9 +1687,9 @@ STDMETHODIMP Console::SleepButton()
     AutoWriteLock alock (this);
 
     if (mMachineState != MachineState_Running)
-        return setError (E_FAIL, tr ("Cannot send the sleep button event as it is "
-                                     "not running (machine state: %d)"),
-                         mMachineState);
+        return setError (VBOX_E_INVALID_VM_STATE,
+            tr ("Cannot send the sleep button event as it is "
+            "not running (machine state: %d)"), mMachineState);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller (this);
@@ -1706,7 +1706,7 @@ STDMETHODIMP Console::SleepButton()
     }
 
     HRESULT rc = VBOX_SUCCESS (vrc) ? S_OK :
-        setError (E_FAIL,
+        setError (VBOX_E_PDM_ERROR,
             tr ("Sending sleep button event failed (%Rrc)"), vrc);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
