@@ -1893,6 +1893,9 @@ ResumeExecution:
             LogFlow(("Manual TLB flush\n"));
     }
 #endif
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PGMDynMapReleaseAutoSet(pVCpu);
+#endif
 
     /*
      * NOTE: DO NOT DO ANYTHING AFTER THIS POINT THAT MIGHT JUMP BACK TO RING 3!
@@ -2047,6 +2050,9 @@ ResumeExecution:
         rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
         AssertRC(rc);
     }
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PGMDynMapStartAutoSet(pVCpu);
+#endif
 
     /* Some cases don't need a complete resync of the guest CPU state; handle them here. */
     switch (exitReason)
