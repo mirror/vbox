@@ -1202,7 +1202,7 @@ typedef enum
  * @returns VBox status code
  * @param   pVMXOn      Physical address of VMXON structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXEnable(RTHCPHYS pVMXOn);
 #else
 DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
@@ -1256,7 +1256,7 @@ the_end:
 /**
  * Executes VMXOFF
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(void) VMXDisable(void);
 #else
 DECLINLINE(void) VMXDisable(void)
@@ -1283,7 +1283,7 @@ DECLINLINE(void) VMXDisable(void)
  * @returns VBox status code
  * @param   pVMCS       Physical address of VM control structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXClearVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
@@ -1331,7 +1331,7 @@ success:
  * @returns VBox status code
  * @param   pVMCS       Physical address of VMCS structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXActivateVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
@@ -1386,7 +1386,7 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val);
 #else
 DECLINLINE(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Val)
@@ -1431,26 +1431,26 @@ the_end:
 }
 #endif
 
-/** 
- * Executes VMWRITE 
- * 
- * @returns VBox status code 
- * @param   idxField        VMCS index 
- * @param   u64Val          16, 32 or 64 bits value 
- */ 
-#if HC_ARCH_BITS == 64 
-DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val); 
-#else 
-DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val) 
-{ 
-    int rc; 
+/**
+ * Executes VMWRITE
+ *
+ * @returns VBox status code
+ * @param   idxField        VMCS index
+ * @param   u64Val          16, 32 or 64 bits value
+ */
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
+#else
+DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
+{
+    int rc;
 
-    rc  = VMXWriteVMCS32(idxField, u64Val); 
- 	rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL)); 
- 	AssertRC(rc); 
- 	return rc; 
-} 
-#endif 
+    rc  = VMXWriteVMCS32(idxField, u64Val);
+ 	rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL));
+ 	AssertRC(rc);
+ 	return rc;
+}
+#endif
 
 #if HC_ARCH_BITS == 64
 #define VMXWriteVMCS VMXWriteVMCS64
@@ -1482,7 +1482,7 @@ DECLASM(int) VMXR0InvVPID(VMX_FLUSH enmFlush, uint64_t *pDescriptor);
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64
+#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData);
 #else
 DECLINLINE(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pData)
@@ -1530,28 +1530,28 @@ the_end:
 }
 #endif
 
-#if HC_ARCH_BITS == 64 
-/** 
- * Executes VMREAD 
- * 
- * @returns VBox status code 
- * @param   idxField        VMCS index 
- * @param   pData           Ptr to store VM field value 
- */ 
-DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData); 
-#else 
-DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData) 
-{ 
-    int rc; 
+/**
+ * Executes VMREAD
+ *
+ * @returns VBox status code
+ * @param   idxField        VMCS index
+ * @param   pData           Ptr to store VM field value
+ */
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+#else
+DECLINLINE(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData)
+{
+    int rc;
 
-    uint32_t val_hi, val; 
-    rc  = VMXReadVMCS32(idxField, &val); 
-    rc |= VMXReadVMCS32(idxField + 1, &val_hi); 
-    AssertRC(rc); 
-    *pData = RT_MAKE_U64(val, val_hi); 
-    return rc; 
-} 
-#endif 
+    uint32_t val_hi, val;
+    rc  = VMXReadVMCS32(idxField, &val);
+    rc |= VMXReadVMCS32(idxField + 1, &val_hi);
+    AssertRC(rc);
+    *pData = RT_MAKE_U64(val, val_hi);
+    return rc;
+}
+#endif
 
 #if HC_ARCH_BITS == 64
 # define VMXReadVMCS VMXReadVMCS64

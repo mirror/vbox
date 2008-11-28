@@ -199,6 +199,31 @@
 %endif
 
 
+;*******************************************************************************
+;* External Symbols                                                            *
+;*******************************************************************************
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+extern NAME(SUPR0AbsIs64bit)
+extern NAME(SUPR0Abs64bitKernelCS)
+extern NAME(SUPR0Abs64bitKernelSS)
+extern NAME(SUPR0Abs64bitKernelDS)
+%endif
+
+
+;*******************************************************************************
+;*  Global Variables                                                           *
+;*******************************************************************************
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+BEGINDATA
+;;
+; Store the SUPR0AbsIs64bit absolute value here so we can cmp/test without
+; needing to clobber a register. (This trick doesn't quite work for PE btw.
+; but that's not relevant atm.)
+g_fIs64bit:
+    dd  NAME(SUPR0AbsIs64bit)
+%endif
+
+
 BEGINCODE
 
 ;/**
@@ -662,26 +687,42 @@ ALIGNCODE(16)
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart64_end
 ENDPROC VMXR0StartVM64
+%endif ; RT_ARCH_AMD64
+
 
 ;/**
-; * Executes VMWRITE
+; * Executes VMWRITE, 64-bit value.
 ; *
 ; * @returns VBox status code
 ; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index
-; * @param   pData      x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
+; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
 ; */
 BEGINPROC VMXWriteVMCS64
-%ifdef ASM_CALL64_GCC
-    mov         eax, 0ffffffffh
-    and         rdi, rax
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    and         edi, 0ffffffffh
     xor         rax, rax
     vmwrite     rdi, rsi
-%else
-    mov         eax, 0ffffffffh
-    and         rcx, rax
+ %else
+    and         ecx, 0ffffffffh
     xor         rax, rax
     vmwrite     rcx, rdx
-%endif
+ %endif
+%else  ; RT_ARCH_X86
+    mov         ecx, [esp + 4]          ; idxField
+    lea         edx, [esp + 8]          ; &u64Data
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp         byte [g_fIs64bit], 0
+    jne         .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+    vmwrite     ecx, [edx]              ; low dword
+    jz          .done
+    jc          .done
+    inc         ecx
+    xor         eax, eax
+    vmwrite     ecx, [edx + 4]          ; high dword
+.done:
+%endif ; RT_ARCH_X86
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
     ret
@@ -690,10 +731,36 @@ BEGINPROC VMXWriteVMCS64
     mov         eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    and     ecx, 0ffffffffh
+    xor     eax, eax
+    vmwrite rcx, [rdx]
+    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXWriteVMCS64
 
+
 ;/**
-; * Executes VMREAD
+; * Executes VMREAD, 64-bit value
 ; *
 ; * @returns VBox status code
 ; * @param   idxField        VMCS index
@@ -701,17 +768,31 @@ ENDPROC VMXWriteVMCS64
 ; */
 ;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
 BEGINPROC VMXReadVMCS64
-%ifdef ASM_CALL64_GCC
-    mov         eax, 0ffffffffh
-    and         rdi, rax
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    and         edi, 0ffffffffh
     xor         rax, rax
     vmread      [rsi], rdi
-%else
-    mov         eax, 0ffffffffh
-    and         rcx, rax
+ %else
+    and         ecx, 0ffffffffh
     xor         rax, rax
     vmread      [rdx], rcx
-%endif
+ %endif
+%else  ; RT_ARCH_X86
+    mov         ecx, [esp + 4]          ; idxField
+    mov         edx, [esp + 8]          ; pData
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp         byte [g_fIs64bit], 0
+    jne         .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+    vmread      [edx], ecx              ; low dword
+    jz          .done
+    jc          .done
+    inc         ecx
+    xor         eax, eax
+    vmread      [edx + 4], ecx          ; high dword
+.done:
+%endif ; RT_ARCH_X86
     jnc         .valid_vmcs
     mov         eax, VERR_VMX_INVALID_VMCS_PTR
     ret
@@ -720,7 +801,167 @@ BEGINPROC VMXReadVMCS64
     mov         eax, VERR_VMX_INVALID_VMCS_FIELD
 .the_end:
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    and     ecx, 0ffffffffh
+    xor     eax, eax
+    vmread  [rdx], rcx
+    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXReadVMCS64
+
+
+;/**
+; * Executes VMREAD, 32-bit value.
+; *
+; * @returns VBox status code
+; * @param   idxField        VMCS index
+; * @param   pu32Data        Ptr to store VM field value
+; */
+;DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pu32Data);
+BEGINPROC VMXReadVMCS32
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    and     edi, 0ffffffffh
+    xor     rax, rax
+    vmread  r10, rdi
+    mov     [rsi], r10d
+ %else
+    and     ecx, 0ffffffffh
+    xor     rax, rax
+    vmread  r10, rcx
+    mov     [rdx], r10d
+ %endif
+%else  ; RT_ARCH_X86
+    mov     ecx, [esp + 4]              ; idxField
+    mov     edx, [esp + 8]              ; pu32Data
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+    xor     eax, eax
+    vmread  [edx], ecx
+%endif ; RT_ARCH_X86
+    jnc     .valid_vmcs
+    mov     eax, VERR_VMX_INVALID_VMCS_PTR
+    ret
+.valid_vmcs:
+    jnz     .the_end
+    mov     eax, VERR_VMX_INVALID_VMCS_FIELD
+.the_end:
+    ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    and     ecx, 0ffffffffh
+    xor     eax, eax
+    vmread  r10, rcx
+    mov     [rdx], r10d
+    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ENDPROC VMXReadVMCS32
+
+
+;/**
+; * Executes VMWRITE, 32-bit value.
+; *
+; * @returns VBox status code
+; * @param   idxField        VMCS index
+; * @param   u32Data         Ptr to store VM field value
+; */
+;DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Data);
+BEGINPROC VMXWriteVMCS32
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    and     edi, 0ffffffffh
+    and     esi, 0ffffffffh
+    xor     rax, rax
+    vmwrite rdi, rsi
+ %else
+    and     ecx, 0ffffffffh
+    and     edx, 0ffffffffh
+    xor     rax, rax
+    vmwrite rcx, rdx
+ %endif
+%else  ; RT_ARCH_X86
+    mov     ecx, [esp + 4]              ; idxField
+    mov     edx, [esp + 8]              ; u32Data
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+    xor     eax, eax
+    vmwrite ecx, edx
+%endif ; RT_ARCH_X86
+    jnc     .valid_vmcs
+    mov     eax, VERR_VMX_INVALID_VMCS_PTR
+    ret
+.valid_vmcs:
+    jnz     .the_end
+    mov     eax, VERR_VMX_INVALID_VMCS_FIELD
+.the_end:
+    ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    and     ecx, 0ffffffffh
+    xor     eax, eax
+    vmwrite rcx, rdx
+    mov     r8d, VERR_VMX_INVALID_VMCS_FIELD
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ENDPROC VMXWriteVMCS32
 
 
 ;/**
@@ -739,10 +980,14 @@ BEGINPROC VMXEnable
     push    rcx
  %endif
     vmxon   [rsp]
-%else
+%else  ; RT_ARCH_X86
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmxon   [esp + 4]
-%endif
+%endif ; RT_ARCH_X86
     jnc     .good
     mov     eax, VERR_VMX_INVALID_VMXON_PTR
     jmp     .the_end
@@ -756,15 +1001,63 @@ BEGINPROC VMXEnable
     add     rsp, 8
 %endif
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    lea     edx, [esp + 4]              ; &HCPhysVMXOn.
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    xor     eax, eax
+    vmxon   [rdx]
+    mov     r8d, VERR_INVALID_PARAMETER
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXEnable
+
 
 ;/**
 ; * Executes VMXOFF
 ; */
 ;DECLASM(void) VMXDisable(void);
 BEGINPROC VMXDisable
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmxoff
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    vmxoff
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXDisable
 
 
@@ -784,10 +1077,14 @@ BEGINPROC VMXClearVMCS
     push    rcx
  %endif
     vmclear [rsp]
-%else
+%else  ; RT_ARCH_X86
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmclear [esp + 4]
-%endif
+%endif ; RT_ARCH_X86
     jnc     .the_end
     mov     eax, VERR_VMX_INVALID_VMCS_PTR
 .the_end:
@@ -795,6 +1092,29 @@ BEGINPROC VMXClearVMCS
     add     rsp, 8
 %endif
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    lea     edx, [esp + 4]              ; &HCPhysVMCS
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    xor     eax, eax
+    vmclear [rdx]
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif
 ENDPROC VMXClearVMCS
 
 
@@ -815,6 +1135,10 @@ BEGINPROC VMXActivateVMCS
  %endif
     vmptrld [rsp]
 %else
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmptrld [esp + 4]
 %endif
@@ -825,9 +1149,31 @@ BEGINPROC VMXActivateVMCS
     add     rsp, 8
 %endif
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    lea     edx, [esp + 4]              ; &HCPhysVMCS
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    xor     eax, eax
+    vmptrld [rdx]
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXActivateVMCS
 
-%endif ; RT_ARCH_AMD64
 
 ;/**
 ; * Executes VMPTRST
@@ -848,10 +1194,35 @@ BEGINPROC VMXGetActivateVMCS
     vmptrst qword [rcx]
   %endif
  %else
+  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp     byte [g_fIs64bit], 0
+    jne     .longmode
+  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmptrst qword [esp+04h]
  %endif
     xor     eax, eax
     ret
+
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    lea     edx, [esp + 4]              ; &HCPhysVMCS
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     edx, 0ffffffffh
+    vmptrst qword [rdx]
+    xor     eax, eax
+    retf                                ; return to caller
+BITS 32
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 %endif
 ENDPROC VMXGetActivateVMCS
 
@@ -864,19 +1235,21 @@ ENDPROC VMXGetActivateVMCS
 BEGINPROC VMXR0InvEPT
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    mov         eax, 0ffffffffh
-    and         rdi, rax
+    and         edi, 0ffffffffh
     xor         rax, rax
 ;    invept      rdi, qword [rsi]
     DB          0x66, 0x0F, 0x38, 0x80, 0x3E
  %else
-    mov         eax, 0ffffffffh
-    and         rcx, rax
+    and         ecx, 0ffffffffh
     xor         rax, rax
 ;    invept      rcx, qword [rdx]
     DB          0x66, 0x0F, 0x38, 0x80, 0xA
  %endif
 %else
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp         byte [g_fIs64bit], 0
+    jne         .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
 ;    invept      eax, qword [ecx]
@@ -890,7 +1263,36 @@ BEGINPROC VMXR0InvEPT
     mov         eax, VERR_INVALID_PARAMETER
 .the_end:
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    mov     ecx, [esp + 4]              ; enmFlush
+    mov     edx, [esp + 8]              ; pDescriptor
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     ecx, 0ffffffffh
+    and     edx, 0ffffffffh
+    xor     eax, eax
+;    invept  rcx, qword [rdx]
+    DB      0x66, 0x0F, 0x38, 0x80, 0xA
+    mov     r8d, VERR_INVALID_PARAMETER
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXR0InvEPT
+
 
 ;/**
 ; * Invalidate a page using invvpid
@@ -901,19 +1303,21 @@ ENDPROC VMXR0InvEPT
 BEGINPROC VMXR0InvVPID
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
-    mov         eax, 0ffffffffh
-    and         rdi, rax
+    and         edi, 0ffffffffh
     xor         rax, rax
     ;invvpid     rdi, qword [rsi]
     DB          0x66, 0x0F, 0x38, 0x81, 0x3E
  %else
-    mov         eax, 0ffffffffh
-    and         rcx, rax
+    and         ecx, 0ffffffffh
     xor         rax, rax
 ;    invvpid     rcx, qword [rdx]
     DB          0x66, 0x0F, 0x38, 0x81, 0xA
  %endif
 %else
+ %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    cmp         byte [g_fIs64bit], 0
+    jne         .longmode
+ %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
 ;    invept      eax, qword [ecx]
@@ -927,6 +1331,34 @@ BEGINPROC VMXR0InvVPID
     mov         eax, VERR_INVALID_PARAMETER
 .the_end:
     ret
+
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+.longmode:
+    mov     ecx, [esp + 4]              ; enmFlush
+    mov     edx, [esp + 8]              ; pDescriptor
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     ecx, 0ffffffffh
+    and     edx, 0ffffffffh
+    xor     eax, eax
+;    invvpid rcx, qword [rdx]
+    DB      0x66, 0x0F, 0x38, 0x81, 0xA
+    mov     r8d, VERR_INVALID_PARAMETER
+    cmovz   eax, r8d
+    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    cmovc   eax, r9d
+    retf                                ; return to caller
+BITS 32
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXR0InvVPID
 
 
