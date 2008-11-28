@@ -1467,38 +1467,53 @@ VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
  * Releases the dynamic memory mappings made by PGMDynMapHCPage and associates
  * since the PGMDynMapStartAutoSet call.
  *
+ * If the set is already closed, nothing will be done.
+ *
  * @param   pVCpu       The shared data for the current virtual CPU.
  */
 VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
 {
     PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
 
-    /* close the set */
+    /*
+     * Is the set open?
+     *
+     * We might be closed before VM execution and not reopened again before
+     * we leave for ring-3 or something.
+     */
     uint32_t    i = pSet->cEntries;
-    AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
-    pSet->cEntries = PGMMAPSET_CLOSED;
-
-    /* release any pages we're referencing. */
-    if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
+    if (i != PGMMAPSET_CLOSED)
     {
-        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-        RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+        /*
+         * Close the set
+         */
+        AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
+        pSet->cEntries = PGMMAPSET_CLOSED;
 
-        while (i-- > 0)
+        /*
+         * Release any pages it's referencing.
+         */
+        if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
         {
-            uint32_t iPage = pSet->aEntries[i].iPage;
-            Assert(iPage < pThis->cPages);
-            int32_t  cRefs = pSet->aEntries[i].cRefs;
-            Assert(cRefs > 0);
-            pgmR0DynMapReleasePageLocked(pThis, iPage, cRefs);
+            PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+            RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+            RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
-            pSet->aEntries[i].iPage = UINT16_MAX;
-            pSet->aEntries[i].cRefs = 0;
+            while (i-- > 0)
+            {
+                uint32_t iPage = pSet->aEntries[i].iPage;
+                Assert(iPage < pThis->cPages);
+                int32_t  cRefs = pSet->aEntries[i].cRefs;
+                Assert(cRefs > 0);
+                pgmR0DynMapReleasePageLocked(pThis, iPage, cRefs);
+
+                pSet->aEntries[i].iPage = UINT16_MAX;
+                pSet->aEntries[i].cRefs = 0;
+            }
+
+            Assert(pThis->cLoad <= pThis->cPages - pThis->cGuardPages);
+            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
         }
-
-        Assert(pThis->cLoad <= pThis->cPages - pThis->cGuardPages);
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     }
 }
 
