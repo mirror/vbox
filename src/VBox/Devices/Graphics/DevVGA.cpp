@@ -4298,7 +4298,41 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     return VINF_SUCCESS;
 }
 
+/**
+ * Info handler, device version. Dumps VGA memory formatted as 
+ * ASCII text, no attributes. Only looks at the first page.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    uint8_t     *src;
+    unsigned    row, col;
+    unsigned    num_rows = 25, num_cols = 80;
 
+    /* Pure paranoia... */
+    Assert(num_rows * num_cols * 8 <= pThis->vram_size);
+
+    src = pThis->vram_ptrR3;
+    if (src) {
+        for (col = 0; col < num_cols; ++col) pHlp->pfnPrintf(pHlp, "-"); pHlp->pfnPrintf(pHlp, "\n");
+        for (row = 0; row < num_rows; ++row) {
+            for (col = 0; col < num_cols; ++col) {
+                pHlp->pfnPrintf(pHlp, "%c", *src);
+                src += 8;   /* chars are spaced 8 bytes apart */
+            }
+            pHlp->pfnPrintf(pHlp, "\n");
+        }
+        for (col = 0; col < num_cols; ++col) pHlp->pfnPrintf(pHlp, "-"); pHlp->pfnPrintf(pHlp, "\n");
+    }
+    else
+    {
+        pHlp->pfnPrintf(pHlp, "VGA memory not available!\n");
+    }
+}
 
 
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
@@ -5732,6 +5766,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns, LOGO_IO_PORT, 1, NULL, vbeIOPortWriteCMDLogo, vbeIOPortReadCMDLogo, NULL, NULL, "BIOS Logo");
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgatext", "Display VGA memory formatted as text.", vgaInfoText);
 
     /*
      * Construct the logo header.
