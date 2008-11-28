@@ -106,6 +106,7 @@ endstruc
 %define FIX_ID_64BIT            32
 %define FIX_ID_FAR32_TO_64BIT_MODE 33
 %define FIX_GC_APIC_BASE_32BIT  34
+%define FIX_HC_64BIT_NOCHECK    35
 %define FIX_THE_END             255
 ;/** @} */
 

@@ -170,7 +170,7 @@ htg_debug_regs_no:
     ;;
     ;; Jump to identity mapped location
     ;;
-    FIXUP FIX_GC_2_ID_NEAR_REL, 1, NAME(IDEnterTarget) - NAME(Start)
+    FIXUP FIX_HC_2_ID_NEAR_REL, 1, NAME(IDEnterTarget) - NAME(Start)
     jmp near NAME(IDEnterTarget)
 
         
@@ -224,7 +224,7 @@ NAME(IDEnter64Mode):
 
 ; 64-bit jump target
 NAME(pICEnterTarget):
-FIXUP FIX_HC_64BIT, 0, NAME(ICEnterTarget) - NAME(Start)
+FIXUP FIX_HC_64BIT_NOCHECK, 0, NAME(ICEnterTarget) - NAME(Start)
 dq 0ffffffffffffffffh
 
 ; 64-bit pCpum address.
@@ -326,13 +326,19 @@ BEGINPROC VMMGCGuestToHostAsm
     mov     rax, 0ffffffffh
     mov     cr3, rax
     ;; We're now in the intermediate memory context!
-        
-    ;;
-    ;; Jump to identity mapped location
-    ;;
-    FIXUP FIX_GC_2_ID_NEAR_REL, 1, NAME(IDExitTarget) - NAME(Start)
-    jmp near NAME(IDExitTarget)
 
+    ;;
+    ;; Switch to compatibility mode, placing ourselves in identity mapped code.
+    ;;
+    jmp far [NAME(fpIDEnterTarget) wrt rip]
+
+; 16:32 Pointer to IDEnterTarget.
+NAME(fpIDEnterTarget):
+    FIXUP FIX_ID_32BIT, 0, NAME(IDExitTarget) - NAME(Start)
+dd  0
+    FIXUP FIX_HYPER_CS, 0
+dd  0
+        
     ; We're now on identity mapped pages!
 ALIGNCODE(16)
 GLOBALNAME IDExitTarget
@@ -377,7 +383,7 @@ just_a_jump:
     ;;
     ;; 5. Jump to guest code mapping of the code and load the Hypervisor CS.
     ;;
-    FIXUP FIX_ID_2_GC_NEAR_REL, 1, NAME(ICExitTarget) - NAME(Start)
+    FIXUP FIX_ID_2_HC_NEAR_REL, 1, NAME(ICExitTarget) - NAME(Start)
     jmp near NAME(ICExitTarget)
    
     ;;
@@ -588,9 +594,9 @@ GLOBALNAME Def
         at VMMSWITCHERDEF.offIDCode0,                   dd NAME(IDEnterTarget)              - NAME(Start)
         at VMMSWITCHERDEF.cbIDCode0,                    dd NAME(ICEnterTarget)              - NAME(IDEnterTarget)
         at VMMSWITCHERDEF.offIDCode1,                   dd NAME(IDExitTarget)               - NAME(Start)
-        at VMMSWITCHERDEF.cbIDCode1,                    dd NAME(ICExitTarget)               - NAME(IDExitTarget)
-        at VMMSWITCHERDEF.offGCCode,                    dd NAME(ICEnterTarget)              - NAME(Start)
-        at VMMSWITCHERDEF.cbGCCode,                     dd NAME(IDExitTarget)               - NAME(ICEnterTarget)
+        at VMMSWITCHERDEF.cbIDCode1,                    dd NAME(ICExitTarget)               - NAME(Start)
+        at VMMSWITCHERDEF.offGCCode,                    dd 0
+        at VMMSWITCHERDEF.cbGCCode,                     dd 0
 
     iend
 
