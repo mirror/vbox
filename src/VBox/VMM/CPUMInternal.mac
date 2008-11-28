@@ -406,7 +406,7 @@ struc CPUMCPU
     .fUseFlags            resd    1
     .fChanged             resd    1
     .ulOffCPUM            resd    1
-    .uPadding             resd    1    
+    .u32RetCode           resd    1    
 endstruc
 
 
