@@ -823,19 +823,21 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
-        cs = ASMGetCS();
-        ss = ASMGetSS();
-#ifdef RT_OS_DARWIN
-        /* VMX doesn't like LDT cs and ss, so switch to the GDT ones. Weird kernel. */
-        if (cs == 0x04)                 /* SYSENTER_CS & ~3 */
-            cs = 0x08;                  /* KERNEL_CS */
-        if (ss == 0x0c)                 /* (SYSENTER_CS & ~3) + 8 */
-            ss = 0x10;                  /* KERNEL_DS */
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
-            cs = 0x80;                  /* KERNEL64_CS - fixme */
-            ss = 0x88;                  /* KERNEL64_CS - fixme */
+            cs = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelCS;
+            ss = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelSS;
         }
+        else
+        {
+            /* sysenter loads LDT cs & ss, VMX doesn't like this. Load the GDT ones (safe). */
+            cs = (RTSEL)(uintptr_t)&SUPR0AbsKernelCS;
+            ss = (RTSEL)(uintptr_t)&SUPR0AbsKernelSS;
+        }
+#else
+        cs = ASMGetCS();
+        ss = ASMGetSS();
 #endif
         rc  = VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_CS,          cs);
         /* Note: VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
