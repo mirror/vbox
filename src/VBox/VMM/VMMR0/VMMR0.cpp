@@ -238,7 +238,10 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
                 rc = PGMR0DynMapInitVM(pVM);
 #endif
                 if (RT_SUCCESS(rc))
+                {
+                    GVMMR0DoneInitVM(pVM);
                     return rc;
+                }
 
                 /* bail out */
             }
@@ -253,20 +256,28 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
 /**
  * Terminates the R0 driver for a particular VM instance.
  *
+ * This is normally called by ring-3 as part of the VM termination process, but
+ * may alternatively be called during the support driver session cleanup when
+ * the VM object is destroyed (see GVMM).
+ *
  * @returns VBox status code.
  *
  * @param   pVM         The VM instance in question.
- * @thread  EMT.
+ * @param   pGVM        Pointer to the global VM structure. Optional.
+ * @thread  EMT or session clean up thread.
  */
-static int vmmR0TermVM(PVM pVM)
+VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 {
-/** @todo @bugref{1865,3202}: Make these tail onto the VM object destruction
- *        to make sure they are *always* executed and don't leave mess behind
- *        when the process is killed. */
+    /*
+     * Tell GVMM what we're up to and check that we only do this once.
+     */
+    if (GVMMR0DoingTermVM(pVM, pGVM))
+    {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    PGMR0DynMapTermVM(pVM);
+        PGMR0DynMapTermVM(pVM);
 #endif
-    HWACCMR0TermVM(pVM);
+        HWACCMR0TermVM(pVM);
+    }
 
     /*
      * Deregister the logger.
@@ -726,7 +737,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
          * Terminate the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_TERM:
-            return vmmR0TermVM(pVM);
+            return VMMR0TermVM(pVM, NULL);
 
         /*
          * Attempt to enable hwacc mode and check the current setting.

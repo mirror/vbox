@@ -42,6 +42,7 @@
 #include "GVMMR0Internal.h"
 #include <VBox/gvm.h>
 #include <VBox/vm.h>
+#include <VBox/vmm.h>
 #include <VBox/err.h>
 #include <iprt/alloc.h>
 #include <iprt/semaphore.h>
@@ -697,6 +698,8 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
     pGVM->gvmm.s.VMPagesMemObj = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.VMPagesMapObj = NIL_RTR0MEMOBJ;
     pGVM->gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
+    pGVM->gvmm.s.fDoneVMMR0Init = false;
+    pGVM->gvmm.s.fDoneVMMR0Term = false;
 }
 
 
@@ -718,7 +721,8 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
     int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
     if (RT_SUCCESS(rc))
     {
-        if (pGVM->gvmm.s.HaltEventMulti == NIL_RTSEMEVENTMULTI)
+        if (   !pGVM->gvmm.s.fDoneVMMR0Init
+            && pGVM->gvmm.s.HaltEventMulti == NIL_RTSEMEVENTMULTI)
         {
             rc = RTSemEventMultiCreate(&pGVM->gvmm.s.HaltEventMulti);
             if (RT_FAILURE(rc))
@@ -730,6 +734,52 @@ GVMMR0DECL(int) GVMMR0InitVM(PVM pVM)
 
     LogFlow(("GVMMR0InitVM: returns %Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * Indicates that we're done with the ring-0 initialization
+ * of the VM.
+ *
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+GVMMR0DECL(void) GVMMR0DoneInitVM(PVM pVM)
+{
+    /* Validate the VM structure, state and handle. */
+    PGVM pGVM;
+    PGVMM pGVMM;
+    int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
+    AssertRCReturnVoid(rc);
+
+    /* Set the indicator. */
+    pGVM->gvmm.s.fDoneVMMR0Init = true;
+}
+
+
+/**
+ * Indicates that we're doing the ring-0 termination of the VM.
+ *
+ * @returns true if termination hasn't been done already, false if it has.
+ * @param   pVM         Pointer to the shared VM structure.
+ * @param   pGVM        Pointer to the global VM structure. Optional.
+ */
+GVMMR0DECL(bool) GVMMR0DoingTermVM(PVM pVM, PGVM pGVM)
+{
+    /* Validate the VM structure, state and handle. */
+    AssertPtrNullReturn(pGVM, false);
+    AssertPtrNullReturn(!pGVM || pGVM->u32Magic == GVM_MAGIC, false);
+    if (!pGVM)
+    {
+        PGVMM pGVMM;
+        int rc = gvmmR0ByVMAndEMT(pVM, &pGVM, &pGVMM);
+        AssertRCReturn(rc, false);
+    }
+
+    /* Set the indicator. */
+    if (pGVM->gvmm.s.fDoneVMMR0Term)
+        return false;
+    pGVM->gvmm.s.fDoneVMMR0Term = true;
+    return true;
 }
 
 
@@ -806,9 +856,31 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
 
 
 /**
+ * Performs VM cleanup task as part of object destruction.
+ *
+ * @param   pGVM        The GVM pointer.
+ */
+static void gmmR0CleanupVM(PGVM pGVM)
+{
+    if (    pGVM->gvmm.s.fDoneVMMR0Init
+        &&  !pGVM->gvmm.s.fDoneVMMR0Term)
+    {
+        if (    pGVM->gvmm.s.VMMemObj != NIL_RTR0MEMOBJ
+            &&  RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj) == pGVM->pVM)
+        {
+            LogFlow(("gmmR0CleanupVM: Calling VMMR0TermVM\n"));
+            VMMR0TermVM(pGVM->pVM, pGVM);
+        }
+        else
+            AssertMsgFailed(("gmmR0CleanupVM: VMMemObj=%p pVM=%p\n", pGVM->gvmm.s.VMMemObj, pGVM->pVM));
+    }
+}
+
+
+/**
  * Handle destructor.
  *
- * @param   pvGVMM       The GVM instance pointer.
+ * @param   pvGVMM      The GVM instance pointer.
  * @param   pvHandle    The handle pointer.
  */
 static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, void *pvHandle)
@@ -895,7 +967,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     if (    VALID_PTR(pGVM)
         &&  pGVM->u32Magic == GVM_MAGIC)
     {
-        /// @todo GMMR0CleanupVM(pGVM);
+        gmmR0CleanupVM(pGVM);
 
         /*
          * Do the GVMM cleanup - must be done last.

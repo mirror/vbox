@@ -24,6 +24,7 @@
 
 #include <iprt/mem.h>
 
+
 /**
  * The GVMM per VM data.
  */
@@ -48,6 +49,11 @@ typedef struct GVMMPERVM
 
     /** The scheduler statistics. */
     GVMMSTATSSCHED      StatsSched;
+
+    /** Whether the per-VM ring-0 initialization has been performed. */
+    bool                fDoneVMMR0Init;
+    /** Whether the per-VM ring-0 termination is being or has been performed. */
+    bool                fDoneVMMR0Term;
 } GVMMPERVM;
 /** Pointer to the GVMM per VM data. */
 typedef GVMMPERVM *PGVMMPERVM;
