@@ -2478,7 +2478,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                     if (!cRefs)
                         return;
                 }
-#if defined(DEBUG) && !defined(IN_RING0) ///@todo RTLogPrintf is missing in R0.
+#ifdef LOG_ENABLED
             RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
@@ -2508,7 +2508,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                     if (!cRefs)
                         return;
                 }
-#if defined(DEBUG) && !defined(IN_RING0) ///@todo RTLogPrintf is missing in R0.
+#ifdef LOG_ENABLED
             RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
@@ -2517,7 +2517,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                     pPT->a[i].u = 0;
                 }
 #endif
-            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d u64=%RX64\n", cRefs, pPage->iFirstPresent, pPage->cPresent, u64));
             break;
         }
 
@@ -2534,7 +2534,7 @@ static void pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, uint16_t 
                     if (!cRefs)
                         return;
                 }
-#if defined(DEBUG) && !defined(IN_RING0) ///@todo RTLogPrintf is missing in R0.
+#ifdef LOG_ENABLED
             RTLogPrintf("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent);
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
