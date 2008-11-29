@@ -121,6 +121,20 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "HWVirtExt/"), "Enabled", &pVM->hwaccm.s.fAllowed, false);
     AssertRC(rc);
 
+#ifdef RT_OS_DARWIN
+    if (VMMIsHwVirtExtForced(pVM) != pVM->hwaccm.s.fAllowed)
+#else
+    if (VMMIsHwVirtExtForced(pVM) && !pVM->hwaccm.s.fAllowed)
+#endif
+    {
+        AssertLogRelMsgFailed(("VMMIsHwVirtExtForced=%RTbool fAllowed=%RTbool\n",
+                               VMMIsHwVirtExtForced(pVM), pVM->hwaccm.s.fAllowed));
+        return VERR_HWACCM_CONFIG_MISMATCH;
+    }
+
+    if (VMMIsHwVirtExtForced(pVM))
+        pVM->fHWACCMEnabled = true;
+
     return VINF_SUCCESS;
 }
 
@@ -299,6 +313,23 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     {
         LogRel(("HWACCMR3InitFinalize: SUPCallVMMR0Ex VMMR0_DO_HWACC_ENABLE failed with %Rrc\n", rc));
         LogRel(("HWACCMR3InitFinalize: disallowed %s of HWACCM\n", pVM->hwaccm.s.fAllowed ? "enabling" : "disabling"));
+
+#ifdef RT_OS_DARWIN
+        /*
+         * This is 100% fatal if we didn't prepare for a HwVirtExt setup because of
+         * missing ring-0 allocations. For VMs that require HwVirtExt it doesn't normally
+         * make sense to try run them in software mode, so fail that too.
+         */
+        if (VMMIsHwVirtExtForced(pVM))
+            VM_SET_ERROR(pVM, rc, "An active VM already uses software virtualization. It is not allowed to "
+                         "simultaneously use VT-x.\n");
+        else
+            VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not "
+                         "allowed to simultaneously use software virtualization.\n");
+        return rc;
+
+#else  /* !RT_OS_DARWIN */
+
         /* Invert the selection */
         pVM->hwaccm.s.fAllowed ^= 1;
         LogRel(("HWACCMR3InitFinalize: new HWACCM status = %s\n", pVM->hwaccm.s.fAllowed ? "enabled" : "disabled"));
@@ -306,18 +337,27 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         if (pVM->hwaccm.s.fAllowed)
         {
             if (pVM->hwaccm.s.vmx.fSupported)
-                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses Intel VT-x hardware acceleration. It is not allowed to simultaneously use software virtualization, therefore this VM will be run using VT-x as well.\n");
+                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
+                                  "An active VM already uses Intel VT-x hardware acceleration. It is not allowed "
+                                  "to simultaneously use software virtualization, therefore this VM will be run "
+                                  "using VT-x as well.\n");
             else
-                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses AMD-V hardware acceleration. It is not allowed to simultaneously use software virtualization, therefore this VM will be run using AMD-V as well.\n");
+                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
+                                  "An active VM already uses AMD-V hardware acceleration. It is not allowed to "
+                                  "simultaneously use software virtualization, therefore this VM will be run "
+                                  "using AMD-V as well.\n");
         }
         else
-            VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed", "An active VM already uses software virtualization. It is not allowed to simultaneously use VT-x or AMD-V, therefore this VM will be run using software virtualization as well.\n");
+            VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
+                              "An active VM already uses software virtualization. It is not allowed to simultaneously "
+                              "use VT-x or AMD-V, therefore this VM will be run using software virtualization as well.\n");
+#endif /* !RT_OS_DARWIN */
     }
 
     if (pVM->hwaccm.s.fAllowed == false)
         return VINF_SUCCESS;    /* disabled */
 
-    Assert(!pVM->fHWACCMEnabled);
+    Assert(!pVM->fHWACCMEnabled || VMMIsHwVirtExtForced(pVM));
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {
