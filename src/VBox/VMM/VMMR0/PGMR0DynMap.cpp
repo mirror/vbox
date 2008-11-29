@@ -53,7 +53,7 @@
 #if defined(VBOX_STRICT)
 # define PGMR0DYNMAP_GUARD_PAGES            4
 #else
-# define PGMR0DYNMAP_GUARD_PAGES            0
+# define PGMR0DYNMAP_GUARD_PAGES            1
 #endif
 /** The dummy physical address of guard pages. */
 #define PGMR0DYNMAP_GUARD_PAGE_HCPHYS       UINT32_C(0x7777feed)
