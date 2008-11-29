@@ -536,6 +536,22 @@ VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
+
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+/**
+ * Gets 64-bit GDTR and IDTR on darwin.
+ * @param  pGdtr        Where to store the 64-bit GDTR.
+ * @param  pIdtr        Where to store the 64-bit IDTR.
+ */
+DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+
+/**
+ * Gets 64-bit CR3 on darwin.
+ * @returns CR3
+ */
+DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
+# endif
+
 #endif /* IN_RING0 */
 
 /** @} */

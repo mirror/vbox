@@ -163,12 +163,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
     /*
      * Check for VT-x and AMD-V capabilities
      */
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    if (    ASMHasCpuId()
-        &&  SUPR0GetPagingMode() < SUPPAGINGMODE_AMD64) /* VMON -> #UD in compatability mode; temporary hack. */
-#else
     if (ASMHasCpuId())
-#endif
     {
         uint32_t u32FeaturesECX;
         uint32_t u32Dummy;

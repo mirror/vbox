@@ -800,14 +800,26 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         uintptr_t   trBase;
         RTSEL       cs;
         RTSEL       ss;
+        uint64_t    cr3;
 
         /* Control registers */
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_CR0,               ASMGetCR0());
-        rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR3,               ASMGetCR3());
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+        if (VMX_IS_64BIT_HOST_MODE())
+        {
+            cr3 = hwaccmR0Get64bitCR3();
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_CR3,         cr3);
+        }
+        else
+#endif
+        {
+            cr3 = ASMGetCR3();
+            rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR3,           cr3);
+        }
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_CR4,               ASMGetCR4());
         AssertRC(rc);
         Log2(("VMX_VMCS_HOST_CR0 %08x\n", ASMGetCR0()));
-        Log2(("VMX_VMCS_HOST_CR3 %08x\n", ASMGetCR3()));
+        Log2(("VMX_VMCS_HOST_CR3 %08RX64\n", cr3));
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
@@ -819,6 +831,11 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             cs = 0x08;                  /* KERNEL_CS */
         if (ss == 0x0c)                 /* (SYSENTER_CS & ~3) + 8 */
             ss = 0x10;                  /* KERNEL_DS */
+        if (VMX_IS_64BIT_HOST_MODE())
+        {
+            cs = 0x80;                  /* KERNEL64_CS - fixme */
+            ss = 0x88;                  /* KERNEL64_CS - fixme */
+        }
 #endif
         rc  = VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_CS,          cs);
         /* Note: VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
@@ -844,13 +861,31 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_FIELD_TR %08x\n", ASMGetTR()));
 
         /* GDTR & IDTR */
-        ASMGetGDTR(&gdtr);
-        rc  = VMXWriteVMCS(VMX_VMCS_HOST_GDTR_BASE, gdtr.pGdt);
-        ASMGetIDTR(&idtr);
-        rc |= VMXWriteVMCS(VMX_VMCS_HOST_IDTR_BASE, idtr.pIdt);
-        AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_GDTR_BASE %RHv\n", gdtr.pGdt));
-        Log2(("VMX_VMCS_HOST_IDTR_BASE %RHv\n", idtr.pIdt));
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+        if (VMX_IS_64BIT_HOST_MODE())
+        {
+            X86XDTR64 gdtr64, idtr64;
+            hwaccmR0Get64bitGDTRandIDTR(&gdtr64, &idtr64);
+            rc  = VMXWriteVMCS64(VMX_VMCS_HOST_GDTR_BASE, gdtr64.uAddr);
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_IDTR_BASE, gdtr64.uAddr);
+            AssertRC(rc);
+            Log2(("VMX_VMCS_HOST_GDTR_BASE %RX64\n", gdtr64.uAddr));
+            Log2(("VMX_VMCS_HOST_IDTR_BASE %RX64\n", idtr64.uAddr));
+            gdtr.cbGdt = gdtr64.cb;
+            gdtr.pGdt  = (uintptr_t)gdtr64.uAddr;
+        }
+        else
+#endif
+        {
+            ASMGetGDTR(&gdtr);
+            rc  = VMXWriteVMCS(VMX_VMCS_HOST_GDTR_BASE, gdtr.pGdt);
+            ASMGetIDTR(&idtr);
+            rc |= VMXWriteVMCS(VMX_VMCS_HOST_IDTR_BASE, idtr.pIdt);
+            AssertRC(rc);
+            Log2(("VMX_VMCS_HOST_GDTR_BASE %RHv\n", gdtr.pGdt));
+            Log2(("VMX_VMCS_HOST_IDTR_BASE %RHv\n", idtr.pIdt));
+        }
+
 
         /* Save the base address of the TR selector. */
         if (SelTR > gdtr.cbGdt)
@@ -859,20 +894,28 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             return VERR_VMX_INVALID_HOST_STATE;
         }
 
-        pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
-#if HC_ARCH_BITS == 64
-        trBase = X86DESC64_BASE(*pDesc);
-#elif defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
-            trBase = X86DESC64_BASE(*(PX86DESC64)pDesc);
+        {
+            pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC]; /// ????
+            uint64_t trBase64 = X86DESC64_BASE(*(PX86DESC64)pDesc);
+            rc = VMXWriteVMCS64(VMX_VMCS_HOST_TR_BASE, trBase64);
+            Log2(("VMX_VMCS_HOST_TR_BASE %RX64\n", trBase64));
+            AssertRC(rc);
+        }
         else
-            trBase = X86DESC_BASE(*pDesc);
-#else
-        trBase = X86DESC_BASE(*pDesc);
 #endif
-        rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
-        AssertRC(rc);
-        Log2(("VMX_VMCS_HOST_TR_BASE %RHv\n", trBase));
+        {
+            pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
+#if HC_ARCH_BITS == 64
+            trBase = X86DESC64_BASE(*pDesc);
+#else
+            trBase = X86DESC_BASE(*pDesc);
+#endif
+            rc = VMXWriteVMCS(VMX_VMCS_HOST_TR_BASE, trBase);
+            AssertRC(rc);
+            Log2(("VMX_VMCS_HOST_TR_BASE %RHv\n", trBase));
+        }
 
         /* FS and GS base. */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)

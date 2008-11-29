@@ -969,6 +969,65 @@ ENDPROC SVMR0InvlpgA
 
 %endif ; GC_ARCH_BITS != 64
 
+%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+
+;/**
+; * Gets 64-bit GDTR and IDTR on darwin.
+; * @param  pGdtr        Where to store the 64-bit GDTR.
+; * @param  pIdtr        Where to store the 64-bit IDTR.
+; */
+;DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+BEGINPROC hwaccmR0Get64bitGDTRandIDTR
+.longmode:
+    mov     ecx, [esp + 4]              ; pGdtr
+    mov     edx, [esp + 8]              ; pIdtr
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    and     ecx, 0ffffffffh
+    and     edx, 0ffffffffh
+    sgdt    [rcx]
+    sidt    [rdx]
+    retf
+BITS 32
+ENDPROC   hwaccmR0Get64bitGDTRandIDTR
+
+
+;/**
+; * Gets 64-bit CR3 on darwin.
+; * @returns CR3
+; */
+;DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
+BEGINPROC hwaccmR0Get64bitCR3
+.longmode:
+    ; Convert return frame into a retf frame 64-bit -> 32-bit
+    xor     eax, eax
+    xchg    eax, [esp]
+    push    cs
+    push    0
+    push    eax                         ; original return address.
+    ; jmp far .thunk64
+    db      0xea
+    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.thunk64:
+    mov     rax, cr3
+    mov     rdx, rax
+    shr     rdx, 32
+    retf
+BITS 32
+ENDPROC   hwaccmR0Get64bitCR3
+
+%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+
 
 
 ;
@@ -998,6 +1057,9 @@ ENDPROC SVMR0InvlpgA
  ;
  ; Write the wrapper procedures.
  ;
+ ; These routines are probably being too paranoid about selector
+ ; restoring, but better safe than sorry...
+ ;
 
 ; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx);
 BEGINPROC VMXR0StartVM32
@@ -1007,9 +1069,15 @@ BEGINPROC VMXR0StartVM32
     ; stack frame.
     push    ebp
     mov     ebp, esp
+    and     esp, 0fffffff0h
     push    esi
     push    edi
-    and     esp, 0fffffff0h
+    push    ebx
+    push    ds
+    push    es
+    push    fs
+    push    gs
+    push    ss
 
     ; retf frame (64 -> 32).
     push    0
@@ -1032,8 +1100,14 @@ BITS 64
     retf
 BITS 32
 .thunk32:
-    mov     esi, [ebp - 4]
-    mov     edi, [ebp - 8]
+    pop     ss
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    pop     ebx
+    pop     edi
+    pop     esi
     leave
     ret
 ENDPROC   VMXR0StartVM32
@@ -1049,9 +1123,15 @@ BEGINPROC VMXR0StartVM64
     ; stack frame.
     push    ebp
     mov     ebp, esp
+    and     esp, 0fffffff0h
     push    esi
     push    edi
-    and     esp, 0fffffff0h
+    push    ebx
+    push    ds
+    push    es
+    push    fs
+    push    gs
+    push    ss
 
     ; retf frame (64 -> 32).
     push    0
@@ -1074,8 +1154,14 @@ BITS 64
     retf
 BITS 32
 .thunk32:
-    mov     esi, [ebp - 4]
-    mov     edi, [ebp - 8]
+    pop     ss
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    pop     ebx
+    pop     edi
+    pop     esi
     leave
     ret
 ENDPROC   VMXR0StartVM64
@@ -1088,9 +1174,15 @@ BEGINPROC SVMR0VMRun
     ; stack frame.
     push    ebp
     mov     ebp, esp
+    and     esp, 0fffffff0h
     push    esi
     push    edi
-    and     esp, 0fffffff0h
+    push    ebx
+    push    ds
+    push    es
+    push    fs
+    push    gs
+    push    ss
 
     ; retf frame (64 -> 32).
     push    0
@@ -1114,8 +1206,14 @@ BITS 64
     retf
 BITS 32
 .thunk32:
-    mov     esi, [ebp - 4]
-    mov     edi, [ebp - 8]
+    pop     ss
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    pop     ebx
+    pop     edi
+    pop     esi
     leave
     ret
 ENDPROC   SVMR0VMRun
@@ -1131,9 +1229,15 @@ BEGINPROC SVMR0VMRun64
     ; stack frame.
     push    ebp
     mov     ebp, esp
+    and     esp, 0fffffff0h
     push    esi
     push    edi
-    and     esp, 0fffffff0h
+    push    ebx
+    push    ds
+    push    es
+    push    fs
+    push    gs
+    push    ss
 
     ; retf frame (64 -> 32).
     push    0
@@ -1157,8 +1261,14 @@ BITS 64
     retf
 BITS 32
 .thunk32:
-    mov     esi, [ebp - 4]
-    mov     edi, [ebp - 8]
+    pop     ss
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    pop     ebx
+    pop     edi
+    pop     esi
     leave
     ret
 ENDPROC   SVMR0VMRun64
@@ -1170,8 +1280,10 @@ ENDPROC   SVMR0VMRun64
  ; macros. So, add new code *BEFORE* this mess.
  ;
  BITS 64
- %undef RT_ARCH_X86
+ %undef  RT_ARCH_X86
  %define RT_ARCH_AMD64
+ %undef  ASM_CALL64_MSC
+ %define ASM_CALL64_GCC
  %define xS             8
  %define xSP            rsp
  %define xBP            rbp
