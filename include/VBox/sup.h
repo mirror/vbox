@@ -843,6 +843,20 @@ SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(int) SUPR0NativeEnableHwVirtExt(PSUPDRVSESSION pSession, bool fEnable);
 
+/** @name Absolute symbols
+ * Take the address of these, don't try call them.
+ * @{ */
+SUPR0DECL(void) SUPR0AbsIs64bit(void);
+SUPR0DECL(void) SUPR0Abs64bitKernelCS(void);
+SUPR0DECL(void) SUPR0Abs64bitKernelSS(void);
+SUPR0DECL(void) SUPR0Abs64bitKernelDS(void);
+SUPR0DECL(void) SUPR0AbsKernelCS(void);
+SUPR0DECL(void) SUPR0AbsKernelSS(void);
+SUPR0DECL(void) SUPR0AbsKernelDS(void);
+SUPR0DECL(void) SUPR0AbsKernelES(void);
+SUPR0DECL(void) SUPR0AbsKernelFS(void);
+SUPR0DECL(void) SUPR0AbsKernelGS(void);
+/** @} */
 
 /**
  * Support driver component factory.
