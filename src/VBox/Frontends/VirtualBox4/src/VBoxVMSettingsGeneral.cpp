@@ -201,10 +201,6 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     /* VT-x/AMD-V */
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
                              .GetProcessorFeature (KProcessorFeature_HWVirtEx);
-#ifdef Q_WS_MAC
-    /* Not currently available on the Mac. */
-    fVTxAMDVSupported = false;
-#endif
     mCbVirt->setEnabled (fVTxAMDVSupported);
     aMachine.GetHWVirtExEnabled() == KTSBool_True ?
         mCbVirt->setCheckState (Qt::Checked) :
