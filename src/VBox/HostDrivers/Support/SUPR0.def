@@ -54,6 +54,7 @@ EXPORTS
     SUPR0Printf
     SUPR0GetPagingMode
     SUPR0NativeEnableHwVirtExt
+    RTMemAlloc
     RTMemAllocZ
     RTMemFree
     RTMemRealloc
