@@ -1,0 +1,717 @@
+; $Id$
+;; @file
+; HWACCMR0Mixed.mac - Stuff that darwin needs to build two versions of.
+;
+; Included by HWACCMR0A.asm with RT_ARCH_AMD64 defined or or undefined.
+;
+
+;
+; Copyright (C) 2006-2007 Sun Microsystems, Inc.
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+; Clara, CA 95054 USA or visit http://www.sun.com if you need
+; additional information or have any questions.
+;
+
+
+;/**
+; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
+; *
+; * @returns VBox status code
+; * @param   fResume    vmlauch/vmresume
+; * @param   pCtx       Guest context
+; */
+BEGINPROC MY_NAME(VMXR0StartVM32)
+    push    xBP
+    mov     xBP, xSP
+
+    pushf
+    cli
+
+    ;/* First we have to save some final CPU context registers. */
+%ifdef RT_ARCH_AMD64
+    lea     rax, [.vmlaunch_done wrt rip]
+    push    rax
+%else
+    push    .vmlaunch_done
+%endif
+    mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
+    vmwrite xAX, [xSP]
+    ;/* Note: assumes success... */
+    add     xSP, xS
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; * - EFLAGS (reset to RT_BIT(1); not relevant)
+    ; *
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    ; fResume already in rdi
+    ; pCtx    already in rsi
+ %else
+    mov     rdi, rcx        ; fResume
+    mov     rsi, rdx        ; pCtx
+ %endif
+%else
+    mov     edi, [ebp + 8]  ; fResume
+    mov     esi, [ebp + 12] ; pCtx
+%endif
+
+    ;/* Save segment registers */
+    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
+    MYPUSHSEGS xAX, ax
+
+    ; Save the pCtx pointer
+    push    xSI
+
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
+    ; Restore CR2
+    mov     ebx, [xSI + CPUMCTX.cr2]
+    mov     cr2, xBX
+
+    mov     eax, VMX_VMCS_HOST_RSP
+    vmwrite xAX, xSP
+    ;/* Note: assumes success... */
+    ;/* Don't mess with ESP anymore!! */
+
+    ;/* Restore Guest's general purpose registers. */
+    mov     eax, [xSI + CPUMCTX.eax]
+    mov     ebx, [xSI + CPUMCTX.ebx]
+    mov     ecx, [xSI + CPUMCTX.ecx]
+    mov     edx, [xSI + CPUMCTX.edx]
+    mov     ebp, [xSI + CPUMCTX.ebp]
+
+    ; resume or start?
+    cmp     xDI, 0                  ; fResume
+    je      .vmlauch_lauch
+
+    ;/* Restore edi & esi. */
+    mov     edi, [xSI + CPUMCTX.edi]
+    mov     esi, [xSI + CPUMCTX.esi]
+
+    vmresume
+    jmp     .vmlaunch_done;      ;/* here if vmresume detected a failure. */
+
+.vmlauch_lauch:
+    ;/* Restore edi & esi. */
+    mov     edi, [xSI + CPUMCTX.edi]
+    mov     esi, [xSI + CPUMCTX.esi]
+
+    vmlaunch
+    jmp     .vmlaunch_done;      ;/* here if vmlaunch detected a failure. */
+
+ALIGNCODE(16)
+.vmlaunch_done:
+    jc      near .vmxstart_invalid_vmxon_ptr
+    jz      near .vmxstart_start_failed
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    push    xDI
+    mov     xDI, [xSP + xS * 2]         ; pCtx
+
+    mov     [ss:xDI + CPUMCTX.eax], eax
+    mov     [ss:xDI + CPUMCTX.ebx], ebx
+    mov     [ss:xDI + CPUMCTX.ecx], ecx
+    mov     [ss:xDI + CPUMCTX.edx], edx
+    mov     [ss:xDI + CPUMCTX.esi], esi
+    mov     [ss:xDI + CPUMCTX.ebp], ebp
+%ifdef RT_ARCH_AMD64
+    pop     xAX                                 ; the guest edi we pushed above
+    mov     dword [ss:xDI + CPUMCTX.edi], eax
+%else
+    pop     dword [ss:xDI + CPUMCTX.edi]        ; the guest edi we pushed above
+%endif
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [ss:xDI + CPUMCTX.dr6], xAX
+%endif
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS      ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+.vmstart_end:
+    popf
+    pop     xBP
+    ret
+
+
+.vmxstart_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmstart_end
+
+.vmxstart_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    add     xSP, xS     ; pCtx
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_START_VM
+    jmp     .vmstart_end
+
+ENDPROC MY_NAME(VMXR0StartVM32)
+
+%ifdef RT_ARCH_AMD64
+;/**
+; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
+; *
+; * @returns VBox status code
+; * @param   fResume    vmlauch/vmresume
+; * @param   pCtx       Guest context
+; */
+BEGINPROC MY_NAME(VMXR0StartVM64)
+    push    xBP
+    mov     xBP, xSP
+
+    pushf
+    cli
+
+    ;/* First we have to save some final CPU context registers. */
+    lea     rax, [.vmlaunch64_done wrt rip]
+    push    rax
+    mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
+    vmwrite rax, [xSP]
+    ;/* Note: assumes success... */
+    add     xSP, xS
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; * - EFLAGS (reset to RT_BIT(1); not relevant)
+    ; *
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+%ifdef ASM_CALL64_GCC
+    ; fResume already in rdi
+    ; pCtx    already in rsi
+%else
+    mov     rdi, rcx        ; fResume
+    mov     rsi, rdx        ; pCtx
+%endif
+
+    ;/* Save segment registers */
+    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
+    MYPUSHSEGS xAX, ax
+
+    ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
+    ;; @todo use the automatic load feature for MSRs
+    LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+%if 0  ; not supported on Intel CPUs
+    LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
+%endif
+    LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
+    LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+
+    ; Save the pCtx pointer
+    push    xSI
+
+    ; Save LDTR
+    xor     eax, eax
+    sldt    ax
+    push    xAX
+
+    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+    sub     xSP, xS*2
+    sgdt    [xSP]
+
+    sub     xSP, xS*2
+    sidt    [xSP]
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Restore DR6 - experiment, not safe!
+    mov     xBX, [xSI + CPUMCTX.dr6]
+    mov     dr6, xBX
+%endif
+
+    ; Restore CR2
+    mov     rbx, qword [xSI + CPUMCTX.cr2]
+    mov     cr2, rbx
+
+    mov     eax, VMX_VMCS_HOST_RSP
+    vmwrite xAX, xSP
+    ;/* Note: assumes success... */
+    ;/* Don't mess with ESP anymore!! */
+
+    ;/* Restore Guest's general purpose registers. */
+    mov     rax, qword [xSI + CPUMCTX.eax]
+    mov     rbx, qword [xSI + CPUMCTX.ebx]
+    mov     rcx, qword [xSI + CPUMCTX.ecx]
+    mov     rdx, qword [xSI + CPUMCTX.edx]
+    mov     rbp, qword [xSI + CPUMCTX.ebp]
+    mov     r8,  qword [xSI + CPUMCTX.r8]
+    mov     r9,  qword [xSI + CPUMCTX.r9]
+    mov     r10, qword [xSI + CPUMCTX.r10]
+    mov     r11, qword [xSI + CPUMCTX.r11]
+    mov     r12, qword [xSI + CPUMCTX.r12]
+    mov     r13, qword [xSI + CPUMCTX.r13]
+    mov     r14, qword [xSI + CPUMCTX.r14]
+    mov     r15, qword [xSI + CPUMCTX.r15]
+
+    ; resume or start?
+    cmp     xDI, 0                  ; fResume
+    je      .vmlauch64_lauch
+
+    ;/* Restore edi & esi. */
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    vmresume
+    jmp     .vmlaunch64_done;      ;/* here if vmresume detected a failure. */
+
+.vmlauch64_lauch:
+    ;/* Restore rdi & rsi. */
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    vmlaunch
+    jmp     .vmlaunch64_done;      ;/* here if vmlaunch detected a failure. */
+
+ALIGNCODE(16)
+.vmlaunch64_done:
+    jc      near .vmxstart64_invalid_vmxon_ptr
+    jz      near .vmxstart64_start_failed
+
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    push    xDI
+    mov     xDI, [xSP + xS * 2]         ; pCtx
+
+    mov     qword [xDI + CPUMCTX.eax], rax
+    mov     qword [xDI + CPUMCTX.ebx], rbx
+    mov     qword [xDI + CPUMCTX.ecx], rcx
+    mov     qword [xDI + CPUMCTX.edx], rdx
+    mov     qword [xDI + CPUMCTX.esi], rsi
+    mov     qword [xDI + CPUMCTX.ebp], rbp
+    mov     qword [xDI + CPUMCTX.r8],  r8
+    mov     qword [xDI + CPUMCTX.r9],  r9
+    mov     qword [xDI + CPUMCTX.r10], r10
+    mov     qword [xDI + CPUMCTX.r11], r11
+    mov     qword [xDI + CPUMCTX.r12], r12
+    mov     qword [xDI + CPUMCTX.r13], r13
+    mov     qword [xDI + CPUMCTX.r14], r14
+    mov     qword [xDI + CPUMCTX.r15], r15
+
+    pop     xAX                                 ; the guest edi we pushed above
+    mov     qword [xDI + CPUMCTX.edi], rax
+
+%ifdef VBOX_WITH_DR6_EXPERIMENT
+    ; Save DR6 - experiment, not safe!
+    mov     xAX, dr6
+    mov     [xDI + CPUMCTX.dr6], xAX
+%endif
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
+
+    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
+    ;; @todo use the automatic load feature for MSRs
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK
+    LOADHOSTMSR MSR_K6_STAR
+%if 0  ; not supported on Intel CPUs
+    LOADHOSTMSR MSR_K8_CSTAR
+%endif
+    LOADHOSTMSR MSR_K8_LSTAR
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+.vmstart64_end:
+    popf
+    pop     xBP
+    ret
+
+
+.vmxstart64_invalid_vmxon_ptr:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
+
+    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
+    ;; @todo use the automatic load feature for MSRs
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK
+    LOADHOSTMSR MSR_K6_STAR
+%if 0  ; not supported on Intel CPUs
+    LOADHOSTMSR MSR_K8_CSTAR
+%endif
+    LOADHOSTMSR MSR_K8_LSTAR
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmstart64_end
+
+.vmxstart64_start_failed:
+    ; Restore base and limit of the IDTR & GDTR
+    lidt    [xSP]
+    add     xSP, xS*2
+    lgdt    [xSP]
+    add     xSP, xS*2
+
+    pop     xAX         ; saved LDTR
+    lldt    ax
+
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
+
+    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
+    ;; @todo use the automatic load feature for MSRs
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSR MSR_K8_SF_MASK
+    LOADHOSTMSR MSR_K6_STAR
+%if 0  ; not supported on Intel CPUs
+    LOADHOSTMSR MSR_K8_CSTAR
+%endif
+    LOADHOSTMSR MSR_K8_LSTAR
+
+    ; Restore segment registers
+    MYPOPSEGS xAX, ax
+
+    ; Restore all general purpose host registers.
+    MYPOPAD
+    mov     eax, VERR_VMX_UNABLE_TO_START_VM
+    jmp     .vmstart64_end
+ENDPROC MY_NAME(VMXR0StartVM64)
+%endif ; RT_ARCH_AMD64
+
+
+;/**
+; * Prepares for and executes VMRUN (32 bits guests)
+; *
+; * @returns VBox status code
+; * @param   HCPhysVMCB     Physical address of host VMCB
+; * @param   HCPhysVMCB     Physical address of guest VMCB
+; * @param   pCtx           Guest context
+; */
+BEGINPROC MY_NAME(SVMR0VMRun)
+%ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
+ %ifdef ASM_CALL64_GCC
+    push    rdx
+    push    rsi
+    push    rdi
+ %else
+    push    r8
+    push    rdx
+    push    rcx
+ %endif
+    push    0
+%endif
+    push    xBP
+    mov     xBP, xSP
+    pushf
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP, RAX
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+    mov     xSI, [xBP + xS*2 + RTHCPHYS_CB*2]   ; pCtx
+    push    xSI                     ; push for saving the state at the end
+
+    ; Restore CR2
+    mov     ebx, [xSI + CPUMCTX.cr2]
+    mov     cr2, xBX
+
+    ; save host fs, gs, sysenter msr etc
+    mov     xAX, [xBP + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    push    xAX                     ; save for the vmload after vmrun
+    vmsave
+
+    ; setup eax for VMLOAD
+    mov     xAX, [xBP + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+
+    ;/* Restore Guest's general purpose registers. */
+    ;/* EAX is loaded from the VMCB by VMRUN */
+    mov     ebx, [xSI + CPUMCTX.ebx]
+    mov     ecx, [xSI + CPUMCTX.ecx]
+    mov     edx, [xSI + CPUMCTX.edx]
+    mov     edi, [xSI + CPUMCTX.edi]
+    mov     ebp, [xSI + CPUMCTX.ebp]
+    mov     esi, [xSI + CPUMCTX.esi]
+
+    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch
+    clgi
+    sti
+
+    ; load guest fs, gs, sysenter msr etc
+    vmload
+    ; run the VM
+    vmrun
+
+    ;/* EAX is in the VMCB already; we can use it here. */
+
+    ; save guest fs, gs, sysenter msr etc
+    vmsave
+
+    ; load host fs, gs, sysenter msr etc
+    pop     xAX                     ; pushed above
+    vmload
+
+    ; Set the global interrupt flag again, but execute cli to make sure IF=0.
+    cli
+    stgi
+
+    pop     xAX                     ; pCtx
+
+    mov     [ss:xAX + CPUMCTX.ebx], ebx
+    mov     [ss:xAX + CPUMCTX.ecx], ecx
+    mov     [ss:xAX + CPUMCTX.edx], edx
+    mov     [ss:xAX + CPUMCTX.esi], esi
+    mov     [ss:xAX + CPUMCTX.edi], edi
+    mov     [ss:xAX + CPUMCTX.ebp], ebp
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+    popf
+    pop     xBP
+%ifdef RT_ARCH_AMD64
+    add     xSP, 4*xS
+%endif
+    ret
+ENDPROC MY_NAME(SVMR0VMRun)
+
+%ifdef RT_ARCH_AMD64
+;/**
+; * Prepares for and executes VMRUN (64 bits guests)
+; *
+; * @returns VBox status code
+; * @param   HCPhysVMCB     Physical address of host VMCB
+; * @param   HCPhysVMCB     Physical address of guest VMCB
+; * @param   pCtx           Guest context
+; */
+BEGINPROC MY_NAME(SVMR0VMRun64)
+    ; fake a cdecl stack frame
+ %ifdef ASM_CALL64_GCC
+    push    rdx
+    push    rsi
+    push    rdi
+ %else
+    push    r8
+    push    rdx
+    push    rcx
+ %endif
+    push    0
+    push    rbp
+    mov     rbp, rsp
+    pushf
+
+    ;/* Manual save and restore:
+    ; * - General purpose registers except RIP, RSP, RAX
+    ; *
+    ; * Trashed:
+    ; * - CR2 (we don't care)
+    ; * - LDTR (reset to 0)
+    ; * - DRx (presumably not changed at all)
+    ; * - DR7 (reset to 0x400)
+    ; */
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
+    ;/* Save the Guest CPU context pointer. */
+    mov     rsi, [rbp + xS*2 + RTHCPHYS_CB*2]   ; pCtx
+    push    rsi                     ; push for saving the state at the end
+
+    ; Restore CR2
+    mov     rbx, [rsi + CPUMCTX.cr2]
+    mov     cr2, rbx
+
+    ; save host fs, gs, sysenter msr etc
+    mov     rax, [rbp + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    push    rax                     ; save for the vmload after vmrun
+    vmsave
+
+    ; setup eax for VMLOAD
+    mov     rax, [rbp + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+
+    ;/* Restore Guest's general purpose registers. */
+    ;/* RAX is loaded from the VMCB by VMRUN */
+    mov     rbx, qword [xSI + CPUMCTX.ebx]
+    mov     rcx, qword [xSI + CPUMCTX.ecx]
+    mov     rdx, qword [xSI + CPUMCTX.edx]
+    mov     rdi, qword [xSI + CPUMCTX.edi]
+    mov     rbp, qword [xSI + CPUMCTX.ebp]
+    mov     r8,  qword [xSI + CPUMCTX.r8]
+    mov     r9,  qword [xSI + CPUMCTX.r9]
+    mov     r10, qword [xSI + CPUMCTX.r10]
+    mov     r11, qword [xSI + CPUMCTX.r11]
+    mov     r12, qword [xSI + CPUMCTX.r12]
+    mov     r13, qword [xSI + CPUMCTX.r13]
+    mov     r14, qword [xSI + CPUMCTX.r14]
+    mov     r15, qword [xSI + CPUMCTX.r15]
+    mov     rsi, qword [xSI + CPUMCTX.esi]
+
+    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch
+    clgi
+    sti
+
+    ; load guest fs, gs, sysenter msr etc
+    vmload
+    ; run the VM
+    vmrun
+
+    ;/* RAX is in the VMCB already; we can use it here. */
+
+    ; save guest fs, gs, sysenter msr etc
+    vmsave
+
+    ; load host fs, gs, sysenter msr etc
+    pop     rax                     ; pushed above
+    vmload
+
+    ; Set the global interrupt flag again, but execute cli to make sure IF=0.
+    cli
+    stgi
+
+    pop     rax                     ; pCtx
+
+    mov     qword [rax + CPUMCTX.ebx], rbx
+    mov     qword [rax + CPUMCTX.ecx], rcx
+    mov     qword [rax + CPUMCTX.edx], rdx
+    mov     qword [rax + CPUMCTX.esi], rsi
+    mov     qword [rax + CPUMCTX.edi], rdi
+    mov     qword [rax + CPUMCTX.ebp], rbp
+    mov     qword [rax + CPUMCTX.r8],  r8
+    mov     qword [rax + CPUMCTX.r9],  r9
+    mov     qword [rax + CPUMCTX.r10], r10
+    mov     qword [rax + CPUMCTX.r11], r11
+    mov     qword [rax + CPUMCTX.r12], r12
+    mov     qword [rax + CPUMCTX.r13], r13
+    mov     qword [rax + CPUMCTX.r14], r14
+    mov     qword [rax + CPUMCTX.r15], r15
+
+    ; Restore general purpose registers
+    MYPOPAD
+
+    mov     eax, VINF_SUCCESS
+
+    popf
+    pop     rbp
+    add     rsp, 4*xS
+    ret
+ENDPROC MY_NAME(SVMR0VMRun64)
+%endif ; RT_ARCH_AMD64
+
