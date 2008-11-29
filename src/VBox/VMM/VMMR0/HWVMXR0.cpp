@@ -41,11 +41,27 @@
 #include "HWVMXR0.h"
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if defined(RT_ARCH_AMD64)
+# define VMX_IS_64BIT_HOST_MODE()   (true)
+#elif defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+# define VMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
+#else
+# define VMX_IS_64BIT_HOST_MODE()   (false)
+#endif
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /* IO operation lookup arrays. */
 static uint32_t const g_aIOSize[4]  = {1, 2, 0, 4};
 static uint32_t const g_aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
+
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+/** See HWACCMR0A.asm. */
+extern "C" uint32_t g_fVMXIs64bitHost;
+#endif
 
 /*******************************************************************************
 *   Local Functions                                                            *
@@ -313,16 +329,19 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
 
-#if HC_ARCH_BITS == 64
-        if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+        if (VMX_IS_64BIT_HOST_MODE())
         {
-            /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
-            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
-            Assert(pVM->hwaccm.s.vmx.pAPIC);
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+            {
+                /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
+                val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+                Assert(pVM->hwaccm.s.vmx.pAPIC);
+            }
+            else
+                /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
+                val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
         }
-        else
-            /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
-            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 #endif
 
 #ifdef VBOX_WITH_VTX_MSR_BITMAPS
@@ -383,10 +402,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
         /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
-#if HC_ARCH_BITS == 64
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
-#else
-        /* else Must be zero when AMD64 is not available. */
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+        if (VMX_IS_64BIT_HOST_MODE())
+            val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
+        /* else: Must be zero when AMD64 is not available. */
 #endif
         val &= pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1;
         /* Don't acknowledge external interrupts on VM-exit. */
@@ -806,8 +825,11 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_DS,          0);
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_ES,          0);
 #if HC_ARCH_BITS == 32
-        rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_FS,          0);
-        rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_GS,          0);
+        if (!VMX_IS_64BIT_HOST_MODE())
+        {
+            rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_FS,      0);
+            rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_GS,      0);
+        }
 #endif
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_SS,          ss);
         SelTR = ASMGetTR();
@@ -840,6 +862,11 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
 #if HC_ARCH_BITS == 64
         trBase = X86DESC64_BASE(*pDesc);
+#elif defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+        if (VMX_IS_64BIT_HOST_MODE())
+            trBase = X86DESC64_BASE(*(PX86DESC64)pDesc);
+        else
+            trBase = X86DESC_BASE(*pDesc);
 #else
         trBase = X86DESC_BASE(*pDesc);
 #endif
@@ -848,11 +875,14 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_TR_BASE %RHv\n", trBase));
 
         /* FS and GS base. */
-#if HC_ARCH_BITS == 64
-        Log2(("MSR_K8_FS_BASE = %RX64\n", ASMRdMsr(MSR_K8_FS_BASE)));
-        Log2(("MSR_K8_GS_BASE = %RX64\n", ASMRdMsr(MSR_K8_GS_BASE)));
-        rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,         ASMRdMsr(MSR_K8_FS_BASE));
-        rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,         ASMRdMsr(MSR_K8_GS_BASE));
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+        if (VMX_IS_64BIT_HOST_MODE())
+        {
+            Log2(("MSR_K8_FS_BASE = %RX64\n", ASMRdMsr(MSR_K8_FS_BASE)));
+            Log2(("MSR_K8_GS_BASE = %RX64\n", ASMRdMsr(MSR_K8_GS_BASE)));
+            rc  = VMXWriteVMCS64(VMX_VMCS_HOST_FS_BASE,     ASMRdMsr(MSR_K8_FS_BASE));
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_GS_BASE,     ASMRdMsr(MSR_K8_GS_BASE));
+        }
 #endif
         AssertRC(rc);
 
@@ -860,7 +890,22 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         /** @todo expensive!! */
         rc  = VMXWriteVMCS(VMX_VMCS32_HOST_SYSENTER_CS,       ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
         Log2(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_CS)));
-#if HC_ARCH_BITS == 32
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+        if (VMX_IS_64BIT_HOST_MODE())
+        {
+            Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX64\n",         ASMRdMsr(MSR_IA32_SYSENTER_EIP)));
+            Log2(("VMX_VMCS_HOST_SYSENTER_ESP %RX64\n",         ASMRdMsr(MSR_IA32_SYSENTER_ESP)));
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_ESP,    ASMRdMsr(MSR_IA32_SYSENTER_ESP));
+            rc |= VMXWriteVMCS64(VMX_VMCS_HOST_SYSENTER_EIP,    ASMRdMsr(MSR_IA32_SYSENTER_EIP));
+        }
+        else
+        {
+            rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_ESP,  ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
+            rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_EIP,  ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
+            Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX32\n",     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
+            Log2(("VMX_VMCS_HOST_SYSENTER_ESP %RX32\n",     ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP)));
+        }
+#elif HC_ARCH_BITS == 32
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_ESP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVMCS(VMX_VMCS_HOST_SYSENTER_EIP,      ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
         Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX32\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP)));
@@ -3302,12 +3347,15 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
             Log(("VMX_VMCS_HOST_RIP %RHv\n", val));
 
-# if HC_ARCH_BITS == 64
-            Log(("MSR_K6_EFER       = %RX64\n", ASMRdMsr(MSR_K6_EFER)));
-            Log(("MSR_K6_STAR       = %RX64\n", ASMRdMsr(MSR_K6_STAR)));
-            Log(("MSR_K8_LSTAR      = %RX64\n", ASMRdMsr(MSR_K8_LSTAR)));
-            Log(("MSR_K8_CSTAR      = %RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
-            Log(("MSR_K8_SF_MASK    = %RX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+            if (VMX_IS_64BIT_HOST_MODE())
+            {
+                Log(("MSR_K6_EFER       = %RX64\n", ASMRdMsr(MSR_K6_EFER)));
+                Log(("MSR_K6_STAR       = %RX64\n", ASMRdMsr(MSR_K6_STAR)));
+                Log(("MSR_K8_LSTAR      = %RX64\n", ASMRdMsr(MSR_K8_LSTAR)));
+                Log(("MSR_K8_CSTAR      = %RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
+                Log(("MSR_K8_SF_MASK    = %RX64\n", ASMRdMsr(MSR_K8_SF_MASK)));
+            }
 # endif
 #endif /* VBOX_STRICT */
         }
