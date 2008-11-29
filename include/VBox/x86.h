@@ -2307,6 +2307,8 @@ typedef X86DESC     *PX86DESCHC;
  */
 #define AMD64_SEL_SHIFT     4
 
+/** @def X86_SEL_SHIFT_HC
+ * This is for use with X86DESCHC. */
 #if HC_ARCH_BITS == 64
 #define X86_SEL_SHIFT_HC    AMD64_SEL_SHIFT
 #else
