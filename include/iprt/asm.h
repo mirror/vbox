@@ -745,7 +745,7 @@ DECLINLINE(uint32_t) ASMCpuId_EDX(uint32_t uOperator)
                "=d" (xDX)
              : "0" (uOperator)
              : "rbx", "rcx");
-#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__) /* darwin: PIC by default. */
+#  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
@@ -801,7 +801,7 @@ DECLINLINE(uint32_t) ASMCpuId_ECX(uint32_t uOperator)
                "=c" (xCX)
              : "0" (uOperator)
              : "rbx", "rdx");
-#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__) /* darwin: 4.0.1 compiler option / bug? */
+#  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     __asm__ ("push  %%ebx\n\t"
              "cpuid\n\t"
              "pop   %%ebx\n\t"
@@ -906,7 +906,7 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
                "=b" (xBX)
              : "0" (1)
              : "rcx", "rdx");
-#  elif (defined(PIC) || defined(RT_OS_DARWIN)) && defined(__i386__)
+#  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
     RTCCUINTREG uSpill;
     __asm__ ("mov   %%ebx,%1\n\t"
              "cpuid\n\t"
@@ -2514,7 +2514,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t *pu64, uint64_t u64)
 #  endif
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = (uint32_t)u64;
     __asm__ __volatile__(/*"xchgl %%esi, %5\n\t"*/
                          "xchgl %%ebx, %3\n\t"
@@ -2878,7 +2878,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64
 # else /* !RT_ARCH_AMD64 */
     uint32_t u32Ret;
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = (uint32_t)u64New;
     uint32_t u32Spill;
     __asm__ __volatile__("xchgl %%ebx, %4\n\t"
@@ -3138,7 +3138,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t *pu64, const uint64_t u
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
     uint64_t u64Ret;
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(__PIC__)
     /* NB: this code uses a memory clobber description, because the clean
      * solution with an output value for *pu64 makes gcc run out of registers.
      * This will cause suboptimal code, and anyone with a better solution is
@@ -3793,7 +3793,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
     u64 = *pu64;
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = 0;
     Assert(!((uintptr_t)pu64 & 7));
     __asm__ __volatile__("xchgl %%ebx, %3\n\t"
@@ -3869,7 +3869,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
     u64 = *pu64;
 # else /* !RT_ARCH_AMD64 */
 #  if RT_INLINE_ASM_GNU_STYLE
-#   if defined(PIC) || defined(RT_OS_DARWIN) /* darwin: 4.0.1 compiler option / bug? */
+#   if defined(PIC) || defined(__PIC__)
     uint32_t u32EBX = 0;
     uint32_t u32Spill;
     Assert(!((uintptr_t)pu64 & 7));
