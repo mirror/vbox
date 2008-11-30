@@ -66,6 +66,7 @@
 # include <sys/utsname.h>
 # include <linux/hdreg.h>
 # include <linux/fs.h>
+# include <stdlib.h> /* atoi() */
 #endif /* RT_OS_LINUX */
 #ifdef RT_OS_DARWIN
 # include <sys/disk.h>
