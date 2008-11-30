@@ -109,6 +109,7 @@ extern "C" char *getfullrawname(char *);
 
 #include <VBox/usb.h>
 #include <VBox/x86.h>
+#include <VBox/asm.h>
 #include <VBox/err.h>
 #include <iprt/string.h>
 #include <iprt/mp.h>
