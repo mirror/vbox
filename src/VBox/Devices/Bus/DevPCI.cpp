@@ -218,6 +218,10 @@ __BEGIN_DECLS
 
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
 PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
+PDMBOTHCBDECL(int)  pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int)  pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int)  pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int)  pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 
 #ifdef IN_RING3
 DECLINLINE(PPCIDEVICE) pciFindBridge(PPCIBUS pBus, uint8_t iBus);
@@ -238,17 +242,8 @@ __END_DECLS
 #define PCI_MIN_GNT         0x3e    /* 8 bits */
 #define PCI_MAX_LAT         0x3f    /* 8 bits */
 
+
 #ifdef IN_RING3
-
-static void pci_addr_writel(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val)
-{
-    pGlobals->uConfigReg = val;
-}
-
-static uint32_t pci_addr_readl(PPCIGLOBALS pGlobals, uint32_t addr)
-{
-    return pGlobals->uConfigReg;
-}
 
 static void pci_update_mappings(PCIDevice *d)
 {
@@ -473,81 +468,103 @@ static DECLCALLBACK(void) pci_default_write_config(PCIDevice *d, uint32_t addres
     }
 }
 
-static void pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int len)
+#endif /* IN_RING3 */
+
+static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int len)
 {
-    PCIDevice *pci_dev;
     uint8_t iBus, iDevice;
     uint32_t config_addr;
 
     Log(("pci_data_write: addr=%08x val=%08x len=%d\n", pGlobals->uConfigReg, val, len));
 
     if (!(pGlobals->uConfigReg & (1 << 31))) {
-        return;
+        return VINF_SUCCESS;
     }
     if ((pGlobals->uConfigReg & 0x3) != 0) {
-        return;
+        return VINF_SUCCESS;
     }
     iBus = (pGlobals->uConfigReg >> 16) & 0xff;
     iDevice = (pGlobals->uConfigReg >> 8) & 0xff;
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
     if (iBus != 0)
     {
-        PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
-        if (pBridgeDevice)
+        if (pGlobals->PciBus.cBridges)
         {
-            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
+#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
+            PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+            if (pBridgeDevice)
+            {
+                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
+                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
+            }
+#else
+            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
         }
     }
     else
     {
-        pci_dev = pGlobals->PciBus.devices[iDevice];
-        if (!pci_dev)
-            return;
-        Log(("pci_config_write: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, val, len));
-        pci_dev->Int.s.pfnConfigWrite(pci_dev, config_addr, val, len);
+        R3PTRTYPE(PCIDevice *) pci_dev = pGlobals->PciBus.devices[iDevice];
+        if (pci_dev)
+        {
+#ifdef IN_RING3
+            Log(("pci_config_write: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, val, len));
+            pci_dev->Int.s.pfnConfigWrite(pci_dev, config_addr, val, len);
+#else
+            return VINF_IOM_HC_IOPORT_WRITE;
+#endif
+        }
     }
+    return VINF_SUCCESS;
 }
 
-static uint32_t pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len)
+static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t *pu32)
 {
     uint8_t iBus, iDevice;
     uint32_t config_addr;
-    uint32_t val = 0xffffffff;
+
+    *pu32 = 0xffffffff;
 
     if (!(pGlobals->uConfigReg & (1 << 31)))
-        goto the_end;
+        return VINF_SUCCESS;
     if ((pGlobals->uConfigReg & 0x3) != 0)
-        goto the_end;
+        return VINF_SUCCESS;
     iBus = (pGlobals->uConfigReg >> 16) & 0xff;
     iDevice = (pGlobals->uConfigReg >> 8) & 0xff;
     config_addr = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
     if (iBus != 0)
     {
-        PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
-        if (pBridgeDevice)
+        if (pGlobals->PciBus.cBridges)
         {
-            AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-            val = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
+#ifdef IN_RING3 /** @todo do lookup in R0/RC too! */
+            PPCIDEVICE pBridgeDevice = pciFindBridge(&pGlobals->PciBus, iBus);
+            if (pBridgeDevice)
+            {
+                AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
+                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
+            }
+#else
+            return VINF_IOM_HC_IOPORT_READ;
+#endif
         }
     }
     else
     {
-        PCIDevice *pci_dev;
-
-        pci_dev = pGlobals->PciBus.devices[iDevice];
-        if (!pci_dev) {
-            goto the_end;
+        R3PTRTYPE(PCIDevice *) pci_dev = pGlobals->PciBus.devices[iDevice];
+        if (pci_dev)
+        {
+#ifdef IN_RING3
+            *pu32 = pci_dev->Int.s.pfnConfigRead(pci_dev, config_addr, len);
+            Log(("pci_config_read: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, *pu32, len));
+#else
+            return VINF_IOM_HC_IOPORT_READ;
+#endif
         }
-        val = pci_dev->Int.s.pfnConfigRead(pci_dev, config_addr, len);
-        Log(("pci_config_read: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, val, len));
     }
 
- the_end:
-    return val;
+    return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
 
 
 /* return the global irq number corresponding to a given device irq
@@ -813,21 +830,30 @@ static uint32_t pci_config_readl(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
 {
     pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
         (uDevFn << 8) | addr;
-    return pci_data_read(pGlobals, 0, 4);
+    uint32_t u32Val;
+    int rc = pci_data_read(pGlobals, 0, 4, &u32Val);
+    AssertRC(rc);
+    return u32Val;
 }
 
 static uint32_t pci_config_readw(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr)
 {
     pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
         (uDevFn << 8) | (addr & ~3);
-    return pci_data_read(pGlobals, addr & 3, 2);
+    uint32_t u32Val;
+    int rc = pci_data_read(pGlobals, addr & 3, 2, &u32Val);
+    AssertRC(rc);
+    return u32Val;
 }
 
 static uint32_t pci_config_readb(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr)
 {
     pGlobals->uConfigReg = 0x80000000 | (uBus << 16) |
         (uDevFn << 8) | (addr & ~3);
-    return pci_data_read(pGlobals, addr & 3, 1);
+    uint32_t u32Val;
+    int rc = pci_data_read(pGlobals, addr & 3, 1, &u32Val);
+    AssertRC(rc);
+    return u32Val;
 }
 
 /* host irqs corresponding to PCI irqs A-D */
@@ -1070,6 +1096,8 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
     }
 }
 
+#endif /* IN_RING3 */
+
 /* -=-=-=-=-=- wrappers -=-=-=-=-=- */
 
 /**
@@ -1083,20 +1111,22 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-static DECLCALLBACK(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     Log(("pciIOPortAddressWrite: Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
     NOREF(pvUser);
     if (cb == 4)
     {
+        PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
-        pci_addr_writel(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, u32);
+        pThis->uConfigReg = u32;
         PCI_UNLOCK(pDevIns);
     }
     /* else: 440FX does "pass through to the bus" for other writes, what ever that means.
      * Linux probes for cmd640 using byte writes/reads during ide init. We'll just ignore it. */
     return VINF_SUCCESS;
 }
+
 
 /**
  * Port I/O Handler for PCI address IN operations.
@@ -1109,13 +1139,14 @@ static DECLCALLBACK(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser,
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-static DECLCALLBACK(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
     if (cb == 4)
     {
+        PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
-        *pu32 = pci_addr_readl(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port);
+        *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
         Log(("pciIOPortAddressRead: Port=%#x cb=%d -> %#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
@@ -1138,19 +1169,20 @@ static DECLCALLBACK(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, 
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-static DECLCALLBACK(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     Log(("pciIOPortDataWrite: Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
     NOREF(pvUser);
+    int rc = VINF_SUCCESS;
     if (!(Port % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
-        pci_data_write(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, u32, cb);
+        rc = pci_data_write(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
     else
         AssertMsgFailed(("Write to port %#x u32=%#x cb=%d\n", Port, u32, cb));
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1165,21 +1197,22 @@ static DECLCALLBACK(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RT
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-static DECLCALLBACK(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
     if (!(Port % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
-        *pu32 = pci_data_read(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, cb);
+        int rc = pci_data_read(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, cb, pu32);
         PCI_UNLOCK(pDevIns);
-        Log(("pciIOPortDataRead: Port=%#x cb=%#x -> %#x\n", Port, cb, *pu32));
-        return VINF_SUCCESS;
+        Log(("pciIOPortDataRead: Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, rc));
+        return rc;
     }
     AssertMsgFailed(("Read from port %#x cb=%d\n", Port, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
+#ifdef IN_RING3
 
 /**
  * Saves a state of the PCI device.
@@ -1825,6 +1858,25 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x0cfc, 4, NULL, pciIOPortDataWrite, pciIOPortDataRead, NULL, NULL, "i440FX (PCI)");
     if (RT_FAILURE(rc))
         return rc;
+    if (fGCEnabled)
+    {
+        rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0x0cf8, 1, NIL_RTGCPTR, "pciIOPortAddressWrite", "pciIOPortAddressRead", NULL, NULL, "i440FX (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpIOPortRegisterGC(pDevIns, 0x0cfc, 4, NIL_RTGCPTR, "pciIOPortDataWrite", "pciIOPortDataRead", NULL, NULL, "i440FX (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    if (fR0Enabled)
+    {
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x0cf8, 1, NIL_RTR0PTR, "pciIOPortAddressWrite", "pciIOPortAddressRead", NULL, NULL, "i440FX (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0x0cfc, 4, NIL_RTR0PTR, "pciIOPortDataWrite", "pciIOPortDataRead", NULL, NULL, "i440FX (PCI)");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     rc = PDMDevHlpSSMRegister(pDevIns, "pci", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus),
                               NULL, pciSaveExec, NULL, NULL, pciLoadExec, NULL);
     if (RT_FAILURE(rc))
