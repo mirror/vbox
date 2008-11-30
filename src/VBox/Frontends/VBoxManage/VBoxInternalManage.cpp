@@ -1,4 +1,4 @@
-/* $Id:$ */
+/* $Id$ */
 /** @file
  * VBoxManage - The 'internalcommands' command.
  *
@@ -35,15 +35,18 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <iprt/runtime.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <iprt/uuid.h>
-#include <VBox/err.h>
-
 #include <VBox/VBoxHDD.h>
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/sup.h>
+#include <VBox/err.h>
+#include <VBox/log.h>
+
+#include <iprt/file.h>
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
+
 
 #include "VBoxManage.h"
 

@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include <iprt/semaphore.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <VBox/VBoxGuest.h>
 
 #include "../seamless.h"

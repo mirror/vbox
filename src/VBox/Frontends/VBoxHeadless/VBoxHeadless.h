@@ -30,7 +30,7 @@
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/critsect.h>
 
 /**

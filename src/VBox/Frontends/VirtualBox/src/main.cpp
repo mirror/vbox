@@ -34,7 +34,7 @@
 #include <qlocale.h>
 #include <qtranslator.h>
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)

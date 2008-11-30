@@ -31,7 +31,7 @@
 #include "svchlp.h"
 
 #include <VBox/err.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 
 #include <atlbase.h>
 #include <atlcom.h>

@@ -36,7 +36,7 @@
 #include <iprt/stream.h>
 #include <iprt/err.h>
 #include <iprt/thread.h>  /* for RTThreadSleep() */
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/string.h>
 
 #include <stdio.h>

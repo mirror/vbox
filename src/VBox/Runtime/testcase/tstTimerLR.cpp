@@ -34,7 +34,7 @@
 #include <iprt/timer.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
 

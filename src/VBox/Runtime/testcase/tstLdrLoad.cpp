@@ -31,7 +31,7 @@
 
 #include <iprt/ldr.h>
 #include <iprt/stream.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/err.h>
 
 int main(int argc, const char * const *argv)

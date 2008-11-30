@@ -32,7 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>

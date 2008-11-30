@@ -30,7 +30,8 @@
 
 using namespace com;
 
-#include <iprt/runtime.h>
+#include <VBox/log.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 
 

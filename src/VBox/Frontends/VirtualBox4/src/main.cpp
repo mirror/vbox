@@ -41,7 +41,7 @@
 #include <qlocale.h>
 #include <qtranslator.h>
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>

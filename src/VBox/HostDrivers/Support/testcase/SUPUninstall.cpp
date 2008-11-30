@@ -35,7 +35,7 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <VBox/err.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <stdio.h>
 
 int main(int argc, char **argv)

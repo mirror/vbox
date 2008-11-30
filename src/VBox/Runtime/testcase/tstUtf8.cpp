@@ -33,7 +33,7 @@
 *******************************************************************************/
 #include <iprt/string.h>
 #include <iprt/uni.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/uuid.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>

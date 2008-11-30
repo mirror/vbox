@@ -34,9 +34,12 @@
 *******************************************************************************/
 #include <iprt/ldr.h>
 #include <iprt/alloc.h>
+#include <iprt/log.h>
 #include <iprt/stream.h>
 #include <iprt/assert.h>
-#include <iprt/runtime.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/initterm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 

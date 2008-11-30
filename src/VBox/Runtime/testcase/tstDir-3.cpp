@@ -28,11 +28,12 @@
  * additional information or have any questions.
  */
 
-#include <iprt/path.h>
 #include <iprt/dir.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
+#include <iprt/string.h>
 
 static int tstDirOpenFiltered(const char *pszFilter, unsigned *pcFilesMatch, int *pRc)
 {

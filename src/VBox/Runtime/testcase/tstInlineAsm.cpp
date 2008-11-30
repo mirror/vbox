@@ -34,8 +34,9 @@
 #include <iprt/asm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/param.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************

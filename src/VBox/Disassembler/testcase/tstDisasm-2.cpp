@@ -23,12 +23,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/dis.h>
-#include <iprt/stream.h>
+#include <VBox/err.h>
+#include <iprt/alloc.h>
+#include <iprt/assert.h>
+#include <iprt/initterm.h>
 #include <iprt/getopt.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/runtime.h>
-#include <VBox/err.h>
 #include <iprt/ctype.h>
 
 
