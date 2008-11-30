@@ -1359,9 +1359,10 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
     int             rc = VINF_SUCCESS;
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
 #define CHECK_RET(expr, a) \
     do { \
-        if (!(expr)) \
+        if (RT_UNLIKELY(!(expr))) \
         { \
             RTSpinlockRelease(pThis->hSpinlock, &Tmp); \
             AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \

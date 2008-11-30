@@ -2745,6 +2745,23 @@ typedef struct PDMDEVHLPR3
                                                   const char *pszDesc, PRTRCPTR pRCPtr));
 
     /**
+     * Maps a portion of an MMIO2 region into kernel space (host).
+     *
+     * The kernel mapping will become invalid when the MMIO2 memory is deregistered
+     * or the VM is terminated.
+     *
+     * @return VBox status code.
+     * @param   pDevIns     The device owning the MMIO2 memory.
+     * @param   iRegion     The region.
+     * @param   off         The offset into the region. Must be page aligned.
+     * @param   cb          The number of bytes to map. Must be page aligned.
+     * @param   pszDesc     Mapping description.
+     * @param   pR0Ptr      Where to store the R0 address.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMMIO2MapKernel,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+                                                  const char *pszDesc, PRTR0PTR pR0Ptr));
+
+    /**
      * Registers the VMM device heap
      *
      * @returns VBox status code.
@@ -2778,7 +2795,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf2060001
+#define PDM_DEVHLP_VERSION  0xf2070000
 
 
 /**
@@ -3314,6 +3331,15 @@ DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, R
                                          const char *pszDesc, PRTRCPTR pRCPtr)
 {
     return pDevIns->pDevHlpR3->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel
+ */
+DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+                                         const char *pszDesc, PRTR0PTR pR0Ptr)
+{
+    return pDevIns->pDevHlpR3->pfnMMIO2MapKernel(pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
 }
 
 /**

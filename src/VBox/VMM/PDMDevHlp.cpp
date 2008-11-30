@@ -2582,6 +2582,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_
 
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+                                                    const char *pszDesc, PRTR0PTR pR0Ptr)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: iRegion=#x off=%RGp cb=%RGp pszDesc=%p:{%s} pR0Ptr=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, iRegion, off, cb, pszDesc, pszDesc, pR0Ptr));
+
+    int rc = PGMR3PhysMMIO2MapKernel(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
+
+    LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: returns %Rrc *pR0Ptr=%RHv\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc, *pR0Ptr));
+    return rc;
+}
+
+
+/**
  * @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap
  */
 static DECLCALLBACK(int) pdmR3DevHlp_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
@@ -2697,6 +2715,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMIO2Map,
     pdmR3DevHlp_MMIO2Unmap,
     pdmR3DevHlp_MMHyperMapMMIO2,
+    pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_RegisterVMMDevHeap,
     pdmR3DevHlp_UnregisterVMMDevHeap,
     PDM_DEVHLP_VERSION /* the end */
@@ -3059,6 +3078,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIn
 }
 
 
+/** @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    return VERR_ACCESS_DENIED;
+}
+
+
 /** @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
 {
@@ -3167,6 +3195,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_MMIO2Map,
     pdmR3DevHlp_Untrusted_MMIO2Unmap,
     pdmR3DevHlp_Untrusted_MMHyperMapMMIO2,
+    pdmR3DevHlp_Untrusted_MMIO2MapKernel,
     pdmR3DevHlp_Untrusted_RegisterVMMDevHeap,
     pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap,
     PDM_DEVHLP_VERSION /* the end */
