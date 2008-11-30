@@ -3489,7 +3489,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    STAM_PROFILE_START(&pThis->StatGCMemoryRead, a);
+    STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     NOREF(pvUser);
     switch (cb)
     {
@@ -3524,7 +3524,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 *pu8Data++ = vga_mem_readb(pThis, GCPhysAddr++);
         }
     }
-    STAM_PROFILE_STOP(&pThis->StatGCMemoryRead, a);
+    STAM_PROFILE_STOP(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     return VINF_SUCCESS;
 }
 
@@ -3543,7 +3543,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     uint8_t  *pu8 = (uint8_t *)pv;
     int rc = VINF_SUCCESS;
-    STAM_PROFILE_START(&pThis->StatGCMemoryWrite, a);
+    STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
 
     switch (cb)
     {
@@ -3599,7 +3599,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             break;
 
     }
-    STAM_PROFILE_STOP(&pThis->StatGCMemoryWrite, a);
+    STAM_PROFILE_STOP(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
     return rc;
 }
 
@@ -5607,10 +5607,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pVBEDataHdr->u16Signature = VBEHEADER_MAGIC;
     pVBEDataHdr->cbData = cb;
 
-#ifndef VRAM_SIZE_FIX
+# ifndef VRAM_SIZE_FIX
     pCurMode = memcpy(pVBEDataHdr + 1, &mode_info_list, sizeof(mode_info_list));
     pCurMode = (ModeInfoListItem *)((uintptr_t)pCurMode + sizeof(mode_info_list));
-#else  /* VRAM_SIZE_FIX defined */
+# else  /* VRAM_SIZE_FIX defined */
     pCurMode = (ModeInfoListItem *)(pVBEDataHdr + 1);
     for (i = 0; i < MODE_INFO_SIZE; i++)
     {
@@ -5627,7 +5627,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         *pCurMode = mode_info_list[i];
         pCurMode++;
     }
-#endif  /* VRAM_SIZE_FIX defined */
+# endif  /* VRAM_SIZE_FIX defined */
 
     /*
      * Copy default modes with subtractred YResolution.
@@ -5636,14 +5636,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         ModeInfoListItem *pDefMode = mode_info_list;
         Log(("vgaR3Construct: cyReduction=%u\n", cyReduction));
-#ifndef VRAM_SIZE_FIX
+# ifndef VRAM_SIZE_FIX
         for (i = 0; i < MODE_INFO_SIZE; i++, pCurMode++, pDefMode++)
         {
             *pCurMode = *pDefMode;
             pCurMode->mode += 0x30;
             pCurMode->info.YResolution -= cyReduction;
         }
-#else  /* VRAM_SIZE_FIX defined */
+# else  /* VRAM_SIZE_FIX defined */
         for (i = 0; i < MODE_INFO_SIZE; i++, pDefMode++)
         {
             uint32_t pixelWidth, reqSize;
@@ -5659,7 +5659,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             pCurMode->info.YResolution -= cyReduction;
             pCurMode++;
         }
-#endif  /* VRAM_SIZE_FIX defined */
+# endif  /* VRAM_SIZE_FIX defined */
     }
 
 
@@ -5690,14 +5690,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     AssertMsgFailed(("Configuration error: Invalid mode data '%s' for '%s'! cBits=%d\n", pszExtraData, szExtraDataKey, cBits));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
-#ifdef VRAM_SIZE_FIX
+# ifdef VRAM_SIZE_FIX
                 if (cx * cy * cBits / 8 >= pThis->vram_size)
                 {
                     AssertMsgFailed(("Configuration error: custom video mode %dx%dx%dbits is too large for the virtual video memory of %dMb.  Please increase the video memory size.\n",
                                      cx, cy, cBits, pThis->vram_size / _1M));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
-#endif  /* VRAM_SIZE_FIX defined */
+# endif  /* VRAM_SIZE_FIX defined */
                 MMR3HeapFree(pszExtraData);
 
                 /* Use defaults from max@bpp mode. */
@@ -5773,7 +5773,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns, VBE_EXTRA_PORT, 1, NULL, vbeIOPortWriteVBEExtra, vbeIOPortReadVBEExtra, NULL, NULL, "VBE BIOS Extra Data");
     if (RT_FAILURE(rc))
         return rc;
-#endif
+#endif /* VBE_NEW_DYN_LIST */
 
     /*
      * Register I/O Port for the BIOS Logo.
@@ -5936,10 +5936,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Statistics.
      */
-    STAM_REG(pVM, &pThis->StatGCMemoryRead,     STAMTYPE_PROFILE, "/Devices/VGA/GC/Memory/Read",         STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryRead() body.");
-    STAM_REG(pVM, &pThis->StatGCMemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/GC/Memory/Write",        STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
-    STAM_REG(pVM, &pThis->StatGCIOPortRead,     STAMTYPE_PROFILE, "/Devices/VGA/GC/IOPort/Read",         STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCIOPortRead() body.");
-    STAM_REG(pVM, &pThis->StatGCIOPortWrite,    STAMTYPE_PROFILE, "/Devices/VGA/GC/IOPort/Write",        STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCIOPortWrite() body.");
+    STAM_REG(pVM, &pThis->StatRZMemoryRead,     STAMTYPE_PROFILE, "/Devices/VGA/RZ/MMIO-Read",  STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryRead() body.");
+    STAM_REG(pVM, &pThis->StatR3MemoryRead,     STAMTYPE_PROFILE, "/Devices/VGA/R3/MMIO-Read",  STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryRead() body.");
+    STAM_REG(pVM, &pThis->StatRZMemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/RZ/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
+    STAM_REG(pVM, &pThis->StatR3MemoryWrite,    STAMTYPE_PROFILE, "/Devices/VGA/R3/MMIO-Write", STAMUNIT_TICKS_PER_CALL, "Profiling of the VGAGCMemoryWrite() body.");
 
     return rc;
 }

@@ -262,10 +262,10 @@ int main()
     GEN_CHECK_OFF(VGASTATE, RefreshTimer);
     GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
     GEN_CHECK_OFF(VGASTATE, Dev);
-    GEN_CHECK_OFF(VGASTATE, StatGCMemoryRead);
-    GEN_CHECK_OFF(VGASTATE, StatGCMemoryWrite);
-    GEN_CHECK_OFF(VGASTATE, StatGCIOPortRead);
-    GEN_CHECK_OFF(VGASTATE, StatGCIOPortWrite);
+    GEN_CHECK_OFF(VGASTATE, StatRZMemoryRead);
+    GEN_CHECK_OFF(VGASTATE, StatR3MemoryRead);
+    GEN_CHECK_OFF(VGASTATE, StatRZMemoryWrite);
+    GEN_CHECK_OFF(VGASTATE, StatR3MemoryWrite);
 #ifdef VBE_BYTEWISE_IO
     GEN_CHECK_OFF(VGASTATE, fReadVBEData);
     GEN_CHECK_OFF(VGASTATE, fWriteVBEData);
