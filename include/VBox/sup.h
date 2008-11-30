@@ -566,6 +566,20 @@ SUPR3DECL(int) SUPPageUnlock(void *pvStart);
 SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages, PRTR0PTR pR0Ptr, PSUPPAGE paPages);
 
 /**
+ * Maps a portion of a ring-3 only allocation into kernel space.
+ *
+ * @return VBox status code.
+ *
+ * @param  pvR3             The address SUPR3PageAllocEx return.
+ * @param  off              Offset to start mapping at. Must be page aligned.
+ * @param  cb               Number of bytes to map. Must be page aligned.
+ * @param  fFlags           Flags, must be zero.
+ * @param  pR0Ptr           Where to store the address on success.
+ *
+ */
+SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_t fFlags, PRTR0PTR pR0Ptr);
+
+/**
  * Free pages allocated by SUPR3PageAllocEx.
  *
  * @returns VBox status code.
@@ -836,6 +850,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
 SUPR0DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr);
 SUPR0DECL(int) SUPR0PageAlloc(PSUPDRVSESSION pSession, uint32_t cPages, PRTR3PTR ppvR3, PRTHCPHYS paPages);
 SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32_t fFlags, PRTR3PTR ppvR3, PRTR0PTR ppvR0, PRTHCPHYS paPages);
+SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t offSub, uint32_t cbSub, uint32_t fFlags, PRTR0PTR ppvR0);
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);

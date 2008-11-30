@@ -260,7 +260,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x000a0000
-                                  ? 0x000a0005
+                                  ? 0x000a0006
                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -412,6 +412,8 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTR0MemObjFree",                         0xefef0015 },
         { "RTR0MemObjGetPagePhysAddr",              0xefef0016 },
         { "RTR0MemObjMapUser",                      0xefef0017 },
+        { "RTR0MemObjMapKernel",                    0xefef0017 },
+        { "RTR0MemObjMapKernelEx",                  0xefef0017 },
         { "RTProcSelf",                             0xefef0038 },
         { "RTR0ProcHandleSelf",                     0xefef0039 },
         { "RTSemEventCreate",                       0xefef0018 },
@@ -999,6 +1001,45 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
         rc = VERR_NO_TMP_MEMORY;
     return rc;
 
+}
+
+
+SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_t fFlags, PRTR0PTR pR0Ptr)
+{
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
+    AssertPtrReturn(pR0Ptr, VERR_INVALID_POINTER);
+    Assert(!(off & PAGE_OFFSET_MASK));
+    Assert(!(cb & PAGE_OFFSET_MASK) && cb);
+    Assert(!fFlags);
+    *pR0Ptr = NIL_RTR0PTR;
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VERR_NOT_SUPPORTED;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPPAGEMAPKERNEL Req;
+    Req.Hdr.u32Cookie = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn = SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_IN;
+    Req.Hdr.cbOut = SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_OUT;
+    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc = VERR_INTERNAL_ERROR;
+    Req.u.In.pvR3 = pvR3;
+    Req.u.In.offSub = off;
+    Req.u.In.cbSub = cb;
+    Req.u.In.fFlags = fFlags;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_PAGE_MAP_KERNEL, &Req, SUP_IOCTL_PAGE_MAP_KERNEL_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    if (RT_SUCCESS(rc))
+        *pR0Ptr = Req.u.Out.pvR0;
+    return rc;
 }
 
 
