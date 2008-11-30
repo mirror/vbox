@@ -32,10 +32,11 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <VBox/log.h>
 #include <VBox/VBoxHDD.h>
+#include <VBox/log.h>
+#include <iprt/stream.h>
+#include <iprt/time.h>
+#include <iprt/string.h>
 
 #include "VBoxManage.h"
 using namespace com;
