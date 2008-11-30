@@ -295,10 +295,10 @@ typedef struct VGAState {
     /** The PCI device. */
     PCIDEVICE                   Dev;
 
-    STAMPROFILE                 StatGCMemoryRead;
-    STAMPROFILE                 StatGCMemoryWrite;
-    STAMPROFILE                 StatGCIOPortRead;
-    STAMPROFILE                 StatGCIOPortWrite;
+    STAMPROFILE                 StatRZMemoryRead;
+    STAMPROFILE                 StatR3MemoryRead;
+    STAMPROFILE                 StatRZMemoryWrite;
+    STAMPROFILE                 StatR3MemoryWrite;
 
 #ifdef VBE_BYTEWISE_IO
     /** VBE read/write data/index flags */
