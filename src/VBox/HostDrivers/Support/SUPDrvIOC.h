@@ -187,7 +187,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
  *            and renaming the related IOCtls too.
  */
-#define SUPDRV_IOC_VERSION                              0x000a0005
+#define SUPDRV_IOC_VERSION                              0x000a0006
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -937,6 +937,48 @@ typedef struct SUPPAGEALLOCEX
         } Out;
     } u;
 } SUPPAGEALLOCEX, *PSUPPAGEALLOCEX;
+/** @} */
+
+
+/** @name SUP_IOCTL_PAGE_MAP_KERNEL
+ * Maps a portion of memory allocated by SUP_IOCTL_PAGE_ALLOC_EX /
+ * SUPR0PageAllocEx into kernel space for use by a device or similar.
+ *
+ * The mapping will be freed together with the ring-3 mapping when
+ * SUP_IOCTL_PAGE_FREE or SUPR0PageFree is called.
+ *
+ * @remarks Not necessarily supported on all platforms.
+ *
+ * @{
+ */
+#define SUP_IOCTL_PAGE_MAP_KERNEL                     SUP_CTL_CODE_SIZE(24, SUP_IOCTL_PAGE_MAP_KERNEL_SIZE)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE                sizeof(SUPPAGEMAPKERNEL)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_IN             sizeof(SUPPAGEMAPKERNEL)
+#define SUP_IOCTL_PAGE_MAP_KERNEL_SIZE_OUT            sizeof(SUPPAGEMAPKERNEL)
+typedef struct SUPPAGEMAPKERNEL
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The pointer of to the previously allocated memory. */
+            RTR3PTR         pvR3;
+            /** The offset to start mapping from. */
+            uint32_t        offSub;
+            /** Size of the section to map. */
+            uint32_t        cbSub;
+            /** Flags reserved for future fun. */
+            uint32_t        fFlags;
+        } In;
+        struct
+        {
+            /** The ring-0 address corresponding to pvR3 + offSub. */
+            RTR0PTR         pvR0;
+        } Out;
+    } u;
+} SUPPAGEMAPKERNEL, *PSUPPAGEMAPKERNEL;
 /** @} */
 
 
