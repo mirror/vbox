@@ -33,7 +33,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/param.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmifs.h>
 #include <VBox/vmapi.h>
 
 __BEGIN_DECLS
