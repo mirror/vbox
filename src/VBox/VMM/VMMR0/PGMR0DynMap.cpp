@@ -74,8 +74,8 @@
 
 #if 0
 /* Assertions causes panics if preemption is disabled, this can be used to work aroudn that. */
-#define RTSpinlockAcquire(a,b) do {} while (0)
-#define RTSpinlockRelease(a,b) do {} while (0)
+//#define RTSpinlockAcquire(a,b) do {} while (0)
+//#define RTSpinlockRelease(a,b) do {} while (0)
 #endif
 
 
@@ -317,9 +317,12 @@ VMMR0DECL(void) PGMR0DynMapTerm(void)
         AssertPtr(pThis);
         g_pPGMR0DynMap = NULL;
 
+        /* This should *never* happen, but in case it does try not to leak memory. */
         AssertLogRelMsg(!pThis->cUsers && !pThis->paPages && !pThis->pvSavedPTEs && !pThis->cPages,
                         ("cUsers=%d paPages=%p pvSavedPTEs=%p cPages=%#x\n",
                          pThis->cUsers, pThis->paPages, pThis->pvSavedPTEs, pThis->cPages));
+        if (pThis->paPages)
+            pgmR0DynMapTearDown(pThis);
 
         /* Free the associated resources. */
         RTSemFastMutexDestroy(pThis->hInitLock);
@@ -362,10 +365,8 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     /*
      * Do we need the cache? Skip the last bit if we don't.
      */
-#if 1
     if (!VMMIsHwVirtExtForced(pVM))
         return VINF_SUCCESS;
-#endif
 
     /*
      * Reference and if necessary setup or expand the cache.
@@ -1065,6 +1066,7 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
             X86PGUINT       uNew  = paSavedPTEs[iPage];
             while (!ASMAtomicCmpXchgExU32(&paPages[iPage].uPte.pLegacy->u, uNew, uOld, &uOld))
                 AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
+            Assert(paPages[iPage].uPte.pLegacy->u == paSavedPTEs[iPage]);
         }
     }
     else
@@ -1077,6 +1079,7 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
             X86PGPAEUINT    uNew  = paSavedPTEs[iPage];
             while (!ASMAtomicCmpXchgExU64(&paPages[iPage].uPte.pPae->u, uNew, uOld, &uOld))
                 AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
+            Assert(paPages[iPage].uPte.pPae->u == paSavedPTEs[iPage]);
         }
     }
 
@@ -1119,6 +1122,7 @@ static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis)
     pThis->pvSavedPTEs = NULL;
     pThis->cPages = 0;
     pThis->cLoad = 0;
+    pThis->cGuardPages = 0;
 }
 
 
@@ -1174,13 +1178,13 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     if (!paPages[iPage].cRefs)
         iFreePage = iPage;
     else if (!paPages[(iPage + 1) % cPages].cRefs)
-        iFreePage = iPage + 1;
+        iFreePage   = (iPage + 1) % cPages;
     else if (!paPages[(iPage + 2) % cPages].cRefs)
-        iFreePage = iPage + 2;
+        iFreePage   = (iPage + 2) % cPages;
     else if (!paPages[(iPage + 3) % cPages].cRefs)
-        iFreePage = iPage + 3;
+        iFreePage   = (iPage + 3) % cPages;
     else if (!paPages[(iPage + 4) % cPages].cRefs)
-        iFreePage = iPage + 4;
+        iFreePage   = (iPage + 4) % cPages;
     else
     {
         /*
@@ -1200,6 +1204,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                 return UINT32_MAX;
         }
     }
+    Assert(iFreePage < cPages);
 
     /*
      * Setup the new entry.
@@ -1216,6 +1221,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                               | (HCPhys & X86_PTE_PG_MASK);
         while (!ASMAtomicCmpXchgExU32(&paPages[iFreePage].uPte.pLegacy->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
+        Assert(paPages[iPage].uPte.pLegacy->u == uNew);
     }
     else
     {
@@ -1226,6 +1232,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                               | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
+        Assert(paPages[iPage].uPte.pPae->u == uNew);
         /*Log6(("pgmR0DynMapPageSlow: #%x - %RHp %p %#llx\n", iFreePage, HCPhys, paPages[iFreePage].pvPage, uNew));*/
     }
     return iFreePage;
