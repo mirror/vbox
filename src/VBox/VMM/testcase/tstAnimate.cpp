@@ -38,7 +38,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>

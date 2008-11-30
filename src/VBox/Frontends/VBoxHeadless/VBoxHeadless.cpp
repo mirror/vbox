@@ -37,7 +37,7 @@ using namespace com;
 #ifdef VBOX_WITH_VRDP
 # include <VBox/vrdpapi.h>
 #endif
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/ldr.h>
 #include <iprt/getopt.h>

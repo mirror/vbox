@@ -36,7 +36,7 @@
 #include <iprt/critsect.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 
 
 /*******************************************************************************

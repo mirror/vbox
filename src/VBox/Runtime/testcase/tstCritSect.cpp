@@ -41,7 +41,7 @@
 #include <iprt/log.h>
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/time.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>

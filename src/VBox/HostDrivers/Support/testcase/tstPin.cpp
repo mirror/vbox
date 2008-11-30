@@ -35,10 +35,11 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <VBox/param.h>
-#include <iprt/runtime.h>
+#include <VBox/err.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
-#include <stdlib.h>
-#include <string.h>
+#include <iprt/thread.h>
+#include <iprt/string.h>
 
 
 int main(int argc, char **argv)

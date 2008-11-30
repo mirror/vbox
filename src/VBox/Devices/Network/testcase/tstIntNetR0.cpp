@@ -42,7 +42,7 @@ typedef void *MYPSUPDRVSESSION;
 #include <VBox/err.h>
 #include <iprt/stream.h>
 #include <iprt/alloc.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/asm.h>

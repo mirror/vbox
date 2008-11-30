@@ -36,7 +36,7 @@
 #include <iprt/alloc.h>
 #include <iprt/stream.h>
 #include <iprt/assert.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <VBox/dis.h>

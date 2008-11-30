@@ -40,7 +40,7 @@
 # include <unistd.h>
 #endif
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
@@ -68,7 +68,7 @@ static int32_t volatile g_cUsers = 0;
 /** Whether we're currently initializing the IPRT. */
 static bool volatile    g_fInitializing = false;
 
-/** The process path. 
+/** The process path.
  * This is used by RTPathProgram and RTProcGetExecutableName and set by rtProcInitName. */
 char        g_szrtProcExePath[RTPATH_MAX];
 /** The length of g_szrtProcExePath. */
@@ -105,11 +105,11 @@ RTPROCPRIORITY g_enmProcessPriority = RTPROCPRIORITY_DEFAULT;
 
 
 
-/** 
- * Internal worker which initializes or re-initializes the 
+/**
+ * Internal worker which initializes or re-initializes the
  * program path, name and directory globals.
  *
- * @returns IPRT status code. 
+ * @returns IPRT status code.
  * @param   pszProgramPath  The program path, NULL if not specified.
  */
 static int rtR3InitProgramPath(const char *pszProgramPath)

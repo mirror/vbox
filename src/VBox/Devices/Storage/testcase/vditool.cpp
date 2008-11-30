@@ -27,7 +27,7 @@
 #include <iprt/file.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 

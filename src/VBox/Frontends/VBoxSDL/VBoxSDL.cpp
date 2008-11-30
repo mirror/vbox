@@ -58,11 +58,14 @@ using namespace com;
 #include <VBox/version.h>
 
 #include <iprt/alloca.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/env.h>
+#include <iprt/file.h>
 #include <iprt/ldr.h>
+#include <iprt/initterm.h>
 #include <iprt/path.h>
-#include <iprt/runtime.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>

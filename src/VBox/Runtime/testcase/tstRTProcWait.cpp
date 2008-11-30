@@ -32,7 +32,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/process.h>
 #include <iprt/thread.h>
 #include <iprt/stream.h>

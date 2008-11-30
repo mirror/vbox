@@ -29,9 +29,10 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 

@@ -33,7 +33,7 @@
 *******************************************************************************/
 #include <iprt/time.h>
 #include <iprt/stream.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/thread.h>
 #include <VBox/sup.h>
 

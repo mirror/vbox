@@ -37,9 +37,11 @@
 #include <VBox/vmm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/alloc.h>
+#include <iprt/time.h>
 
 
 /**

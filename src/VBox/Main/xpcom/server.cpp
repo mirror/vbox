@@ -46,7 +46,7 @@
 #include <VBox/param.h>
 #include <VBox/version.h>
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/critsect.h>
 #include <iprt/timer.h>

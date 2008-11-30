@@ -35,7 +35,7 @@
 *******************************************************************************/
 #include <VBox/sup.h>
 #include <VBox/param.h>
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <string.h>
 

@@ -38,7 +38,9 @@ using namespace com;
 #define LOG_INSTANCE NULL
 #include <VBox/log.h>
 
-#include <iprt/runtime.h>
+#include <iprt/initterm.h>
+#include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/stream.h>
 
 #define printf RTPrintf
