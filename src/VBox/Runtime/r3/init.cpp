@@ -41,11 +41,12 @@
 #endif
 
 #include <iprt/initterm.h>
-#include <iprt/path.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/log.h>
-#include <iprt/time.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/path.h>
+#include <iprt/time.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
