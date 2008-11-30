@@ -549,7 +549,6 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
      */
     int rc = VERR_INVALID_PARAMETER;
     PRTR0MEMOBJDARWIN pMemToMapDarwin = (PRTR0MEMOBJDARWIN)pMemToMap;
-printf("rtR0MemObjNativeMapKernel: pMemDesc=%p\n", pMemToMapDarwin->pMemDesc);
     if (pMemToMapDarwin->pMemDesc)
     {
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map(kernel_task, kIOMapAnywhere,
