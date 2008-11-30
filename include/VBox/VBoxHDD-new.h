@@ -37,9 +37,9 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
-/** @todo eliminate this dependency by moving data type definitions to the
- * right place. PFNVMPROGRESS and P*PDMMEDIAGEOMETRY are affected. */
-#include <VBox/pdm.h>
+#include <VBox/pdmifs.h>
+/** @todo remove this dependency, using PFNVMPROGRESS outside VMM is *WRONG*. */
+#include <VBox/vmapi.h>
 
 __BEGIN_DECLS
 
@@ -571,6 +571,7 @@ typedef struct VDINTERFACEPROGRESS
 
     /**
      * Progress notification callbacks.
+     * @todo r=bird: Why the heck are we using PFNVMPROGRESS here?
      */
     PFNVMPROGRESS   pfnProgress;
 } VDINTERFACEPROGRESS, *PVDINTERFACEPROGRESS;
