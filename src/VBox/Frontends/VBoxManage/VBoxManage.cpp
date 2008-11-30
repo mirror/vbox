@@ -54,6 +54,7 @@
 #include <iprt/uuid.h>
 #include <VBox/version.h>
 #include <VBox/VBoxHDD.h>
+#include <VBox/log.h>
 
 #include "VBoxManage.h"
 
