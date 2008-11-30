@@ -1148,7 +1148,7 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         break;
     }
 
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     if (addr >= VGA_MAPPING_SIZE)
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
@@ -1183,9 +1183,9 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         /* standard VGA latched access */
 #ifndef VBOX
         s->latch = ((uint32_t *)s->vram_ptr)[addr];
-#else /* VBOX && IN_RC */
+#else /* VBOX */
         s->latch = ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr];
-#endif /* VBOX && IN_RC */
+#endif /* VBOX */
 
         if (!(s->gr[5] & 0x08)) {
             /* read mode 0 */
@@ -1285,7 +1285,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-# ifdef IN_RC
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
             if (addr >= VGA_MAPPING_SIZE)
                 return VINF_IOM_HC_MMIO_WRITE;
 # else
@@ -1336,17 +1336,17 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-#ifdef IN_RC
+# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
             if (addr >= VGA_MAPPING_SIZE)
                 return VINF_IOM_HC_MMIO_WRITE;
-#else
+# else
             if (addr >= s->vram_size)
             {
                 AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
                                  addr, s->bank_offset, memory_map_mode));
                 return VINF_SUCCESS;
             }
-#endif
+# endif
             s->CTX_SUFF(vram_ptr)[addr] = val;
 #endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
@@ -1360,7 +1360,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #endif /* VBOX */
         }
     } else {
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
         if (addr * 4 >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3319,7 +3319,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (pThis->sr[4] & 0x08) {
         /* chain 4 mode : simplest access */
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
         if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3342,7 +3342,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
             }
     } else if (pThis->gr[5] & 0x10) {
         /* odd/even mode (aka text mode mapping) */
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
         if (GCPhysAddr * 2 + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -3364,7 +3364,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 GCPhysAddr++;
             }
     } else {
-#ifdef IN_RC
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
         if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
             return VINF_IOM_HC_MMIO_WRITE;
 #else
@@ -4299,7 +4299,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 }
 
 /**
- * Info handler, device version. Dumps VGA memory formatted as 
+ * Info handler, device version. Dumps VGA memory formatted as
  * ASCII text, no attributes. Only looks at the first page.
  *
  * @param   pDevIns     Device instance which registered the info.
@@ -5364,16 +5364,29 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 
     /*
-     * Allocate the VRAM and map the first 256KB of it into GC so we can speed up VGA support.
+     * Allocate the VRAM and map the first 512KB of it into GC so we can speed up VGA support.
      */
     rc = PDMDevHlpMMIO2Register(pDevIns, 0 /* iRegion */, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
     pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo #1865 Map parts into R0 or just use PGM access (Mac only). */
 
-    RTRCPTR pRCMapping = 0;
-    rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pRCMapping);
-    AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
-    pThis->vram_ptrRC = pRCMapping;
+    if (pThis->fGCEnabled)
+    {
+        RTRCPTR pRCMapping = 0;
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pRCMapping);
+        AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
+        pThis->vram_ptrRC = pRCMapping;
+    }
+
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+    if (pThis->fR0Enabled)
+    {
+        RTR0PTR pR0Mapping = 0;
+        rc = PDMDevHlpMMIO2MapKernel(pDevIns, 0 /* iRegion */, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pR0Mapping);
+        AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
+        pThis->vram_ptrR0 = pR0Mapping;
+    }
+#endif
 
     /*
      * Register I/O ports, ROM and save state.
