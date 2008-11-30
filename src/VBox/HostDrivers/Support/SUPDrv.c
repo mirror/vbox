@@ -2537,16 +2537,11 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
      * Validate input. The allowed allocation size must be at least equal to the maximum guest VRAM size.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-SUPR0Printf("SUPR0PageMapKernel: 1\n");
     AssertPtrNullReturn(ppvR0, VERR_INVALID_POINTER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-SUPR0Printf("SUPR0PageMapKernel: 2\n");
     AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
-SUPR0Printf("SUPR0PageMapKernel: 3\n");
     AssertReturn(!(cbSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
-SUPR0Printf("SUPR0PageMapKernel: 4\n");
     AssertReturn(cbSub, VERR_INVALID_PARAMETER);
-SUPR0Printf("SUPR0PageMapKernel: 5 - ok\n");
 
     /*
      * Find the memory object.
@@ -2575,7 +2570,6 @@ SUPR0Printf("SUPR0PageMapKernel: 5 - ok\n");
         }
     }
     RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
-SUPR0Printf("SUPR0PageMapKernel: hMemObj=%p\n", hMemObj);
 
     rc = VERR_INVALID_PARAMETER;
     if (hMemObj != NIL_RTR0MEMOBJ)
@@ -2590,7 +2584,6 @@ SUPR0Printf("SUPR0PageMapKernel: hMemObj=%p\n", hMemObj);
             &&  offSub + cbSub <= cbMemObj)
         {
             RTR0MEMOBJ hMapObj;
-SUPR0Printf("RTR0MemObjMapKernelEx: hMemObj=%p\n", hMemObj);
             rc = RTR0MemObjMapKernelEx(&hMapObj, hMemObj, (void *)-1, 0,
                                        RTMEM_PROT_READ | RTMEM_PROT_WRITE, offSub, cbSub);
             if (RT_SUCCESS(rc))
