@@ -19,6 +19,7 @@
  */
 
 #include <iostream>
+#include <stdlib.h> /* exit() */
 
 #include <iprt/semaphore.h>
 #include <iprt/initterm.h>
