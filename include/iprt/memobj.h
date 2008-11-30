@@ -187,6 +187,7 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
  * @retval  VERR_NOT_SUPPORTED if it's not possible to allocated unmapped
  *          physical memory on this platform. The caller should expect
  *          this error and have a fallback strategy for it.
+ *
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
  * @param   PhysHighest     The highest permittable address (inclusive).
@@ -239,6 +240,9 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
 /**
  * Maps a memory object into kernel virtual address space.
  *
+ * This is the same as calling RTR0MemObjMapKernelEx with cbSub and offSub set
+ * to zero.
+ *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
  * @param   MemObjToMap     The object to be map.
@@ -248,6 +252,33 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  */
 RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt);
+
+/**
+ * Maps a memory object into kernel virtual address space.
+ *
+ * The ability to map subsections of the object into kernel space is currently
+ * not implemented on all platforms. All/Most of platforms supports mapping the
+ * whole object into  kernel space.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if it's not possible to map a subsection of a
+ *          memory object on this platform. When you hit this, try implement it.
+ *
+ * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
+ * @param   MemObjToMap     The object to be map.
+ * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
+ * @param   uAlignment      The alignment of the reserved memory.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
+ * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
+ */
+RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment,
+                                    unsigned fProt, size_t offSub, size_t cbSub);
 
 /**
  * Maps a memory object into user virtual address space in the current process.
