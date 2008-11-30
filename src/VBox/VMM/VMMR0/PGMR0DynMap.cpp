@@ -1221,7 +1221,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                               | (HCPhys & X86_PTE_PG_MASK);
         while (!ASMAtomicCmpXchgExU32(&paPages[iFreePage].uPte.pLegacy->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#x uOld2=%#x uNew=%#x\n", uOld, uOld2, uNew));
-        Assert(paPages[iPage].uPte.pLegacy->u == uNew);
+        Assert(paPages[iFreePage].uPte.pLegacy->u == uNew);
     }
     else
     {
@@ -1232,7 +1232,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                               | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
             AssertMsgFailed(("uOld=%#llx uOld2=%#llx uNew=%#llx\n", uOld, uOld2, uNew));
-        Assert(paPages[iPage].uPte.pPae->u == uNew);
+        Assert(paPages[iFreePage].uPte.pPae->u == uNew);
         /*Log6(("pgmR0DynMapPageSlow: #%x - %RHp %p %#llx\n", iFreePage, HCPhys, paPages[iFreePage].pvPage, uNew));*/
     }
     return iFreePage;
