@@ -80,6 +80,8 @@
 #define BOOL PRBool
 #endif
 
+#include <VBox/sup.h>
+
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/param.h>
