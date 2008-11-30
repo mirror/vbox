@@ -669,6 +669,37 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
  */
 RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
 {
+    return RTR0MemObjMapKernelEx(pMemObj, MemObjToMap, pvFixed, uAlignment, fProt, 0, 0);
+}
+
+
+/**
+ * Maps a memory object into kernel virtual address space.
+ *
+ * The ability to map subsections of the object into kernel space is currently
+ * not implemented on all platforms. All/Most of platforms supports mapping the
+ * whole object into  kernel space.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if it's not possible to map a subsection of a
+ *          memory object on this platform. When you hit this, try implement it.
+ *
+ * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
+ * @param   MemObjToMap     The object to be map.
+ * @param   pvFixed         Requested address. (void *)-1 means any address. This must match the alignment.
+ * @param   uAlignment      The alignment of the reserved memory.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
+ * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
+ */
+RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, void *pvFixed, size_t uAlignment,
+                                    unsigned fProt, size_t offSub, size_t cbSub)
+{
     PRTR0MEMOBJINTERNAL pMemToMap;
     PRTR0MEMOBJINTERNAL pNew;
     int                 rc;
@@ -689,10 +720,18 @@ RTR0DECL(int) RTR0MemObjMapKernel(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, v
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     AssertReturn(fProt != RTMEM_PROT_NONE, VERR_INVALID_PARAMETER);
     AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(offSub < pMemToMap->cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!(cbSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cbSub <= pMemToMap->cb, VERR_INVALID_PARAMETER);
+    AssertReturn((!offSub && !cbSub) || (offSub + cbSub) <= pMemToMap->cb, VERR_INVALID_PARAMETER);
 
+    /* adjust the request to simplify the native code. */
+    if (offSub == 0 && cbSub == pMemToMap->cb)
+        cbSub = 0;
 
     /* do the mapping. */
-    rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt);
+    rc = rtR0MemObjNativeMapKernel(&pNew, pMemToMap, pvFixed, uAlignment, fProt, offSub, cbSub);
     if (RT_SUCCESS(rc))
     {
         /* link it. */

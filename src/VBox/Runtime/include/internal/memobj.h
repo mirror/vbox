@@ -379,13 +379,22 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
  * Maps a memory object into user virtual address space in the current process.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED see RTR0MemObjMapKernelEx.
+ *
  * @param   ppMem           Where to store the ring-0 memory object handle of the mapping object.
  * @param   pMemToMap       The object to be map.
  * @param   pvFixed         Requested address. (void *)-1 means any address. This matches uAlignment if specified.
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
  */
-int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt);
+int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
+                              unsigned fProt, size_t offSub, size_t cbSub);
 
 /**
  * Maps a memory object into user virtual address space in the current process.

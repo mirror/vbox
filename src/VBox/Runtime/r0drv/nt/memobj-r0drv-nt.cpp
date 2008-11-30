@@ -745,8 +745,10 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
 }
 
 
-int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment, unsigned fProt)
+int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
+                              unsigned fProt, size_t offSub, size_t cbSub)
 {
+    AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
     return rtR0MemObjNtMap(ppMem, pMemToMap, pvFixed, uAlignment, fProt, NIL_RTR0PROCESS);
 }
 
