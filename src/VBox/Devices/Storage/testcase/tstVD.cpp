@@ -19,8 +19,10 @@
  * additional information or have any questions.
  */
 
-#include <VBox/err.h>
 #include <VBox/VBoxHDD-new.h>
+#include <VBox/err.h>
+#include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/dir.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
@@ -848,6 +850,7 @@ static void tstVmdk()
 
 int main(int argc, char *argv[])
 {
+    RTR3Init();
     int rc;
 
     uint32_t u32Seed = 0; // Means choose random
@@ -860,7 +863,6 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-    RTR3Init();
     RTPrintf("tstVD: TESTING...\n");
 
     /*
