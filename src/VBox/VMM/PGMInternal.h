@@ -2570,7 +2570,7 @@ typedef struct PGM
     STAMCOUNTER StatR0DynMapPageSlow;               /**< R0: Calls to pgmR0DynMapPageSlow. */
     STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
     STAMCOUNTER StatR0DynMapPageSlowLoopMisses;     /**< R0: Misses in the pgmR0DynMapPageSlow search loop. */
-    STAMCOUNTER StatR0DynMapPageSlowLostHits;       /**< R0: Lost hits. */
+    //STAMCOUNTER StatR0DynMapPageSlowLostHits;       /**< R0: Lost hits. */
 
     /* RC only: */
     STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
