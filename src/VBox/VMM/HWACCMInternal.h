@@ -208,6 +208,12 @@ typedef struct HWACCM
 
     /* VT-x 64 bits vmlaunch handler */
     RTRCPTR                     pfnVMXGCStartVM64;
+
+    /* RC handler to setup the 64 bits FPU state. */
+    RTRCPTR                     pfnSetupFPU64;
+
+    /* RC handler to setup the 64 bits debug state. */
+    RTRCPTR                     pfnSetupDebug64;
 #endif
 
     struct
