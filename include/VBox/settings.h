@@ -47,6 +47,8 @@
 #include <iprt/mem.h>
 #include <iprt/time.h>
 
+#include <VBox/vboxxml.h>
+
 #include <stdarg.h>
 
 
@@ -224,29 +226,6 @@
  * on the Settings File Manipulation API.
  */
 
-#ifndef IN_RING3
-# error "There are no settings APIs available in Ring-0 Context!"
-#else /* IN_RING3 */
-
-/** @def IN_VBOXSETTINGS_R3
- * Used to indicate whether we're inside the same link module as the
- * XML Settings File Manipulation API.
- *
- * @todo should go to a separate common include together with VBOXXML2_CLASS
- * once there becomes more than one header in the VBoxXML2 library.
- */
-#ifdef DOXYGEN_RUNNING
-# define IN_VBOXSETTINGS_R3
-#endif
-
-/** @def VBOXSETTINGS_CLASS
- * Class export/import wrapper. */
-#ifdef IN_VBOXSETTINGS_R3
-# define VBOXSETTINGS_CLASS DECLEXPORT_CLASS
-#else
-# define VBOXSETTINGS_CLASS DECLIMPORT_CLASS
-#endif
-
 /*
  * Shut up MSVC complaining that auto_ptr[_ref] template instantiations (as a
  * result of private data member declarations of some classes below) need to
@@ -280,11 +259,37 @@ typedef xmlParserCtxt *xmlParserCtxtPtr;
 typedef struct _xmlError xmlError;
 typedef xmlError *xmlErrorPtr;
 
+
 /**
  * Settings File Manipulation API namespace.
  */
 namespace settings
 {
+
+// Exceptions (on top of vboxxml exceptions)
+//////////////////////////////////////////////////////////////////////////////
+
+class VBOXSETTINGS_CLASS ENoKey : public vboxxml::LogicError
+{
+public:
+
+    ENoKey (const char *aMsg = NULL) : vboxxml::LogicError (aMsg) {}
+};
+
+class VBOXSETTINGS_CLASS ENoValue : public vboxxml::LogicError
+{
+public:
+
+    ENoValue (const char *aMsg = NULL) : vboxxml::LogicError (aMsg) {}
+};
+
+class VBOXSETTINGS_CLASS ENoConversion : public vboxxml::RuntimeError
+{
+public:
+
+    ENoConversion (const char *aMsg = NULL) : RuntimeError (aMsg) {}
+};
+
 
 // Helpers
 //////////////////////////////////////////////////////////////////////////////
@@ -321,138 +326,6 @@ private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (FmtStr)
 
     char *mStr;
-};
-
-// Exceptions
-//////////////////////////////////////////////////////////////////////////////
-
-/**
- * Base exception class.
- */
-class VBOXSETTINGS_CLASS Error : public std::exception
-{
-public:
-
-    Error (const char *aMsg = NULL)
-        : m (aMsg ? Str::New (aMsg) : NULL) {}
-
-    virtual ~Error() throw() {}
-
-    void setWhat (const char *aMsg) { m = aMsg ? Str::New (aMsg) : NULL; }
-
-    const char *what() const throw() { return m.is_null() ? NULL : m->str; }
-
-private:
-
-    /** smart string with support for reference counting */
-    struct Str
-    {
-        size_t ref() { return ++ refs; }
-        size_t unref() { return -- refs; }
-
-        size_t refs;
-        char str [1];
-
-        static Str *New (const char *aStr)
-        {
-            Str *that = (Str *) RTMemAllocZ (sizeof (Str) + strlen (aStr));
-            AssertReturn (that, NULL);
-            strcpy (that->str, aStr);
-            return that;
-        }
-
-        void operator delete (void *that, size_t) { RTMemFree (that); }
-    };
-
-    stdx::auto_ref_ptr <Str> m;
-};
-
-class VBOXSETTINGS_CLASS LogicError : public Error
-{
-public:
-
-    LogicError (const char *aMsg = NULL) : Error (aMsg) {}
-
-    LogicError (RT_SRC_POS_DECL)
-    {
-        char *msg = NULL;
-        RTStrAPrintf (&msg, "In '%s', '%s' at #%d",
-                      pszFunction, pszFile, iLine);
-        setWhat (msg);
-        RTStrFree (msg);
-    }
-};
-
-class VBOXSETTINGS_CLASS RuntimeError : public Error
-{
-public:
-
-    RuntimeError (const char *aMsg = NULL) : Error (aMsg) {}
-};
-
-// Logical errors
-//////////////////////////////////////////////////////////////////////////////
-
-class VBOXSETTINGS_CLASS ENotImplemented : public LogicError
-{
-public:
-
-    ENotImplemented (const char *aMsg = NULL) : LogicError (aMsg) {}
-    ENotImplemented (RT_SRC_POS_DECL) : LogicError (RT_SRC_POS_ARGS) {}
-};
-
-class VBOXSETTINGS_CLASS EInvalidArg : public LogicError
-{
-public:
-
-    EInvalidArg (const char *aMsg = NULL) : LogicError (aMsg) {}
-    EInvalidArg (RT_SRC_POS_DECL) : LogicError (RT_SRC_POS_ARGS) {}
-};
-
-class VBOXSETTINGS_CLASS ENoKey : public LogicError
-{
-public:
-
-    ENoKey (const char *aMsg = NULL) : LogicError (aMsg) {}
-};
-
-class VBOXSETTINGS_CLASS ENoValue : public LogicError
-{
-public:
-
-    ENoValue (const char *aMsg = NULL) : LogicError (aMsg) {}
-};
-
-// Runtime errors
-//////////////////////////////////////////////////////////////////////////////
-
-class VBOXSETTINGS_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
-{
-public:
-
-    ENoMemory (const char *aMsg = NULL) : RuntimeError (aMsg) {}
-    virtual ~ENoMemory() throw() {}
-};
-
-class VBOXSETTINGS_CLASS EIPRTFailure : public RuntimeError
-{
-public:
-
-    EIPRTFailure (const char *aMsg = NULL) : RuntimeError (aMsg) {}
-
-    EIPRTFailure (int aRC) : mRC (aRC) {}
-    int rc() const { return mRC; }
-
-private:
-
-    int mRC;
-};
-
-class VBOXSETTINGS_CLASS ENoConversion : public RuntimeError
-{
-public:
-
-    ENoConversion (const char *aMsg = NULL) : RuntimeError (aMsg) {}
 };
 
 // string -> type conversions
@@ -498,7 +371,7 @@ T FromString (const char *aValue)
                                       (uint64_t) std::numeric_limits <T>::max());
     }
 
-    throw ENotImplemented (RT_SRC_POS);
+    throw vboxxml::ENotImplemented (RT_SRC_POS);
 }
 
 /**
@@ -570,7 +443,7 @@ stdx::char_auto_ptr ToString (const T &aValue, unsigned int aExtra = 0)
         return ToStringInteger (aValue, aExtra, sign, bits);
     }
 
-    throw ENotImplemented (RT_SRC_POS);
+    throw vboxxml::ENotImplemented (RT_SRC_POS);
 }
 
 /**
@@ -1010,86 +883,6 @@ private:
 };
 
 /**
- * The Stream class is a base class for I/O streams.
- */
-class VBOXSETTINGS_CLASS Stream
-{
-public:
-
-    virtual ~Stream() {}
-
-    virtual const char *uri() const = 0;
-
-    /**
-     * Returns the current read/write position in the stream. The returned
-     * position is a zero-based byte offset from the beginning of the file.
-     *
-     * Throws ENotImplemented if this operation is not implemented for the
-     * given stream.
-     */
-    virtual uint64_t pos() const = 0;
-
-    /**
-     * Sets the current read/write position in the stream.
-     *
-     * @param aPos Zero-based byte offset from the beginning of the stream.
-     *
-     * Throws ENotImplemented if this operation is not implemented for the
-     * given stream.
-     */
-    virtual void setPos (uint64_t aPos) = 0;
-};
-
-/**
- * The Input class represents an input stream.
- *
- * This input stream is used to read the settings tree from.
- * This is an abstract class that must be subclassed in order to fill it with
- * useful functionality.
- */
-class VBOXSETTINGS_CLASS Input : virtual public Stream
-{
-public:
-
-    /**
-     * Reads from the stream to the supplied buffer.
-     *
-     * @param aBuf Buffer to store read data to.
-     * @param aLen Buffer length.
-     *
-     * @return Number of bytes read.
-     */
-    virtual int read (char *aBuf, int aLen) = 0;
-};
-
-/**
- *
- */
-class VBOXSETTINGS_CLASS Output : virtual public Stream
-{
-public:
-
-    /**
-     * Writes to the stream from the supplied buffer.
-     *
-     * @param aBuf Buffer to write data from.
-     * @param aLen Buffer length.
-     *
-     * @return Number of bytes written.
-     */
-    virtual int write (const char *aBuf, int aLen) = 0;
-
-    /**
-     * Truncates the stream from the current position and upto the end.
-     * The new file size will become exactly #pos() bytes.
-     *
-     * Throws ENotImplemented if this operation is not implemented for the
-     * given stream.
-     */
-    virtual void truncate() = 0;
-};
-
-/**
  * The TreeBackend class represents a storage backend used to read a settings
  * tree from and write it to a stream.
  *
@@ -1123,7 +916,7 @@ public:
      * @param aSchema       Schema URI to use for input stream validation.
      * @param aFlags        Optional bit flags.
      */
-    void read (Input &aInput, const char *aSchema = NULL, int aFlags = 0)
+    void read (vboxxml::Input &aInput, const char *aSchema = NULL, int aFlags = 0)
     {
         aInput.setPos (0);
         rawRead (aInput, aSchema, aFlags);
@@ -1139,7 +932,7 @@ public:
      *
      * @see read()
      */
-    virtual void rawRead (Input &aInput, const char *aSchema = NULL,
+    virtual void rawRead (vboxxml::Input &aInput, const char *aSchema = NULL,
                           int aFlags = 0) = 0;
 
     /**
@@ -1153,7 +946,7 @@ public:
      *
      * @param aOutput       Output stream.
      */
-    void write (Output &aOutput)
+    void write (vboxxml::Output &aOutput)
     {
         aOutput.setPos (0);
         rawWrite (aOutput);
@@ -1172,7 +965,7 @@ public:
      *
      * @see write()
      */
-    virtual void rawWrite (Output &aOutput) = 0;
+    virtual void rawWrite (vboxxml::Output &aOutput) = 0;
 
     /**
      * Deletes the current settings tree.
@@ -1187,125 +980,6 @@ public:
 protected:
 
     static Key::Backend *GetKeyBackend (const Key &aKey) { return aKey.m.raw(); }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-/**
- * The File class is a stream implementation that reads from and writes to
- * regular files.
- *
- * The File class uses IPRT File API for file operations. Note that IPRT File
- * API is not thread-safe. This means that if you pass the same RTFILE handle to
- * different File instances that may be simultaneously used on different
- * threads, you should care about serialization; otherwise you will get garbage
- * when reading from or writing to such File instances.
- */
-class VBOXSETTINGS_CLASS File : public Input, public Output
-{
-public:
-
-    /**
-     * Possible file access modes.
-     */
-    enum Mode { Mode_Read, Mode_Write, Mode_ReadWrite };
-
-    /**
-     * Opens a file with the given name in the given mode. If @a aMode is Read
-     * or ReadWrite, the file must exist. If @a aMode is Write, the file must
-     * not exist. Otherwise, an EIPRTFailure excetion will be thrown.
-     *
-     * @param aMode     File mode.
-     * @param aFileName File name.
-     */
-    File (Mode aMode, const char *aFileName);
-
-    /**
-     * Uses the given file handle to perform file operations. This file
-     * handle must be already open in necessary mode (read, or write, or mixed).
-     *
-     * The read/write position of the given handle will be reset to the
-     * beginning of the file on success.
-     *
-     * Note that the given file handle will not be automatically closed upon
-     * this object destruction.
-     *
-     * @note It you pass the same RTFILE handle to more than one File instance,
-     *       please make sure you have provided serialization in case if these
-     *       instasnces are to be simultaneously used by different threads.
-     *       Otherwise you may get garbage when reading or writing.
-     *
-     * @param aHandle   Open file handle.
-     * @param aFileName File name (for reference).
-     */
-    File (RTFILE aHandle, const char *aFileName = NULL);
-
-    /**
-     * Destrroys the File object. If the object was created from a file name
-     * the corresponding file will be automatically closed. If the object was
-     * created from a file handle, it will remain open.
-     */
-    virtual ~File();
-
-    const char *uri() const;
-
-    uint64_t pos() const;
-    void setPos (uint64_t aPos);
-
-    /**
-     * See Input::read(). If this method is called in wrong file mode,
-     * LogicError will be thrown.
-     */
-    int read (char *aBuf, int aLen);
-
-    /**
-     * See Output::write(). If this method is called in wrong file mode,
-     * LogicError will be thrown.
-     */
-    int write (const char *aBuf, int aLen);
-
-    /**
-     * See Output::truncate(). If this method is called in wrong file mode,
-     * LogicError will be thrown.
-     */
-    void truncate();
-
-private:
-
-    /* Obscure class data */
-    struct Data;
-    std::auto_ptr <Data> m;
-
-    /* auto_ptr data doesn't have proper copy semantics */
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (File)
-};
-
-/**
- * The MemoryBuf class represents a stream implementation that reads from the
- * memory buffer.
- */
-class VBOXSETTINGS_CLASS MemoryBuf : public Input
-{
-public:
-
-    MemoryBuf (const char *aBuf, size_t aLen, const char *aURI = NULL);
-
-    virtual ~MemoryBuf();
-
-    const char *uri() const;
-
-    int read (char *aBuf, int aLen);
-    uint64_t pos() const;
-    void setPos (uint64_t aPos);
-
-private:
-
-    /* Obscure class data */
-    struct Data;
-    std::auto_ptr <Data> m;
-
-    /* auto_ptr data doesn't have proper copy semantics */
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (MemoryBuf)
 };
 
 class XmlKeyBackend;
@@ -1346,7 +1020,7 @@ public:
      * The Error class represents errors that may happen when parsing or
      * validating the XML document representing the settings tree.
      */
-    class VBOXSETTINGS_CLASS Error : public RuntimeError
+    class VBOXSETTINGS_CLASS Error : public vboxxml::RuntimeError
     {
     public:
 
@@ -1385,7 +1059,7 @@ public:
          * @todo Return by value after implementing the copy semantics for
          * Input subclasses.
          */
-        virtual Input *resolveEntity (const char *aURI, const char *aID) = 0;
+        virtual vboxxml::Input *resolveEntity (const char *aURI, const char *aID) = 0;
     };
 
     /**
@@ -1504,8 +1178,8 @@ public:
      */
     const char *oldVersion() const;
 
-    void rawRead (Input &aInput, const char *aSchema = NULL, int aFlags = 0);
-    void rawWrite (Output &aOutput);
+    void rawRead (vboxxml::Input &aInput, const char *aSchema = NULL, int aFlags = 0);
+    void rawWrite (vboxxml::Output &aOutput);
     void reset();
     Key &rootKey() const;
 
@@ -1540,11 +1214,36 @@ private:
 
 } /* namespace settings */
 
+
+/*
+ * VBoxXml
+ *
+ *
+ */
+
+
+class VBoxXmlBase
+{
+protected:
+    VBoxXmlBase();
+
+    ~VBoxXmlBase();
+
+    xmlParserCtxtPtr m_ctxt;
+};
+
+class VBoxXmlFile : public VBoxXmlBase
+{
+public:
+    VBoxXmlFile();
+    ~VBoxXmlFile();
+};
+
+
+
 #if defined(_MSC_VER)
 #pragma warning (default:4251)
 #endif
-
-#endif /* IN_RING3 */
 
 /** @} */
 
