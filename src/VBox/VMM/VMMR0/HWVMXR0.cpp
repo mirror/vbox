@@ -3433,6 +3433,9 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PV
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
+    /* @todo This code is not guest SMP safe (hyper context) */
+    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+
     pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 

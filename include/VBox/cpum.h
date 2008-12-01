@@ -917,6 +917,7 @@ VMMDECL(int)            CPUMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMMDECL(void)           CPUMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t eflags);
 VMMDECL(int)            CPUMHandleLazyFPU(PVM pVM, PVMCPU pVCpu);
+VMMDECL(int)            CPUMSaveGuestRestoreHostFPUState(PVM pVM, PVMCPU pVCpu);
 VMMDECL(int)            CPUMRestoreHostFPUState(PVM pVM, PVMCPU pVCpu);
 
 /** @name Changed flags

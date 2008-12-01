@@ -208,7 +208,7 @@ ENDPROC     CPUMHandleLazyFPUAsm
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
 ;
 align 16
-BEGINPROC CPUMRestoreHostFPUStateAsm
+BEGINPROC CPUMSaveGuestRestoreHostFPUStateAsm
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -237,8 +237,44 @@ BEGINPROC CPUMRestoreHostFPUStateAsm
 gth_fpu_no:
     xor     eax, eax
     ret
-ENDPROC   CPUMRestoreHostFPUStateAsm
+ENDPROC   CPUMSaveGuestRestoreHostFPUStateAsm
 
+;;
+; Sets the host's FPU/XMM state
+;
+; @returns  0
+; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
+;
+align 16
+BEGINPROC CPUMRestoreHostFPUStateAsm
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     xDX, rcx
+ %else
+    mov     xDX, rdi
+ %endif
+%else
+    mov     xDX, dword [esp + 4]
+%endif
+
+    ; Restore FPU if guest has used it.
+    ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
+    test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
+    jz short gth_fpu_no_2
+
+    mov     xAX, cr0
+    mov     xCX, xAX                    ; save old CR0
+    and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, xAX
+
+    fxrstor [xDX + CPUMCPU.Host.fpu]
+
+    mov     cr0, xCX                    ; and restore old CR0 again
+    and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
+gth_fpu_no_2:
+    xor     eax, eax
+    ret
+ENDPROC   CPUMRestoreHostFPUStateAsm
 
 ;;
 ; Restores the guest's FPU/XMM state
