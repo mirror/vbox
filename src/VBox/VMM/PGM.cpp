@@ -1602,6 +1602,10 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPageSetSearchMisses, STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/HCPageSetSearchMisses", STAMUNIT_OCCURENCES, "Set search misses.");
     STAM_REG(pVM, &pPGM->StatR0DynMapMigrateInvlPg,         STAMTYPE_COUNTER, "/PGM/R0/DynMapMigrateInvlPg",        STAMUNIT_OCCURENCES,     "invlpg count in PGMDynMapMigrateAutoSet.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPage,                  STAMTYPE_COUNTER, "/PGM/R0/DynMapPage",                 STAMUNIT_OCCURENCES,     "Calls to pgmR0DynMapPage");
+    STAM_REG(pVM, &pPGM->StatR0DynMapPageHit0,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Hit0",            STAMUNIT_OCCURENCES,     "Hit at iPage+0");
+    STAM_REG(pVM, &pPGM->StatR0DynMapPageHit1,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Hit1",            STAMUNIT_OCCURENCES,     "Hit at iPage+1");
+    STAM_REG(pVM, &pPGM->StatR0DynMapPageHit2,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Hit2",            STAMUNIT_OCCURENCES,     "Hit at iPage+2");
+    STAM_REG(pVM, &pPGM->StatR0DynMapPageHit3,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Hit3",            STAMUNIT_OCCURENCES,     "Hit at iPage+3");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageInvlPg,            STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/InvlPg",          STAMUNIT_OCCURENCES,     "invlpg count in pgmR0DynMapPageSlow.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlow,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Slow",            STAMUNIT_OCCURENCES,     "Calls to pgmR0DynMapPageSlow - subtract this from pgmR0DynMapPage to get 1st level hits.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLoopHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLoopHits" ,   STAMUNIT_OCCURENCES,     "Hits in the loop path.");
