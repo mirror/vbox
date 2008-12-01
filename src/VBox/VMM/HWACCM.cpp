@@ -818,7 +818,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         }
     }
 
-#if RT_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     if (pVM->fHWACCMEnabled)
     {
         switch(PGMGetHostMode(pVM))
@@ -837,10 +837,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             break;
         }
 
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "VMXGCStartVM64", &pVM->hwaccm.pfnVMXGCStartVM64);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "VMXGCStartVM64", &pVM->hwaccm.s.pfnVMXGCStartVM64);
         AssertMsgRCReturn(rc, ("VMXGCStartVM64 -> rc=%Rrc\n", rc), rc);
 
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hwaccm.pfnSVMGCVMRun64);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hwaccm.s.pfnSVMGCVMRun64);
         AssertMsgRCReturn(rc, ("SVMGCVMRun64 -> rc=%Rrc\n", rc), rc);
     }
 #endif
