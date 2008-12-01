@@ -856,8 +856,8 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
         ASMIntDisable();
         PGMR0DYNMAPPGLVL    PgLvl;
         pgmR0DynMapPagingArrayInit(pThis, &PgLvl);
-        uint32_t const      iEndPage = pThis->cPages + cPages;
-        for (uint32_t iPage = pThis->cPages;
+        uint32_t const      iEndPage = pSeg->iPage + cPages;
+        for (uint32_t iPage = pSeg->iPage;
              iPage < iEndPage;
              iPage++, pbPage += PAGE_SIZE)
         {
@@ -910,7 +910,7 @@ static int pgmR0DynMapAddSeg(PPGMR0DYNMAP pThis, uint32_t cPages)
              * Setup guard pages.
              * (Note: TLBs will be shot down later on.)
              */
-            uint32_t iPage = pThis->cPages;
+            uint32_t iPage = pSeg->iPage;
             while (iPage < iEndPage)
             {
                 for (uint32_t iGPg = 0; iGPg < PGMR0DYNMAP_GUARD_PAGES && iPage < iEndPage; iGPg++, iPage++)
