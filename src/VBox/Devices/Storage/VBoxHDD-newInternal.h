@@ -71,6 +71,11 @@ typedef struct VBOXHDDBACKEND
     PCVDCONFIGINFO paConfigInfo;
 
     /**
+     * Handle of loaded plugin library, NIL_RTLDRMOD for static backends.
+     */
+    RTLDRMOD hPlugin;
+
+    /**
      * Check if a file is valid for the backend.
      *
      * @returns VBox status code.

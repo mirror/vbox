@@ -66,8 +66,6 @@ typedef struct VDIMAGE
      * the backends will never ever see). */
     unsigned        uOpenFlags;
 
-    /** Handle for the shared object / DLL. */
-    RTLDRMOD            hPlugin;
     /** Function pointers for the various backend methods. */
     PCVBOXHDDBACKEND    Backend;
 
@@ -128,18 +126,41 @@ extern VBOXHDDBACKEND g_VhdBackend;
 extern VBOXHDDBACKEND g_ISCSIBackend;
 #endif
 
-static PCVBOXHDDBACKEND aBackends[] =
+static unsigned g_cBackends = 0;
+static PVBOXHDDBACKEND *g_apBackends = NULL;
+static PVBOXHDDBACKEND aStaticBackends[] =
 {
     &g_RawBackend,
     &g_VmdkBackend,
     &g_VDIBackend,
-    &g_VhdBackend,
+    &g_VhdBackend
 #ifdef VBOX_WITH_ISCSI
-    &g_ISCSIBackend,
+    ,&g_ISCSIBackend
 #endif
-    NULL
 };
 
+/**
+ * internal: add several backends.
+ */
+static int vdAddBackends(PVBOXHDDBACKEND *ppBackends, unsigned cBackends)
+{
+    PVBOXHDDBACKEND *pTmp = (PVBOXHDDBACKEND*)RTMemRealloc(g_apBackends,
+           (g_cBackends + cBackends) * sizeof(PVBOXHDDBACKEND));
+    if (RT_UNLIKELY(!pTmp))
+        return VERR_NO_MEMORY;
+    g_apBackends = pTmp;
+    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PVBOXHDDBACKEND));
+    g_cBackends += cBackends;
+    return VINF_SUCCESS;
+}
+
+/**
+ * internal: add single backend.
+ */
+DECLINLINE(int) vdAddBackend(PVBOXHDDBACKEND pBackend)
+{
+    return vdAddBackends(&pBackend, 1);
+}
 
 /**
  * internal: issue error message.
@@ -158,92 +179,23 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
 /**
  * internal: find image format backend.
  */
-static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend,
-                         RTLDRMOD *phPlugin)
+static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend)
 {
     int rc = VINF_SUCCESS;
     PCVBOXHDDBACKEND pBackend = NULL;
-    RTLDRMOD hPlugin = NIL_RTLDRMOD;
 
-    for (unsigned i = 0; aBackends[i] != NULL; i++)
+    if (!g_apBackends)
+        VDInit();
+
+    for (unsigned i = 0; i < g_cBackends; i++)
     {
-        if (!strcmp(pszBackend, aBackends[i]->pszBackendName))
+        if (!strcmp(pszBackend, g_apBackends[i]->pszBackendName))
         {
-            pBackend = aBackends[i];
+            pBackend = g_apBackends[i];
             break;
         }
     }
-
-    /* If no static backend is found try loading a shared module with
-     * pszBackend as filename. */
-    if (!pBackend)
-    {
-        char szSharedLibPath[RTPATH_MAX];
-        char *pszPluginName;
-
-        rc = RTPathAppPrivateArch(szSharedLibPath, sizeof(szSharedLibPath));
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* HDD Format Plugins have VBoxHDD as prefix, prepend it. */
-        RTStrAPrintf(&pszPluginName, "%s/%s%s",
-                     szSharedLibPath, VBOX_HDDFORMAT_PLUGIN_PREFIX, pszBackend);
-        if (!pszPluginName)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        /* Try to load the plugin (RTLdrLoad takes care of the suffix). */
-        rc = SUPR3HardenedLdrLoad(pszPluginName, &hPlugin);
-        if (RT_SUCCESS(rc))
-        {
-            PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad;
-
-            rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME,
-                                (void**)&pfnHDDFormatLoad);
-            if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
-            {
-                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pszPluginName, rc, pfnHDDFormatLoad));
-                if (RT_SUCCESS(rc))
-                    rc = VERR_SYMBOL_NOT_FOUND;
-                goto out;
-            }
-
-            /* Get the function table. */
-            PVBOXHDDBACKEND pBE;
-            rc = pfnHDDFormatLoad(&pBE);
-            if (RT_FAILURE(rc))
-                goto out;
-            /* Check if the sizes match. If not this plugin is too old. */
-            if (pBE->cbSize != sizeof(VBOXHDDBACKEND))
-            {
-                rc = VERR_VDI_UNSUPPORTED_VERSION;
-                goto out;
-            }
-            pBackend = pBE;
-        }
-        else
-        {
-            /* If the backend plugin doesn't exist, don't treat this as an
-             * error. Just return the NULL pointers. */
-            rc = VINF_SUCCESS;
-        }
-
-        RTStrFree(pszPluginName);
-    }
-
-out:
-    if (RT_FAILURE(rc))
-    {
-        if (hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(hPlugin);
-        hPlugin = NIL_RTLDRMOD;
-        pBackend = NULL;
-    }
-
     *ppBackend = pBackend;
-    *phPlugin = hPlugin;
     return rc;
 }
 
@@ -613,6 +565,161 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
 
 
 /**
+ * internal: scans plugin directory and loads the backends have been found.
+ */
+static int vdLoadDynamicBackends()
+{
+    int rc = VINF_SUCCESS;
+    PRTDIR pPluginDir = NULL;
+
+    /* Enumerate plugin backends. */
+    char szPath[RTPATH_MAX];
+    rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* To get all entries with VBoxHDD as prefix. */
+    char *pszPluginFilter;
+    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
+            VBOX_HDDFORMAT_PLUGIN_PREFIX);
+    if (RT_FAILURE(rc))
+    {
+        rc = VERR_NO_MEMORY;
+        return rc;
+    }
+
+    PRTDIRENTRYEX pPluginDirEntry = NULL;
+    size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
+    /* The plugins are in the same directory as the other shared libs. */
+    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+    if (RT_FAILURE(rc))
+    {
+        /* On Windows the above immediately signals that there are no
+         * files matching, while on other platforms enumerating the
+         * files below fails. Either way: no plugins. */
+        goto out;
+    }
+
+    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+    if (!pPluginDirEntry)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+
+    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
+    {
+        RTLDRMOD hPlugin = NIL_RTLDRMOD;
+        PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
+        PVBOXHDDBACKEND pBackend = NULL;
+        char *pszPluginPath = NULL;
+
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            /* allocate new buffer. */
+            RTMemFree(pPluginDirEntry);
+            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
+            /* Retry. */
+            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else if (RT_FAILURE(rc))
+            break;
+
+        /* We got the new entry. */
+        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
+            continue;
+
+        /* Prepend the path to the libraries. */
+        rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
+        if (RT_FAILURE(rc))
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
+            if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
+            {
+                LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
+                if (RT_SUCCESS(rc))
+                    rc = VERR_SYMBOL_NOT_FOUND;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Get the function table. */
+                rc = pfnHDDFormatLoad(&pBackend);
+                if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+                {
+                    pBackend->hPlugin = hPlugin;
+                    vdAddBackend(pBackend);
+                }
+                else
+                    LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
+            }
+            else
+                LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
+
+            if (RT_FAILURE(rc))
+                RTLdrClose(hPlugin);
+        }
+        RTStrFree(pszPluginPath);
+    }
+out:
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    RTStrFree(pszPluginFilter);
+    if (pPluginDirEntry)
+        RTMemFree(pPluginDirEntry);
+    if (pPluginDir)
+        RTDirClose(pPluginDir);
+    return rc;
+}
+
+/**
+ * Initializes HDD backends.
+ *
+ * @returns VBox status code.
+ */
+VBOXDDU_DECL(int) VDInit()
+{
+    int rc = vdAddBackends(aStaticBackends, RT_ELEMENTS(aStaticBackends));
+    if (RT_SUCCESS(rc))
+        rc = vdLoadDynamicBackends();
+    LogRel(("VDInit finished\n"));
+    return rc;
+}
+
+/**
+ * Destroys loaded HDD backends.
+ *
+ * @returns VBox status code.
+ */
+VBOXDDU_DECL(int) VDShutdown()
+{
+    PVBOXHDDBACKEND *pBackends = g_apBackends;
+    unsigned cBackends = g_cBackends;
+
+    if (!pBackends)
+        return VERR_INTERNAL_ERROR;
+
+    g_cBackends = 0;
+    g_apBackends = NULL;
+
+    for (unsigned i = 0; i < cBackends; i++)
+        if (pBackends[i]->hPlugin != NIL_RTLDRMOD)
+            RTLdrClose(pBackends[i]->hPlugin);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
  *
  * @todo this code contains memory leaks, inconsistent (and probably buggy)
@@ -632,193 +739,35 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
     unsigned cEntries = 0;
 
     LogFlowFunc(("cEntriesAlloc=%u pEntries=%#p pcEntriesUsed=%#p\n", cEntriesAlloc, pEntries, pcEntriesUsed));
-    do
+    /* Check arguments. */
+    AssertMsgReturn(cEntriesAlloc,
+                    ("cEntriesAlloc=%u\n", cEntriesAlloc),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pEntries),
+                    ("pEntries=%#p\n", pEntries),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pcEntriesUsed),
+                    ("pcEntriesUsed=%#p\n", pcEntriesUsed),
+                    VERR_INVALID_PARAMETER);
+    if (!g_apBackends)
+        VDInit();
+
+    if (cEntriesAlloc < g_cBackends)
     {
-        /* Check arguments. */
-        AssertMsgBreakStmt(cEntriesAlloc,
-                           ("cEntriesAlloc=%u\n", cEntriesAlloc),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pEntries),
-                           ("pEntries=%#p\n", pEntries),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(pcEntriesUsed),
-                           ("pcEntriesUsed=%#p\n", pcEntriesUsed),
-                           rc = VERR_INVALID_PARAMETER);
+        *pcEntriesUsed = g_cBackends;
+        return VERR_BUFFER_OVERFLOW;
+    }
 
-        /* First enumerate static backends. */
-        for (unsigned i = 0; aBackends[i] != NULL; i++)
-        {
-            char *pszName = RTStrDup(aBackends[i]->pszBackendName);
-            if (!pszName)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-            pEntries[cEntries].pszBackend = pszName;
-            pEntries[cEntries].uBackendCaps = aBackends[i]->uBackendCaps;
-            pEntries[cEntries].papszFileExtensions = aBackends[i]->papszFileExtensions;
-            pEntries[cEntries].paConfigInfo = aBackends[i]->paConfigInfo;
-            cEntries++;
-            if (cEntries >= cEntriesAlloc)
-            {
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-        }
-        if (RT_FAILURE(rc))
-            break;
-
-        /* Then enumerate plugin backends. */
-        char szPath[RTPATH_MAX];
-        rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
-        if (RT_FAILURE(rc))
-            break;
-
-        /* To get all entries with VBoxHDD as prefix. */
-        char *pszPluginFilter;
-        rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
-                          VBOX_HDDFORMAT_PLUGIN_PREFIX);
-        if (RT_FAILURE(rc))
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        /* The plugins are in the same directory as the other shared libs. */
-        rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
-        if (RT_FAILURE(rc))
-        {
-            /* On Windows the above immediately signals that there are no
-             * files matching, while on other platforms enumerating the
-             * files below fails. Either way: no plugins. */
-            break;
-        }
-
-        PRTDIRENTRYEX pPluginDirEntry = NULL;
-        size_t cbPluginDirEntry = sizeof(RTDIRENTRY);
-        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
-        if (!pPluginDirEntry)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
-        {
-            RTLDRMOD hPlugin = NIL_RTLDRMOD;
-            PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
-            PVBOXHDDBACKEND pBackend = NULL;
-            char *pszPluginPath = NULL;
-
-            if (rc == VERR_BUFFER_OVERFLOW)
-            {
-                /* allocate new buffer. */
-                RTMemFree(pPluginDirEntry);
-                pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
-                /* Retry. */
-                rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            else if (RT_FAILURE(rc))
-                break;
-
-            /* We got the new entry. */
-            if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
-                continue;
-
-            /* Prepend the path to the libraries. */
-            rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
-            if (RT_FAILURE(rc))
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-
-            rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
-            if (RT_SUCCESS(rc))
-            {
-                rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-                if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
-                {
-                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
-                    if (RT_SUCCESS(rc))
-                        rc = VERR_SYMBOL_NOT_FOUND;
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    /* Get the function table. */
-                    rc = pfnHDDFormatLoad(&pBackend);
-                    if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
-                    {
-                        char *pszName = RTStrDup(pBackend->pszBackendName);
-                        if (!pszName)
-                        {
-                            rc = VERR_NO_MEMORY;
-                            break;
-                        }
-                        pEntries[cEntries].pszBackend = pszName;
-                        pEntries[cEntries].uBackendCaps = pBackend->uBackendCaps;
-                        unsigned cExts, iExt;
-                        for (cExts=0; pBackend->papszFileExtensions[cExts]; cExts++)
-                            ;
-                        const char **paExts = (const char **)RTMemAlloc((cExts+1) * sizeof(paExts[0])); /** @todo rainy day: fix leak on error. */
-                        if (!paExts)
-                        {
-                            rc = VERR_NO_MEMORY;
-                            break;
-                        }
-                        for (iExt=0; iExt < cExts; iExt++)
-                        {
-                            paExts[iExt] = (const char*)RTStrDup(pBackend->papszFileExtensions[iExt]);
-                            if (!paExts[iExt])
-                            {
-                                rc = VERR_NO_MEMORY;
-                                break;
-                            }
-                        }
-                        paExts[iExt] = NULL;
-                        pEntries[cEntries].papszFileExtensions = paExts;
-                        if (pBackend->paConfigInfo != NULL)
-                        {
-                            /* copy the whole config field! */
-                            rc = VERR_NOT_IMPLEMENTED;
-                            break;
-                        }
-                        pEntries[cEntries].paConfigInfo = NULL;
-                        cEntries++;
-                        if (cEntries >= cEntriesAlloc)
-                        {
-                            rc = VERR_BUFFER_OVERFLOW;
-                            break;
-                        }
-                    }
-                    else
-                        LogFunc(("ignored plugin '%s': pBackend->cbSize=%d rc=%Rrc\n", pszPluginPath, pBackend->cbSize, rc));
-                }
-                else
-                    LogFunc(("ignored plugin '%s': rc=%Rrc\n", pszPluginPath, rc));
-
-                RTLdrClose(hPlugin);
-            }
-            RTStrFree(pszPluginPath);
-        }
-        if (rc == VERR_NO_MORE_FILES)
-            rc = VINF_SUCCESS;
-        RTStrFree(pszPluginFilter);
-        if (pPluginDirEntry)
-            RTMemFree(pPluginDirEntry);
-        if (pPluginDir)
-            RTDirClose(pPluginDir);
-    } while (0);
-    /* Ignore any files which can't be found. Happens e.g. on Windows when
-     * absolutely no plugins are installed (see above). Totally harmless. */
-    if (rc == VERR_FILE_NOT_FOUND)
-        rc = VINF_SUCCESS;
+     for (unsigned i = 0; i < g_cBackends; i++)
+     {
+         pEntries[i].pszBackend = g_apBackends[i]->pszBackendName;
+         pEntries[i].uBackendCaps = g_apBackends[i]->uBackendCaps;
+         pEntries[i].papszFileExtensions = g_apBackends[i]->papszFileExtensions;
+         pEntries[i].paConfigInfo = g_apBackends[i]->paConfigInfo;
+     }
 
     LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
-    *pcEntriesUsed = cEntries;
+    *pcEntriesUsed = g_cBackends;
     return rc;
 }
 
@@ -832,7 +781,31 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
  */
 VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry)
 {
-    return VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pszBackend=%#p pEntry=%#p\n", pszBackend, pEntry));
+    /* Check arguments. */
+    AssertMsgReturn(VALID_PTR(pszBackend),
+                    ("pszBackend=%#p\n", pszBackend),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pEntry),
+                    ("pEntry=%#p\n", pEntry),
+                    VERR_INVALID_PARAMETER);
+    if (!g_apBackends)
+        VDInit();
+
+    /* Go through loaded backends. */
+    for (unsigned i = 0; i < g_cBackends; i++)
+    {
+        if (!strcmp(pszBackend, g_apBackends[i]->pszBackendName))
+        {
+            pEntry->pszBackend = g_apBackends[i]->pszBackendName;
+            pEntry->uBackendCaps = g_apBackends[i]->uBackendCaps;
+            pEntry->papszFileExtensions = g_apBackends[i]->papszFileExtensions;
+            pEntry->paConfigInfo = g_apBackends[i]->paConfigInfo;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 /**
@@ -923,177 +896,41 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
  */
 VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
 {
-    PRTDIR pPluginDir = NULL;
     int rc = VERR_NOT_SUPPORTED;
-    bool fPluginFound = false;
 
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
-    do
+    /* Check arguments. */
+    AssertMsgReturn(VALID_PTR(pszFilename) && *pszFilename,
+                    ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(ppszFormat),
+                    ("ppszFormat=%#p\n", ppszFormat),
+                    VERR_INVALID_PARAMETER);
+
+    if (!g_apBackends)
+        VDInit();
+
+    /* Find the backend supporting this file format. */
+    for (unsigned i = 0; i < g_cBackends; i++)
     {
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
-                           ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(ppszFormat),
-                           ("ppszFormat=%#p\n", ppszFormat),
-                           rc = VERR_INVALID_PARAMETER);
-
-        /* First check if static backends support this file format. */
-        for (unsigned i = 0; aBackends[i] != NULL; i++)
+        if (g_apBackends[i]->pfnCheckIfValid)
         {
-            if (aBackends[i]->pfnCheckIfValid)
-            {
-                rc = aBackends[i]->pfnCheckIfValid(pszFilename);
-                if (RT_SUCCESS(rc))
-                {
-                    fPluginFound = true;
-                    /* Copy the name into the new string. */
-                    char *pszFormat = RTStrDup(aBackends[i]->pszBackendName);
-                    if (!pszFormat)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-                    *ppszFormat = pszFormat;
-                    break;
-                }
-            }
-        }
-        if (fPluginFound)
-            break;
-
-        /* Then check if plugin backends support this file format. */
-        char szPath[RTPATH_MAX];
-        rc = RTPathAppPrivateArch(szPath, sizeof(szPath));
-        if (RT_FAILURE(rc))
-            break;
-
-        /* To get all entries with VBoxHDD as prefix. */
-        char *pszPluginFilter;
-        rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath,
-                          VBOX_HDDFORMAT_PLUGIN_PREFIX);
-        if (RT_FAILURE(rc))
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        /* The plugins are in the same directory as the other shared libs. */
-        rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_FILE_NOT_FOUND)
-            {
-                /* VERR_FILE_NOT_FOUND would be interpreted as the hard
-                 * disk storage unit was not found, so replace with
-                 * VERR_NOT_SUPPORTED which is more meaningful in this case */
-                rc = VERR_NOT_SUPPORTED;
-            }
-            break;
-        }
-
-        PRTDIRENTRYEX pPluginDirEntry = NULL;
-        size_t cbPluginDirEntry = sizeof(RTDIRENTRY);
-        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRY));
-        if (!pPluginDirEntry)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING)) != VERR_NO_MORE_FILES)
-        {
-            RTLDRMOD hPlugin = NIL_RTLDRMOD;
-            PFNVBOXHDDFORMATLOAD pfnHDDFormatLoad = NULL;
-            PVBOXHDDBACKEND pBackend = NULL;
-            char *pszPluginPath = NULL;
-
-            if (rc == VERR_BUFFER_OVERFLOW)
-            {
-                /* allocate new buffer. */
-                RTMemFree(pPluginDirEntry);
-                pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
-                /* Retry. */
-                rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            else if (RT_FAILURE(rc))
-                break;
-
-            /* We got the new entry. */
-            if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
-                continue;
-
-            /* Prepend the path to the libraries. */
-            rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
-            if (RT_FAILURE(rc))
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-
-            rc = SUPR3HardenedLdrLoad(pszPluginPath, &hPlugin);
+            rc = g_apBackends[i]->pfnCheckIfValid(pszFilename);
             if (RT_SUCCESS(rc))
             {
-                rc = RTLdrGetSymbol(hPlugin, VBOX_HDDFORMAT_LOAD_NAME, (void**)&pfnHDDFormatLoad);
-                if (RT_FAILURE(rc) || !pfnHDDFormatLoad)
+                /* Copy the name into the new string. */
+                char *pszFormat = RTStrDup(g_apBackends[i]->pszBackendName);
+                if (!pszFormat)
                 {
-                    LogFunc(("error resolving the entry point %s in plugin %s, rc=%Rrc, pfnHDDFormat=%#p\n", VBOX_HDDFORMAT_LOAD_NAME, pPluginDirEntry->szName, rc, pfnHDDFormatLoad));
-                    if (RT_SUCCESS(rc))
-                        rc = VERR_SYMBOL_NOT_FOUND;
+                    rc = VERR_NO_MEMORY;
+                    break;
                 }
-
-                if (RT_SUCCESS(rc))
-                {
-                    /* Get the function table. */
-                    rc = pfnHDDFormatLoad(&pBackend);
-                    if (RT_SUCCESS(rc) && pBackend->cbSize == sizeof(VBOXHDDBACKEND))
-                    {
-
-                        /* Check if the plugin can handle this file. */
-                        rc = pBackend->pfnCheckIfValid(pszFilename);
-                        if (RT_SUCCESS(rc))
-                        {
-                            fPluginFound = true;
-                            rc = VINF_SUCCESS;
-
-                            /* Report the format name. */
-                            RTPathStripExt(pPluginDirEntry->szName);
-                            AssertBreakStmt(strlen(pPluginDirEntry->szName) > VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH,
-                                            rc = VERR_INVALID_NAME);
-
-                            char *pszFormat = NULL;
-                            pszFormat = RTStrDup(pPluginDirEntry->szName + VBOX_HDDFORMAT_PLUGIN_PREFIX_LENGTH);
-                            if (!pszFormat)
-                                rc = VERR_NO_MEMORY;
-
-                            *ppszFormat = pszFormat;
-                        }
-                    }
-                }
-                else
-                    pBackend = NULL;
-
-                RTLdrClose(hPlugin);
-            }
-            RTStrFree(pszPluginPath);
-
-            /*
-             * We take the first plugin which can handle this file.
-             */
-            if (fPluginFound)
+                *ppszFormat = pszFormat;
+                rc = VINF_SUCCESS;
                 break;
+            }
         }
-        if (rc == VERR_NO_MORE_FILES)
-            rc = VERR_NOT_SUPPORTED;
-
-        RTStrFree(pszPluginFilter);
-        if (pPluginDirEntry)
-            RTMemFree(pPluginDirEntry);
-        if (pPluginDir)
-            RTDirClose(pPluginDir);
-    } while (0);
+    }
 
     LogFlowFunc(("returns %Rrc *ppszFormat=\"%s\"\n", rc, *ppszFormat));
     return rc;
@@ -1160,7 +997,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
         pImage->pVDIfsImage = pVDIfsImage;
 
-        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        rc = vdFindBackend(pszBackend, &pImage->Backend);
         if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
@@ -1312,9 +1149,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
     {
         if (pImage)
         {
-            if (pImage->hPlugin != NIL_RTLDRMOD)
-                RTLdrClose(pImage->hPlugin);
-
             if (pImage->pszFilename)
                 RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
@@ -1438,7 +1272,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
         pImage->pVDIfsImage = pVDIfsImage;
 
-        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        rc = vdFindBackend(pszBackend, &pImage->Backend);
         if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
@@ -1545,9 +1379,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
     {
         if (pImage)
         {
-            if (pImage->hPlugin != NIL_RTLDRMOD)
-                RTLdrClose(pImage->hPlugin);
-
             if (pImage->pszFilename)
                 RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
@@ -1640,7 +1471,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
             break;
         }
 
-        rc = vdFindBackend(pszBackend, &pImage->Backend, &pImage->hPlugin);
+        rc = vdFindBackend(pszBackend, &pImage->Backend);
         if (RT_FAILURE(rc))
             break;
         if (!pImage->Backend)
@@ -1738,9 +1569,6 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
     if (RT_FAILURE(rc))
     {
-        if (pImage->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pImage->hPlugin);
-
         if (pImage)
         {
             if (pImage->pszFilename)
@@ -2102,9 +1930,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             vdRemoveImageFromList(pDiskFrom, pImageFrom);
             pImageFrom->pvBackendData = NULL;
 
-            if (pImageFrom->hPlugin != NIL_RTLDRMOD)
-                RTLdrClose(pImageFrom->hPlugin);
-
             if (pImageFrom->pszFilename)
                 RTStrFree(pImageFrom->pszFilename);
 
@@ -2229,9 +2054,6 @@ movefail:
             pImageFrom->pvBackendData = NULL;
 
             /* Free remaining resources. */
-            if (pImageFrom->hPlugin != NIL_RTLDRMOD)
-                RTLdrClose(pImageFrom->hPlugin);
-
             if (pImageFrom->pszFilename)
                 RTStrFree(pImageFrom->pszFilename);
 
@@ -2250,9 +2072,6 @@ movefail:
         pImageTo->pvBackendData = NULL;
 
         /* Free remaining resources. */
-        if (pImageTo->hPlugin != NIL_RTLDRMOD)
-            RTLdrClose(pImageTo->hPlugin);
-
         if (pImageTo->pszFilename)
             RTStrFree(pImageTo->pszFilename);
 
@@ -2306,11 +2125,6 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         /* Close (and optionally delete) image. */
         rc = pImage->Backend->pfnClose(pImage->pvBackendData, fDelete);
         /* Free remaining resources related to the image. */
-        if (pImage->hPlugin != NIL_RTLDRMOD)
-        {
-            RTLdrClose(pImage->hPlugin);
-            pImage->hPlugin = NIL_RTLDRMOD;
-        }
         RTStrFree(pImage->pszFilename);
         RTMemFree(pImage);
 
@@ -2400,11 +2214,6 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
             /* Free remaining resources related to the image. */
-            if (pImage->hPlugin != NIL_RTLDRMOD)
-            {
-                RTLdrClose(pImage->hPlugin);
-                pImage->hPlugin = NIL_RTLDRMOD;
-            }
             RTStrFree(pImage->pszFilename);
             RTMemFree(pImage);
             pImage = pPrev;
