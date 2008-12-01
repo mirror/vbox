@@ -1174,9 +1174,9 @@ STDMETHODIMP VirtualBox::GetHardDisk2 (INPTR GUIDPARAM aId,
 STDMETHODIMP VirtualBox::FindHardDisk2 (INPTR BSTR aLocation,
                                         IHardDisk2 **aHardDisk)
 {
-   if (!aLocation)
+    if (!aLocation)
         return E_INVALIDARG;
-   if (!aHardDisk)
+    if (!aHardDisk)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -2701,7 +2701,7 @@ findHardDisk2 (const Guid *aId, const BSTR aLocation,
         }
     }
 
-    HRESULT rc = result == 0 ? S_OK : E_INVALIDARG;
+    HRESULT rc = result == 0 ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
 
     if (aSetError && result != 0)
     {
@@ -3468,7 +3468,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage2 *aImage,
 
     if (!conflict.isNull())
     {
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_FILE_ERROR,
             tr ("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aImage->locationFull().raw(), aImage->id().raw(),
