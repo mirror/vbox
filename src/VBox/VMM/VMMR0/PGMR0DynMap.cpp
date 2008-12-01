@@ -1176,6 +1176,9 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
      * Check if any of the first 5 pages are unreferenced since the caller
      * already has made sure they aren't matching.
      */
+#ifdef VBOX_WITH_STATISTICS
+    bool                fLooped = false;
+#endif
     uint32_t const      cPages  = pThis->cPages;
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
     uint32_t            iFreePage;
@@ -1211,8 +1214,19 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
                 return UINT32_MAX;
         }
         STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLoopMisses);
+#ifdef VBOX_WITH_STATISTICS
+        fLooped = true;
+#endif
     }
     Assert(iFreePage < cPages);
+
+#ifdef VBOX_WITH_STATISTICS
+    /* Check for lost hits. */
+    if (!fLooped)
+        for (uint32_t iPage2 = (iPage + 5) % cPages; iPage2 != iPage; iPage2 = (iPage2 + 1) % cPages)
+            if (paPages[iPage2].HCPhys == HCPhys)
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLostHits);
+#endif
 
     /*
      * Setup the new entry.
@@ -1340,7 +1354,11 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
     /*
      * Do the actual invalidation outside the spinlock.
      */
-    ASMInvalidatePage(pvPage);
+    if (fInvalidateIt)
+    {
+        STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageInvlPg);
+        ASMInvalidatePage(pvPage);
+    }
 
     *ppvPage = pvPage;
     return iPage;
@@ -1570,6 +1588,7 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                 {
                     RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
                     ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+                    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapMigrateInvlPg);
                 }
             }
         }
