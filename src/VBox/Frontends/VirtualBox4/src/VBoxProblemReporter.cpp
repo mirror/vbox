@@ -1116,6 +1116,8 @@ bool VBoxProblemReporter::confirmReleaseMedium (QWidget *aParent,
 bool VBoxProblemReporter::confirmRemoveMedium (QWidget *aParent,
                                                const VBoxMedium &aMedium)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     QString msg =
         tr ("<p>Are you sure you want to remove the %1 "
             "<nobr><b>%2</b></nobr> from the list of known media?</p>")
