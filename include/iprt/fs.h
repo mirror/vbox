@@ -55,8 +55,8 @@ __BEGIN_DECLS
  * synthesize it from the one given if it requires it.
  *
  * Both sets match their x86 ABIs, the DOS/NT one is simply shifted
- * up 16 bits. The DOS/NT range is bits 16 to 31 inclusivly. The
- * Unix range is bits 0 to 15 (inclusivly).
+ * up 16 bits. The DOS/NT range is bits 16 to 31 inclusively. The
+ * Unix range is bits 0 to 15 (inclusively).
  *
  * @{
  */
