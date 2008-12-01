@@ -4158,7 +4158,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     if (aRegistered)
     {
         if (mData->mRegistered)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("The machine '%ls' with UUID {%s} is already registered"),
                 mUserData->mName.raw(),
                 mData->mUuid.toString().raw());
@@ -4166,7 +4166,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
     else
     {
         if (mData->mMachineState == MachineState_Saved)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Cannot unregister the machine '%ls' because it "
                     "is in the Saved state"),
                 mUserData->mName.raw());
@@ -4175,19 +4175,19 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
         if (mData->mFirstSnapshot)
             snapshotCount = mData->mFirstSnapshot->descendantCount() + 1;
         if (snapshotCount)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Cannot unregister the machine '%ls' because it "
                     "has %d snapshots"),
                 mUserData->mName.raw(), snapshotCount);
 
         if (mData->mSession.mState != SessionState_Closed)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Cannot unregister the machine '%ls' because it has an "
                     "open session"),
                 mUserData->mName.raw());
 
         if (mHDData->mAttachments.size() != 0)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Cannot unregister the machine '%ls' because it "
                     "has %d hard disks attached"),
                 mUserData->mName.raw(), mHDData->mAttachments.size());
