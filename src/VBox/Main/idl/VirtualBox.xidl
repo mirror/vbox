@@ -269,55 +269,55 @@
 
   <result name="VBOX_E_OBJECT_NOT_FOUND" value="0x80BB0001">
     <desc>
-       Object corresponding to the supplied arguments does not exist.
+      Object corresponding to the supplied arguments does not exist.
     </desc>
   </result>
 
   <result name="VBOX_E_INVALID_VM_STATE" value="0x80BB0002">
     <desc>
-       Current virtual machine state prevents the operation.
+      Current virtual machine state prevents the operation.
     </desc>
   </result>
 
   <result name="VBOX_E_VM_ERROR" value="0x80BB0003">
     <desc>
-       Virtual machine error occurred attempting the operation.
+      Virtual machine error occurred attempting the operation.
     </desc>
   </result>
 
   <result name="VBOX_E_FILE_ERROR" value="0x80BB0004">
     <desc>
-       File not accessible or erroneous file contents.
+      File not accessible or erroneous file contents.
     </desc>
   </result>
 
   <result name="VBOX_E_IPRT_ERROR" value="0x80BB0005">
     <desc>
-       Runtime subsystem error.
+      Runtime subsystem error.
     </desc>
   </result>
 
   <result name="VBOX_E_PDM_ERROR" value="0x80BB0006">
     <desc>
-       Pluggable Device Manager error.
+      Pluggable Device Manager error.
     </desc>
   </result>
 
   <result name="VBOX_E_INVALID_OBJECT_STATE" value="0x80BB0007">
     <desc>
-       Current object state prohibits operation.
+      Current object state prohibits operation.
     </desc>
   </result>
 
   <result name="VBOX_E_HOST_ERROR" value="0x80BB0008">
     <desc>
-       Host operating system related error.
+      Host operating system related error.
     </desc>
   </result>
 
   <result name="VBOX_E_NOT_SUPPORTED" value="0x80BB0009">
     <desc>
-       Requested operation is not supported.
+      Requested operation is not supported.
     </desc>
   </result>
 
@@ -1717,6 +1717,11 @@
         installation, i.e. it must be previously created by
         <link to="#createHardDisk2()"/> or opened by <link
         to="#openHardDisk2()"/>, or attached to some known virtual machine.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No hard disk object matching @a id found.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to look for.</desc>
@@ -1748,6 +1753,11 @@
         folder</link> will be prepended to the file name before searching. Note
         that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No hard disk object matching @a location found.
+        </result>
+
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>Location string to search for.</desc>
@@ -1773,8 +1783,13 @@
         of the location string.
 
         <note>
-          Currently, only ISO CD/DVD images are supported by VirtualBox.
+          Currently only ISO 9960 CD/DVD images are supported by VirtualBox.
         </note>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Image conflicts with another in the media registry.
+        </result>
+
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>
