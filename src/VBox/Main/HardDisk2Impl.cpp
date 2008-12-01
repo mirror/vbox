@@ -2436,7 +2436,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
         Utf8Str locationFull;
         int vrc = mVirtualBox->calculateFullPath (location, locationFull);
         if (RT_FAILURE (vrc))
-            return setError (E_FAIL,
+            return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
                 location.raw(), vrc);
 
@@ -2464,7 +2464,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
             }
 
             if (RT_FAILURE (vrc))
-                return setError (E_FAIL,
+                return setError (VBOX_E_IPRT_ERROR,
                     tr ("Could not get the storage format of the hard disk "
                         "'%s' (%Rrc)"), locationFull.raw(), vrc);
 
@@ -2521,7 +2521,7 @@ HRESULT HardDisk2::setFormat (const BSTR aFormat)
         unconst (mm.formatObj)
             = mVirtualBox->systemProperties()->hardDiskFormat (aFormat);
         if (mm.formatObj.isNull())
-            return setError (VBOX_E_OBJECT_NOT_FOUND,
+            return setError (E_INVALIDARG,
                 tr ("Invalid hard disk storage format '%ls'"), aFormat);
 
         /* reference the format permanently to prevent its unexpected

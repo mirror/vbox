@@ -1685,6 +1685,18 @@
         Note that the format of the location string is storage format specific.
         See <link to="IMedium::location"/>, IHardDisk2 and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
+
+
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid hard disk storage file location.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not get hard disk storage format.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid hard disk storage format.
+        </result>
+
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>
