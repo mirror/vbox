@@ -1283,6 +1283,8 @@ void VBoxProblemReporter::
 cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
                      const VBoxMedium &aMedium, const COMResult &aResult)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to unmount the %1 <nobr><b>%2</b></nobr> "
             "from the machine <b>%3</b>.")
@@ -1296,6 +1298,8 @@ void VBoxProblemReporter::cannotOpenMedium (
     QWidget *aParent, const CVirtualBox &aVBox,
     VBoxDefs::MediaType aType, const QString &aLocation)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to open the %1 <nobr><b>%2</b></nobr>.")
             .arg (toAccusative (aType))
@@ -1306,6 +1310,8 @@ void VBoxProblemReporter::cannotOpenMedium (
 void VBoxProblemReporter::cannotCloseMedium (
     QWidget *aParent, const VBoxMedium &aMedium, const COMResult &aResult)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to close the %1 <nobr><b>%2</b></nobr>.")
             .arg (toAccusative (aMedium.type()))
