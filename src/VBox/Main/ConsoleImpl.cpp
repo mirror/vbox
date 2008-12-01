@@ -2021,7 +2021,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
      */
     if (mMachineState != MachineState_Running &&
         mMachineState != MachineState_Paused)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot attach a USB device to the machine which is not running "
                 "(machine state: %d)"), mMachineState);
 
@@ -2033,7 +2033,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     PPDMIBASE pBase = NULL;
     int vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
     if (VBOX_FAILURE (vrc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_PDM_ERROR,
             tr ("The virtual machine does not have a USB controller"));
 
     /* leave the lock because the USB Proxy service may call us back
@@ -2047,7 +2047,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
     return rc;
 
 #else   /* !VBOX_WITH_USB */
-    return setError (E_FAIL,
+    return setError (VBOX_E_PDM_ERROR,
         tr ("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
@@ -2108,9 +2108,8 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 
 
 #else   /* !VBOX_WITH_USB */
-    return setError (E_INVALIDARG,
-        tr ("USB device with UUID {%RTuuid} is not attached to this machine"),
-        Guid (aId).raw());
+    return setError (VBOX_E_PDM_ERROR,
+        tr ("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
 

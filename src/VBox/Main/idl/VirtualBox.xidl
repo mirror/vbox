@@ -4827,6 +4827,9 @@
     <method name="getDeviceActivity">
       <desc>
         Gets the current activity type of a given device or device group.
+        <result name="E_INVALIDARG">
+          Invalid device type.
+        </result>
       </desc>
       <param name="type" type="DeviceType" dir="in"/>
       <param name="activity" type="DeviceActivity" dir="return"/>
@@ -4848,6 +4851,12 @@
         be returned if the host computer refuses to release it for some reason.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither Running nor Paused.
+        </result>
+        <result name="VBOX_E_PDM_ERROR">
+          Virtual machine does not have a USB controller.
+        </result>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the host USB device to attach.</desc>
@@ -4865,6 +4874,13 @@
         a possible automatic re-attachment.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
+
+        <result name="VBOX_E_PDM_ERROR">
+          Virtual machine does not have a USB controller.
+        </result>
+        <result name="E_INVALIDARG">
+          USB device not attached to this virtual machine.
+        </result>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the USB device to detach.</desc>
