@@ -324,7 +324,8 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     pThis->pDrvIns                      = pDrvIns;
     pThis->File                         = NIL_RTFILE;
-    pThis->StartNanoTS                  = /*RTTimeProgramNanoTS() - */ RTTimeNanoTS();
+    /* The pcap file *must* start at time offset 0,0. */
+    pThis->StartNanoTS                  = RTTimeNanoTS() - RTTimeProgramNanoTS();
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNetSnifferQueryInterface;
     /* INetworkConnector */
@@ -413,8 +414,9 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     /*
      * Write pcap header.
+     * Some time is done since capturing pThis->StartNanoTS so capture the current time again.
      */
-    PcapFileHdr(pThis->File, pThis->StartNanoTS);
+    PcapFileHdr(pThis->File, RTTimeNanoTS());
 
     return VINF_SUCCESS;
 }
