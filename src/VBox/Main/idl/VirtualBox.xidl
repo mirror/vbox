@@ -303,9 +303,9 @@
     </desc>
   </result>
 
-  <result name="VBOX_E_OBJECT_IN_USE" value="0x80BB0007">
+  <result name="VBOX_E_INVALID_OBJECT_STATE" value="0x80BB0007">
     <desc>
-       Operation prohibited because object is in use.
+       Current object state prohibits operation.
     </desc>
   </result>
 
