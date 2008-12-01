@@ -43,12 +43,15 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The max size of the mapping cache (in pages). */
-#define PGMR0DYNMAP_MAX_PAGES               ((8*_1M) >> PAGE_SHIFT)
+#define PGMR0DYNMAP_MAX_PAGES               ((16*_1M) >> PAGE_SHIFT)
 /** The small segment size that is adopted on out-of-memory conditions with a
  * single big segment. */
 #define PGMR0DYNMAP_SMALL_SEG_PAGES         128
 /** The number of pages we reserve per CPU. */
-#define PGMR0DYNMAP_PAGES_PER_CPU           64
+#define PGMR0DYNMAP_PAGES_PER_CPU           256
+/** The minimum number of pages we reserve per CPU.
+ * This must be equal or larger than the autoset size.  */
+#define PGMR0DYNMAP_PAGES_PER_CPU_MIN       32
 /** The number of guard pages.
  * @remarks Never do tuning of the hashing or whatnot with a strict build!  */
 #if defined(VBOX_STRICT)
@@ -533,11 +536,11 @@ static uint32_t pgmR0DynMapCalcNewSize(PPGMR0DYNMAP pThis, uint32_t *pcMinPages)
 {
     Assert(pThis->cPages <= PGMR0DYNMAP_MAX_PAGES);
 
-    /* cCpus * PGMR0DYNMAP_PAGES_PER_CPU (/2). */
+    /* cCpus * PGMR0DYNMAP_PAGES_PER_CPU(_MIN). */
     RTCPUID     cCpus     = RTMpGetCount();
     AssertReturn(cCpus > 0 && cCpus <= RTCPUSET_MAX_CPUS, 0);
-    uint32_t    cPages    = cCpus *  PGMR0DYNMAP_PAGES_PER_CPU;
-    uint32_t    cMinPages = cCpus * (PGMR0DYNMAP_PAGES_PER_CPU / 2);
+    uint32_t    cPages    = cCpus * PGMR0DYNMAP_PAGES_PER_CPU;
+    uint32_t    cMinPages = cCpus * PGMR0DYNMAP_PAGES_PER_CPU_MIN;
 
     /* adjust against cMaxLoad. */
     AssertMsg(pThis->cMaxLoad <= PGMR0DYNMAP_MAX_PAGES, ("%#x\n", pThis->cMaxLoad));
@@ -1173,7 +1176,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlow);
 
     /*
-     * Check if any of the first 4 pages are unreferenced since the caller
+     * Check if any of the first 3 pages are unreferenced since the caller
      * already has made sure they aren't matching.
      */
 #ifdef VBOX_WITH_STATISTICS
@@ -1188,14 +1191,12 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         iFreePage   = (iPage + 1) % cPages;
     else if (!paPages[(iPage + 2) % cPages].cRefs)
         iFreePage   = (iPage + 2) % cPages;
-    else if (!paPages[(iPage + 3) % cPages].cRefs)
-        iFreePage   = (iPage + 3) % cPages;
     else
     {
         /*
          * Search for an unused or matching entry.
          */
-        iFreePage = (iPage + 4) % cPages;
+        iFreePage = (iPage + 3) % cPages;
         for (;;)
         {
             if (paPages[iFreePage].HCPhys == HCPhys)
@@ -1221,7 +1222,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 #if 0 //def VBOX_WITH_STATISTICS
     /* Check for lost hits. */
     if (!fLooped)
-        for (uint32_t iPage2 = (iPage + 4) % cPages; iPage2 != iPage; iPage2 = (iPage2 + 1) % cPages)
+        for (uint32_t iPage2 = (iPage + 3) % cPages; iPage2 != iPage; iPage2 = (iPage2 + 1) % cPages)
             if (paPages[iPage2].HCPhys == HCPhys)
                 STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLostHits);
 #endif
@@ -1277,8 +1278,8 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
 
     /*
      * Find an entry, if possible a matching one. The HCPhys address is hashed
-     * down to a page index, collisions are handled by linear searching. Optimize
-     * for a hit in the first 4 pages.
+     * down to a page index, collisions are handled by linear searching.
+     * Optimized for a hit in the first 3 pages.
      *
      * To the cheap hits here and defer the tedious searching and inserting
      * to a helper function.
@@ -1306,20 +1307,11 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
             }
             else
             {
-                iPage2 = (iPage + 3) % cPages;
-                if (paPages[iPage2].HCPhys == HCPhys)
+                iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
+                if (RT_UNLIKELY(iPage == UINT32_MAX))
                 {
-                    iPage = iPage2;
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageHit3);
-                }
-                else
-                {
-                    iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
-                    if (RT_UNLIKELY(iPage == UINT32_MAX))
-                    {
-                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-                        return iPage;
-                    }
+                    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                    return iPage;
                 }
             }
         }
