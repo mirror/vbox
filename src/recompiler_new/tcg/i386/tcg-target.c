@@ -428,13 +428,20 @@ static void tcg_out_brcond(TCGContext *s, int cond,
 }
 
 #ifdef VBOX
-DECLINLINE(void) tcg_out_long_call(TCGContext *s, tcg_target_long dst) 
+DECLINLINE(void) 
+tcg_out_long_call(TCGContext *s, void* dst) 
 {
-    intptr_t disp = dst - (tcg_target_long)s->code_ptr - 5;
+    intptr_t disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
     tcg_out8(s,  0xe8); /* call disp32 */
     tcg_out32(s, disp); /* disp32 */
 }
-
+DECLINLINE(void) 
+tcg_out_long_jmp(TCGContext *s, void* dst) 
+{
+    intptr_t disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
+    tcg_out8(s,  0xe9); /* jmp disp32 */
+    tcg_out32(s, disp); /* disp32 */
+}
 #endif /* VBOX */
 
 
@@ -538,9 +545,50 @@ static void *vbox_st_helpers[] = {
     remR3PhysWriteU64
 };
 
+#ifdef RT_OS_DARWIN
 static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
                                    int addr_reg, 
-                                   int data_reg, int data_reg2) {
+                                   int data_reg, int data_reg2) 
+{
+    int useReg2 = ((index & 3) == 3);
+
+    /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
+    /* out parameter (address), note that phys address is always 64-bit */
+    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
+    
+    tcg_out8(s, 0xf7); tcg_out8(s, 0xc4); tcg_out32(s, 0xf); /* test $0xf, %esp */
+    tcg_out8(s, 0x74); tcg_out8(s, 0x4); /* je 1 */ 
+    tcg_out8(s, 0x8d);  tcg_out8(s, 0x64);  tcg_out8(s, 0x24);  tcg_out8(s, 0xf8); 	/* lea    -0x8(%esp),%esp */
+   /* 1: */
+    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
+    tcg_out_push(s, addr_reg);
+
+    tcg_out8(s, 0xe8);  tcg_out32(s, 0); /* call 2 */
+   /* 2: */
+    tcg_out8(s, 0x74); tcg_out8(s, 0x6); /* je 3 */ 
+    tcg_out8(s, 0x83); tcg_out8(s, 0x04); tcg_out8(s, 0x24); tcg_out8(s, 0x11); /* addl   $0x11,(%esp) */
+    tcg_out8(s, 0xeb); tcg_out8(s, 0x04); /* jmp 4 */
+   /* 3: */
+    tcg_out8(s, 0x83); tcg_out8(s, 0x04); tcg_out8(s, 0x24); tcg_out8(s, 0x14); /* addl   $0x14,(%esp) */
+   /* 4: */
+    tcg_out_long_jmp(s, vbox_ld_helpers[index]);
+
+   /* return point 1: clear both parameter and alignment */ 
+    tcg_out8(s, 0x83);  tcg_out8(s, 0xc4);   tcg_out8(s, 0x08); /* add    $0x8,%esp */
+   /* return point 2: clear only parameter */ 
+    tcg_out8(s, 0x83);  tcg_out8(s, 0xc4);   tcg_out8(s, 0x08); /* add    $0x8,%esp */
+    /* mov %eax, data_reg */
+    tcg_out_mov(s, data_reg, TCG_REG_EAX);
+
+    /* returned 64-bit value */
+    if (useReg2)
+      tcg_out_mov(s, data_reg2, TCG_REG_EDX);
+}
+#else
+static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
+                                   int addr_reg, 
+                                   int data_reg, int data_reg2) 
+{
     int useReg2 = ((index & 3) == 3);
 
     /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
@@ -549,7 +597,7 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
     tcg_out_push(s, addr_reg);
 
-    tcg_out_long_call(s, (tcg_target_long)vbox_ld_helpers[index]);
+    tcg_out_long_call(s, vbox_ld_helpers[index]);
 
     /* mov %eax, data_reg */
     tcg_out_mov(s, data_reg, TCG_REG_EAX);
@@ -561,6 +609,8 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     /* clean stack after us */
     tcg_out_addi(s, TCG_REG_ESP, 8);
 }
+#endif
+
 
 static void tcg_out_vbox_phys_write(TCGContext *s, int index, 
                                     int addr_reg, 
@@ -579,7 +629,7 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index,
     tcg_out_push(s, addr_reg);
 
     /* call it */
-    tcg_out_long_call(s, (tcg_target_long)vbox_st_helpers[index]);
+    tcg_out_long_call(s, vbox_st_helpers[index]);
     
     /* clean stack after us */
     tcg_out_addi(s, TCG_REG_ESP, 8 + (useReg2 ? 8 : 4));
@@ -1325,8 +1375,8 @@ static int tcg_target_callee_save_regs[] = {
 #else
     TCG_REG_EBP,
     TCG_REG_EBX,
-    TCG_REG_ESI, /* currently used for the global env, so no
-                    need to save */
+    /* TCG_REG_ESI ,*/ /* currently used for the global env, so no
+                          need to save */
     TCG_REG_EDI,
 #endif
 };
