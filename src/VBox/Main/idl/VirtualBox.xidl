@@ -49,10 +49,10 @@
  *    (Main API TypeLib block for the WiX installer)
  *
  * 8. src/VBox/Runtime/common/err/errmsgvboxcom.xsl =>
- *    out/<platform>/obj/src/VBox/Runtime/errmsgvboxcomdata.h
+ *    out/<platform>/obj/Runtime/errmsgvboxcomdata.h
  *    (<result> extraction for the %Rhrc format specifier)
  *
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -104,7 +104,7 @@
 
   The <tt>%VirtualBox.VirtualBox</tt> class is a singleton. This means that
   there can be only one object of this class on the local machine at any given
-  time. This object is a parent of many other objects ih the VirtualBox COM
+  time. This object is a parent of many other objects in the VirtualBox COM
   library and lives in the VBoxSVC process. In fact, when you create an instance
   of the <tt>VirtualBox.VirtualBox</tt>, the COM subsystem checks if the VBoxSVC
   process is already running, starts it if not, and returns you a reference to
