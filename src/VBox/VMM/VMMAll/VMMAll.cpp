@@ -31,7 +31,6 @@
 #include <VBox/hwaccm.h>
 
 
-#ifndef IN_RING0
 /**
  * Gets the bottom of the hypervisor stack - RC Ptr.
  *
@@ -45,7 +44,6 @@ RTRCPTR VMMGetStackRC(PVM pVM)
 {
     return (RTRCPTR)pVM->vmm.s.pbEMTStackBottomRC;
 }
-#endif /* !IN_RING0 */
 
 
 /**

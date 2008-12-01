@@ -1039,7 +1039,7 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVM);
-    pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx);
+    pVCpu->hwaccm.s.svm.pfnVMRun(pVM->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVM);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, x);
 
@@ -2265,7 +2265,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     return VINF_SUCCESS;
 }
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 /**
  * Prepares for and executes VMRUN (64 bits guests from a 32 bits hosts).
  *
@@ -2273,12 +2273,41 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  * @param   pVMCBHostPhys   Physical address of host VMCB.
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Guest context.
+ * @param   pVM             The VM to operate on.
+ * @param   pVCpu           The VMCPU to operate on.
  */
-DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
+DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    /* @todo This code is not guest SMP safe (hyper context) */
-////    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
-    return VERR_NOT_IMPLEMENTED;
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64);
 }
 
-#endif /* HC_ARCH_BITS == 32 */
+/**
+ * Executes the specified handler in 64 mode
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ * @param   pfnHandler  RC handler
+ */
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler)
+{
+    int             rc;
+    RTCCUINTREG     uFlags;
+
+    /* @todo This code is not guest SMP safe (hyper context) */
+    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+
+    uFlags = ASMIntDisableFlags();
+
+    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
+    CPUMSetHyperEIP(pVM, pfnHandler);
+
+    /* Call switcher. */
+    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
+
+    ASMSetFlags(uFlags);
+    return rc;
+}
+
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */

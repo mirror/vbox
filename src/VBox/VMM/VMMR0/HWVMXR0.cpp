@@ -3416,7 +3416,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
     }
 }
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 /**
  * Prepares for and executes VMLAUNCH (64 bits guest mode)
  *
@@ -3427,6 +3427,20 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  * @param   pVCpu       The VMCPU to operate on.
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
+{
+    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64);
+}
+
+/**
+ * Executes the specified handler in 64 mode
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ * @param   pfnHandler  RC handler
+ */
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler)
 {
     int             rc, rc2;
     RTCCUINTREG     uFlags;
@@ -3446,8 +3460,12 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PV
     VMXDisable();
 
     uFlags = ASMIntDisableFlags();
+
+    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
+    CPUMSetHyperEIP(pVM, pfnHandler);
+
     /* Call switcher. */
-    rc = VERR_ACCESS_DENIED;
+    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
 
     ASMSetFlags(uFlags);
 
@@ -3467,6 +3485,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PV
     VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
     return rc;
 }
-#endif
+
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 

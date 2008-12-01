@@ -166,6 +166,16 @@ typedef union
 } VMX_CAPABILITY;
 
 /**
+ * Switcher function, HC to RC.
+ *
+ * @param   pVM         The VM handle.
+ * @returns Return code indicating the action to take.
+ */
+typedef DECLASMTYPE(int) FNHWACCMSWITCHERHC(PVM pVM);
+/** Pointer to switcher function. */
+typedef FNHWACCMSWITCHERHC *PFNHWACCMSWITCHERHC;
+
+/**
  * HWACCM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
  */
@@ -201,7 +211,7 @@ typedef struct HWACCM
 
 #if HC_ARCH_BITS == 32
     /** 32 to 64 bits switcher entrypoint. */
-    RTR0PTR                     pfnHost32ToGuest64R0;
+    R0PTRTYPE(PFNHWACCMSWITCHERHC) pfnHost32ToGuest64R0;
 
     /* AMD-V 64 bits vmrun handler */
     RTRCPTR                     pfnSVMGCVMRun64;
@@ -210,10 +220,10 @@ typedef struct HWACCM
     RTRCPTR                     pfnVMXGCStartVM64;
 
     /* RC handler to setup the 64 bits FPU state. */
-    RTRCPTR                     pfnSetupFPU64;
+    RTRCPTR                     pfnSaveGuestFPU64;
 
     /* RC handler to setup the 64 bits debug state. */
-    RTRCPTR                     pfnSetupDebug64;
+    RTRCPTR                     pfnSaveGuestDebug64;
 #endif
 
     struct
@@ -441,7 +451,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pVMCB;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx));
+        DECLR0CALLBACKMEMBER(int, pfnVMRun,(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu));
 
     } svm;
 

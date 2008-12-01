@@ -139,6 +139,17 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 
+/**
+ * Executes the specified handler in 64 mode
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ * @param   pfnHandler  RC handler
+ */
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler);
+
 #define VMX_WRITE_SELREG(REG, reg) \
 {                                                                                               \
         rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_##REG,      pCtx->reg);                         \
