@@ -4336,6 +4336,86 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
     }
 }
 
+/**
+ * Info handler, device version. Dumps VGA Sequencer registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoSR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    unsigned    i;
+
+    pHlp->pfnPrintf(pHlp, "VGA Sequencer (3C5): SR index 3C4:%02X\n", s->sr_index);
+    Assert(sizeof(s->sr) >= 8);
+    for (i = 0; i < 5; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " SR%02X:%02X", i, s->sr[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+/**
+ * Info handler, device version. Dumps VGA CRTC registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoCR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    unsigned    i;
+
+    pHlp->pfnPrintf(pHlp, "VGA CRTC (3D5): CRTC index 3D4:%02X\n", s->cr_index);
+    Assert(sizeof(s->cr) >= 24);
+    for (i = 0; i < 10; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " CR%02X:%02X", i, s->cr[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+    for (i = 10; i < 20; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " CR%02X:%02X", i, s->cr[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+    for (i = 20; i < 25; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " CR%02X:%02X", i, s->cr[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+/**
+ * Info handler, device version. Dumps VGA Sequencer registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    unsigned    i;
+
+    pHlp->pfnPrintf(pHlp, "VGA Attribute Controller (3C0): index reg %02X, flip-flop: %d (%s)\n",
+                    s->ar_index, s->ar_flip_flop, s->ar_flip_flop ? "data" : "index" );
+    Assert(sizeof(s->ar) >= 0x14);
+    pHlp->pfnPrintf(pHlp, " Palette:");
+    for (i = 0; i < 0x10; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " %02X", i, s->ar[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+    for (i = 0x10; i <= 0x14; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " AR%02X:%02X", i, s->ar[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
 
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
 
@@ -5783,9 +5863,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /*
-     * Register debugger info callback.
+     * Register debugger info callbacks.
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgatext", "Display VGA memory formatted as text.", vgaInfoText);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgacr", "Dump VGA CRTC registers.", vgaInfoCR);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgaar", "Dump VGA Attribute Controller registers.", vgaInfoAR);
 
     /*
      * Construct the logo header.
