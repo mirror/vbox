@@ -2263,7 +2263,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
 
     if (mMachineState > MachineState_Paused)
     {
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot take a snapshot of the machine "
                 "while it is changing the state (machine state: %d)"),
             mMachineState);
@@ -2433,7 +2433,7 @@ STDMETHODIMP Console::DiscardSnapshot (INPTR GUIDPARAM aId, IProgress **aProgres
     AutoWriteLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard a snapshot of the running machine "
                 "(machine state: %d)"),
             mMachineState);
@@ -2454,7 +2454,7 @@ STDMETHODIMP Console::DiscardCurrentState (IProgress **aProgress)
     AutoWriteLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard the current state of the running machine "
                 "(nachine state: %d)"),
             mMachineState);
@@ -2475,7 +2475,7 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState (IProgress **aProgress)
     AutoWriteLock alock (this);
 
     if (mMachineState >= MachineState_Running)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot discard the current snapshot and state of the "
                 "running machine (machine state: %d)"),
             mMachineState);

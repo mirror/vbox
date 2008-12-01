@@ -4954,6 +4954,9 @@
         </note>
 
         <see>ISnapshot, <link to="#saveState"/></see>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine currently changing state.
+        </result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Short name for the snapshot.</desc>
@@ -5048,6 +5051,9 @@
           will implicitly call <link to="IMachine::saveSettings()"/> to
           make all current machine settings permanent.
         </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is running.
+        </result>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the snapshot to discard.</desc>
@@ -5084,6 +5090,9 @@
           called).
         </note>
 
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is running.
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -5128,11 +5137,14 @@
         </note>
 
         <note>
-          This method is more efficient than calling two above
+          This method is more efficient than calling both of the above
           methods separately: it requires less IPC calls and provides
           a single progress object.
         </note>
 
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is running.
+        </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -5152,6 +5164,9 @@
       <desc>
         Unregisters the console callback previously registered using
         <link to="#registerCallback"/>.
+        <result name="E_INVALIDARG">
+          Given @a callback handler is not registered.
+        </result>
       </desc>
       <param name="callback" type="IConsoleCallback" dir="in"/>
     </method>
