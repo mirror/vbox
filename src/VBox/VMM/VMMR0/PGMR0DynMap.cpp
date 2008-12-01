@@ -1173,7 +1173,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlow);
 
     /*
-     * Check if any of the first 5 pages are unreferenced since the caller
+     * Check if any of the first 4 pages are unreferenced since the caller
      * already has made sure they aren't matching.
      */
 #ifdef VBOX_WITH_STATISTICS
@@ -1190,14 +1190,12 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         iFreePage   = (iPage + 2) % cPages;
     else if (!paPages[(iPage + 3) % cPages].cRefs)
         iFreePage   = (iPage + 3) % cPages;
-    else if (!paPages[(iPage + 4) % cPages].cRefs)
-        iFreePage   = (iPage + 4) % cPages;
     else
     {
         /*
          * Search for an unused or matching entry.
          */
-        iFreePage = (iPage + 5) % cPages;
+        iFreePage = (iPage + 4) % cPages;
         for (;;)
         {
             if (paPages[iFreePage].HCPhys == HCPhys)
@@ -1223,7 +1221,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
 #if 0 //def VBOX_WITH_STATISTICS
     /* Check for lost hits. */
     if (!fLooped)
-        for (uint32_t iPage2 = (iPage + 5) % cPages; iPage2 != iPage; iPage2 = (iPage2 + 1) % cPages)
+        for (uint32_t iPage2 = (iPage + 4) % cPages; iPage2 != iPage; iPage2 = (iPage2 + 1) % cPages)
             if (paPages[iPage2].HCPhys == HCPhys)
                 STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLostHits);
 #endif
@@ -1280,7 +1278,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
     /*
      * Find an entry, if possible a matching one. The HCPhys address is hashed
      * down to a page index, collisions are handled by linear searching. Optimize
-     * for a hit in the first 5 pages.
+     * for a hit in the first 4 pages.
      *
      * To the cheap hits here and defer the tedious searching and inserting
      * to a helper function.
@@ -1288,38 +1286,43 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
     uint32_t const      cPages  = pThis->cPages;
     uint32_t            iPage   = (HCPhys >> PAGE_SHIFT) % cPages;
     PPGMR0DYNMAPENTRY   paPages = pThis->paPages;
-    if (paPages[iPage].HCPhys != HCPhys)
+    if (RT_LIKELY(paPages[iPage].HCPhys == HCPhys))
+        STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageHit0);
+    else
     {
-        uint32_t    iPage2 = (iPage + 1) % cPages;
-        if (paPages[iPage2].HCPhys != HCPhys)
+        uint32_t        iPage2 = (iPage + 1) % cPages;
+        if (RT_LIKELY(paPages[iPage2].HCPhys == HCPhys))
         {
-            iPage2 = (iPage + 2) % cPages;
-            if (paPages[iPage2].HCPhys != HCPhys)
-            {
-                iPage2 = (iPage + 3) % cPages;
-                if (paPages[iPage2].HCPhys != HCPhys)
-                {
-                    iPage2 = (iPage + 4) % cPages;
-                    if (paPages[iPage2].HCPhys != HCPhys)
-                    {
-                        iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
-                        if (RT_UNLIKELY(iPage == UINT32_MAX))
-                        {
-                            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-                            return iPage;
-                        }
-                    }
-                    else
-                        iPage = iPage2;
-                }
-                else
-                    iPage = iPage2;
-            }
-            else
-                iPage = iPage2;
+            iPage = iPage2;
+            STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageHit1);
         }
         else
-            iPage = iPage2;
+        {
+            iPage2 = (iPage + 2) % cPages;
+            if (paPages[iPage2].HCPhys == HCPhys)
+            {
+                iPage = iPage2;
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageHit2);
+            }
+            else
+            {
+                iPage2 = (iPage + 3) % cPages;
+                if (paPages[iPage2].HCPhys == HCPhys)
+                {
+                    iPage = iPage2;
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageHit3);
+                }
+                else
+                {
+                    iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
+                    if (RT_UNLIKELY(iPage == UINT32_MAX))
+                    {
+                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                        return iPage;
+                    }
+                }
+            }
+        }
     }
 
     /*
@@ -1346,7 +1349,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
      */
     RTCPUID idRealCpu = RTMpCpuId();
     bool fInvalidateIt = RTCpuSetIsMember(&paPages[iPage].PendingSet, idRealCpu);
-    if (fInvalidateIt)
+    if (RT_UNLIKELY(fInvalidateIt))
         RTCpuSetDel(&paPages[iPage].PendingSet, idRealCpu);
 
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -1354,7 +1357,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
     /*
      * Do the actual invalidation outside the spinlock.
      */
-    if (fInvalidateIt)
+    if (RT_UNLIKELY(fInvalidateIt))
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageInvlPg);
         ASMInvalidatePage(pvPage);
@@ -1708,7 +1711,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
              && pSet->aEntries[i - 4].cRefs < UINT16_MAX - 1)
         pSet->aEntries[i - 4].cRefs++;
     /* Don't bother searching unless we're above a 75% load. */
-    else if (i <= (int32_t)RT_ELEMENTS(pSet->aEntries) / 4 * 3)
+    else if (RT_LIKELY(i <= (int32_t)RT_ELEMENTS(pSet->aEntries) / 4 * 3))
     {
         pSet->aEntries[pSet->cEntries].cRefs = 1;
         pSet->aEntries[pSet->cEntries].iPage = iPage;
