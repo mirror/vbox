@@ -166,66 +166,76 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
     }
 
-#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-    uint64_t oldMsrEFERHost;
-    uint32_t oldCR0 = ASMGetCR0();
-
-    /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
-    if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+    if (CPUMIsGuestInLongModeEx(pCtx))
     {
-        /** @todo Do we really need to read this every time?? The host could change this on the fly though.
-         *  bird: what about starting by skipping the ASMWrMsr below if we didn't
-         *        change anything? Ditto for the stuff in CPUMR0SaveGuestFPU. */
-        oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
-        if (oldMsrEFERHost & MSR_K6_EFER_FFXSR)
-        {
-            ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
-            pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
-        }
+        /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
+        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
     }
+    else
+#endif
+    {
+#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
+        uint64_t oldMsrEFERHost;
+        uint32_t oldCR0 = ASMGetCR0();
 
-    /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
-    int rc = CPUMHandleLazyFPU(pVM, pVCpu);
-    AssertRC(rc);
-    Assert(CPUMIsGuestFPUStateActive(pVCpu));
+        /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+        if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+        {
+            /** @todo Do we really need to read this every time?? The host could change this on the fly though.
+             *  bird: what about starting by skipping the ASMWrMsr below if we didn't
+             *        change anything? Ditto for the stuff in CPUMR0SaveGuestFPU. */
+            oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
+            if (oldMsrEFERHost & MSR_K6_EFER_FFXSR)
+            {
+                ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
+                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+            }
+        }
 
-    /* Restore EFER MSR */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
-        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
+        /* If we sync the FPU/XMM state on-demand, then we can continue execution as if nothing has happened. */
+        int rc = CPUMHandleLazyFPU(pVM, pVCpu);
+        AssertRC(rc);
+        Assert(CPUMIsGuestFPUStateActive(pVCpu));
 
- 	/* CPUMHandleLazyFPU could have changed CR0; restore it. */
-    ASMSetCR0(oldCR0);
+        /* Restore EFER MSR */
+        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+            ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
+
+ 	    /* CPUMHandleLazyFPU could have changed CR0; restore it. */
+        ASMSetCR0(oldCR0);
 
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
 
-    /*
-     * Save the FPU control word and MXCSR, so we can restore the state properly afterwards.
-     * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
-     */
-    pVCpu->cpum.s.Host.fpu.FCW = CPUMGetFCW();
-    if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
-        pVCpu->cpum.s.Host.fpu.MXCSR = CPUMGetMXCSR();
+        /*
+         * Save the FPU control word and MXCSR, so we can restore the state properly afterwards.
+         * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
+         */
+        pVCpu->cpum.s.Host.fpu.FCW = CPUMGetFCW();
+        if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
+            pVCpu->cpum.s.Host.fpu.MXCSR = CPUMGetMXCSR();
 
-    CPUMLoadFPUAsm(pCtx);
+        CPUMLoadFPUAsm(pCtx);
 
-    /*
-     * The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
-     *
-     * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
-     */
-    if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
-    {
-        /** @todo Do we really need to read this every time?? The host could change this on the fly though. */
-        uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
-
-        if (msrEFERHost & MSR_K6_EFER_FFXSR)
+        /*
+         * The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
+         *
+         * MSR_K6_EFER_FFXSR changes the behaviour of fxsave and fxrstore: the XMM state isn't saved/restored
+         */
+        if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
         {
-            /* fxrstor doesn't restore the XMM state! */
-            CPUMLoadXMMAsm(pCtx);
-            pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+            /** @todo Do we really need to read this every time?? The host could change this on the fly though. */
+            uint64_t msrEFERHost = ASMRdMsr(MSR_K6_EFER);
+
+            if (msrEFERHost & MSR_K6_EFER_FFXSR)
+            {
+                /* fxrstor doesn't restore the XMM state! */
+                CPUMLoadXMMAsm(pCtx);
+                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+            }
         }
-    }
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
+    }
 
     pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU;
     return VINF_SUCCESS;
@@ -246,37 +256,48 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
 
-#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-    uint64_t oldMsrEFERHost;
-
-    /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+    if (CPUMIsGuestInLongModeEx(pCtx))
     {
-        oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
-        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
+        HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
+        CPUMRestoreHostFPUState(pVCpu);
     }
-    CPUMRestoreHostFPUState(pVM, pVCpu);
+    else
+#endif
+    {
+#ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
+        uint64_t oldMsrEFERHost;
 
-    /* Restore EFER MSR */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
-        ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
+        /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
+        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        {
+            oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
+            ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
+        }
+        CPUMSaveGuestRestoreHostFPUState(pVM, pVCpu);
+
+        /* Restore EFER MSR */
+        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+            ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
-    CPUMSaveFPUAsm(pCtx);
-    if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
-    {
-        /* fxsave doesn't save the XMM state! */
-        CPUMSaveXMMAsm(pCtx);
-    }
+        CPUMSaveFPUAsm(pCtx);
+        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        {
+            /* fxsave doesn't save the XMM state! */
+            CPUMSaveXMMAsm(pCtx);
+        }
 
-    /*
-     * Restore the original FPU control word and MXCSR.
-     * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
-     */
-    CPUMSetFCW(pVCpu->cpum.s.Host.fpu.FCW);
-    if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
-        CPUMSetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
+        /*
+         * Restore the original FPU control word and MXCSR.
+         * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
+         */
+        CPUMSetFCW(pVCpu->cpum.s.Host.fpu.FCW);
+        if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
+            CPUMSetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
+    }
 
     pVCpu->cpum.s.fUseFlags &= ~(CPUM_USED_FPU | CPUM_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
@@ -297,12 +318,22 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     Assert(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS);
 
     /* Save the guest's debug state. The caller is responsible for DR7. */
-    pCtx->dr[0] = ASMGetDR0();
-    pCtx->dr[1] = ASMGetDR1();
-    pCtx->dr[2] = ASMGetDR2();
-    pCtx->dr[3] = ASMGetDR3();
-    if (fDR6)
-        pCtx->dr[6] = ASMGetDR6();
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_STATE));
+        HWACCMR0SaveDebugState(pVM, pVCpu, pCtx, fDR6);
+    }
+    else
+#endif
+    {
+        pCtx->dr[0] = ASMGetDR0();
+        pCtx->dr[1] = ASMGetDR1();
+        pCtx->dr[2] = ASMGetDR2();
+        pCtx->dr[3] = ASMGetDR3();
+        if (fDR6)
+            pCtx->dr[6] = ASMGetDR6();
+    }
 
     /*
      * Restore the host's debug state. DR0-3, DR6 and only then DR7!
@@ -343,12 +374,22 @@ VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     ASMSetDR7(X86_DR7_INIT_VAL);
 
     /* Activate the guest state DR0-3; DR7 is left to the caller. */
-    ASMSetDR0(pCtx->dr[0]);
-    ASMSetDR1(pCtx->dr[1]);
-    ASMSetDR2(pCtx->dr[2]);
-    ASMSetDR3(pCtx->dr[3]);
-    if (fDR6)
-        ASMSetDR6(pCtx->dr[6]);
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
+        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_DEBUG_STATE;
+    }
+    else
+#endif
+    {
+        ASMSetDR0(pCtx->dr[0]);
+        ASMSetDR1(pCtx->dr[1]);
+        ASMSetDR2(pCtx->dr[2]);
+        ASMSetDR3(pCtx->dr[3]);
+        if (fDR6)
+            ASMSetDR6(pCtx->dr[6]);
+    }
 
     pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
     return VINF_SUCCESS;
