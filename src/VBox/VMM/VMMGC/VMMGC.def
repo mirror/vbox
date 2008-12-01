@@ -64,8 +64,8 @@ EXPORTS
     VMSetErrorV
     VMXGCStartVM64
     SVMGCVMRun64
-    HWACCMSetupFPU64
-    HWACCMSetupDebug64
+    HWACCMSaveGuestFPU64
+    HWACCMSaveGuestDebug64
 
     ; runtime
     nocrt_memchr

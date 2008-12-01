@@ -843,10 +843,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hwaccm.s.pfnSVMGCVMRun64);
         AssertMsgRCReturn(rc, ("SVMGCVMRun64 -> rc=%Rrc\n", rc), rc);
 
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSetupFPU64",   &pVM->hwaccm.s.pfnSaveGuestFPU64);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestFPU64",   &pVM->hwaccm.s.pfnSaveGuestFPU64);
         AssertMsgRCReturn(rc, ("HWACCMSetupFPU64 -> rc=%Rrc\n", rc), rc);
         
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSetupDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
         AssertMsgRCReturn(rc, ("HWACCMSetupDebug64 -> rc=%Rrc\n", rc), rc);
     }
 #endif
