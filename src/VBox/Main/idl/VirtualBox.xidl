@@ -1483,6 +1483,9 @@
         will be used to construct the machine object.
 
         @deprecated Will be removed soon.
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file name invalid, not found or sharing violation.
+        </result>
       </desc>
       <param name="settingsFile" type="wstring" dir="in">
         <desc>
@@ -1514,6 +1517,10 @@
           to save all current machine settings before registering it.
         </note>
 
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Virtual machine was not created within this VirtualBox instance.
+        </result>
+
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
     </method>
@@ -1521,7 +1528,13 @@
     <method name="getMachine">
       <desc>
         Attempts to find a virtual machine given its UUID.
-        To look up a machine by name, use <link to="IVirtualBox::findMachine" /> instead.
+        To look up a machine by name, use <link to="IVirtualBox::findMachine" />
+        instead.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Could not find registered machine matching @a id.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
@@ -1530,7 +1543,13 @@
     <method name="findMachine">
       <desc>
         Attempts to find a virtual machine given its name.
-        To look up a machine by UUID, use <link to="IVirtualBox::getMachine" /> instead.
+        To look up a machine by UUID, use <link to="IVirtualBox::getMachine" />
+        instead.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Could not find registered machine matching @a name.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
@@ -1562,6 +1581,16 @@
           machine object will be unusable and an attempt to call
           <b>any</b> method will return the "Object not ready" error.
         </note>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Could not find registered machine matching @a id.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine is in Saved state.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Machine has snapshot or open session or hard disk attached.
+        </result>
 
       </desc>
       <param name="id" type="uuid" dir="in">

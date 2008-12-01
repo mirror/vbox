@@ -961,7 +961,7 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
          *  this machine was not created by CreateMachine()
          *  or opened by OpenMachine() or loaded during startup
          */
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The machine named '%ls' is not created within this "
                 "VirtualBox instance"), name.raw());
     }
@@ -1040,7 +1040,7 @@ STDMETHODIMP VirtualBox::FindMachine (INPTR BSTR aName, IMachine **aMachine)
 
     HRESULT rc = machine
         ? S_OK
-        : setError (E_INVALIDARG,
+        : setError (VBOX_E_FILE_ERROR,
             tr ("Could not find a registered machine named '%ls'"), aName);
 
     LogFlowThisFunc (("rc=%08X\n", rc));
@@ -2634,7 +2634,7 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
 
     if (aSetError && !found)
     {
-        setError (E_INVALIDARG,
+        setError (VBOX_E_FILE_ERROR,
             tr ("Could not find a registered machine with UUID {%RTuuid}"),
             aId.raw());
     }
