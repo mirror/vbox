@@ -2559,6 +2559,16 @@ typedef struct PGM
     STAMCOUNTER StatR3DynRamTotal;                  /**< R3: Allocated MBs of guest ram */
     STAMCOUNTER StatR3DynRamGrow;                   /**< R3: Nr of pgmr3PhysGrowRange calls. */
 
+    /* R0 only: */
+    STAMCOUNTER StatR0DynMapPage;                   /**< R0: Calls to pgmR0DynMapPage. */
+    STAMCOUNTER StatR0DynMapPageSlow;               /**< R0: Calls to pgmR0DynMapPageSlow. */
+    STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
+    STAMCOUNTER StatR0DynMapPageSlowLoopMisses;     /**< R0: Misses in the pgmR0DynMapPageSlow search loop. */
+    STAMCOUNTER StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
+    STAMCOUNTER StatR0DynMapHCPageSetOptimize;      /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
+    STAMCOUNTER StatR0DynMapHCPageSetSearchHits;    /**< R0: Set search hits. */
+    STAMCOUNTER StatR0DynMapHCPageSetSearchMisses;  /**< R0: Set search misses. */
+
     /* RC only: */
     STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
     STAMCOUNTER StatRCDynMapCacheHits;              /**< RC: The number of dynamic page mapping cache misses */
