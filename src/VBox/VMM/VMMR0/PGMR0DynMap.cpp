@@ -1165,9 +1165,12 @@ static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t 
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
  * @param   iPage       The page index pgmR0DynMapPage hashed HCPhys to.
+ * @param   pVM         The shared VM structure, for statistics only.
  */
-static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage)
+static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_t iPage, PVM pVM)
 {
+    STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlow);
+
     /*
      * Check if any of the first 5 pages are unreferenced since the caller
      * already has made sure they aren't matching.
@@ -1194,7 +1197,10 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
         for (;;)
         {
             if (paPages[iFreePage].HCPhys == HCPhys)
+            {
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLoopHits);
                 return iFreePage;
+            }
             if (!paPages[iFreePage].cRefs)
                 break;
 
@@ -1203,6 +1209,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
             if (RT_UNLIKELY(iFreePage == iPage))
                 return UINT32_MAX;
         }
+        STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPageSlowLoopMisses);
     }
     Assert(iFreePage < cPages);
 
@@ -1245,13 +1252,15 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
  * @returns Page index on success, UINT32_MAX on failure.
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
- * @param   ppvPage      Where to the page address.
+ * @param   pVM         The shared VM structure, for statistics only.
+ * @param   ppvPage     Where to the page address.
  */
-DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, void **ppvPage)
+DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pVM, void **ppvPage)
 {
     RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
+    STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapPage);
 
     /*
      * Find an entry, if possible a matching one. The HCPhys address is hashed
@@ -1278,7 +1287,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, void *
                     iPage2 = (iPage + 4) % cPages;
                     if (paPages[iPage2].HCPhys != HCPhys)
                     {
-                        iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage);
+                        iPage = pgmR0DynMapPageSlow(pThis, HCPhys, iPage, pVM);
                         if (RT_UNLIKELY(iPage == UINT32_MAX))
                         {
                             RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -1619,6 +1628,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Validate state.
      */
+    STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapHCPage);
     AssertPtr(ppv);
     *ppv = NULL;
     AssertMsgReturn(pVM->pgm.s.pvR0DynMapUsed == g_pPGMR0DynMap,
@@ -1634,7 +1644,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Map it.
      */
-    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, ppv);
+    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pVM, ppv);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
         static uint32_t s_cBitched = 0;
@@ -1646,9 +1656,38 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 
     /*
      * Add the page to the auto reference set.
-     * If it's less than half full, don't bother looking for duplicates.
+     *
+     * The typical usage pattern means that the same pages will be mapped
+     * several times in the same set. We can catch most of these
+     * remappings by looking a few pages back into the set. (The searching
+     * and set optimizing path will hardly ever be used when doing this.)
      */
-    if (pSet->cEntries < RT_ELEMENTS(pSet->aEntries) / 2)
+    AssertCompile(RT_ELEMENTS(pSet->aEntries) >= 8);
+    int32_t i = pSet->cEntries;
+    if (i-- < 5)
+    {
+        pSet->aEntries[pSet->cEntries].cRefs = 1;
+        pSet->aEntries[pSet->cEntries].iPage = iPage;
+        pSet->cEntries++;
+    }
+    /* Any of the last 5 pages? */
+    else if (   pSet->aEntries[i - 0].iPage == iPage
+             && pSet->aEntries[i - 0].cRefs < UINT16_MAX - 1)
+        pSet->aEntries[i - 0].cRefs++;
+    else if (   pSet->aEntries[i - 1].iPage == iPage
+             && pSet->aEntries[i - 1].cRefs < UINT16_MAX - 1)
+        pSet->aEntries[i - 1].cRefs++;
+    else if (   pSet->aEntries[i - 2].iPage == iPage
+             && pSet->aEntries[i - 2].cRefs < UINT16_MAX - 1)
+        pSet->aEntries[i - 2].cRefs++;
+    else if (   pSet->aEntries[i - 3].iPage == iPage
+             && pSet->aEntries[i - 3].cRefs < UINT16_MAX - 1)
+        pSet->aEntries[i - 3].cRefs++;
+    else if (   pSet->aEntries[i - 4].iPage == iPage
+             && pSet->aEntries[i - 4].cRefs < UINT16_MAX - 1)
+        pSet->aEntries[i - 4].cRefs++;
+    /* Don't bother searching unless we're above a 75% load. */
+    else if (i <= (int32_t)RT_ELEMENTS(pSet->aEntries) / 4 * 3)
     {
         pSet->aEntries[pSet->cEntries].cRefs = 1;
         pSet->aEntries[pSet->cEntries].iPage = iPage;
@@ -1656,19 +1695,25 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     }
     else
     {
+        /* Search the rest of the set. */
         Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
-        int32_t     i = pSet->cEntries;
+        i -= 4;
         while (i-- > 0)
             if (    pSet->aEntries[i].iPage == iPage
                 &&  pSet->aEntries[i].cRefs < UINT16_MAX - 1)
             {
                 pSet->aEntries[i].cRefs++;
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapHCPageSetSearchHits);
                 break;
             }
         if (i < 0)
         {
+            STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapHCPageSetSearchMisses);
             if (RT_UNLIKELY(pSet->cEntries >= RT_ELEMENTS(pSet->aEntries)))
+            {
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapHCPageSetOptimize);
                 pgmDynMapOptimizeAutoSet(pSet);
+            }
             if (RT_LIKELY(pSet->cEntries < RT_ELEMENTS(pSet->aEntries)))
             {
                 pSet->aEntries[pSet->cEntries].cRefs = 1;
@@ -1769,7 +1814,7 @@ static int pgmR0DynMapTest(PVM pVM)
          */
         LogRel(("Test #2\n"));
         ASMIntDisable();
-        for (i = 0 ; i < UINT16_MAX*2 + RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 == pv; i++)
+        for (i = 0 ; i < UINT16_MAX*2 - 1 && RT_SUCCESS(rc) && pv2 == pv; i++)
         {
             pv2 = (void *)(intptr_t)-4;
             rc = PGMDynMapHCPage(pVM, cr3, &pv2);
@@ -1780,15 +1825,16 @@ static int pgmR0DynMapTest(PVM pVM)
             LogRel(("failed(%d): rc=%Rrc; pv=%p pv2=%p i=%p\n", __LINE__, rc, pv, pv2, i));
             if (RT_SUCCESS(rc)) rc = VERR_INTERNAL_ERROR;
         }
-        else if (pSet->cEntries != RT_ELEMENTS(pSet->aEntries) / 2)
+        else if (pSet->cEntries != 5)
         {
             LogRel(("failed(%d): cEntries=%d expected %d\n", __LINE__, pSet->cEntries, RT_ELEMENTS(pSet->aEntries) / 2));
             rc = VERR_INTERNAL_ERROR;
         }
-        else if (   pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 1].cRefs != UINT16_MAX - 1
-                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 2].cRefs != UINT16_MAX - 1
-                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 3].cRefs != 2+2+3
-                 || pSet->aEntries[(RT_ELEMENTS(pSet->aEntries) / 2) - 4].cRefs != 1)
+        else if (   pSet->aEntries[4].cRefs != UINT16_MAX - 1
+                 || pSet->aEntries[3].cRefs != UINT16_MAX - 1
+                 || pSet->aEntries[2].cRefs != 1
+                 || pSet->aEntries[1].cRefs != 1
+                 || pSet->aEntries[0].cRefs != 1)
         {
             LogRel(("failed(%d): bad set dist: ", __LINE__));
             for (i = 0; i < pSet->cEntries; i++)
@@ -1806,7 +1852,7 @@ static int pgmR0DynMapTest(PVM pVM)
             LogRel(("Test #3\n"));
             ASMIntDisable();
             pv2 = NULL;
-            for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 && RT_SUCCESS(rc) && pv2 != pv; i++)
+            for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) - 5 && RT_SUCCESS(rc) && pv2 != pv; i++)
             {
                 pv2 = (void *)(intptr_t)(-5 - i);
                 rc = PGMDynMapHCPage(pVM, cr3 + PAGE_SIZE * (i + 5), &pv2);
@@ -1832,7 +1878,7 @@ static int pgmR0DynMapTest(PVM pVM)
                  */
                 LogRel(("Test #4\n"));
                 ASMIntDisable();
-                for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) / 2 - 3 + 1 && pv2 != pv; i++)
+                for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) + 2; i++)
                 {
                     rc = PGMDynMapHCPage(pVM, cr3 - PAGE_SIZE * (i + 5), &pv2);
                     if (RT_SUCCESS(rc))
