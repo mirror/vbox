@@ -199,6 +199,15 @@ typedef struct HWACCM
     RTUINT                      uMaxASID;
 
 #if HC_ARCH_BITS == 32
+    /** 32 to 64 bits switcher entrypoint. */
+    RTR0PTR                     pfnHost32ToGuest64R0;
+
+    /* AMD-V 64 bits vmrun handler */
+    RTRCPTR                     pfnSVMGCVMRun64;
+
+    /* VT-x 64 bits vmlaunch handler */
+    RTRCPTR                     pfnVMXGCStartVM64;
+
     uint32_t                    Alignment0;
 #endif
 
@@ -382,7 +391,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pVMCS;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx));
+        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu));
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
@@ -514,6 +523,7 @@ typedef HWACCMCPU *PHWACCMCPU;
 #ifdef IN_RING0
 
 VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu();
+VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu);
 
 
 #ifdef VBOX_STRICT

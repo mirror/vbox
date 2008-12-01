@@ -1501,8 +1501,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
-#if !defined(VBOX_WITH_64_BITS_GUESTS) || HC_ARCH_BITS != 64
+#if !defined(VBOX_WITH_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#elif HC_ARCH_BITS == 32
+        pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0SwitcherStartVM64;
 #else
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
@@ -2040,7 +2042,7 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVM);
-    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx);
+    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, pVM, pVCpu);
     TMNotifyEndOfExecution(pVM);
 
     /* In case we execute a goto ResumeExecution later on. */
@@ -3421,10 +3423,46 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  * @returns VBox status code
  * @param   fResume     vmlauch/vmresume
  * @param   pCtx        Guest context
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  */
-DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx)
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    return VERR_NOT_IMPLEMENTED;
+    int             rc, rc2;
+    RTCCUINTREG     uFlags;
+    PHWACCM_CPUINFO pCpu;
+    RTHCPHYS        pPageCpuPhys;
+
+    pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+    /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
+    VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+
+    /* Leave VMX Root Mode. */
+    VMXDisable();
+
+    uFlags = ASMIntDisableFlags();
+    /* Call switcher. */
+    rc = VERR_ACCESS_DENIED;
+
+    ASMSetFlags(uFlags);
+
+    /* Make sure the VMX instructions don't cause #UD faults. */
+    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
+
+    /* Enter VMX Root Mode */
+    rc2 = VMXEnable(pPageCpuPhys);
+    if (RT_FAILURE(rc2))
+    {
+        if (pVM)
+            VMXR0CheckError(pVM, pVCpu, rc2);
+        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        return VERR_VMX_VMXON_FAILED;
+    }
+
+    VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    return rc;
 }
 #endif
 
