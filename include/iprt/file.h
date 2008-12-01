@@ -471,7 +471,7 @@ RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove);
  * operation system. Also see comments to RTFileChangeLock API call.
  *
  * Linux/Posix: By default locks in Unixes are advisory. This means that cooperating processes
- * may use locks to coordonate access to a file between themselves, but programs are also free
+ * may use locks to coordinate access to a file between themselves, but programs are also free
  * to ignore locks and access the file in any way they choose to.
  *
  * Additional reading:
