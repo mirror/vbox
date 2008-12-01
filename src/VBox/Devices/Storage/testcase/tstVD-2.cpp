@@ -149,6 +149,12 @@ int main(int argc, char *argv[])
         g_cErrors++;
     }
 
+    rc = VDShutdown();
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstVD-2: unloading backends failed! rc=%Rrc\n", rc);
+        g_cErrors++;
+    }
     /*
      * Summary
      */
