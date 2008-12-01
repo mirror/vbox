@@ -45,6 +45,12 @@ all:
 	fi
 
 
+install:
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxdrv install
+	@if [ -d vboxnetflt ]; then \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt install; \
+	fi
+
 clean:
 	@$(MAKE) -C vboxdrv clean
 	@if [ -d vboxnetflt ]; then \
@@ -52,3 +58,8 @@ clean:
 	fi
 	rm -f vboxdrv.ko vboxnetflt.ko
 
+load:
+	@rmmod vboxnetflt || true
+	@rmmod vboxdrv || true
+	@insmod vboxdrv.ko
+	@if [ -f vboxnetflt.ko ]; then insmod vboxnetflt.ko; fi
