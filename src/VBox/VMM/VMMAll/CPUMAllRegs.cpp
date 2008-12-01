@@ -2075,33 +2075,6 @@ VMMDECL(int) CPUMHandleLazyFPU(PVM pVM, PVMCPU pVCpu)
     return CPUMHandleLazyFPUAsm(&pVCpu->cpum.s);
 }
 
-
-/**
- * Restore host FPU/XMM state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pVCpu       VMCPU handle
- */
-VMMDECL(int) CPUMSaveGuestRestoreHostFPUState(PVM pVM, PVMCPU pVCpu)
-{
-    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
-    return CPUMSaveGuestRestoreHostFPUStateAsm(&pVCpu->cpum.s);
-}
-
-/**
- * Set host FPU/XMM state
- *
- * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pVCpu       VMCPU handle
- */
-VMMDECL(int) CPUMRestoreHostFPUState(PVM pVM, PVMCPU pVCpu)
-{
-    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
-    return CPUMRestoreHostFPUStateAsm(&pVCpu->cpum.s);
-}
-
 #endif /* !IN_RING3 */
 
 /**

@@ -215,7 +215,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
             pVCpu->cpum.s.Host.fpu.MXCSR = CPUMGetMXCSR();
 
-        CPUMLoadFPUAsm(pCtx);
+        CPUMR0LoadFPU(pCtx);
 
         /*
          * The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
@@ -230,7 +230,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (msrEFERHost & MSR_K6_EFER_FFXSR)
             {
                 /* fxrstor doesn't restore the XMM state! */
-                CPUMLoadXMMAsm(pCtx);
+                CPUMR0LoadXMM(pCtx);
                 pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
             }
         }
@@ -261,7 +261,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
         HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
-        CPUMRestoreHostFPUState(pVCpu);
+        CPUMR0RestoreHostFPUState(&pVCpu->cpum.s);
     }
     else
 #endif
@@ -275,27 +275,27 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
         }
-        CPUMSaveGuestRestoreHostFPUState(pVM, pVCpu);
+        CPUMR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
 
         /* Restore EFER MSR */
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
-        CPUMSaveFPUAsm(pCtx);
+        CPUMR0SaveFPU(pCtx);
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         {
             /* fxsave doesn't save the XMM state! */
-            CPUMSaveXMMAsm(pCtx);
+            CPUMR0SaveXMM(pCtx);
         }
 
         /*
          * Restore the original FPU control word and MXCSR.
          * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
          */
-        CPUMSetFCW(pVCpu->cpum.s.Host.fpu.FCW);
+        CPUMR0SetFCW(pVCpu->cpum.s.Host.fpu.FCW);
         if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
-            CPUMSetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
+            CPUMR0SetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 
@@ -394,4 +394,5 @@ VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
     return VINF_SUCCESS;
 }
+
 
