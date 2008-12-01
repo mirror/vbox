@@ -1606,7 +1606,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlow,              STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/Slow",            STAMUNIT_OCCURENCES,     "Calls to pgmR0DynMapPageSlow - subtract this from pgmR0DynMapPage to get 1st level hits.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLoopHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLoopHits" ,   STAMUNIT_OCCURENCES,     "Hits in the loop path.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLoopMisses,    STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLoopMisses",  STAMUNIT_OCCURENCES,     "Misses in the loop path. NonLoopMisses = Slow - SlowLoopHit - SlowLoopMisses");
-    STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLostHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLostHits",    STAMUNIT_OCCURENCES,     "Lost hits.");
+    //STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLostHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLostHits",    STAMUNIT_OCCURENCES,     "Lost hits.");
 
     /* GC only: */
     STAM_REG(pVM, &pPGM->StatRCDynMapCacheHits,             STAMTYPE_COUNTER, "/PGM/RC/DynMapCache/Hits" ,          STAMUNIT_OCCURENCES,     "Number of dynamic page mapping cache hits.");
