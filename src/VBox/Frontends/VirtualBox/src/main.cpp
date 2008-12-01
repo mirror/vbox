@@ -39,6 +39,7 @@
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
 
+#include <stdlib.h>
 #include <signal.h>
 #include <execinfo.h>
 
