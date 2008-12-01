@@ -1048,7 +1048,7 @@ typedef const VDCONFIGINFO *PCVDCONFIGINFO;
 typedef struct VDBACKENDINFO
 {
     /** Name of the backend. */
-    char *pszBackend;
+    const char *pszBackend;
     /** Capabilities of the backend (a combination of the VD_CAP_* flags). */
     uint64_t uBackendCaps;
     /** Pointer to a NULL-terminated array of strings, containing the supported
@@ -1071,6 +1071,19 @@ struct VBOXHDD;
 typedef struct VBOXHDD VBOXHDD;
 typedef VBOXHDD *PVBOXHDD;
 
+/**
+ * Initializes HDD backends.
+ *
+ * @returns VBox status code.
+ */
+VBOXDDU_DECL(int) VDInit();
+
+/**
+ * Destroys loaded HDD backends.
+ *
+ * @returns VBox status code.
+ */
+VBOXDDU_DECL(int) VDShutdown();
 
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.

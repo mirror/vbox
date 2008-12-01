@@ -1089,6 +1089,8 @@ VBOXHDDBACKEND g_RawBackend =
     s_apszRawFileExtensions,
     /* paConfigInfo */
     NULL,
+    /* hPlugin */
+    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     rawCheckIfValid,
     /* pfnOpen */

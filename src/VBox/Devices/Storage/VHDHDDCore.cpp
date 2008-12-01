@@ -1867,6 +1867,8 @@ VBOXHDDBACKEND g_VhdBackend =
     s_apszVhdFileExtensions,
     /* paConfigInfo */
     NULL,
+    /* hPlugin */
+    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vhdCheckIfValid,
     /* pfnOpen */

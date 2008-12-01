@@ -5316,6 +5316,8 @@ VBOXHDDBACKEND g_VmdkBackend =
     s_apszVmdkFileExtensions,
     /* paConfigInfo */
     NULL,
+    /* hPlugin */
+    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vmdkCheckIfValid,
     /* pfnOpen */

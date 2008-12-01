@@ -1868,6 +1868,8 @@ VBOXHDDBACKEND g_VDIBackend =
     s_apszVdiFileExtensions,
     /* paConfigInfo */
     NULL,
+    /* hPlugin */
+    NIL_RTLDRMOD,
     /* pfnCheckIfValid */
     vdiCheckIfValid,
     /* pfnOpen */
