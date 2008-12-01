@@ -1059,7 +1059,13 @@ int main(int argc, char *argv[])
     RTFileDelete("tmpVDRename-s002.vmdk");
     RTFileDelete("tmpVDRename-s003.vmdk");
 
-    /*
+    rc = VDShutdown();
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstVD: unloading backends failed! rc=%Rrc\n", rc);
+        g_cErrors++;
+    }
+     /*
      * Summary
      */
     if (!g_cErrors)

@@ -714,6 +714,8 @@ VBOXDDU_DECL(int) VDShutdown()
     for (unsigned i = 0; i < cBackends; i++)
         if (pBackends[i]->hPlugin != NIL_RTLDRMOD)
             RTLdrClose(pBackends[i]->hPlugin);
+
+    RTMemFree(pBackends);
     return VINF_SUCCESS;
 }
 
