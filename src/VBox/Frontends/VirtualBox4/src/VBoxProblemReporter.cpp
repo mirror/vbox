@@ -1268,6 +1268,8 @@ void VBoxProblemReporter::
 cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
                    const VBoxMedium &aMedium, const COMResult &aResult)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to mount the %1 <nobr><b>%2</b></nobr> "
             "to the machine <b>%3</b>.")
