@@ -1099,6 +1099,8 @@ bool VBoxProblemReporter::confirmReleaseMedium (QWidget *aParent,
                                                 const VBoxMedium &aMedium,
                                                 const QString &aUsage)
 {
+    /** @todo (translation-related): the gender of "the" in translations
+     * will depend on the gender of aMedium.type(). */
     return messageOkCancel (aParent, Question,
         tr ("<p>Are you sure you want to release the %1 "
             "<nobr><b>%2</b></nobr>?</p>"
