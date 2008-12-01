@@ -377,16 +377,19 @@ typedef CPUMCPU *PCPUMCPU;
 __BEGIN_DECLS
 
 DECLASM(int)      CPUMHandleLazyFPUAsm(PCPUMCPU pCPUM);
-DECLASM(int)      CPUMSaveGuestRestoreHostFPUStateAsm(PCPUMCPU pCPUM);
-DECLASM(int)      CPUMRestoreHostFPUStateAsm(PCPUMCPU pCPUM);
-DECLASM(void)     CPUMLoadFPUAsm(PCPUMCTX pCtx);
-DECLASM(void)     CPUMSaveFPUAsm(PCPUMCTX pCtx);
-DECLASM(void)     CPUMLoadXMMAsm(PCPUMCTX pCtx);
-DECLASM(void)     CPUMSaveXMMAsm(PCPUMCTX pCtx);
-DECLASM(void)     CPUMSetFCW(uint16_t u16FCW);
-DECLASM(uint16_t) CPUMGetFCW();
-DECLASM(void)     CPUMSetMXCSR(uint32_t u32MXCSR);
-DECLASM(uint32_t) CPUMGetMXCSR();
+
+#ifdef IN_RING0
+DECLASM(int)      CPUMR0SaveGuestRestoreHostFPUState(PCPUMCPU pCPUM);
+DECLASM(int)      CPUMR0RestoreHostFPUState(PCPUMCPU pCPUM);
+DECLASM(void)     CPUMR0LoadFPU(PCPUMCTX pCtx);
+DECLASM(void)     CPUMR0SaveFPU(PCPUMCTX pCtx);
+DECLASM(void)     CPUMR0LoadXMM(PCPUMCTX pCtx);
+DECLASM(void)     CPUMR0SaveXMM(PCPUMCTX pCtx);
+DECLASM(void)     CPUMR0SetFCW(uint16_t u16FCW);
+DECLASM(uint16_t) CPUMR0GetFCW();
+DECLASM(void)     CPUMR0SetMXCSR(uint32_t u32MXCSR);
+DECLASM(uint32_t) CPUMR0GetMXCSR();
+#endif
 
 __END_DECLS
 
