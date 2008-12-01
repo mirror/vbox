@@ -554,6 +554,7 @@ VBoxSettings_DEFS       = IN_VBOXSETTINGS_R3
 VBoxSettings_INCS       = \
 	include
 VBoxSettings_SOURCES    = \
+	xml/vboxxml.cpp \
 	xml/Settings.cpp
 VBoxSettings_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
 

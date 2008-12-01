@@ -220,6 +220,7 @@ HRESULT VirtualBox::init()
         try
         {
             using namespace settings;
+            using namespace vboxxml;
 
             /* no concurrent file access is possible in init() so open by handle */
             File file (mData.mCfgFile.mHandle, vboxConfigFile);
@@ -1420,6 +1421,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file (we don't reuse the existing handle but
          * request a new one to allow for concurrent multi-threaded reads) */
@@ -1518,6 +1520,7 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file (we don't reuse the existing handle but
          * request a new one to allow for concurrent multi-threaded reads) */
@@ -1578,6 +1581,7 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file */
         File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
@@ -3143,6 +3147,7 @@ HRESULT VirtualBox::saveSettings()
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file */
         File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
@@ -3762,7 +3767,7 @@ HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
  */
 /* static */
 HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
-                                      settings::File &aFile,
+                                      vboxxml::File &aFile,
                                       bool aValidate,
                                       bool aCatchLoadErrors,
                                       bool aAddDefaults,
@@ -3797,7 +3802,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
                 *aFormatVersion = VBOX_XML_VERSION_FULL;
         }
     }
-    catch (const EIPRTFailure &err)
+    catch (const vboxxml::EIPRTFailure &err)
     {
         if (!aCatchLoadErrors)
             throw;
@@ -3836,7 +3841,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
  */
 /* static */
 HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
-                                      settings::File &aFile,
+                                      vboxxml::File &aFile,
                                       Utf8Str &aFormatVersion)
 {
     using namespace settings;
@@ -3850,7 +3855,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
         if (aFormatVersion != VBOX_XML_VERSION_FULL)
             aFormatVersion = VBOX_XML_VERSION_FULL;
     }
-    catch (const EIPRTFailure &err)
+    catch (const vboxxml::EIPRTFailure &err)
     {
         /* this is the only expected exception for now */
         return setError (E_FAIL,

@@ -279,7 +279,7 @@ public:
     public:
 
         // InputResolver interface
-        settings::Input *resolveEntity (const char *aURI, const char *aID);
+        vboxxml::Input *resolveEntity (const char *aURI, const char *aID);
 
         // AutoConverter interface
         bool needsConversion (const settings::Key &aRoot, char **aOldVersion) const;
@@ -287,7 +287,7 @@ public:
     };
 
     static HRESULT loadSettingsTree (settings::XmlTreeBackend &aTree,
-                                     settings::File &aFile,
+                                     vboxxml::File &aFile,
                                      bool aValidate,
                                      bool aCatchLoadErrors,
                                      bool aAddDefaults,
@@ -303,7 +303,7 @@ public:
      *                       loaded settings tree.
      */
     static HRESULT loadSettingsTree_FirstTime (settings::XmlTreeBackend &aTree,
-                                               settings::File &aFile,
+                                               vboxxml::File &aFile,
                                                Utf8Str &aFormatVersion)
     {
         return loadSettingsTree (aTree, aFile, true, true, true,
@@ -319,7 +319,7 @@ public:
      * data fields.
      */
     static HRESULT loadSettingsTree_Again (settings::XmlTreeBackend &aTree,
-                                           settings::File &aFile)
+                                           vboxxml::File &aFile)
     {
         return loadSettingsTree (aTree, aFile, true, false, true);
     }
@@ -332,13 +332,13 @@ public:
      * update some settings and then save them back.
      */
     static HRESULT loadSettingsTree_ForUpdate (settings::XmlTreeBackend &aTree,
-                                               settings::File &aFile)
+                                               vboxxml::File &aFile)
     {
         return loadSettingsTree (aTree, aFile, true, false, false);
     }
 
     static HRESULT saveSettingsTree (settings::TreeBackend &aTree,
-                                     settings::File &aFile,
+                                     vboxxml::File &aFile,
                                      Utf8Str &aFormatVersion);
 
     static HRESULT backupSettingsFile (const Bstr &aFileName,

@@ -2389,6 +2389,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file (we don't reuse the existing handle but
          * request a new one to allow for concurrent multithreaded reads) */
@@ -2492,6 +2493,7 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file (we don't reuse the existing handle but
          * request a new one to allow for concurrent multithreaded reads) */
@@ -2567,6 +2569,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file */
         File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
@@ -4708,6 +4711,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* no concurrent file access is possible in init() so open by handle */
         File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
@@ -5865,6 +5869,7 @@ HRESULT Machine::saveSettings (int aFlags /*= 0*/)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* this object is locked for writing to prevent concurrent reads and writes */
         File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
@@ -6060,6 +6065,7 @@ HRESULT Machine::saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file */
         File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
@@ -6622,7 +6628,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                                                mHWData->mGuestPropertyNotificationPatterns,
                                                emptyStr);
     }
-    catch (ENoMemory e)
+    catch (vboxxml::ENoMemory e)
     {
         return E_OUTOFMEMORY;
     }
@@ -6704,6 +6710,7 @@ HRESULT Machine::saveStateSettings (int aFlags)
     try
     {
         using namespace settings;
+        using namespace vboxxml;
 
         /* load the settings file */
         File file (mData->mHandleCfgFile, Utf8Str (mData->mConfigFileFull));
