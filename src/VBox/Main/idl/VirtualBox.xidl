@@ -4896,6 +4896,13 @@
         name with the given host path, adds it to the collection of shared
         folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine in Saved state or currently changing state.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Shared folder already exists or not accessible.
+        </result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -4913,6 +4920,12 @@
         Removes a transient shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine in Saved state or currently changing state.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Shared folder does not exists.
+        </result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Logical name of the shared folder to remove.</desc>
