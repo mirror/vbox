@@ -49,11 +49,12 @@
 #define PGMR0DYNMAP_SMALL_SEG_PAGES         128
 /** The number of pages we reserve per CPU. */
 #define PGMR0DYNMAP_PAGES_PER_CPU           64
-/** The number of guard pages. */
+/** The number of guard pages.
+ * @remarks Never do tuning of the hashing or whatnot with a strict build!  */
 #if defined(VBOX_STRICT)
-# define PGMR0DYNMAP_GUARD_PAGES            4
-#else
 # define PGMR0DYNMAP_GUARD_PAGES            1
+#else
+# define PGMR0DYNMAP_GUARD_PAGES            0
 #endif
 /** The dummy physical address of guard pages. */
 #define PGMR0DYNMAP_GUARD_PAGE_HCPHYS       UINT32_C(0x7777feed)
