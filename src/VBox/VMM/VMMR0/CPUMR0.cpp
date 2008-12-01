@@ -30,6 +30,7 @@
 #include <VBox/x86.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
@@ -320,7 +321,7 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
-        HWACCMR0SaveDebugState(pVM, pVCpu, pCtx, fDR6);
+        HWACCMR0SaveDebugState(pVM, pVCpu, pCtx);
     }
     else
 #endif

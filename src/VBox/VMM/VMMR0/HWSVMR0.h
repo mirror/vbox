@@ -137,25 +137,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
-/** 
- * Prepares for and executes VMRUN (32 bits guests). 
- * 
- * @returns VBox status code. 
- * @param   pVMCBHostPhys   Physical address of host VMCB. 
- * @param   pVMCBPhys       Physical address of the VMCB. 
- * @param   pCtx            Guest context. 
- */ 
-DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx); 
-
-/** 
- * Prepares for and executes VMRUN (64 bits guests). 
- * 
- * @returns VBox status code. 
- * @param   pVMCBHostPhys   Physical address of host VMCB. 
- * @param   pVMCBPhys       Physical address of the VMCB. 
- * @param   pCtx            Guest context. 
- */ 
-DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx); 
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
 
 /**
  * Prepares for and executes VMRUN (64 bits guests from a 32 bits hosts).
@@ -164,8 +146,48 @@ DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX p
  * @param   pVMCBHostPhys   Physical address of host VMCB.
  * @param   pVMCBPhys       Physical address of the VMCB.
  * @param   pCtx            Guest context.
+ * @param   pVM             The VM to operate on.
+ * @param   pVCpu           The VMCPU to operate on. (not used)
  */
-DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx);
+DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+
+/**
+ * Executes the specified handler in 64 mode
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ * @param   pfnHandler  RC handler
+ */
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler);
+
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
+
+/** 
+ * Prepares for and executes VMRUN (32 bits guests). 
+ * 
+ * @returns VBox status code. 
+ * @param   pVMCBHostPhys   Physical address of host VMCB. 
+ * @param   pVMCBPhys       Physical address of the VMCB. 
+ * @param   pCtx            Guest context. 
+ * @param   pVM             The VM to operate on. (not used)
+ * @param   pVCpu           The VMCPU to operate on. (not used)
+ */ 
+DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu); 
+
+
+/** 
+ * Prepares for and executes VMRUN (64 bits guests). 
+ * 
+ * @returns VBox status code. 
+ * @param   pVMCBHostPhys   Physical address of host VMCB. 
+ * @param   pVMCBPhys       Physical address of the VMCB. 
+ * @param   pCtx            Guest context. 
+ * @param   pVM             The VM to operate on. (not used)
+ * @param   pVCpu           The VMCPU to operate on. (not used)
+ */ 
+DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu); 
 
 /**
  * Executes INVLPGA.
