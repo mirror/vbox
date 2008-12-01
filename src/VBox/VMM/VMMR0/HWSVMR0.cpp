@@ -2277,7 +2277,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx)
 {
     /* @todo This code is not guest SMP safe (hyper context) */
-    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+////    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
     return VERR_NOT_IMPLEMENTED;
 }
 
