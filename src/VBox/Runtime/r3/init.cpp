@@ -219,13 +219,6 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
 #endif
 
     /*
-     * Init the program start TSes.
-     */
-    g_u64ProgramStartNanoTS = RTTimeNanoTS();
-    g_u64ProgramStartMicroTS = g_u64ProgramStartNanoTS / 1000;
-    g_u64ProgramStartMilliTS = g_u64ProgramStartNanoTS / 1000000;
-
-    /*
      * The Process ID.
      */
 #ifdef _MSC_VER
@@ -257,6 +250,14 @@ static int rtR3Init(bool fInitSUPLib, const char *pszProgramPath)
         RTTimeNanoTS();
     }
 #endif
+
+    /*
+     * Init the program start TSes.
+     * Do that here to be sure that the GIP time was properly updated the 1st time.
+     */
+    g_u64ProgramStartNanoTS = RTTimeNanoTS();
+    g_u64ProgramStartMicroTS = g_u64ProgramStartNanoTS / 1000;
+    g_u64ProgramStartMilliTS = g_u64ProgramStartNanoTS / 1000000;
 
     /*
      * More stuff to come?
