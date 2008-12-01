@@ -2126,11 +2126,11 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot create a transient shared folder on the "
                 "machine in the saved state"));
     if (mMachineState > MachineState_Paused)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot create a transient shared folder on the "
                 "machine while it is changing the state (machine state: %d)"),
             mMachineState);
@@ -2138,7 +2138,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     ComObjPtr <SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED (rc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
             tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
@@ -2150,7 +2150,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     CheckComRCReturnRC (rc);
 
     if (!accessible)
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
             tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
 
     /* protect mpVM (if not NULL) */
@@ -2198,11 +2198,11 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
     if (mMachineState == MachineState_Saved)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot remove a transient shared folder from the "
                 "machine in the saved state"));
     if (mMachineState > MachineState_Paused)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot remove a transient shared folder from the "
                 "machine while it is changing the state (machine state: %d)"),
             mMachineState);
@@ -4973,10 +4973,10 @@ HRESULT Console::findSharedFolder (const BSTR aName,
     }
 
     if (aSetError)
-        setError (E_INVALIDARG,
+        setError (VBOX_E_FILE_ERROR,
                   tr ("Could not find a shared folder named '%ls'."), aName);
 
-    return E_INVALIDARG;
+    return VBOX_E_FILE_ERROR;
 }
 
 /**
