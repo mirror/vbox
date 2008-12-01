@@ -321,7 +321,11 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
+        uint64_t dr6 = pCtx->dr[6];
+
         HWACCMR0SaveDebugState(pVM, pVCpu, pCtx);
+        if (!fDR6) /* dr6 was already up-to-date */
+            pCtx->dr[6] = dr6;
     }
     else
 #endif
