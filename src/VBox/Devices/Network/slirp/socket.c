@@ -161,9 +161,8 @@ soread(PNATState pData, struct socket *so)
         if (nn <= 0) {
                 if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
                         return 0;
-                else if (nn == 0)
-                        return 0; /* Windows: this is no error, just handle this like EWOULDBLOCK. */
                 else {
+                        /* nn == 0 means peer has performed an orderly shutdown */
                         DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n", nn, errno,strerror(errno)));
                         sofcantrcvmore(so);
                         tcp_sockclosed(pData, sototcpcb(so));
