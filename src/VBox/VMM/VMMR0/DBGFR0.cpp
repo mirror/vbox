@@ -86,7 +86,7 @@ VMMR0DECL(int) DBGFR0Trap01Handler(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCUINTREG 
      * Currently we only implement single stepping in the guest,
      * so we'll bitch if this is not a BS event.
      */
-    AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%08\n",
+    AssertMsg(uDr6 & X86_DR6_BS, ("hey! we're not doing guest BPs yet! dr6=%RTreg %04x:%08x\n",
                                   uDr6, pRegFrame->cs, pRegFrame->eip));
     /** @todo virtualize DRx. */
     LogFlow(("DBGFR0Trap01Handler: guest debug event %RTreg at %04x:%08x!\n", uDr6, pRegFrame->cs, pRegFrame->eip));
