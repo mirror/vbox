@@ -296,6 +296,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     {
         LogRel(("HWACCM: No VMX or SVM CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
+#ifdef RT_OS_DARWIN
+        if (VMMIsHwVirtExtForced(pVM))
+            return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
+#endif
         return VINF_SUCCESS;
     }
 
@@ -322,10 +326,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
          */
         if (VMMIsHwVirtExtForced(pVM))
             VM_SET_ERROR(pVM, rc, "An active VM already uses software virtualization. It is not allowed to "
-                         "simultaneously use VT-x.\n");
+                         "simultaneously use VT-x.");
         else
             VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not "
-                         "allowed to simultaneously use software virtualization.\n");
+                         "allowed to simultaneously use software virtualization.");
         return rc;
 
 #else  /* !RT_OS_DARWIN */
