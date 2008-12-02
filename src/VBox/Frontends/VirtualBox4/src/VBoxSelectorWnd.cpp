@@ -590,7 +590,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
             h = winPos.section (',', 3, 3).toInt (&ok);
         if (ok)
             max = winPos.section (',', 4, 4) == VBoxDefs::GUI_LastWindowPosition_Max;
-        if (ok)
+        if (ok && x > 0 && y > 0 /* to be sure it is not loaded out of the screen */)
         {
             QRect ar = QApplication::desktop()->availableGeometry (QPoint (x, y));
 
@@ -600,14 +600,11 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
             if (y < ar.top() || y > ar.bottom())
                 y = ar.top();
 
-            /* Composing normal parameters */
-            mNormalSize = QSize (w, h).expandedTo (minimumSizeHint())
-                          .boundedTo (ar.size());
-            mNormalPos = QPoint (x, y);
+            mNormalGeo.moveTo (x, y);
+            mNormalGeo.setSize (QSize (w, h).expandedTo (minimumSizeHint())
+                                            .boundedTo (ar.size()));
+            setGeometry (mNormalGeo);
 
-            /* Applying normal parameters */
-            resize (mNormalSize);
-            move (mNormalPos);
             if (max)
                 /* maximize if needed */
                 showMaximized();
@@ -615,8 +612,10 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
         else
         {
             QRect ar = QApplication::desktop()->availableGeometry (this);
-            resize (QSize (770, 550).expandedTo (minimumSizeHint())
-                .boundedTo (ar.size()));
+            mNormalGeo.setSize (QSize (770, 550).expandedTo (minimumSizeHint())
+                                                .boundedTo (ar.size()));
+            mNormalGeo.moveCenter (ar.center());
+            setGeometry (mNormalGeo);
         }
     }
 
@@ -697,10 +696,8 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     /* Save the position of the window */
     {
         QString winPos = QString ("%1,%2,%3,%4")
-                                 .arg (mNormalPos.x())
-                                 .arg (mNormalPos.y())
-                                 .arg (mNormalSize.width())
-                                 .arg (mNormalSize.height());
+            .arg (mNormalGeo.x()).arg (mNormalGeo.y())
+            .arg (mNormalGeo.width()).arg (mNormalGeo.height());
         if (isMaximized())
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
@@ -1169,25 +1166,14 @@ bool VBoxSelectorWnd::event (QEvent *e)
             QResizeEvent *re = (QResizeEvent *) e;
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-                mNormalSize = re->size();
+                mNormalGeo.setSize (re->size());
             break;
         }
         case QEvent::Move:
         {
             if ((windowState() & (Qt::WindowMaximized | Qt::WindowMinimized |
                                   Qt::WindowFullScreen)) == 0)
-            {
-                /* On X11 systems window remains un-framed before it
-                 * shown and painted for the first time. In this case
-                 * qt returns similar values for window's position either
-                 * including or excluding window's frame. We no need to
-                 * memorize window's position in this case as this is
-                 * not normal situation, so just ignoring such events.
-                 * Do not trust frameGeometry() in this situation. */
-
-                if (!(pos().x() == geometry().x() && pos().y() == geometry().y()))
-                    mNormalPos = pos();
-            }
+                mNormalGeo.moveTo (geometry().x(), geometry().y());
             break;
         }
 
