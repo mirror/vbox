@@ -26,6 +26,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PATM
 #include <VBox/patm.h>
+#include <VBox/hwaccm.h>
 #include <VBox/stam.h>
 #include <VBox/pgm.h>
 #include <VBox/cpum.h>
