@@ -917,6 +917,7 @@ typedef enum
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI             2
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT         3
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SW              4 /**< int xx */
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT         5 /**< Why are we getting this one?? */
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT         6
 /** @} */
 
