@@ -67,33 +67,33 @@ static const unsigned g_cb_xml_VirtualBox_settings_root_xsd =
  * @return      Input stream created using @c new or NULL to indicate
  *              a wrong URI/ID pair.
  */
-vboxxml::Input *
+xml::Input *
 VirtualBox::SettingsTreeHelper::resolveEntity (const char *aURI, const char *aID)
 {
     if (strcmp (aURI, VBOX_XML_SCHEMA_COMMON) == 0)
     {
-        return new vboxxml::
+        return new xml::
             MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_common_xsd,
                        g_cb_xml_VirtualBox_settings_common_xsd, aURI);
     }
 
     if (strcmp (aURI, VBOX_XML_SCHEMA_ROOT) == 0)
     {
-        return new vboxxml::
+        return new xml::
             MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_root_xsd,
                        g_cb_xml_VirtualBox_settings_root_xsd, aURI);
     }
 
     if (strcmp (aURI, VBOX_XML_SCHEMA) == 0)
     {
-        return new vboxxml::
+        return new xml::
             MemoryBuf ((const char *) g_ab_xml_VirtualBox_settings_xsd,
                        g_cb_xml_VirtualBox_settings_xsd, aURI);
     }
 
     if (strcmp (aURI, VBOX_XML_SETTINGS_CONVERTER) == 0)
     {
-        return new vboxxml::
+        return new xml::
             MemoryBuf ((const char *) g_ab_xml_SettingsConverter_xsl,
                        g_cb_xml_SettingsConverter_xsl, aURI);
     }
