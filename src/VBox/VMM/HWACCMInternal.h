@@ -224,6 +224,13 @@ typedef struct HWACCM
 
     /* RC handler to setup the 64 bits debug state. */
     RTRCPTR                     pfnSaveGuestDebug64;
+
+# ifdef DEBUG
+    /* Test handler */
+    RTRCPTR                     pfnTest64;
+
+    RTRCPTR                     uAlignment[1];
+# endif
 #endif
 
     struct

@@ -66,6 +66,7 @@ EXPORTS
     SVMGCVMRun64
     HWACCMSaveGuestFPU64
     HWACCMSaveGuestDebug64
+    HWACCMTestSwitcher64
 
     ; runtime
     nocrt_memchr

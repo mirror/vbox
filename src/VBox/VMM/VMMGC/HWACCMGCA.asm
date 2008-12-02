@@ -549,3 +549,6 @@ BEGINPROC HWACCMSaveGuestDebug64
     ret
 ENDPROC HWACCMSaveGuestDebug64
 
+BEGINPROC HWACCMTestSwitcher64
+    ret
+ENDPROC HWACCMTestSwitcher64
