@@ -330,6 +330,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
 #else  /* !RT_OS_DARWIN */
 
+        /* Invert the selection */
+        pVM->hwaccm.s.fAllowed ^= 1;
         if (pVM->hwaccm.s.fAllowed)
         {
             if (pVM->hwaccm.s.vmx.fSupported)
