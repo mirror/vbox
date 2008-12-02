@@ -710,8 +710,12 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     if (    PATMIsEnabled(pVM)
         &&  HWACCMIsEnabled(pVM))
     {
-        VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not "
-                              "allowed to simultaneously use software virtualization.\n");
+        if (CPUMGetCPUVendor(pVM) == CPUMCPUVENDOR_AMD)
+            VM_SET_ERROR(pVM, rc, "An active VM already uses AMD-V hardware acceleration. It is not "
+                                  "allowed to simultaneously use software virtualization.\n");
+        else
+            VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not "
+                                  "allowed to simultaneously use software virtualization.\n");
         return VERR_ACCESS_DENIED;
     }
 
