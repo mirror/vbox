@@ -2566,12 +2566,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished">&lt;hr&gt;Einige Dateien dieser virtuellen Festplatte sind nicht zugreifbar. Bitte verwenden Sie den Manager für virtuelle Medien im Modus &lt;b&gt;Zeige differentielle Abbilder&lt;/b&gt; um diese Dateien anzuzeigen.</translation>
+        <translation>&lt;hr&gt;Einige der zu dieser virtuellen Festplatte gehörigen Dateien sind nicht zugreifbar. Bitte verwenden Sie den Manager für virtuelle Medien im Modus &lt;b&gt;Zeige Differenz-Abbilder&lt;/b&gt; um diese Dateien anzuzeigen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;Diese Basisfestplatte ist indirekt über die folgenden Differenzfestplatten eingebunden:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
@@ -3087,7 +3087,7 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Datenspeichertyp</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
@@ -4090,12 +4090,12 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Beachten Sie, dass die Festplatte nicht zugreifbar ist. Daher kann diese momentan nicht gelöscht werden.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
+        <translation>Im folgenden Dialog haben Sie die Möglichkeit, das Speichermedium explizit zu löschen oder für eine spätere Verwendung zu bewahren.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
@@ -4198,19 +4198,19 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mehr</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">B&amp;eenden</translation>
+        <translation>B&amp;eenden</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
@@ -4226,7 +4226,7 @@ Version %1</translation>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Überschreiben</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
@@ -4237,19 +4237,19 @@ Version %1</translation>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">Festplatte</translation>
+        <translation>Festplatte</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">CD/DVD-Abbild</translation>
+        <translation>CD/DVD-Abbild</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">Diskettenabbild</translation>
+        <translation>Diskettenabbild</translation>
     </message>
 </context>
 <context>
