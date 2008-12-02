@@ -53,7 +53,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 #include <iprt/alloc.h>
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 #include <mach/kmod.h>
@@ -239,7 +239,6 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                 g_iMajorDeviceNo = cdevsw_add(-1, &g_DevCW);
                 if (g_iMajorDeviceNo >= 0)
                 {
-                    /** @todo the UID, GID and mode mask should be configurable! This isn't very secure... */
 #ifdef VBOX_WITH_HARDENING
                     g_hDevFsDevice = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
                                                      UID_ROOT, GID_WHEEL, 0600, DEVICE_NAME);
@@ -661,7 +660,77 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 }
 
 
-bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
+/*
+ * The following is a weak symbol hack to deal with the lack of
+ * host_vmxon & host_vmxoff in Tiger.
+ */
+static int g_fWeakHostVmxOnOff = false;
+
+__BEGIN_DECLS
+int host_vmxon(int exclusive) __attribute__((weak));
+void host_vmxoff(void) __attribute__((weak));
+__END_DECLS
+
+/* weak version for Tiger. */
+int host_vmxon(int exclusive)
+{
+    NOREF(exclusive);
+    g_fWeakHostVmxOnOff = true;
+    return 42;
+}
+
+/* weak version for Tiger. */
+void host_vmxoff(void)
+{
+    g_fWeakHostVmxOnOff = true;
+}
+
+
+/**
+ * Enables or disables VT-x using kernel functions.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED has a special meaning.
+ * @param   fEnable     Whether to enable or disable.
+ */
+int VBOXCALL supdrvOSEnableVTx(bool fEnable)
+{
+    if (g_fWeakHostVmxOnOff)
+        return VERR_NOT_SUPPORTED;
+
+    int rc;
+    if (fEnable)
+    {
+printf("calling host_vmxon\n");
+        rc = host_vmxon(false /* exclusive */);
+printf("host_vmxon: %d\n", rc);
+        if (rc == 42)
+            rc = VERR_NOT_SUPPORTED;
+        else
+        {
+            AssertReturn(!g_fWeakHostVmxOnOff, VERR_NOT_SUPPORTED);
+            if (rc == 0 /* all ok */)
+                rc = VINF_SUCCESS;
+            else if (rc == 1 /* unsupported */)
+                rc = VERR_VMX_NO_VMX;
+            else if (rc == 2 /* exclusive user */)
+                rc = VERR_VMX_IN_VMX_ROOT_MODE;
+            else
+                rc = VERR_UNRESOLVED_ERROR;
+        }
+    }
+    else
+    {
+printf("calling host_vmxoff\n");
+        host_vmxoff();
+printf("host_vmxoff returned\n");
+        AssertReturn(!g_fWeakHostVmxOnOff, VERR_NOT_SUPPORTED);
+        rc = VINF_SUCCESS;
+    }
+    return rc;
+}
+
+
+bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     NOREF(pDevExt);
     return false;
