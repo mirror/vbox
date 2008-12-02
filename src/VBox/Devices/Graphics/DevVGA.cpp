@@ -4416,6 +4416,26 @@ static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     pHlp->pfnPrintf(pHlp, "\n");
 }
 
+/**
+ * Info handler, device version. Dumps VGA DAC registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    unsigned    i;
+
+    pHlp->pfnPrintf(pHlp, "VGA DAC contents:\n");
+    for (i = 0; i < 0x100; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " %02X: %02X %02X %02X\n",
+                        i, s->palette[i*3+0], s->palette[i*3+1], s->palette[i*3+2]);
+    }
+}
+
 
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
 
@@ -5869,6 +5889,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgacr", "Dump VGA CRTC registers.", vgaInfoCR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgaar", "Dump VGA Attribute Controller registers.", vgaInfoAR);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgadac", "Dump VGA DAC registers.", vgaInfoDAC);
 
     /*
      * Construct the logo header.
