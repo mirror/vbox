@@ -517,40 +517,6 @@ void XmlKeyBackend::zap()
 // XmlTreeBackend Class
 //////////////////////////////////////////////////////////////////////////////
 
-class XmlTreeBackend::XmlError : public XmlTreeBackend::Error
-{
-public:
-
-    XmlError (xmlErrorPtr aErr)
-    {
-        if (!aErr)
-            throw xml::EInvalidArg (RT_SRC_POS);
-
-        char *msg = Format (aErr);
-        setWhat (msg);
-        RTStrFree (msg);
-    }
-
-    /**
-     * Composes a single message for the given error. The caller must free the
-     * returned string using RTStrFree() when no more necessary.
-     */
-    static char *Format (xmlErrorPtr aErr)
-    {
-        const char *msg = aErr->message ? aErr->message : "<none>";
-        size_t msgLen = strlen (msg);
-        /* strip spaces, trailing EOLs and dot-like char */
-        while (msgLen && strchr (" \n.?!", msg [msgLen - 1]))
-            -- msgLen;
-
-        char *finalMsg = NULL;
-        RTStrAPrintf (&finalMsg, "%.*s.\nLocation: '%s', line %d (%d), column %d",
-                      msgLen, msg, aErr->file, aErr->line, aErr->int1, aErr->int2);
-
-        return finalMsg;
-    }
-};
-
 struct XmlTreeBackend::Data
 {
     Data() : ctxt (NULL), doc (NULL)
@@ -692,7 +658,7 @@ void XmlTreeBackend::rawRead (xml::Input &aInput, const char *aSchema /* = NULL 
             if (m->trappedErr.get() != NULL)
                 m->trappedErr->rethrow();
 
-            throw XmlError (xmlCtxtGetLastError (m->ctxt));
+            throw xml::XmlError(xmlCtxtGetLastError (m->ctxt));
         }
 
         char *oldVersion = NULL;
@@ -733,7 +699,7 @@ void XmlTreeBackend::rawRead (xml::Input &aInput, const char *aSchema /* = NULL 
                     if (m->trappedErr.get() != NULL)
                         m->trappedErr->rethrow();
 
-                    throw XmlError (xmlCtxtGetLastError (m->ctxt));
+                    throw xml::XmlError(xmlCtxtGetLastError (m->ctxt));
                 }
 
                 /* setup stylesheet compilation and transformation error
@@ -766,7 +732,7 @@ void XmlTreeBackend::rawRead (xml::Input &aInput, const char *aSchema /* = NULL 
                     if (errorStr != NULL)
                     {
                         xmlFreeDoc (newDoc);
-                        throw Error (errorStr);
+                        throw xml::RuntimeError(errorStr);
                         /* errorStr is freed in catch(...) below */
                     }
 
@@ -860,7 +826,7 @@ void XmlTreeBackend::rawRead (xml::Input &aInput, const char *aSchema /* = NULL 
                     if (errorStr == NULL)
                         throw xml::LogicError (RT_SRC_POS);
 
-                    throw Error (errorStr);
+                    throw xml::RuntimeError(errorStr);
                     /* errorStr is freed in catch(...) below */
                 }
 
@@ -1106,7 +1072,7 @@ void XmlTreeBackend::StructuredErrorCallback (void *aCtxt, xmlErrorPtr aErr)
 
     char * &str = *(char * *) aCtxt;
 
-    char *newMsg = XmlError::Format (aErr);
+    char *newMsg = xml::XmlError::Format (aErr);
     AssertReturnVoid (newMsg != NULL);
 
     if (str == NULL)
