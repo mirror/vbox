@@ -2172,8 +2172,9 @@ ResumeExecution:
             AssertFailed(); /* can't come here; fails the first check. */
             break;
 
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DBEXCPT:   /* Unknown why we get this type for #DB */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT:   /* Software exception. (#BP or #OF) */
-            Assert(vector == 3 || vector == 4);
+            Assert(vector == 1 || vector == 3 || vector == 4);
             /* no break */
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_HWEXCPT:   /* Hardware exception. */
             Log2(("Hardware/software interrupt %d\n", vector));
@@ -2439,7 +2440,7 @@ ResumeExecution:
 
         default:
             rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE;
-            AssertFailed();
+            AssertMsgFailed(("Unexpected interuption code %x\n", intInfo));
             break;
         }
 
