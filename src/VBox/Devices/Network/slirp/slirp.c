@@ -242,6 +242,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     Assert(sizeof(struct ip) == 20);
     link_up = 1;
 
+    debug_init();
     if_init(pData);
     ip_init(pData);
 

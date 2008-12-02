@@ -7,6 +7,8 @@
  */
 
 #include <slirp.h>
+#include <iprt/string.h>
+#include <iprt/stream.h>
 
 
 /* Carry over one item from main.c so that the tty's restored.
@@ -214,4 +216,43 @@ sockstats(PNATState pData)
                                 so->so_rcv.sb_cc, so->so_snd.sb_cc);
         }
 }
+static size_t 
+print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                               const char *pszType, void const *pvValue,
+                                               int cchWidth, int cchPrecision, unsigned fFlags,
+                                               void *pvUser)
+{
+	uint32_t ip;
+	size_t cch = 0;
+	size_t cchNum = 0;
+    	char szNum[64];
+	if (strncmp(pszType, "IP4", 3) != 0) {
+		RTPrintf("%s: IP4 expected\n", __FUNCTION__);
+	}
+	ip = (uint32_t)pvValue;
 
+	cchNum = RTStrFormatNumber(szNum, ip & ((1 << 8) - 1), 0, cchWidth, cchPrecision, fFlags);
+	cch += pfnOutput(pvArgOutput, szNum, cchNum);
+	cch += pfnOutput(pvArgOutput, ".", 1);
+
+	cchNum = RTStrFormatNumber(szNum, (ip >> 8) & ((1 << 8) - 1), 0, cchWidth, cchPrecision, fFlags);
+	cch += pfnOutput(pvArgOutput, szNum, cchNum);
+	cch += pfnOutput(pvArgOutput, ".", 1);
+
+	cchNum = RTStrFormatNumber(szNum, (ip >> 16) & ((1 << 8) - 1), 0, cchWidth, cchPrecision, fFlags);
+	cch += pfnOutput(pvArgOutput, szNum, cchNum);
+	cch += pfnOutput(pvArgOutput, ".", 1);
+
+	cchNum = RTStrFormatNumber(szNum, (ip >> 24) & ((1 << 8) - 1), 0, cchWidth, cchPrecision, fFlags);
+	cch += pfnOutput(pvArgOutput, szNum, cchNum);
+	return (cch);
+}
+
+int 
+debug_init() 
+{
+	int status = VINF_SUCCESS;
+	status = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
+	AssertRC(status);
+	return (status);
+}
