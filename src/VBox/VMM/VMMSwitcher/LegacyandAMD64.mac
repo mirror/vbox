@@ -429,25 +429,7 @@ GLOBALNAME ICExitTarget
     ; restore stack
     lss     esp, [edx + CPUMCPU.Host.esp]
 
-    ; Restore FPU if guest has used it.
-    ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
-    mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
-    test    esi, CPUM_USED_FPU
-    jz near gth_fpu_no
-    mov     ecx, cr0
-    and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
-    mov     cr0, ecx
-
-    fxsave  [edx + CPUMCPU.Guest.fpu]
-    fxrstor [edx + CPUMCPU.Host.fpu]
-    jmp near gth_fpu_no
-
-ALIGNCODE(16)
-gth_fpu_no:
-
     ; Control registers.
-    ; Would've liked to have these higher up in case of crashes, but
-    ; the fpu stuff must be done before we restore cr0.
     mov     ecx, [edx + CPUMCPU.Host.cr4]
     mov     cr4, ecx
     mov     ecx, [edx + CPUMCPU.Host.cr0]

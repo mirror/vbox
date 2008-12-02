@@ -62,12 +62,8 @@
 ; @param 1  full width register name
 ; @param 2  16-bit regsiter name for \a 1.
 
-  ; Save a host and load the corresponding guest MSR (trashes rdx & rcx)
+  ; Load the corresponding guest MSR (trashes rdx & rcx)
   %macro LOADGUESTMSR 2
-    mov     rcx, %1
-    rdmsr
-    push    rdx
-    push    rax
     mov     edx, dword [rsi + %2 + 4]
     mov     eax, dword [rsi + %2]
     wrmsr
@@ -80,17 +76,6 @@
     rdmsr
     mov     dword [rsi + %2], eax
     mov     dword [rsi + %2 + 4], edx
-    pop     rax
-    pop     rdx
-    wrmsr
-  %endmacro
-
-  ; Load the corresponding host MSR (trashes rdx & rcx)
-  %macro LOADHOSTMSR 1
-    mov     rcx, %1
-    pop     rax
-    pop     rdx
-    wrmsr
   %endmacro
 
  %ifdef ASM_CALL64_GCC
@@ -184,7 +169,6 @@ BITS 64
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    vmlauch/vmresume
 ; * @param   pCtx       Guest context
 ; */
 BEGINPROC VMXGCStartVM64
@@ -218,13 +202,7 @@ BEGINPROC VMXGCStartVM64
     MYPUSHAD
 
     ;/* Save the Guest CPU context pointer. */
-%ifdef ASM_CALL64_GCC
-    ; fResume already in rdi
     ; pCtx    already in rsi
-%else
-    mov     rdi, rcx        ; fResume
-    mov     rsi, rdx        ; pCtx
-%endif
 
     ;/* Save segment registers */
     ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
@@ -232,12 +210,9 @@ BEGINPROC VMXGCStartVM64
 
     ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
     ;; @todo use the automatic load feature for MSRs
-    LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
-%if 0  ; not supported on Intel CPUs
-    LOADGUESTMSR MSR_K8_CSTAR, CPUMCTX.msrCSTAR
-%endif
-    LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
-    LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
+    LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
+    LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Save the pCtx pointer
@@ -279,18 +254,6 @@ BEGINPROC VMXGCStartVM64
     mov     r14, qword [rsi + CPUMCTX.r14]
     mov     r15, qword [rsi + CPUMCTX.r15]
 
-    ; resume or start?
-    cmp     rdi, 0                  ; fResume
-    je      .vmlauch64_lauch
-
-    ;/* Restore edi & esi. */
-    mov     rdi, qword [rsi + CPUMCTX.edi]
-    mov     rsi, qword [rsi + CPUMCTX.esi]
-
-    vmresume
-    jmp     .vmlaunch64_done;      ;/* here if vmresume detected a failure. */
-
-.vmlauch64_lauch:
     ;/* Restore rdi & rsi. */
     mov     rdi, qword [rsi + CPUMCTX.edi]
     mov     rsi, qword [rsi + CPUMCTX.esi]
@@ -300,8 +263,8 @@ BEGINPROC VMXGCStartVM64
 
 ALIGNCODE(16)
 .vmlaunch64_done:
-    jc      near .vm8tart64_invalid_vmxon_ptr
-    jz      near .vm8tart64_start_failed
+    jc      near .vmstart64_invalid_vmxon_ptr
+    jz      near .vmstart64_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
     lidt    [rsp]
@@ -338,12 +301,6 @@ ALIGNCODE(16)
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSR MSR_K8_SF_MASK
-    LOADHOSTMSR MSR_K6_STAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSR MSR_K8_CSTAR
-%endif
-    LOADHOSTMSR MSR_K8_LSTAR
 
     ; Restore segment registers
     MYPOPSEGS rax, ax
@@ -359,7 +316,7 @@ ALIGNCODE(16)
     ret
 
 
-.vm8tart64_invalid_vmxon_ptr:
+.vmstart64_invalid_vmxon_ptr:
     ; Restore base and limit of the IDTR & GDTR
     lidt    [rsp]
     add     rsp, 8*2
@@ -374,12 +331,6 @@ ALIGNCODE(16)
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSR MSR_K8_SF_MASK
-    LOADHOSTMSR MSR_K6_STAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSR MSR_K8_CSTAR
-%endif
-    LOADHOSTMSR MSR_K8_LSTAR
 
     ; Restore segment registers
     MYPOPSEGS rax, ax
@@ -389,7 +340,7 @@ ALIGNCODE(16)
     mov     eax, VERR_VMX_INVALID_VMXON_PTR
     jmp     .vmstart64_end
 
-.vm8tart64_start_failed:
+.vmstart64_start_failed:
     ; Restore base and limit of the IDTR & GDTR
     lidt    [rsp]
     add     rsp, 8*2
@@ -404,12 +355,6 @@ ALIGNCODE(16)
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSR MSR_K8_SF_MASK
-    LOADHOSTMSR MSR_K6_STAR
-%if 0  ; not supported on Intel CPUs
-    LOADHOSTMSR MSR_K8_CSTAR
-%endif
-    LOADHOSTMSR MSR_K8_LSTAR
 
     ; Restore segment registers
     MYPOPSEGS rax, ax
@@ -541,14 +486,54 @@ BEGINPROC SVMGCVMRun64
     ret
 ENDPROC SVMGCVMRun64
 
+;/**
+; * Saves the guest FPU context
+; *
+; * @returns VBox status code
+; * @param   pCtx       Guest context [rsi]
+; */
 BEGINPROC HWACCMSaveGuestFPU64
+    mov     rax, cr0
+    mov     rcx, rax                    ; save old CR0
+    and     rax, ~(X86_CR0_TS | X86_CR0_EM)
+    mov     cr0, rax
+
+    fxsave  [rsi + CPUMCTX.fpu]
+
+    mov     cr0, rcx                    ; and restore old CR0 again
+    
+    mov     eax, VINF_SUCCESS
     ret
 ENDPROC HWACCMSaveGuestFPU64
 
+;/**
+; * Saves the guest debug context (DR0-3, DR6)
+; *
+; * @returns VBox status code
+; * @param   pCtx       Guest context [rsi]
+; */
 BEGINPROC HWACCMSaveGuestDebug64
+    mov rax, dr0
+    mov qword [rsi + CPUMCTX.dr + 0*8], rax
+    mov rax, dr1
+    mov qword [rsi + CPUMCTX.dr + 1*8], rax
+    mov rax, dr2
+    mov qword [rsi + CPUMCTX.dr + 2*8], rax
+    mov rax, dr3
+    mov qword [rsi + CPUMCTX.dr + 3*8], rax
+    mov rax, dr6
+    mov qword [rsi + CPUMCTX.dr + 6*8], rax
+    mov eax, VINF_SUCCESS
     ret
 ENDPROC HWACCMSaveGuestDebug64
 
+;/**
+; * Dummy callback handler
+; *
+; * @returns VBox status code
+; * @param   pCtx       Guest context [rsi]
+; */
 BEGINPROC HWACCMTestSwitcher64
+    mov eax, VINF_SUCCESS
     ret
 ENDPROC HWACCMTestSwitcher64
