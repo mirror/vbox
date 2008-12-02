@@ -384,15 +384,18 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 }
 
                 if (false == vboxGlobal().isTrayMenu())
+                {
 #endif
                     vboxGlobal().selectorWnd().show();
 #ifdef VBOX_WITH_REGISTRATION_REQUEST
-                vboxGlobal().showRegistrationDialog (false /* aForce */);
+                    vboxGlobal().showRegistrationDialog (false /* aForce */);
 #endif
 #ifdef VBOX_WITH_UPDATE_REQUEST
-                vboxGlobal().showUpdateDialog (false /* aForce */);
+                    vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
 #ifdef VBOX_GUI_WITH_SYSTRAY
+                }
+                
                 do
                 {
 #endif
