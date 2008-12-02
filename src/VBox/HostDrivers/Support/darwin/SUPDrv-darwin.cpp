@@ -664,13 +664,21 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
  * The following is a weak symbol hack to deal with the lack of
  * host_vmxon & host_vmxoff in Tiger.
  */
-static int g_fWeakHostVmxOnOff = false;
-
+#if 0
 __BEGIN_DECLS
+#if 1
+#pragma weak host_vmxon
+int host_vmxon(int exclusive) __attribute__((weak_import));
+#pragma weak host_vmxoff
+void host_vmxoff(void) __attribute__((weak_import));
+#else
 int host_vmxon(int exclusive) __attribute__((weak));
 void host_vmxoff(void) __attribute__((weak));
+#endif
 __END_DECLS
 
+static int g_fWeakHostVmxOnOff = false;
+#if 0
 /* weak version for Tiger. */
 int host_vmxon(int exclusive)
 {
@@ -684,6 +692,8 @@ void host_vmxoff(void)
 {
     g_fWeakHostVmxOnOff = true;
 }
+#endif
+#endif
 
 
 /**
@@ -694,6 +704,9 @@ void host_vmxoff(void)
  */
 int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 {
+#if 0
+    if (host_vmxon == NULL || host_vmxoff == NULL)
+        g_fWeakHostVmxOnOff = true;
     if (g_fWeakHostVmxOnOff)
         return VERR_NOT_SUPPORTED;
 
@@ -723,6 +736,9 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
         rc = VINF_SUCCESS;
     }
     return rc;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
