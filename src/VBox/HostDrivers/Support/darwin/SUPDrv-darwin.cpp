@@ -700,9 +700,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
     int rc;
     if (fEnable)
     {
-printf("calling host_vmxon\n");
         rc = host_vmxon(false /* exclusive */);
-printf("host_vmxon: %d\n", rc);
         if (rc == 42)
             rc = VERR_NOT_SUPPORTED;
         else
@@ -720,9 +718,7 @@ printf("host_vmxon: %d\n", rc);
     }
     else
     {
-printf("calling host_vmxoff\n");
         host_vmxoff();
-printf("host_vmxoff returned\n");
         AssertReturn(!g_fWeakHostVmxOnOff, VERR_NOT_SUPPORTED);
         rc = VINF_SUCCESS;
     }
