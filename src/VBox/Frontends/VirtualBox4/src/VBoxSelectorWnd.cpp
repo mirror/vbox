@@ -1509,7 +1509,11 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
 
     /* we warn about inaccessible media only once (after media emumeration
      * started from main() at startup), to avoid annoying the user */
-    if (mDoneInaccessibleWarningOnce)
+    if (   mDoneInaccessibleWarningOnce
+#ifdef VBOX_GUI_WITH_SYSTRAY
+        || vboxGlobal().isTrayMenu()
+#endif
+       )
         return;
 
     mDoneInaccessibleWarningOnce = true;
