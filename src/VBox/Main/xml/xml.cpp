@@ -94,6 +94,7 @@ namespace xml
 //////////////////////////////////////////////////////////////////////////////
 
 LogicError::LogicError(RT_SRC_POS_DECL)
+    : Error(NULL)
 {
     char *msg = NULL;
     RTStrAPrintf(&msg, "In '%s', '%s' at #%d",
@@ -102,6 +103,45 @@ LogicError::LogicError(RT_SRC_POS_DECL)
     RTStrFree(msg);
 }
 
+XmlError::XmlError(xmlErrorPtr aErr)
+{
+    if (!aErr)
+        throw EInvalidArg (RT_SRC_POS);
+
+    char *msg = Format (aErr);
+    setWhat (msg);
+    RTStrFree (msg);
+}
+
+/**
+ * Composes a single message for the given error. The caller must free the
+ * returned string using RTStrFree() when no more necessary.
+ */
+// static
+char *XmlError::Format(xmlErrorPtr aErr)
+{
+    const char *msg = aErr->message ? aErr->message : "<none>";
+    size_t msgLen = strlen (msg);
+    /* strip spaces, trailing EOLs and dot-like char */
+    while (msgLen && strchr (" \n.?!", msg [msgLen - 1]))
+        -- msgLen;
+
+    char *finalMsg = NULL;
+    RTStrAPrintf (&finalMsg, "%.*s.\nLocation: '%s', line %d (%d), column %d",
+                    msgLen, msg, aErr->file, aErr->line, aErr->int1, aErr->int2);
+
+    return finalMsg;
+}
+
+EIPRTFailure::EIPRTFailure(int aRC)
+    : RuntimeError(NULL),
+      mRC(aRC)
+{
+    char *newMsg = NULL;
+    RTStrAPrintf(&newMsg, "Runtime error: %d (%s)", aRC, RTErrGetShort(aRC));
+    setWhat(newMsg);
+    RTStrFree(newMsg);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // File Class
@@ -117,7 +157,7 @@ struct File::Data
     bool opened : 1;
 };
 
-File::File (Mode aMode, const char *aFileName)
+File::File(Mode aMode, const char *aFileName)
     : m (new Data())
 {
     m->fileName = RTStrDup (aFileName);
@@ -400,37 +440,97 @@ XmlFileParser::~XmlFileParser()
 {
 }
 
+struct ReadContext
+{
+    File file;
+    std::string error;
+
+    ReadContext(const char *pcszFilename)
+        : file(File::Mode_Read, pcszFilename)
+    {
+    }
+
+    void setError(const xml::Error &x)
+    {
+        error = x.what();
+    }
+
+    void setError(const std::exception &x)
+    {
+        error = x.what();
+    }
+};
+
 void XmlFileParser::read(const char *pcszFilename)
 {
     GlobalLock lock();
+//     global.setExternalEntityLoader(ExternalEntityLoader);
 
     xmlDocPtr doc = NULL;
+    ReadContext *pContext = NULL;
 
     m->strXmlFilename = pcszFilename;
 
-    /* Note: when parsing we use XML_PARSE_NOBLANKS to instruct libxml2 to
-        * remove text nodes that contain only blanks. This is important because
-        * otherwise xmlSaveDoc() won't be able to do proper indentation on
-        * output. */
-
-    /* parse the stream */
-    /* NOTE: new InputCtxt instance will be deleted when the stream is closed by
-        * the libxml2 API (e.g. when calling xmlFreeParserCtxt()) */
-//     doc = xmlCtxtReadIO(m->ctxt,
-//                         ReadCallback,
-//                         CloseCallback,
-//                         new Data::InputCtxt (&aInput, m->trappedErr),
-//                         aInput.uri(), NULL,
-//                         XML_PARSE_NOBLANKS);
-    if (doc == NULL)
+    try
     {
-        /* look if there was a forwared exception from the lower level */
-//         if (m->trappedErr.get() != NULL)
-//             m->trappedErr->rethrow();
+        pContext = new ReadContext(pcszFilename);
+        doc = xmlCtxtReadIO(m->ctxt,
+                            ReadCallback,
+                            CloseCallback,
+                            pContext,
+                            pcszFilename,
+                            NULL,       // encoding
+                            XML_PARSE_NOBLANKS);
+        if (doc == NULL)
+        {
+            throw XmlError(xmlCtxtGetLastError(m->ctxt));
+        }
 
-//         throw XmlError (xmlCtxtGetLastError (m->ctxt));
+        xmlFreeDoc(doc);
+        doc = NULL;
+
+        delete pContext;
+        pContext = NULL;
+    }
+    catch (...)
+    {
+        if (doc != NULL)
+            xmlFreeDoc(doc);
+
+        if (pContext)
+            delete pContext;
+
+        throw;
     }
 }
+
+// static
+int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
+{
+    ReadContext *pContext = static_cast<ReadContext*>(aCtxt);
+
+    /* To prevent throwing exceptions while inside libxml2 code, we catch
+     * them and forward to our level using a couple of variables. */
+
+    try
+    {
+        return pContext->file.read(aBuf, aLen);
+    }
+    catch (const xml::EIPRTFailure &err) { pContext->setError(err); }
+    catch (const xml::Error &err) { pContext->setError(err); }
+    catch (const std::exception &err) { pContext->setError(err); }
+    catch (...) { pContext->setError(xml::LogicError(RT_SRC_POS)); }
+
+    return -1 /* failure */;
+}
+
+int XmlFileParser::CloseCallback(void *aCtxt)
+{
+    /// @todo to be written
+
+    return -1;
+}
+
 
 } // end namespace xml
 

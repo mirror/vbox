@@ -3811,7 +3811,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
                          tr ("Could not load the settings file '%s' (%Rrc)"),
                          aFile.uri(), err.rc());
     }
-    catch (const XmlTreeBackend::Error &err)
+    catch (const xml::RuntimeError &err)
     {
         Assert (err.what() != NULL);
 

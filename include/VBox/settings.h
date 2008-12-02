@@ -793,7 +793,9 @@ public:
     {
         Key key = findKey (aName);
         if (key.isNull())
-            throw ENoKey (FmtStr ("No such key '%s'", aName));
+        {
+            throw ENoKey(FmtStr("No such key '%s'", aName));
+        }
         return key;
     }
 
@@ -1014,25 +1016,14 @@ public:
     };
 
     /**
-     * The Error class represents errors that may happen when parsing or
-     * validating the XML document representing the settings tree.
-     */
-    class VBOXXML_CLASS Error : public xml::RuntimeError
-    {
-    public:
-
-        Error (const char *aMsg = NULL) : RuntimeError (aMsg) {}
-    };
-
-    /**
      * The EConversionCycle class represents a conversion cycle detected by the
      * AutoConverter::needsConversion() implementation.
      */
-    class VBOXXML_CLASS EConversionCycle : public Error
+    class VBOXXML_CLASS EConversionCycle : public xml::RuntimeError
     {
     public:
 
-        EConversionCycle (const char *aMsg = NULL) : Error (aMsg) {}
+        EConversionCycle (const char *aMsg = NULL) : RuntimeError (aMsg) {}
     };
 
     /**
@@ -1181,8 +1172,6 @@ public:
     Key &rootKey() const;
 
 private:
-
-    class XmlError;
 
     /* Obscure class data */
     struct Data;

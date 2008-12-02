@@ -109,7 +109,7 @@ class VBOXXML_CLASS Error : public std::exception
 {
 public:
 
-    Error (const char *aMsg = NULL)
+    Error(const char *aMsg = NULL)
         : m (aMsg ? Str::New (aMsg) : NULL) {}
 
     virtual ~Error() throw() {}
@@ -119,6 +119,8 @@ public:
     const char *what() const throw() { return m.is_null() ? NULL : m->str; }
 
 private:
+
+    Error() {};     // hide the default constructor to make sure the extended one above is always used
 
     /** smart string with support for reference counting */
     struct Str
@@ -147,7 +149,9 @@ class VBOXXML_CLASS LogicError : public Error
 {
 public:
 
-    LogicError (const char *aMsg = NULL) : Error (aMsg) {}
+    LogicError (const char *aMsg = NULL)
+        : xml::Error(aMsg)
+    {}
 
     LogicError (RT_SRC_POS_DECL);
 };
@@ -157,6 +161,15 @@ class VBOXXML_CLASS RuntimeError : public Error
 public:
 
     RuntimeError (const char *aMsg = NULL) : Error (aMsg) {}
+};
+
+class VBOXXML_CLASS XmlError : public RuntimeError
+{
+public:
+
+    XmlError(xmlErrorPtr aErr);
+
+    static char *Format(xmlErrorPtr aErr);
 };
 
 // Logical errors
@@ -193,13 +206,11 @@ class VBOXXML_CLASS EIPRTFailure : public RuntimeError
 {
 public:
 
-    EIPRTFailure (const char *aMsg = NULL) : RuntimeError (aMsg) {}
+    EIPRTFailure (int aRC);
 
-    EIPRTFailure (int aRC) : mRC (aRC) {}
     int rc() const { return mRC; }
 
 private:
-
     int mRC;
 };
 
@@ -465,6 +476,9 @@ private:
     struct Data;
     std::auto_ptr<Data> m;
 
+    static int ReadCallback(void *aCtxt, char *aBuf, int aLen);
+
+    static int CloseCallback (void *aCtxt);
 };
 
 
