@@ -173,8 +173,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	   $(prefix)/usr/share/pixmaps/VBox.png
 	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
 	mv $(archdir)/*.r0 $(prefix)/usr/lib/$(package)
-	$(if $(filter amd64,$(arch)),\
-	    mv $(archdir)/VBoxREM2.rel $(prefix)/usr/lib/$(package),)
+	mv $(archdir)/*.rel $(prefix)/usr/lib/$(package) || true
 	mv $(archdir)/VBoxXPCOMIPCD $(prefix)/usr/lib/$(package)
 	mv $(archdir)/components $(prefix)/usr/lib/$(package)/components
 	mv $(archdir)/*.so $(prefix)/usr/lib/$(package)
