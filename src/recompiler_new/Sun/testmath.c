@@ -277,8 +277,8 @@ extern int testmath(void)
     CHECKLL(testremainder(), 1);
 
 
-#ifndef RT_OS_DARWIN
-    /** @todo: figure out why it doesn't work on MacOS */
+    /* Only works in extended precision, while double precesion is defaul on BSD (including Darwin) */
+    set_cw(0x37f);
     CHECK(rintl(1.0L), 1.0);
     CHECK(rintl(1.4L), 1.0);
     CHECK(rintl(1.3L), 1.0);
@@ -286,7 +286,7 @@ extern int testmath(void)
     CHECK(rintl(3123.1232L), 3123.0);
     CHECK(rint(3985.13454), 3985.0);
     CHECK(rintf(9999.999), 10000.0);
-#endif
+    set_cw(0x27f);
 
     CHECK(sinl(1.0L),  0.84147098480789650664L);
     lrd = 180.0L;

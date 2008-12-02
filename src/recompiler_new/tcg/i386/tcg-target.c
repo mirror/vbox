@@ -546,6 +546,42 @@ static void *vbox_st_helpers[] = {
 };
 
 #ifdef RT_OS_DARWIN
+
+/* could be any register, not used for argument passing */
+#define BIAS_REG            TCG_REG_EDI
+/* Call out stack alignement, must be power of 2 for mask below to be right */
+#define CALLOUT_FRAME_ALIGN 16
+#define CALLOUT_FRAME_MASK  ~(CALLOUT_FRAME_ALIGN - 1)
+
+static void tcg_align_frame_pre(TCGContext* s, int args_size)
+{   
+    int8_t bias;
+
+    bias = CALLOUT_FRAME_ALIGN - args_size;
+    
+    while (bias <= 0)
+        bias += CALLOUT_FRAME_ALIGN;
+
+    tcg_out_push(s, BIAS_REG);
+    tcg_out_opc(s, 0x8d);  tcg_out8(s, 0x74 | (BIAS_REG <<3));  tcg_out8(s, 0x20 | TCG_REG_ESP);  tcg_out8(s, -args_size-4); 	/* lea -(args_size+4)(%esp),%bias */
+    tcg_out8(s, 0x83); tcg_out8(s, 0xe0 | BIAS_REG); tcg_out8(s, CALLOUT_FRAME_MASK); /* andl $CALLOUT_FRAME_MASK, %bias */
+    tcg_out_modrm(s, 0x01 | (ARITH_SUB << 3), TCG_REG_ESP, BIAS_REG); /* sub    %esp,%bias */
+    tcg_out8(s, 0x8d);  tcg_out8(s, 0x64);  tcg_out8(s, TCG_REG_ESP |(BIAS_REG << 3));  tcg_out8(s, args_size+4);/* lea    args_size+4(%esp,%bias),%esp */
+    tcg_out_push(s, BIAS_REG);
+    /* restore old bias_reg value, so nobody notices */
+    tcg_out8(s, 0xf7);  tcg_out8(s, 0xd8 | BIAS_REG);  /* neg bias_reg */
+    tcg_out8(s, 0x8b);  tcg_out8(s, 0x44 | (BIAS_REG << 3));  tcg_out8(s, TCG_REG_ESP |(BIAS_REG << 3));  tcg_out8(s, -args_size);/* mov    -args_size(%esp,%bias),%bias */
+
+    /* how stack is ready for args to be pushed */
+}
+
+static void tcg_align_frame_post(TCGContext* s, int args_size)
+{
+    tcg_out8(s, 0x8b);  tcg_out8(s, 0x44 | (BIAS_REG << 3));  tcg_out8(s, TCG_REG_ESP |(TCG_REG_ESP << 3));  tcg_out8(s, args_size);/* mov  args_size(%esp),%bias */
+    tcg_out_modrm(s, 0x01 | (ARITH_SUB << 3), BIAS_REG, TCG_REG_ESP); /* sub    %bias, %esp */    
+    tcg_out_pop(s, BIAS_REG);
+}
+
 static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
                                    int addr_reg, 
                                    int data_reg, int data_reg2) 
@@ -554,36 +590,46 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
 
     /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
     /* out parameter (address), note that phys address is always 64-bit */
-    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
+    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));        
+    tcg_align_frame_pre(s, 8);
     
-    tcg_out8(s, 0xf7); tcg_out8(s, 0xc4); tcg_out32(s, 0xf); /* test $0xf, %esp */
-    tcg_out8(s, 0x74); tcg_out8(s, 0x4); /* je 1 */ 
-    tcg_out8(s, 0x8d);  tcg_out8(s, 0x64);  tcg_out8(s, 0x24);  tcg_out8(s, 0xf8); 	/* lea    -0x8(%esp),%esp */
-   /* 1: */
-    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
+    /* push arguments */
+    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
     tcg_out_push(s, addr_reg);
 
-    tcg_out8(s, 0xe8);  tcg_out32(s, 0); /* call 2 */
-   /* 2: */
-    tcg_out8(s, 0x74); tcg_out8(s, 0x6); /* je 3 */ 
-    tcg_out8(s, 0x83); tcg_out8(s, 0x04); tcg_out8(s, 0x24); tcg_out8(s, 0x11); /* addl   $0x11,(%esp) */
-    tcg_out8(s, 0xeb); tcg_out8(s, 0x04); /* jmp 4 */
-   /* 3: */
-    tcg_out8(s, 0x83); tcg_out8(s, 0x04); tcg_out8(s, 0x24); tcg_out8(s, 0x14); /* addl   $0x14,(%esp) */
-   /* 4: */
-    tcg_out_long_jmp(s, vbox_ld_helpers[index]);
+    tcg_out_long_call(s, vbox_ld_helpers[index]);
+    tcg_align_frame_post(s, 8);
 
-   /* return point 1: clear both parameter and alignment */ 
-    tcg_out8(s, 0x83);  tcg_out8(s, 0xc4);   tcg_out8(s, 0x08); /* add    $0x8,%esp */
-   /* return point 2: clear only parameter */ 
-    tcg_out8(s, 0x83);  tcg_out8(s, 0xc4);   tcg_out8(s, 0x08); /* add    $0x8,%esp */
-    /* mov %eax, data_reg */
     tcg_out_mov(s, data_reg, TCG_REG_EAX);
-
     /* returned 64-bit value */
     if (useReg2)
       tcg_out_mov(s, data_reg2, TCG_REG_EDX);
 }
+static void tcg_out_vbox_phys_write(TCGContext *s, int index, 
+                                    int addr_reg, 
+                                    int val_reg, int val_reg2) {
+    int use_reg2 = ((index & 3) == 3);
+    int args_size = 8 + (use_reg2 ? 8 : 4);
+    int temp_val_reg = 0;
+
+    /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */ 
+    tcg_align_frame_pre(s, args_size);
+    /* out parameter (value2) */
+    if (use_reg2) 
+        tcg_out_push(s, val_reg2);
+    /* out parameter (value) */
+    tcg_out_push(s, val_reg);
+    /* out parameter (address), note that phys address is always 64-bit */
+    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
+    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
+    tcg_out_push(s, addr_reg);
+
+    /* call it */
+    tcg_out_long_call(s, vbox_st_helpers[index]);
+  
+    tcg_align_frame_post(s, args_size);
+}
+
 #else
 static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
                                    int addr_reg, 
@@ -609,8 +655,6 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     /* clean stack after us */
     tcg_out_addi(s, TCG_REG_ESP, 8);
 }
-#endif
-
 
 static void tcg_out_vbox_phys_write(TCGContext *s, int index, 
                                     int addr_reg, 
@@ -633,8 +677,9 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index,
     
     /* clean stack after us */
     tcg_out_addi(s, TCG_REG_ESP, 8 + (useReg2 ? 8 : 4));
-
 }
+#endif
+
 #endif
 
 /* XXX: qemu_ld and qemu_st could be modified to clobber only EDX and
@@ -1375,7 +1420,7 @@ static int tcg_target_callee_save_regs[] = {
 #else
     TCG_REG_EBP,
     TCG_REG_EBX,
-    /* TCG_REG_ESI ,*/ /* currently used for the global env, so no
+    /* TCG_REG_ESI, */ /* currently used for the global env, so no
                           need to save */
     TCG_REG_EDI,
 #endif
