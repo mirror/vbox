@@ -330,10 +330,6 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
 #else  /* !RT_OS_DARWIN */
 
-        /* Invert the selection */
-        pVM->hwaccm.s.fAllowed ^= 1;
-        LogRel(("HWACCMR3InitFinalize: new HWACCM status = %s\n", pVM->hwaccm.s.fAllowed ? "enabled" : "disabled"));
-
         if (pVM->hwaccm.s.fAllowed)
         {
             if (pVM->hwaccm.s.vmx.fSupported)
