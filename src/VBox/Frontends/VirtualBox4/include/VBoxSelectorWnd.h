@@ -174,8 +174,7 @@ private:
     VBoxSnapshotsWgt *mVmSnapshotsWgt;
     VBoxVMDescriptionPage *mVmDescriptionPage;
 
-    QPoint mNormalPos;
-    QSize mNormalSize;
+    QRect mNormalGeo;
 
     bool mDoneInaccessibleWarningOnce : 1;
 };
