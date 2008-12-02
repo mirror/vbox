@@ -120,7 +120,7 @@ public:
 
 private:
 
-    Error() {};     // hide the default constructor to make sure the extended one above is always used
+//     Error() {};     // hide the default constructor to make sure the extended one above is always used
 
     /** smart string with support for reference counting */
     struct Str
