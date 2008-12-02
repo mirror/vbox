@@ -123,6 +123,8 @@ public:
     }
     void updateSliders();
 
+    void requestToResize (const QSize &aSize);
+
 signals:
 
     void keyboardStateChanged (int state);
@@ -256,6 +258,7 @@ private:
 
     bool mIgnoreMainwndResize : 1;
     bool mAutoresizeGuest : 1;
+    bool mIgnoreFrameBufferResize : 1;
 
     /**
      * This flag indicates whether the last console resize should trigger
