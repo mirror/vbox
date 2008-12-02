@@ -651,6 +651,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mIsHostkeyAlone (false)
     , mIgnoreMainwndResize (true)
     , mAutoresizeGuest (false)
+    , mIgnoreFrameBufferResize (false)
     , mDoResize (false)
     , mGuestSupportsGraphics (false)
     , mNumLock (false)
@@ -1142,7 +1143,8 @@ bool VBoxConsoleView::event (QEvent *e)
                 maybeRestrictMinimumSize();
 
                 /* resize the guest canvas */
-                resize (re->width(), re->height());
+                if (!mIgnoreFrameBufferResize)
+                    resize (re->width(), re->height());
                 updateSliders();
                 /* Let our toplevel widget calculate its sizeHint properly. */
 #ifdef Q_WS_X11
@@ -1156,7 +1158,8 @@ bool VBoxConsoleView::event (QEvent *e)
                 QCoreApplication::sendPostedEvents (0, QEvent::LayoutRequest);
 #endif /* Q_WS_X11 */
 
-                normalizeGeometry (true /* adjustPosition */);
+                if (!mIgnoreFrameBufferResize)
+                    normalizeGeometry (true /* adjustPosition */);
 
                 /* report to the VM thread that we finished resizing */
                 mConsole.GetDisplay().ResizeCompleted (0);
@@ -1177,6 +1180,13 @@ bool VBoxConsoleView::event (QEvent *e)
                  * automatically.  In fact, we only need this on the first resize,
                  * but it is done every time to keep the code simpler. */
                 calculateDesktopGeometry();
+
+                /* Enable frame-buffer resize watching. */
+                if (mIgnoreFrameBufferResize)
+                {
+                    mIgnoreFrameBufferResize = false;
+                    doResizeHint (mNormalSize);
+                }
 
                 return true;
             }
@@ -3856,5 +3866,11 @@ void VBoxConsoleView::updateSliders()
     verticalScrollBar()->setRange(0, v.height() - p.height());
     horizontalScrollBar()->setPageStep(p.width());
     verticalScrollBar()->setPageStep(p.height());
+}
+
+void VBoxConsoleView::requestToResize (const QSize &aSize)
+{
+    mIgnoreFrameBufferResize = true;
+    mNormalSize = aSize;
 }
 

@@ -853,6 +853,16 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         str = cmachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
         if (str == "no")
             mIsAutoSaveMedia = false;
+
+        /* Check if one of extended modes to be activated on loading */
+        QString fsMode = cmachine.GetExtraData (VBoxDefs::GUI_Fullscreen);
+        QString slMode = cmachine.GetExtraData (VBoxDefs::GUI_Seamless);
+        bool extendedMode = fsMode == "on" || slMode == "on";
+
+        /* If one of extended modes to be loaded we have to ignore default
+         * console resize event which will come from VGA Device on loading. */
+        if (extendedMode)
+            console->requestToResize (QSize (w, h - menuBar()->height() - statusBar()->height()));
     }
 
     /* initialize usb stuff */
