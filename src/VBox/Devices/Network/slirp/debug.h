@@ -61,7 +61,7 @@ DECLINLINE(void) __debug_log(FILE *pIgnore, const char *pszFormat, ...)
 
 #endif  /* !LOG_ENABLED */
 
-void debug_init _P((char *, int));
+int debug_init _P((void));
 void ipstats _P((PNATState));
 void tcpstats _P((PNATState));
 void udpstats _P((PNATState));
