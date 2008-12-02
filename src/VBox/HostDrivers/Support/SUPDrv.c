@@ -310,7 +310,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageFree",                          (void *)UNWIND_WRAP(SUPR0PageFree) },
     { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
-    { "SUPR0NativeEnableHwVirtExt",             (void *)SUPR0NativeEnableHwVirtExt },
+    { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -4058,12 +4058,15 @@ SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_SUPPORTED if not supported by the native OS.
  *
- * @param   pSession        The calling session.
  * @param   fEnable         Whether to enable or disable.
  */
-SUPR0DECL(int) SUPR0NativeEnableHwVirtExt(PSUPDRVSESSION pSession, bool fEnable)
+SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
 {
+#ifdef RT_OS_DARWIN
+    return supdrvOSEnableVTx(fEnable);
+#else
     return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
