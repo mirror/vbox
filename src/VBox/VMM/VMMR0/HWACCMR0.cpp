@@ -1032,6 +1032,27 @@ VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64);
 }
 
+#ifdef DEBUG
+/**
+ * Test the 32->64 bits switcher
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ */
+VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
+{
+    PVMCPU   pVCpu = &pVM->aCpus[0];
+    CPUMCTX *pCtx;
+
+    pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
+
+    if (pVM->hwaccm.s.vmx.fSupported)
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64);
+
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64);
+}
+#endif
+
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 /**

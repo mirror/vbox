@@ -262,6 +262,8 @@ typedef enum VMMR0OPERATION
 
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS,
+    /** Test the 32->64 bits switcher. */
+    VMMR0_DO_TEST_SWITCHER3264,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff
