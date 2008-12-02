@@ -1977,12 +1977,7 @@ void VBoxTrayIcon::trayIconShow (bool aShow)
     setVisible (mActive);
 
     if (!mActive)
-    {
-        VBoxGlobalSettings s = vboxGlobal().settings();
-        s.setTrayIconEnabled (false);
-        s.save(vboxGlobal().virtualBox());
         mParent->fileExit();
-    }
 }
 
 void VBoxTrayIcon::vmSettings()
