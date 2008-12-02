@@ -550,7 +550,7 @@ DLLS += VBoxSettings
 VBoxSettings_TEMPLATE	= VBOXMAINDLL
 VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
 VBoxSettings_SDKS       = VBOX_LIBXSLT VBOX_LIBXML2 VBOX_ZLIB
-VBoxSettings_DEFS       = IN_VBOXSETTINGS_R3
+VBoxSettings_DEFS       = IN_VBOXXML_R3
 VBoxSettings_INCS       = \
 	include
 VBoxSettings_SOURCES    = \
