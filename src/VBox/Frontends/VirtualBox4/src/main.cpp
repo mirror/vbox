@@ -424,7 +424,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 int main (int argc, char **argv, char **envp)
 {
-#if (defined(VBOX_GUI_WITH_SYSTRAY)&& (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)))
+#if (defined(VBOX_GUI_WITH_SYSTRAY) && (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)))
     rc = RTProcDaemonize(false /* fNoChDir */, false /* fNoClose */,
                          NULL);
     if (RT_FAILURE(rc))
