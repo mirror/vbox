@@ -35,6 +35,8 @@
 #include <iprt/string.h>
 
 #include <list>
+#include <memory>
+#include <limits>
 
 /* these conflict with numeric_digits<>::min and max */
 #undef min
