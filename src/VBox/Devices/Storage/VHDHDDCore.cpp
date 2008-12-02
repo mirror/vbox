@@ -1020,10 +1020,12 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
 
         /*
          * If the block is not allocated the content of the entry is ~0
-         * and we need to allocate a new block.
+         * and we need to allocate a new block. Note that while blocks are
+         * allocated with a relatively big granularity, each sector has its
+         * own bitmap entry, indicating whether it has been written or not.
+         * So that means for the purposes of the higher level that the
+         * granularity is invisible.
          */
-        /** @todo Integrate this properly into the unallocated block logic.
-         * The current code wouldn't be able to handle diff images at all. */
         if (pImage->pBlockAllocationTable[cBlockAllocationTableEntry] == ~0U)
         {
             size_t  cbNewBlock = (pImage->cbDataBlock + pImage->cbDataBlockBitmap) * sizeof(uint8_t);
@@ -1086,6 +1088,11 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
 
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
+
+    /* Stay on the safe side. Do not run the risk of confusing the higher
+     * level, as that can be pretty lethal to image consistency. */
+    *pcbPreRead = 0;
+    *pcbPostRead = 0;
 
     return rc;
 }
