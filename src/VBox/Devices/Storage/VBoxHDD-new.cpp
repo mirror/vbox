@@ -965,7 +965,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x\n, pVDIfsImage=%#p",
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x, pVDIfsImage=%#p\n",
                  pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsImage));
     do
     {

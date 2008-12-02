@@ -631,7 +631,8 @@ typedef struct VDINTERFACECONFIG
     DECLR3CALLBACKMEMBER(bool, pfnAreKeysValid, (void *pvUser, const char *pszzValid));
 
     /**
-     * Retrieves the length of the string value associated with a key.
+     * Retrieves the length of the string value associated with a key (including
+     * the terminator, for compatibility with CFGMR3QuerySize).
      *
      * @return  VBox status code.
      *          VERR_CFGM_VALUE_NOT_FOUND means that the key is not known.
