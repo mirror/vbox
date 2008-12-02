@@ -337,20 +337,16 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         if (pVM->hwaccm.s.fAllowed)
         {
             if (pVM->hwaccm.s.vmx.fSupported)
-                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
-                                  "An active VM already uses Intel VT-x hardware acceleration. It is not allowed "
-                                  "to simultaneously use software virtualization, therefore this VM will be run "
-                                  "using VT-x as well.\n");
+                VM_SET_ERROR(pVM, rc, "An active VM already uses Intel VT-x hardware acceleration. It is not allowed "
+                                      "to simultaneously use software virtualization.\n");
             else
-                VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
-                                  "An active VM already uses AMD-V hardware acceleration. It is not allowed to "
-                                  "simultaneously use software virtualization, therefore this VM will be run "
-                                  "using AMD-V as well.\n");
+                VM_SET_ERROR(pVM, rc, "An active VM already uses AMD-V hardware acceleration. It is not allowed to "
+                                      "simultaneously use software virtualization.\n");
         }
         else
-            VMSetRuntimeError(pVM, false, "HwAccmModeChangeDisallowed",
-                              "An active VM already uses software virtualization. It is not allowed to simultaneously "
-                              "use VT-x or AMD-V, therefore this VM will be run using software virtualization as well.\n");
+            VM_SET_ERROR(pVM, rc, "An active VM already uses software virtualization. It is not allowed to simultaneously "
+                                  "use VT-x or AMD-V.\n");
+        return rc;
 #endif /* !RT_OS_DARWIN */
     }
 
