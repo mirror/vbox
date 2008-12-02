@@ -863,6 +863,8 @@ public:
                 if (sKey == "GUI/LanguageID")
                     QApplication::postEvent (&mGlobal, new VBoxChangeGUILanguageEvent (sVal));
 #ifdef VBOX_GUI_WITH_SYSTRAY
+                if (sKey == "GUI/MainWindowCount")
+                    QApplication::postEvent (&mGlobal, new VBoxMainWindowCountChangeEvent (sVal.toInt()));
                 if (sKey == VBoxDefs::GUI_TrayIconWinID)
                 {
                     if (sVal.isEmpty())
@@ -1243,7 +1245,6 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , mUpdDlg (NULL)
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    , mHasTrayIcon (false)
     , mIsTrayMenu (false)
 #endif
     , mMediaEnumThread (NULL)
@@ -1414,48 +1415,77 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
 /**
- *  Returns true if the current instance is responsible of showing/handling
- *  the tray icon.
- */
-bool VBoxGlobal::hasTrayIcon() const
-{
-    return mHasTrayIcon;
-}
-
-/**
  *  Returns true if the current instance a systray menu only (started with
  *  "-systray" parameter).
  */
 bool VBoxGlobal::isTrayMenu() const
 {
-    return (mHasTrayIcon && mIsTrayMenu);
+    return mIsTrayMenu;
+}
+
+void VBoxGlobal::setTrayMenu(bool aIsTrayMenu)
+{
+    mIsTrayMenu = aIsTrayMenu;
+}
+
+/**
+ *  Spawns a new selector window (process).
+ */
+void VBoxGlobal::trayIconShowSelector()
+{
+    /* Get the path to the executable. */
+    char path [RTPATH_MAX];
+    RTPathAppPrivateArch (path, RTPATH_MAX);
+    size_t sz = strlen (path);
+    path [sz++] = RTPATH_DELIMITER;
+    path [sz] = 0;
+    char *cmd = path + sz;
+    sz = RTPATH_MAX - sz;
+
+    int rc = 0;
+    RTPROCESS pid = NIL_RTPROCESS;
+    RTENV env = RTENV_DEFAULT;
+
+    const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
+    Assert (sz >= sizeof (VirtualBox_exe));
+    strcpy (cmd, VirtualBox_exe);
+# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+    const char * args[] = {path, 0 };
+# else
+    const char * args[] = {path, 0 };
+# endif
+    rc = RTProcCreate (path, args, env, 0, &pid);
+    if (RT_FAILURE (rc))
+        LogRel(("Systray: Failed to start new selector window! Path=%s, rc=%Rrc\n", path, rc));
 }
 
 /**
  *  Tries to install the tray icon using the current instance (singleton).
- *  Returns true on success, false on failure.
+ *  Returns true if this instance is the tray icon, false if not.
  */
 bool VBoxGlobal::trayIconInstall()
 {
-    bool bActive = mIsTrayMenu;
-    if (false == bActive)
-        bActive = vboxGlobal().settings().trayIconEnabled();
-
-    /* Is there already a tray icon or is tray icon not active? */
+    int rc = 0;
     QString strTrayWinID = mVBox.GetExtraData (VBoxDefs::GUI_TrayIconWinID);
-    if (   (bActive == false)
-        || (QSystemTrayIcon::isSystemTrayAvailable() == false)
-        || (strTrayWinID.isEmpty() == false))
+    if (false == strTrayWinID.isEmpty())
     {
-        return false;
+        /* Check if current tray icon is alive by writing some bogus value. */
+        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, "0");
+        if (mVBox.isOk())
+        {
+            /* Current tray icon died - clean up. */
+            mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
+            strTrayWinID.clear();
+        }
     }
 
-    int rc = 0;
-    if (isVMConsoleProcess())
+    /* Is there already a tray icon or is tray icon not active? */
+    if (   (mIsTrayMenu == false)
+        && (vboxGlobal().settings().trayIconEnabled())
+        && (QSystemTrayIcon::isSystemTrayAvailable())
+        && (strTrayWinID.isEmpty()))
     {
-        // Spawn new selector window instance
-
-        // Get the path to the executable
+        /* Get the path to the executable. */
         char path [RTPATH_MAX];
         RTPathAppPrivateArch (path, RTPATH_MAX);
         size_t sz = strlen (path);
@@ -1470,19 +1500,20 @@ bool VBoxGlobal::trayIconInstall()
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
-# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+    # ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
         const char * args[] = {path, "-systray", 0 };
-# else
+    # else
         const char * args[] = {path, "-systray", 0 };
-# endif
+    # endif
         rc = RTProcCreate (path, args, env, 0, &pid);
         if (RT_FAILURE (rc))
         {
-            LogRel(("Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
+            LogRel(("Systray: Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
             return false;
         }
     }
-    else
+
+    if (mIsTrayMenu)
     {
         // Use this selector for displaying the tray icon
         mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
@@ -1492,12 +1523,12 @@ bool VBoxGlobal::trayIconInstall()
          * It will be the tray icon menu then. */
         if (mVBox.isOk())
         {
-            mHasTrayIcon = true;
-            emit trayIconChanged (*(new VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled())));
+            emit trayIconShow (*(new VBoxShowTrayIconEvent (true)));
+            return true;
         }
     }
 
-    return mHasTrayIcon;
+    return false;
 }
 
 #endif
@@ -5203,12 +5234,22 @@ bool VBoxGlobal::event (QEvent *e)
             return true;
         }
 #ifdef VBOX_GUI_WITH_SYSTRAY
+        case VBoxDefs::MainWindowCountChangeEventType:
+
+            emit mainWindowCountChanged (*(VBoxMainWindowCountChangeEvent *) e);
+            return true;
+
         case VBoxDefs::CanShowTrayIconEventType:
         {
             emit trayIconCanShow (*(VBoxCanShowTrayIconEvent *) e);
             return true;
         }
-        case VBoxDefs::ChangeTrayIconEventType:
+        case VBoxDefs::ShowTrayIconEventType:
+        {
+            emit trayIconShow (*(VBoxShowTrayIconEvent *) e);
+            return true;
+        }
+        case VBoxDefs::TrayIconChangeEventType:
         {
             emit trayIconChanged (*(VBoxChangeTrayIconEvent *) e);
             return true;

@@ -390,6 +390,17 @@ public:
 };
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
+class VBoxMainWindowCountChangeEvent : public QEvent
+{
+public:
+    VBoxMainWindowCountChangeEvent (int aCount)
+        : QEvent ((QEvent::Type) VBoxDefs::MainWindowCountChangeEventType)
+        , mCount (aCount)
+        {}
+
+    const int mCount;
+};
+
 class VBoxCanShowTrayIconEvent : public QEvent
 {
 public:
@@ -401,15 +412,26 @@ public:
     const bool mCanShow;
 };
 
+class VBoxShowTrayIconEvent : public QEvent
+{
+public:
+    VBoxShowTrayIconEvent (bool aShow)
+        : QEvent ((QEvent::Type) VBoxDefs::ShowTrayIconEventType)
+        , mShow (aShow)
+        {}
+
+    const bool mShow;
+};
+
 class VBoxChangeTrayIconEvent : public QEvent
 {
 public:
-    VBoxChangeTrayIconEvent (bool aEnabled)
-        : QEvent ((QEvent::Type) VBoxDefs::ChangeTrayIconEventType)
-        , mEnabled (aEnabled)
+    VBoxChangeTrayIconEvent (bool aChanged)
+        : QEvent ((QEvent::Type) VBoxDefs::TrayIconChangeEventType)
+        , mChanged (aChanged)
         {}
 
-    const bool mEnabled;
+    const bool mChanged;
 };
 #endif
 
@@ -482,8 +504,9 @@ public:
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    bool hasTrayIcon() const;
     bool isTrayMenu() const;
+    void setTrayMenu(bool aIsTrayMenu);
+    void trayIconShowSelector();
     bool trayIconInstall();
 #endif
     QUuid managedVMUuid() const { return vmUuid; }
@@ -955,7 +978,9 @@ signals:
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
 #ifdef VBOX_GUI_WITH_SYSTRAY
+    void mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &e);
     void trayIconCanShow (const VBoxCanShowTrayIconEvent &e);
+    void trayIconShow (const VBoxShowTrayIconEvent &e);
     void trayIconChanged (const VBoxChangeTrayIconEvent &e);
 #endif
 
@@ -999,7 +1024,6 @@ private:
     QUuid vmUuid;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    bool mHasTrayIcon;          /* Is current instance responsible for tray icon? */
     bool mIsTrayMenu;           /* Tray icon active/desired? */
 #endif
     QThread *mMediaEnumThread;

@@ -679,8 +679,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal(), SIGNAL (snapshotChanged (const VBoxSnapshotEvent &)),
              this, SLOT (snapshotChanged (const VBoxSnapshotEvent &)));
 #ifdef VBOX_GUI_WITH_SYSTRAY
+    connect (&vboxGlobal(), SIGNAL (mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &)),
+             this, SLOT (mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &)));
     connect (&vboxGlobal(), SIGNAL (trayIconCanShow (const VBoxCanShowTrayIconEvent &)),
              this, SLOT (trayIconCanShow (const VBoxCanShowTrayIconEvent &)));
+    connect (&vboxGlobal(), SIGNAL (trayIconShow (const VBoxShowTrayIconEvent &)),
+             this, SLOT (trayIconShow (const VBoxShowTrayIconEvent &)));
     connect (&vboxGlobal(), SIGNAL (trayIconChanged (const VBoxChangeTrayIconEvent &)),
              this, SLOT (trayIconChanged (const VBoxChangeTrayIconEvent &)));
 #endif
@@ -1086,7 +1090,7 @@ void VBoxSelectorWnd::refreshVMList()
     vmListViewCurrentChanged();
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    if (vboxGlobal().hasTrayIcon())
+    if (vboxGlobal().isTrayMenu())
         mTrayIcon->refresh();
 #endif
 }
@@ -1130,7 +1134,7 @@ void VBoxSelectorWnd::trayIconActivated (QSystemTrayIcon::ActivationReason aReas
 
         case QSystemTrayIcon::DoubleClick:
 
-            showWindow();
+            vboxGlobal().trayIconShowSelector();
             break;
 
         case QSystemTrayIcon::MiddleClick:
@@ -1187,24 +1191,13 @@ bool VBoxSelectorWnd::event (QEvent *e)
 void VBoxSelectorWnd::closeEvent (QCloseEvent *aEvent)
 {
 #ifdef VBOX_GUI_WITH_SYSTRAY
+    /* Needed for breaking out of the while() loop in main(). */
     if (vboxGlobal().isTrayMenu())
-    {
-        hide();
-        if (vboxGlobal().mainWindowCount() == 0)
-        {
-            emit closing();
-            QMainWindow::closeEvent (aEvent);
-        }
-        else aEvent->ignore();
-    }
-    else
-    {
+        vboxGlobal().setTrayMenu (false);
 #endif
-        emit closing();
-        QMainWindow::closeEvent (aEvent);
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    }
-#endif
+
+    emit closing();
+    QMainWindow::closeEvent (aEvent);
 }
 
 #if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
@@ -1327,7 +1320,7 @@ void VBoxSelectorWnd::retranslateUi()
     mHelpMenu->setTitle (tr ("&Help"));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    if (vboxGlobal().hasTrayIcon())
+    if (vboxGlobal().isTrayMenu())
     {
         mTrayIcon->retranslateUi();
         mTrayIcon->refresh();
@@ -1637,15 +1630,26 @@ void VBoxSelectorWnd::snapshotChanged (const VBoxSnapshotEvent &aEvent)
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 
+void VBoxSelectorWnd::mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &aEvent)
+{
+    if (vboxGlobal().isTrayMenu() && aEvent.mCount <= 1)
+        fileExit();
+}
+
 void VBoxSelectorWnd::trayIconCanShow (const VBoxCanShowTrayIconEvent &aEvent)
 {
     emit trayIconChanged (VBoxChangeTrayIconEvent (vboxGlobal().settings().trayIconEnabled()));
 }
 
+void VBoxSelectorWnd::trayIconShow (const VBoxShowTrayIconEvent &aEvent)
+{
+    if (vboxGlobal().isTrayMenu() && mTrayIcon)
+        mTrayIcon->trayIconShow (aEvent.mShow);
+}
+
 void VBoxSelectorWnd::trayIconChanged (const VBoxChangeTrayIconEvent &aEvent)
 {
-    if (mTrayIcon)
-        mTrayIcon->trayIconShow (aEvent.mEnabled);
+    /* Not used yet. */
 }
 
 VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
@@ -1961,7 +1965,7 @@ VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 
 void VBoxTrayIcon::trayIconShow (bool aShow)
 {
-    if (!vboxGlobal().hasTrayIcon())
+    if (!vboxGlobal().isTrayMenu())
         return;
 
     mActive = aShow;
@@ -1972,8 +1976,13 @@ void VBoxTrayIcon::trayIconShow (bool aShow)
     }
     setVisible (mActive);
 
-    if (!mActive && vboxGlobal().isTrayMenu())
+    if (!mActive)
+    {
+        VBoxGlobalSettings s = vboxGlobal().settings();
+        s.setTrayIconEnabled (false);
+        s.save(vboxGlobal().virtualBox());
         mParent->fileExit();
+    }
 }
 
 void VBoxTrayIcon::vmSettings()

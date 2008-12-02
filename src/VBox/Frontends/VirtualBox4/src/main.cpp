@@ -362,8 +362,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             {
                 vboxGlobal().setMainWindow (&vboxGlobal().consoleWnd());
 #ifdef VBOX_GUI_WITH_SYSTRAY
-                if (   vboxGlobal().trayIconInstall()
-                    && vboxGlobal().hasTrayIcon())
+                if (vboxGlobal().trayIconInstall())
                 {
                     /* Nothing to do here yet. */
                 }
@@ -379,8 +378,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             {
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
 #ifdef VBOX_GUI_WITH_SYSTRAY
-                if (   vboxGlobal().trayIconInstall()
-                    && vboxGlobal().hasTrayIcon())
+                if (vboxGlobal().trayIconInstall())
                 {
                     /* Nothing to do here yet. */
                 }
@@ -394,7 +392,14 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #ifdef VBOX_WITH_UPDATE_REQUEST
                 vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
-                rc = a.exec();
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                do
+                {
+#endif
+                    rc = a.exec();
+#ifdef VBOX_GUI_WITH_SYSTRAY
+                } while (vboxGlobal().isTrayMenu());
+#endif
             }
         }
         while (0);
