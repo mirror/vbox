@@ -36,6 +36,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/file.h>
+#include <iprt/tcp.h>
 
 #include <list>
 #include <memory>
@@ -439,11 +440,22 @@ HRESULT HardDisk2::FinalConstruct()
     mm.vdIfCallsProgress.pfnProgress = vdProgressCall;
 
     /* Initialize the callbacks of the VD config interface */
-    mm.vdIfCallsConfig.cbSize = sizeof (VDINTERFACEPROGRESS);
+    mm.vdIfCallsConfig.cbSize = sizeof (VDINTERFACECONFIG);
     mm.vdIfCallsConfig.enmInterface = VDINTERFACETYPE_CONFIG;
-/// @todo later
-//  mm.vdIfCallsConfig.pfnAreValuesValid = ...;
-//  mm.vdIfCallsConfig.pfnQueryBytes = ...;
+    mm.vdIfCallsConfig.pfnAreKeysValid = vdConfigAreKeysValid;
+    mm.vdIfCallsConfig.pfnQuerySize = vdConfigQuerySize;
+    mm.vdIfCallsConfig.pfnQuery = vdConfigQuery;
+
+    /* Initialize the callbacks of the VD TCP interface (we always use the host
+     * IP stack for now) */
+    mm.vdIfCallsTcpNet.cbSize = sizeof (VDINTERFACETCPNET);
+    mm.vdIfCallsTcpNet.enmInterface = VDINTERFACETYPE_TCPNET;
+    mm.vdIfCallsTcpNet.pfnClientConnect = RTTcpClientConnect;
+    mm.vdIfCallsTcpNet.pfnClientClose = RTTcpClientClose;
+    mm.vdIfCallsTcpNet.pfnSelectOne = RTTcpSelectOne;
+    mm.vdIfCallsTcpNet.pfnRead = RTTcpRead;
+    mm.vdIfCallsTcpNet.pfnWrite = RTTcpWrite;
+    mm.vdIfCallsTcpNet.pfnFlush = RTTcpFlush;
 
     /* Initialize the per-disk interface chain */
     int vrc;
@@ -452,10 +464,23 @@ HRESULT HardDisk2::FinalConstruct()
                           VDINTERFACETYPE_ERROR,
                           &mm.vdIfCallsError, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
+
     vrc = VDInterfaceAdd (&mm.vdIfProgress,
                           "HardDisk2::vdInterfaceProgress",
                           VDINTERFACETYPE_PROGRESS,
                           &mm.vdIfCallsProgress, this, &mm.vdDiskIfaces);
+    AssertRCReturn (vrc, E_FAIL);
+
+    vrc = VDInterfaceAdd (&mm.vdIfConfig,
+                          "HardDisk2::vdInterfaceConfig",
+                          VDINTERFACETYPE_CONFIG,
+                          &mm.vdIfCallsConfig, this, &mm.vdDiskIfaces);
+    AssertRCReturn (vrc, E_FAIL);
+
+    vrc = VDInterfaceAdd (&mm.vdIfTcpNet,
+                          "HardDisk2::vdInterfaceTcpNet",
+                          VDINTERFACETYPE_TCPNET,
+                          &mm.vdIfCallsTcpNet, this, &mm.vdDiskIfaces);
     AssertRCReturn (vrc, E_FAIL);
 
     return S_OK;
@@ -2650,7 +2675,8 @@ HRESULT HardDisk2::queryInfo()
             if (!isNew)
                 flags |= VD_OPEN_FLAGS_READONLY;
 
-            vrc = VDOpen (hdd, Utf8Str (mm.format), location, flags, NULL);
+            vrc = VDOpen (hdd, Utf8Str (mm.format), location, flags,
+                          mm.vdDiskIfaces);
             if (RT_FAILURE (vrc))
             {
                 lastAccessError = Utf8StrFmt (
@@ -2929,7 +2955,7 @@ Utf8Str HardDisk2::vdError (int aVRC)
     if (mm.vdError.isEmpty())
         error = Utf8StrFmt (" (%Rrc)", aVRC);
     else
-        error = Utf8StrFmt (". %s (%Rrc)", mm.vdError.raw(), aVRC);
+        error = Utf8StrFmt (".\n%s", mm.vdError.raw());
 
     mm.vdError.setNull();
 
@@ -2957,7 +2983,13 @@ DECLCALLBACK(void) HardDisk2::vdErrorCall (void *pvUser, int rc, RT_SRC_POS_DECL
     HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
     AssertReturnVoid (that != NULL);
 
-    that->mm.vdError = Utf8StrFmtVA (pszFormat, va);
+    if (that->mm.vdError.isEmpty())
+        that->mm.vdError =
+            Utf8StrFmt ("%s (%Rrc)", Utf8StrFmtVA (pszFormat, va).raw(), rc);
+    else
+        that->mm.vdError =
+            Utf8StrFmt ("%s.\n%s (%Rrc)", that->mm.vdError.raw(),
+                        Utf8StrFmtVA (pszFormat, va).raw(), rc);
 }
 
 /**
@@ -2979,6 +3011,68 @@ DECLCALLBACK(int) HardDisk2::vdProgressCall (PVM /* pVM */, unsigned uPercent,
          * is used for additional operations like setting the UUIDs and similar. */
         that->mm.vdProgress->notifyProgress (RT_MIN (uPercent, 99));
     }
+
+    return VINF_SUCCESS;
+}
+
+/* static */
+DECLCALLBACK(bool) HardDisk2::vdConfigAreKeysValid (void *pvUser,
+                                                    const char *pszzValid)
+{
+    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
+
+    /* we always return true since the only keys we have are those found in
+     * VDBACKENDINFO */
+    return true;
+}
+
+/* static */
+DECLCALLBACK(int) HardDisk2::vdConfigQuerySize (void *pvUser, const char *pszName,
+                                                size_t *pcbValue)
+{
+    AssertReturn (VALID_PTR (pcbValue), VERR_INVALID_POINTER);
+
+    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
+
+    Data::PropertyMap::const_iterator it =
+        that->mm.properties.find (Bstr (pszName));
+    if (it == that->mm.properties.end())
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    /* we interpret null values as "no value" in HardDisk2 */
+    if (it->second.isNull())
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    *pcbValue = it->second.length() + 1 /* include terminator */;
+
+    return VINF_SUCCESS;
+}
+
+/* static */
+DECLCALLBACK(int) HardDisk2::vdConfigQuery (void *pvUser, const char *pszName,
+                                            char *pszValue, size_t cchValue)
+{
+    AssertReturn (VALID_PTR (pszValue), VERR_INVALID_POINTER);
+
+    HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
+    AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
+
+    Data::PropertyMap::const_iterator it =
+        that->mm.properties.find (Bstr (pszName));
+    if (it == that->mm.properties.end())
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    Utf8Str value = it->second;
+    if (value.length() >= cchValue)
+        return VERR_CFGM_NOT_ENOUGH_SPACE;
+
+    /* we interpret null values as "no value" in HardDisk2 */
+    if (it->second.isNull())
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    memcpy (pszValue, value, value.length());
 
     return VINF_SUCCESS;
 }

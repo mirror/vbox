@@ -248,6 +248,13 @@ private:
     static DECLCALLBACK(int) vdProgressCall (PVM /* pVM */, unsigned uPercent,
                                              void *pvUser);
 
+    static DECLCALLBACK(bool) vdConfigAreKeysValid (void *pvUser,
+                                                    const char *pszzValid);
+    static DECLCALLBACK(int) vdConfigQuerySize (void *pvUser, const char *pszName,
+                                                size_t *pcbValue);
+    static DECLCALLBACK(int) vdConfigQuery (void *pvUser, const char *pszName,
+                                            char *pszValue, size_t cchValue);
+
     static DECLCALLBACK(int) taskThread (RTTHREAD thread, void *pvUser);
 
     /** weak parent */
@@ -286,6 +293,9 @@ private:
 
         VDINTERFACE vdIfConfig;
         VDINTERFACECONFIG vdIfCallsConfig;
+
+        VDINTERFACE vdIfTcpNet;
+        VDINTERFACETCPNET vdIfCallsTcpNet;
 
         PVDINTERFACE vdDiskIfaces;
     };
