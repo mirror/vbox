@@ -23,6 +23,7 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/lock.h>
+#include <iprt/string.h>
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -33,16 +34,74 @@
 
 #include <libxml/xmlschemas.h>
 
-#include <libxslt/xsltInternals.h>
-#include <libxslt/transform.h>
-#include <libxslt/xsltutils.h>
+#include <string>
 
-#include <string.h>
+#include "VBox/xml.h"
 
-#include "VBox/vboxxml.h"
 
-namespace vboxxml
+/**
+ * Global module initialization structure.
+ *
+ * The constructor and destructor of this structure are used to perform global
+ * module initiaizaton and cleanup. Thee must be only one global variable of
+ * this structure.
+ */
+static
+class Global
 {
+public:
+
+    Global()
+    {
+        /* Check the parser version. The docs say it will kill the app if
+         * there is a serious version mismatch, but I couldn't find it in the
+         * source code (it only prints the error/warning message to the console) so
+         * let's leave it as is for informational purposes. */
+        LIBXML_TEST_VERSION
+
+        /* Init libxml */
+        xmlInitParser();
+
+        /* Save the default entity resolver before someone has replaced it */
+        xml.defaultEntityLoader = xmlGetExternalEntityLoader();
+    }
+
+    ~Global()
+    {
+        /* Shutdown libxml */
+        xmlCleanupParser();
+    }
+
+    struct
+    {
+        xmlExternalEntityLoader defaultEntityLoader;
+
+        /** Used to provide some thread safety missing in libxml2 (see e.g.
+         *  XmlTreeBackend::read()) */
+        RTLockMtx lock;
+    }
+    xml;
+}
+gGlobal;
+
+
+
+namespace xml
+{
+
+//////////////////////////////////////////////////////////////////////////////
+// Exceptions
+//////////////////////////////////////////////////////////////////////////////
+
+LogicError::LogicError(RT_SRC_POS_DECL)
+{
+    char *msg = NULL;
+    RTStrAPrintf(&msg, "In '%s', '%s' at #%d",
+                 pszFunction, pszFile, iLine);
+    setWhat(msg);
+    RTStrFree(msg);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 // File Class
@@ -245,44 +304,134 @@ int MemoryBuf::read (char *aBuf, int aLen)
     return len;
 }
 
-
 /*
- * VBoxXml
+ * GlobalLock
  *
  *
  */
 
-VBoxXmlBase::VBoxXmlBase()
+struct GlobalLock::Data
+{
+    PFNEXTERNALENTITYLOADER pOldLoader;
+    RTLock lock;
+
+    Data()
+        : pOldLoader(NULL),
+          lock(gGlobal.xml.lock)
+    {
+    }
+};
+
+GlobalLock::GlobalLock()
+    : m(new Data())
+{
+}
+
+GlobalLock::~GlobalLock()
+{
+    if (m->pOldLoader)
+        xmlSetExternalEntityLoader(m->pOldLoader);
+}
+
+void GlobalLock::setExternalEntityLoader(PFNEXTERNALENTITYLOADER pLoader)
+{
+    m->pOldLoader = xmlGetExternalEntityLoader();
+    xmlSetExternalEntityLoader(pLoader);
+}
+
+// static
+xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
+                                              const char *aID,
+                                              xmlParserCtxt *aCtxt)
+{
+    return gGlobal.xml.defaultEntityLoader(aURI, aID, aCtxt);
+}
+
+/*
+ * XmlParserBase
+ *
+ *
+ */
+
+XmlParserBase::XmlParserBase()
 {
     m_ctxt = xmlNewParserCtxt();
     if (m_ctxt == NULL)
         throw ENoMemory();
 }
 
-VBoxXmlBase::~VBoxXmlBase()
+XmlParserBase::~XmlParserBase()
 {
     xmlFreeParserCtxt (m_ctxt);
     m_ctxt = NULL;
 }
 
+/*
+ * XmlFileParser
+ *
+ *
+ */
 
-int ReadCallback (void *aCtxt, char *aBuf, int aLen)
+struct XmlFileParser::Data
 {
-    return -1 /* failure */;
+    xmlParserCtxtPtr ctxt;
+    std::string strXmlFilename;
+
+    Data()
+    {
+        if (!(ctxt = xmlNewParserCtxt()))
+            throw xml::ENoMemory();
+    }
+
+    ~Data()
+    {
+        xmlFreeParserCtxt(ctxt);
+        ctxt = NULL;
+    }
+};
+
+XmlFileParser::XmlFileParser()
+    : XmlParserBase(),
+      m(new Data())
+{
 }
 
-
-VBoxXmlFile::VBoxXmlFile()
-    : VBoxXmlBase()
-{
-    xmlDocPtr doc;
-
-}
-
-VBoxXmlFile::~VBoxXmlFile()
+XmlFileParser::~XmlFileParser()
 {
 }
 
-} // namespace vboxxml
+void XmlFileParser::read(const char *pcszFilename)
+{
+    GlobalLock lock();
+
+    xmlDocPtr doc = NULL;
+
+    m->strXmlFilename = pcszFilename;
+
+    /* Note: when parsing we use XML_PARSE_NOBLANKS to instruct libxml2 to
+        * remove text nodes that contain only blanks. This is important because
+        * otherwise xmlSaveDoc() won't be able to do proper indentation on
+        * output. */
+
+    /* parse the stream */
+    /* NOTE: new InputCtxt instance will be deleted when the stream is closed by
+        * the libxml2 API (e.g. when calling xmlFreeParserCtxt()) */
+//     doc = xmlCtxtReadIO(m->ctxt,
+//                         ReadCallback,
+//                         CloseCallback,
+//                         new Data::InputCtxt (&aInput, m->trappedErr),
+//                         aInput.uri(), NULL,
+//                         XML_PARSE_NOBLANKS);
+    if (doc == NULL)
+    {
+        /* look if there was a forwared exception from the lower level */
+//         if (m->trappedErr.get() != NULL)
+//             m->trappedErr->rethrow();
+
+//         throw XmlError (xmlCtxtGetLastError (m->ctxt));
+    }
+}
+
+} // end namespace xml
 
 

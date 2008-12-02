@@ -32,26 +32,18 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/cpputils.h>
-#include <iprt/string.h>
-
-#include <list>
-#include <memory>
-#include <limits>
 
 /* these conflict with numeric_digits<>::min and max */
 #undef min
 #undef max
 
-#include <iprt/assert.h>
-#include <iprt/string.h>
 #include <iprt/mem.h>
-#include <iprt/time.h>
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
 #else /* IN_RING3 */
 
-/** @def IN_VBOXSETTINGS_R3
+/** @def IN_VBOXXML_R3
  * Used to indicate whether we're inside the same link module as the
  * XML Settings File Manipulation API.
  *
@@ -59,15 +51,15 @@
  * once there becomes more than one header in the VBoxXML2 library.
  */
 #ifdef DOXYGEN_RUNNING
-# define IN_VBOXSETTINGS_R3
+# define IN_VBOXXML_R3
 #endif
 
-/** @def VBOXSETTINGS_CLASS
+/** @def VBOXXML_CLASS
  * Class export/import wrapper. */
-#ifdef IN_VBOXSETTINGS_R3
-# define VBOXSETTINGS_CLASS DECLEXPORT_CLASS
+#ifdef IN_VBOXXML_R3
+# define VBOXXML_CLASS DECLEXPORT_CLASS
 #else
-# define VBOXSETTINGS_CLASS DECLIMPORT_CLASS
+# define VBOXXML_CLASS DECLIMPORT_CLASS
 #endif
 
 
@@ -77,11 +69,11 @@
  * be exported too to in order to be accessible by clients.
  *
  * The alternative is to instantiate a template before the data member
- * declaration with the VBOXSETTINGS_CLASS prefix, but the standard disables
+ * declaration with the VBOXXML_CLASS prefix, but the standard disables
  * explicit instantiations in a foreign namespace. In other words, a declaration
  * like:
  *
- *   template class VBOXSETTINGS_CLASS std::auto_ptr <Data>;
+ *   template class VBOXXML_CLASS std::auto_ptr <Data>;
  *
  * right before the member declaration makes MSVC happy too, but this is not a
  * valid C++ construct (and G++ spits it out). So, for now we just disable the
@@ -104,7 +96,7 @@ typedef xmlParserCtxt *xmlParserCtxtPtr;
 typedef struct _xmlError xmlError;
 typedef xmlError *xmlErrorPtr;
 
-namespace vboxxml
+namespace xml
 {
 
 // Exceptions
@@ -113,7 +105,7 @@ namespace vboxxml
 /**
  * Base exception class.
  */
-class VBOXSETTINGS_CLASS Error : public std::exception
+class VBOXXML_CLASS Error : public std::exception
 {
 public:
 
@@ -151,23 +143,16 @@ private:
     stdx::auto_ref_ptr <Str> m;
 };
 
-class VBOXSETTINGS_CLASS LogicError : public Error
+class VBOXXML_CLASS LogicError : public Error
 {
 public:
 
     LogicError (const char *aMsg = NULL) : Error (aMsg) {}
 
-    LogicError (RT_SRC_POS_DECL)
-    {
-        char *msg = NULL;
-        RTStrAPrintf (&msg, "In '%s', '%s' at #%d",
-                      pszFunction, pszFile, iLine);
-        setWhat (msg);
-        RTStrFree (msg);
-    }
+    LogicError (RT_SRC_POS_DECL);
 };
 
-class VBOXSETTINGS_CLASS RuntimeError : public Error
+class VBOXXML_CLASS RuntimeError : public Error
 {
 public:
 
@@ -177,7 +162,7 @@ public:
 // Logical errors
 //////////////////////////////////////////////////////////////////////////////
 
-class VBOXSETTINGS_CLASS ENotImplemented : public LogicError
+class VBOXXML_CLASS ENotImplemented : public LogicError
 {
 public:
 
@@ -185,7 +170,7 @@ public:
     ENotImplemented (RT_SRC_POS_DECL) : LogicError (RT_SRC_POS_ARGS) {}
 };
 
-class VBOXSETTINGS_CLASS EInvalidArg : public LogicError
+class VBOXXML_CLASS EInvalidArg : public LogicError
 {
 public:
 
@@ -196,7 +181,7 @@ public:
 // Runtime errors
 //////////////////////////////////////////////////////////////////////////////
 
-class VBOXSETTINGS_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
+class VBOXXML_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
 {
 public:
 
@@ -204,7 +189,7 @@ public:
     virtual ~ENoMemory() throw() {}
 };
 
-class VBOXSETTINGS_CLASS EIPRTFailure : public RuntimeError
+class VBOXXML_CLASS EIPRTFailure : public RuntimeError
 {
 public:
 
@@ -222,7 +207,7 @@ private:
 /**
  * The Stream class is a base class for I/O streams.
  */
-class VBOXSETTINGS_CLASS Stream
+class VBOXXML_CLASS Stream
 {
 public:
 
@@ -257,7 +242,7 @@ public:
  * This is an abstract class that must be subclassed in order to fill it with
  * useful functionality.
  */
-class VBOXSETTINGS_CLASS Input : virtual public Stream
+class VBOXXML_CLASS Input : virtual public Stream
 {
 public:
 
@@ -275,7 +260,7 @@ public:
 /**
  *
  */
-class VBOXSETTINGS_CLASS Output : virtual public Stream
+class VBOXXML_CLASS Output : virtual public Stream
 {
 public:
 
@@ -312,7 +297,7 @@ public:
  * threads, you should care about serialization; otherwise you will get garbage
  * when reading from or writing to such File instances.
  */
-class VBOXSETTINGS_CLASS File : public Input, public Output
+class VBOXXML_CLASS File : public Input, public Output
 {
 public:
 
@@ -395,7 +380,7 @@ private:
  * The MemoryBuf class represents a stream implementation that reads from the
  * memory buffer.
  */
-class VBOXSETTINGS_CLASS MemoryBuf : public Input
+class VBOXXML_CLASS MemoryBuf : public Input
 {
 public:
 
@@ -410,7 +395,6 @@ public:
     void setPos (uint64_t aPos);
 
 private:
-
     /* Obscure class data */
     struct Data;
     std::auto_ptr <Data> m;
@@ -421,27 +405,66 @@ private:
 
 
 /*
- * VBoxXml
+ * GlobalLock
  *
  *
  */
 
+typedef xmlParserInput* FNEXTERNALENTITYLOADER(const char *aURI,
+                                               const char *aID,
+                                               xmlParserCtxt *aCtxt);
+typedef FNEXTERNALENTITYLOADER *PFNEXTERNALENTITYLOADER;
 
-class VBoxXmlBase
+class VBOXXML_CLASS GlobalLock
+{
+public:
+    GlobalLock();
+    ~GlobalLock();
+
+    void setExternalEntityLoader(PFNEXTERNALENTITYLOADER pFunc);
+
+    static xmlParserInput* callDefaultLoader(const char *aURI,
+                                             const char *aID,
+                                             xmlParserCtxt *aCtxt);
+
+private:
+    /* Obscure class data */
+    struct Data;
+    std::auto_ptr<Data> m;
+};
+
+/*
+ * XmlParserBase
+ *
+ */
+
+class VBOXXML_CLASS XmlParserBase
 {
 protected:
-    VBoxXmlBase();
-
-    ~VBoxXmlBase();
+    XmlParserBase();
+    ~XmlParserBase();
 
     xmlParserCtxtPtr m_ctxt;
 };
 
-class VBoxXmlFile : public VBoxXmlBase
+/*
+ * XmlFileParser
+ *
+ */
+
+class VBOXXML_CLASS XmlFileParser : public XmlParserBase
 {
 public:
-    VBoxXmlFile();
-    ~VBoxXmlFile();
+    XmlFileParser();
+    ~XmlFileParser();
+
+    void read(const char *pcszFilename);
+
+private:
+    /* Obscure class data */
+    struct Data;
+    std::auto_ptr<Data> m;
+
 };
 
 
@@ -454,6 +477,6 @@ public:
 
 /** @} */
 
-} // end namespace vboxxml
+} // end namespace xml
 
 #endif /* ___VBox_vboxxml_h */

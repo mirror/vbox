@@ -35,19 +35,14 @@
 #include <iprt/string.h>
 
 #include <list>
-#include <memory>
-#include <limits>
 
 /* these conflict with numeric_digits<>::min and max */
 #undef min
 #undef max
 
-#include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/mem.h>
 #include <iprt/time.h>
 
-#include <VBox/vboxxml.h>
+#include <VBox/xml.h>
 
 #include <stdarg.h>
 
@@ -232,11 +227,11 @@
  * be exported too to in order to be accessible by clients.
  *
  * The alternative is to instantiate a template before the data member
- * declaration with the VBOXSETTINGS_CLASS prefix, but the standard disables
+ * declaration with the VBOXXML_CLASS prefix, but the standard disables
  * explicit instantiations in a foreign namespace. In other words, a declaration
  * like:
  *
- *   template class VBOXSETTINGS_CLASS std::auto_ptr <Data>;
+ *   template class VBOXXML_CLASS std::auto_ptr <Data>;
  *
  * right before the member declaration makes MSVC happy too, but this is not a
  * valid C++ construct (and G++ spits it out). So, for now we just disable the
@@ -269,21 +264,21 @@ namespace settings
 // Exceptions (on top of vboxxml exceptions)
 //////////////////////////////////////////////////////////////////////////////
 
-class VBOXSETTINGS_CLASS ENoKey : public vboxxml::LogicError
+class VBOXXML_CLASS ENoKey : public xml::LogicError
 {
 public:
 
-    ENoKey (const char *aMsg = NULL) : vboxxml::LogicError (aMsg) {}
+    ENoKey (const char *aMsg = NULL) : xml::LogicError (aMsg) {}
 };
 
-class VBOXSETTINGS_CLASS ENoValue : public vboxxml::LogicError
+class VBOXXML_CLASS ENoValue : public xml::LogicError
 {
 public:
 
-    ENoValue (const char *aMsg = NULL) : vboxxml::LogicError (aMsg) {}
+    ENoValue (const char *aMsg = NULL) : xml::LogicError (aMsg) {}
 };
 
-class VBOXSETTINGS_CLASS ENoConversion : public vboxxml::RuntimeError
+class VBOXXML_CLASS ENoConversion : public xml::RuntimeError
 {
 public:
 
@@ -301,7 +296,7 @@ public:
  * argument to an Error constructor or to another function that takes
  * <tr>const char *</tr> and makes a copy of the string it points to.
  */
-class VBOXSETTINGS_CLASS FmtStr
+class VBOXXML_CLASS FmtStr
 {
 public:
 
@@ -371,7 +366,7 @@ T FromString (const char *aValue)
                                       (uint64_t) std::numeric_limits <T>::max());
     }
 
-    throw vboxxml::ENotImplemented (RT_SRC_POS);
+    throw xml::ENotImplemented (RT_SRC_POS);
 }
 
 /**
@@ -443,7 +438,7 @@ stdx::char_auto_ptr ToString (const T &aValue, unsigned int aExtra = 0)
         return ToStringInteger (aValue, aExtra, sign, bits);
     }
 
-    throw vboxxml::ENotImplemented (RT_SRC_POS);
+    throw xml::ENotImplemented (RT_SRC_POS);
 }
 
 /**
@@ -495,7 +490,7 @@ DECLEXPORT (stdx::char_auto_ptr) ToString (const void *aData, size_t aLen);
  * classes are owned by the given TreeBackend instance and may refer to data
  * that becomes invalid when this TreeBackend instance is destroyed.
  */
-class VBOXSETTINGS_CLASS Key
+class VBOXXML_CLASS Key
 {
 public:
 
@@ -507,7 +502,7 @@ public:
      * This interface is implemented by backends that provide specific ways of
      * storing settings keys.
      */
-    class VBOXSETTINGS_CLASS Backend : public stdx::auto_ref
+    class VBOXXML_CLASS Backend : public stdx::auto_ref
     {
     public:
 
@@ -891,7 +886,7 @@ private:
  * instance. When this instance is destroyed, all Key objects become invalid
  * and an attempt to access Key data will cause the program crash.
  */
-class VBOXSETTINGS_CLASS TreeBackend
+class VBOXXML_CLASS TreeBackend
 {
 public:
 
@@ -916,7 +911,7 @@ public:
      * @param aSchema       Schema URI to use for input stream validation.
      * @param aFlags        Optional bit flags.
      */
-    void read (vboxxml::Input &aInput, const char *aSchema = NULL, int aFlags = 0)
+    void read (xml::Input &aInput, const char *aSchema = NULL, int aFlags = 0)
     {
         aInput.setPos (0);
         rawRead (aInput, aSchema, aFlags);
@@ -932,7 +927,7 @@ public:
      *
      * @see read()
      */
-    virtual void rawRead (vboxxml::Input &aInput, const char *aSchema = NULL,
+    virtual void rawRead (xml::Input &aInput, const char *aSchema = NULL,
                           int aFlags = 0) = 0;
 
     /**
@@ -946,7 +941,7 @@ public:
      *
      * @param aOutput       Output stream.
      */
-    void write (vboxxml::Output &aOutput)
+    void write (xml::Output &aOutput)
     {
         aOutput.setPos (0);
         rawWrite (aOutput);
@@ -965,7 +960,7 @@ public:
      *
      * @see write()
      */
-    virtual void rawWrite (vboxxml::Output &aOutput) = 0;
+    virtual void rawWrite (xml::Output &aOutput) = 0;
 
     /**
      * Deletes the current settings tree.
@@ -1001,7 +996,7 @@ class XmlKeyBackend;
  * XmlTreeBackend instnace (as well as instances of other classes from the
  * settings namespace) needs to be used by more than one thread.
  */
-class VBOXSETTINGS_CLASS XmlTreeBackend : public TreeBackend
+class VBOXXML_CLASS XmlTreeBackend : public TreeBackend
 {
 public:
 
@@ -1020,7 +1015,7 @@ public:
      * The Error class represents errors that may happen when parsing or
      * validating the XML document representing the settings tree.
      */
-    class VBOXSETTINGS_CLASS Error : public vboxxml::RuntimeError
+    class VBOXXML_CLASS Error : public xml::RuntimeError
     {
     public:
 
@@ -1031,7 +1026,7 @@ public:
      * The EConversionCycle class represents a conversion cycle detected by the
      * AutoConverter::needsConversion() implementation.
      */
-    class VBOXSETTINGS_CLASS EConversionCycle : public Error
+    class VBOXXML_CLASS EConversionCycle : public Error
     {
     public:
 
@@ -1042,7 +1037,7 @@ public:
      * The InputResolver class represents an interface to provide input streams
      * for external entities given an URL and entity ID.
      */
-    class VBOXSETTINGS_CLASS InputResolver
+    class VBOXXML_CLASS InputResolver
     {
     public:
 
@@ -1059,7 +1054,7 @@ public:
          * @todo Return by value after implementing the copy semantics for
          * Input subclasses.
          */
-        virtual vboxxml::Input *resolveEntity (const char *aURI, const char *aID) = 0;
+        virtual xml::Input *resolveEntity (const char *aURI, const char *aID) = 0;
     };
 
     /**
@@ -1067,7 +1062,7 @@ public:
      * old settings trees to a new version when the tree is read from the
      * stream.
      */
-    class VBOXSETTINGS_CLASS AutoConverter
+    class VBOXXML_CLASS AutoConverter
     {
     public:
 
@@ -1178,8 +1173,8 @@ public:
      */
     const char *oldVersion() const;
 
-    void rawRead (vboxxml::Input &aInput, const char *aSchema = NULL, int aFlags = 0);
-    void rawWrite (vboxxml::Output &aOutput);
+    void rawRead (xml::Input &aInput, const char *aSchema = NULL, int aFlags = 0);
+    void rawWrite (xml::Output &aOutput);
     void reset();
     Key &rootKey() const;
 
