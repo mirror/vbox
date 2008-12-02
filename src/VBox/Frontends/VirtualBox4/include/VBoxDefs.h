@@ -119,7 +119,9 @@ struct VBoxDefs
         ChangeGUILanguageEventType,
 #if defined (VBOX_GUI_WITH_SYSTRAY)
         CanShowTrayIconEventType,
-        ChangeTrayIconEventType,
+        ShowTrayIconEventType,
+        TrayIconChangeEventType,
+        MainWindowCountChangeEventType,
 #endif
         AddVDMUrlsEventType
     };

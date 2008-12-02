@@ -59,7 +59,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     guiFeatures = QString::null;
     languageId  = QString::null;
     maxGuestRes = "auto";
-    trayIconEnabled = true;
+    trayIconEnabled = false;
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)

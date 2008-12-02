@@ -130,7 +130,9 @@ private slots:
     void sessionStateChanged (const VBoxSessionStateChangeEvent &e);
     void snapshotChanged (const VBoxSnapshotEvent &e);
 #ifdef VBOX_GUI_WITH_SYSTRAY
+    void mainWindowCountChanged (const VBoxMainWindowCountChangeEvent &aEvent);
     void trayIconCanShow (const VBoxCanShowTrayIconEvent &e);
+    void trayIconShow (const VBoxShowTrayIconEvent &e);
     void trayIconChanged (const VBoxChangeTrayIconEvent &e);
 #endif
 
