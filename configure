@@ -2056,6 +2056,9 @@ check_gcc
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11    -eq 1 ] && check_x
+# TODO check for Xmu (X11/Xmu/StdCmap.h)
+# TODO check for mesa-common-dev (GL/glx.h)
+# TODO check for libglu1-mesa-dev (GL/glu.h)
 [ $WITH_X11    -eq 1 ] && check_xcursor
 [ $WITH_QT3    -eq 1 ] && check_qt3
 [ $WITH_QT4    -eq 1 ] && check_qt4
