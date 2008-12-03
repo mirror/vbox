@@ -502,8 +502,7 @@ void VirtualBox::uninit()
 
 STDMETHODIMP VirtualBox::COMGETTER(Version) (BSTR *aVersion)
 {
-    if (!aVersion)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -514,8 +513,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Version) (BSTR *aVersion)
 
 STDMETHODIMP VirtualBox::COMGETTER(Revision) (ULONG *aRevision)
 {
-    if (!aRevision)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aRevision);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -526,8 +524,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Revision) (ULONG *aRevision)
 
 STDMETHODIMP VirtualBox::COMGETTER(PackageType) (BSTR *aPackageType)
 {
-    if (!aPackageType)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aPackageType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -551,8 +548,7 @@ STDMETHODIMP VirtualBox::COMGETTER(HomeFolder) (BSTR *aHomeFolder)
 
 STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
 {
-    if (!aSettingsFilePath)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSettingsFilePath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -565,8 +561,7 @@ STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
 STDMETHODIMP VirtualBox::
 COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 {
-    if (!aSettingsFileVersion)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSettingsFileVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -580,8 +575,7 @@ COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 STDMETHODIMP VirtualBox::
 COMGETTER(SettingsFormatVersion) (BSTR *aSettingsFormatVersion)
 {
-    if (!aSettingsFormatVersion)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSettingsFormatVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -937,8 +931,7 @@ STDMETHODIMP VirtualBox::OpenMachine (INPTR BSTR aSettingsFile,
 /** @note Locks objects! */
 STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
 {
-    if (!aMachine)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aMachine);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1001,8 +994,7 @@ STDMETHODIMP VirtualBox::FindMachine (INPTR BSTR aName, IMachine **aMachine)
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
 
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
     if (!aMachine)
         return E_POINTER;
 
@@ -1118,8 +1110,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk2 (INPTR BSTR aFormat,
 STDMETHODIMP VirtualBox::OpenHardDisk2 (INPTR BSTR aLocation,
                                         IHardDisk2 **aHardDisk)
 {
-    if (!aLocation)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aLocation);
     if (!aHardDisk)
         return E_POINTER;
 
@@ -1173,8 +1164,7 @@ STDMETHODIMP VirtualBox::GetHardDisk2 (INPTR GUIDPARAM aId,
 STDMETHODIMP VirtualBox::FindHardDisk2 (INPTR BSTR aLocation,
                                         IHardDisk2 **aHardDisk)
 {
-    if (!aLocation)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aLocation);
     if (!aHardDisk)
         return E_POINTER;
 
@@ -1245,9 +1235,8 @@ STDMETHODIMP VirtualBox::GetDVDImage (INPTR GUIDPARAM aId, IDVDImage2 **aDVDImag
 /** @note Locks objects! */
 STDMETHODIMP VirtualBox::FindDVDImage (INPTR BSTR aLocation, IDVDImage2 **aDVDImage)
 {
-   if (!aLocation)
-        return E_INVALIDARG;
-   if (!aDVDImage)
+    CheckComArgNotNull(aLocation);
+    if (!aDVDImage)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1320,9 +1309,8 @@ STDMETHODIMP VirtualBox::GetFloppyImage (INPTR GUIDPARAM aId,
 STDMETHODIMP VirtualBox::FindFloppyImage (INPTR BSTR aLocation,
                                           IFloppyImage2 **aFloppyImage)
 {
-   if (!aLocation)
-        return E_INVALIDARG;
-   if (!aFloppyImage)
+    CheckComArgNotNull(aLocation);
+    if (!aFloppyImage)
         return E_POINTER;
 
     AutoCaller autoCaller (this);
@@ -1340,8 +1328,7 @@ STDMETHODIMP VirtualBox::FindFloppyImage (INPTR BSTR aLocation,
 /** @note Locks this object for reading. */
 STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
 {
-    if (!aType)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1372,8 +1359,8 @@ STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
 STDMETHODIMP
 VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
 {
-    if (!aName || !aHostPath)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
+    CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1383,8 +1370,7 @@ VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWr
 
 STDMETHODIMP VirtualBox::RemoveSharedFolder (INPTR BSTR aName)
 {
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1497,8 +1483,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
  */
 STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 {
-    if (!aKey)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aKey);
     if (!aValue)
         return E_POINTER;
 
@@ -1560,8 +1545,7 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
  */
 STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-    if (!aKey)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aKey);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1665,8 +1649,7 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
  */
 STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachineId)
 {
-    if (!aSession)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSession);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1717,8 +1700,8 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
                                             INPTR BSTR aEnvironment,
                                             IProgress **aProgress)
 {
-    if (!aSession || !aType)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSession);
+    CheckComArgNotNull(aType);
     if (!aProgress)
         return E_POINTER;
 
@@ -1812,8 +1795,7 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
 {
     LogFlowThisFunc (("aCallback=%p\n", aCallback));
 
-    if (!aCallback)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1829,8 +1811,7 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
  */
 STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
 {
-    if (!aCallback)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1943,8 +1924,7 @@ HRESULT VirtualBox::postEvent (Event *event)
  */
 HRESULT VirtualBox::addProgress (IProgress *aProgress)
 {
-    if (!aProgress)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
