@@ -58,7 +58,8 @@ STDMETHODIMP MediumBase::COMGETTER(Id) (GUIDPARAMOUT aId)
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    /* m.id is constant during life time, no need to lock */
+    AutoReadLock alock (this);
+
     m.id.cloneTo (aId);
 
     return S_OK;
