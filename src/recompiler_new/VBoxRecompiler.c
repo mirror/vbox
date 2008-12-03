@@ -3178,7 +3178,7 @@ int32_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
     val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
-    LogRel(("reads16: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
+    LogRel(("reads16: %x <- %08x\n", (uint16_t)val, (uint32_t)SrcGCPhys));
 #endif
     return val;
 }
