@@ -1,21 +1,21 @@
 #ifndef _LIBSLIRP_H
 #define _LIBSLIRP_H
 
-#ifdef _WIN32
-#include <winsock2.h>
-#ifdef __cplusplus
+#ifdef RT_OS_WINDOWS
+# include <winsock2.h>
+# ifdef __cplusplus
 extern "C" {
-#endif
+# endif
 int inet_aton(const char *cp, struct in_addr *ia);
-#ifdef __cplusplus
+# ifdef __cplusplus
 }
-#endif
+# endif
 #else
-#ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */
-# include <sys/time.h>
-#endif
-#include <sys/select.h>
-#include <arpa/inet.h>
+# ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */
+#  include <sys/time.h>
+# endif
+# include <sys/select.h>
+# include <arpa/inet.h>
 #endif
 
 #include <VBox/types.h>

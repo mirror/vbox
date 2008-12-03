@@ -60,20 +60,21 @@
 
 /* XXX should union some of these! */
 /* header at beginning of each mbuf: */
-struct m_hdr {
-        struct  mbuf *mh_next;          /* Linked list of mbufs */
-        struct  mbuf *mh_prev;
-        struct  mbuf *mh_nextpkt;       /* Next packet in queue/record */
-        struct  mbuf *mh_prevpkt; /* Flags aren't used in the output queue */
-        int     mh_flags;         /* Misc flags */
+struct m_hdr
+{
+    struct  mbuf *mh_next;     /* Linked list of mbufs */
+    struct  mbuf *mh_prev;
+    struct  mbuf *mh_nextpkt;  /* Next packet in queue/record */
+    struct  mbuf *mh_prevpkt;  /* Flags aren't used in the output queue */
+    int     mh_flags;          /* Misc flags */
 
-        int     mh_size;                /* Size of data */
-        struct  socket *mh_so;
+    int     mh_size;           /* Size of data */
+    struct  socket *mh_so;
 
-        caddr_t mh_data;                /* Location of data */
-        int     mh_len;                 /* Amount of data in this mbuf */
+    caddr_t mh_data;           /* Location of data */
+    int     mh_len;            /* Amount of data in this mbuf */
 #ifdef VBOX_WITH_BSD_REASS
-        void *header;                   /*XXX: in real BSD sources this field lays in pkthdr structure*/
+    void *header;              /*XXX: in real BSD sources this field lays in pkthdr structure*/
 #endif
 };
 
@@ -91,12 +92,14 @@ struct m_hdr {
 #define M_FREEROOM(m) (M_ROOM(m) - (m)->m_len)
 #define M_TRAILINGSPACE M_FREEROOM
 
-struct mbuf {
-        struct  m_hdr m_hdr;
-        union M_dat {
-                char    m_dat_[1]; /* ANSI don't like 0 sized arrays */
-                char    *m_ext_;
-        } M_dat;
+struct mbuf
+{
+    struct  m_hdr m_hdr;
+    union M_dat
+    {
+        char    m_dat_[1]; /* ANSI don't like 0 sized arrays */
+        char    *m_ext_;
+    } M_dat;
 };
 
 #define m_next          m_hdr.mh_next
@@ -128,16 +131,6 @@ struct mbuf {
 #define M_LASTFRAG              0x2000  /* paket is last fragment */
 #endif /* VBOX_WITH_BSD_REASS */
 
-/*
- * Mbuf statistics. XXX
- */
-
-struct mbstat {
-        int mbs_alloced;                /* Number of mbufs allocated */
-
-};
-
-extern struct   mbstat mbstat;
 extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;

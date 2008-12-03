@@ -76,12 +76,6 @@
 #define HAVE_SYS_FILIO_H
 #endif
 
-/* Define if you have strerror */
-#define HAVE_STRERROR
-
-/* Define if you have strdup() */
-#define HAVE_STRDUP
-
 /* Define according to how time.h should be included */
 #define TIME_WITH_SYS_TIME 0
 #undef HAVE_SYS_TIME_H
@@ -92,9 +86,6 @@
 /* Define if the machine is big endian */
 /*#undef WORDS_BIGENDIAN */
 
-/* Define if your sprintf returns char * instead of int */
-#undef BAD_SPRINTF
-
 /* Define if you have readv */
 #undef HAVE_READV
 
@@ -103,9 +94,6 @@
 #ifdef RT_OS_WINDOWS
 # define DECLARE_IOVEC
 #endif
-
-/* Define if a declaration of sprintf/fprintf is needed */
-#undef DECLARE_SPRINTF
 
 /* Define if you have a POSIX.1 sys/wait.h */
 #undef HAVE_SYS_WAIT_H

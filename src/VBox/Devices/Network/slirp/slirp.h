@@ -259,24 +259,6 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 void if_start _P((PNATState));
 
-#ifdef BAD_SPRINTF
-# define vsprintf vsprintf_len
-# define sprintf sprintf_len
- extern int vsprintf_len _P((char *, const char *, va_list));
- extern int sprintf_len _P((char *, const char *, ...));
-#endif
-
-#ifdef DECLARE_SPRINTF
-# ifndef BAD_SPRINTF
- extern int vsprintf _P((char *, const char *, va_list));
-# endif
- extern int vfprintf _P((FILE *, const char *, va_list));
-#endif
-
-#ifndef HAVE_STRERROR
- extern char *strerror _P((int error));
-#endif
-
 #ifndef HAVE_INDEX
  char *index _P((const char *, int));
 #endif
