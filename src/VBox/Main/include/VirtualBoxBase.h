@@ -57,66 +57,66 @@ template <class T>
 class CMyComClassFactorySingleton : public CComClassFactory
 {
 public:
-	CMyComClassFactorySingleton() : m_hrCreate(S_OK){}
-	virtual ~CMyComClassFactorySingleton(){}
-	// IClassFactory
-	STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void** ppvObj)
-	{
-		HRESULT hRes = E_POINTER;
-		if (ppvObj != NULL)
-		{
-			*ppvObj = NULL;
-			// Aggregation is not supported in singleton objects.
-			ATLASSERT(pUnkOuter == NULL);
-			if (pUnkOuter != NULL)
-				hRes = CLASS_E_NOAGGREGATION;
-			else
-			{
-				if (m_hrCreate == S_OK && m_spObj == NULL)
-				{
-					Lock();
-					__try
-					{
-						// Fix:  The following If statement was moved inside the __try statement.
-						// Did another thread arrive here first?
-						if (m_hrCreate == S_OK && m_spObj == NULL)
-						{
-							// lock the module to indicate activity
-							// (necessary for the monitor shutdown thread to correctly
-							// terminate the module in case when CreateInstance() fails)
-							_pAtlModule->Lock();
-							CComObjectCached<T> *p;
-							m_hrCreate = CComObjectCached<T>::CreateInstance(&p);
-							if (SUCCEEDED(m_hrCreate))
-							{
-								m_hrCreate = p->QueryInterface(IID_IUnknown, (void**)&m_spObj);
-								if (FAILED(m_hrCreate))
-								{
-									delete p;
-								}
-							}
-							_pAtlModule->Unlock();
-						}
-					}
-					__finally
-					{
-						Unlock();
-					}
-				}
-				if (m_hrCreate == S_OK)
-				{
-					hRes = m_spObj->QueryInterface(riid, ppvObj);
-				}
-				else
-				{
-					hRes = m_hrCreate;
-				}
-			}
-		}
-		return hRes;
-	}
-	HRESULT m_hrCreate;
-	CComPtr<IUnknown> m_spObj;
+    CMyComClassFactorySingleton() : m_hrCreate(S_OK){}
+    virtual ~CMyComClassFactorySingleton(){}
+    // IClassFactory
+    STDMETHOD(CreateInstance)(LPUNKNOWN pUnkOuter, REFIID riid, void** ppvObj)
+    {
+        HRESULT hRes = E_POINTER;
+        if (ppvObj != NULL)
+        {
+            *ppvObj = NULL;
+            // Aggregation is not supported in singleton objects.
+            ATLASSERT(pUnkOuter == NULL);
+            if (pUnkOuter != NULL)
+                hRes = CLASS_E_NOAGGREGATION;
+            else
+            {
+                if (m_hrCreate == S_OK && m_spObj == NULL)
+                {
+                    Lock();
+                    __try
+                    {
+                        // Fix:  The following If statement was moved inside the __try statement.
+                        // Did another thread arrive here first?
+                        if (m_hrCreate == S_OK && m_spObj == NULL)
+                        {
+                            // lock the module to indicate activity
+                            // (necessary for the monitor shutdown thread to correctly
+                            // terminate the module in case when CreateInstance() fails)
+                            _pAtlModule->Lock();
+                            CComObjectCached<T> *p;
+                            m_hrCreate = CComObjectCached<T>::CreateInstance(&p);
+                            if (SUCCEEDED(m_hrCreate))
+                            {
+                                m_hrCreate = p->QueryInterface(IID_IUnknown, (void**)&m_spObj);
+                                if (FAILED(m_hrCreate))
+                                {
+                                    delete p;
+                                }
+                            }
+                            _pAtlModule->Unlock();
+                        }
+                    }
+                    __finally
+                    {
+                        Unlock();
+                    }
+                }
+                if (m_hrCreate == S_OK)
+                {
+                    hRes = m_spObj->QueryInterface(riid, ppvObj);
+                }
+                else
+                {
+                    hRes = m_hrCreate;
+                }
+            }
+        }
+        return hRes;
+    }
+    HRESULT m_hrCreate;
+    CComPtr<IUnknown> m_spObj;
 };
 
 #endif /* !defined (VBOX_WITH_XPCOM) */
