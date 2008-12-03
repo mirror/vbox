@@ -68,7 +68,6 @@ public:
     virtual ~VBoxConsoleWnd();
 
     bool openView (const CSession &session);
-    void closeView();
 
     void refreshView();
 
@@ -110,6 +109,8 @@ protected:
 #endif
 
 protected slots:
+
+    void closeView();
 
 private:
 
