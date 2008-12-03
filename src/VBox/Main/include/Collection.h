@@ -299,7 +299,7 @@ protected:
  *  stores objects of the @a itemcls class (|ComObjPtr <OSomeItem>| in the
  *  example above).
  *
- *  See descriptions of the above IfaceVectorEnumerator and 
+ *  See descriptions of the above IfaceVectorEnumerator and
  *  ReadonlyIfaceVector templates for more info.
  *
  *  The generated class also inherits the VirtualBoxSupportTranslation template,
@@ -314,7 +314,7 @@ protected:
  *  @param  itemcls     Either ComObjPtr or ComPtr for the class that implements
  *                      the given interface of items to be stored in the
  *                      collection
- *  @param  iface       Interface of items implemented by the @a itemcls class 
+ *  @param  iface       Interface of items implemented by the @a itemcls class
  *  @param  prefix      Prefix to apply to generated enumerator and collection
  *                      names.
  */
@@ -465,7 +465,7 @@ protected:
  *  This macro is a counterpart to COM_DECL_READONLY_ENUM_AND_COLLECTION_AS_BEGIN
  *  and must be always used to finalize the collection declaration started
  *  by that macro.
- * 
+ *
  *  This is a "shortcut" macro that expands exactly to:
  *  <code>
  *      COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <c>, I##c, c)
@@ -512,7 +512,7 @@ protected:
  *  @param  itemcls     Either ComObjPtr or ComPtr for the class that implements
  *                      the given interface of items to be stored in the
  *                      collection
- *  @param  iface       Interface of items implemented by the @a itemcls class 
+ *  @param  iface       Interface of items implemented by the @a itemcls class
  *  @param  prefix      Prefix to apply to generated enumerator and collection
  *                      names.
  */
@@ -542,7 +542,7 @@ protected:
  *              in the collection
  */
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION(c) \
-    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, I##c, c) 
+    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, I##c, c)
 
 /**
  *  This macro defines nsISupports implementations (i.e. QueryInterface(),
@@ -565,7 +565,7 @@ protected:
  *  @param iface    Interface class
  */
 #define COM_IMPL_READONLY_ENUM_AND_COLLECTION_AS(prefix, iface) \
-    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, iface, prefix) 
+    COM_IMPL_READONLY_ENUM_AND_COLLECTION_EX (0, iface, prefix)
 
 #endif // !RT_OS_WINDOWS
 

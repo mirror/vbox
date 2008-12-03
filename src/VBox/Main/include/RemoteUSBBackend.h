@@ -40,7 +40,7 @@ class ConsoleVRDPServer;
 DECLCALLBACK(int) USBClientResponseCallback (void *pv, uint32_t u32ClientId, uint8_t code, const void *pvRet, uint32_t cbRet);
 
 
-/* How many remote devices can be attached to a remote client. 
+/* How many remote devices can be attached to a remote client.
  * Normally a client computer has 2-8 physical USB ports, so 16 devices
  * should be usually enough.
  */
@@ -51,7 +51,7 @@ class RemoteUSBBackendListable
     public:
         RemoteUSBBackendListable *pNext;
         RemoteUSBBackendListable *pPrev;
-        
+
         RemoteUSBBackendListable() : pNext (NULL), pPrev (NULL) {};
 };
 
@@ -60,16 +60,16 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
     public:
         RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, uint32_t u32ClientId);
         ~RemoteUSBBackend();
-        
+
         uint32_t ClientId (void) { return mu32ClientId; }
-        
+
         void AddRef (void);
         void Release (void);
-        
+
         REMOTEUSBCALLBACK *GetBackendCallbackPointer (void) { return &mCallback; }
-        
+
         void NotifyDelete (void);
-        
+
         void PollRemoteDevices (void);
 
     public: /* Functions for internal use. */
@@ -78,7 +78,7 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
         bool pollingEnabledURB (void) { return mfPollURB; }
 
         int saveDeviceList (const void *pvList, uint32_t cbList);
-        
+
         int negotiateResponse (const VRDPUSBREQNEGOTIATERET *pret, uint32_t cbRet);
 
         int reapURB (const void *pvBody, uint32_t cbBody);
@@ -90,7 +90,7 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
 
         void addDevice (PREMOTEUSBDEVICE pDevice);
         void removeDevice (PREMOTEUSBDEVICE pDevice);
-        
+
         bool addUUID (const Guid *pUuid);
         bool findUUID (const Guid *pUuid);
         void removeUUID (const Guid *pUuid);
@@ -100,18 +100,18 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
         ConsoleVRDPServer *mServer;
 
         int cRefs;
-        
+
         uint32_t mu32ClientId;
-        
+
         RTCRITSECT mCritsect;
-        
+
         REMOTEUSBCALLBACK mCallback;
-        
+
         bool mfHasDeviceList;
-        
+
         void *mpvDeviceList;
         uint32_t mcbDeviceList;
-        
+
         typedef enum {
             PollRemoteDevicesStatus_Negotiate,
             PollRemoteDevicesStatus_WaitNegotiateResponse,
@@ -119,15 +119,15 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
             PollRemoteDevicesStatus_WaitResponse,
             PollRemoteDevicesStatus_Dereferenced
         } PollRemoteDevicesStatus;
-        
+
         PollRemoteDevicesStatus menmPollRemoteDevicesStatus;
 
         bool mfPollURB;
-        
+
         PREMOTEUSBDEVICE mpDevices;
-        
+
         bool mfWillBeDeleted;
-        
+
         Guid aGuids[VRDP_MAX_USB_DEVICES_PER_CLIENT];
 
         /* VRDP_USB_VERSION_2: the client version. */

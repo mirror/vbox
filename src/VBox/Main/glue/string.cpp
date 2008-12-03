@@ -30,7 +30,7 @@ namespace com
 {
 
 /* static */
-const Bstr Bstr::Null; /* default ctor is OK */ 
+const Bstr Bstr::Null; /* default ctor is OK */
 
 /* static */
 const Utf8Str Utf8Str::Null; /* default ctor is OK */

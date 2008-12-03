@@ -36,7 +36,7 @@ struct SVCHlpMsg
         Null = 0, /* no parameters */
         OK, /* no parameters */
         Error, /* Utf8Str string (may be null but must present) */
-        
+
         CreateHostNetworkInterface = 100, /* see usage in code */
         CreateHostNetworkInterface_OK, /* see usage in code */
         RemoveHostNetworkInterface, /* see usage in code */
@@ -54,10 +54,10 @@ public:
     int connect();
     int open (const char *aName);
     int close();
-    
+
     bool isOpen() const { return mIsOpen; }
     bool isServer() const { return mIsServer; }
-    const com::Utf8Str &name() const { return mName; } 
+    const com::Utf8Str &name() const { return mName; }
 
     int write (const void *aVal, size_t aLen);
     template <typename Scalar>
