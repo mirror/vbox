@@ -2770,29 +2770,36 @@ ResumeExecution:
             break;
         }
 
+        uint32_t cbSize = g_aIOSize[uIOWidth];
+
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
-            uint32_t cbSize;
-
             /* ins/outs */
-            if (fIOWrite)
+            DISCPUSTATE Cpu;
+
+            /* Disassemble manually to deal with segment prefixes. */
+            rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, NULL);
+            if (rc == VINF_SUCCESS)
             {
-                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, g_aIOSize[uIOWidth]));
+                if (fIOWrite)
+                {
+                    Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, Cpu.prefix, cbSize);
+                }
+                else
+                {
+                    Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, Cpu.prefix, cbSize);
+                }
             }
             else
-            {
-                Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, g_aIOSize[uIOWidth]));
-                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-            }
-
-            /* Disassemble manually, because we don't have any information about segment prefixes. */
-            rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                rc = VINF_EM_RAW_EMULATE_INSTR;
         }
         else
         {
             /* normal in/out */
-            uint32_t cbSize  = g_aIOSize[uIOWidth];
             uint32_t uAndVal = g_aIOOpAnd[uIOWidth];
 
             Assert(!VMX_EXIT_QUALIFICATION_IO_REP(exitQualification));

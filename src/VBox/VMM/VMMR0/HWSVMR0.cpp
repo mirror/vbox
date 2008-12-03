@@ -1840,22 +1840,28 @@ ResumeExecution:
 
         if (IoExitInfo.n.u1STR)
         {
-            uint32_t cbSize;
-
             /* ins/outs */
-            if (IoExitInfo.n.u1Type == 0)
+            DISCPUSTATE Cpu;
+
+            /* Disassemble manually to deal with segment prefixes. */
+            rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, NULL);
+            if (rc == VINF_SUCCESS)
             {
-                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+                if (IoExitInfo.n.u1Type == 0)
+                {
+                    Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, Cpu.prefix, uIOSize);
+                }
+                else
+                {
+                    Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, Cpu.prefix, uIOSize);
+                }
             }
             else
-            {
-                Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
-                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-            }
-
-            /* Disassemble manually, because we don't have any information about segment prefixes. */
-            rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
+                rc = VINF_EM_RAW_EMULATE_INSTR;
         }
         else
         {
