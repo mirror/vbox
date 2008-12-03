@@ -117,9 +117,7 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxTunctl \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
-	components/VBoxXPCOMIPCC.so \
-	$(if $(VBOX_OSE),,VRDPAuth.so)
-
+	components/VBoxXPCOMIPCC.so
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
@@ -181,7 +179,8 @@ endif
 # VRDP
 ifdef VBOX_WITH_VRDP
  VBOX_LNX_STRIP_BIN += \
-	VBoxVRDP.so
+	VBoxVRDP.so \
+	VRDPAuth.so
  VBOX_LNX_NO_STRIP += \
 	rdesktop-vrdp.tar.gz
  ifdef VBOX_WITH_VRDP_RDESKTOP
