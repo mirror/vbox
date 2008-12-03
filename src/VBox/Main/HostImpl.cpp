@@ -576,8 +576,8 @@ static bool IsTAPDevice(const char *guid)
 
                 if (   !strcmp(szNetCfgInstanceId, guid)
                     && !strcmp(szNetProductName, "VirtualBox TAP Adapter")
-                    && (   !strcmp(szNetProviderName, "innotek GmbH")
-                        || !strcmp(szNetProviderName, "Sun Microsystems, Inc.")))
+                    && (   (!strcmp(szNetProviderName, "innotek GmbH"))
+                        || (!strcmp(szNetProviderName, "Sun Microsystems, Inc."))))
                 {
                     ret = true;
                     RegCloseKey(hNetCardGUID);
