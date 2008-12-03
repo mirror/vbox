@@ -109,7 +109,7 @@ HRESULT VirtualBoxErrorInfo::init (IErrorInfo *aInfo)
     AssertComRC (rc);
     rc = aInfo->GetDescription (mText.asOutParam());
     AssertComRC (rc);
-    
+
     return S_OK;
 }
 
@@ -163,7 +163,7 @@ HRESULT VirtualBoxErrorInfo::init (nsIException *aInfo)
     rc = aInfo->GetMessage (message.asOutParam());
     AssertComRC (rc);
     mText = message;
-    
+
     return S_OK;
 }
 
