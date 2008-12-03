@@ -6646,6 +6646,12 @@
       <desc>
         UUID of the medium. For a newly created medium, this value is a randomly
         generated UUID.
+
+        <note>
+          For media in one of MediaState::NotCreated, MediaState::Creating or
+          MediaState::Deleting states, the value of this property is undefined
+          and will most likely be an empty UUID.
+        </note>
       </desc>
     </attribute>
 
@@ -7600,6 +7606,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           operations are supported. See
           <link to="IHardDiskFormat::capabilities"/>.
         </result>
+
+        <note>
+          If the deletion operation fails, it is not guaranteed that the storage
+          unit still exists. You may check the <link to="IMedium::state"/> value
+          to answer this question.
+        </note>
       </desc>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

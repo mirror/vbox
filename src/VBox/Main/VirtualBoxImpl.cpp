@@ -489,7 +489,8 @@ void VirtualBox::uninit()
 #else
 # error "Port me!"
 #endif
-    /* Unload plugin backends. */
+
+    /* Unload hard disk plugin backends. */
     VDShutdown();
 
     LogFlowThisFuncLeave();
