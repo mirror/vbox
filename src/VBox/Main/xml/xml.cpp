@@ -63,7 +63,7 @@ public:
         xmlInitParser();
 
         /* Save the default entity resolver before someone has replaced it */
-        xml.defaultEntityLoader = xmlGetExternalEntityLoader();
+        sxml.defaultEntityLoader = xmlGetExternalEntityLoader();
     }
 
     ~Global()
@@ -80,7 +80,7 @@ public:
          *  XmlTreeBackend::read()) */
         RTLockMtx lock;
     }
-    xml;
+    sxml;  /* XXX naming this xml will break with gcc-3.3 */
 }
 gGlobal;
 
@@ -357,7 +357,7 @@ struct GlobalLock::Data
 
     Data()
         : pOldLoader(NULL),
-          lock(gGlobal.xml.lock)
+          lock(gGlobal.sxml.lock)
     {
     }
 };
@@ -384,7 +384,7 @@ xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
                                               const char *aID,
                                               xmlParserCtxt *aCtxt)
 {
-    return gGlobal.xml.defaultEntityLoader(aURI, aID, aCtxt);
+    return gGlobal.sxml.defaultEntityLoader(aURI, aID, aCtxt);
 }
 
 /*
