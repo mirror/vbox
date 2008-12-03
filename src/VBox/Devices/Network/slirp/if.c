@@ -27,20 +27,8 @@ static void ifs_remque(struct mbuf *ifm)
 void
 if_init(PNATState pData)
 {
-#if 0
-        /*
-         * Set if_maxlinkhdr to 48 because it's 40 bytes for TCP/IP,
-         * and 8 bytes for PPP, but need to have it on an 8byte boundary
-         */
-#ifdef USE_PPP
-        if_maxlinkhdr = 48;
-#else
-        if_maxlinkhdr = 40;
-#endif
-#else
         /* 2 for alignment, 14 for ethernet, 40 for TCP/IP */
         if_maxlinkhdr = 2 + 14 + 40;
-#endif
         if_queued = 0;
         if_thresh = 10;
         if_mtu = 1500;

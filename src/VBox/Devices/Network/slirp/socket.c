@@ -159,6 +159,17 @@ soread(PNATState pData, struct socket *so)
         nn = recv(so->s, iov[0].iov_base, iov[0].iov_len,0);
 #endif
         if (nn <= 0) {
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+            /*
+             * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
+             * _could_ mean that the connection is closed. But we will receive an
+             * FD_CLOSE event later if the connection was _really_ closed. With
+             * www.youtube.com I see this very often. Closing the socket too early
+             * would be dangerous.
+             */
+                if (nn == 0)
+                        return 0;
+#endif
                 if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
                         return 0;
                 else {

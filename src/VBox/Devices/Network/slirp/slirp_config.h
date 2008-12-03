@@ -66,8 +66,8 @@
 
 /* Define if you have sys/ioctl.h */
 #undef HAVE_SYS_IOCTL_H
-#ifndef _WIN32
-#define HAVE_SYS_IOCTL_H
+#ifndef RT_OS_WINDOWS
+# define HAVE_SYS_IOCTL_H
 #endif
 
 /* Define if you have sys/filio.h */
@@ -100,8 +100,8 @@
 
 /* Define if iovec needs to be declared */
 #undef DECLARE_IOVEC
-#ifdef _WIN32
-#define DECLARE_IOVEC
+#ifdef RT_OS_WINDOWS
+# define DECLARE_IOVEC
 #endif
 
 /* Define if a declaration of sprintf/fprintf is needed */
@@ -112,8 +112,8 @@
 
 /* Define if you have sys/select.h */
 #undef HAVE_SYS_SELECT_H
-#ifndef _WIN32
-#define HAVE_SYS_SELECT_H
+#ifndef RT_OS_WINDOWS
+# define HAVE_SYS_SELECT_H
 #endif
 
 /* Define if you have strings.h */
@@ -121,8 +121,8 @@
 
 /* Define if you have arpa/inet.h */
 #undef HAVE_ARPA_INET_H
-#ifndef _WIN32
-#define HAVE_ARPA_INET_H
+#ifndef RT_OS_WINDOWS
+# define HAVE_ARPA_INET_H
 #endif
 
 /* Define if you have sys/signal.h */
@@ -171,8 +171,8 @@
 
 /* Define if you have inet_aton */
 #undef HAVE_INET_ATON
-#ifndef _WIN32
-#define HAVE_INET_ATON
+#ifndef RT_OS_WINDOWS
+# define HAVE_INET_ATON
 #endif
 
 /* Define if you have setenv */
@@ -198,8 +198,8 @@
 
 /* Define if you DON'T have unix-domain sockets */
 #undef NO_UNIX_SOCKETS
-#ifdef _WIN32
-#define NO_UNIX_SOCKETS
+#ifdef RT_OS_WINDOWS
+# define NO_UNIX_SOCKETS
 #endif
 
 /* Define if gettimeofday only takes one argument */

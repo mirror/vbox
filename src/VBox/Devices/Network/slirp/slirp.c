@@ -14,7 +14,7 @@ static const uint8_t special_ethaddr[6] = {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
 };
 
-#ifdef _WIN32
+#ifdef RT_OS_WINDOWS
 
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
@@ -229,14 +229,14 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     bootp_filename = pszBootFile;
     pData->netmask = u32Netmask;
 
-#ifdef _WIN32
+#ifdef RT_OS_WINDOWS
     {
         WSADATA Data;
         WSAStartup(MAKEWORD(2,0), &Data);
     }
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
     pData->phEvents[VBOX_SOCKET_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-#endif
+# endif
 #endif
 
     Assert(sizeof(struct ip) == 20);
@@ -330,7 +330,7 @@ void slirp_term(PNATState pData)
 #endif
 
     slirp_link_down(pData);
-#ifdef WIN32
+#ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
 #ifdef LOG_ENABLED
@@ -359,7 +359,7 @@ void slirp_term(PNATState pData)
 /*
  * curtime kept to an accuracy of 1ms
  */
-#ifdef _WIN32
+#ifdef RT_OS_WINDOWS
 static void updtime(PNATState pData)
 {
     struct _timeb tb;
@@ -415,15 +415,18 @@ void slirp_select_fill(PNATState pData, int *pnfds,
         /* XXX:
          * triggering of fragment expiration should be the same but use new macroses
          */
-        for (i = 0; i < IPREASS_NHASH; i++)
+        do_slowtimo = (tcb.so_next != &tcb);
+        if (!do_slowtimo)
         {
-            if (!TAILQ_EMPTY(&ipq[i]))
+            for (i = 0; i < IPREASS_NHASH; i++)
             {
-                do_slowtimo = 1;
-                break;
+                if (!TAILQ_EMPTY(&ipq[i]))
+                {
+                    do_slowtimo = 1;
+                    break;
+                }
             }
         }
-        do_slowtimo |= (tcb.so_next != &tcb);
 #endif /* VBOX_WITH_BSD_REASS */
 
         STAM_REL_COUNTER_RESET(&pData->StatTCP);
@@ -458,12 +461,14 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 FD_SET(so->s, readfds);
                 UPD_NFDS(so->s);
 #else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
+engage_event:
+                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
                 if (rc == SOCKET_ERROR)
                 {
-socket_error:
+                    /* This should not happen */
                     error = WSAGetLastError();
-                    LogRel(("WSAEventSelector error %d (so=%x, socket=%s, event=%x)\n", error, so, so->s, VBOX_SOCKET_EVENT));
+                    LogRel(("WSAEventSelector (TCP) error %d (so=%x, socket=%s, event=%x)\n",
+                             error, so, so->s, VBOX_SOCKET_EVENT));
                 }
 #endif
                 continue;
@@ -478,12 +483,10 @@ socket_error:
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
                 FD_SET(so->s, writefds);
                 UPD_NFDS(so->s);
-#else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
-                if (rc == SOCKET_ERROR)
-                    goto socket_error;
-#endif
                 continue;
+#else
+                goto engage_event;
+#endif
             }
 
             /*
@@ -497,10 +500,7 @@ socket_error:
                 FD_SET(so->s, writefds);
                 UPD_NFDS(so->s);
 #else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT|FD_OOB);
-                if (rc == SOCKET_ERROR)
-                    goto socket_error;
-                continue; /* we're using the widest mask for event */
+                goto engage_event;
 #endif
             }
 
@@ -516,17 +516,9 @@ socket_error:
                 FD_SET(so->s, xfds);
                 UPD_NFDS(so->s);
 #else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_OOB|FD_READ|FD_WRITE|FD_ACCEPT|FD_CONNECT);
-                if (rc == SOCKET_ERROR)
-                    goto socket_error;
-                continue; /* we're using the widest mask for event */
+                goto engage_event;
 #endif
             }
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-            rc = WSAEventSelect(so->s, NULL, 0);
-            if (rc == SOCKET_ERROR)
-                goto socket_error;
-#endif
         }
 
         /*
@@ -572,20 +564,16 @@ socket_error:
                 FD_SET(so->s, readfds);
                 UPD_NFDS(so->s);
 #else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_READ|FD_WRITE|FD_OOB|FD_ACCEPT);
+                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
                 if (rc == SOCKET_ERROR)
-                    goto socket_error;
-                continue;
+                {
+                    /* This should not happen */
+                    error = WSAGetLastError();
+                    LogRel(("WSAEventSelector (UDP) error %d (so=%x, socket=%s, event=%x)\n",
+                            error, so, so->s, VBOX_SOCKET_EVENT));
+                }
 #endif
             }
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-            else
-            {
-                rc = WSAEventSelect(so->s, NULL, 0);
-                if (rc != SOCKET_ERROR)
-                    goto socket_error;
-            }
-#endif
         }
     }
 
@@ -607,6 +595,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     int rc;
     int error;
 #endif
+
     STAM_REL_PROFILE_START(&pData->StatPoll, a);
 
     /* Update time */
@@ -697,7 +686,10 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 if (so->so_state & SS_FACCEPTCONN)
                 {
                     tcp_connect(pData, so);
-                    continue;
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+                    if (!NetworkEvents.lNetworkEvents & FD_CLOSE)
+#endif
+                        continue;
                 }
 
                 ret = soread(pData, so);
@@ -705,6 +697,26 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 if (ret > 0)
                     tcp_output(pData, sototcpcb(so));
             }
+
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+            /*
+             * Check for FD_CLOSE events.
+             */
+            if (NetworkEvents.lNetworkEvents & FD_CLOSE)
+            {
+                /*
+                 * drain the socket
+                 */
+                for (;;)
+                {
+                    ret = soread(pData, so);
+                    if (ret > 0)
+                        tcp_output(pData, sototcpcb(so));
+                    else
+                        break;
+                }
+            }
+#endif
 
             /*
              * Check sockets for writing
@@ -751,13 +763,13 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                      */
                     tcp_input(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
                     /* continue; */
-                } else
+                }
+                else
                     ret = sowrite(pData, so);
                 /*
-                 * XXXXX If we wrote something (a lot), there
-                 * could be a need for a window update.
-                 * In the worst case, the remote will send
-                 * a window probe to get things going again
+                 * XXX If we wrote something (a lot), there could be the need
+                 * for a window update. In the worst case, the remote will send
+                 * a window probe to get things going again.
                  */
             }
 
@@ -849,8 +861,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     STAM_REL_PROFILE_STOP(&pData->StatPoll, a);
 }
 
-#define ETH_ALEN 6
-#define ETH_HLEN 14
+#define ETH_ALEN        6
+#define ETH_HLEN        14
 
 #define ETH_P_IP        0x0800          /* Internet Protocol packet     */
 #define ETH_P_ARP       0x0806          /* Address Resolution packet    */
@@ -860,26 +872,26 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 
 struct ethhdr
 {
-        unsigned char   h_dest[ETH_ALEN];       /* destination eth addr */
-        unsigned char   h_source[ETH_ALEN];     /* source ether addr    */
-        unsigned short  h_proto;                /* packet type ID field */
+    unsigned char   h_dest[ETH_ALEN];           /* destination eth addr */
+    unsigned char   h_source[ETH_ALEN];         /* source ether addr    */
+    unsigned short  h_proto;                    /* packet type ID field */
 };
 
 struct arphdr
 {
-        unsigned short  ar_hrd;         /* format of hardware address   */
-        unsigned short  ar_pro;         /* format of protocol address   */
-        unsigned char   ar_hln;         /* length of hardware address   */
-        unsigned char   ar_pln;         /* length of protocol address   */
-        unsigned short  ar_op;          /* ARP opcode (command)         */
+    unsigned short  ar_hrd;             /* format of hardware address   */
+    unsigned short  ar_pro;             /* format of protocol address   */
+    unsigned char   ar_hln;             /* length of hardware address   */
+    unsigned char   ar_pln;             /* length of protocol address   */
+    unsigned short  ar_op;              /* ARP opcode (command)         */
 
-         /*
-          *      Ethernet looks like this : This bit is variable sized however...
-          */
-        unsigned char           ar_sha[ETH_ALEN];       /* sender hardware address      */
-        unsigned char           ar_sip[4];              /* sender IP address            */
-        unsigned char           ar_tha[ETH_ALEN];       /* target hardware address      */
-        unsigned char           ar_tip[4];              /* target IP address            */
+    /*
+     *      Ethernet looks like this : This bit is variable sized however...
+     */
+    unsigned char   ar_sha[ETH_ALEN];   /* sender hardware address      */
+    unsigned char   ar_sip[4];          /* sender IP address            */
+    unsigned char   ar_tha[ETH_ALEN];   /* target hardware address      */
+    unsigned char   ar_tip[4];          /* target IP address            */
 };
 
 static

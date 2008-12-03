@@ -22,12 +22,12 @@ typedef int socklen_t;
 #endif
 
 #ifndef CONFIG_QEMU
-#include "version.h"
+# include "version.h"
 #endif
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #include <VBox/log.h>
 #ifdef VBOX_WITH_SLIRP_MEMORY_CHECK
-#define RTMEM_WRAP_TO_EF_APIS
+# define RTMEM_WRAP_TO_EF_APIS
 #endif /* VBOX_WITH_SLIRP_MEMORY_CHECK */
 #include <iprt/mem.h>
 #ifdef RT_OS_WINDOWS
@@ -39,17 +39,17 @@ typedef int socklen_t;
 #include <iprt/dir.h>
 #include <VBox/types.h>
 
-# define malloc(a)       RTMemAlloc(a)
-# define free(a)         RTMemFree(a)
-# define realloc(a,b)    RTMemRealloc(a, b)
+#define malloc(a)       RTMemAlloc(a)
+#define free(a)         RTMemFree(a)
+#define realloc(a,b)    RTMemRealloc(a, b)
 
 #include "slirp_config.h"
 
-#ifdef _WIN32
+#ifdef RT_OS_WINDOWS
 
-#ifndef _MSC_VER
-# include <inttypes.h>
-#endif
+# ifndef _MSC_VER
+#  include <inttypes.h>
+# endif
 
 typedef uint8_t u_int8_t;
 typedef uint16_t u_int16_t;
@@ -66,11 +66,14 @@ typedef char *caddr_t;
 # define EHOSTUNREACH WSAEHOSTUNREACH
 # define ENETUNREACH WSAENETUNREACH
 # define ECONNREFUSED WSAECONNREFUSED
-#else
+
+#else /* !RT_OS_WINDOWS */
+
 # define ioctlsocket ioctl
 # define closesocket(s) close(s)
 # define O_BINARY 0
-#endif
+
+#endif /* !RT_OS_WINDOWS */
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_BITYPES_H
@@ -78,9 +81,9 @@ typedef char *caddr_t;
 #endif
 
 #ifdef _MSC_VER
-#include <time.h>
+# include <time.h>
 #else /* !_MSC_VER */
-#include <sys/time.h>
+# include <sys/time.h>
 #endif /* !_MSC_VER */
 
 #ifdef NEED_TYPEDEFS
@@ -124,7 +127,7 @@ typedef unsigned char u_int8_t;
 #include <errno.h>
 
 #ifndef HAVE_MEMMOVE
-#define memmove(x, y, z) bcopy(y, x, z)
+# define memmove(x, y, z) bcopy(y, x, z)
 #endif
 
 #if TIME_WITH_SYS_TIME
@@ -144,8 +147,8 @@ typedef unsigned char u_int8_t;
 # include <strings.h>
 #endif
 
-#ifndef _WIN32
-#include <sys/uio.h>
+#ifndef RT_OS_WINDOWS
+# include <sys/uio.h>
 #endif
 
 #ifndef _P
@@ -156,13 +159,13 @@ typedef unsigned char u_int8_t;
 #endif
 #endif
 
-#ifndef _WIN32
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#ifndef RT_OS_WINDOWS
+# include <netinet/in.h>
+# include <arpa/inet.h>
 #endif
 
 #ifdef GETTIMEOFDAY_ONE_ARG
-#define gettimeofday(x, y) gettimeofday(x)
+# define gettimeofday(x, y) gettimeofday(x)
 #endif
 
 /* Systems lacking strdup() definition in <string.h>. */
@@ -182,14 +185,14 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 
 #include <fcntl.h>
 #ifndef NO_UNIX_SOCKETS
-#include <sys/un.h>
+# include <sys/un.h>
 #endif
 #include <signal.h>
 #ifdef HAVE_SYS_SIGNAL_H
 # include <sys/signal.h>
 #endif
-#ifndef _WIN32
-#include <sys/socket.h>
+#ifndef RT_OS_WINDOWS
+# include <sys/socket.h>
 #endif
 
 #if defined(HAVE_SYS_IOCTL_H)
@@ -208,27 +211,21 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 # include <sys/filio.h>
 #endif
 
-#ifdef USE_PPP
-#include <ppp/slirppp.h>
-#endif
-
 #if defined(__STDC__) || defined(_MSC_VER)
-#include <stdarg.h>
+# include <stdarg.h>
 #else
-#include <varargs.h>
+# include <varargs.h>
 #endif
 
 #include <sys/stat.h>
 
-#if 1 /* ndef _MSC_VER */
 /* Avoid conflicting with the libc insque() and remque(), which
-   have different prototypes. */
+ * have different prototypes. */
 #define insque slirp_insque
 #define remque slirp_remque
-#endif /* !_MSC_VER */
 
 #ifdef HAVE_SYS_STROPTS_H
-#include <sys/stropts.h>
+# include <sys/stropts.h>
 #endif
 
 #include "libslirp.h"
@@ -249,20 +246,15 @@ int inet_aton _P((const char *cp, struct in_addr *ia));
 #include "main.h"
 #include "misc.h"
 #include "ctl.h"
-#ifdef USE_PPP
-#include "ppp/pppd.h"
-#include "ppp/ppp.h"
-#endif
-
 #include "bootp.h"
 #include "tftp.h"
 
 #include "slirp_state.h"
 
-#undef PVM /* XXX Mac hack */
+#undef PVM /* XXX Mac OS X hack */
 
 #ifndef NULL
-#define NULL (void *)0
+# define NULL (void *)0
 #endif
 
 void if_start _P((PNATState));
@@ -317,7 +309,7 @@ extern void insque_32 _P((PNATState, void *, void *));
 extern void remque_32 _P((PNATState, void *));
 #endif
 
-#ifndef _WIN32
+#ifndef RT_OS_WINDOWS
 #include <netdb.h>
 #endif
 
@@ -381,22 +373,17 @@ int tcp_emu _P((PNATState, struct socket *, struct mbuf *));
 int tcp_ctl _P((PNATState, struct socket *));
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
-#ifdef USE_PPP
-#define MIN_MRU MINMRU
-#define MAX_MRU MAXMRU
-#else
 #define MIN_MRU 128
 #define MAX_MRU 16384
+
+#ifndef RT_OS_WINDOWS
+# define min(x,y) ((x) < (y) ? (x) : (y))
+# define max(x,y) ((x) > (y) ? (x) : (y))
 #endif
 
-#ifndef _WIN32
-#define min(x,y) ((x) < (y) ? (x) : (y))
-#define max(x,y) ((x) > (y) ? (x) : (y))
-#endif
-
-#ifdef _WIN32
-#undef errno
-#define errno (WSAGetLastError())
+#ifdef RT_OS_WINDOWS
+# undef errno
+# define errno (WSAGetLastError())
 #endif
 
 #endif

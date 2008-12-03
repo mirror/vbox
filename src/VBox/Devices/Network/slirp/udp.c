@@ -344,7 +344,7 @@ udp_attach(PNATState pData, struct socket *so)
       int lasterrno=errno;
       closesocket(so->s);
       so->s=-1;
-#ifdef _WIN32
+#ifdef RT_OS_WINDOWS
       WSASetLastError(lasterrno);
 #else
       errno=lasterrno;
