@@ -483,7 +483,6 @@ void Filter::init(ComSafeArrayIn(INPTR BSTR, metricNames),
     }
     else
     {
- 
         for (size_t i = 0; i < objectArray.size(); ++i)
             switch (nameArray.size())
             {
