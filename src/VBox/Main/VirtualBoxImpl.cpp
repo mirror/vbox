@@ -906,9 +906,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
 STDMETHODIMP VirtualBox::OpenMachine (INPTR BSTR aSettingsFile,
                                       IMachine **aMachine)
 {
-    /* null and empty strings are not allowed as path names */
-    if (!aSettingsFile || !(*aSettingsFile))
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aSettingsFile);
 
     if (!aMachine)
         return E_POINTER;
@@ -1196,9 +1194,7 @@ STDMETHODIMP VirtualBox::FindHardDisk2 (INPTR BSTR aLocation,
 STDMETHODIMP VirtualBox::OpenDVDImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
                                        IDVDImage2 **aDVDImage)
 {
-    /* null and empty strings are not allowed as path names */
-    if (!aLocation || !(*aLocation))
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aLocation);
 
     if (!aDVDImage)
         return E_POINTER;
@@ -1270,9 +1266,7 @@ STDMETHODIMP VirtualBox::FindDVDImage (INPTR BSTR aLocation, IDVDImage2 **aDVDIm
 STDMETHODIMP VirtualBox::OpenFloppyImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
                                           IFloppyImage2 **aFloppyImage)
 {
-    /* null and empty strings are not allowed as path names */
-    if (!aLocation || !(*aLocation))
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aLocation);
 
     if (!aFloppyImage)
         return E_POINTER;
@@ -2002,9 +1996,9 @@ struct StartSVCHelperClientData
 };
 
 /**
- *  Helper method to that starts a worker thread that:
+ *  Helper method that starts a worker thread that:
  *  - creates a pipe communication channel using SVCHlpClient;
- *  - starts a SVC Helper process that will inherit this channel;
+ *  - starts an SVC Helper process that will inherit this channel;
  *  - executes the supplied function by passing it the created SVCHlpClient
  *    and opened instance to communicate to the Helper process and the given
  *    Progress object.
@@ -2015,16 +2009,16 @@ struct StartSVCHelperClientData
  *  call notifyComplete() on it: this will be done automatically using the
  *  result code returned by the function.
  *
- *  Before the user function is stared, the communication channel passed to in
- *  the \a aClient argument, is fully set up, the function should start using
- *  it's write() and read() methods directly.
+ *  Before the user function is started, the communication channel passed to
+ *  the \a aClient argument is fully set up, the function should start using
+ *  its write() and read() methods directly.
  *
  *  The \a aVrc parameter of the user function may be used to return an error
  *  code if it is related to communication errors (for example, returned by
  *  the SVCHlpClient members when they fail). In this case, the correct error
  *  message using this value will be reported to the caller. Note that the
  *  value of \a aVrc is inspected only if the user function itself returns
- *  a success.
+ *  success.
  *
  *  If a failure happens anywhere before the user function would be normally
  *  called, it will be called anyway in special "cleanup only" mode indicated
