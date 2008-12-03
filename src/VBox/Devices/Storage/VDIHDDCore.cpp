@@ -1945,10 +1945,6 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnAsyncRead */
     vdiAsyncRead,
     /* pfnAsyncWrite */
-    vdiAsyncWrite,
-    /* pfnComposeLocation */
-    genericFileComposeLocation,
-    /* pfnComposeName */
-    genericFileComposeName
+    vdiAsyncWrite
 };
 

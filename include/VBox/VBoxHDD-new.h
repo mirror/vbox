@@ -1061,17 +1061,6 @@ typedef struct VDBACKENDINFO
      * the configuration interface, so this pointer may just contain NULL.
      * Mandatory if the backend sets VD_CAP_CONFIG. */
     PCVDCONFIGINFO paConfigInfo;
-    /** Returns a human readable hard disk location string given a
-     *  set of hard disk configuration keys. The returned string is an
-     *  equivalent of the full file path for image-based hard disks.
-     *  Mandatory for backends with no VD_CAP_FILE and NULL otherwise. */
-    DECLR3CALLBACKMEMBER(int, pfnComposeLocation, (PVDINTERFACE pConfig, char **pszLocation));
-    /** Returns a human readable hard disk name string given a
-     *  set of hard disk configuration keys. The returned string is an
-     *  equivalent of the file name part in the full file path for
-     *  image-based hard disks. Mandatory for backends with no
-     *  VD_CAP_FILE and NULL otherwise. */
-    DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
 } VDBACKENDINFO, *PVDBACKENDINFO;
 
 

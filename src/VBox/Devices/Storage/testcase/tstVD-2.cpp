@@ -36,58 +36,6 @@
 /** The error count. */
 unsigned g_cErrors = 0;
 
-static struct KeyValuePair {
-    const char *key;
-    const char *value;
-} aCfgNode[] = {
-    { "TargetName", "test" },
-    { "LUN", "1" },
-    { "TargetAddress", "address" },
-    { NULL, NULL }
-};
-
-static bool tstAreKeysValid(void *pvUser, const char *pszzValid)
-{
-    return true;
-}
-
-static const char *tstGetValueByKey(const char *pszKey)
-{
-    for (int i = 0; aCfgNode[i].key; i++) 
-        if (!strcmp(aCfgNode[i].key, pszKey))
-            return aCfgNode[i].value;
-    return NULL;
-}
-
-static int tstQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
-{
-    const char *pszValue = tstGetValueByKey(pszName);
-    if (!pszValue)
-        return VERR_CFGM_VALUE_NOT_FOUND;
-    *pcbValue = strlen(pszValue) + 1;
-    return VINF_SUCCESS;
-}
-
-static int tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cchValue)
-{
-    const char *pszTmp = tstGetValueByKey(pszName);
-    if (!pszValue)
-        return VERR_CFGM_VALUE_NOT_FOUND;
-    size_t cchTmp = strlen(pszTmp) + 1; 
-    if (cchValue < cchTmp)
-        return VERR_CFGM_NOT_ENOUGH_SPACE;
-    memcpy(pszValue, pszTmp, cchTmp);
-    return VINF_SUCCESS;
-}
-
-
-VDINTERFACECONFIG icc = {
-    sizeof(VDINTERFACECONFIG),
-    VDINTERFACETYPE_CONFIG,
-    tstAreKeysValid,
-    tstQuerySize,
-    tstQuery
-};
 
 static int tstVDBackendInfo(void)
 {
@@ -180,34 +128,6 @@ static int tstVDBackendInfo(void)
         else
             RTPrintf("<NONE>");
         RTPrintf("\n");
-
-        VDINTERFACE ic;
-        ic.cbSize = sizeof(ic);
-        ic.enmInterface = VDINTERFACETYPE_CONFIG;
-        ic.pCallbacks = &icc;
-        char *pszLocation, *pszName;
-        rc = aVDInfo[i].pfnComposeLocation(&ic, &pszLocation);
-        CHECK("pfnComposeLocation()");
-        if (pszLocation)
-        {
-            RTMemFree(pszLocation);
-            if (aVDInfo[i].uBackendCaps & VD_CAP_FILE)
-            {
-                RTPrintf("Non-NULL location returned for file-based backend!\n");
-                return VERR_INTERNAL_ERROR;
-            }
-        }
-        rc = aVDInfo[i].pfnComposeName(&ic, &pszName);
-        CHECK("pfnComposeName()");
-        if (pszName)
-        {
-            RTMemFree(pszName);
-            if (aVDInfo[i].uBackendCaps & VD_CAP_FILE)
-            {
-                RTPrintf("Non-NULL name returned for file-based backend!\n");
-                return VERR_INTERNAL_ERROR;
-            }
-        }
     }
 
 #undef CHECK
