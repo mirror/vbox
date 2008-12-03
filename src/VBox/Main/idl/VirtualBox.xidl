@@ -321,6 +321,18 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_XML_ERROR" value="0x80BB000A">
+    <desc>
+      Invalid XML found.
+    </desc>
+  </result>
+
+  <result name="VBOX_E_INVALID_SESSION_STATE" value="0x80BB000B">
+    <desc>
+      Current session state prohibits operation.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -1786,8 +1798,8 @@
           Currently only ISO 9960 CD/DVD images are supported by VirtualBox.
         </note>
 
-        <result name="VBOX_E_FILE_ERROR">
-          Image conflicts with another in the media registry.
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          CD/DVD image already exists in the media registry.
         </result>
 
       </desc>
@@ -1815,6 +1827,11 @@
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
         to="#openDVDImage()"/>, or mounted to some known virtual machine.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching DVD image found in the media registry.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
@@ -1841,7 +1858,15 @@
         <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
         folder</link> will be prepended to the file name before searching. Note
         that on case sensitive file systems, a case sensitive comparison is
-        performed, otherwise the case of symbols in the file path is ignored.
+        performed, otherwise the case in the file path is ignored.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid image file location.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching DVD image found in the media registry.
+        </result>
+
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>CD/DVD image file path to look for.</desc>
@@ -1865,6 +1890,13 @@
 
         See <link to="IMedium::location"/> to get more details about the format
         of the location string.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Floppy image specified by @a location not accessible.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Floppy image already exists in the media registry.
+        </result>
 
         <note>
           Currently, only raw floppy images are supported by VirtualBox.
@@ -1894,6 +1926,11 @@
         The image with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously opened by <link
         to="#openFloppyImage()"/>, or mounted to some known virtual machine.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching floppy image found in the media registry.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the image to look for.</desc>
@@ -1921,6 +1958,14 @@
         folder</link> will be prepended to the file name before searching. Note
         that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid image file location.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No matching floppy image found in the media registry.
+        </result>
+
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>Floppy image file path to look for.</desc>
@@ -1944,6 +1989,11 @@
         available guest OS type objects. Each object has an
         <link to="IGuestOSType::id"/> attribute which contains an identifier of
         the guest OS this object describes.
+
+        <result name="E_INVALIDARG">
+          @a id is not a valid Guest OS type.
+        </result>
+
       </desc>
       <param name="id" type="wstring" dir="in">
         <desc>Guest OS type ID string.</desc>
@@ -1959,6 +2009,10 @@
         name with the given host path, adds it to the collection of shared
         folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
+        <note>
+          In the current implementation, this operation is not
+          implemented.
+        </note>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -1976,6 +2030,10 @@
         Removes the global shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
+        <note>
+          In the current implementation, this operation is not
+          implemented.
+        </note>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Logical name of the shared folder to remove.</desc>
@@ -1991,6 +2049,11 @@
         supplying @c NULL for the @a key, the first key item is returned in @a
         nextKey (if there is any). @a nextValue is an optional parameter and
         if supplied, the next key's value is returned in it.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Extra data @a key not found.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to follow.</desc>
@@ -2009,6 +2072,14 @@
 
         If the requested data @a key does not exist, this function will
         succeed and return @c NULL in the @a value argument.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to get.</desc>
@@ -2038,6 +2109,17 @@
           is called to inform all registered callbacks about a successful data
           change.
         </note>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+        <result name="E_ACCESSDENIED">
+          Modification request refused.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to set.</desc>
@@ -2098,6 +2180,20 @@
 
         <li>Close the session by calling <link to="ISession::close()"/>.</li>
         </ol>
+
+        <result name="E_UNEXPECTED">
+          Virtual machine not registered.
+        </result>
+        <result name="E_ACCESSDENIED">
+          Process not started by OpenRemoteSession.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session already open or being opened.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Failed to assign machine to session.
+        </result>
+
       </desc>
       <param name="session" type="ISession" dir="in">
         <desc>
@@ -2126,7 +2222,8 @@
         conflicting changes from other processes. Since sessions act as locks
         that such prevent conflicting changes, one cannot open a remote session
         for a VM that already has another open session (direct or remote), or
-        is currently in the process of opening one (see <link to="IMachine::sessionState"/>).
+        is currently in the process of opening one (see <link
+          to="IMachine::sessionState"/>).
 
         While the remote session still provides some level of control over the
         VM execution to the caller (using the <link to="IConsole" /> interface),
@@ -2173,6 +2270,26 @@
         inherited by the started process as is.
 
         <see>openExistingSession</see>
+
+        <result name="E_UNEXPECTED">
+          Virtual machine not registered.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid session type @a type.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No machine matching @a machineId found.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session already open or being opened.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Launching process for machine failed.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Failed to assign machine to session.
+        </result>
+
       </desc>
       <param name="session" type="ISession" dir="in">
         <desc>
@@ -2217,6 +2334,23 @@
           doesn't have an open direct session.
         </note>
 
+        <result name="E_UNEXPECTED">
+          Virtual machine not registered.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No machine matching @a machineId found.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session already open or being opened.
+        </result>
+        <result name="VBOX_E_INVALID_SESSION_STATE">
+          Direct session state not Open.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Failed to get console object from direct session or assign
+          machine to session.
+        </result>
+
         <see>openRemoteSession</see>
       </desc>
       <param name="session" type="ISession" dir="in">
@@ -2240,6 +2374,12 @@
         Registers a new global VirtualBox callback. The methods of the given
         callback object will be called by VirtualBox when an appropriate
         event occurs.
+
+        <result name="E_INVALIDARG">
+          Registering a @c NULL @a callback is pretty pointless, ain't it?
+          <!-- See if someone is actually reading this and objects :-) -->
+        </result>
+
       </desc>
       <param name="callback" type="IVirtualBoxCallback" dir="in">
         <desc>Callback object to register.</desc>
@@ -2249,6 +2389,11 @@
     <method name="unregisterCallback">
       <desc>
         Unregisters the previously registered global VirtualBox callback.
+
+        <result name="E_INVALIDARG">
+          Specified @a callback not registered.
+        </result>
+
       </desc>
       <param name="callback" type="IVirtualBoxCallback" dir="in">
         <desc>Callback object to unregister.</desc>
@@ -2323,6 +2468,10 @@
           </tr>
         </table>
 
+        <note>
+          This function is not implemented in the current version of the
+          product.
+        </note>
       </desc>
       <param name="what" type="wstring" dir="in">
         <desc>Comma separated list of property masks.</desc>
@@ -2354,6 +2503,14 @@
         recent format (see <link to="#settingsFileVersion"/> for details).
         Normally, the global settings file is implicitly saved when a global
         setting is changed.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
     </method>
 
@@ -2397,6 +2554,17 @@
         </note>
 
         <see>settingsFileVersion</see>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not copy the settings file.
+        </result>
+
       </desc>
       <param name="bakFileName" type="wstring" dir="return">
         <desc>Full path to the created backup copy.</desc>

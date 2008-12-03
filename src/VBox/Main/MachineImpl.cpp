@@ -3404,7 +3404,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
 
     if (mData->mSession.mState == SessionState_Open ||
         mData->mSession.mState == SessionState_Closing)
-        return setError (E_ACCESSDENIED,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("A session for the machine '%ls' is currently open "
                 "(or being closed)"),
             mUserData->mName.raw());
@@ -3412,7 +3412,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
     /* may not be Running */
     AssertReturn (mData->mMachineState < MachineState_Running, E_FAIL);
 
-    /* get the sesion PID */
+    /* get the session PID */
     RTPROCESS pid = NIL_RTPROCESS;
     AssertCompile (sizeof (ULONG) == sizeof (RTPROCESS));
     aControl->GetPID ((ULONG *) &pid);
@@ -3472,10 +3472,10 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
         rc = aControl->AssignMachine (sessionMachine);
         LogFlowThisFunc (("AssignMachine() returned %08X\n", rc));
 
-        /* The failure may w/o any error info (from RPC), so provide one */
+        /* The failure may occur w/o any error info (from RPC), so provide one */
         if (FAILED (rc))
-            setError (rc,
-                tr ("Failed to assign the machine to the session"));
+            setError (VBOX_E_VM_ERROR,
+                tr ("Failed to assign the machine to the session (%Rrc)"), rc);
 
         if (SUCCEEDED (rc) && origState == SessionState_Spawning)
         {
@@ -3492,7 +3492,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
                 rc = E_FAIL;
             }
 
-            /* assign machine & console to the remote sesion */
+            /* assign machine & console to the remote session */
             if (SUCCEEDED (rc))
             {
                 /*
@@ -3504,10 +3504,10 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
                     AssignRemoteMachine (sessionMachine, console);
                 LogFlowThisFunc (("AssignRemoteMachine() returned %08X\n", rc));
 
-                /* The failure may w/o any error info (from RPC), so provide one */
+                /* The failure may occur w/o any error info (from RPC), so provide one */
                 if (FAILED (rc))
-                    setError (rc,
-                        tr ("Failed to assign the machine to the remote session"));
+                    setError (VBOX_E_VM_ERROR,
+                        tr ("Failed to assign the machine to the remote session (%Rrc)"), rc);
             }
 
             if (FAILED (rc))
@@ -3521,7 +3521,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
         mData->mSession.mState = origState;
     }
 
-    /* finalize spawning amyway (this is why we don't return on errors above) */
+    /* finalize spawning anyway (this is why we don't return on errors above) */
     if (mData->mSession.mState == SessionState_Spawning)
     {
         /* Note that the progress object is finalized later */
@@ -3611,7 +3611,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     if (mData->mSession.mState == SessionState_Open ||
         mData->mSession.mState == SessionState_Spawning ||
         mData->mSession.mState == SessionState_Closing)
-        return setError (E_ACCESSDENIED,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("A session for the machine '%ls' is currently open "
                 "(or being opened or closed)"),
             mUserData->mName.raw());
@@ -3688,7 +3688,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
 #ifdef VBOX_WITH_QT4GUI
     if (type == "gui" || type == "GUI/Qt4")
     {
-# ifdef RT_OS_DARWIN /* Avoid Lanuch Services confusing this with the selector by using a helper app. */
+# ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
         const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
 # else
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
@@ -3793,7 +3793,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     RTEnvDestroy (env);
 
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_IPRT_ERROR,
             tr ("Could not launch a process for the machine '%ls' (%Rrc)"),
             mUserData->mName.raw(), vrc);
 
@@ -3817,9 +3817,9 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
     {
         /* restore the session state */
         mData->mSession.mState = SessionState_Closed;
-        /* The failure may w/o any error info (from RPC), so provide one */
-        return setError (rc,
-            tr ("Failed to assign the machine to the session"));
+        /* The failure may occur w/o any error info (from RPC), so provide one */
+        return setError (VBOX_E_VM_ERROR,
+            tr ("Failed to assign the machine to the session (%Rrc)"), rc);
     }
 
     /* attach launch data to the machine */
@@ -3856,7 +3856,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     LogFlowThisFunc (("mSession.state=%d\n", mData->mSession.mState));
 
     if (mData->mSession.mState != SessionState_Open)
-        return setError (E_ACCESSDENIED,
+        return setError (VBOX_E_INVALID_SESSION_STATE,
             tr ("The machine '%ls' does not have an open session"),
             mUserData->mName.raw());
 
@@ -3871,9 +3871,9 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
                      GetRemoteConsole (console.asOutParam());
     if (FAILED (rc))
     {
-        /* The failure may w/o any error info (from RPC), so provide one */
-        return setError (rc,
-            tr ("Failed to get a console object from the direct session"));
+        /* The failure may occur w/o any error info (from RPC), so provide one */
+        return setError (VBOX_E_VM_ERROR,
+            tr ("Failed to get a console object from the direct session (%Rrc)"), rc);
     }
 
     ComAssertRet (!console.isNull(), E_FAIL);
@@ -3894,10 +3894,10 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     rc = aControl->AssignRemoteMachine (sessionMachine, console);
     LogFlowThisFunc (("AssignRemoteMachine() returned %08X\n", rc));
 
-    /* The failure may w/o any error info (from RPC), so provide one */
+    /* The failure may occur w/o any error info (from RPC), so provide one */
     if (FAILED (rc))
-        return setError (rc,
-            tr ("Failed to assign the machine to the session"));
+        return setError (VBOX_E_VM_ERROR,
+            tr ("Failed to assign the machine to the session (%Rrc)"), rc);
 
     alock.enter();
 
@@ -3906,7 +3906,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     {
         aControl->Uninitialize();
 
-        return setError (E_ACCESSDENIED,
+        return setError (VBOX_E_INVALID_SESSION_STATE,
             tr ("The machine '%ls' does not have an open session"),
             mUserData->mName.raw());
     }
