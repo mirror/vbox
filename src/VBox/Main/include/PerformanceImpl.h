@@ -187,7 +187,7 @@ public:
 private:
     HRESULT toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst);
     HRESULT toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst);
-                            
+
     static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback();
 

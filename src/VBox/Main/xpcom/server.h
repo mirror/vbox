@@ -27,9 +27,8 @@
 #include <VBox/version.h>
 
 /**
- * IPC name used to resolve the client ID of the server. 
+ * IPC name used to resolve the client ID of the server.
  */
 #define VBOXSVC_IPC_NAME "VBoxSVC-" VBOX_VERSION_STRING
 
 #endif /* ____H_LINUX_SERVER */
-
