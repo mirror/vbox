@@ -111,6 +111,11 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_QT4GUI),accessible/libqtaccessiblewidgets.so,) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
+	$(if $(VBOX_WITH_CROGL),\
+	  VBoxOGLhostcrutil.so \
+	  VBoxOGLhosterrorspu.so \
+	  VBoxOGLrenderspu.so \
+	  VBoxSharedCrOpenGL.so) \
 	VBoxSettings.so \
 	VBoxZoneAccess \
 	components/VBoxC.so \
@@ -314,6 +319,10 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(INSTALL) -m 0755 $(PATH_DEVTOOLS_TRG)/qt/v4.3.3-r1/bin/qtconfig      $(SOLARIS_INST_DIR)/VBoxQtconfig,)
 	$(QUIET)$(if $(VBOX_WITH_DEBUGGER_GUI),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDbg.so                        $(SOLARIS_INST_DIR)/VBoxDbg.so,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxPython.so                           $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxOGLhostcrutil.so                     $(SOLARIS_INST_DIR)/VBoxOGLhostcrutil.so)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxOGLhosterrorspu.so                   $(SOLARIS_INST_DIR)/VBoxOGLhosterrorspu.so)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxOGLrenderspu.so                      $(SOLARIS_INST_DIR)/VBoxOGLrenderspu.so)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSharedCrOpenGL.so                    $(SOLARIS_INST_DIR)/VBoxSharedCrOpenGL.so)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxSettings.so                                                  $(SOLARIS_INST_DIR)/VBoxSettings.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxZoneAccess                                                   $(SOLARIS_INST_DIR)/VBoxZoneAccess
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxC.so                                              $(SOLARIS_INST_DIR)/components/VBoxC.so
@@ -368,6 +377,10 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_QT4GUI),strip $(SOLARIS_INST_DIR)/VBoxQtconfig,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_DEBUGGER_GUI),strip $(SOLARIS_INST_DIR)/VBoxDbg.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_PYTHON),strip $(SOLARIS_INST_DIR)/$(VBOX_SOL_PYTHON_INST)VBoxPython.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_CROGL),strip $(SOLARIS_INST_DIR)/VBoxOGLhostcrutil.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_CROGL),strip $(SOLARIS_INST_DIR)/VBoxOGLhosterrorspu.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_CROGL),strip $(SOLARIS_INST_DIR)/VBoxOGLrenderspu.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_CROGL),strip $(SOLARIS_INST_DIR)/VBoxSharedCrOpenGL.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxSettings.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxZoneAccess,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxC.so,)
@@ -516,6 +529,10 @@ ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_QT4GUI),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VirtualBox.so                             $(SOLARIS_DBG_DIR)/VirtualBox.so,)
 endif
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxPython.so                             $(SOLARIS_DBG_DIR)/VBoxPython.so,)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxOGLhostcrutil.so                       $(SOLARIS_DBG_DIR)/VBoxOGLhostcrutil.so,)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxOGLhosterrorspu.so                     $(SOLARIS_DBG_DIR)/VBoxOGLhosterrorspu.so,)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxOGLrenderspu.so                        $(SOLARIS_DBG_DIR)/VBoxOGLrenderspu.so,)
+	$(QUIET)$(if $(VBOX_WITH_CROGL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSharedCrOpenGL.so                      $(SOLARIS_DBG_DIR)/VBoxSharedCrOpenGL.so,)
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSettings.so                                                    $(SOLARIS_DBG_DIR)/VBoxSettings.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxZoneAccess                                                     $(SOLARIS_DBG_DIR)/VBoxZoneAccess
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxC.so                                                $(SOLARIS_DBG_DIR)/components/VBoxC.so
