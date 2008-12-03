@@ -2778,6 +2778,8 @@ ResumeExecution:
             DISCPUSTATE Cpu;
 
             /* Disassemble manually to deal with segment prefixes. */
+            /** @todo VMX_VMCS_EXIT_GUEST_LINEAR_ADDR contains the flat pointer operand of the instruction. */
+            /** @todo VMX_VMCS32_RO_EXIT_INSTR_INFO also contains segment prefix info. */
             rc = EMInterpretDisasOne(pVM, CPUMCTX2CORE(pCtx), &Cpu, NULL);
             if (rc == VINF_SUCCESS)
             {
