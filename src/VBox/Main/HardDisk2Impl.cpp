@@ -1885,7 +1885,7 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
     }
 
     if (m.backRefs.size() != 0)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
+        return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Hard disk '%ls' is attached to %d virtual machines"),
                 m.locationFull.raw(), m.backRefs.size());
 
