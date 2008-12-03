@@ -333,6 +333,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_OBJECT_IN_USE" value="0x80BB000C">
+    <desc>
+      Object being in use prohibits operation.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
