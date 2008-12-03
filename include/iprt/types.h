@@ -978,36 +978,29 @@ typedef const RTCCPHYS *PCRTCCPHYS;
 # define NIL_RTCCPHYS   NIL_RTHCPHYS
 #endif
 
-/** Unsigned integer register in the current 32 bits context. */
-typedef uint32_t              RTCCUINTREG32;
-/** Pointer to an unsigned integer register in the current context. */
-typedef RTCCUINTREG32        *PRTCCUINTREG32;
-/** Pointer to a const unsigned integer register in the current context. */
-typedef const RTCCUINTREG32  *PCRTCCUINTREG32;
-
-/** Unsigned integer register in the current 64 bits context. */
-typedef uint64_t              RTCCUINTREG64;
-/** Pointer to an unsigned integer register in the current context. */
-typedef RTCCUINTREG64        *PRTCCUINTREG64;
-/** Pointer to a const unsigned integer register in the current context. */
-typedef const RTCCUINTREG64  *PCRTCCUINTREG64;
-
 /** Unsigned integer register in the current context. */
 #if ARCH_BITS == 32
-typedef RTCCUINTREG32         RTCCUINTREG;
-/** Pointer to an unsigned integer register in the current context. */
-typedef PRTCCUINTREG32        PRTCCUINTREG;
-/** Pointer to a const unsigned integer register in the current context. */
-typedef PCRTCCUINTREG32       PCRTCCUINTREG;
+typedef uint32_t                RTCCUINTREG;
 #elif ARCH_BITS == 64
-typedef RTCCUINTREG64         RTCCUINTREG;
-/** Pointer to an unsigned integer register in the current context. */
-typedef PRTCCUINTREG64      PRTCCUINTREG;
-/** Pointer to a const unsigned integer register in the current context. */
-typedef PCRTCCUINTREG64     PCRTCCUINTREG;
+typedef uint64_t                RTCCUINTREG;
 #else
 # error "Unsupported ARCH_BITS!"
 #endif
+/** Pointer to an unsigned integer register in the current context. */
+typedef RTCCUINTREG            *PRTCCUINTREG;
+/** Pointer to a const unsigned integer register in the current context. */
+typedef RTCCUINTREG const      *PCRTCCUINTREG;
+
+/** Signed integer register in the current context. */
+#if ARCH_BITS == 32
+typedef int32_t                 RTCCINTREG;
+#elif ARCH_BITS == 64
+typedef int64_t                 RTCCINTREG;
+#endif
+/** Pointer to a signed integer register in the current context. */
+typedef RTCCINTREG             *PRTCCINTREG;
+/** Pointer to a const signed integer register in the current context. */
+typedef RTCCINTREG const       *PCRTCCINTREG;
 
 /** @} */
 
