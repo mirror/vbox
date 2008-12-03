@@ -3172,7 +3172,7 @@ uint32_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
  */
 int32_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
 {
-    uint16_t val;
+    int16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
     val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
