@@ -1542,7 +1542,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 #ifndef VBOX_GUI_SEPARATE_VM_PROCESS
         vboxGlobal().selectorWnd().show();
 #endif
-        closeView();
+        QTimer::singleShot (0, this, SLOT (closeView()));
     }
 
     LogFlowFunc (("accepted=%d\n", e->isAccepted()));
