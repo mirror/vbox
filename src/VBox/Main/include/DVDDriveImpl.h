@@ -127,3 +127,4 @@ private:
 
 #endif // ____H_DVDDRIVEIMPL
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -146,3 +146,4 @@ private:
 
 #endif // ____H_BIOSSETTINGS
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

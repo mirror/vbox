@@ -305,3 +305,4 @@ private:
 
 #endif /* ____H_HARDDISK2IMPL */
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

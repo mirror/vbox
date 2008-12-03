@@ -128,3 +128,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION (Snapshot)
 
 #endif // ____H_SNAPSHOTIMPL
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

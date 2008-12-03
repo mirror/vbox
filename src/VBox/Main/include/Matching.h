@@ -523,3 +523,4 @@ private:
 } /* namespace matching */
 
 #endif // ____H_MATCHING
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

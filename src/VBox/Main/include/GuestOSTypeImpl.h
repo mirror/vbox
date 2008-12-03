@@ -105,3 +105,4 @@ private:
 COM_DECL_READONLY_ENUM_AND_COLLECTION (GuestOSType)
 
 #endif // ____H_GUESTOSTYPEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

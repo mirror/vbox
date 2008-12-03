@@ -184,3 +184,4 @@ private:
 };
 
 #endif // ____H_HOSTIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

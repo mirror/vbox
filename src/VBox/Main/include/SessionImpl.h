@@ -149,3 +149,4 @@ private:
 };
 
 #endif // ____H_SESSIONIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

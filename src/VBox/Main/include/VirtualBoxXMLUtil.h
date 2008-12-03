@@ -65,3 +65,4 @@
 #define VBOX_XML_SETTINGS_CONVERTER "SettingsConverter.xsl"
 
 #endif /* ____H_VIRTUALBOXXMLUTIL */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

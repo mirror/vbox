@@ -133,3 +133,4 @@ private:
 };
 
 #endif // ____H_HARDDISKATTACHMENTIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

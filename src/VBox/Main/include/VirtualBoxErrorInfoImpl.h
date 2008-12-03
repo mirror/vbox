@@ -90,3 +90,4 @@ private:
 
 #endif // ____H_VIRTUALBOXERRORINFOIMPL
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -361,3 +361,4 @@ private:
 COM_DECL_READONLY_ENUM_AND_COLLECTION_AS (Progress, IProgress)
 
 #endif /* ____H_PROGRESSIMPL */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

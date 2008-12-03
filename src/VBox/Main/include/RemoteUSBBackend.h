@@ -135,3 +135,4 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
 };
 
 #endif /* ____H_REMOTEUSBBACKEND */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

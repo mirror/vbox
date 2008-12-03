@@ -1078,3 +1078,4 @@ inline Machine *Machine::machine()
 }
 
 #endif // ____H_MACHINEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

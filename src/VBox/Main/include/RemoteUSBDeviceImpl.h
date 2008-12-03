@@ -198,3 +198,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <RemoteUSBDevice>, IHost
 
 
 #endif // ____H_REMOTEUSBDEVICEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
