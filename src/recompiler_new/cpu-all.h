@@ -254,15 +254,15 @@ void remAbort(int rc, const char *pszTip) __attribute__((__noreturn__));
 void     remR3GrowDynRange(unsigned long physaddr);
 #endif
 
-void     remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
-uint32_t remR3PhysReadU8(RTGCPHYS SrcGCPhys);
-int32_t  remR3PhysReadS8(RTGCPHYS SrcGCPhys);
-uint32_t remR3PhysReadU16(RTGCPHYS SrcGCPhys);
-int32_t  remR3PhysReadS16(RTGCPHYS SrcGCPhys);
-uint32_t remR3PhysReadU32(RTGCPHYS SrcGCPhys);
-int32_t  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
-uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys);
-int64_t  remR3PhysReadS64(RTGCPHYS SrcGCPhys);
+void        remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb);
+RTCCUINTREG remR3PhysReadU8(RTGCPHYS SrcGCPhys);
+RTCCINTREG  remR3PhysReadS8(RTGCPHYS SrcGCPhys);
+RTCCUINTREG remR3PhysReadU16(RTGCPHYS SrcGCPhys);
+RTCCINTREG  remR3PhysReadS16(RTGCPHYS SrcGCPhys);
+RTCCUINTREG remR3PhysReadU32(RTGCPHYS SrcGCPhys);
+RTCCINTREG  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
+uint64_t    remR3PhysReadU64(RTGCPHYS SrcGCPhys);
+int64_t     remR3PhysReadS64(RTGCPHYS SrcGCPhys);
 void     remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
 void     remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
 void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
