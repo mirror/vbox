@@ -493,6 +493,19 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                                               PPDMDATASEG paSeg, unsigned cSeg, void *pvUser));
 
+    /** Returns a human readable hard disk location string given a
+     *  set of hard disk configuration keys. The returned string is an
+     *  equivalent of the full file path for image-based hard disks.
+     *  Mandatory for backends with no VD_CAP_FILE and NULL otherwise. */
+    DECLR3CALLBACKMEMBER(int, pfnComposeLocation, (PVDINTERFACE pConfig, char **pszLocation));
+
+    /** Returns a human readable hard disk name string given a
+     *  set of hard disk configuration keys. The returned string is an
+     *  equivalent of the file name part in the full file path for
+     *  image-based hard disks. Mandatory for backends with no
+     *  VD_CAP_FILE and NULL otherwise. */
+    DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */
@@ -500,6 +513,19 @@ typedef VBOXHDDBACKEND *PVBOXHDDBACKEND;
 
 /** Constant pointer to VD backend. */
 typedef const VBOXHDDBACKEND *PCVBOXHDDBACKEND;
+
+/** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
+DECLINLINE(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
+{
+    *pszLocation = NULL;
+    return VINF_SUCCESS;
+}
+/** @copydoc VBOXHDDBACKEND::pfnComposeName */
+DECLINLINE(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
+{
+    *pszName = NULL;
+    return VINF_SUCCESS;
+}
 
 /** Initialization entry point. */
 typedef DECLCALLBACK(int) VBOXHDDFORMATLOAD(PVBOXHDDBACKEND *ppBackendTable);

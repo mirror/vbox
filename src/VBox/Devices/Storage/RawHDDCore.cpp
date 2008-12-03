@@ -1166,6 +1166,10 @@ VBOXHDDBACKEND g_RawBackend =
     /* pfnAsyncRead */
     rawAsyncRead,
     /* pfnAsyncWrite */
-    rawAsyncWrite
+    rawAsyncWrite,
+    /* pfnComposeLocation */
+    genericFileComposeLocation,
+    /* pfnComposeName */
+    genericFileComposeName
 };
 
