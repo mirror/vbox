@@ -3291,7 +3291,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
                 aMachine->id().raw(), m->settingsFileFull().raw());
         }
 
-        ComAssertRet (rc == E_INVALIDARG, rc);
+        ComAssertRet (rc == VBOX_E_OBJECT_NOT_FOUND, rc);
         rc = S_OK;
     }
 
