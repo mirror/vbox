@@ -2770,31 +2770,29 @@ ResumeExecution:
             break;
         }
 
-        uint32_t cbSize = g_aIOSize[uIOWidth];
-
         if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
         {
-            /* ins/outs */
-            uint32_t prefix = 0;
-            if (VMX_EXIT_QUALIFICATION_IO_REP(exitQualification))
-                prefix |= PREFIX_REP;
+            uint32_t cbSize;
 
+            /* ins/outs */
             if (fIOWrite)
             {
-                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
+                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, g_aIOSize[uIOWidth]));
             }
             else
             {
-                Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
+                Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, g_aIOSize[uIOWidth]));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, prefix, cbSize);
             }
+
+            /* Disassemble manually, because we don't have any information about segment prefixes. */
+            rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
         }
         else
         {
             /* normal in/out */
+            uint32_t cbSize  = g_aIOSize[uIOWidth];
             uint32_t uAndVal = g_aIOOpAnd[uIOWidth];
 
             Assert(!VMX_EXIT_QUALIFICATION_IO_REP(exitQualification));

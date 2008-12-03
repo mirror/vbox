@@ -1840,23 +1840,22 @@ ResumeExecution:
 
         if (IoExitInfo.n.u1STR)
         {
-            /* ins/outs */
-            uint32_t prefix = 0;
-            if (IoExitInfo.n.u1REP)
-                prefix |= PREFIX_REP;
+            uint32_t cbSize;
 
+            /* ins/outs */
             if (IoExitInfo.n.u1Type == 0)
             {
-                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
+                Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
             }
             else
             {
                 Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, prefix, uIOSize);
             }
+
+            /* Disassemble manually, because we don't have any information about segment prefixes. */
+            rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
         }
         else
         {
