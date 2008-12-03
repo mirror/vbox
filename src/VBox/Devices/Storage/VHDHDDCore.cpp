@@ -1951,9 +1951,5 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnAsyncRead */
     vhdAsyncRead,
     /* pfnAsyncWrite */
-    vhdAsyncWrite,
-    /* pfnComposeLocation */
-    genericFileComposeLocation,
-    /* pfnComposeName */
-    genericFileComposeName
+    vhdAsyncWrite
 };
