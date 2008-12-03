@@ -1440,7 +1440,7 @@ STDMETHODIMP Console::PowerDownAsync (IProgress **aProgress)
                               RTTHREADTYPE_MAIN_WORKER, 0,
                               "VMPowerDown");
     ComAssertMsgRCRet (vrc,
-         ("Could not create VMPowerDown thread (%Rrc)\n", vrc), E_FAIL);
+         ("Could not create VMPowerDown thread (%Rrc)", vrc), E_FAIL);
 
     /* task is now owned by powerDownThread(), so release it */
     task.release();
@@ -1817,7 +1817,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         int vrc = RTThreadCreate (NULL, Console::saveStateThread, (void *) task.get(),
                                   0, RTTHREADTYPE_MAIN_WORKER, 0, "VMSave");
 
-        ComAssertMsgRCBreak (vrc, ("Could not create VMSave thread (%Rrc)\n", vrc),
+        ComAssertMsgRCBreak (vrc, ("Could not create VMSave thread (%Rrc)", vrc),
                              rc = E_FAIL);
 
         /* task is now owned by saveStateThread(), so release it */
@@ -2370,7 +2370,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
             int vrc = RTThreadCreate (NULL, Console::saveStateThread, (void *) task.get(),
                                       0, RTTHREADTYPE_MAIN_WORKER, 0, "VMTakeSnap");
 
-            ComAssertMsgRCBreak (vrc, ("Could not create VMTakeSnap thread (%Rrc)\n", vrc),
+            ComAssertMsgRCBreak (vrc, ("Could not create VMTakeSnap thread (%Rrc)", vrc),
                                  rc = E_FAIL);
 
             /* task is now owned by saveStateThread(), so release it */
@@ -4512,7 +4512,7 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
     int vrc = RTThreadCreate (NULL, Console::powerUpThread, (void *) task.get(),
                               0, RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
 
-    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Rrc)\n", vrc),
+    ComAssertMsgRCRet (vrc, ("Could not create VMPowerUp thread (%Rrc)", vrc),
                        E_FAIL);
 
     /* clear the locked media list to prevent unlocking on task destruction as

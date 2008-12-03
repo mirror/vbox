@@ -5083,7 +5083,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             else if (strcmp (device, "Network") == 0)
                 mHWData->mBootOrder [position] = DeviceType_Network;
             else
-                ComAssertMsgFailed (("Invalid device: %s\n", device));
+                ComAssertMsgFailed (("Invalid device: %s", device));
         }
     }
 
@@ -6445,7 +6445,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                 case DeviceType_Network:        device = "Network"; break;
                 default:
                 {
-                    ComAssertMsgFailedRet (("Invalid boot device: %d\n",
+                    ComAssertMsgFailedRet (("Invalid boot device: %d",
                                             mHWData->mBootOrder [pos]),
                                             E_FAIL);
                 }
@@ -7726,7 +7726,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
             mIPCSemName[i] = '/';
     mIPCSem = ::CreateMutex (NULL, FALSE, mIPCSemName);
     ComAssertMsgRet (mIPCSem,
-                     ("Cannot create IPC mutex '%ls', err=%d\n",
+                     ("Cannot create IPC mutex '%ls', err=%d",
                       mIPCSemName.raw(), ::GetLastError()),
                      E_FAIL);
 #elif defined(RT_OS_OS2)
@@ -7735,7 +7735,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
     mIPCSemName = ipcSem;
     APIRET arc = ::DosCreateMutexSem ((PSZ) ipcSem.raw(), &mIPCSem, 0, FALSE);
     ComAssertMsgRet (arc == NO_ERROR,
-                     ("Cannot create IPC mutex '%s', arc=%ld\n",
+                     ("Cannot create IPC mutex '%s', arc=%ld",
                       ipcSem.raw(), arc),
                      E_FAIL);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)

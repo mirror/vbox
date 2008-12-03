@@ -1164,7 +1164,7 @@ HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
             typeStr = "82543GC";
             break;
         default:
-            ComAssertMsgFailedRet (("Invalid network adapter type: %d\n",
+            ComAssertMsgFailedRet (("Invalid network adapter type: %d",
                                     mData->mAdapterType),
                                    E_FAIL);
     }

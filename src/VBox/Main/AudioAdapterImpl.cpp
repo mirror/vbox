@@ -526,7 +526,7 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
             }
 #endif
             default:
-                ComAssertMsgFailedRet (("Wrong audio driver type! driver = %d\n",
+                ComAssertMsgFailedRet (("Wrong audio driver type! driver = %d",
                                         mData->mAudioDriver),
                                        E_FAIL);
     }
