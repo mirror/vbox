@@ -321,6 +321,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                      $(SOLARIS_INST_DIR)/components/VBoxXPCOMIPCC.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/kchmviewer                                                       $(SOLARIS_INST_DIR)/kchmviewer
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVRDP.so                               $(SOLARIS_INST_DIR)/VBoxVRDP.so,)
+	$(QUIET)$(if $(VBOX_WITH_VRDP),$(INSTALL) -m 0644 $(PATH_BIN)/VRDPAuth.so                               $(SOLARIS_INST_DIR)/VRDPAuth.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxHeadless                          $(SOLARIS_INST_DIR)/VBoxHeadless,)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(INSTALL) -m 0644 $(PATH_BIN)/VBoxHeadless.so                       $(SOLARIS_INST_DIR)/VBoxHeadless.so,)
@@ -374,6 +375,7 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/components/VBoxXPCOMIPCC.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/kchmviewer,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP),strip $(SOLARIS_INST_DIR)/VBoxVRDP.so,),)
+	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_VRDP),strip $(SOLARIS_INST_DIR)/VRDPAuth.so,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless,),)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(VBOX_WITH_HEADLESS),strip $(SOLARIS_INST_DIR)/VBoxHeadless.so,),)
@@ -521,6 +523,7 @@ endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/components/VBoxXPCOMIPCC.so                                        $(SOLARIS_DBG_DIR)/components/VBoxXPCOMIPCC.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/kchmviewer                                                         $(SOLARIS_DBG_DIR)/kchmviewer
 	$(QUIET)$(if $(VBOX_WITH_VRDP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxVRDP.so                                 $(SOLARIS_DBG_DIR)/VBoxVRDP.so,)
+	$(QUIET)$(if $(VBOX_WITH_VRDP),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VRDPAuth.so                                 $(SOLARIS_DBG_DIR)/VRDPAuth.so,)
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxHeadless                            $(SOLARIS_DBG_DIR)/VBoxHeadless,)
 ifdef VBOX_WITH_HARDENING
 	$(QUIET)$(if $(VBOX_WITH_HEADLESS),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxHeadless.so                         $(SOLARIS_DBG_DIR)/VBoxHeadless.so,)
