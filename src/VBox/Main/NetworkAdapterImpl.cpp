@@ -424,9 +424,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
     if (!aHostInterface)
         return E_INVALIDARG;
 #else
-    // empty strings are not allowed as path names
-    if (aHostInterface && !(*aHostInterface))
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aHostInterface);
 #endif
 
     AutoCaller autoCaller (this);

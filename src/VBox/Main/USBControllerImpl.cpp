@@ -394,8 +394,7 @@ STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
     if (!aFilter)
         return E_POINTER;
 
-    if (!aName || *aName == 0)
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
