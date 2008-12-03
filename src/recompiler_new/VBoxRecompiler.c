@@ -3113,7 +3113,7 @@ void remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb)
  *
  * @param   SrcGCPhys       The source address (guest physical).
  */
-uint8_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
+uint32_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
 {
     uint8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
@@ -3132,7 +3132,7 @@ uint8_t remR3PhysReadU8(RTGCPHYS SrcGCPhys)
  *
  * @param   SrcGCPhys       The source address (guest physical).
  */
-int8_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
+int32_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
 {
     int8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
@@ -3151,7 +3151,7 @@ int8_t remR3PhysReadS8(RTGCPHYS SrcGCPhys)
  *
  * @param   SrcGCPhys       The source address (guest physical).
  */
-uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
+uint32_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
 {
     uint16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
@@ -3170,7 +3170,7 @@ uint16_t remR3PhysReadU16(RTGCPHYS SrcGCPhys)
  *
  * @param   SrcGCPhys       The source address (guest physical).
  */
-int16_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
+int32_t remR3PhysReadS16(RTGCPHYS SrcGCPhys)
 {
     uint16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
