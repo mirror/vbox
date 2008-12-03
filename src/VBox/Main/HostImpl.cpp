@@ -1557,8 +1557,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
     if (!aFilter)
         return E_POINTER;
 
-    if (!aName || *aName == 0)
-        return E_INVALIDARG;
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoWriteLock alock (this);
     CHECK_READY();
