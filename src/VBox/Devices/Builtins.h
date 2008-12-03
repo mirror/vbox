@@ -109,6 +109,10 @@ extern const PDMDRVREG g_DrvSCSIHost;
 #endif
 #endif
 
+#ifdef VBOX_WITH_FAULT_INJECTION
+extern const PDMDRVREG g_DrvFaultInject;
+#endif
+
 __END_DECLS
 
 #endif
