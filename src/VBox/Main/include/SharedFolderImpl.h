@@ -139,3 +139,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (SharedFolder)
 
 #endif // ____H_SHAREDFOLDERIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

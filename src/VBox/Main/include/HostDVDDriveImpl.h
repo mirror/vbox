@@ -113,3 +113,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostDVDDrive)
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostDVDDrive)
 
 #endif // ____H_HOSTDVDDRIVEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

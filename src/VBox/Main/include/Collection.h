@@ -570,3 +570,4 @@ protected:
 #endif // !RT_OS_WINDOWS
 
 #endif // ____H_COLLECTION
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

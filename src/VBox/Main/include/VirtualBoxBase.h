@@ -2858,3 +2858,4 @@ ToString <com::Guid> (const com::Guid &aValue, unsigned int aExtra);
 #endif /* VBOX_MAIN_SETTINGS_ADDONS */
 
 #endif // ____H_VIRTUALBOXBASEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

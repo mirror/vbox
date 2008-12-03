@@ -104,3 +104,4 @@ private:
 # endif /* RT_OS_DARWIN */
 
 #endif /* !____H_HOSTPOWER */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

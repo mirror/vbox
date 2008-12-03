@@ -113,3 +113,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostFloppyDrive)
 COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostFloppyDrive)
 
 #endif // ____H_HOSTFLOPPYDRIVEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

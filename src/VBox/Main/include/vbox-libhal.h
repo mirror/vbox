@@ -67,3 +67,4 @@ extern dbus_bool_t (*gLibHalCtxFree)(LibHalContext *);
 extern bool gLibHalCheckPresence(void);
 
 #endif /* ____H_VBOX_LIBHAL not defined */
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

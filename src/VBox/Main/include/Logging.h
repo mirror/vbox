@@ -96,3 +96,4 @@
 #define MyLog(a)            MyLogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, a)
 
 #endif // ____H_LOGGING
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

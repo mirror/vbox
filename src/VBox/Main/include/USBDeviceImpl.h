@@ -182,3 +182,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <OUSBDevice>, IUSBDevi
 COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_END (ComObjPtr <OUSBDevice>, IUSBDevice, OUSBDevice)
 
 #endif // ____H_USBDEVICEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

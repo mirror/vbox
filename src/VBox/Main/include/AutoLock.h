@@ -1420,3 +1420,4 @@ public:
 
 #endif // ____H_AUTOLOCK
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

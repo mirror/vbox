@@ -127,3 +127,4 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_END (HostNetworkInterface)
 
 
 #endif // ____H_H_HOSTNETWORKINTERFACEIMPL
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -131,3 +131,4 @@ private:
 
 #endif // ____H_HARDDISKFORMAT
 
+/* vi: set tabstop=4 shiftwidth=4 expandtab: */
