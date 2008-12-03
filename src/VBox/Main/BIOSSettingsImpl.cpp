@@ -567,7 +567,7 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
             else if (strcmp (modeStr, "MessageAndMenu") == 0)
                 mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
             else
-                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", modeStr),
+                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'", modeStr),
                                        E_FAIL);
         }
     }
@@ -600,7 +600,7 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
             else if (strcmp (typeStr, "PIIX4") == 0)
                 mData->mIDEControllerType = IDEControllerType_PIIX4;
             else
-                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'\n", typeStr),
+                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'", typeStr),
                                        E_FAIL);
         }
     }
@@ -665,7 +665,7 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
                 modeStr = "MessageAndMenu";
                 break;
             default:
-                ComAssertMsgFailedRet (("Invalid boot menu type: %d\n",
+                ComAssertMsgFailedRet (("Invalid boot menu type: %d",
                                         mData->mBootMenuMode),
                                        E_FAIL);
         }
@@ -697,7 +697,7 @@ HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
                 ideControllerTypeStr = "PIIX4";
                 break;
             default:
-                ComAssertMsgFailedRet (("Invalid IDE Controller type: %d\n",
+                ComAssertMsgFailedRet (("Invalid IDE Controller type: %d",
                                         mData->mIDEControllerType),
                                        E_FAIL);
         }

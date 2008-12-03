@@ -533,7 +533,7 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
             /* do nothing, i.e.leave the drive node empty */
             break;
         default:
-            ComAssertMsgFailedRet (("Invalid drive state: %d\n", mData->mState),
+            ComAssertMsgFailedRet (("Invalid drive state: %d", mData->mState),
                                     E_FAIL);
     }
 

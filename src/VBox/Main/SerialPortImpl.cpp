@@ -208,7 +208,7 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
     else if (strcmp (mode, "Disconnected") == 0)
         mData->mHostMode = PortMode_Disconnected;
     else
-        ComAssertMsgFailedRet (("Invalid port mode '%s'\n", mode), E_FAIL);
+        ComAssertMsgFailedRet (("Invalid port mode '%s'", mode), E_FAIL);
 
     /* pipe/device path (optional, defaults to null) */
     Bstr path = aPortNode.stringValue ("path");
@@ -259,7 +259,7 @@ HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
             mode = "HostDevice";
             break;
         default:
-            ComAssertMsgFailedRet (("Invalid serial port mode: %d\n",
+            ComAssertMsgFailedRet (("Invalid serial port mode: %d",
                                     mData->mHostMode),
                                    E_FAIL);
     }

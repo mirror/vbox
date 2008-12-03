@@ -2023,7 +2023,7 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
                               0, RTTHREADTYPE_MAIN_WORKER,
                               RTTHREADFLAGS_WAITABLE, "SVCHelper");
 
-    ComAssertMsgRCRet (vrc, ("Could not create SVCHelper thread (%Rrc)\n", vrc),
+    ComAssertMsgRCRet (vrc, ("Could not create SVCHelper thread (%Rrc)", vrc),
                        E_FAIL);
 
     /* d is now owned by SVCHelperClientThread(), so release it */
@@ -3889,14 +3889,14 @@ HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
     }
     catch (const std::exception &err)
     {
-        ComAssertMsgFailedPos (("Unexpected exception '%s' (%s)\n",
+        ComAssertMsgFailedPos (("Unexpected exception '%s' (%s)",
                                 typeid (err).name(), err.what()),
                                pszFile, iLine, pszFunction);
         return E_FAIL;
     }
     catch (...)
     {
-        ComAssertMsgFailedPos (("Unknown exception\n"),
+        ComAssertMsgFailedPos (("Unknown exception"),
                                pszFile, iLine, pszFunction);
         return E_FAIL;
     }
