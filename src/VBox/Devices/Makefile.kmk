@@ -806,6 +806,12 @@ ifdef VBOX_WITH_SCSI
 	Storage/DrvSCSIHost.cpp
 endif # VBOX_WITH_SCSI
 
+ifdef VBOX_WITH_FAULT_INJECTION
+ Drivers_DEFS += VBOX_WITH_FAULT_INJECTION
+ Drivers_SOURCES += \
+	Storage/DrvFaultInject.cpp
+endif # VBOX_WITH_FAULT_INJECTION
+
 #
 # Ring-0 Services (library, linked into VMMR0.r0)
 #
