@@ -38,24 +38,24 @@
 /* @todo Replace them with libproc.h and sys/proc_info.h when 10.4 is no longer supported */
 extern "C" int proc_pidinfo(int pid, int flavor, uint64_t arg,  void *buffer, int buffersize);
 struct proc_taskinfo {
-	uint64_t		pti_virtual_size;   /* virtual memory size (bytes) */
-	uint64_t		pti_resident_size;  /* resident memory size (bytes) */
-	uint64_t		pti_total_user;		/* total time */
-	uint64_t		pti_total_system;
-	uint64_t		pti_threads_user;	/* existing threads only */
-	uint64_t		pti_threads_system;
-	int32_t			pti_policy;		/* default policy for new threads */
-	int32_t			pti_faults;		/* number of page faults */
-	int32_t			pti_pageins;	/* number of actual pageins */
-	int32_t			pti_cow_faults;	/* number of copy-on-write faults */
-	int32_t			pti_messages_sent;	/* number of messages sent */
-	int32_t			pti_messages_received; /* number of messages received */
-	int32_t			pti_syscalls_mach;  /* number of mach system calls */
-	int32_t			pti_syscalls_unix;  /* number of unix system calls */
-	int32_t			pti_csw;            /* number of context switches */
-	int32_t			pti_threadnum;		/* number of threads in the task */
-	int32_t			pti_numrunning;		/* number of running threads */
-	int32_t			pti_priority;		/* task priority*/
+    uint64_t    pti_virtual_size;       /* virtual memory size (bytes) */
+    uint64_t    pti_resident_size;      /* resident memory size (bytes) */
+    uint64_t    pti_total_user;         /* total time */
+    uint64_t    pti_total_system;
+    uint64_t    pti_threads_user;       /* existing threads only */
+    uint64_t    pti_threads_system;
+    int32_t     pti_policy;             /* default policy for new threads */
+    int32_t     pti_faults;             /* number of page faults */
+    int32_t     pti_pageins;            /* number of actual pageins */
+    int32_t     pti_cow_faults;         /* number of copy-on-write faults */
+    int32_t     pti_messages_sent;      /* number of messages sent */
+    int32_t     pti_messages_received;  /* number of messages received */
+    int32_t     pti_syscalls_mach;      /* number of mach system calls */
+    int32_t     pti_syscalls_unix;      /* number of unix system calls */
+    int32_t     pti_csw;                /* number of context switches */
+    int32_t     pti_threadnum;          /* number of threads in the task */
+    int32_t     pti_numrunning;         /* number of running threads */
+    int32_t     pti_priority;           /* task priority*/
 };
 #define PROC_PIDTASKINFO 4
 
@@ -100,16 +100,16 @@ int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_
     kern_return_t krc;
     mach_msg_type_number_t count;
     host_cpu_load_info_data_t info;
-    
+
     count = HOST_CPU_LOAD_INFO_COUNT;
-    
+
     krc = host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, (host_info_t)&info, &count);
     if (krc != KERN_SUCCESS)
     {
         Log(("host_statistics() -> %s", mach_error_string(krc)));
         return RTErrConvertFromDarwinKern(krc);
     }
-        
+
     *user = (uint64_t)info.cpu_ticks[CPU_STATE_USER]
                     + info.cpu_ticks[CPU_STATE_NICE];
     *kernel = (uint64_t)info.cpu_ticks[CPU_STATE_SYSTEM];
@@ -122,9 +122,9 @@ int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *availa
     kern_return_t krc;
     mach_msg_type_number_t count;
     vm_statistics_data_t info;
-    
+
     count = HOST_VM_INFO_COUNT;
-    
+
     krc = host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&info, &count);
     if (krc != KERN_SUCCESS)
     {

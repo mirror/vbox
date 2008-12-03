@@ -74,15 +74,15 @@ public:
 
     DirectoryServiceProvider()
         : mCompRegLocation (NULL), mXPTIDatLocation (NULL)
-	, mComponentDirLocation (NULL), mCurrProcDirLocation (NULL)
+        , mComponentDirLocation (NULL), mCurrProcDirLocation (NULL)
         {}
 
     virtual ~DirectoryServiceProvider();
 
     HRESULT init (const char *aCompRegLocation,
                   const char *aXPTIDatLocation,
-		  const char *aComponentDirLocation,
-		  const char *aCurrProcDirLocation);
+                  const char *aComponentDirLocation,
+                  const char *aCurrProcDirLocation);
 
     NS_DECL_NSIDIRECTORYSERVICEPROVIDER
 
@@ -127,8 +127,8 @@ DirectoryServiceProvider::~DirectoryServiceProvider()
 HRESULT
 DirectoryServiceProvider::init (const char *aCompRegLocation,
                                 const char *aXPTIDatLocation,
-				const char *aComponentDirLocation,
-				const char *aCurrProcDirLocation)
+                                const char *aComponentDirLocation,
+                                const char *aCurrProcDirLocation)
 {
     AssertReturn (aCompRegLocation, NS_ERROR_INVALID_ARG);
     AssertReturn (aXPTIDatLocation, NS_ERROR_INVALID_ARG);
@@ -139,7 +139,7 @@ DirectoryServiceProvider::init (const char *aCompRegLocation,
     if (RT_SUCCESS (vrc) && aComponentDirLocation)
         vrc = RTStrUtf8ToCurrentCP (&mComponentDirLocation, aComponentDirLocation);
     if (RT_SUCCESS (vrc) && aCurrProcDirLocation)
-	vrc = RTStrUtf8ToCurrentCP (&mCurrProcDirLocation, aCurrProcDirLocation);
+        vrc = RTStrUtf8ToCurrentCP (&mCurrProcDirLocation, aCurrProcDirLocation);
 
     return RT_SUCCESS (vrc) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
@@ -162,9 +162,9 @@ DirectoryServiceProvider::GetFile (const char *aProp,
     else if (strcmp (aProp, NS_XPCOM_XPTI_REGISTRY_FILE) == 0)
         fileLocation = mXPTIDatLocation;
     else if (mComponentDirLocation && strcmp (aProp, NS_XPCOM_COMPONENT_DIR) == 0)
-	fileLocation = mComponentDirLocation;
+        fileLocation = mComponentDirLocation;
     else if (mCurrProcDirLocation && strcmp (aProp, NS_XPCOM_CURRENT_PROCESS_DIR) == 0)
-	fileLocation = mCurrProcDirLocation;
+        fileLocation = mCurrProcDirLocation;
     else
         return NS_ERROR_FAILURE;
 
