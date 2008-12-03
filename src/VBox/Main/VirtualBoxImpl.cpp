@@ -1206,7 +1206,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    HRESULT rc = E_FAIL;
+    HRESULT rc = VBOX_E_FILE_ERROR;
 
     Guid id = aId;
     /* generate an UUID if not specified */
@@ -1280,7 +1280,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (INPTR BSTR aLocation, INPTR GUIDPARAM 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    HRESULT rc = E_FAIL;
+    HRESULT rc = VBOX_E_FILE_ERROR;
 
     Guid id = aId;
     /* generate an UUID if not specified */
@@ -1304,6 +1304,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (INPTR BSTR aLocation, INPTR GUIDPARAM 
 /** @note Locks objects! */
 STDMETHODIMP VirtualBox::GetFloppyImage (INPTR GUIDPARAM aId,
                                          IFloppyImage2 **aFloppyImage)
+
 {
     if (!aFloppyImage)
         return E_POINTER;
@@ -1486,7 +1487,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
          * through to return NULLs and S_OK. */
 
         if (aKey != NULL)
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Could not find the extra data key '%ls'"), aKey);
     }
     catch (...)
@@ -1640,9 +1641,9 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
             }
             else
             {
-                /* an old value does for sure exist here (XML schema
-                 * guarantees that "value" may not absent in the
-                 * <ExtraDataItem> element) */
+                /* An old value does for sure exist here (XML schema
+                 * guarantees that "value" may not be absent in the
+                 * <ExtraDataItem> element). */
                 Assert (!extraDataItemNode.isNull());
                 extraDataItemNode.zap();
             }
@@ -1688,7 +1689,7 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachi
     CheckComRCReturnRC (rc);
 
     if (state != SessionState_Closed)
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
@@ -1742,7 +1743,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     CheckComRCReturnRC (rc);
 
     if (state != SessionState_Closed)
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
@@ -1797,7 +1798,7 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
     CheckComRCReturnRC (rc);
 
     if (state != SessionState_Closed)
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
@@ -2602,7 +2603,7 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aMachines,
  *      where to store the found machine object (can be NULL)
  *
  *  @return
- *      S_OK when found or E_INVALIDARG when not found
+ *      S_OK when found or VBOX_E_OBJECT_NOT_FOUND when not found
  *
  *  @note Locks this object for reading.
  */
@@ -2631,11 +2632,11 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
         }
     }
 
-    HRESULT rc = found ? S_OK : E_INVALIDARG;
+    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
 
     if (aSetError && !found)
     {
-        setError (VBOX_E_FILE_ERROR,
+        setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("Could not find a registered machine with UUID {%RTuuid}"),
             aId.raw());
     }
@@ -2746,7 +2747,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
         if (RT_FAILURE (vrc))
-            return setError (E_FAIL,
+            return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
@@ -2773,7 +2774,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
         }
     }
 
-    HRESULT rc = found ? S_OK : E_INVALIDARG;
+    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
 
     if (aSetError && !found)
     {
@@ -2818,7 +2819,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
         if (RT_FAILURE (vrc))
-            return setError (E_FAIL,
+            return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
@@ -2845,7 +2846,7 @@ HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
         }
     }
 
-    HRESULT rc = found ? S_OK : E_INVALIDARG;
+    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
 
     if (aSetError && !found)
     {
@@ -3142,7 +3143,7 @@ HRESULT VirtualBox::saveSettings()
 
     HRESULT rc = S_OK;
 
-    /* serialize file access (prevent concurrent reads and writes) */
+    /* serialize file access (prevents concurrent reads and writes) */
     AutoWriteLock alock (this);
 
     try
@@ -3469,7 +3470,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage2 *aImage,
 
     if (!conflict.isNull())
     {
-        return setError (VBOX_E_FILE_ERROR,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aImage->locationFull().raw(), aImage->id().raw(),
@@ -3570,7 +3571,7 @@ HRESULT VirtualBox::registerFloppyImage (FloppyImage2 *aImage,
 
     if (!conflict.isNull())
     {
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Cannot register the floppy image '%ls' with UUID {%RTuuid} "
                 "because a %s already exists in the media registry ('%ls')"),
             aImage->locationFull().raw(), aImage->id().raw(),
@@ -3808,7 +3809,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
         if (!aCatchLoadErrors)
             throw;
 
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
                          tr ("Could not load the settings file '%s' (%Rrc)"),
                          aFile.uri(), err.rc());
     }
@@ -3819,7 +3820,7 @@ HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
         if (!aCatchLoadErrors)
             throw;
 
-        return setError (E_FAIL,
+        return setError (VBOX_E_XML_ERROR,
                          tr ("Could not load the settings file '%s'.\n%s"),
                          aFile.uri(),
                          err.what() ? err.what() : "Unknown error");
@@ -3859,7 +3860,7 @@ HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
     catch (const xml::EIPRTFailure &err)
     {
         /* this is the only expected exception for now */
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
                          tr ("Could not save the settings file '%s' (%Rrc)"),
                          aFile.uri(), err.rc());
     }
@@ -3900,7 +3901,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
     }
 
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_IPRT_ERROR,
             tr ("Could not copy the settings file '%s' to '%s' (%Rrc)"),
             of.raw(), nf.raw(), vrc);
 
