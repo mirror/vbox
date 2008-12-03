@@ -736,20 +736,20 @@ static bool vboxSolarisSameNIC(const ComObjPtr <HostNetworkInterface> Iface1, co
 # ifdef VBOX_SOLARIS_NSL_RESOLVED
 static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvHostNetworkInterfaceList)
 {
-	/*
-	 * Skip aggregations.
-	 */
-	if (!strcmp(di_driver_name(Node), "aggr"))
-		return DI_WALK_CONTINUE;
+    /*
+     * Skip aggregations.
+     */
+    if (!strcmp(di_driver_name(Node), "aggr"))
+        return DI_WALK_CONTINUE;
 
-	/*
-	 * Skip softmacs.
-	 */
-	if (!strcmp(di_driver_name(Node), "softmac"))
-		return DI_WALK_CONTINUE;
+    /*
+     * Skip softmacs.
+     */
+    if (!strcmp(di_driver_name(Node), "softmac"))
+        return DI_WALK_CONTINUE;
 
     vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvHostNetworkInterfaceList);
-	return DI_WALK_CONTINUE;
+    return DI_WALK_CONTINUE;
 }
 # endif /* VBOX_SOLARIS_NSL_RESOLVED */
 
@@ -843,7 +843,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     if (Root != DI_NODE_NIL)
     {
         di_walk_minor(Root, DDI_NT_NET, 0, &list, vboxSolarisAddPhysHostIface);
-    	di_fini(Root);
+        di_fini(Root);
     }
 
     /*

@@ -236,11 +236,11 @@ STDMETHODIMP InternalFramebuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCou
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    /// @todo
 
-	NOREF(rects);
-	NOREF(aCount);
-	NOREF(aCountCopied);
+    NOREF(rects);
+    NOREF(aCount);
+    NOREF(aCountCopied);
 
     return S_OK;
 }
@@ -252,10 +252,10 @@ STDMETHODIMP InternalFramebuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCou
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    /// @todo
 
-	NOREF(rects);
-	NOREF(aCount);
+    NOREF(rects);
+    NOREF(aCount);
 
     return S_OK;
 }
