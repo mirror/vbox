@@ -41,14 +41,15 @@
  * Variables related to this implementation
  * of the internet control message protocol.
  */
-struct icmpstat_t {
+struct icmpstat_t
+{
 /* statistics related to input messages processed */
-	u_long  icps_received;		/* #ICMP packets received */
-	u_long	icps_tooshort;		/* packet < ICMP_MINLEN */
-	u_long	icps_checksum;		/* bad checksum */
-	u_long	icps_notsupp;		/* #ICMP packets not supported */
-	u_long  icps_badtype;		/* #with bad type feild */
-	u_long	icps_reflect;		/* number of responses */
+    u_long  icps_received;		/* #ICMP packets received */
+    u_long	icps_tooshort;		/* packet < ICMP_MINLEN */
+    u_long	icps_checksum;		/* bad checksum */
+    u_long	icps_notsupp;		/* #ICMP packets not supported */
+    u_long  icps_badtype;		/* #with bad type feild */
+    u_long	icps_reflect;		/* number of responses */
 };
 
 /*

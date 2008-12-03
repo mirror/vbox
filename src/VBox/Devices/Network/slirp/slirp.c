@@ -1054,7 +1054,7 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
         if (time_fasttimo)
             return 2;
         if (do_slowtimo)
-            return 500;
+            return 500; /* see PR_SLOWHZ */
     }
     return 0;
 }

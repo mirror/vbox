@@ -92,24 +92,25 @@
 #define BOOTP_VENDOR_LEN	64
 #define DHCP_OPT_LEN		312
 
-struct bootp_t {
-    struct ip ip;
-    struct udphdr udp;
-    uint8_t bp_op;
-    uint8_t bp_htype;
-    uint8_t bp_hlen;
-    uint8_t bp_hops;
-    uint32_t bp_xid;
-    uint16_t bp_secs;
-    uint16_t unused;
+struct bootp_t
+{
+    struct ip      ip;
+    struct udphdr  udp;
+    uint8_t        bp_op;
+    uint8_t        bp_htype;
+    uint8_t        bp_hlen;
+    uint8_t        bp_hops;
+    uint32_t       bp_xid;
+    uint16_t       bp_secs;
+    uint16_t       unused;
     struct in_addr bp_ciaddr;
     struct in_addr bp_yiaddr;
     struct in_addr bp_siaddr;
     struct in_addr bp_giaddr;
-    uint8_t bp_hwaddr[16];
-    uint8_t bp_sname[64];
-    uint8_t bp_file[128];
-    uint8_t bp_vend[DHCP_OPT_LEN];
+    uint8_t        bp_hwaddr[16];
+    uint8_t        bp_sname[64];
+    uint8_t        bp_file[128];
+    uint8_t        bp_vend[DHCP_OPT_LEN];
 };
 
 void bootp_input(PNATState, struct mbuf *m);
