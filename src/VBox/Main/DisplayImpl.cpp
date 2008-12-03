@@ -1416,7 +1416,7 @@ STDMETHODIMP Display::UnlockFramebuffer()
 
 STDMETHODIMP Display::RegisterExternalFramebuffer (IFramebuffer *frameBuf)
 {
-	LogFlowFunc (("\n"));
+    LogFlowFunc (("\n"));
 
     if (!frameBuf)
         return E_POINTER;
