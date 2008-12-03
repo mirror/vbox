@@ -75,6 +75,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
                            NetworkAdapterType_T aNetworkAdapterType)
 {
+#if 0
     LogFlowThisFunc (("aFamilyId='%s', aFamilyDescription='%s', "
                       "aId='%s', aDescription='%s', "
                       "aType=%d, aIs64Bit=%d, "
@@ -87,6 +88,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                       aRecommendedIOAPIC, aRecommendedVirtEx,
                       aRAMSize, aVRAMSize, aHDDSize,
                       aNetworkAdapterType));
+#endif
 
     ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
 
