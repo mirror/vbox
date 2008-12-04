@@ -63,7 +63,7 @@
 
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
-    int rc;
+    int rc = 0;
 
     /*
      * Validate input.
