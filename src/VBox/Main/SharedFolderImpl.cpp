@@ -256,8 +256,7 @@ void SharedFolder::uninit()
 
 STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
 {
-    if (!aName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -270,8 +269,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
 {
-    if (!aHostPath)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -284,8 +282,7 @@ STDMETHODIMP SharedFolder::COMGETTER(HostPath) (BSTR *aHostPath)
 
 STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
 {
-    if (!aAccessible)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAccessible);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -317,8 +314,7 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
 
 STDMETHODIMP SharedFolder::COMGETTER(Writable) (BOOL *aWritable)
 {
-    if (!aWritable)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aWritable);
 
     *aWritable = mData.mWritable;
 

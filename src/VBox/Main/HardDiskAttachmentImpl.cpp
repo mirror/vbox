@@ -87,8 +87,7 @@ void HardDisk2Attachment::uninit()
 
 STDMETHODIMP HardDisk2Attachment::COMGETTER(HardDisk) (IHardDisk2 **aHardDisk)
 {
-    if (!aHardDisk)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHardDisk);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -102,8 +101,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(HardDisk) (IHardDisk2 **aHardDisk)
 
 STDMETHODIMP HardDisk2Attachment::COMGETTER(Bus) (StorageBus_T *aBus)
 {
-    if (!aBus)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aBus);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -116,8 +114,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(Bus) (StorageBus_T *aBus)
 
 STDMETHODIMP HardDisk2Attachment::COMGETTER(Channel) (LONG *aChannel)
 {
-    if (!aChannel)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aChannel);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -130,8 +127,7 @@ STDMETHODIMP HardDisk2Attachment::COMGETTER(Channel) (LONG *aChannel)
 
 STDMETHODIMP HardDisk2Attachment::COMGETTER(Device) (LONG *aDevice)
 {
-    if (!aDevice)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aDevice);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

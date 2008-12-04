@@ -81,8 +81,7 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
  */
 STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
 {
-    if (!aInterfaceName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aInterfaceName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -100,8 +99,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
  */
 STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (GUIDPARAMOUT aGuid)
 {
-    if (!aGuid)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aGuid);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

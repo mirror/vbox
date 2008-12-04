@@ -160,8 +160,7 @@ void AudioAdapter::uninit()
 
 STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -195,8 +194,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
 
 STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDriver)
 {
-    if (!aAudioDriver)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAudioDriver);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -273,8 +271,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
 
 STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAudioController)
 {
-    if (!aAudioController)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAudioController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

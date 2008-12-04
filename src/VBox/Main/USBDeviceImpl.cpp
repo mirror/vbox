@@ -145,8 +145,7 @@ void OUSBDevice::uninit()
  */
 STDMETHODIMP OUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -166,8 +165,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
 {
-    if (!aVendorId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVendorId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -187,8 +185,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(VendorId)(USHORT *aVendorId)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(ProductId)(USHORT *aProductId)
 {
-    if (!aProductId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aProductId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -208,8 +205,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(ProductId)(USHORT *aProductId)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(Revision)(USHORT *aRevision)
 {
-    if (!aRevision)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRevision);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -228,8 +224,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Revision)(USHORT *aRevision)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
 {
-    if (!aManufacturer)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aManufacturer);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -249,8 +244,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Manufacturer)(BSTR *aManufacturer)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(Product)(BSTR *aProduct)
 {
-    if (!aProduct)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aProduct);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -270,8 +264,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Product)(BSTR *aProduct)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
 {
-    if (!aSerialNumber)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSerialNumber);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -291,8 +284,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(SerialNumber)(BSTR *aSerialNumber)
  */
 STDMETHODIMP OUSBDevice::COMGETTER(Address)(BSTR *aAddress)
 {
-    if (!aAddress)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -305,8 +297,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Address)(BSTR *aAddress)
 
 STDMETHODIMP OUSBDevice::COMGETTER(Port)(USHORT *aPort)
 {
-    if (!aPort)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -319,8 +310,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Port)(USHORT *aPort)
 
 STDMETHODIMP OUSBDevice::COMGETTER(Version)(USHORT *aVersion)
 {
-    if (!aVersion)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -333,8 +323,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(Version)(USHORT *aVersion)
 
 STDMETHODIMP OUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
 {
-    if (!aPortVersion)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPortVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -347,8 +336,7 @@ STDMETHODIMP OUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
 
 STDMETHODIMP OUSBDevice::COMGETTER(Remote)(BOOL *aRemote)
 {
-    if (!aRemote)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRemote);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

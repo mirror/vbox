@@ -149,8 +149,7 @@ void Session::uninit (bool aFinalRelease)
 
 STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
 {
-    if (!aState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -164,8 +163,7 @@ STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
 
 STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
 {
-    if (!aType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -180,8 +178,7 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
 
 STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
 {
-    if (!aMachine)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -203,8 +200,7 @@ STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
 
 STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
 {
-    if (!aConsole)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aConsole);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -682,8 +678,7 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, 
             tr ("Machine session is not open (session state: %d)."),
             mState);
     AssertReturn (mType == SessionType_Direct, E_UNEXPECTED);
-    if (!VALID_PTR (aName))
-        return E_POINTER;
+    CheckComArgNotNull(aName);
     if (!aIsSetter && !VALID_PTR (aRetValue))
         return E_POINTER;
     if (!aIsSetter && !VALID_PTR (aRetTimestamp))

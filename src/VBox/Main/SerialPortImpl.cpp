@@ -358,8 +358,7 @@ void SerialPort::copyFrom (SerialPort *aThat)
 
 STDMETHODIMP SerialPort::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -400,8 +399,7 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
 
 STDMETHODIMP SerialPort::COMGETTER(HostMode) (PortMode_T *aHostMode)
 {
-    if (!aHostMode)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostMode);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -468,8 +466,7 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
 
 STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
 {
-    if (!aSlot)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -483,8 +480,7 @@ STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
 
 STDMETHODIMP SerialPort::COMGETTER(IRQ) (ULONG *aIRQ)
 {
-    if (!aIRQ)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aIRQ);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -538,8 +534,7 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
 
 STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
 {
-    if (!aIOBase)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aIOBase);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -593,8 +588,7 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
 
 STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 {
-    if (!aPath)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -658,8 +652,7 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
 
 STDMETHODIMP SerialPort::COMGETTER(Server) (BOOL *aServer)
 {
-    if (!aServer)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aServer);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

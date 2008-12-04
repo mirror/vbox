@@ -132,8 +132,7 @@ void GuestOSType::uninit()
 
 STDMETHODIMP GuestOSType::COMGETTER(FamilyId) (BSTR *aFamilyId)
 {
-    if (!aFamilyId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFamilyId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -146,8 +145,7 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyId) (BSTR *aFamilyId)
 
 STDMETHODIMP GuestOSType::COMGETTER(FamilyDescription) (BSTR *aFamilyDescription)
 {
-    if (!aFamilyDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFamilyDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -160,8 +158,7 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyDescription) (BSTR *aFamilyDescription
 
 STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -174,8 +171,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
 
 STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -188,8 +184,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
 {
-    if (!aIs64Bit)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aIs64Bit);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -202,8 +197,7 @@ STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
 
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedIOAPIC) (BOOL *aRecommendedIOAPIC)
 {
-    if (!aRecommendedIOAPIC)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRecommendedIOAPIC);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -216,8 +210,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedIOAPIC) (BOOL *aRecommendedIOAPIC
 
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedVirtEx) (BOOL *aRecommendedVirtEx)
 {
-    if (!aRecommendedVirtEx)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRecommendedVirtEx);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -230,8 +223,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVirtEx) (BOOL *aRecommendedVirtEx
 
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
 {
-    if (!aRAMSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRAMSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -244,8 +236,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
 
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *aVRAMSize)
 {
-    if (!aVRAMSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVRAMSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -258,8 +249,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *aVRAMSize)
 
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
 {
-    if (!aHDDSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHDDSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -272,8 +262,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
 
 STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetworkAdapterType)
 {
-    if (!aNetworkAdapterType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aNetworkAdapterType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

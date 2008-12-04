@@ -166,8 +166,7 @@ void Snapshot::discard()
 
 STDMETHODIMP Snapshot::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -178,8 +177,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (GUIDPARAMOUT aId)
 
 STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
 {
-    if (!aName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aName);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -194,8 +192,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
  */
 STDMETHODIMP Snapshot::COMSETTER(Name) (INPTR BSTR aName)
 {
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -214,8 +211,7 @@ STDMETHODIMP Snapshot::COMSETTER(Name) (INPTR BSTR aName)
 
 STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -226,8 +222,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP Snapshot::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    if (!aDescription)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aDescription);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -246,8 +241,7 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (INPTR BSTR aDescription)
 
 STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
 {
-    if (!aTimeStamp)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aTimeStamp);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -258,8 +252,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
 
 STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
 {
-    if (!aOnline)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOnline);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -270,8 +263,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
 
 STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
 {
-    if (!aMachine)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMachine);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -282,8 +274,7 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
 
 STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
 {
-    if (!aParent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aParent);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -294,8 +285,7 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
 
 STDMETHODIMP Snapshot::COMGETTER(Children) (ISnapshotCollection **aChildren)
 {
-    if (!aChildren)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aChildren);
 
     AutoWriteLock alock (this);
     CHECK_READY();
