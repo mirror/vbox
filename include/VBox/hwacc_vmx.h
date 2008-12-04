@@ -1124,26 +1124,26 @@ typedef enum
 /** @name VMCS field encoding - Natural width guest state fields
  * @{
  */
-#define VMX_VMCS_GUEST_CR0                                      0x6800
-#define VMX_VMCS_GUEST_CR3                                      0x6802
-#define VMX_VMCS_GUEST_CR4                                      0x6804
-#define VMX_VMCS_GUEST_ES_BASE                                  0x6806
-#define VMX_VMCS_GUEST_CS_BASE                                  0x6808
-#define VMX_VMCS_GUEST_SS_BASE                                  0x680A
-#define VMX_VMCS_GUEST_DS_BASE                                  0x680C
-#define VMX_VMCS_GUEST_FS_BASE                                  0x680E
-#define VMX_VMCS_GUEST_GS_BASE                                  0x6810
-#define VMX_VMCS_GUEST_LDTR_BASE                                0x6812
-#define VMX_VMCS_GUEST_TR_BASE                                  0x6814
-#define VMX_VMCS_GUEST_GDTR_BASE                                0x6816
-#define VMX_VMCS_GUEST_IDTR_BASE                                0x6818
-#define VMX_VMCS_GUEST_DR7                                      0x681A
-#define VMX_VMCS_GUEST_RSP                                      0x681C
-#define VMX_VMCS_GUEST_RIP                                      0x681E
-#define VMX_VMCS_GUEST_RFLAGS                                   0x6820
-#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                         0x6822
-#define VMX_VMCS_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
-#define VMX_VMCS_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
+#define VMX_VMCS64_GUEST_CR0                                      0x6800
+#define VMX_VMCS64_GUEST_CR3                                      0x6802
+#define VMX_VMCS64_GUEST_CR4                                      0x6804
+#define VMX_VMCS64_GUEST_ES_BASE                                  0x6806
+#define VMX_VMCS64_GUEST_CS_BASE                                  0x6808
+#define VMX_VMCS64_GUEST_SS_BASE                                  0x680A
+#define VMX_VMCS64_GUEST_DS_BASE                                  0x680C
+#define VMX_VMCS64_GUEST_FS_BASE                                  0x680E
+#define VMX_VMCS64_GUEST_GS_BASE                                  0x6810
+#define VMX_VMCS64_GUEST_LDTR_BASE                                0x6812
+#define VMX_VMCS64_GUEST_TR_BASE                                  0x6814
+#define VMX_VMCS64_GUEST_GDTR_BASE                                0x6816
+#define VMX_VMCS64_GUEST_IDTR_BASE                                0x6818
+#define VMX_VMCS64_GUEST_DR7                                      0x681A
+#define VMX_VMCS64_GUEST_RSP                                      0x681C
+#define VMX_VMCS64_GUEST_RIP                                      0x681E
+#define VMX_VMCS_GUEST_RFLAGS                                     0x6820
+#define VMX_VMCS_GUEST_DEBUG_EXCEPTIONS                           0x6822
+#define VMX_VMCS64_GUEST_SYSENTER_ESP                             0x6824  /**< MSR IA32_SYSENTER_ESP */
+#define VMX_VMCS64_GUEST_SYSENTER_EIP                             0x6826  /**< MSR IA32_SYSENTER_EIP */
 /** @} */
 
 
