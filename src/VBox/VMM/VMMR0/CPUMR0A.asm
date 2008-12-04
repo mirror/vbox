@@ -1,4 +1,4 @@
-; $Id: CPUMAllA.asm 40189 2008-12-01 14:01:55Z sandervl $
+; $Id$
 ;; @file
 ; CPUM - Guest Context Assembly Routines.
 ;
