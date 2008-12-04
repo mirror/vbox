@@ -130,11 +130,19 @@ RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void);
  * @param   pszExec     Executable image to use to create the child process.
  * @param   papszArgs   Pointer to an array of arguments to the child. The array terminated by an entry containing NULL.
  * @param   Env         Handle to the environment block for the child.
- * @param   fFlags      Flags. This is currently reserved and must be 0.
+ * @param   fFlags      Flags, one of the RTPROC_FLAGS_* defines.
  * @param   pProcess    Where to store the process identifier on successful return.
  *                      The content is not changed on failure. NULL is allowed.
  */
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess);
+
+/** @name RTProcCreate flags
+ * @{ */
+/** Daemonize the child process, without changing the directory.
+ * @remarks Not implemented on all platforms yet... */
+#define RTPROC_FLAGS_DAEMONIZE          RT_BIT(0)
+/** @}  */
+
 
 /**
  * Process exit reason.

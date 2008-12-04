@@ -63,12 +63,14 @@
 
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
+    int rc;
+
     /*
      * Validate input.
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags & ~RTPROC_FLAGS_DAEMONIZE, VERR_INVALID_PARAMETER);
     AssertReturn(Env != NIL_RTENV, VERR_INVALID_PARAMETER);
     const char * const *papszEnv = RTEnvGetExecEnvP(Env);
     AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
@@ -109,34 +111,42 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
      */
     pid_t pid;
 #ifdef HAVE_POSIX_SPAWN
-    /** @todo check if it requires any of those two attributes, don't remember atm. */
-    int rc = posix_spawn(&pid, pszExec, NULL, NULL, (char * const *)papszArgs,
+    if (!(fFlags & RTPROC_FLAGS_DAEMONIZE))
+    {
+        /** @todo check if it requires any of those two attributes, don't remember atm. */
+        rc = posix_spawn(&pid, pszExec, NULL, NULL, (char * const *)papszArgs,
                          (char * const *)papszEnv);
-    if (!rc)
-    {
-        if (pProcess)
-            *pProcess = pid;
-        return VINF_SUCCESS;
+        if (!rc)
+        {
+            if (pProcess)
+                *pProcess = pid;
+            return VINF_SUCCESS;
+        }
     }
-
-#else
-
-    pid = fork();
-    if (!pid)
-    {
-        int rc;
-        rc = execve(pszExec, (char * const *)papszArgs, (char * const *)papszEnv);
-        AssertReleaseMsgFailed(("execve returns %d errno=%d\n", rc, errno));
-        exit(127);
-    }
-    if (pid > 0)
-    {
-        if (pProcess)
-            *pProcess = pid;
-        return VINF_SUCCESS;
-    }
-    int rc = errno;
+    else
 #endif
+    {
+        pid = fork();
+        if (!pid)
+        {
+            if (fFlags & RTPROC_FLAGS_DAEMONIZE)
+            {
+                rc = RTProcDaemonize(true /* fNoChDir */, false /* fNoClose */, NULL /* pszPidFile */);
+                AssertReleaseMsgFailed(("RTProcDaemonize returns %Rrc errno=%d\n", rc, errno));
+                exit(127);
+            }
+            rc = execve(pszExec, (char * const *)papszArgs, (char * const *)papszEnv);
+            AssertReleaseMsgFailed(("execve returns %d errno=%d\n", rc, errno));
+            exit(127);
+        }
+        if (pid > 0)
+        {
+            if (pProcess)
+                *pProcess = pid;
+            return VINF_SUCCESS;
+        }
+        int rc = errno;
+    }
 
     /* failure, errno value in rc. */
     AssertMsgFailed(("spawn/exec failed rc=%d\n", rc)); /* this migth be annoying... */
