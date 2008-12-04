@@ -23,23 +23,17 @@
 #define __STDC_CONSTANT_MACROS
 
 #ifdef RT_OS_LINUX
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <unistd.h>
+// # include <sys/types.h>
+// # include <sys/stat.h>
+// # include <unistd.h>
 # include <sys/ioctl.h>
-# include <fcntl.h>
-# include <mntent.h>
+// # include <fcntl.h>
+// # include <mntent.h>
 /* bird: This is a hack to work around conflicts between these linux kernel headers
  *       and the GLIBC tcpip headers. They have different declarations of the 4
  *       standard byte order functions. */
-# define _LINUX_BYTEORDER_GENERIC_H
-# include <linux/cdrom.h>
-# ifdef VBOX_WITH_LIBHAL
-#  include <libhal.h>
-/* These are defined by libhal.h and by VBox header files. */
-#  undef TRUE
-#  undef FALSE
-# endif
+// # define _LINUX_BYTEORDER_GENERIC_H
+// # include <linux/cdrom.h>
 # include <errno.h>
 # include <net/if.h>
 # include <net/if_arp.h>
@@ -116,6 +110,7 @@ extern "C" char *getfullrawname(char *);
 #include <iprt/time.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
+#include <iprt/mem.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/path.h>
 # include <iprt/ctype.h>
@@ -297,6 +292,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     AutoWriteLock alock (this);
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
+    HRESULT rc = S_OK;
 
 #if defined(RT_OS_WINDOWS)
     int sz = GetLogicalDriveStrings(0, NULL);
@@ -361,52 +357,24 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     }
 
 #elif defined(RT_OS_LINUX)
-#ifdef VBOX_WITH_LIBHAL
-    if (!getDVDInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
-#endif /* VBOX_WITH_LIBHAL defined */
-    // On Linux without hal, the situation is much more complex. We will take a
-    // heuristical approach and also allow the user to specify a list of host
-    // CDROMs using an environment variable.
-    // The general strategy is to try some known device names and see of they
-    // exist. At last, we'll enumerate the /etc/fstab file (luckily there's an
-    // API to parse it) for CDROM devices. Ok, let's start!
-
-    {
-        if (RTEnvGet("VBOX_CDROM"))
+    if (RT_SUCCESS (mHostDrives.updateDVDs()))
+        for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
+             SUCCEEDED (rc) && it != mHostDrives.DVDEnd(); ++it)        
         {
-            char *cdromEnv = strdupa(RTEnvGet("VBOX_CDROM"));
-            char *cdromDrive;
-            cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r */
-            while (cdromDrive)
-            {
-                if (validateDevice(cdromDrive, true))
-                {
-                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-                    hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr (cdromDrive));
-                    list.push_back (hostDVDDriveObj);
-                }
-                cdromDrive = strtok(NULL, ":");
-            }
+            ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+            Bstr device (it->mDevice.c_str());
+            Bstr udi (it->mUdi.empty() ? NULL : it->mUdi.c_str());
+            Bstr description (it->mDescription.empty() ? NULL : it->mDescription.c_str());
+            if (device.isNull() || (!it->mUdi.empty() && udi.isNull()) ||
+                (!it->mDescription.empty() && description.isNull()))
+                rc = E_OUTOFMEMORY;
+            if (SUCCEEDED (rc))
+                rc = hostDVDDriveObj.createObject();
+            if (SUCCEEDED (rc))
+                rc = hostDVDDriveObj->init (device, udi, description);
+            if (SUCCEEDED (rc))
+                list.push_back(hostDVDDriveObj);
         }
-        else
-        {
-            // this is a good guess usually
-            if (validateDevice("/dev/cdrom", true))
-            {
-                    ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-                    hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr ("/dev/cdrom"));
-                    list.push_back (hostDVDDriveObj);
-            }
-
-            // check the mounted drives
-            parseMountTable((char*)"/etc/mtab", list);
-
-            // check the drives that can be mounted
-            parseMountTable((char*)"/etc/fstab", list);
-        }
-    }
 #elif defined(RT_OS_DARWIN)
     PDARWINDVD cur = DarwinGetDVDDrives();
     while (cur)
@@ -430,7 +398,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     collection.createObject();
     collection->init (list);
     collection.queryInterfaceTo(drives);
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -447,6 +415,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     CHECK_READY();
 
     std::list <ComObjPtr <HostFloppyDrive> > list;
+    HRESULT rc = S_OK;
 
 #ifdef RT_OS_WINDOWS
     int sz = GetLogicalDriveStrings(0, NULL);
@@ -469,50 +438,24 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     while (*p);
     delete[] hostDrives;
 #elif defined(RT_OS_LINUX)
-#ifdef VBOX_WITH_LIBHAL
-    if (!getFloppyInfoFromHal(list)) /* Playing with #defines in this way is nasty, I know. */
-#endif /* VBOX_WITH_LIBHAL defined */
-    // As with the CDROMs, on Linux we have to take a multi-level approach
-    // involving parsing the mount tables. As this is not bulletproof, we'll
-    // give the user the chance to override the detection by an environment
-    // variable and skip the detection.
-
-    {
-        if (RTEnvGet("VBOX_FLOPPY"))
+    if (RT_SUCCESS (mHostDrives.updateFloppies()))
+        for (DriveInfoList::const_iterator it = mHostDrives.FloppyBegin();
+             SUCCEEDED (rc) && it != mHostDrives.FloppyEnd(); ++it)        
         {
-            char *floppyEnv = strdupa(RTEnvGet("VBOX_FLOPPY"));
-            char *floppyDrive;
-            floppyDrive = strtok(floppyEnv, ":");
-            while (floppyDrive)
-            {
-                // check if this is an acceptable device
-                if (validateDevice(floppyDrive, false))
-                {
-                    ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-                    hostFloppyDriveObj.createObject();
-                    hostFloppyDriveObj->init (Bstr (floppyDrive));
-                    list.push_back (hostFloppyDriveObj);
-                }
-                floppyDrive = strtok(NULL, ":");
-            }
+            ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
+            Bstr device (it->mDevice.c_str());
+            Bstr udi (it->mUdi.empty() ? NULL : it->mUdi.c_str());
+            Bstr description (it->mDescription.empty() ? NULL : it->mDescription.c_str());
+            if (device.isNull() || (!it->mUdi.empty() && udi.isNull()) ||
+                (!it->mDescription.empty() && description.isNull()))
+                rc = E_OUTOFMEMORY;
+            if (SUCCEEDED (rc))
+                rc = hostFloppyDriveObj.createObject();
+            if (SUCCEEDED (rc))
+                rc = hostFloppyDriveObj->init (device, udi, description);
+            if (SUCCEEDED (rc))
+                list.push_back(hostFloppyDriveObj);
         }
-        else
-        {
-            // we assume that a floppy is always /dev/fd[x] with x from 0 to 7
-            char devName[10];
-            for (int i = 0; i <= 7; i++)
-            {
-                sprintf(devName, "/dev/fd%d", i);
-                if (validateDevice(devName, false))
-                {
-                    ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-                    hostFloppyDriveObj.createObject();
-                    hostFloppyDriveObj->init (Bstr (devName));
-                    list.push_back (hostFloppyDriveObj);
-                }
-            }
-        }
-    }
 #else
     /* PORTME */
 #endif
@@ -521,7 +464,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     collection.createObject();
     collection->init (list);
     collection.queryInterfaceTo(drives);
-    return S_OK;
+    return rc;
 }
 
 #ifdef RT_OS_WINDOWS
@@ -1875,185 +1818,7 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::
 // private methods
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_LIBHAL)
-/* Linux, load libhal statically */
-
-/** Helper function for setting up a libhal context */
-bool hostInitLibHal(DBusConnection **pDBusConnection,
-                    LibHalContext **pLibHalContext)
-{
-    bool halSuccess = true;
-    DBusError dbusError;
-
-    dbus_error_init (&dbusError);
-    DBusConnection *dbusConnection;
-    LibHalContext *libhalContext;
-    dbusConnection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbusError);
-    if (dbusConnection == NULL)
-        halSuccess = false;
-    if (dbusConnection == NULL && !dbus_error_is_set (&dbusError))
-        LogRelFunc (("Unresolved error getting DBus connection.\n"));
-    if (halSuccess)
-    {
-        libhalContext = libhal_ctx_new();
-        if (libhalContext == NULL)
-            halSuccess = false;
-    }
-    if (   halSuccess
-        && !libhal_ctx_set_dbus_connection (libhalContext, dbusConnection))
-        halSuccess = false;
-    if (   halSuccess
-        && !libhal_ctx_init (libhalContext, &dbusError))
-    {
-        halSuccess = false;
-        if (!dbus_error_is_set (&dbusError))
-            LogRelFunc (("Unresolved error initialising the libhal context.\n"));
-    }
-    if (halSuccess)
-    {
-        *pDBusConnection = dbusConnection;
-        *pLibHalContext = libhalContext;
-    }
-    return halSuccess;
-}
-
-/**
- * Helper function to query the hal subsystem for information about DVD drives attached to the
- * system.
- *
- * @returns true if information was successfully obtained, false otherwise
- * @retval  list drives found will be attached to this list
- */
-bool Host::getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list)
-{
-    DBusConnection *dbusConnection;
-    LibHalContext *libhalContext;
-    int numDevices = 0;
-    char **halDevices = NULL;
-    bool halSuccess = hostInitLibHal (&dbusConnection, &libhalContext);
-    if (halSuccess)
-        halDevices = libhal_manager_find_device_string_match(libhalContext,
-                                                "storage.drive_type", "cdrom",
-                                                &numDevices, NULL);
-    /* Hal is installed and working, so if no devices are reported, assume
-       that there are none. */
-    for (int i = 0; halSuccess && i < numDevices; ++i)
-    {
-        char *devNode = libhal_device_get_property_string(libhalContext,
-                                halDevices[i], "block.device", NULL);
-        Utf8Str description;
-        char *vendor = NULL, *product = NULL;
-        if (devNode != NULL)
-        {
-            vendor = libhal_device_get_property_string(libhalContext,
-                            halDevices[i], "info.vendor", NULL);
-            product =  libhal_device_get_property_string(libhalContext,
-                            halDevices[i], "info.product", NULL);
-            if ((product != 0 && product[0] != 0))
-            {
-                if ((vendor != 0) && (vendor[0] != 0))
-                    description = Utf8StrFmt ("%s %s",
-                                              vendor, product);
-                else
-                    description = product;
-            }
-            ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-            hostDVDDriveObj.createObject();
-            if (!description.isNull ())
-                hostDVDDriveObj->init (Bstr (devNode),
-                                       Bstr (halDevices[i]),
-                                       Bstr (description));
-            else
-                hostDVDDriveObj->init (Bstr (devNode),
-                                       Bstr (halDevices[i]));
-            list.push_back (hostDVDDriveObj);
-            if (vendor != NULL)
-                libhal_free_string(vendor);
-            if (product != NULL)
-                libhal_free_string(product);
-            libhal_free_string(devNode);
-        }
-    }
-    if (halDevices != NULL)
-        libhal_free_string_array(halDevices);
-    if (halSuccess)
-        libhal_ctx_shutdown (libhalContext, NULL);
-    if (libhalContext != NULL)
-        libhal_ctx_free (libhalContext);
-    if (dbusConnection != NULL)
-        dbus_connection_unref (dbusConnection);
-    return halSuccess;
-}
-
-/**
- * Helper function to query the hal subsystem for information about floppy drives attached to the
- * system.
- *
- * @returns true if information was successfully obtained, false otherwise
- * @retval  list drives found will be attached to this list
- */
-bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
-{
-    DBusConnection *dbusConnection;
-    LibHalContext *libhalContext;
-    int numDevices = 0;
-    char **halDevices = NULL;
-    bool halSuccess = hostInitLibHal (&dbusConnection, &libhalContext);
-    if (halSuccess)
-        halDevices = libhal_manager_find_device_string_match(libhalContext,
-                                                "storage.drive_type", "floppy",
-                                                &numDevices, NULL);
-    /* Hal is installed and working, so if no devices are reported, assume
-       that there are none. */
-    for (int i = 0; halSuccess && i < numDevices; ++i)
-    {
-        char *devNode = libhal_device_get_property_string(libhalContext,
-                                halDevices[i], "block.device", NULL);
-        Utf8Str description;
-        char *vendor = NULL, *product = NULL;
-        if (devNode != NULL)
-        {
-            vendor = libhal_device_get_property_string(libhalContext,
-                            halDevices[i], "info.vendor", NULL);
-            product =  libhal_device_get_property_string(libhalContext,
-                            halDevices[i], "info.product", NULL);
-            if ((product != 0 && product[0] != 0))
-            {
-                if ((vendor != 0) && (vendor[0] != 0))
-                    description = Utf8StrFmt ("%s %s",
-                                              vendor, product);
-                else
-                    description = product;
-            }
-            ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-            hostFloppyDriveObj.createObject();
-            if (!description.isNull ())
-                hostFloppyDriveObj->init (Bstr (devNode),
-                                          Bstr (halDevices[i]),
-                                          Bstr (description));
-            else
-                hostFloppyDriveObj->init (Bstr (devNode),
-                                          Bstr (halDevices[i]));
-            list.push_back (hostFloppyDriveObj);
-            if (vendor != NULL)
-                libhal_free_string(vendor);
-            if (product != NULL)
-                libhal_free_string(product);
-            libhal_free_string(devNode);
-        }
-    }
-    if (halDevices != NULL)
-        libhal_free_string_array(halDevices);
-    if (halSuccess)
-        libhal_ctx_shutdown (libhalContext, NULL);
-    if (libhalContext != NULL)
-        libhal_ctx_free (libhalContext);
-    if (dbusConnection != NULL)
-        dbus_connection_unref (dbusConnection);
-    return halSuccess;
-}
-
-# elif defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
+#if defined(RT_OS_SOLARIS) && defined(VBOX_USE_LIBHAL)
 /* Solaris hosts, loading libhal at runtime */
 
 /**
@@ -2367,9 +2132,9 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list)
     }
     return halSuccess;
 }
-#endif  /* VBOX_WITH_HAL and VBOX_USE_HAL */
+#endif  /* RT_OS_SOLARIS and VBOX_USE_HAL */
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS)
 
 /**
  * Helper function to parse the given mount file and add found entries
@@ -2533,7 +2298,7 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
     }
     return retValue;
 }
-#endif // RT_OS_LINUX || RT_OS_SOLARIS
+#endif // RT_OS_SOLARIS
 
 #ifdef VBOX_WITH_USB
 /**

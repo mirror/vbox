@@ -32,7 +32,7 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
   PROGRAMS.linux += \
-	$(if $(VBOX_OSE),,$(if $(VBOX_USB_WITH_SYSFS),tstUSBLinux,))
+	$(if $(VBOX_OSE),,tstHostHardwareLinux)
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
 if defined(VBOX_ONLY_SDK) || !defined(VBOX_WITH_XPCOM)
@@ -119,21 +119,23 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 
 
 #
-# tstUSBLinux
+# tstHostHardwareLinux
 #
-tstUSBLinux_TEMPLATE  = VBOXR3TSTEXE
-tstUSBLinux_SOURCES   = \
-	tstUSBLinux.cpp \
-	../linux/USBProxyServiceLinux.cpp
-tstUSBLinux_INCS      = . ../include
-tstUSBLinux_DEFS      = \
+tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTEXE
+tstHostHardwareLinux_SOURCES   = \
+	tstHostHardwareLinux.cpp \
+	../linux/USBProxyServiceLinux.cpp \
+	../linux/HostHardwareLinux.cpp
+tstHostHardwareLinux_INCS      = . ../include
+tstHostHardwareLinux_DEFS      = \
 	VBOX_TEST_USB_LINUX \
 	$(if $(VBOX_WITHOUT_LINUX_COMPILER_H),VBOX_WITHOUT_LINUX_COMPILER_H,) \
+	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
-tstUSBLinux_LIBS     += $(PATH_OUT)/lib/USBLib.a
-tstUSBLinux_CFLAGS   += $(if $(VBOX_WITH_LIBHAL),$(VBOX_LIBHAL_CFLAGS),)
-tstUSBLinux_CXXFLAGS += $(if $(VBOX_WITH_LIBHAL),$(VBOX_LIBHAL_CXXFLAGS),)
-tstUSBLinux_LDFLAGS  += $(if $(VBOX_WITH_LIBHAL),$(VBOX_LIBHAL_LDFLAGS),)
+tstHostHardwareLinux_LIBS     += $(PATH_OUT)/lib/USBLib.a
+tstHostHardwareLinux_CFLAGS   += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_CFLAGS),)
+tstHostHardwareLinux_CXXFLAGS += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_CXXFLAGS),)
+tstHostHardwareLinux_LDFLAGS  += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_LDFLAGS),)
 
 
 # generate rules.

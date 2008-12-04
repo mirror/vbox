@@ -23,7 +23,7 @@ enum { S_OK = 0, E_NOTIMPL = 1 };
 #include <VBox/err.h>
 
 #ifdef VBOX_USB_WITH_SYSFS
-# include "libhal.h"
+# include <libhal.h>
 #endif
 
 #include <stdio.h>
