@@ -123,7 +123,8 @@ struct VBoxDefs
         TrayIconChangeEventType,
         MainWindowCountChangeEventType,
 #endif
-        AddVDMUrlsEventType
+        AddVDMUrlsEventType,
+        ChangeDockIconUpdateEventType
     };
 
     /** Size formatting types. */
@@ -157,6 +158,9 @@ struct VBoxDefs
 #ifdef VBOX_GUI_WITH_SYSTRAY
     static const char* GUI_TrayIconWinID;
     static const char* GUI_MainWindowCount;
+#endif
+#ifdef Q_WS_MAC
+    static const char* GUI_RealtimeDockIconUpdateEnabled;
 #endif
 };
 

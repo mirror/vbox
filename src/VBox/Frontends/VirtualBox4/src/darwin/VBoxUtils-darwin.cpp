@@ -23,6 +23,7 @@
 
 #include "VBoxUtils.h"
 #include "VBoxFrameBuffer.h"
+#include "VBoxConsoleView.h"
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -167,6 +168,15 @@ CGImageRef darwinCreateDockBadge (const char *aSource)
     return ::darwinToCGImageRef (&transImage);
 }
 
+/* Import private function to capture the window content of any given window. */
+CG_EXTERN_C_BEGIN
+typedef int CGSWindowID;
+typedef void *CGSConnectionID;
+CG_EXTERN CGSWindowID GetNativeWindowFromWindowRef(WindowRef ref);
+CG_EXTERN CGSConnectionID CGSMainConnectionID(void);
+CG_EXTERN void CGContextCopyWindowCaptureContentsToRect(CGContextRef c, CGRect dstRect, CGSConnectionID connection, CGSWindowID window, int zero);
+CG_EXTERN_C_END
+
 /**
  * Updates the dock preview image.
  *
@@ -225,6 +235,40 @@ void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
     /* vm content */
     iconRect = CGRectInset (iconRect, 1, 1);
     CGContextDrawImage (context, iconRect, aVMImage);
+    /* Process the content of any external OpenGL windows. */
+    WindowRef w = FrontNonFloatingWindow();
+    WindowGroupRef g = GetWindowGroup (w);
+    WindowGroupContentOptions wgco = kWindowGroupContentsReturnWindows | kWindowGroupContentsRecurse | kWindowGroupContentsVisible;
+    ItemCount c = CountWindowGroupContents (g, wgco);
+    float a1 = iconRect.size.width / static_cast <float> (CGImageGetWidth (aVMImage));
+    float a2 = iconRect.size.height / static_cast <float> (CGImageGetHeight (aVMImage));
+    HIViewRef mainView = HIViewGetRoot (w);
+    Rect tmpR;
+    GetWindowBounds (w, kWindowContentRgn, &tmpR);
+    HIRect mainRect = CGRectMake (tmpR.left, tmpR.top, tmpR.right-tmpR.left, tmpR.bottom-tmpR.top);
+    for (ItemCount i = 0; i <= c; ++i)
+    {
+        WindowRef wc;
+        OSStatus status = GetIndexedWindow (g, i, wgco, &wc);
+        if (status == noErr &&
+            wc != w)
+        {
+            Rect tmpR1;
+            GetWindowBounds (wc, kWindowContentRgn, &tmpR1);
+            HIRect rect;
+            rect.size.width = (tmpR1.right-tmpR1.left) * a1;
+            rect.size.height = (tmpR1.bottom-tmpR1.top) * a2;
+            rect.origin.x = iconRect.origin.x + (tmpR1.left - mainRect.origin.x) * a1;
+            rect.origin.y = targetHeight - (iconRect.origin.y + (tmpR1.top - mainRect.origin.y) * a2) - rect.size.height;
+            /* This is a big, bad hack. The following functions aren't
+             * documented nor official supported by apple. But its the only way
+             * to capture the OpenGL content of a window without fiddling
+             * around with gPixelRead or something like that. */
+            CGSWindowID wid = GetNativeWindowFromWindowRef(wc);
+            CGContextCopyWindowCaptureContentsToRect(context, rect, CGSMainConnectionID(), wid, 0);
+        }
+    }
+
     /* the state image at center */
     if (aStateImage)
     {
@@ -385,7 +429,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
     if (!(eventClass == 'cute'))
         ::darwinDebugPrintEvent ("view: ", aInEvent);
     */
-    QWidget *view = static_cast<QWidget *> (aInUserData);
+    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (aInUserData);
 
     if (eventClass == kEventClassVBox)
     {
@@ -428,6 +472,12 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
             ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
             return noErr;
         }
+        if (eventKind == kEventVBoxUpdateDock)
+        {
+//            printf ("UpdateDock requested\n");
+            view->updateDockIcon();
+            return noErr;
+        }
     }
 
     return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
@@ -435,7 +485,7 @@ OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, Even
 
 
 
-/* Event debugging stuff. Borrowed from the Knuts Qt patch. */
+/* Event debugging stuff. Borrowed from Knuts Qt patch. */
 #ifdef DEBUG
 
 # define MY_CASE(a) case a: return #a

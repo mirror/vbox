@@ -665,6 +665,10 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     /* watch global settings changes */
     connect (&vboxGlobal().settings(), SIGNAL (propertyChanged (const char *, const char *)),
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
+#ifdef Q_WS_MAC
+    connect (&vboxGlobal(), SIGNAL (dockIconUpdateChanged (const VBoxChangeDockIconUpdateEvent &)),
+             this, SLOT (changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &)));
+#endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (mDbgMenu)
@@ -927,18 +931,23 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateSharedFoldersState()));
 
 #ifdef Q_WS_MAC
-    QString osTypeId = cmachine.GetOSTypeId();
-    QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).toImage().scaled (100, 75, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    QImage osImg = QImage (":/dock_1.png");
-    QImage VBoxOverlay = QImage (":/VirtualBox_cube_42px.png");
-    QPainter painter (&osImg);
-    painter.drawImage (QPoint (14, 22), osImg100x75);
-    painter.drawImage (QPoint (osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height()), VBoxOverlay);
-    painter.end();
-    if (dockImgOS)
-        CGImageRelease (dockImgOS);
-    dockImgOS = ::darwinToCGImageRef (&osImg);
-    SetApplicationDockTileImage (dockImgOS);
+    bool b = (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_RealtimeDockIconUpdateEnabled) == "true") ? true : false;
+    console->setDockIconEnabled (b);
+    if (b)
+    {
+        QString osTypeId = cmachine.GetOSTypeId();
+        QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).toImage().scaled (100, 75, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        QImage osImg = QImage (":/dock_1.png");
+        QImage VBoxOverlay = QImage (":/VirtualBox_cube_42px.png");
+        QPainter painter (&osImg);
+        painter.drawImage (QPoint (14, 22), osImg100x75);
+        painter.drawImage (QPoint (osImg.width() - VBoxOverlay.width(), osImg.height() - VBoxOverlay.height()), VBoxOverlay);
+        painter.end();
+        if (dockImgOS)
+            CGImageRelease (dockImgOS);
+        dockImgOS = ::darwinToCGImageRef (&osImg);
+        SetApplicationDockTileImage (dockImgOS);
+    }
 #endif
 
     /* set the correct initial machine_state value */
@@ -2406,6 +2415,22 @@ CGImageRef VBoxConsoleWnd::dockImageState() const
     return img;
 }
 #endif
+
+void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &e)
+{
+#ifdef Q_WS_MAC
+    if (console)
+    {
+        console->setDockIconEnabled (e.mChanged);
+        if (e.mChanged)
+            console->updateDockIcon();
+        else
+            RestoreApplicationDockTileImage();
+    }
+#else
+    Q_UNUSED (e);
+#endif
+}
 
 //
 // Private slots

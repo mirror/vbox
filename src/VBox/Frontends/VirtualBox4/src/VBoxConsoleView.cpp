@@ -669,6 +669,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # endif
     , mDarwinKeyModifiers (0)
     , mVirtualBoxLogo (NULL)
+    , mDockIconEnabled (true)
 #endif
     , mDesktopGeo (DesktopGeo_Invalid)
 {
@@ -687,7 +688,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     {
         { kEventClassVBox, kEventVBoxShowWindow },
         { kEventClassVBox, kEventVBoxMoveWindow },
-        { kEventClassVBox, kEventVBoxResizeWindow }
+        { kEventClassVBox, kEventVBoxResizeWindow },
+        { kEventClassVBox, kEventVBoxUpdateDock }
     };
 
     mDarwinWindowOverlayHandlerRef = NULL;
@@ -3066,21 +3068,7 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
         if (isRunning())
-        {
-# if defined (VBOX_GUI_USE_QUARTZ2D)
-            if (mode == VBoxDefs::Quartz2DMode)
-            {
-                /* If the render mode is Quartz2D we could use the
-                 * CGImageRef of the framebuffer for the dock icon creation.
-                 * This saves some conversion time. */
-                CGImageRef ir =
-                    static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-                ::darwinUpdateDockPreview (ir, mVirtualBoxLogo);
-            }
-            else
-# endif
-                ::darwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
-        }
+            updateDockIcon();
 #endif
         return;
     }
@@ -3873,4 +3861,26 @@ void VBoxConsoleView::requestToResize (const QSize &aSize)
     mIgnoreFrameBufferResize = true;
     mNormalSize = aSize;
 }
+
+#if defined(Q_WS_MAC)
+void VBoxConsoleView::updateDockIcon()
+{
+    if (mDockIconEnabled)
+    {
+# if defined (VBOX_GUI_USE_QUARTZ2D)
+        if (mode == VBoxDefs::Quartz2DMode)
+        {
+            /* If the render mode is Quartz2D we could use the
+             * CGImageRef of the framebuffer for the dock icon creation.
+             * This saves some conversion time. */
+            CGImageRef ir =
+                static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
+            ::darwinUpdateDockPreview (ir, mVirtualBoxLogo);
+        }
+        else
+# endif
+            ::darwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
+    }
+}
+#endif
 

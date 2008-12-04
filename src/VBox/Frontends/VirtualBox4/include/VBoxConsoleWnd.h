@@ -56,6 +56,8 @@ class QIStateIndicator;
 class VBoxUSBMenu;
 class VBoxSwitchMenu;
 
+class VBoxChangeDockIconUpdateEvent;
+
 class VBoxConsoleWnd : public QIWithRetranslateUI2<QMainWindow>
 {
     Q_OBJECT;
@@ -85,11 +87,12 @@ public:
 
     void clearMask();
 
-#ifdef Q_WS_MAC
+#if defined (Q_WS_MAC)
     CGImageRef dockImageState () const;
 #endif
 
 public slots:
+    void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &e);
 
 protected:
 

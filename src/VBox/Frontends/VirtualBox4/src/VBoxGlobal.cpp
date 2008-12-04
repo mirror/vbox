@@ -884,6 +884,10 @@ public:
                 if (sKey == "GUI/TrayIcon/Enabled")
                     QApplication::postEvent (&mGlobal, new VBoxChangeTrayIconEvent ((sVal.toLower() == "true") ? true : false));
 #endif
+#ifdef Q_WS_MAC
+                if (sKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled)
+                    QApplication::postEvent (&mGlobal, new VBoxChangeDockIconUpdateEvent ((sVal.toLower() == "true") ? true : false));
+#endif
 
                 mMutex.lock();
                 mGlobal.gset.setPublicProperty (sKey, sVal);
@@ -5252,6 +5256,13 @@ bool VBoxGlobal::event (QEvent *e)
         case VBoxDefs::TrayIconChangeEventType:
         {
             emit trayIconChanged (*(VBoxChangeTrayIconEvent *) e);
+            return true;
+        }
+#endif
+#if defined(Q_WS_MAC)
+        case VBoxDefs::ChangeDockIconUpdateEventType:
+        {
+            emit dockIconUpdateChanged (*(VBoxChangeDockIconUpdateEvent *) e);
             return true;
         }
 #endif
