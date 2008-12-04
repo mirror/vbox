@@ -53,7 +53,7 @@ static bool tstAreKeysValid(void *pvUser, const char *pszzValid)
 
 static const char *tstGetValueByKey(const char *pszKey)
 {
-    for (int i = 0; aCfgNode[i].key; i++) 
+    for (int i = 0; aCfgNode[i].key; i++)
         if (!strcmp(aCfgNode[i].key, pszKey))
             return aCfgNode[i].value;
     return NULL;
@@ -73,7 +73,7 @@ static int tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cc
     const char *pszTmp = tstGetValueByKey(pszName);
     if (!pszValue)
         return VERR_CFGM_VALUE_NOT_FOUND;
-    size_t cchTmp = strlen(pszTmp) + 1; 
+    size_t cchTmp = strlen(pszTmp) + 1;
     if (cchValue < cchTmp)
         return VERR_CFGM_NOT_ENOUGH_SPACE;
     memcpy(pszValue, pszTmp, cchTmp);
@@ -149,6 +149,7 @@ static int tstVDBackendInfo(void)
                     default:
                         RTPrintf("INVALID!");
                 }
+                RTPrintf(" default=");
                 if (pa->pszDefaultValue)
                     RTPrintf("%s", pa->pszDefaultValue);
                 else
