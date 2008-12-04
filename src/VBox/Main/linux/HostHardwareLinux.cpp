@@ -74,6 +74,7 @@ static bool validateDevice(const char *deviceNode, bool isDVD);
 static int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
                                bool isDVD, bool *pfSuccess);
 static int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList);
+#ifdef VBOX_WITH_DBUS
 static int halInit(DBusConnection **ppConnection);
 static int halFindDeviceStringMatch (DBusConnection *pConnection,
                                      const char *pszKey, const char *pszValue,
@@ -84,6 +85,7 @@ static int halGetPropertyStrings (DBusConnection *pConnection,
                                   DBusMessage **ppMessage);
 static int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD,
                                bool *pfSuccess);
+#endif  /* VBOX_WITH_DBUS */
 
 /**
  * Updates the list of host DVD drives.
