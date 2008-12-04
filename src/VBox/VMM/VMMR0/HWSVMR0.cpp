@@ -2283,7 +2283,26 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  */
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64);
+    int             rc;
+    RTCCUINTREG     uFlags;
+
+    /* @todo This code is not guest SMP safe (hyper context) */
+    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+
+    uFlags = ASMIntDisableFlags();
+
+    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
+    CPUMPushHyper(pVM, (uint32_t)(pVMCBHostPhys >> 32));    /* Param 2: pVMCBHostPhys - Hi. */
+    CPUMPushHyper(pVM, (uint32_t)pVMCBHostPhys);            /* Param 2: pVMCBHostPhys - Lo. */
+    CPUMPushHyper(pVM, (uint32_t)(pVMCBPhys >> 32));        /* Param 1: pVMCBPhys - Hi. */
+    CPUMPushHyper(pVM, (uint32_t)pVMCBPhys);                /* Param 1: pVMCBPhys - Lo. */
+    CPUMSetHyperEIP(pVM, pVM->hwaccm.s.pfnVMXGCStartVM64);
+
+    /* Call switcher. */
+    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
+
+    ASMSetFlags(uFlags);
+    return rc;
 }
 
 /**

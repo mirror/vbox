@@ -27,6 +27,8 @@
 %define CPUM_USE_SYSCALL                RT_BIT(3)
 %define CPUM_USE_DEBUG_REGS_HOST        RT_BIT(4)
 %define CPUM_USE_DEBUG_REGS             RT_BIT(5)
+%define CPUM_SYNC_FPU_STATE             RT_BIT(7)
+%define CPUM_SYNC_DEBUG_STATE           RT_BIT(8)
 
 %define CPUM_HANDLER_DS                 1
 %define CPUM_HANDLER_ES                 2

@@ -169,7 +169,7 @@ BITS 64
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   pCtx       Guest context
+; * @param   pCtx       Guest context (rsi)
 ; */
 BEGINPROC VMXGCStartVM64
     push    rbp
@@ -370,22 +370,11 @@ ENDPROC VMXGCStartVM64
 ; * Prepares for and executes VMRUN (64 bits guests)
 ; *
 ; * @returns VBox status code
-; * @param   HCPhysVMCB     Physical address of host VMCB
-; * @param   HCPhysVMCB     Physical address of guest VMCB
-; * @param   pCtx           Guest context
+; * @param   HCPhysVMCB     Physical address of host VMCB       (rsp+8)
+; * @param   HCPhysVMCB     Physical address of guest VMCB      (rsp+16)
+; * @param   pCtx           Guest context                       (rsi)
 ; */
 BEGINPROC SVMGCVMRun64
-    ; fake a cdecl stack frame
- %ifdef ASM_CALL64_GCC
-    push    rdx
-    push    rsi
-    push    rdi
- %else
-    push    r8
-    push    rdx
-    push    rcx
- %endif
-    push    0
     push    rbp
     mov     rbp, rsp
     pushf
@@ -404,7 +393,6 @@ BEGINPROC SVMGCVMRun64
     MYPUSHAD
 
     ;/* Save the Guest CPU context pointer. */
-    mov     rsi, [rbp + 8*2 + RTHCPHYS_CB*2]   ; pCtx
     push    rsi                     ; push for saving the state at the end
 
     ; Restore CR2
@@ -412,12 +400,12 @@ BEGINPROC SVMGCVMRun64
     mov     cr2, rbx
 
     ; save host fs, gs, sysenter msr etc
-    mov     rax, [rbp + 8*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
-    push    rax                     ; save for the vmload after vmrun
+    mov     rax, [rbp + 8]                  ; pVMCBHostPhys (64 bits physical address)
+    push    rax                             ; save for the vmload after vmrun
     vmsave
 
     ; setup eax for VMLOAD
-    mov     rax, [rbp + 8*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     rax, [rbp + 8 + RTHCPHYS_CB]    ; pVMCBPhys (64 bits physical address)
 
     ;/* Restore Guest's general purpose registers. */
     ;/* RAX is loaded from the VMCB by VMRUN */
@@ -482,7 +470,6 @@ BEGINPROC SVMGCVMRun64
 
     popf
     pop     rbp
-    add     rsp, 4*8
     ret
 ENDPROC SVMGCVMRun64
 
