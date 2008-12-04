@@ -64,6 +64,7 @@ SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
 #
 VBoxDDU_TEMPLATE         = VBOXR3
 VBoxDDU_NAME             = $(basename $(notdir $(LIB_DDU)))
+VBoxDDU_INST.darwin      = $(INST_DLL) $(INST_TESTCASE)
 VBoxDDU_DEFS             = IN_VBOXDDU
 ifdef VBOX_WITH_USB
  VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
