@@ -32,16 +32,16 @@ else
  REM_MOD              += VBoxREM
 endif
 
+TEMPLATE_DUMMY = dummy template (move to kBuild)
 ifeq ($(KBUILD_TARGET), win)
- TEMPLATE_DUMMY = dummy template (move to kBuild)
  $(REM_MOD)_TOOL.win.x86    = MINGW32
  $(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
  $(REM_MOD)_TEMPLATE        = DUMMY
  $(REM_MOD)_SDKS.win.x86    = W32API
  $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
- $(REM_MOD)_CFLAGS          = -Wall -g
- $(REM_MOD)_CFLAGS.debug    = -O0
- $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
+ $(REM_MOD)_CFLAGS          = -Wall
+ $(REM_MOD)_CFLAGS.debug    = -O0 -g
+ $(REM_MOD)_CFLAGS.release += -fno-gcse -O2 
  $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
  $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
 
@@ -54,7 +54,22 @@ ifeq ($(KBUILD_TARGET), win)
 
  USE_REM_IMP = 1
 else
- $(REM_MOD)_TEMPLATE  = VBOXR3NP
+
+ # Unfortunately little pinguins tend to have default compilers no suitable 
+ # for real compilation, so search better alternatives 
+ if1of ($(KBUILD_TARGET), linux)
+  $(REM_MOD)_TOOL      = GCC3V3
+  $(REM_MOD)_TEMPLATE  = DUMMY
+  $(REM_MOD)_CFLAGS    = -fPIC                                          \
+                         -Wall -fno-strict-aliasing -Wno-unused         \
+                         -Wno-long-long -Wno-sign-compare
+  $(REM_MOD)_CFLAGS.x86      = -m32
+  $(REM_MOD)_CFLAGS.amd64    = -m64
+  $(REM_MOD)_CFLAGS.debug    = -g -O0
+  $(REM_MOD)_CFLAGS.release += -O2
+ else
+  $(REM_MOD)_TEMPLATE  = VBOXR3N 
+ endif
 
  IMPORT_LIBS          += VBoxREM
 endif

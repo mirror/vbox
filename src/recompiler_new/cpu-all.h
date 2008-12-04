@@ -278,13 +278,13 @@ void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr, target_ulong vir
 
 #if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
 
-DECLINLINE(int) ldub_p(void *ptr)
+DECLINLINE(uint8_t) ldub_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU8((uintptr_t)ptr);
 }
 
-DECLINLINE(int) ldsb_p(void *ptr)
+DECLINLINE(int8_t) ldsb_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadS8((uintptr_t)ptr);
@@ -296,13 +296,13 @@ DECLINLINE(void) stb_p(void *ptr, int v)
     remR3PhysWriteU8((uintptr_t)ptr, v);
 }
 
-DECLINLINE(int) lduw_le_p(void *ptr)
+DECLINLINE(uint32_t) lduw_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU16((uintptr_t)ptr);
 }
 
-DECLINLINE(int) ldsw_le_p(void *ptr)
+DECLINLINE(int32_t) ldsw_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadS16((uintptr_t)ptr);
@@ -314,7 +314,7 @@ DECLINLINE(void) stw_le_p(void *ptr, int v)
     remR3PhysWriteU16((uintptr_t)ptr, v);
 }
 
-DECLINLINE(int) ldl_le_p(void *ptr)
+DECLINLINE(uint32_t) ldl_le_p(void *ptr)
 {
     VBOX_CHECK_ADDR(ptr);
     return remR3PhysReadU32((uintptr_t)ptr);

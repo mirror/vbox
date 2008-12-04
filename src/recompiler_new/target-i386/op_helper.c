@@ -5642,7 +5642,7 @@ int emulate_single_instr(CPUX86State *env1)
     uint8_t *tc_ptr;
     target_ulong old_eip;
 
-    /* ensures env is loaded in ebp! */
+    /* ensures env is loaded! */
     CPUX86State *savedenv = env;
     env = env1;
 
