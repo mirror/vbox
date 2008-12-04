@@ -52,8 +52,7 @@ DEFINE_EMPTY_CTOR_DTOR (MediumBase)
 
 STDMETHODIMP MediumBase::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -67,8 +66,7 @@ STDMETHODIMP MediumBase::COMGETTER(Id) (GUIDPARAMOUT aId)
 
 STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -82,8 +80,7 @@ STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP MediumBase::COMSETTER(Description) (INPTR BSTR aDescription)
 {
-    if (!aDescription)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -99,8 +96,7 @@ STDMETHODIMP MediumBase::COMSETTER(Description) (INPTR BSTR aDescription)
 
 STDMETHODIMP MediumBase::COMGETTER(State) (MediaState_T *aState)
 {
-    if (!aState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -131,8 +127,7 @@ STDMETHODIMP MediumBase::COMGETTER(State) (MediaState_T *aState)
 
 STDMETHODIMP MediumBase::COMGETTER(Location) (BSTR *aLocation)
 {
-    if (!aLocation)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aLocation);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -146,8 +141,7 @@ STDMETHODIMP MediumBase::COMGETTER(Location) (BSTR *aLocation)
 
 STDMETHODIMP MediumBase::COMSETTER(Location) (INPTR BSTR aLocation)
 {
-    if (!aLocation)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aLocation);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -168,8 +162,7 @@ STDMETHODIMP MediumBase::COMSETTER(Location) (INPTR BSTR aLocation)
 
 STDMETHODIMP MediumBase::COMGETTER(Name) (BSTR *aName)
 {
-    if (!aName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -183,8 +176,7 @@ STDMETHODIMP MediumBase::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP MediumBase::COMGETTER(Size) (ULONG64 *aSize)
 {
-    if (!aSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -198,8 +190,7 @@ STDMETHODIMP MediumBase::COMGETTER(Size) (ULONG64 *aSize)
 
 STDMETHODIMP MediumBase::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
 {
-    if (!aLastAccessError)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aLastAccessError);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

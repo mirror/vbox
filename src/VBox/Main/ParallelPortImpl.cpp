@@ -322,8 +322,7 @@ void ParallelPort::copyFrom (ParallelPort *aThat)
 
 STDMETHODIMP ParallelPort::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -371,8 +370,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
 
 STDMETHODIMP ParallelPort::COMGETTER(Slot) (ULONG *aSlot)
 {
-    if (!aSlot)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -386,8 +384,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Slot) (ULONG *aSlot)
 
 STDMETHODIMP ParallelPort::COMGETTER(IRQ) (ULONG *aIRQ)
 {
-    if (!aIRQ)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aIRQ);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -441,8 +438,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
 
 STDMETHODIMP ParallelPort::COMGETTER(IOBase) (ULONG *aIOBase)
 {
-    if (!aIOBase)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aIOBase);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -496,8 +492,7 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
 
 STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
 {
-    if (!aPath)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

@@ -716,8 +716,7 @@ void Machine::uninit()
 
 STDMETHODIMP Machine::COMGETTER(Parent) (IVirtualBox **aParent)
 {
-    if (!aParent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aParent);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -730,8 +729,7 @@ STDMETHODIMP Machine::COMGETTER(Parent) (IVirtualBox **aParent)
 
 STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 {
-    if (!aAccessible)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAccessible);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -768,8 +766,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
 STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessError)
 {
-    if (!aAccessError)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAccessError);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -801,8 +798,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
 
 STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
 {
-    if (!aName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -816,8 +812,7 @@ STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
 {
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
 
     if (!*aName)
         return setError (E_INVALIDARG,
@@ -839,8 +834,7 @@ STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
 
 STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -870,8 +864,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
 
 STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -885,8 +878,7 @@ STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
 
 STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
-    if (!aOSTypeId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOSTypeId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -900,8 +892,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 
 STDMETHODIMP Machine::COMSETTER(OSTypeId) (INPTR BSTR aOSTypeId)
 {
-    if (!aOSTypeId)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aOSTypeId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1329,8 +1320,7 @@ STDMETHODIMP Machine::COMSETTER(PAEEnabled)(BOOL enable)
 
 STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
 {
-    if (!aSnapshotFolder)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSnapshotFolder);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1479,8 +1469,7 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
 STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 {
 #ifdef VBOX_WITH_USB
-    if (!aUSBController)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUSBController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1502,8 +1491,7 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAController)
 {
 #ifdef VBOX_WITH_AHCI
-    if (!aSATAController)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSATAController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1521,8 +1509,7 @@ STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAControll
 
 STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 {
-    if (!aFilePath)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFilePath);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1536,8 +1523,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 STDMETHODIMP Machine::
 COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 {
-    if (!aSettingsFileVersion)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aSettingsFileVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1550,8 +1536,7 @@ COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 
 STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 {
-    if (!aModified)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aModified);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1579,8 +1564,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 
 STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
 {
-    if (!aSessionState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSessionState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1594,8 +1578,7 @@ STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
 
 STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
 {
-    if (!aSessionType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSessionType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1609,8 +1592,7 @@ STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
 
 STDMETHODIMP Machine::COMGETTER(SessionPid) (ULONG *aSessionPid)
 {
-    if (!aSessionPid)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSessionPid);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1639,8 +1621,7 @@ STDMETHODIMP Machine::COMGETTER(State) (MachineState_T *machineState)
 
 STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
 {
-    if (!aLastStateChange)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aLastStateChange);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1654,8 +1635,7 @@ STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
 
 STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
 {
-    if (!aStateFilePath)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aStateFilePath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1669,8 +1649,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
 
 STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
 {
-    if (!aLogFolder)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aLogFolder);
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -1687,8 +1666,7 @@ STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
 
 STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
 {
-    if (!aCurrentSnapshot)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCurrentSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1702,8 +1680,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
 
 STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
 {
-    if (!aSnapshotCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSnapshotCount);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1718,8 +1695,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
 
 STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModified)
 {
-    if (!aCurrentStateModified)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCurrentStateModified);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1739,8 +1715,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModifi
 STDMETHODIMP
 Machine::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 {
-    if (!aSharedFolders)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSharedFolders);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1758,8 +1733,7 @@ Machine::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 STDMETHODIMP
 Machine::COMGETTER(ClipboardMode) (ClipboardMode_T *aClipboardMode)
 {
-    if (!aClipboardMode)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aClipboardMode);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1791,8 +1765,7 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
 STDMETHODIMP
 Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 {
-    if (!aPatterns)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPatterns);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2365,8 +2338,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
  */
 STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
-    if (!aNextKey)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aNextKey);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2469,10 +2441,8 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
  */
 STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 {
-    if (!aKey)
-        return E_INVALIDARG;
-    if (!aValue)
-        return E_POINTER;
+    CheckComArgNotNull(aKey);
+    CheckComArgOutPointerValid(aValue);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2537,8 +2507,7 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
  */
 STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 {
-    if (!aKey)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aKey);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2677,8 +2646,7 @@ STDMETHODIMP Machine::SaveSettings()
 
 STDMETHODIMP Machine::SaveSettingsWithBackup (BSTR *aBakFileName)
 {
-    if (!aBakFileName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aBakFileName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2807,8 +2775,7 @@ STDMETHODIMP Machine::DeleteSettings()
 
 STDMETHODIMP Machine::GetSnapshot (INPTR GUIDPARAM aId, ISnapshot **aSnapshot)
 {
-    if (!aSnapshot)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2826,10 +2793,8 @@ STDMETHODIMP Machine::GetSnapshot (INPTR GUIDPARAM aId, ISnapshot **aSnapshot)
 
 STDMETHODIMP Machine::FindSnapshot (INPTR BSTR aName, ISnapshot **aSnapshot)
 {
-    if (!aName)
-        return E_INVALIDARG;
-    if (!aSnapshot)
-        return E_POINTER;
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2855,8 +2820,8 @@ STDMETHODIMP Machine::SetCurrentSnapshot (INPTR GUIDPARAM aId)
 STDMETHODIMP
 Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
 {
-    if (!aName || !aHostPath)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
+    CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2896,8 +2861,7 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
 
 STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
 {
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2923,8 +2887,7 @@ STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
 
 STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 {
-    if (!aCanShow)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCanShow);
 
     /* start with No */
     *aCanShow = FALSE;
@@ -2954,8 +2917,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
 STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 {
-    if (!aWinId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aWinId);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -8118,10 +8080,8 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 {
     LogFlowThisFunc (("\n"));
 
-    if (!aUSBDevice)
-        return E_INVALIDARG;
-    if (!aMatched)
-        return E_POINTER;
+    CheckComArgNotNull(aUSBDevice);
+    CheckComArgOutPointerValid(aMatched);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());

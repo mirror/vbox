@@ -194,8 +194,7 @@ void ProgressBase::protectedUninit (AutoUninitSpan &aAutoUninitSpan)
 
 STDMETHODIMP ProgressBase::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -208,8 +207,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Id) (GUIDPARAMOUT aId)
 
 STDMETHODIMP ProgressBase::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -222,8 +220,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP ProgressBase::COMGETTER(Initiator) (IUnknown **aInitiator)
 {
-    if (!aInitiator)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aInitiator);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -244,8 +241,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Initiator) (IUnknown **aInitiator)
 
 STDMETHODIMP ProgressBase::COMGETTER(Cancelable) (BOOL *aCancelable)
 {
-    if (!aCancelable)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCancelable);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -259,8 +255,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Cancelable) (BOOL *aCancelable)
 
 STDMETHODIMP ProgressBase::COMGETTER(Percent) (LONG *aPercent)
 {
-    if (!aPercent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPercent);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -282,8 +277,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Percent) (LONG *aPercent)
 
 STDMETHODIMP ProgressBase::COMGETTER(Completed) (BOOL *aCompleted)
 {
-    if (!aCompleted)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCompleted);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -297,8 +291,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Completed) (BOOL *aCompleted)
 
 STDMETHODIMP ProgressBase::COMGETTER(Canceled) (BOOL *aCanceled)
 {
-    if (!aCanceled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCanceled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -312,8 +305,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Canceled) (BOOL *aCanceled)
 
 STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (HRESULT *aResultCode)
 {
-    if (!aResultCode)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aResultCode);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -331,8 +323,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (HRESULT *aResultCode)
 
 STDMETHODIMP ProgressBase::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorInfo)
 {
-    if (!aErrorInfo)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aErrorInfo);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -350,8 +341,7 @@ STDMETHODIMP ProgressBase::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorIn
 
 STDMETHODIMP ProgressBase::COMGETTER(OperationCount) (ULONG *aOperationCount)
 {
-    if (!aOperationCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperationCount);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -365,8 +355,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationCount) (ULONG *aOperationCount)
 
 STDMETHODIMP ProgressBase::COMGETTER(Operation) (ULONG *aOperation)
 {
-    if (!aOperation)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperation);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -380,8 +369,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Operation) (ULONG *aOperation)
 
 STDMETHODIMP ProgressBase::COMGETTER(OperationDescription) (BSTR *aOperationDescription)
 {
-    if (!aOperationDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperationDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -395,8 +383,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationDescription) (BSTR *aOperationDesc
 
 STDMETHODIMP ProgressBase::COMGETTER(OperationPercent) (LONG *aOperationPercent)
 {
-    if (!aOperationPercent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperationPercent);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1138,8 +1125,7 @@ void CombinedProgress::uninit()
 
 STDMETHODIMP CombinedProgress::COMGETTER(Percent) (LONG *aPercent)
 {
-    if (!aPercent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPercent);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1165,8 +1151,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Percent) (LONG *aPercent)
 
 STDMETHODIMP CombinedProgress::COMGETTER(Completed) (BOOL *aCompleted)
 {
-    if (!aCompleted)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCompleted);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1182,8 +1167,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Completed) (BOOL *aCompleted)
 
 STDMETHODIMP CombinedProgress::COMGETTER(Canceled) (BOOL *aCanceled)
 {
-    if (!aCanceled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCanceled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1199,8 +1183,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Canceled) (BOOL *aCanceled)
 
 STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (HRESULT *aResultCode)
 {
-    if (!aResultCode)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aResultCode);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1216,8 +1199,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ResultCode) (HRESULT *aResultCode)
 
 STDMETHODIMP CombinedProgress::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorInfo)
 {
-    if (!aErrorInfo)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aErrorInfo);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1233,8 +1215,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErr
 
 STDMETHODIMP CombinedProgress::COMGETTER(Operation) (ULONG *aOperation)
 {
-    if (!aOperation)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperation);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1250,8 +1231,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(Operation) (ULONG *aOperation)
 
 STDMETHODIMP CombinedProgress::COMGETTER(OperationDescription) (BSTR *aOperationDescription)
 {
-    if (!aOperationDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperationDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1267,8 +1247,7 @@ STDMETHODIMP CombinedProgress::COMGETTER(OperationDescription) (BSTR *aOperation
 
 STDMETHODIMP CombinedProgress::COMGETTER(OperationPercent) (LONG *aOperationPercent)
 {
-    if (!aOperationPercent)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOperationPercent);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

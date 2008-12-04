@@ -1119,8 +1119,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 {
 #ifdef VBOX_WITH_USB
-    if (!aUSBDevices)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUSBDevices);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1141,8 +1140,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection **aUSBDeviceFilters)
 {
 #ifdef VBOX_WITH_USB
-    if (!aUSBDeviceFilters)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUSBDeviceFilters);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1349,8 +1347,7 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *version)
  */
 STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 {
-    if (!aUTCTime)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUTCTime);
     AutoWriteLock alock (this);
     CHECK_READY();
     RTTIMESPEC now;
@@ -1426,12 +1423,9 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
-    if (!aName)
-        return E_INVALIDARG;
-    if (!aHostNetworkInterface)
-        return E_POINTER;
-    if (!aProgress)
-        return E_POINTER;
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aHostNetworkInterface);
+    CheckComArgOutPointerValid(aProgress);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1492,10 +1486,8 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
                                   IHostNetworkInterface **aHostNetworkInterface,
                                   IProgress **aProgress)
 {
-    if (!aHostNetworkInterface)
-        return E_POINTER;
-    if (!aProgress)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostNetworkInterface);
+    CheckComArgOutPointerValid(aProgress);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1554,10 +1546,8 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
 STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_POINTER;
-
     CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgOutPointerValid(aFilter);
 
     AutoWriteLock alock (this);
     CHECK_READY();
@@ -1580,8 +1570,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
 STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter *aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aFilter);
 
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoWriteLock alock (this);
@@ -1628,8 +1617,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFilter);
 
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoWriteLock alock (this);

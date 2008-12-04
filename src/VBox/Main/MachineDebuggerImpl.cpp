@@ -121,8 +121,7 @@ void MachineDebugger::uninit()
  */
 STDMETHODIMP MachineDebugger::COMGETTER(Singlestep) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -154,8 +153,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(Singlestep) (BOOL aEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -223,8 +221,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser) (BOOL aEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -292,8 +289,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor) (BOOL aEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -371,8 +367,7 @@ STDMETHODIMP MachineDebugger::InjectNMI()
  */
 STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -436,8 +431,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled) (BOOL aEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(LogEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -498,8 +492,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled) (BOOL aEnabled)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -524,8 +517,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExEnabled) (BOOL *aEnabled)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExNestedPagingEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -550,8 +542,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExNestedPagingEnabled) (BOOL *aEna
  */
 STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -576,8 +567,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -605,8 +595,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate) (ULONG *aPct)
 {
-    if (!aPct)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPct);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -669,8 +658,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate) (ULONG aPct)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(VM) (ULONG64 *aVm)
 {
-    if (!aVm)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVm);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

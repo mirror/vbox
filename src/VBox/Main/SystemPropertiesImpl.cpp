@@ -274,8 +274,7 @@ STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPosition)
 {
-    if (!aMaxBootPosition)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMaxBootPosition);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -288,8 +287,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
 
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
 {
-    if (!aDefaultMachineFolder)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDefaultMachineFolder);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -318,8 +316,7 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (INPTR BSTR aDefa
 
 STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultHardDiskFolder)
 {
-    if (!aDefaultHardDiskFolder)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDefaultHardDiskFolder);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -365,8 +362,7 @@ COMGETTER(HardDiskFormats) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats
 
 STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultHardDiskFormat)
 {
-    if (!aDefaultHardDiskFormat)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDefaultHardDiskFormat);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -395,8 +391,7 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (INPTR BSTR aDef
 
 STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemoteDisplayAuthLibrary)
 {
-    if (!aRemoteDisplayAuthLibrary)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRemoteDisplayAuthLibrary);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -425,8 +420,7 @@ STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (INPTR BSTR a
 
 STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServiceAuthLibrary)
 {
-    if (!aWebServiceAuthLibrary)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aWebServiceAuthLibrary);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

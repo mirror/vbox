@@ -411,8 +411,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
 
 STDMETHODIMP BIOSSettings::COMGETTER(IDEControllerType)(IDEControllerType_T *aControllerType)
 {
-    if (!aControllerType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aControllerType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

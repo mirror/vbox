@@ -193,8 +193,7 @@ void DVDDrive::uninit()
 
 STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *aState)
 {
-    if (!aState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -208,8 +207,7 @@ STDMETHODIMP DVDDrive::COMGETTER(State) (DriveState_T *aState)
 
 STDMETHODIMP DVDDrive::COMGETTER(Passthrough) (BOOL *aPassthrough)
 {
-    if (!aPassthrough)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aPassthrough);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -296,8 +294,7 @@ STDMETHODIMP DVDDrive::MountImage (INPTR GUIDPARAM aImageId)
 
 STDMETHODIMP DVDDrive::CaptureHostDrive (IHostDVDDrive *aHostDVDDrive)
 {
-    if (!aHostDVDDrive)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aHostDVDDrive);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -357,8 +354,7 @@ STDMETHODIMP DVDDrive::Unmount()
 
 STDMETHODIMP DVDDrive::GetImage (IDVDImage2 **aDVDImage)
 {
-    if (!aDVDImage)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDVDImage);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -372,8 +368,7 @@ STDMETHODIMP DVDDrive::GetImage (IDVDImage2 **aDVDImage)
 
 STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
 {
-    if (!aHostDrive)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostDrive);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

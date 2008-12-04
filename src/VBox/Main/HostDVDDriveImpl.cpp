@@ -89,8 +89,7 @@ void HostDVDDrive::uninit()
 
 STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *aName)
 {
-    if (!aName)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -104,8 +103,7 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
 {
-    if (!aDescription)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -119,8 +117,7 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP HostDVDDrive::COMGETTER(Udi) (BSTR *aUdi)
 {
-    if (!aUdi)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUdi);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

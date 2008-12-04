@@ -133,8 +133,7 @@ void RemoteUSBDevice::uninit()
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (GUIDPARAMOUT aId)
 {
-    if (!aId)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -147,8 +146,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (GUIDPARAMOUT aId)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(VendorId) (USHORT *aVendorId)
 {
-    if (!aVendorId)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aVendorId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -161,8 +159,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(VendorId) (USHORT *aVendorId)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(ProductId) (USHORT *aProductId)
 {
-    if (!aProductId)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aProductId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -175,8 +172,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(ProductId) (USHORT *aProductId)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Revision) (USHORT *aRevision)
 {
-    if (!aRevision)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aRevision);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -189,8 +185,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Revision) (USHORT *aRevision)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Manufacturer) (BSTR *aManufacturer)
 {
-    if (!aManufacturer)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aManufacturer);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -203,8 +198,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Manufacturer) (BSTR *aManufacturer)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Product) (BSTR *aProduct)
 {
-    if (!aProduct)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aProduct);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -217,8 +211,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Product) (BSTR *aProduct)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
 {
-    if (!aSerialNumber)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aSerialNumber);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -231,8 +224,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(SerialNumber) (BSTR *aSerialNumber)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Address) (BSTR *aAddress)
 {
-    if (!aAddress)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -245,8 +237,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Address) (BSTR *aAddress)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
 {
-    if (!aPort)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -259,8 +250,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Port) (USHORT *aPort)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
 {
-    if (!aVersion)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -273,8 +263,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Version) (USHORT *aVersion)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
 {
-    if (!aPortVersion)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aPortVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -287,8 +276,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(PortVersion) (USHORT *aPortVersion)
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
 {
-    if (!aRemote)
-        return E_INVALIDARG;
+    CheckComArgOutPointerValid(aRemote);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -301,12 +289,11 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Remote) (BOOL *aRemote)
 }
 
 // IHostUSBDevice properties
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 STDMETHODIMP RemoteUSBDevice::COMGETTER(State) (USBDeviceState_T *aState)
 {
-    if (!aState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

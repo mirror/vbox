@@ -1159,8 +1159,7 @@ HRESULT Console::doEnumerateGuestProperties (INPTR BSTR aPatterns,
 
 STDMETHODIMP Console::COMGETTER(Machine) (IMachine **aMachine)
 {
-    if (!aMachine)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1173,8 +1172,7 @@ STDMETHODIMP Console::COMGETTER(Machine) (IMachine **aMachine)
 
 STDMETHODIMP Console::COMGETTER(State) (MachineState_T *aMachineState)
 {
-    if (!aMachineState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMachineState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1189,8 +1187,7 @@ STDMETHODIMP Console::COMGETTER(State) (MachineState_T *aMachineState)
 
 STDMETHODIMP Console::COMGETTER(Guest) (IGuest **aGuest)
 {
-    if (!aGuest)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aGuest);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1203,8 +1200,7 @@ STDMETHODIMP Console::COMGETTER(Guest) (IGuest **aGuest)
 
 STDMETHODIMP Console::COMGETTER(Keyboard) (IKeyboard **aKeyboard)
 {
-    if (!aKeyboard)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aKeyboard);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1217,8 +1213,7 @@ STDMETHODIMP Console::COMGETTER(Keyboard) (IKeyboard **aKeyboard)
 
 STDMETHODIMP Console::COMGETTER(Mouse) (IMouse **aMouse)
 {
-    if (!aMouse)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMouse);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1231,8 +1226,7 @@ STDMETHODIMP Console::COMGETTER(Mouse) (IMouse **aMouse)
 
 STDMETHODIMP Console::COMGETTER(Display) (IDisplay **aDisplay)
 {
-    if (!aDisplay)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDisplay);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1245,8 +1239,7 @@ STDMETHODIMP Console::COMGETTER(Display) (IDisplay **aDisplay)
 
 STDMETHODIMP Console::COMGETTER(Debugger) (IMachineDebugger **aDebugger)
 {
-    if (!aDebugger)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDebugger);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1268,8 +1261,7 @@ STDMETHODIMP Console::COMGETTER(Debugger) (IMachineDebugger **aDebugger)
 
 STDMETHODIMP Console::COMGETTER(USBDevices) (IUSBDeviceCollection **aUSBDevices)
 {
-    if (!aUSBDevices)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUSBDevices);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1286,8 +1278,7 @@ STDMETHODIMP Console::COMGETTER(USBDevices) (IUSBDeviceCollection **aUSBDevices)
 
 STDMETHODIMP Console::COMGETTER(RemoteUSBDevices) (IHostUSBDeviceCollection **aRemoteUSBDevices)
 {
-    if (!aRemoteUSBDevices)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRemoteUSBDevices);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1304,8 +1295,7 @@ STDMETHODIMP Console::COMGETTER(RemoteUSBDevices) (IHostUSBDeviceCollection **aR
 
 STDMETHODIMP Console::COMGETTER(RemoteDisplayInfo) (IRemoteDisplayInfo **aRemoteDisplayInfo)
 {
-    if (!aRemoteDisplayInfo)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aRemoteDisplayInfo);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1319,8 +1309,7 @@ STDMETHODIMP Console::COMGETTER(RemoteDisplayInfo) (IRemoteDisplayInfo **aRemote
 STDMETHODIMP
 Console::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 {
-    if (!aSharedFolders)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSharedFolders);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1601,8 +1590,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 {
     LogFlowThisFuncEnter();
 
-    if (!aHandled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHandled);
 
     *aHandled = FALSE;
 
@@ -1644,8 +1632,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 {
     LogFlowThisFuncEnter();
 
-    if (!aEntered)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEntered);
 
     *aEntered = FALSE;
 
@@ -1721,8 +1708,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("mMachineState=%d\n", mMachineState));
 
-    if (!aProgress)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1861,8 +1847,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
 
 STDMETHODIMP Console::AdoptSavedState (INPTR BSTR aSavedStateFile)
 {
-    if (!aSavedStateFile)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aSavedStateFile);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1914,8 +1899,7 @@ inline uint32_t readAndClearLed(PPDMLED pLed)
 STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
                                          DeviceActivity_T *aDeviceActivity)
 {
-    if (!aDeviceActivity)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aDeviceActivity);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2055,8 +2039,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
 STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    if (!aDevice)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDevice);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2116,8 +2099,8 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 STDMETHODIMP
 Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
 {
-    if (!aName || !aHostPath)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
+    CheckComArgNotNull(aHostPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2188,8 +2171,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
 
 STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
 {
-    if (!aName)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2251,10 +2233,8 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("aName='%ls' mMachineState=%08X\n", aName, mMachineState));
 
-    if (!aName)
-        return E_INVALIDARG;
-    if (!aProgress)
-        return E_POINTER;
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2422,10 +2402,8 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
 
 STDMETHODIMP Console::DiscardSnapshot (INPTR GUIDPARAM aId, IProgress **aProgress)
 {
-    if (Guid (aId).isEmpty())
-        return E_INVALIDARG;
-    if (!aProgress)
-        return E_POINTER;
+    CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2491,8 +2469,7 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState (IProgress **aProgress)
 
 STDMETHODIMP Console::RegisterCallback (IConsoleCallback *aCallback)
 {
-    if (!aCallback)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2533,8 +2510,7 @@ STDMETHODIMP Console::RegisterCallback (IConsoleCallback *aCallback)
 
 STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
 {
-    if (!aCallback)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aCallback);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

@@ -193,8 +193,7 @@ void FloppyDrive::uninit()
 
 STDMETHODIMP FloppyDrive::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -235,8 +234,7 @@ STDMETHODIMP FloppyDrive::COMSETTER(Enabled) (BOOL aEnabled)
 
 STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 {
-    if (!aState)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -303,8 +301,7 @@ STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
 
 STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
 {
-    if (!aHostFloppyDrive)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aHostFloppyDrive);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -364,8 +361,7 @@ STDMETHODIMP FloppyDrive::Unmount()
 
 STDMETHODIMP FloppyDrive::GetImage (IFloppyImage2 **aFloppyImage)
 {
-    if (!aFloppyImage)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFloppyImage);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -379,8 +375,7 @@ STDMETHODIMP FloppyDrive::GetImage (IFloppyImage2 **aFloppyImage)
 
 STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
 {
-    if (!aHostDrive)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostDrive);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

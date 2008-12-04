@@ -176,8 +176,7 @@ void NetworkAdapter::uninit()
 
 STDMETHODIMP NetworkAdapter::COMGETTER(AdapterType) (NetworkAdapterType_T *aAdapterType)
 {
-    if (!aAdapterType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAdapterType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -232,8 +231,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
 
 STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *aSlot)
 {
-    if (!aSlot)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSlot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -247,8 +245,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(Slot) (ULONG *aSlot)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -287,8 +284,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 {
-    if (!aMACAddress)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMACAddress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -385,8 +381,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
 STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
     NetworkAttachmentType_T *aAttachmentType)
 {
-    if (!aAttachmentType)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAttachmentType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -400,8 +395,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
 
 STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
 {
-    if (!aHostInterface)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aHostInterface);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -421,8 +415,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
     // we don't allow null strings for the host interface on Win32
     // (because the @name attribute of <HostInterface> must be always present,
     // but can be empty).
-    if (!aHostInterface)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aHostInterface);
 #else
     CheckComArgStrNotEmptyOrNull(aHostInterface);
 #endif
@@ -455,8 +448,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
 STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescriptor)
 {
 # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    if (!aTAPFileDescriptor)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aTAPFileDescriptor);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -516,8 +508,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
     BSTR *aTAPSetupApplication)
 {
 # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    if (!aTAPSetupApplication)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aTAPSetupApplication);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -571,8 +562,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
     BSTR *aTAPTerminateApplication)
 {
 # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
-    if (!aTAPTerminateApplication)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aTAPTerminateApplication);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -626,8 +616,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
 
 STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
 {
-    if (!aInternalNetwork)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aInternalNetwork);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -675,8 +664,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNet
 
 STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
 {
-    if (!aNATNetwork)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aNATNetwork);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -715,8 +703,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (INPTR BSTR aNATNetwork)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
 {
-    if (!aConnected)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aConnected);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -755,8 +742,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(LineSpeed) (ULONG *aSpeed)
 {
-    if (!aSpeed)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSpeed);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -795,8 +781,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TraceEnabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -834,8 +819,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
 {
-    if (!aTraceFile)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aTraceFile);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

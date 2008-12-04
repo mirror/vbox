@@ -117,8 +117,7 @@ void Guest::uninit()
 
 STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
-    if (!aOSTypeId)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOSTypeId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -136,8 +135,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 
 STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
 {
-    if (!aAdditionsActive)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAdditionsActive);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -151,8 +149,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
 
 STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 {
-    if (!aAdditionsVersion)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAdditionsVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -166,8 +163,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 
 STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
 {
-    if (!aSupportsSeamless)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSupportsSeamless);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -181,8 +177,7 @@ STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
 
 STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
 {
-    if (!aSupportsGraphics)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSupportsGraphics);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -196,8 +191,7 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
 
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
-    if (!aMemoryBalloonSize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aMemoryBalloonSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -231,8 +225,7 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
 
 STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
 {
-    if (!aUpdateInterval)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUpdateInterval);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -267,8 +260,9 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
 STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
                                    INPTR BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
-    if (!aUserName || !aPassword || !aDomain)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aUserName);
+    CheckComArgNotNull(aPassword);
+    CheckComArgNotNull(aDomain);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -293,18 +287,12 @@ STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
 
 STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal)
 {
-    if (!aStatVal)
-        return E_INVALIDARG;
-
-    if (aCpuId != 0)
-        return E_INVALIDARG;
-
-    if (aStatistic >= GuestStatisticType_MaxVal)
-        return E_INVALIDARG;
+    CheckComArgExpr(aCpuId, aCpuId = 0);
+    CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
+    CheckComArgOutPointerValid(aStatVal);
 
     /* not available or not yet reported? */
-    if (mCurrentGuestStat[aStatistic] == GUEST_STAT_INVALID)
-        return E_INVALIDARG;
+    CheckComArgExpr(aStatistic, mCurrentGuestStat[aStatistic] != GUEST_STAT_INVALID);
 
     *aStatVal = mCurrentGuestStat[aStatistic];
     return S_OK;
@@ -312,13 +300,10 @@ STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 
 STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal)
 {
-    if (aCpuId != 0)
-        return E_INVALIDARG;
+    CheckComArgExpr(aCpuId, aCpuId = 0);
+    CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
 
-    if (aStatistic >= GuestStatisticType_MaxVal)
-        return E_INVALIDARG;
-
-    /* internal method assumes that the caller known what he's doing (no boundary checks) */
+    /* internal method assumes that the caller knows what he's doing (no boundary checks) */
     mCurrentGuestStat[aStatistic] = aStatVal;
     return S_OK;
 }

@@ -213,8 +213,7 @@ void USBController::uninit()
 
 STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -256,8 +255,7 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
 
 STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
 {
-    if (!aEnabled)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -298,8 +296,7 @@ STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
 
 STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
 {
-    if (!aUSBStandard)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aUSBStandard);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -366,8 +363,7 @@ COM_IMPL_READONLY_ENUM_AND_COLLECTION (USBDeviceFilter);
 
 STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection **aDevicesFilters)
 {
-    if (!aDevicesFilters)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDevicesFilters);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -391,8 +387,7 @@ STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
                                                 IUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFilter);
 
     CheckComArgStrNotEmptyOrNull(aName);
 
@@ -422,8 +417,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
                                                 IUSBDeviceFilter *aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_INVALIDARG;
+    CheckComArgNotNull(aFilter);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -487,8 +481,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
                                                 IUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB
-    if (!aFilter)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFilter);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
