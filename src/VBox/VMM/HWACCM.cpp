@@ -847,10 +847,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
         AssertMsgRCReturn(rc, ("HWACCMSetupDebug64 -> rc=%Rrc\n", rc), rc);
 
-#ifdef DEBUG
+# ifdef DEBUG
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMTestSwitcher64",   &pVM->hwaccm.s.pfnTest64);
         AssertMsgRCReturn(rc, ("HWACCMTestSwitcher64 -> rc=%Rrc\n", rc), rc);
-#endif
+# endif
     }
 #endif
     return VINF_SUCCESS;

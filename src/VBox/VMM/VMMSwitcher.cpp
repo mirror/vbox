@@ -644,7 +644,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 break;
             }
 
-#if defined(RT_ARCH_X86) && defined(VBOX_WITH_64_BITS_GUESTS)
+#ifdef RT_ARCH_X86
             case FIX_GC_64_BIT_CPUM_OFF:
             {
                 uint32_t offCPUM = *u.pu32++;
