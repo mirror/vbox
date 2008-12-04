@@ -1305,7 +1305,12 @@ IO_READ_PROTO (acpiSysInfoDataRead)
                 case SYSTEM_INFO_INDEX_USE_IOAPIC:
                     *pu32 = s->u8UseIOApic;
                     break;
-
+                    
+                /* Solaris 9 tries to read from this index */
+                case SYSTEM_INFO_INDEX_INVALID:
+                    *pu32 = 0;
+                    break;
+                    
                 default:
                     AssertMsgFailed (("Invalid system info index %d\n", s->uSystemInfoIndex));
                     break;
