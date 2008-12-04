@@ -62,7 +62,7 @@ WITH_SDL_TTF=1
 WITH_X11=1
 WITH_ALSA=1
 WITH_PULSE=1
-WITH_LIBHAL=1
+WITH_DBUS=1
 WITH_KMODS=1
 WITH_HARDENING=1
 CC="gcc"
@@ -92,9 +92,9 @@ INCPNG=""
 LIBPNG="-lpng"
 PKGCONFIG="`which_wrapper pkg-config`"
 if [ -n $PKGCONFIG ]; then
-  FLAGSHAL="`$PKGCONFIG hal --cflags 2>/dev/null`"
-  LIBDIRHAL="`$PKGCONFIG hal --libs-only-L 2>/dev/null`"
-  LIBHAL="`$PKGCONFIG hal --libs-only-l 2>/dev/null`"
+  FLAGSDBUS="`$PKGCONFIG dbus-1 --cflags 2>/dev/null`"
+  LIBDIRDBUS="`$PKGCONFIG dbus-1 --libs-only-L 2>/dev/null`"
+  LIBDBUS="`$PKGCONFIG dbus-1 --libs-only-l 2>/dev/null`"
 fi
 PYTHONDIR="/usr /usr/local"
 QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
@@ -1164,19 +1164,19 @@ EOF
 
 
 #
-# Check for libhal
+# Check for DBus
 #
-check_libhal()
+check_dbus()
 {
-  test_header "libhal"
+  test_header "DBus"
   cat > .tmp_src.cc << EOF
-#include <libhal.h>
+#include <dbus/dbus.h>
 extern "C" int main(void)
 {
   return 0;
 }
 EOF
-  if [ -n $PKGCONFIG ] && test_compile "$FLAGSHAL $LIBDIRHAL $LIBHAL" libhal libhal; then
+  if [ -n $PKGCONFIG ] && test_compile "$FLAGSDBUS $LIBDIRDBUS $LIBDBUS" DBus DBus; then
     log_success "found"
   fi
 }
@@ -1785,7 +1785,7 @@ Configuration:
   --disable-sdl-ttf        disable SDL_ttf detection
   --disable-alsa           disable the ALSA sound backend
   --disable-pulse          disable the PulseAudio backend
-  --disable-libhal         don't use hal for hardware detection
+  --disable-dbus           don't use DBus and hal for hardware detection
   --disable-kmods          don't build Linux kernel modules (host and guest)
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
@@ -1885,8 +1885,8 @@ for option in $*; do
     --disable-pulse)
       WITH_PULSE=0
       ;;
-    --disable-libhal)
-      WITH_LIBHAL=0
+    --disable-dbus)
+      WITH_DBUS=0
       ;;
     --disable-kmods)
       WITH_KMODS=0
@@ -2084,10 +2084,10 @@ if [ "$OS" = "linux" ]; then
   else
     cnf_append "VBOX_WITH_PULSE" ""
   fi
-  if [ $WITH_LIBHAL -eq 1 ]; then
-    check_libhal
+  if [ $WITH_DBUS -eq 1 ]; then
+    check_dbus
   else
-    cnf_append "VBOX_WITH_LIBHAL" ""
+    cnf_append "VBOX_WITH_DBUS" ""
   fi
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
