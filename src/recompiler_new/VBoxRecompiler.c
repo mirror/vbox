@@ -1389,12 +1389,22 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 
 
 #ifndef REM_PHYS_ADDR_IN_TLB
-void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr)
+void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr, target_ulong virtAddr)
 {
     void* rv = NULL;
     int rc;
+    uint32_t flags = PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED;
+    
+    if (virtAddr != (target_ulong)-1)
+      flags |= PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED;
 
-    rc = PGMPhysGCPhys2R3Ptr(env1->pVM, (RTGCPHYS)physAddr, 1, &rv);
+    rc = PGMPhysGCPhys2R3PtrEx(env1->pVM, (RTGCPHYS)physAddr, (RTGCPTR)virtAddr,
+			       flags, &rv);
+
+    if (rc == VERR_PGM_PHYS_PAGE_RESERVED)
+    {
+      return (void*)-1;
+    }
     Assert (RT_SUCCESS(rc));
 
     return rv;
@@ -1449,13 +1459,6 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
         CSAMR3UnmonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
 #endif
 }
-
-#ifndef REM_PHYS_ADDR_IN_TLB
-bool remR3IsMonitored(CPUState *env, RTGCPTR GCPtr)
-{
-     return PGMHandlerIsAddressMonitored(env->pVM, GCPtr);
-}
-#endif
 
 /**
  * Called when the CPU is initialized, any of the CRx registers are changed or

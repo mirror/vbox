@@ -430,24 +430,6 @@ VMMDECL(int) PGMHandlerVirtualChangeInvalidateCallback(PVM pVM, RTGCPTR GCPtr, P
     return VERR_INVALID_PARAMETER;
 }
 
-
-/**
- * Check if particular guest's VA is being monitored.
- *
- * @returns true or false
- * @param   pVM             VM handle.
- * @param   GCPtr           Virtual address.
- */
-VMMDECL(bool) PGMHandlerIsAddressMonitored(PVM pVM, RTGCPTR GCPtr)
-{
-    pgmLock(pVM);
-    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.pTreesR3->VirtHandlers, GCPtr);
-    pgmUnlock(pVM);
-
-    return pCur != 0;
-}
-
-
 /**
  * Deregister an access handler for a virtual range.
  *

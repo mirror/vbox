@@ -1053,6 +1053,21 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
     return false;
 }
 
+/**
+ * Check if particular guest's VA is being monitored.
+ *
+ * @returns true or false
+ * @param   pVM             VM handle.
+ * @param   GCPtr           Virtual address.
+ */
+VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
+{
+    pgmLock(pVM);
+    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtr);
+    pgmUnlock(pVM);
+
+    return pCur != 0;
+}
 
 /**
  * Search for virtual handler with matching physical address
