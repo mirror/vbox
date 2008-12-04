@@ -1971,6 +1971,11 @@ DECLINLINE(void) tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
 #endif
 {
     unsigned long addr;
+
+#ifdef VBOX
+    if (start & 1)
+        return;
+#endif
     if ((tlb_entry->addr_write & ~TARGET_PAGE_MASK) == IO_MEM_RAM) {
         addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend;
         if ((addr - start) < length) {
@@ -2192,6 +2197,21 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
     }
 
     code_address = address;
+
+#ifdef VBOX
+#  if !defined(REM_PHYS_ADDR_IN_TLB)
+    if (addend & 0x1)
+    {
+        addend &= ~(target_ulong)0x1;
+        if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM)
+        {
+            address |= TLB_MMIO;
+            iotlb = (pd & ~TARGET_PAGE_MASK) + paddr +env->pVM->rem.s.iHandlerMemType;
+        }
+    }
+#  endif
+#endif
+
     /* Make accesses to pages with watchpoints go via the
        watchpoint trap routines.  */
     for (i = 0; i < env->nb_watchpoints; i++) {
@@ -2202,16 +2222,6 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
             address |= TLB_MMIO;
         }
     }
-
-#ifdef VBOX
-#  if !defined(REM_PHYS_ADDR_IN_TLB)
-    if (addend == (target_phys_addr_t)-1)
-    {
-         address |= TLB_MMIO;
-         iotlb = (pd & ~TARGET_PAGE_MASK) + paddr +env->pVM->rem.s.iHandlerMemType;
-    }
-#  endif
-#endif
 
     index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     env->iotlb[mmu_idx][index] = iotlb - vaddr;
