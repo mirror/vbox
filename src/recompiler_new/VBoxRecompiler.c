@@ -750,8 +750,6 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
         Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXIT | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
         Assert(!pVM->rem.s.Env.singlestep_enabled);
-#if 1
-
         /*
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
@@ -852,109 +850,6 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM)
         /*
          * Switch back the state.
          */
-#else
-        pVM->rem.s.Env.interrupt_request = 0;
-        cpu_single_step(&pVM->rem.s.Env, 1);
-
-        /*
-         * Execute and handle the return code.
-         * We execute without enabling the cpu tick, so on success we'll
-         * just flip it on and off to make sure it moves.
-         *
-         * (We do not use emulate_single_instr() because that doesn't enter the
-         * right way in will cause serious trouble if a longjmp was attempted.)
-         */
-# ifdef DEBUG_bird
-        remR3DisasInstr(&pVM->rem.s.Env, 1, "REMR3EmulateInstruction");
-# endif
-        TMNotifyStartOfExecution(pVM);
-        int cTimesMax = 16384;
-        uint32_t eip = pVM->rem.s.Env.eip;
-        do
-        {
-            rc = cpu_exec(&pVM->rem.s.Env);
-
-        } while (   eip == pVM->rem.s.Env.eip
-                 && (rc == EXCP_DEBUG || rc == EXCP_EXECUTE_RAW)
-                 && --cTimesMax > 0);
-        TMNotifyEndOfExecution(pVM);
-        switch (rc)
-        {
-            /*
-             * Single step, we assume!
-             * If there was a breakpoint there we're fucked now.
-             */
-            case EXCP_DEBUG:
-            {
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_DEBUG\n"));
-                rc = VINF_EM_RESCHEDULE;
-                break;
-            }
-
-            /*
-             * We cannot be interrupted!
-             */
-            case EXCP_INTERRUPT:
-                AssertMsgFailed(("Shouldn't happen! Everything was locked!\n"));
-                rc = VERR_INTERNAL_ERROR;
-                break;
-
-            /*
-             * hlt instruction.
-             */
-            case EXCP_HLT:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_HLT\n"));
-                rc = VINF_EM_HALT;
-                break;
-
-            /*
-             * The VM has halted.
-             */
-            case EXCP_HALTED:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_HALTED\n"));
-                rc = VINF_EM_HALT;
-                break;
-
-            /*
-             * Switch to RAW-mode.
-             */
-            case EXCP_EXECUTE_RAW:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_EXECUTE_RAW\n"));
-                rc = VINF_EM_RESCHEDULE_RAW;
-                break;
-
-            /*
-             * Switch to hardware accelerated RAW-mode.
-             */
-            case EXCP_EXECUTE_HWACC:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_EXECUTE_HWACC\n"));
-                rc = VINF_EM_RESCHEDULE_HWACC;
-                break;
-
-            /*
-             * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
-             */
-            case EXCP_RC:
-                Log2(("REMR3EmulateInstruction: cpu_exec -> EXCP_RC rc=%Rrc\n", pVM->rem.s.rc));
-                rc = pVM->rem.s.rc;
-                pVM->rem.s.rc = VERR_INTERNAL_ERROR;
-                break;
-
-            /*
-             * Figure out the rest when they arrive....
-             */
-            default:
-                AssertMsgFailed(("rc=%d\n", rc));
-                Log2(("REMR3EmulateInstruction: cpu_exec -> %d\n", rc));
-                rc = VINF_SUCCESS;
-                break;
-        }
-
-        /*
-         * Switch back the state.
-         */
-        cpu_single_step(&pVM->rem.s.Env, 0);
-#endif
         pVM->rem.s.Env.interrupt_request = interrupt_request;
         rc2 = REMR3StateBack(pVM);
         AssertRC(rc2);
@@ -1580,7 +1475,7 @@ void remR3TimersRun(CPUState *env)
  * @param   uErrorCode      Error code
  * @param   pvNextEIP       Next EIP
  */
-int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t pvNextEIP)
+int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, RTGCPTR pvNextEIP)
 {
     PVM pVM = env->pVM;
 #ifdef VBOX_WITH_STATISTICS
@@ -1601,7 +1496,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
         STAM_COUNTER_INC(&s_aStatTrap[uTrap]);
     }
 #endif
-    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, (RTGCPTR)pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
+    Log(("remR3NotifyTrap: uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
     if(   uTrap < 0x20
        && (env->cr[0] & X86_CR0_PE)
        && !(env->eflags & X86_EFL_VM))
@@ -1611,7 +1506,7 @@ int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, uint32_t
 #endif
         if(pVM->rem.s.uPendingException == uTrap && ++pVM->rem.s.cPendingExceptions > 512)
         {
-            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, (RTGCPTR)pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
+            LogRel(("VERR_REM_TOO_MANY_TRAPS -> uTrap=%x error=%x next_eip=%RGv eip=%RGv cr2=%RGv\n", uTrap, uErrorCode, pvNextEIP, (RTGCPTR)env->eip, (RTGCPTR)env->cr[2]));
             remR3RaiseRC(env->pVM, VERR_REM_TOO_MANY_TRAPS);
             return VERR_REM_TOO_MANY_TRAPS;
         }
@@ -2140,7 +2035,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM)
     Log2(("REMR3StateBack:\n"));
     Assert(pVM->rem.s.fInREM);
 
-        /*
+    /*
      * Copy back the registers.
      * This is done in the order they are declared in the CPUMCTX structure.
      */

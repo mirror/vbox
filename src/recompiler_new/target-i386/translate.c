@@ -4639,9 +4639,14 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #endif
     s->rip_offset = 0; /* for relative ip address */
 #ifdef VBOX
+    /* nike: seems only slow down things */
+# if 0
     /* Always update EIP. Otherwise one must be very careful with generated code that can raise exceptions. */
+
     gen_update_eip(pc_start - s->cs_base);
+# endif
 #endif
+
  next_byte:
     b = ldub_code(s->pc);
     s->pc++;
