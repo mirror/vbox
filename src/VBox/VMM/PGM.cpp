@@ -1389,7 +1389,7 @@ static int pgmR3InitPaging(PVM pVM)
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.apInterPaePDs); i++)
     {
         ASMMemZeroPage(pVM->pgm.s.apInterPaePDs[i]);
-        pVM->pgm.s.pInterPaePDPT->a[i].u = X86_PDPE_P | PGM_PLXFLAGS_PERMANENT
+        pVM->pgm.s.pInterPaePDPT->a[i].u = X86_PDPE_P | X86_PDPE_RW | X86_PDPE_US | X86_PDPE_A | PGM_PLXFLAGS_PERMANENT
                                           | MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[i]);
     }
 
