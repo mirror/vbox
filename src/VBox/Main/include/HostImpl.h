@@ -37,6 +37,10 @@ class USBProxyService;
 # include "win/svchlp.h"
 #endif
 
+#ifdef RT_OS_LINUX
+# include <HostHardwareLinux.h>
+#endif
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -131,8 +135,8 @@ public:
 
 private:
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-# if defined(VBOX_WITH_LIBHAL) || defined(VBOX_USE_LIBHAL)
+#if defined(RT_OS_SOLARIS)
+# if defined(VBOX_USE_LIBHAL)
     bool getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list);
     bool getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list);
 # endif
@@ -177,6 +181,10 @@ private:
     USBProxyService *mUSBProxyService;
 #endif /* VBOX_WITH_USB */
 
+#ifdef RT_OS_LINUX
+    /** Object with information about host drives */
+    VBoxMainDriveInfo mHostDrives;
+#endif
     /* Features that can be queried with GetProcessorFeature */
     BOOL fVTxAMDVSupported, fLongModeSupported, fPAESupported;
 

@@ -13,7 +13,11 @@
  * All rights reserved
  */
 
-#include "tstUSBLinux.h"
+#ifdef VBOX_USB_WITH_SYSFS
+# include "tstUSBLinux.h"
+#endif
+
+#include <HostHardwareLinux.h>
 
 #include <VBox/err.h>
 
@@ -26,6 +30,7 @@
 int main()
 {
     RTR3Init();
+#ifdef VBOX_USB_WITH_SYSFS
     USBProxyServiceLinux service;
     service.initSysfs();
     if (RT_FAILURE(service.getLastError()))
@@ -72,6 +77,40 @@ int main()
             RTPrintf("\n");
             pNext = pNext->pNext;
         }
+    }
+#endif  /* VBOX_USB_WITH_SYSFS */
+    VBoxMainDriveInfo driveInfo;
+    g_testHostHardwareLinux = true;
+    int rc = driveInfo.updateFloppies();
+    if (RT_SUCCESS (rc))
+        rc = driveInfo.updateDVDs();
+    if (RT_FAILURE (rc))
+    {
+        RTPrintf("Failed to update the host drive information, error %Rrc\n",
+                 rc);
+        return 1;
+    }
+    RTPrintf ("Listing floppy drives detected:\n");
+    for (VBoxMainDriveInfo::DriveInfoList::const_iterator it = driveInfo.FloppyBegin();
+         it != driveInfo.FloppyEnd(); ++it)
+    {
+        RTPrintf ("  device: %s", it->mDevice.c_str());
+        if (!it->mUdi.empty())
+            RTPrintf (", udi: %s", it->mUdi.c_str());
+        if (!it->mDescription.empty())
+            RTPrintf (", description: %s", it->mDescription.c_str());
+        RTPrintf ("\n");
+    }
+    RTPrintf ("Listing DVD drives detected:\n");
+    for (VBoxMainDriveInfo::DriveInfoList::const_iterator it = driveInfo.DVDBegin();
+         it != driveInfo.DVDEnd(); ++it)
+    {
+        RTPrintf ("  device: %s", it->mDevice.c_str());
+        if (!it->mUdi.empty())
+            RTPrintf (", udi: %s", it->mUdi.c_str());
+        if (!it->mDescription.empty())
+            RTPrintf (", description: %s", it->mDescription.c_str());
+        RTPrintf ("\n");
     }
     return 0;
 }
