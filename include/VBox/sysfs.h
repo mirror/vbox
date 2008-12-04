@@ -81,7 +81,8 @@ inline int VBoxSysfsGetString(const char *pszSysfsPath, const char *pszFile,
     }
     if (pcbBufActual != NULL && (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW))
         *pcbBufActual = cbBufActual + 1;  /* +1 for the '\0' */
-    RTStrmClose(pStream);
+    if (pStream != NULL)
+        RTStrmClose(pStream);
     return rc;
 }
 
