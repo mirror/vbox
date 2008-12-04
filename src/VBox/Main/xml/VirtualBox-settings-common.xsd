@@ -589,7 +589,7 @@
     <xsd:simpleType>
       <xsd:restriction base="xsd:unsignedInt">
         <xsd:minInclusive value="0"/>
-        <xsd:maxExclusive value="4"/>
+        <xsd:maxExclusive value="8"/>
       </xsd:restriction>
     </xsd:simpleType>
   </xsd:attribute>

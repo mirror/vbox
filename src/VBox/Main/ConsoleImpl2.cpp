@@ -957,8 +957,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
         rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
-        /* the first network card gets the PCI ID 3, the next 3 gets 8..10. */
-        const unsigned iPciDeviceNo = !ulInstance ? 3 : ulInstance - 1 + 8;
+        /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
+         * next 4 get 16..19. */
+        unsigned iPciDeviceNo = 3;
+        if (ulInstance)
+        {
+            if (ulInstance < 4)
+                iPciDeviceNo = ulInstance - 1 + 8;
+            else
+                iPciDeviceNo = ulInstance - 4 + 16;
+        }
         rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", iPciDeviceNo);               RC_CHECK();
         Assert(!afPciDeviceNo[iPciDeviceNo]);
         afPciDeviceNo[iPciDeviceNo] = true;
