@@ -154,7 +154,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 {                                                                                               \
         rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_##REG,      pCtx->reg);                         \
         rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);           \
-        rc |= VMXWriteVMCS(VMX_VMCS_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);            \
+        rc |= VMXWriteVMCS(VMX_VMCS64_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);            \
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
             val = pCtx->reg##Hid.Attr.u;                                                        \
         else                                                                                    \
@@ -180,7 +180,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         pCtx->reg                = val;                              \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val);   \
         pCtx->reg##Hid.u32Limit    = val;                            \
-        VMXReadVMCS(VMX_VMCS_GUEST_##REG##_BASE,          &val);     \
+        VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &val);   \
         pCtx->reg##Hid.u64Base     = val;                            \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val);   \
         pCtx->reg##Hid.Attr.u    = val;                              \
@@ -192,7 +192,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         Log(("%s Selector     %x\n", szSelReg, val));                \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val);   \
         Log(("%s Limit        %x\n", szSelReg, val));                \
-        VMXReadVMCS(VMX_VMCS_GUEST_##REG##_BASE,          &val);     \
+        VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &val);   \
         Log(("%s Base         %RX64\n", szSelReg, val));             \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val);   \
         Log(("%s Attributes   %x\n", szSelReg, val));                \

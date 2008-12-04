@@ -178,8 +178,27 @@ BEGINPROC VMXGCStartVM64
     pushf
     cli
 
+    ; Have to sync half the guest state as we can't access most of the 64 bits state. Sigh
+;    VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_ES_BASE,         [rsi + CPUMCTX.esHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_FS_BASE,         [rsi + CPUMCTX.fsHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_GS_BASE,         [rsi + CPUMCTX.gsHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_SS_BASE,         [rsi + CPUMCTX.ssHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_LDTR_BASE,       [rsi + CPUMCTX.ldtrHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_GDTR_BASE,       [rsi + CPUMCTX.gdtrHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_IDTR_BASE,       [rsi + CPUMCTX.idtrHid.u64Base]
+;    VMCSWRITE VMX_VMCS64_GUEST_TR_BASE,         [rsi + CPUMCTX.trHid.u64Base]
+;    
+;    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_EIP,    [rsi + CPUMCTX.SysEnter.eip]
+;    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_ESP,    [rsi + CPUMCTX.SysEnter.esp]
+;    
+;    VMCSWRITE VMX_VMCS64_GUEST_RIP,             [rsi + CPUMCTX.eip]
+;    VMCSWRITE VMX_VMCS64_GUEST_RSP,             [rsi + CPUMCTX.esp]
+    
+
     ;/* First we have to save some final CPU context registers. */
-    lea     rax, [.vmlaunch64_done wrt rip]
+    lea     rax, [.vmlaunch64_done wrt rip]    
     push    rax
     mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
     vmwrite rax, [rsp]
