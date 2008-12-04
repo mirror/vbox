@@ -48,3 +48,6 @@ const char* VBoxDefs::GUI_InfoDlgState = "GUI/InfoDlgState";
 const char* VBoxDefs::GUI_TrayIconWinID = "GUI/TrayIcon/WinID";
 const char* VBoxDefs::GUI_MainWindowCount = "GUI/MainWindowCount";
 #endif
+#ifdef Q_WS_MAC
+const char* VBoxDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
+#endif

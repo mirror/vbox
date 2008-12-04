@@ -125,6 +125,11 @@ public:
 
     void requestToResize (const QSize &aSize);
 
+#if defined(Q_WS_MAC)
+    void updateDockIcon();
+    void setDockIconEnabled (bool aOn) { mDockIconEnabled = aOn; };
+#endif
+
 signals:
 
     void keyboardStateChanged (int state);
@@ -316,6 +321,7 @@ private:
     QPixmap mPausedShot;
 #if defined(Q_WS_MAC)
     CGImageRef mVirtualBoxLogo;
+    bool mDockIconEnabled;
 #endif
     DesktopGeo mDesktopGeo;
     QRect mDesktopGeometry;
