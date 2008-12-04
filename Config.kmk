@@ -303,7 +303,7 @@ VBOX_WITH_ALSA = 1
 VBOX_WITH_PULSE = 1
 # Enable statically linked dbus support for Linux
 ifeq ($(KBUILD_TARGET),linux)
- VBOX_WITH_DBUS = 1
+# VBOX_WITH_DBUS = 1
 endif
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
