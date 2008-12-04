@@ -10352,7 +10352,6 @@ pci_routing_table_structure_start:
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 14 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-#if 0 /* Disabled atm because Vista wants a reactivation */
   ;; 16th slot entry: 15th PCI slot
   db 0 ;; pci bus number
   db 0x80 ;; pci device number (bit 7-3)
@@ -10561,7 +10560,6 @@ pci_routing_table_structure_start:
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 29 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-#endif
 #endif /* VBOX */
 pci_routing_table_structure_end:
 
