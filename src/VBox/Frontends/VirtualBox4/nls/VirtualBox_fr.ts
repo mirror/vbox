@@ -478,12 +478,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Téléchargement de l&apos;image CD &quot;Additions invité VirtualBox&quot; de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;  </translation>
+        <translation>Téléchargement de l&apos;image disque optique &quot;Additions invité VirtualBox&quot; de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;  </translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annuler le téléchargement de l&apos;image CD &quot;Additions invité VirtualBox&quot;</translation>
+        <translation>Annuler le téléchargement de l&apos;image disque optique &quot;Additions invité VirtualBox&quot;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
@@ -686,22 +686,22 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1659"/>
         <source>&amp;CD/DVD-ROM Image...</source>
-        <translation>Image &amp;CD/DVD-ROM...</translation>
+        <translation>Image &amp;disque optique...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1661"/>
         <source>Mount a CD/DVD-ROM image file</source>
-        <translation>Insérer une image CD/DVD-ROM</translation>
+        <translation>Insérer une image disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1663"/>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation>Éjecter le C&amp;D/DVD-ROM</translation>
+        <translation>Éjecter le disque &amp;optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1665"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Éjecter le médium CD/DVD-ROM actuellement inséré</translation>
+        <translation>Éjecter le support optique actuellement inséré</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1669"/>
@@ -741,7 +741,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1699"/>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Insérer un &amp;CD/DVD-ROM</translation>
+        <translation>Insérer un &disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1701"/>
@@ -859,7 +859,7 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3026"/>
         <source>Mount the selected physical drive of the host PC</source>
         <comment>CD/DVD tip</comment>
-        <translation>Connecter le lecteur CD/DVD choisi de la machine hôte</translation>
+        <translation>Connecter le lecteur optique choisi de la machine hôte</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3072"/>
@@ -914,7 +914,7 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1831"/>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du support CD/DVD-ROM&amp;nbsp;: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;&lt;nobr&gt;Indique l&apos;activité du support optique&amp;nbsp;: &lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1844"/>
@@ -1080,7 +1080,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="211"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">Images &amp;CD/DVD</translation>
+        <translation type="obsolete">Images &amp;disque optique</translation>
     </message>
     <message>
         <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="308"/>
@@ -1205,7 +1205,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1113"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Choisissez un fichier image CD/DVD-ROM </translation>
+        <translation type="obsolete">Choisissez un fichier image disque optique </translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1120"/>
@@ -1240,7 +1240,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1112"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Images CD/DVD-ROM (*.iso);;Tous les fichiers (*)</translation>
+        <translation type="obsolete">Images disque optique (*.iso);;Tous les fichiers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1119"/>
@@ -1772,7 +1772,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2122"/>
         <source>CD/DVD-ROM</source>
         <comment>details report</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>Disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2175"/>
@@ -1951,7 +1951,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="3124"/>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>Disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3125"/>
@@ -2810,12 +2810,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation>Images CD/DVD-ROM (*.iso);;Tous les fichiers (*)</translation>
+        <translation>Images disque optique (*.iso);;Tous les fichiers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>Choisissez un fichier image CD/DVD-ROM </translation>
+        <translation>Choisissez un fichier image disque optique </translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
@@ -2866,7 +2866,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation>Images &amp;CD/DVD</translation>
+        <translation>Images &amp;disque optique</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
@@ -3711,22 +3711,22 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1525"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image CD &quot;Additions invité VirtualBox&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas été trouvée ou &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous télécharger cette image CD à partir de la toile ?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;L&apos;image disque optique &quot;Additions invité VirtualBox&quot; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas été trouvée ou &lt;nibr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous télécharger cette image à partir de la toile ?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1537"/>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Echec du téléchargement de l&apos;image CD Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Echec du téléchargement de l&apos;image disque optique Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1547"/>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous vraiment télécharger l&apos;image CD Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous vraiment télécharger l&apos;image disque optique Addition invité VirtualBox à partir de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (taille %3 octets)?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1562"/>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;image CD Additions invité VirtualBox a été téléchargé a pertir du site  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistré sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous utiliser cette image CD et l&apos;attacher sous le lecteur virtuel CD/DVD ?&gt;/p&gt; </translation>
+        <translation>&lt;p&gt;L&apos;image disque optique Additions invité VirtualBox a été téléchargé a pertir du site  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; et enregistré sous &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Désirez-vous enregistrer cette image disque optique et l&apos;insérer dans le lecteur virtuel?&gt;/p&gt; </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1976"/>
@@ -4195,7 +4195,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un ou plusieurs disques durs virtuels, supports CD/DVD ou disquette ne sont pas pas accessibles actuellement. Vous ne pourrez démarrer des machines virtuelles qui utilisent ces supports tant qu&apos;il ne seront pas accessibles.&lt;/p&gt;&lt;p&gt;Activez &lt;b&gt;Vérifier&lt;/b&gt; pour ouvrir le Gestionnaire de supports virtuels pour voir quels supports sont inaccessibles, ou bien activez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Un ou plusieurs disques durs virtuels, supports optique ou disquette ne sont pas pas accessibles actuellement. Vous ne pourrez démarrer des machines virtuelles qui utilisent ces supports tant qu&apos;il ne seront pas accessibles.&lt;/p&gt;&lt;p&gt;Activez &lt;b&gt;Vérifier&lt;/b&gt; pour ouvrir le Gestionnaire de supports virtuels pour voir quels supports sont inaccessibles, ou bien activez &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
@@ -4245,7 +4245,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation>l'image CD/DVD</translation>
+        <translation>l'image disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
@@ -4975,7 +4975,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="363"/>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>&amp;CD/DVD-ROM</translation>
+        <translation>&amp;Disque optique</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="379"/>
@@ -5020,7 +5020,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="95"/>
         <source>CD/DVD-ROM Device</source>
-        <translation>Lecteur CD/DVD-ROM</translation>
+        <translation>Lecteur optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="96"/>
@@ -5165,7 +5165,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="509"/>
         <source>CD/DVD-ROM Statistics</source>
-        <translation>Statistiques CD/DVD-ROM</translation>
+        <translation>Statistiques lecteur optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="519"/>
@@ -5379,42 +5379,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="175"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation>Lecteur CD/DVD hôte non selectionné</translation>
+        <translation>Lecteur optique hôte non selectionné</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="177"/>
         <source>CD/DVD image file is not selected</source>
-        <translation>Le fichier image CD/DVD n&apos;est pas choisi</translation>
+        <translation>Le fichier image disque optique n&apos;est pas choisi</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Si la case est cochée, le média spécifié sera inséré dans lecteur CD/DVD de la machine virtuelle. Notez que le lecteur CD/DVD est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation>Si la case est cochée, le média spécifié sera inséré dans lecteur optique de la machine virtuelle. Notez que le lecteur optique est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation>&amp;Insérer un CD/DVD-ROM</translation>
+        <translation>&amp;Insérer un disque optique</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="83"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
-        <translation>Connecte le lecteur CD/DVD du hôte au lecteur virtuel.</translation>
+        <translation>Connecte le lecteur optique de l&apos;hôte au lecteur virtuel.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="86"/>
         <source>Host CD/DVD &amp;Drive</source>
-        <translation>Connecter le &amp;lecteur CD/DVD hôte</translation>
+        <translation>Connecter le &amp;lecteur optique hôte</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="112"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
-        <translation>Affiche les lecteurs CD/DVD disponibles pouvants être connectés à la machine virtuelle. </translation>
+        <translation>Affiche les lecteurs optiques disponibles pouvants être connectés à la machine virtuelle. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Si la case est cochée, l&apos;invité pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs CD/DVD à partir de la machine virtuelle. Notez que la gravure de CD audio n&apos;est pas possible actuellement.</translation>
+        <translation>Si la case est cochée, l&apos;invité pourra envoyer directement des commandes ATAPI sur le disque hôte et de ce faît il est possible d&apos;utiliser des graveurs de disques optiques à partir de la machine virtuelle. Notez que la gravure de disque audio n&apos;est pas possible actuellement.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
@@ -5424,7 +5424,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="135"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
-        <translation>Insère l&apos;image CD/DVD dans le lecteur virtuel.</translation>
+        <translation>Insère l&apos;image disque optique dans le lecteur virtuel.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="138"/>
@@ -5434,17 +5434,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="148"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
-        <translation>Affiche le fichier image à insérer dans le lecteur virtuel CD/DVD et permet un choix rapide de différentes images.</translation>
+        <translation>Affiche le fichier image à insérer dans le lecteur optique virtuel et permet un choix rapide de différentes images.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">Appelle l&apos; assistant de disque virtuel permettant le choix d&apos;une image de CD/DVD. </translation>
+        <translation type="obsolete">Appelle l&apos; assistant de disque virtuel permettant le choix d&apos;une image de disque optique. </translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>Invoque le Gestionnaire de supports virtuels pour choisir une image CD/DVD à insérer.</translation>
+        <translation>Invoque le Gestionnaire de supports virtuels pour choisir une image disque optique à insérer.</translation>
     </message>
 </context>
 <context>
@@ -5472,7 +5472,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="421"/>
         <source>CD/DVD-ROM</source>
-        <translation>CD/DVD-ROM</translation>
+        <translation>Disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="424"/>
@@ -5798,7 +5798,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="886"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Si la case est cochée, toutes les modifications des médias CD/DVD ou disquette effectuées lors du fonctionnement de la machine virtuelle seront sauvegardées afin de préserver la même configuration au lancement suivant de la machine.</translation>
+        <translation>Si la case est cochée, toutes les modifications des supports disque optique ou disquette effectuées lors du fonctionnement de la machine virtuelle seront sauvegardées afin de préserver la même configuration au lancement suivant de la machine.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="889"/>
