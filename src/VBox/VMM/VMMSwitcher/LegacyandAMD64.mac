@@ -201,6 +201,8 @@ GLOBALNAME IDEnterTarget
 
     ; 5. Enable paging.
     or      ebx, X86_CR0_PG
+    ; Disable ring 0 write protection too
+    and     ebx, ~X86_CR0_WRITE_PROTECT
     mov     cr0, ebx
     DEBUG_CHAR('5')
 
