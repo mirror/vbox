@@ -1341,7 +1341,7 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # dbus settings for Linux
 ifeq ($(KBUILD_TARGET),linux)
  ifdef VBOX_WITH_DBUS
-  VBOX_DBUS_CFLAGS := $(shell pkg-config dbus-1 --cflags)
+  VBOX_DBUS_CFLAGS := $(shell pkg-config dbus-1 --cflags) -DDBUS_API_SUBJECT_TO_CHANGE
   VBOX_DBUS_CXXFLAGS := $(VBOX_DBUS_CFLAGS)
   VBOX_DBUS_LDFLAGS := $(shell pkg-config dbus-1 --libs)
  endif
