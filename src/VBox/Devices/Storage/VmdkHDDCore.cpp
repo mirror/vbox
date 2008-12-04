@@ -5393,5 +5393,9 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnAsyncRead */
     vmdkAsyncRead,
     /* pfnAsyncWrite */
-    vmdkAsyncWrite
+    vmdkAsyncWrite,
+    /* pfnComposeLocation */
+    genericFileComposeLocation,
+    /* pfnComposeName */
+    genericFileComposeName
 };
