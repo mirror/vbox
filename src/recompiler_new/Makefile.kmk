@@ -68,7 +68,7 @@ else
   $(REM_MOD)_CFLAGS.debug    = -g -O0
   $(REM_MOD)_CFLAGS.release += -O2
  else
-  $(REM_MOD)_TEMPLATE  = VBOXR3N 
+  $(REM_MOD)_TEMPLATE  = VBOXR3N
  endif
 
  IMPORT_LIBS          += VBoxREM
