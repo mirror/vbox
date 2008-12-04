@@ -760,13 +760,15 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
         return VERR_BUFFER_OVERFLOW;
     }
 
-     for (unsigned i = 0; i < g_cBackends; i++)
-     {
-         pEntries[i].pszBackend = g_apBackends[i]->pszBackendName;
-         pEntries[i].uBackendCaps = g_apBackends[i]->uBackendCaps;
-         pEntries[i].papszFileExtensions = g_apBackends[i]->papszFileExtensions;
-         pEntries[i].paConfigInfo = g_apBackends[i]->paConfigInfo;
-     }
+    for (unsigned i = 0; i < g_cBackends; i++)
+    {
+        pEntries[i].pszBackend = g_apBackends[i]->pszBackendName;
+        pEntries[i].uBackendCaps = g_apBackends[i]->uBackendCaps;
+        pEntries[i].papszFileExtensions = g_apBackends[i]->papszFileExtensions;
+        pEntries[i].paConfigInfo = g_apBackends[i]->paConfigInfo;
+        pEntries[i].pfnComposeLocation = g_apBackends[i]->pfnComposeLocation;
+        pEntries[i].pfnComposeName = g_apBackends[i]->pfnComposeName;
+    }
 
     LogFlowFunc(("returns %Rrc *pcEntriesUsed=%u\n", rc, cEntries));
     *pcEntriesUsed = g_cBackends;
@@ -3551,3 +3553,17 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 
 }
 
+#if 0
+/** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
+int genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
+{
+    return NULL;
+}
+
+
+/** @copydoc VBOXHDDBACKEND::pfnComposeName */
+int genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
+{
+    return NULL;
+}
+#endif
