@@ -105,7 +105,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
     /* Note: hardcoded assumption about number of slots; see rom bios */
-    bool afPciDeviceNo[15] = {false};
+    bool afPciDeviceNo[32] = {false};
 
 #if !defined (VBOX_WITH_XPCOM)
     {
