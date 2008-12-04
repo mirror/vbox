@@ -851,6 +851,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMTestSwitcher64",   &pVM->hwaccm.s.pfnTest64);
         AssertMsgRCReturn(rc, ("HWACCMTestSwitcher64 -> rc=%Rrc\n", rc), rc);
 # endif
+//testestestsetset
+    rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_TEST_SWITCHER3264, 0, NULL);
+RTLogPrintf("VMMR0_DO_TEST_SWITCHER3264 -> %x\n", rc);
+//testestestsetset
     }
 #endif
     return VINF_SUCCESS;
