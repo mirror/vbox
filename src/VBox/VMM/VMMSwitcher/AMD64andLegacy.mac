@@ -387,7 +387,7 @@ GLOBALNAME IDEnterTarget
     mov     cr0, ebx
     DEBUG_CHAR('4')
 
-    ; 3. Load 32-bit intermediate page table.
+    ; 3. Load intermediate page table.
     FIXUP SWITCHER_FIX_INTER_CR3_GC, 1
     mov     edx, 0ffffffffh
     mov     cr3, edx

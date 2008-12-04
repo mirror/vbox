@@ -760,11 +760,7 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     PPGM pPGM = &pVM->pgm.s;
 
-    /* If mappings are not supposed to be put in the shadow page table, then this function is a nop. */
-    if (!pgmMapAreMappingsEnabled(&pVM->pgm.s))
-        return;
-
-    Assert(PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
+    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s) || PGMGetGuestMode(pVM) <= PGMMODE_PAE_NX);
 
     /*
      * Init the page tables and insert them into the page directories.
@@ -779,7 +775,8 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
          * 32-bit.
          */
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
+        if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
+            && pPGM->pShw32BitPdR3->a[iNewPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->pShw32BitPdR3->a[iNewPDE].u & X86_PDE_PG_MASK, PGMPOOL_IDX_PD, iNewPDE);
 #endif
         X86PDE Pde;
@@ -787,7 +784,8 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         Pde.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | (uint32_t)pMap->aPTs[i].HCPhysPT;
         pPGM->pInterPD->a[iNewPDE]        = Pde;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pPGM->pShw32BitPdR3->a[iNewPDE]   = Pde;
+        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
+            pPGM->pShw32BitPdR3->a[iNewPDE]   = Pde;
 #endif
         /*
          * PAE.
@@ -795,28 +793,34 @@ static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
         const unsigned iPD = iNewPDE / 256;
         unsigned iPDE = iNewPDE * 2 % 512;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
+        if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
+            && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2);
 #endif
         X86PDEPAE PdePae0;
         PdePae0.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT0;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae0;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae0;
+        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
+            pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae0;
 #endif
         iPDE++;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        if (pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
+        if (   pgmMapAreMappingsEnabled(&pVM->pgm.s)
+            && pPGM->apShwPaePDsR3[iPD]->a[iPDE].n.u1Present)
             pgmPoolFree(pVM, pPGM->apShwPaePDsR3[iPD]->a[iPDE].u & X86_PDE_PAE_PG_MASK, PGMPOOL_IDX_PAE_PD, iNewPDE * 2 + 1);
 #endif
         X86PDEPAE PdePae1;
         PdePae1.u = PGM_PDFLAGS_MAPPING | X86_PDE_P | X86_PDE_A | X86_PDE_RW | X86_PDE_US | pMap->aPTs[i].HCPhysPaePT1;
         pPGM->apInterPaePDs[iPD]->a[iPDE] = PdePae1;
 #ifndef VBOX_WITH_PGMPOOL_PAGING_ONLY
-        pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae1;
+        if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
+        {
+            pPGM->apShwPaePDsR3[iPD]->a[iPDE] = PdePae1;
 
-        /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
-        pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
+            /* Set the PGM_PDFLAGS_MAPPING flag in the page directory pointer entry. (legacy PAE guest mode) */
+            pPGM->pShwPaePdptR3->a[iPD].u |= PGM_PLXFLAGS_MAPPING;
+        }
 #endif
     }
 }
