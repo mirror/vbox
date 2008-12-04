@@ -2021,7 +2021,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 #elif !defined(VBOX)
     start1 = start + (unsigned long)phys_ram_base;
 #else
-    start1 = (unsigned long)remR3GCPhys2HCVirt(first_cpu, start);
+    start1 = (unsigned long)remR3GCPhys2HCVirt(first_cpu, start, -1);
 #endif
     for(env = first_cpu; env != NULL; env = env->next_cpu) {
         for(i = 0; i < CPU_TLB_SIZE; i++)
@@ -2170,7 +2170,9 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 #elif !defined(VBOX)
     addend = (unsigned long)phys_ram_base + (pd & TARGET_PAGE_MASK);
 #else
-    addend = (unsigned long)remR3GCPhys2HCVirt(env, pd & TARGET_PAGE_MASK);
+    addend = (unsigned long)remR3GCPhys2HCVirt(env, 
+					       pd & TARGET_PAGE_MASK,
+					       vaddr & TARGET_PAGE_MASK);
 #endif
     if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM) {
         /* Normal RAM.  */
@@ -2203,7 +2205,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 
 #ifdef VBOX
 #  if !defined(REM_PHYS_ADDR_IN_TLB)
-    if (remR3IsMonitored(env, vaddr & TARGET_PAGE_MASK))
+    if (addend == (target_phys_addr_t)-1)
     {
          address |= TLB_MMIO;
          iotlb = (pd & ~TARGET_PAGE_MASK) + paddr +env->pVM->rem.s.iHandlerMemType;

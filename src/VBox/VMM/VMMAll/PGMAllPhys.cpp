@@ -912,7 +912,51 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
     return VINF_SUCCESS;
 }
 
+/**
+ * Converts a GC physical address to a HC ring-3 pointer, with some
+ * additional checks.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical
+ *          page but has no physical backing, or if partuclar 
+ *          memory access must always go via PGM, because of handlers.
+ * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
+ *          GC physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The GC physical address to convert.
+ * @param   GCPtr       The guest VA, to check virtual handler on.
+ * @param   flags       Flags controlling additional checks.
+ * @param   pR3Ptr      Where to store the R3 pointer on success.
+ */
+VMMDECL(int) PGMPhysGCPhys2R3PtrEx(PVM pVM, RTGCPHYS GCPhys, RTGCPTR GCPtr, uint32_t flags, PRTR3PTR pR3Ptr)
+{
+  RTR3PTR va;
+  int rc;
 
+  if (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED)
+  {
+    /* Check if there's a physical handler for PA */
+      if (PGMHandlerPhysicalIsRegistered(pVM, GCPhys))
+	return VERR_PGM_PHYS_PAGE_RESERVED;
+  }
+
+  if (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED)
+  {
+    /* Check if there's a virtual handler for VA */
+    if (PGMHandlerVirtualIsRegistered(pVM, GCPtr))
+	return VERR_PGM_PHYS_PAGE_RESERVED;
+  }
+
+  rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1, &va);
+  
+  if (RT_FAILURE(rc))
+      return rc;
+
+  *pR3Ptr = va;
+
+  return rc;
+}
 /**
  * PGMPhysGCPhys2R3Ptr convenience for use with assertions.
  *

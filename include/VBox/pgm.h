@@ -347,7 +347,7 @@ VMMDECL(int)        PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enm
                                                  RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
                                                  R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
-VMMDECL(bool)       PGMHandlerIsAddressMonitored(PVM pVM, RTGCPTR GCPtr);
+VMMDECL(bool)       PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
                                                       R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
@@ -417,6 +417,22 @@ DECLINLINE(bool)    PGMPhysIsPageMappingLockValid(PVM pVM, PPGMPAGEMAPLOCK pLock
 
 VMMDECL(int)        PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr);
 VMMDECL(RTR3PTR)    PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
+/** @PGMPhysGCPhys2R3PtrEx flags.
+ * @{ */
+/** Default value of the flag, behaves the same way as PGMPhysGCPhys2R3Ptr. */
+#define PGMPHYS_TRANSLATION_FLAG_DEFAULT           0
+/** Indicates that for monitored pages with physical handlers
+ * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned, 
+ * so address translation routines must fallback to PGM functions for 
+ * access memory. */
+#define PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED   RT_BIT_32(0)
+/** Indicates that for monitored pages with virtual handlers
+ * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned, 
+ * so address translation routines must fallback to PGM functions for 
+ * access memory. */
+#define PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED   RT_BIT_32(1)
+/** @} */
+VMMDECL(int)        PGMPhysGCPhys2R3PtrEx(PVM pVM, RTGCPHYS GCPhys, RTGCPTR GCPtr, uint32_t flags, PRTR3PTR pR3Ptr);
 VMMDECL(int)        PGMPhysGCPtr2R3Ptr(PVM pVM, RTGCPTR GCPtr, PRTR3PTR pR3Ptr);
 VMMDECL(int)        PGMPhysGCPtr2R3PtrByGstCR3(PVM pVM, RTGCPTR GCPtr, uint64_t cr3, unsigned fFlags, PRTR3PTR pR3Ptr);
 VMMDECL(void)       PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
