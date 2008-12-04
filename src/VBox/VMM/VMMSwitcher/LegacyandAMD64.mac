@@ -250,6 +250,9 @@ GLOBALNAME ICEnterTarget
     ; call the hypervisor function with rdx=pCpumCpu
     mov     eax, [rdx + CPUM.Hyper.eip]
     CPUMCPU_FROM_CPUM(edx)
+
+    ; parameter for all helper functions (pCtx)    
+    lea     rsi, [rdx + CPUMCPU.Guest.fpu]
     call    rax
     
     ; Load CPUM pointer into rdx
