@@ -5088,7 +5088,7 @@ const PDMDEVREG g_DevicePCNet =
     /* fClass */
     PDM_DEVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    4,
+    8,
     /* cbInstance */
     sizeof(PCNetState),
     /* pfnConstruct */
