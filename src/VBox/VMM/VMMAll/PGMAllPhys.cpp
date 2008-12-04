@@ -931,29 +931,23 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
  */
 VMMDECL(int) PGMPhysGCPhys2R3PtrEx(PVM pVM, RTGCPHYS GCPhys, RTGCPTR GCPtr, uint32_t flags, PRTR3PTR pR3Ptr)
 {
-  RTR3PTR va;
   int rc;
 
-  if (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED)
+  rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1, pR3Ptr);
+
+  if (RT_SUCCESS(rc) && (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED))
   {
     /* Check if there's a physical handler for PA */
       if (PGMHandlerPhysicalIsRegistered(pVM, GCPhys))
-	return VERR_PGM_PHYS_PAGE_RESERVED;
+	rc = VERR_PGM_PHYS_PAGE_RESERVED;
   }
 
-  if (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED)
+  if (RT_SUCCESS(rc) && (flags & PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED))
   {
     /* Check if there's a virtual handler for VA */
     if (PGMHandlerVirtualIsRegistered(pVM, GCPtr))
-	return VERR_PGM_PHYS_PAGE_RESERVED;
+	rc = VERR_PGM_PHYS_PAGE_RESERVED;
   }
-
-  rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1, &va);
-  
-  if (RT_FAILURE(rc))
-      return rc;
-
-  *pR3Ptr = va;
 
   return rc;
 }
