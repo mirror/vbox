@@ -285,10 +285,9 @@ void Host::uninit()
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
+STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **aDrives)
 {
-    if (!drives)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDrives);
     AutoWriteLock alock (this);
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
@@ -397,7 +396,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
     ComObjPtr<HostDVDDriveCollection> collection;
     collection.createObject();
     collection->init (list);
-    collection.queryInterfaceTo(drives);
+    collection.queryInterfaceTo(aDrives);
     return rc;
 }
 
@@ -407,10 +406,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (IHostDVDDriveCollection **drives)
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
+STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **aDrives)
 {
-    if (!drives)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDrives);
     AutoWriteLock alock (this);
     CHECK_READY();
 
@@ -463,7 +461,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (IHostFloppyDriveCollection **drives)
     ComObjPtr<HostFloppyDriveCollection> collection;
     collection.createObject();
     collection->init (list);
-    collection.queryInterfaceTo(drives);
+    collection.queryInterfaceTo(aDrives);
     return rc;
 }
 
@@ -717,24 +715,24 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
         Bstr name (uniLen + 1 /* extra zero */);
         wcscpy((wchar_t *) name.mutableRaw(), lpszName);
 
-                hr = pncc->GetInstanceGuid(&IfGuid);
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-                {
-                    /* create a new object and add it to the list */
-                    ComObjPtr <HostNetworkInterface> iface;
-                    iface.createObject();
-                    /* remove the curly bracket at the end */
-                    if (SUCCEEDED (iface->init (name, Guid (IfGuid))))
-                    {
-                        pPist->push_back (iface);
-                        rc = VINF_SUCCESS;
-                    }
-                    else
-                    {
-                        Assert(0);
-                    }
-                }
+        hr = pncc->GetInstanceGuid(&IfGuid);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            /* create a new object and add it to the list */
+            ComObjPtr <HostNetworkInterface> iface;
+            iface.createObject();
+            /* remove the curly bracket at the end */
+            if (SUCCEEDED (iface->init (name, Guid (IfGuid))))
+            {
+                pPist->push_back (iface);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                Assert(0);
+            }
+        }
         CoTaskMemFree(lpszName);
     }
 
@@ -1075,7 +1073,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(IHostUSBDeviceCollection **aUSBDevices)
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE. */
     ReturnComNotImplemented();
 #endif
 }
@@ -1100,7 +1098,7 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE. */
     ReturnComNotImplemented();
 #endif
 }
@@ -1111,13 +1109,12 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (IHostUSBDeviceFilterCollection *
  * @returns COM status code
  * @param   count address of result variable
  */
-STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
+STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *aCount)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCount);
     AutoWriteLock alock (this);
     CHECK_READY();
-    *count = RTMpGetPresentCount();
+    *aCount = RTMpGetPresentCount();
     return S_OK;
 }
 
@@ -1127,13 +1124,12 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *count)
  * @returns COM status code
  * @param   count address of result variable
  */
-STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *count)
+STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *aCount)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aCount);
     AutoWriteLock alock (this);
     CHECK_READY();
-    *count = RTMpGetOnlineCount();
+    *aCount = RTMpGetOnlineCount();
     return S_OK;
 }
 
@@ -1142,15 +1138,14 @@ STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *count)
  *
  * @returns COM status code
  * @param   cpu id to get info for.
- * @param   speed address of result variable, speed is 0 if unknown or cpuId is invalid.
+ * @param   speed address of result variable, speed is 0 if unknown or aCpuId is invalid.
  */
-STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *speed)
+STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
 {
-    if (!speed)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSpeed);
     AutoWriteLock alock (this);
     CHECK_READY();
-    *speed = RTMpGetMaxFrequency(aCpuId);
+    *aSpeed = RTMpGetMaxFrequency(aCpuId);
     return S_OK;
 }
 /**
@@ -1158,12 +1153,11 @@ STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *speed)
  *
  * @returns COM status code
  * @param   cpu id to get info for.
- * @param   description address of result variable, NULL if known or cpuId is invalid.
+ * @param   description address of result variable, NULL if known or aCpuId is invalid.
  */
-STDMETHODIMP Host::GetProcessorDescription(ULONG cpuId, BSTR *description)
+STDMETHODIMP Host::GetProcessorDescription(ULONG aCpuId, BSTR *aDescription)
 {
-    if (!description)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aDescription);
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
@@ -1177,25 +1171,24 @@ STDMETHODIMP Host::GetProcessorDescription(ULONG cpuId, BSTR *description)
  * @param   Feature to query.
  * @param   address of supported bool result variable
  */
-STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T feature, BOOL *supported)
+STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 {
-    if (!supported)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSupported);
     AutoWriteLock alock (this);
     CHECK_READY();
 
-    switch (feature)
+    switch (aFeature)
     {
     case ProcessorFeature_HWVirtEx:
-        *supported = fVTxAMDVSupported;
+        *aSupported = fVTxAMDVSupported;
         break;
 
     case ProcessorFeature_PAE:
-        *supported = fPAESupported;
+        *aSupported = fPAESupported;
         break;
 
     case ProcessorFeature_LongMode:
-        *supported = fLongModeSupported;
+        *aSupported = fLongModeSupported;
         break;
 
     default:
@@ -1210,10 +1203,9 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T feature, BOOL *support
  * @returns COM status code
  * @param   size address of result variable
  */
-STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
+STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *aSize)
 {
-    if (!size)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aSize);
     AutoWriteLock alock (this);
     CHECK_READY();
     /* @todo This is an ugly hack. There must be a function in IPRT for that. */
@@ -1221,8 +1213,8 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
     if (!hal)
         return VERR_INTERNAL_ERROR;
     ULONG tmp;
-    int rc = hal->getHostMemoryUsage(size, &tmp, &tmp);
-    *size /= 1024;
+    int rc = hal->getHostMemoryUsage(aSize, &tmp, &tmp);
+    *aSize /= 1024;
     delete hal;
     return rc;
 }
@@ -1233,10 +1225,9 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *size)
  * @returns COM status code
  * @param   available address of result variable
  */
-STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
+STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *aAvailable)
 {
-    if (!available)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAvailable);
     AutoWriteLock alock (this);
     CHECK_READY();
     /* @todo This is an ugly hack. There must be a function in IPRT for that. */
@@ -1244,8 +1235,8 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
     if (!hal)
         return VERR_INTERNAL_ERROR;
     ULONG tmp;
-    int rc = hal->getHostMemoryUsage(&tmp, &tmp, available);
-    *available /= 1024;
+    int rc = hal->getHostMemoryUsage(&tmp, &tmp, aAvailable);
+    *aAvailable /= 1024;
     delete hal;
     return rc;
 }
@@ -1256,10 +1247,9 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *available)
  * @returns COM status code
  * @param   os address of result variable
  */
-STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *os)
+STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *aOs)
 {
-    if (!os)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aOs);
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
@@ -1272,10 +1262,9 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *os)
  * @returns COM status code
  * @param   os address of result variable
  */
-STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *version)
+STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *aVersion)
 {
-    if (!version)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aVersion);
     AutoWriteLock alock (this);
     CHECK_READY();
     /** @todo */
@@ -1382,7 +1371,7 @@ Host::CreateHostNetworkInterface (INPTR BSTR aName,
         CheckComRCReturnRC (rc);
         ComPtr <IHostNetworkInterface> iface;
         if (SUCCEEDED (coll->FindByName (aName, iface.asOutParam())))
-            return setError (E_FAIL,
+            return setError (E_INVALIDARG,
                 tr ("Host network interface '%ls' already exists"), aName);
     }
 
@@ -1444,7 +1433,7 @@ Host::RemoveHostNetworkInterface (INPTR GUIDPARAM aId,
         CheckComRCReturnRC (rc);
         ComPtr <IHostNetworkInterface> iface;
         if (FAILED (coll->FindById (aId, iface.asOutParam())))
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Host network interface with UUID {%RTuuid} does not exist"),
                 Guid (aId).raw());
 
@@ -1505,7 +1494,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (INPTR BSTR aName, IHostUSBDeviceFilter
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE. */
     ReturnComNotImplemented();
 #endif
 }
@@ -1524,7 +1513,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 
     ComObjPtr <HostUSBDeviceFilter> filter = getDependentChild (aFilter);
     if (!filter)
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given USB device filter is not created within "
                 "this VirtualBox instance"));
 
@@ -1552,7 +1541,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE. */
     ReturnComNotImplemented();
 #endif
 }
@@ -1606,7 +1595,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE. */
     ReturnComNotImplemented();
 #endif
 }
