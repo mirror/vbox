@@ -5600,7 +5600,7 @@
       An object implementing this interface is returned by the
       <link to="IVirtualBox::host" /> attribute. This interface contains
       read-only information about the host's physical hardware (such as what
-      processors, and disks are available, what the host operating system is,
+      processors and disks are available, what the host operating system is,
       and so on) and also allows for manipulating some of the host's hardware,
       such as global USB device filters and host interface networking.
 
@@ -5667,7 +5667,9 @@
     </attribute>
 
     <method name="getProcessorSpeed">
-      <desc>Query the (approximate) maximum speed of a specified host CPU in Megahertz.</desc>
+      <desc>Query the (approximate) maximum speed of a specified host CPU in
+        Megahertz.
+      </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>
           Identifier of the CPU.
@@ -5696,7 +5698,12 @@
     </method>
 
     <method name="getProcessorDescription">
-      <desc>Query the model string of a specified host CPU.</desc>
+      <desc>Query the model string of a specified host CPU.
+        <note>
+          This function is not implemented in the current version of the
+          product.
+        </note>
+      </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>
           Identifier of the CPU.
@@ -5734,6 +5741,9 @@
     <method name="createHostNetworkInterface">
       <desc>
         Creates a new adapter for Host Interface Networking.
+        <result name="E_INVALIDARG">
+          Host network interface @a name already exists.
+        </result>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -5754,6 +5764,9 @@
     <method name="removeHostNetworkInterface">
       <desc>
         Removes the given host network interface.
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No host network interface matching @a id found.
+        </result>
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>
@@ -5802,7 +5815,7 @@
 
         Positions are numbered starting from <tt>0</tt>. If the specified
         position is equal to or greater than the number of elements in
-        the list, the filter is added to the end of the collection.
+        the list, the filter is added at the end of the collection.
 
         <note>
           Duplicates are not allowed, so an attempt to insert a
@@ -5818,6 +5831,14 @@
         </note>
 
         <see>#USBDeviceFilters</see>
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          USB device filter is not created within this VirtualBox instance.
+        </result>
+        <result name="E_INVALIDARG">
+          USB device filter already in list.
+        </result>
+
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to insert the filter to.</desc>
@@ -5845,6 +5866,11 @@
         </note>
 
         <see>#USBDeviceFilters</see>
+
+        <result name="E_INVALIDARG">
+          USB device filter list empty or invalid @a position.
+        </result>
+
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to remove the filter from.</desc>
