@@ -199,6 +199,212 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PVM pVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPhys
 
 
 /**
+ * Read physical memory API for the debugger, similar to
+ * PGMPhysSimpleReadGCPhys.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pvDst       Where to store what's read.
+ * @param   GCPhysDst   Where to start reading from.
+ * @param   cb          The number of bytes to attempt reading.
+ * @param   fFlags      Flags, MBZ.
+ * @param   pcbRead     For store the actual number of bytes read, pass NULL if
+ *                      partial reads are unwanted.
+ */
+VMMR3DECL(int) PGMR3DbgReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb, uint32_t fFlags, size_t *pcbRead)
+{
+    /* validate */
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+    /* try simple first. */
+    int rc = PGMPhysSimpleReadGCPhys(pVM, pvDst, GCPhysSrc, cb);
+    if (RT_SUCCESS(rc) || !pcbRead)
+        return rc;
+
+    /* partial read that failed, chop it up in pages. */
+    *pcbRead = 0;
+    size_t const cbReq = cb;
+    rc = VINF_SUCCESS;
+    while (cb > 0)
+    {
+        size_t cbChunk = PAGE_SIZE;
+        cbChunk -= GCPhysSrc & PAGE_OFFSET_MASK;
+        if (cbChunk > cb)
+            cbChunk = cb;
+
+        rc = PGMPhysSimpleReadGCPhys(pVM, pvDst, GCPhysSrc, cbChunk);
+
+        /* advance */
+        if (RT_FAILURE(rc))
+            break;
+        *pcbRead  += cbChunk;
+        cb        -= cbChunk;
+        GCPhysSrc += cbChunk;
+        pvDst = (uint8_t *)pvDst + cbChunk;
+    }
+
+    return *pcbRead && RT_FAILURE(rc) ? -rc : rc;
+}
+
+
+/**
+ * Write physical memory API for the debugger, similar to
+ * PGMPhysSimpleWriteGCPhys.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhysDst   Where to start writing.
+ * @param   pvSrc       What to write.
+ * @param   cb          The number of bytes to attempt writing.
+ * @param   fFlags      Flags, MBZ.
+ * @param   pcbWritten  For store the actual number of bytes written, pass NULL
+ *                      if partial writes are unwanted.
+ */
+VMMR3DECL(int) PGMR3DbgWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten)
+{
+    /* validate */
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+    /* try simple first. */
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysDst, pvSrc, cb);
+    if (RT_SUCCESS(rc) || !pcbWritten)
+        return rc;
+
+    /* partial write that failed, chop it up in pages. */
+    *pcbWritten = 0;
+    rc = VINF_SUCCESS;
+    while (cb > 0)
+    {
+        size_t cbChunk = PAGE_SIZE;
+        cbChunk -= GCPhysDst & PAGE_OFFSET_MASK;
+        if (cbChunk > cb)
+            cbChunk = cb;
+
+        rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysDst, pvSrc, cbChunk);
+
+        /* advance */
+        if (RT_FAILURE(rc))
+            break;
+        *pcbWritten += cbChunk;
+        cb          -= cbChunk;
+        GCPhysDst   += cbChunk;
+        pvSrc = (uint8_t const *)pvSrc + cbChunk;
+    }
+
+    return *pcbWritten && RT_FAILURE(rc) ? -rc : rc;
+
+}
+
+
+/**
+ * Read virtual memory API for the debugger, similar to PGMPhysSimpleReadGCPtr.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pvDst       Where to store what's read.
+ * @param   GCPtrDst    Where to start reading from.
+ * @param   cb          The number of bytes to attempt reading.
+ * @param   fFlags      Flags, MBZ.
+ * @param   pcbRead     For store the actual number of bytes read, pass NULL if
+ *                      partial reads are unwanted.
+ */
+VMMR3DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, uint32_t fFlags, size_t *pcbRead)
+{
+    /* validate */
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+/** @todo deal with HMA */
+    /* try simple first. */
+    int rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCPtrSrc, cb);
+    if (RT_SUCCESS(rc) || !pcbRead)
+        return rc;
+
+    /* partial read that failed, chop it up in pages. */
+    *pcbRead = 0;
+    rc = VINF_SUCCESS;
+    while (cb > 0)
+    {
+        size_t cbChunk = PAGE_SIZE;
+        cbChunk -= GCPtrSrc & PAGE_OFFSET_MASK;
+        if (cbChunk > cb)
+            cbChunk = cb;
+
+        rc = PGMPhysSimpleReadGCPtr(pVM, pvDst, GCPtrSrc, cbChunk);
+
+        /* advance */
+        if (RT_FAILURE(rc))
+            break;
+        *pcbRead  += cbChunk;
+        cb        -= cbChunk;
+        GCPtrSrc  += cbChunk;
+        pvDst = (uint8_t *)pvDst + cbChunk;
+    }
+
+    return *pcbRead && RT_FAILURE(rc) ? -rc : rc;
+
+}
+
+
+/**
+ * Write virtual memory API for the debugger, similar to
+ * PGMPhysSimpleWriteGCPtr.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPtrDst    Where to start writing.
+ * @param   pvSrc       What to write.
+ * @param   cb          The number of bytes to attempt writing.
+ * @param   fFlags      Flags, MBZ.
+ * @param   pcbWritten  For store the actual number of bytes written, pass NULL
+ *                      if partial writes are unwanted.
+ */
+VMMR3DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten)
+{
+    /* validate */
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+/** @todo deal with HMA */
+    /* try simple first. */
+    int rc = PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cb);
+    if (RT_SUCCESS(rc) || !pcbWritten)
+        return rc;
+
+    /* partial write that failed, chop it up in pages. */
+    *pcbWritten = 0;
+    rc = VINF_SUCCESS;
+    while (cb > 0)
+    {
+        size_t cbChunk = PAGE_SIZE;
+        cbChunk -= GCPtrDst & PAGE_OFFSET_MASK;
+        if (cbChunk > cb)
+            cbChunk = cb;
+
+        rc = PGMPhysSimpleWriteGCPtr(pVM, GCPtrDst, pvSrc, cbChunk);
+
+        /* advance */
+        if (RT_FAILURE(rc))
+            break;
+        *pcbWritten += cbChunk;
+        cb          -= cbChunk;
+        GCPtrDst    += cbChunk;
+        pvSrc = (uint8_t const *)pvSrc + cbChunk;
+    }
+
+    return *pcbWritten && RT_FAILURE(rc) ? -rc : rc;
+
+}
+
+
+
+/**
  * Scans a page for a byte string, keeping track of potential
  * cross page matches.
  *
