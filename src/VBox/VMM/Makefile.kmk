@@ -51,7 +51,6 @@ VMMR3_INCS     := \
 VMMR3_SOURCES   = \
 	CFGM.cpp \
 	CPUM.cpp \
-	CPUMStack.cpp \
 	DBGF.cpp \
 	DBGFAddr.cpp \
 	DBGFBp.cpp \
@@ -99,6 +98,7 @@ VMMR3_SOURCES   = \
 	VMMTests.cpp \
 	HWACCM.cpp \
 	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/HWACCMAll.cpp \
 	VMMAll/IOMAll.cpp \
@@ -433,6 +433,7 @@ VMMR0_SOURCES   = \
 	VMMR0/VMMR0A.asm \
 	VMMAll/CPUMAllA.asm \
 	VMMAll/CPUMAllRegs.cpp \
+	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/EMAll.cpp \
 	VMMAll/EMAllA.asm \
