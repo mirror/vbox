@@ -76,6 +76,24 @@
 # define VBOX_SKB_GSO_SEGMENT(skb) NULL
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 12)
+unsigned dev_get_flags(const struct net_device *dev)
+{
+        unsigned flags;
+
+        flags = (dev->flags & ~(IFF_PROMISC |
+                                IFF_ALLMULTI |
+                                IFF_RUNNING)) | 
+                (dev->gflags & (IFF_PROMISC |
+                                IFF_ALLMULTI));
+
+        if (netif_running(dev) && netif_carrier_ok(dev))
+                flags |= IFF_RUNNING;
+
+        return flags;
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 12) */
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
