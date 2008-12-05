@@ -221,7 +221,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxContextSwitch,       "/HWACCM/CPU%d/Debug/ContextSwitch");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxIOCheck,             "/HWACCM/CPU%d/Debug/IOCheck");
 
-        for (int j=0;i<RT_ELEMENTS(pVCpu->hwaccm.s.StatExitCRxWrite);j++)
+        for (int j=0;j<RT_ELEMENTS(pVCpu->hwaccm.s.StatExitCRxWrite);j++)
         {
             rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExitCRxWrite[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Profiling of CRx writes",
                                 "/HWACCM/CPU%d/Exit/Instr/CR/Write/%x", i, j);
