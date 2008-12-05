@@ -257,14 +257,10 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                         LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
                                 VBOX_SVN_REV, SUPDRV_IOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
 
-/* Bird: please acknowledge! */
-#if 0
                         /* Register a sleep/wakeup notification callback */
-                        void *pvData = NULL;
-                        g_pSleepNotifier = registerPrioritySleepWakeInterest(&VBoxDrvDarwinSleepHandler, pvData, NULL);
+                        g_pSleepNotifier = registerPrioritySleepWakeInterest(&VBoxDrvDarwinSleepHandler, &g_DevExt, NULL);
                         if (g_pSleepNotifier == NULL)
                             LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
-#endif
 
                         return KMOD_RETURN_SUCCESS;
                     }
