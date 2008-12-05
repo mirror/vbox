@@ -1416,7 +1416,7 @@ public:
      *       was not enough memory for creating an array of the requested size.
      *       The constructor will also assert in this case.
      */
-    SafeIfaceArray (size_t aSize) { resize (aSize); }
+    SafeIfaceArray (size_t aSize) { Base::resize (aSize); }
 
     /**
      * Weakly attaches this instance to the existing array passed in a method
@@ -1491,7 +1491,7 @@ public:
     {
         typedef C <ComPtr <OI>, A> List;
 
-        resize (aCntr.size());
+        Base::resize (aCntr.size());
         AssertReturnVoid (!Base::isNull());
 
         int i = 0;
@@ -1520,7 +1520,7 @@ public:
     {
         typedef C <ComObjPtr <OI>, A> List;
 
-        resize (aCntr.size());
+        Base::resize (aCntr.size());
         AssertReturnVoid (!Base::isNull());
 
         int i = 0;
