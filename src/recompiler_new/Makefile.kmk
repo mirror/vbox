@@ -39,9 +39,9 @@ ifeq ($(KBUILD_TARGET), win)
  $(REM_MOD)_TEMPLATE        = DUMMY
  $(REM_MOD)_SDKS.win.x86    = W32API
  $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
- $(REM_MOD)_CFLAGS          = -Wall
- $(REM_MOD)_CFLAGS.debug    = -O0 -g
- $(REM_MOD)_CFLAGS.release += -fno-gcse -O2 
+ $(REM_MOD)_CFLAGS          = -Wall -g
+ $(REM_MOD)_CFLAGS.debug    = -O0
+ $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
  $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
  $(REM_MOD)_CFLAGS.kprofile = $($(REM_MOD)_CFLAGS.release)
 
@@ -55,9 +55,23 @@ ifeq ($(KBUILD_TARGET), win)
  USE_REM_IMP = 1
 else
 
- # Unfortunately little pinguins tend to have default compilers no suitable 
- # for real compilation, so search better alternatives 
- if1of ($(KBUILD_TARGET), )
+TOOL_GCC3V3 = description
+TOOL_GCC3V3_EXTENDS = GCC3
+TOOL_GCC3V3_CC = $(firstword $(which gcc-4.1.2 gcc-3.4 gcc-3.4.6 gcc-3.3 gcc-3.3.6  gcc-3.2 gcc-4.1 gcc-4.2))
+TOOL_GCC3V3_COMPILE_C_DEPEND =
+TOOL_GCC3V3_COMPILE_C_DEPORD =
+TOOL_GCC3V3_COMPILE_C_OUTPUT =
+define TOOL_GCC3V3_COMPILE_C_CMDS
+	$(QUIET)$(TOOL_GCC3V3_CC) -c\
+		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
+		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
+		-o $(obj)\
+		$(abspath $(source))
+endef
+
+ # Unfortunately little pinguins tend to have default compilers no suitable
+ # for real compilation, so search better alternatives
+ if1of ($(KBUILD_TARGET),)
   $(REM_MOD)_TOOL      = GCC3V3
   $(REM_MOD)_TEMPLATE  = DUMMY
   $(REM_MOD)_CFLAGS    = -fPIC                                          \
@@ -117,6 +131,8 @@ $(REM_MOD)_SOURCES          = 	\
 	target-i386/op_helper.c \
 	target-i386/helper.c 	\
 	target-i386/translate.c
+
+#target-i386/helper.c_TOOL = GCC3V3
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  $(REM_MOD)_DEFS             += __x86_64__
