@@ -300,9 +300,11 @@ VBoxSVC_SOURCES.win = \
         win/HostPowerWin.cpp \
 	win/VBoxSVC.rc
 
+ifdef VBOX_WITH_DBUS
 VBoxSVC_SOURCES.linux += \
 	linux/HostHardwareLinux.cpp \
 	linux/vbox-dbus.cpp
+endif
 
 VBoxSVC_SOURCES.solaris = \
 	linux/vbox-libhal.cpp \

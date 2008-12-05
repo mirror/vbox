@@ -129,3 +129,13 @@ bool VBoxDBusCheckPresence(void)
     }
 }
 
+void VBoxDBusConnectionUnref(DBusConnection *pConnection)
+{
+    dbus_connection_unref(pConnection);
+}
+
+void VBoxDBusMessageUnref(DBusMessage *pMessage)
+{
+    dbus_message_unref(pMessage);
+}
+

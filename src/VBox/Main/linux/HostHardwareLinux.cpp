@@ -436,7 +436,7 @@ int halInit (DBusConnection **ppConnection)
     bool halSuccess = true;
     autoDBusError dbusError;
 
-    RTMemAutoPtr <DBusConnection, dbus_connection_unref> dbusConnection;
+    RTMemAutoPtr <DBusConnection, VBoxDBusConnectionUnref> dbusConnection;
     dbusConnection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbusError.get());
     if (!dbusConnection)
         halSuccess = false;
@@ -508,7 +508,7 @@ int halFindDeviceStringMatch (DBusConnection *pConnection, const char *pszKey,
     int rc = VINF_SUCCESS;
     bool halSuccess = true;
     autoDBusError dbusError;
-    RTMemAutoPtr <DBusMessage, dbus_message_unref> message;
+    RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message;
     DBusMessage *pReply = NULL;
     if (halSuccess && RT_SUCCESS (rc))
     {
@@ -567,7 +567,7 @@ int halGetPropertyStrings (DBusConnection *pConnection, const char *pszUdi,
     int rc = VINF_SUCCESS;
     bool halSuccess = true;
     autoDBusError dbusError;
-    RTMemAutoPtr <DBusMessage, dbus_message_unref> message, reply;
+    RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, reply;
     DBusMessageIter iterGet, iterProps, iterKey, iterValue;
 
     /* Initialise the return array to NULLs */
@@ -644,7 +644,7 @@ int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     DBusConnection *pConnection;
     autoDBusError dbusError;
     DBusMessage *pReply;
-    RTMemAutoPtr <DBusMessage, dbus_message_unref> message, replyFind, replyGet;
+    RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, replyFind, replyGet;
     DBusMessageIter iterFind, iterUdis;
     bool halSuccess = true;  /* Did something go wrong with hal or DBus? */
     int rc = VINF_SUCCESS;  /* Did a fatal error occur? */
