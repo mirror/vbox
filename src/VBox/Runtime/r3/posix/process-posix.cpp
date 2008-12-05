@@ -63,7 +63,7 @@
 
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
-    int rc = 0;
+    int rc;
 
     /*
      * Validate input.
@@ -82,7 +82,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
      */
     if (access(pszExec, X_OK))
     {
-        int rc = RTErrConvertFromErrno(errno);
+        rc = RTErrConvertFromErrno(errno);
         AssertMsgFailed(("'%s' %Rrc!\n", pszExec, rc));
         return rc;
     }
@@ -145,7 +145,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
                 *pProcess = pid;
             return VINF_SUCCESS;
         }
-        int rc = errno;
+        rc = errno;
     }
 
     /* failure, errno value in rc. */
