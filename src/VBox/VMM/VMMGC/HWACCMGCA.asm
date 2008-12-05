@@ -106,12 +106,33 @@ BITS 64
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   pCtx       Guest context (rsi)
+; * @param   pPageCpuPhys   VMXON physical address  [rsp+8]
+; * @param   pVMCSPhys      VMCS physical address   [rsp+16]
+; * @param   pCtx           Guest context (rsi)
 ; */
 BEGINPROC VMXGCStartVM64
     push    rbp
     mov     rbp, rsp
 
+    ; Make sure VT-x instructions are allowed
+    mov     rax, cr4
+    or      rax, X86_CR4_VMXE
+    mov     cr4, rax
+
+    ;/* Enter VMX Root Mode */
+    vmxon   [rbp + 8 + 8]
+    jnc     .vmxon_success
+    mov     rax, VERR_VMX_INVALID_VMXON_PTR
+    jmp     .vmstart64_vmxon_failed
+    
+.vmxon_success:
+    ; Activate the VMCS pointer
+    vmptrld [rbp + 16 + 8]
+    jnc     .vmptrld_success
+    mov     rax, VERR_VMX_INVALID_VMCS_PTR
+    jmp     .vmstart64_vmoff_end
+    
+.vmptrld_success:    
     ; Have to sync half the guest state as we can't access most of the 64 bits state in 32 bits mode. Sigh.
     VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
     VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
@@ -252,6 +273,13 @@ ALIGNCODE(16)
     mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
+    ; Write back the data and disable the VMCS
+    vmclear [rbp + 16 + 8]  ;pVMCS
+
+.vmstart64_vmoff_end:
+    ; Disable VMX root mode
+    vmxoff
+.vmstart64_vmxon_failed:
     pop     rbp
     ret
 
