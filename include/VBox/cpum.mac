@@ -164,9 +164,11 @@ struc CPUMCTX
 
     .dr             resq    8
 
-    .gdtr           resb    10          ; GDT limit + linear address
+    .gdtr.cbGdt     resw    1
+    .gdtr.pGdt      resq    1
     .gdtrPadding    resw    1
-    .idtr           resb    10          ; IDT limit + linear address
+    .idtr.cbIdt     resw    1
+    .idtr.pIdt      resq    1
     .idtrPadding    resw    1
     .ldtr           resw    1
     .ldtrPadding    resw    1

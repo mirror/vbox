@@ -441,7 +441,7 @@ GLOBALNAME ICExitTarget
     DEBUG_CHAR('0')
     lidt    [edx + CPUMCPU.Host.idtr]
     DEBUG_CHAR('1')
-        
+
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     movzx   eax, word [edx + CPUMCPU.Host.tr]          ; eax <- TR

@@ -46,21 +46,13 @@
  %endmacro
 %endif
 
-;; @def MYPUSHAD
-; Macro generating an equivalent to pushad
-
-;; @def MYPOPAD
-; Macro generating an equivalent to popad
-
 ;; @def MYPUSHSEGS
 ; Macro saving all segment registers on the stack.
 ; @param 1  full width register name
-; @param 2  16-bit regsiter name for \a 1.
 
 ;; @def MYPOPSEGS
 ; Macro restoring all segment registers on the stack
 ; @param 1  full width register name
-; @param 2  16-bit regsiter name for \a 1.
 
   ; Load the corresponding guest MSR (trashes rdx & rcx)
   %macro LOADGUESTMSR 2
@@ -69,97 +61,42 @@
     wrmsr
   %endmacro
 
-  ; Save a guest and load the corresponding host MSR (trashes rdx & rcx)
+  ; Save a guest MSR (trashes rdx & rcx)
   ; Only really useful for gs kernel base as that one can be changed behind our back (swapgs)
-  %macro LOADHOSTMSREX 2
+  %macro SAVEGUESTMSR 2
     mov     rcx, %1
     rdmsr
     mov     dword [rsi + %2], eax
     mov     dword [rsi + %2 + 4], edx
   %endmacro
 
- %ifdef ASM_CALL64_GCC
-  %macro MYPUSHAD 0
-    push    r15
-    push    r14
-    push    r13
-    push    r12
-    push    rbx
-  %endmacro
-  %macro MYPOPAD 0
-    pop     rbx
-    pop     r12
-    pop     r13
-    pop     r14
-    pop     r15
-  %endmacro
-
- %else ; ASM_CALL64_MSC
-  %macro MYPUSHAD 0
-    push    r15
-    push    r14
-    push    r13
-    push    r12
-    push    rbx
-    push    rsi
-    push    rdi
-  %endmacro
-  %macro MYPOPAD 0
-    pop     rdi
-    pop     rsi
-    pop     rbx
-    pop     r12
-    pop     r13
-    pop     r14
-    pop     r15
-  %endmacro
- %endif
-
-; trashes, rax, rdx & rcx
- %macro MYPUSHSEGS 2
-    mov     %2, es
+ %macro MYPUSHSEGS 1
+    mov     %1, es
     push    %1
-    mov     %2, ds
+    mov     %1, ds
     push    %1
-
-    ; Special case for FS; Windows and Linux either don't use it or restore it when leaving kernel mode, Solaris OTOH doesn't and we must save it.
-    mov     ecx, MSR_K8_FS_BASE
-    rdmsr
-    push    rdx
-    push    rax
-    push    fs
-
-    ; Special case for GS; OSes typically use swapgs to reset the hidden base register for GS on entry into the kernel. The same happens on exit
-    mov     ecx, MSR_K8_GS_BASE
-    rdmsr
-    push    rdx
-    push    rax
-    push    gs
  %endmacro
 
-; trashes, rax, rdx & rcx
- %macro MYPOPSEGS 2
-    ; Note: do not step through this code with a debugger!
-    pop     gs
-    pop     rax
-    pop     rdx
-    mov     ecx, MSR_K8_GS_BASE
-    wrmsr
-
-    pop     fs
-    pop     rax
-    pop     rdx
-    mov     ecx, MSR_K8_FS_BASE
-    wrmsr
-    ; Now it's safe to step again
-
+ %macro MYPOPSEGS 1
     pop     %1
-    mov     ds, %2
+    mov     ds, %1
     pop     %1
-    mov     es, %2
+    mov     es, %1
  %endmacro
 
+; trashes rax & rdx
+ %macro VMCSWRITE 2
+    mov     rdx, %2
+    mov     eax, %1
+    vmwrite rax, rdx
+ %endmacro
 
+; trashes rax & rdx
+ %macro VMCSREAD 2
+    mov     eax, %1
+    vmwrite rax, rdx
+    mov     %2, rdx
+ %endmacro
 
 BEGINCODE
 BITS 64
@@ -175,35 +112,49 @@ BEGINPROC VMXGCStartVM64
     push    rbp
     mov     rbp, rsp
 
-    pushf
-    cli
-
-    ; Have to sync half the guest state as we can't access most of the 64 bits state. Sigh
-;    VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_ES_BASE,         [rsi + CPUMCTX.esHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_FS_BASE,         [rsi + CPUMCTX.fsHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_GS_BASE,         [rsi + CPUMCTX.gsHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_SS_BASE,         [rsi + CPUMCTX.ssHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_LDTR_BASE,       [rsi + CPUMCTX.ldtrHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_GDTR_BASE,       [rsi + CPUMCTX.gdtrHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_IDTR_BASE,       [rsi + CPUMCTX.idtrHid.u64Base]
-;    VMCSWRITE VMX_VMCS64_GUEST_TR_BASE,         [rsi + CPUMCTX.trHid.u64Base]
-;    
-;    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_EIP,    [rsi + CPUMCTX.SysEnter.eip]
-;    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_ESP,    [rsi + CPUMCTX.SysEnter.esp]
-;    
-;    VMCSWRITE VMX_VMCS64_GUEST_RIP,             [rsi + CPUMCTX.eip]
-;    VMCSWRITE VMX_VMCS64_GUEST_RSP,             [rsi + CPUMCTX.esp]
+    ; Have to sync half the guest state as we can't access most of the 64 bits state in 32 bits mode. Sigh.
+    VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_ES_BASE,         [rsi + CPUMCTX.esHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_FS_BASE,         [rsi + CPUMCTX.fsHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_GS_BASE,         [rsi + CPUMCTX.gsHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_SS_BASE,         [rsi + CPUMCTX.ssHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_GDTR_BASE,       [rsi + CPUMCTX.gdtr.pGdt]
+    VMCSWRITE VMX_VMCS64_GUEST_IDTR_BASE,       [rsi + CPUMCTX.idtr.pIdt]
+    VMCSWRITE VMX_VMCS64_GUEST_LDTR_BASE,       [rsi + CPUMCTX.ldtrHid.u64Base]
+    VMCSWRITE VMX_VMCS64_GUEST_TR_BASE,         [rsi + CPUMCTX.trHid.u64Base]
     
+    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_EIP,    [rsi + CPUMCTX.SysEnter.eip]
+    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_ESP,    [rsi + CPUMCTX.SysEnter.esp]
+    
+    VMCSWRITE VMX_VMCS64_GUEST_RIP,             [rsi + CPUMCTX.eip]
+    VMCSWRITE VMX_VMCS64_GUEST_RSP,             [rsi + CPUMCTX.esp]
+    
+    ; Save the host state that's relevant in the temporary 64 bits mode
+    mov     rax, cr0
+    VMCSWRITE VMX_VMCS_HOST_CR0,                rax
+    mov     rax, cr3
+    VMCSWRITE VMX_VMCS_HOST_CR3,                rax
+    mov     rax, cr4
+    VMCSWRITE VMX_VMCS_HOST_CR4,                rax
+    mov     rax, cs
+    VMCSWRITE VMX_VMCS_HOST_FIELD_CS,           rax
+    mov     rax, ss
+    VMCSWRITE VMX_VMCS_HOST_FIELD_SS,           rax
 
+    sub     rsp, 8*2
+    sgdt    [rsp]          
+    mov     rax, [rsp+2]
+    VMCSWRITE VMX_VMCS_HOST_GDTR_BASE,          rax
+    add     rsp, 8*2
+    
+    ; hopefully we can ignore TR (we restore it anyway on the way back to 32 bits mode)
+    
     ;/* First we have to save some final CPU context registers. */
-    lea     rax, [.vmlaunch64_done wrt rip]    
-    push    rax
+    lea     rdx, [.vmlaunch64_done wrt rip]    
     mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
-    vmwrite rax, [rsp]
+    vmwrite rax, rdx
     ;/* Note: assumes success... */
-    add     rsp, 8
 
     ;/* Manual save and restore:
     ; * - General purpose registers except RIP, RSP
@@ -217,37 +168,21 @@ BEGINPROC VMXGCStartVM64
     ; *
     ; */
 
-    ;/* Save all general purpose host registers. */
-    MYPUSHAD
-
-    ;/* Save the Guest CPU context pointer. */
-    ; pCtx    already in rsi
-
     ;/* Save segment registers */
-    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
-    MYPUSHSEGS rax, ax
+    MYPUSHSEGS rax
 
-    ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
+    ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
+%if 0  ; not supported on Intel CPUs
+    LOADGUESTMSR MSR_K8_CSTAR,          CPUMCTX.msrCSTAR
+%endif
     LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Save the pCtx pointer
     push    rsi
-
-    ; Save LDTR
-    xor     eax, eax
-    sldt    ax
-    push    rax
-
-    ; VMX only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
-    sub     rsp, 8*2
-    sgdt    [rsp]
-
-    sub     rsp, 8*2
-    sidt    [rsp]
 
     ; Restore CR2
     mov     rbx, qword [rsi + CPUMCTX.cr2]
@@ -285,12 +220,6 @@ ALIGNCODE(16)
     jc      near .vmstart64_invalid_vmxon_ptr
     jz      near .vmstart64_start_failed
 
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [rsp]
-    add     rsp, 8*2
-    lgdt    [rsp]
-    add     rsp, 8*2
-
     push    rdi
     mov     rdi, [rsp + 8 * 2]         ; pCtx
 
@@ -312,74 +241,46 @@ ALIGNCODE(16)
     pop     rax                                 ; the guest edi we pushed above
     mov     qword [rdi + CPUMCTX.edi], rax
 
-    pop     rax         ; saved LDTR
-    lldt    ax
-
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Restore segment registers
-    MYPOPSEGS rax, ax
-
-    ; Restore general purpose registers
-    MYPOPAD
+    MYPOPSEGS rax
 
     mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
-    popf
     pop     rbp
     ret
 
 
 .vmstart64_invalid_vmxon_ptr:
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [rsp]
-    add     rsp, 8*2
-    lgdt    [rsp]
-    add     rsp, 8*2
-
-    pop     rax         ; saved LDTR
-    lldt    ax
-
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Restore segment registers
-    MYPOPSEGS rax, ax
+    MYPOPSEGS rax
 
     ; Restore all general purpose host registers.
-    MYPOPAD
     mov     eax, VERR_VMX_INVALID_VMXON_PTR
     jmp     .vmstart64_end
 
 .vmstart64_start_failed:
-    ; Restore base and limit of the IDTR & GDTR
-    lidt    [rsp]
-    add     rsp, 8*2
-    lgdt    [rsp]
-    add     rsp, 8*2
-
-    pop     rax         ; saved LDTR
-    lldt    ax
-
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
     ; Restore segment registers
-    MYPOPSEGS rax, ax
+    MYPOPSEGS rax
 
     ; Restore all general purpose host registers.
-    MYPOPAD
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart64_end
 ENDPROC VMXGCStartVM64
@@ -407,9 +308,6 @@ BEGINPROC SVMGCVMRun64
     ; * - DRx (presumably not changed at all)
     ; * - DR7 (reset to 0x400)
     ; */
-
-    ;/* Save all general purpose host registers. */
-    MYPUSHAD
 
     ;/* Save the Guest CPU context pointer. */
     push    rsi                     ; push for saving the state at the end
@@ -481,9 +379,6 @@ BEGINPROC SVMGCVMRun64
     mov     qword [rax + CPUMCTX.r13], r13
     mov     qword [rax + CPUMCTX.r14], r14
     mov     qword [rax + CPUMCTX.r15], r15
-
-    ; Restore general purpose registers
-    MYPOPAD
 
     mov     eax, VINF_SUCCESS
 
