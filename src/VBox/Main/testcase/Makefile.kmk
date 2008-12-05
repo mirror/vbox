@@ -125,7 +125,8 @@ tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTEXE
 tstHostHardwareLinux_SOURCES   = \
 	tstHostHardwareLinux.cpp \
 	../linux/USBProxyServiceLinux.cpp \
-	../linux/HostHardwareLinux.cpp
+	../linux/HostHardwareLinux.cpp \
+	../linux/vbox-dbus.cpp
 tstHostHardwareLinux_INCS      = . ../include
 tstHostHardwareLinux_DEFS      = \
 	VBOX_TEST_USB_LINUX \
@@ -133,9 +134,6 @@ tstHostHardwareLinux_DEFS      = \
 	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
 tstHostHardwareLinux_LIBS     += $(PATH_OUT)/lib/USBLib.a
-tstHostHardwareLinux_CFLAGS   += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_CFLAGS),)
-tstHostHardwareLinux_CXXFLAGS += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_CXXFLAGS),)
-tstHostHardwareLinux_LDFLAGS  += $(if $(VBOX_WITH_DBUS),$(VBOX_DBUS_LDFLAGS),)
 
 
 # generate rules.

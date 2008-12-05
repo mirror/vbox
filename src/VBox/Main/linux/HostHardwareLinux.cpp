@@ -48,10 +48,7 @@
 // # define _LINUX_BYTEORDER_GENERIC_H
 # include <linux/cdrom.h>
 # ifdef VBOX_WITH_DBUS
-#  include <dbus/dbus.h>
-/* These are defined by the dbus headers and by VBox header files. */
-#  undef TRUE
-#  undef FALSE
+#  include <vbox-dbus.h>
 # endif
 # include <errno.h>
 #endif /* RT_OS_LINUX */
@@ -76,6 +73,8 @@ static int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
 static int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList);
 #ifdef VBOX_WITH_DBUS
 static int halInit(DBusConnection **ppConnection);
+/* This must be extern to be used in the RTMemAutoPtr template */
+extern void halShutdown (DBusConnection *pConnection);
 static int halFindDeviceStringMatch (DBusConnection *pConnection,
                                      const char *pszKey, const char *pszValue,
                                      DBusMessage **ppMessage);
@@ -102,7 +101,7 @@ int VBoxMainDriveInfo::updateDVDs ()
         mDVDList.clear ();
 #if defined(RT_OS_LINUX)
 #ifdef VBOX_WITH_DBUS
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS (rc) && VBoxDBusCheckPresence() && (!success || testing()))
             rc = getDriveInfoFromHal(&mDVDList, true /* isDVD */, &success);
 #endif /* VBOX_WITH_DBUS defined */
         // On Linux without hal, the situation is much more complex. We will take a
@@ -152,7 +151,7 @@ int VBoxMainDriveInfo::updateFloppies ()
         mFloppyList.clear ();
 #if defined(RT_OS_LINUX)
 #ifdef VBOX_WITH_DBUS
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS (rc) && VBoxDBusCheckPresence() && (!success || testing()))
             rc = getDriveInfoFromHal(&mFloppyList, false /* isDVD */, &success);
 #endif /* VBOX_WITH_DBUS defined */
         // As with the CDROMs, on Linux we have to take a multi-level approach
@@ -402,14 +401,19 @@ public:
     autoDBusError () { dbus_error_init (&mError); }
     ~autoDBusError ()
     {
-        if (dbus_error_is_set (&mError))
+        if (IsSet())
             dbus_error_free (&mError);
     }
     DBusError &get () { return mError; }
-    bool IsSet () { return dbus_error_is_set (&mError); }
+    bool IsSet ()
+    {
+        Assert ((mError.name == NULL) == (mError.message == NULL));
+        return (mError.name != NULL);
+    }
     bool HasName (const char *pszName)
     {
-        return dbus_error_has_name (&mError, pszName);
+        Assert ((mError.name == NULL) == (mError.message == NULL));
+        return (RTStrCmp (mError.name, pszName) == 0);
     }
     void FlowLog ()
     {
@@ -448,7 +452,8 @@ int halInit (DBusConnection **ppConnection)
                             "type='signal',"
                             "interface='org.freedesktop.Hal.Manager',"
                             "sender='org.freedesktop.Hal',"
-                            "path='/org/freedesktop/Hal/Manager'", &dbusError.get());
+                            "path='/org/freedesktop/Hal/Manager'",
+                            &dbusError.get());
         halSuccess = !dbusError.IsSet();
     }
     if (dbusError.HasName (DBUS_ERROR_NO_MEMORY))
@@ -457,6 +462,28 @@ int halInit (DBusConnection **ppConnection)
     LogFlowFunc(("rc=%Rrc, *ppConnection=%p\n", rc, *ppConnection));
     dbusError.FlowLog();
     return rc;
+}
+
+/**
+ * Helper function for shutting down a connection to hal
+ * @param   pConnection  the connection handle
+ */
+/* static */
+void halShutdown (DBusConnection *pConnection)
+{
+    AssertReturnVoid(VALID_PTR (pConnection));
+    LogFlowFunc (("pConnection=%p\n", pConnection));
+    autoDBusError dbusError;
+
+    dbus_bus_remove_match (pConnection, 
+                           "type='signal',"
+                           "interface='org.freedesktop.Hal.Manager',"
+                           "sender='org.freedesktop.Hal',"
+                           "path='/org/freedesktop/Hal/Manager'",
+                           &dbusError.get());
+    dbus_connection_unref (pConnection);
+    LogFlowFunc(("returning\n"));
+    dbusError.FlowLog();
 }
 
 /**
@@ -623,7 +650,7 @@ int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     int rc = VINF_SUCCESS;  /* Did a fatal error occur? */
 
     rc = halInit (&pConnection);
-    RTMemAutoPtr <DBusConnection, dbus_connection_unref> dbusConnection;
+    RTMemAutoPtr <DBusConnection, halShutdown> dbusConnection;
     dbusConnection = pConnection;
     if (!dbusConnection)
         halSuccess = false;
