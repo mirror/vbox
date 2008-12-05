@@ -1027,6 +1027,9 @@ STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mVirtualBox, this);
 
@@ -1082,6 +1085,43 @@ STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
     values.detachTo (ComSafeArrayOutArg (aReturnValues));
 
     return S_OK;
+}
+
+STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (INPTR BSTR, aNames),
+                                       ComSafeArrayIn (INPTR BSTR, aValues))
+{
+    CheckComArgSafeArrayNotNull (aNames);
+    CheckComArgSafeArrayNotNull (aValues);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    /* VirtualBox::saveSettings() needs a write lock */
+    AutoMultiWriteLock2 alock (mVirtualBox, this);
+
+    com::SafeArray <INPTR BSTR> names (ComSafeArrayInArg (aNames));
+    com::SafeArray <INPTR BSTR> values (ComSafeArrayInArg (aValues));
+
+    /* first pass: validate names */
+    for (size_t i = 0; i < names.size(); ++ i)
+    {
+        if (mm.properties.find (Bstr (names [i])) == mm.properties.end())
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
+                tr ("Property '%ls' does not exist"), names [i]);
+    }
+
+    /* second pass: assign */
+    for (size_t i = 0; i < names.size(); ++ i)
+    {
+        Data::PropertyMap::iterator it = mm.properties.find (Bstr (names [i]));
+        AssertReturn (it != mm.properties.end(), E_FAIL);
+
+        it->second = values [i];
+    }
+
+    HRESULT rc = mVirtualBox->saveSettings();
+
+    return rc;
 }
 
 STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
@@ -3042,7 +3082,7 @@ DECLCALLBACK(bool) HardDisk2::vdConfigAreKeysValid (void *pvUser,
                                                     const char *pszzValid)
 {
     HardDisk2 *that = static_cast <HardDisk2 *> (pvUser);
-    AssertReturn (that != NULL, VERR_GENERAL_FAILURE);
+    AssertReturn (that != NULL, false);
 
     /* we always return true since the only keys we have are those found in
      * VDBACKENDINFO */
@@ -3153,7 +3193,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
                 Utf8Str format (that->mm.format);
                 Utf8Str location (that->m.locationFull);
-                ULONG capabilities = that->mm.formatObj->capabilities();
+                uint64_t capabilities = that->mm.formatObj->capabilities();
 
                 /* unlock before the potentially lengthy operation */
                 Assert (that->m.state == MediaState_Creating);

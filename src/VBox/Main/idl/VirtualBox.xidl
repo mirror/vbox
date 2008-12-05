@@ -7259,7 +7259,7 @@
 
   <interface
     name="IHardDisk2" extends="IMedium"
-    uuid="4fece1c1-2a75-43ce-ba82-76d2a89b9d5d"
+    uuid="ed6e2525-c2fd-42a4-917a-7a9045ac9e15"
     wsmap="managed"
   >
     <desc>
@@ -7688,10 +7688,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given hard disk format can
         be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
 
-        Note that passing <tt>null</tt> as @a value will reset the value of the
-        property to nothing which may also be understood as deleting the
-        property's value. For properties with no values, the format backend will
-        use a default value if such a value is defined for the given property.
+        Note that setting the property value to <tt>null</tt> is equivalent to
+        deleting the existing value. A default value (if it is defined for this
+        property) will be used by the format backend in this case.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
@@ -7721,11 +7720,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The method returns two arrays, the array of property names corresponding
         to the @a names argument and the current values of these properties.
-        <!-- FIXME: Both arrays [sentence was cut off here. Complete. -->
+        Both arrays have the same number of elements with each elemend at the
+        given index in the first array corresponds to an element at the same
+        index in the second array.
 
-        Note that for properties that don't have values assigned to them,
-        <tt>null</tt> is returned at the appropriate index in the @a returnValues
-        array.
+        Note that for properties that do not have assigned values,
+        <tt>null</tt> is returned at the appropriate index in the @a
+        returnValues array.
 
       </desc>
       <param name="names" type="wstring" dir="in">
@@ -7738,6 +7739,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="returnValues" type="wstring" safearray="yes" dir="return">
         <desc>Values of returned properties.</desc>
+      </param>
+    </method>
+
+    <method name="setProperties">
+      <desc>
+        Sets values for a group of properties in one call.
+
+        The names of the properties to set are passed in the @a names
+        array along with the new values for them in the @a values array. Both
+        arrays have the same number of elements with each elemend at the given
+        index in the first array corresponding to an element at the same index
+        in the second array.
+
+        If there is at least one property name in @a names that is not valid,
+        the method will fail before changing the values of any other properties
+        from the @a names array.
+
+        Using this method over <link to="#setProperty()"/> is preferred if you
+        need to set several properties at once since it will result into less
+        IPC calls.
+
+        The list of all properties supported by the given hard disk format can
+        be obtained with <link to="IHardDiskFormat::describeProperties()"/>.
+
+        Note that setting the property value to <tt>null</tt> is equivalent to
+        deleting the existing value. A default value (if it is defined for this
+        property) will be used by the format backend in this case.
+      </desc>
+      <param name="names" type="wstring" safearray="yes" dir="in">
+        <desc>Names of properties to set.</desc>
+      </param>
+      <param name="values" type="wstring" safearray="yes" dir="in">
+        <desc>Values of properties to set.</desc>
       </param>
     </method>
 

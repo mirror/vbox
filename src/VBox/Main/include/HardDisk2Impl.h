@@ -103,6 +103,8 @@ public:
     STDMETHOD(GetProperties) (INPTR BSTR aNames,
                               ComSafeArrayOut (BSTR, aReturnNames),
                               ComSafeArrayOut (BSTR, aReturnValues));
+    STDMETHOD(SetProperties) (ComSafeArrayIn (INPTR BSTR, aNames),
+                              ComSafeArrayIn (INPTR BSTR, aValues));
     STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(DeleteStorage) (IProgress **aProgress);
