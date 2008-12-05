@@ -69,8 +69,6 @@
 # endif
 #endif
 
-typedef u_int32_t n_long;                 /* long as received from the net */
-
 /*
  * Definitions for internet protocol version 4.
  * Per RFC 791, September 1981.
@@ -80,35 +78,41 @@ typedef u_int32_t n_long;                 /* long as received from the net */
 /*
  * Structure of an internet header, naked of options.
  */
-struct ip {
-/*
- * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
- */
+struct ip
+{
 #ifdef WORDS_BIGENDIAN
-        u_int ip_v:4,                   /* version */
-                ip_hl:4;                /* header length */
+# ifdef _MSC_VER
+    uint8_t        ip_v:4;     /* version */
+    uint8_t        ip_hl:4;    /* header length */
+# else
+    unsigned       ip_v:4;     /* version */
+    unsigned       ip_hl:4;    /* header length */
+# endif
 #else
-#ifdef _MSC_VER
-        u_int8_t ip_hl:4,               /* header length */
-#else
-        u_int ip_hl:4,          /* header length */
+# ifdef _MSC_VER
+    uint8_t        ip_hl:4;    /* header length */
+    uint8_t        ip_v:4;     /* version */
+# else
+    unsigned       ip_hl:4;    /* header length */
+    unsigned       ip_v:4;     /* version */
+# endif
 #endif
-                ip_v:4;                 /* version */
-#endif
-        u_int8_t ip_tos;                        /* type of service */
-        u_int16_t       ip_len;                 /* total length */
-        u_int16_t       ip_id;                  /* identification */
-        u_int16_t       ip_off;                 /* fragment offset field */
-#define IP_DF 0x4000                    /* don't fragment flag */
-#define IP_MF 0x2000                    /* more fragments flag */
-#define IP_OFFMASK 0x1fff               /* mask for fragmenting bits */
-        u_int8_t ip_ttl;                        /* time to live */
-        u_int8_t ip_p;                  /* protocol */
-        u_int16_t       ip_sum;                 /* checksum */
-        struct  in_addr ip_src,ip_dst;  /* source and dest address */
+    uint8_t        ip_tos;     /* type of service */
+    uint16_t       ip_len;     /* total length */
+    uint16_t       ip_id;      /* identification */
+    uint16_t       ip_off;     /* fragment offset field */
+#define IP_DF       0x4000     /* don't fragment flag */
+#define IP_MF       0x2000     /* more fragments flag */
+#define IP_OFFMASK  0x1fff     /* mask for fragmenting bits */
+    uint8_t        ip_ttl;     /* time to live */
+    uint8_t        ip_p;       /* protocol */
+    uint16_t       ip_sum;     /* checksum */
+    struct in_addr ip_src;     /* source address */
+    struct in_addr ip_dst;     /* destination address */
 };
+AssertCompileSize(struct ip, 20);
 
-#define IP_MAXPACKET    65535           /* maximum packet size */
+#define IP_MAXPACKET    65535  /* maximum packet size */
 
 /*
  * Definitions for IP type of service (ip_tos)
@@ -129,58 +133,65 @@ struct ip {
 #define IPOPT_DEBMEAS           0x40
 #define IPOPT_RESERVED2         0x60
 
-#define IPOPT_EOL               0               /* end of option list */
-#define IPOPT_NOP               1               /* no operation */
+#define IPOPT_EOL               0     /* end of option list */
+#define IPOPT_NOP               1     /* no operation */
 
-#define IPOPT_RR                7               /* record packet route */
-#define IPOPT_TS                68              /* timestamp */
-#define IPOPT_SECURITY          130             /* provide s,c,h,tcc */
-#define IPOPT_LSRR              131             /* loose source route */
-#define IPOPT_SATID             136             /* satnet id */
-#define IPOPT_SSRR              137             /* strict source route */
+#define IPOPT_RR                7     /* record packet route */
+#define IPOPT_TS                68    /* timestamp */
+#define IPOPT_SECURITY          130   /* provide s,c,h,tcc */
+#define IPOPT_LSRR              131   /* loose source route */
+#define IPOPT_SATID             136   /* satnet id */
+#define IPOPT_SSRR              137   /* strict source route */
 
 /*
  * Offsets to fields in options other than EOL and NOP.
  */
-#define IPOPT_OPTVAL            0               /* option ID */
-#define IPOPT_OLEN              1               /* option length */
-#define IPOPT_OFFSET            2               /* offset within option */
-#define IPOPT_MINOFF            4               /* min value of above */
+#define IPOPT_OPTVAL            0     /* option ID */
+#define IPOPT_OLEN              1     /* option length */
+#define IPOPT_OFFSET            2     /* offset within option */
+#define IPOPT_MINOFF            4     /* min value of above */
 
 /*
  * Time stamp option structure.
  */
-struct  ip_timestamp {
-        u_int8_t        ipt_code;               /* IPOPT_TS */
-        u_int8_t        ipt_len;                /* size of structure (variable) */
-        u_int8_t        ipt_ptr;                /* index of current entry */
-/*
- * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
- */
+struct  ip_timestamp
+{
+    uint8_t        ipt_code;          /* IPOPT_TS */
+    uint8_t        ipt_len;           /* size of structure (variable) */
+    uint8_t        ipt_ptr;           /* index of current entry */
 #ifdef WORDS_BIGENDIAN
-        u_int   ipt_oflw:4,             /* overflow counter */
-                ipt_flg:4;              /* flags, see below */
+# ifdef _MSC_VER
+    uint8_t        ipt_oflw:4;        /* overflow counter */
+    uint8_t        ipt_flg:4;         /* flags, see below */
+# else
+    unsigned       ipt_oflw:4;        /* overflow counter */
+    unsigned       ipt_flg:4;         /* flags, see below */
+# endif
 #else
-#ifdef _MSC_VER
-        u_int8_t ipt_flg:4,             /* flags, see below */
-#else
-        u_int   ipt_flg:4,              /* flags, see below */
+# ifdef _MSC_VER
+    uint8_t        ipt_flg:4;         /* flags, see below */
+    uint8_t        ipt_oflw:4;        /* overflow counter */
+# else
+    unsigned       ipt_flg:4;         /* flags, see below */
+    unsigned       ipt_oflw:4;        /* overflow counter */
+# endif
 #endif
-                ipt_oflw:4;             /* overflow counter */
-#endif
-        union ipt_timestamp {
-                n_long  ipt_time[1];
-                struct  ipt_ta {
-                        struct in_addr ipt_addr;
-                        n_long ipt_time;
-                } ipt_ta[1];
-        } ipt_timestamp;
+    union ipt_timestamp
+    {
+        uint32_t           ipt_time[1];
+        struct ipt_ta
+        {
+            struct in_addr ipt_addr;
+            uint32_t       ipt_time;
+        } ipt_ta[1];
+    } ipt_timestamp;
 };
+AssertCompileSize(struct ip_timestamp, 12);
 
 /* flag bits for ipt_flg */
-#define IPOPT_TS_TSONLY         0               /* timestamps only */
-#define IPOPT_TS_TSANDADDR      1               /* timestamps and addresses */
-#define IPOPT_TS_PRESPEC        3               /* specified modules only */
+#define IPOPT_TS_TSONLY         0     /* timestamps only */
+#define IPOPT_TS_TSANDADDR      1     /* timestamps and addresses */
+#define IPOPT_TS_PRESPEC        3     /* specified modules only */
 
 /* bits for security (not byte swapped) */
 #define IPOPT_SECUR_UNCLASS     0x0000
@@ -194,12 +205,12 @@ struct  ip_timestamp {
 /*
  * Internet implementation parameters.
  */
-#define MAXTTL          255             /* maximum time to live (seconds) */
-#define IPDEFTTL        64              /* default ttl, from RFC 1340 */
-#define IPFRAGTTL       60              /* time to live for frags, slowhz */
-#define IPTTLDEC        1               /* subtracted when forwarding */
+#define MAXTTL          255           /* maximum time to live (seconds) */
+#define IPDEFTTL        64            /* default ttl, from RFC 1340 */
+#define IPFRAGTTL       60            /* time to live for frags, slowhz */
+#define IPTTLDEC        1             /* subtracted when forwarding */
 
-#define IP_MSS          576             /* default maximum segment size */
+#define IP_MSS          576           /* default maximum segment size */
 
 #ifdef HAVE_SYS_TYPES32_H  /* Overcome some Solaris 2.x junk */
 # include <sys/types32.h>
@@ -226,43 +237,48 @@ typedef caddr32_t ipasfragp_32;
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
  */
-struct ipovly {
+struct ipovly
+{
 #if !defined(VBOX_WITH_BSD_REASS)
-        caddr32_t       ih_next, ih_prev;       /* for protocol sequence q's */
-        u_int8_t        ih_x1;                  /* (unused) */
+    caddr32_t       ih_next;
+    caddr32_t       ih_prev;          /* for protocol sequence q's */
+    u_int8_t        ih_x1;            /* (unused) */
 #else /* VBOX_WITH_BSD_REASS */
-        u_int8_t        ih_x1[9];                  /* (unused) */
+    u_int8_t        ih_x1[9];         /* (unused) */
 #endif /* VBOX_WITH_BSD_REASS */
-        u_int8_t        ih_pr;                  /* protocol */
-        u_int16_t       ih_len;                 /* protocol length */
-        struct  in_addr ih_src;         /* source internet address */
-        struct  in_addr ih_dst;         /* destination internet address */
+    u_int8_t        ih_pr;            /* protocol */
+    u_int16_t       ih_len;           /* protocol length */
+    struct  in_addr ih_src;           /* source internet address */
+    struct  in_addr ih_dst;           /* destination internet address */
 };
+AssertCompileSize(struct ipovly, 20);
 
 /*
- * Ip reassembly queue structure.  Each fragment
- * being reassembled is attached to one of these structures.
- * They are timed out after ipq_ttl drops to 0, and may also
- * be reclaimed if memory becomes tight.
+ * Ip reassembly queue structure.  Each fragment being reassembled is
+ * attached to one of these structures. They are timed out after ipq_ttl
+ * drops to 0, and may also be reclaimed if memory becomes tight.
  * size 28 bytes
  */
-struct ipq_t {
+struct ipq_t
+{
 #ifndef VBOX_WITH_BSD_REASS
-        ipqp_32 next,prev;      /* to other reass headers */
+    ipqp_32         next;
+    ipqp_32         prev;            /* to other reass headers */
 #else  /* VBOX_WITH_BSD_REASS */
-        TAILQ_ENTRY(ipq_t) ipq_list;
+    TAILQ_ENTRY(ipq_t) ipq_list;
 #endif /* VBOX_WITH_BSD_REASS */
-        u_int8_t        ipq_ttl;                /* time for reass q to live */
-        u_int8_t        ipq_p;                  /* protocol of this fragment */
-        u_int16_t       ipq_id;                 /* sequence id for reassembly */
+    u_int8_t        ipq_ttl;         /* time for reass q to live */
+    u_int8_t        ipq_p;           /* protocol of this fragment */
+    u_int16_t       ipq_id;          /* sequence id for reassembly */
 #ifndef VBOX_WITH_BSD_REASS
-        ipasfragp_32 ipq_next,ipq_prev;         /* to ip headers of fragments */
+    ipasfragp_32    ipq_next;
+    ipasfragp_32    ipq_prev;        /* to ip headers of fragments */
 #else  /* VBOX_WITH_BSD_REASS */
-        u_int8_t        ipq_nfrags;             /* # of fragments in this packet */
-        struct mbuf *ipq_frags;                 /* to ip headers of fragments */
+    struct mbuf     *ipq_frags;      /* to ip headers of fragments */
+    uint8_t         ipq_nfrags;      /* # of fragments in this packet */
 #endif /* VBOX_WITH_BSD_REASS */
-
-        struct  in_addr ipq_src,ipq_dst;
+    struct in_addr  ipq_src;
+    struct in_addr  ipq_dst;
 };
 
 #ifdef VBOX_WITH_BSD_REASS
@@ -282,33 +298,38 @@ TAILQ_HEAD(ipqhead,ipq_t);
  *
  * Note: ipf_next must be at same offset as ipq_next above
  */
-struct  ipasfrag {
+struct  ipasfrag
+{
 #ifdef WORDS_BIGENDIAN
-        u_int   ip_v:4,
-                ip_hl:4;
+# ifdef _MSC_VER
+    uint8_t      ip_v:4;
+    uint8_t      ip_hl:4;
+# else
+    unsigned     ip_v:4;
+    unsigned     ip_hl:4;
+# endif
 #else
-#ifdef _MSC_VER
-        u_int8_t        ip_hl:4,
-#else
-        u_int   ip_hl:4,
+# ifdef _MSC_VER
+    uint8_t      ip_hl:4;
+    uint8_t      ip_v:4;
+# else
+    unsigned     ip_hl:4;
+    unsigned     ip_v:4;
+# endif
 #endif
-                ip_v:4;
-#endif
-                                        /* BUG : u_int changed to u_int8_t.
-                                         * sizeof(u_int)==4 on linux 2.0
-                                         */
-        u_int8_t ipf_mff;               /* XXX overlays ip_tos: use low bit
-                                         * to avoid destroying tos (PPPDTRuu);
-                                         * copied from (ip_off&IP_MF) */
-        u_int16_t       ip_len;
-        u_int16_t       ip_id;
-        u_int16_t       ip_off;
-        u_int8_t        ip_ttl;
-        u_int8_t        ip_p;
-        u_int16_t       ip_sum;
-        ipasfragp_32 ipf_next;          /* next fragment */
-        ipasfragp_32 ipf_prev;          /* previous fragment */
+    u_int8_t     ipf_mff;           /* XXX overlays ip_tos: use low bit
+                                     * to avoid destroying tos (PPPDTRuu);
+                                     * copied from (ip_off & IP_MF) */
+    u_int16_t    ip_len;
+    u_int16_t    ip_id;
+    u_int16_t    ip_off;
+    u_int8_t     ip_ttl;
+    u_int8_t     ip_p;
+    u_int16_t    ip_sum;
+    ipasfragp_32 ipf_next;          /* next fragment */
+    ipasfragp_32 ipf_prev;          /* previous fragment */
 };
+AssertCompileSize(struct ipasfrag, 20);
 
 /*
  * Structure stored in mbuf in inpcb.ip_options
@@ -318,9 +339,10 @@ struct  ipasfrag {
  */
 #define MAX_IPOPTLEN    40
 
-struct ipoption {
-        struct  in_addr ipopt_dst;      /* first-hop dst if source routed */
-        int8_t  ipopt_list[MAX_IPOPTLEN];       /* options proper */
+struct ipoption
+{
+    struct in_addr ipopt_dst;      /* first-hop dst if source routed */
+    int8_t         ipopt_list[MAX_IPOPTLEN]; /* options proper */
 };
 
 /*
@@ -328,33 +350,33 @@ struct ipoption {
  * passed to ip_output when IP multicast options are in use.
  */
 
-struct  ipstat_t {
-        u_long  ips_total;              /* total packets received */
-        u_long  ips_badsum;             /* checksum bad */
-        u_long  ips_tooshort;           /* packet too short */
-        u_long  ips_toosmall;           /* not enough data */
-        u_long  ips_badhlen;            /* ip header length < data size */
-        u_long  ips_badlen;             /* ip length < ip header length */
-        u_long  ips_fragments;          /* fragments received */
-        u_long  ips_fragdropped;        /* frags dropped (dups, out of space) */
-        u_long  ips_fragtimeout;        /* fragments timed out */
-        u_long  ips_forward;            /* packets forwarded */
-        u_long  ips_cantforward;        /* packets rcvd for unreachable dest */
-        u_long  ips_redirectsent;       /* packets forwarded on same net */
-        u_long  ips_noproto;            /* unknown or unsupported protocol */
-        u_long  ips_delivered;          /* datagrams delivered to upper level*/
-        u_long  ips_localout;           /* total ip packets generated here */
-        u_long  ips_odropped;           /* lost packets due to nobufs, etc. */
-        u_long  ips_reassembled;        /* total packets reassembled ok */
-        u_long  ips_fragmented;         /* datagrams successfully fragmented */
-        u_long  ips_ofragments;         /* output fragments created */
-        u_long  ips_cantfrag;           /* don't fragment flag was set, etc. */
-        u_long  ips_badoptions;         /* error in option processing */
-        u_long  ips_noroute;            /* packets discarded due to no route */
-        u_long  ips_badvers;            /* ip version != 4 */
-        u_long  ips_rawout;             /* total raw ip packets generated */
-        u_long  ips_unaligned;          /* times the ip packet was not aligned */
+struct  ipstat_t
+{
+    u_long  ips_total;              /* total packets received */
+    u_long  ips_badsum;             /* checksum bad */
+    u_long  ips_tooshort;           /* packet too short */
+    u_long  ips_toosmall;           /* not enough data */
+    u_long  ips_badhlen;            /* ip header length < data size */
+    u_long  ips_badlen;             /* ip length < ip header length */
+    u_long  ips_fragments;          /* fragments received */
+    u_long  ips_fragdropped;        /* frags dropped (dups, out of space) */
+    u_long  ips_fragtimeout;        /* fragments timed out */
+    u_long  ips_forward;            /* packets forwarded */
+    u_long  ips_cantforward;        /* packets rcvd for unreachable dest */
+    u_long  ips_redirectsent;       /* packets forwarded on same net */
+    u_long  ips_noproto;            /* unknown or unsupported protocol */
+    u_long  ips_delivered;          /* datagrams delivered to upper level*/
+    u_long  ips_localout;           /* total ip packets generated here */
+    u_long  ips_odropped;           /* lost packets due to nobufs, etc. */
+    u_long  ips_reassembled;        /* total packets reassembled ok */
+    u_long  ips_fragmented;         /* datagrams successfully fragmented */
+    u_long  ips_ofragments;         /* output fragments created */
+    u_long  ips_cantfrag;           /* don't fragment flag was set, etc. */
+    u_long  ips_badoptions;         /* error in option processing */
+    u_long  ips_noroute;            /* packets discarded due to no route */
+    u_long  ips_badvers;            /* ip version != 4 */
+    u_long  ips_rawout;             /* total raw ip packets generated */
+    u_long  ips_unaligned;          /* times the ip packet was not aligned */
 };
-
 
 #endif

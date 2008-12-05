@@ -46,19 +46,21 @@ extern struct socket *udp_last_so;
  * Udp protocol header.
  * Per RFC 768, September, 1981.
  */
-struct udphdr {
-        u_int16_t       uh_sport;               /* source port */
-        u_int16_t       uh_dport;               /* destination port */
-        int16_t uh_ulen;                /* udp length */
-        u_int16_t       uh_sum;                 /* udp checksum */
+struct udphdr
+{
+    uint16_t   uh_sport;               /* source port */
+    uint16_t   uh_dport;               /* destination port */
+    int16_t    uh_ulen;                /* udp length */
+    uint16_t   uh_sum;                 /* udp checksum */
 };
 
 /*
  * UDP kernel structures and variables.
  */
-struct udpiphdr {
-                struct  ipovly ui_i;            /* overlaid ip structure */
-                struct  udphdr ui_u;            /* udp header */
+struct udpiphdr
+{
+    struct ipovly ui_i;            /* overlaid ip structure */
+    struct udphdr ui_u;            /* udp header */
 };
 #define ui_next         ui_i.ih_next
 #define ui_prev         ui_i.ih_prev
@@ -72,18 +74,19 @@ struct udpiphdr {
 #define ui_ulen         ui_u.uh_ulen
 #define ui_sum          ui_u.uh_sum
 
-struct udpstat_t {
-                                        /* input statistics: */
-                u_long  udps_ipackets;          /* total input packets */
-                u_long  udps_hdrops;            /* packet shorter than header */
-                u_long  udps_badsum;            /* checksum error */
-                u_long  udps_badlen;            /* data length larger than packet */
-                u_long  udps_noport;            /* no socket on port */
-                u_long  udps_noportbcast;       /* of above, arrived as broadcast */
-                u_long  udps_fullsock;          /* not delivered, input socket full */
-                u_long  udpps_pcbcachemiss;     /* input packets missing pcb cache */
-                                        /* output statistics: */
-                u_long  udps_opackets;          /* total output packets */
+struct udpstat_t
+{
+                                    /* input statistics: */
+    u_long  udps_ipackets;          /* total input packets */
+    u_long  udps_hdrops;            /* packet shorter than header */
+    u_long  udps_badsum;            /* checksum error */
+    u_long  udps_badlen;            /* data length larger than packet */
+    u_long  udps_noport;            /* no socket on port */
+    u_long  udps_noportbcast;       /* of above, arrived as broadcast */
+    u_long  udps_fullsock;          /* not delivered, input socket full */
+    u_long  udpps_pcbcachemiss;     /* input packets missing pcb cache */
+                                    /* output statistics: */
+    u_long  udps_opackets;          /* total output packets */
 };
 
 /*
