@@ -374,9 +374,11 @@ struc CPUMCPU
 
     .Guest.dr             resq    8
 
-    .Guest.gdtr           resb    10          ; GDT limit + linear address
+    .Guest.gdtr.cbGdt     resw    1
+    .Guest.gdtr.pGdt      resq    1
     .Guest.gdtrPadding    resw    1
-    .Guest.idtr           resb    10          ; IDT limit + linear address
+    .Guest.idtr.cbIdt     resw    1
+    .Guest.idtr.pIdt      resq    1
     .Guest.idtrPadding    resw    1
     .Guest.ldtr           resw    1
     .Guest.ldtrPadding    resw    1
