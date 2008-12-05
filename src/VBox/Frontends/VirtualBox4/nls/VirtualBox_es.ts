@@ -5319,7 +5319,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1638"/>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;¡Felicitaciones! Ud. se a registrado exitosamente como un usuario de VirtualBox.&lt;/p&gt;&lt;p&gt;¡Muchas gracias por su colaboración!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;¡Felicitaciones! Ud. se ha registrado exitosamente como un usuario de VirtualBox.&lt;/p&gt;&lt;p&gt;¡Muchas gracias por su colaboración!&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1641"/>
