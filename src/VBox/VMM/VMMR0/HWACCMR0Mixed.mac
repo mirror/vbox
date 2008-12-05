@@ -528,10 +528,6 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     mov     xSI, [xBP + xS*2 + RTHCPHYS_CB*2]   ; pCtx
     push    xSI                     ; push for saving the state at the end
 
-    ; Restore CR2
-    mov     ebx, [xSI + CPUMCTX.cr2]
-    mov     cr2, xBX
-
     ; save host fs, gs, sysenter msr etc
     mov     xAX, [xBP + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
     push    xAX                     ; save for the vmload after vmrun
@@ -634,10 +630,6 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     ;/* Save the Guest CPU context pointer. */
     mov     rsi, [rbp + xS*2 + RTHCPHYS_CB*2]   ; pCtx
     push    rsi                     ; push for saving the state at the end
-
-    ; Restore CR2
-    mov     rbx, [rsi + CPUMCTX.cr2]
-    mov     cr2, rbx
 
     ; save host fs, gs, sysenter msr etc
     mov     rax, [rbp + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)

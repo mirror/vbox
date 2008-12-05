@@ -348,10 +348,6 @@ BEGINPROC SVMGCVMRun64
     ;/* Save the Guest CPU context pointer. */
     push    rsi                     ; push for saving the state at the end
 
-    ; Restore CR2
-    mov     rbx, [rsi + CPUMCTX.cr2]
-    mov     cr2, rbx
-
     ; save host fs, gs, sysenter msr etc
     mov     rax, [rbp + 8]                  ; pVMCBHostPhys (64 bits physical address)
     push    rax                             ; save for the vmload after vmrun
