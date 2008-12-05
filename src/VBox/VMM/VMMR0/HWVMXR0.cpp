@@ -1501,7 +1501,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
     {
-#if !defined(VBOX_WITH_64_BITS_GUESTS)
+#if !defined(VBOX_ENABLE_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #elif HC_ARCH_BITS == 32
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0SwitcherStartVM64;

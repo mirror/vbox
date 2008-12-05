@@ -34,7 +34,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
-#if HC_ARCH_BITS == 64 || defined (VBOX_WITH_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 64 // || defined (VBOX_WITH_64_BITS_GUESTS)
 /* Enable 64 bits guest support. */
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
