@@ -8042,15 +8042,15 @@ RWLockHandle *SessionMachine::lockHandle() const
 /**
  *  @note Locks the same as #setMachineState() does.
  */
-STDMETHODIMP SessionMachine::UpdateState (MachineState_T machineState)
+STDMETHODIMP SessionMachine::UpdateState (MachineState_T aMachineState)
 {
-    return setMachineState (machineState);
+    return setMachineState (aMachineState);
 }
 
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
+STDMETHODIMP SessionMachine::GetIPCId (BSTR *aId)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -8058,10 +8058,10 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *id)
     AutoReadLock alock (this);
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    mIPCSemName.cloneTo (id);
+    mIPCSemName.cloneTo (aId);
     return S_OK;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    mData->mConfigFileFull.cloneTo (id);
+    mData->mConfigFileFull.cloneTo (aId);
     return S_OK;
 #else
 # error "Port me!"
@@ -8114,7 +8114,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
     AssertReturn (service, E_FAIL);
     return service->captureDeviceForVM (this, aId);
 #else
-    return E_FAIL;
+    return E_NOTIMPL;
 #endif
 }
 
@@ -8133,7 +8133,7 @@ STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
     AssertReturn (service, E_FAIL);
     return service->detachDeviceFromVM (this, aId, !!aDone);
 #else
-    return E_FAIL;
+    return E_NOTIMPL;
 #endif
 }
 
@@ -8373,7 +8373,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
     Utf8Str stateFilePathFull = aSavedStateFile;
     int vrc = calculateFullPath (stateFilePathFull, stateFilePathFull);
     if (RT_FAILURE (vrc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_FILE_ERROR,
             tr ("Invalid saved state file path '%ls' (%Rrc)"),
                 aSavedStateFile, vrc);
 
@@ -8604,7 +8604,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
         AutoWriteLock chLock (snapshot->childrenLock());
         size_t childrenCount = snapshot->children().size();
         if (childrenCount > 1)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Snapshot '%ls' of the machine '%ls' has more than one "
                     "child snapshot (%d)"),
                 snapshot->data().mName.raw(), mUserData->mName.raw(),
@@ -8677,7 +8677,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
     if (mData->mCurrentSnapshot.isNull())
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Could not discard the current state of the machine '%ls' "
                 "because it doesn't have any snapshots"),
             mUserData->mName.raw());
@@ -8741,7 +8741,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
     if (mData->mCurrentSnapshot.isNull())
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Could not discard the current state of the machine '%ls' "
                 "because it doesn't have any snapshots"),
             mUserData->mName.raw());
@@ -8921,8 +8921,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    if (!VALID_PTR(aName))
-        return E_POINTER;
+    CheckComArgNotNull(aName);
     if ((aValue != NULL) && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 
@@ -8940,7 +8939,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aVa
         return E_INVALIDARG;
 
     bool matchAll = false;
-    if (0 == utf8Patterns.length())
+    if (utf8Patterns.length() == 0)
         matchAll = true;
 
     AutoCaller autoCaller (this);
