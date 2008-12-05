@@ -55,35 +55,23 @@ ifeq ($(KBUILD_TARGET), win)
  USE_REM_IMP = 1
 else
 
-TOOL_GCC3V3 = description
-TOOL_GCC3V3_EXTENDS = GCC3
-TOOL_GCC3V3_CC = $(firstword $(which gcc-4.1.2 gcc-3.4 gcc-3.4.6 gcc-3.3 gcc-3.3.6  gcc-3.2 gcc-4.1 gcc-4.2))
-TOOL_GCC3V3_COMPILE_C_DEPEND =
-TOOL_GCC3V3_COMPILE_C_DEPORD =
-TOOL_GCC3V3_COMPILE_C_OUTPUT =
-define TOOL_GCC3V3_COMPILE_C_CMDS
+ # Just keep it here, if need to experiment with older compilers in the future
+ TOOL_GCC3V3 = description
+ TOOL_GCC3V3_EXTENDS = GCC3
+ TOOL_GCC3V3_CC = $(firstword $(which gcc-4.2 gcc-4.1 gcc-3.4 gcc-3.4.6 gcc-3.3 gcc-3.3.6  gcc-3.2))
+ TOOL_GCC3V3_COMPILE_C_DEPEND =
+ TOOL_GCC3V3_COMPILE_C_DEPORD =
+ TOOL_GCC3V3_COMPILE_C_OUTPUT =
+ define TOOL_GCC3V3_COMPILE_C_CMDS
 	$(QUIET)$(TOOL_GCC3V3_CC) -c\
 		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-endef
+ endef
+ #target-i386/op_helper.c_TOOL = GCC3V3
 
- # Unfortunately little pinguins tend to have default compilers no suitable
- # for real compilation, so search better alternatives
- if1of ($(KBUILD_TARGET),)
-  $(REM_MOD)_TOOL      = GCC3V3
-  $(REM_MOD)_TEMPLATE  = DUMMY
-  $(REM_MOD)_CFLAGS    = -fPIC                                          \
-                         -Wall -fno-strict-aliasing -Wno-unused         \
-                         -Wno-long-long -Wno-sign-compare
-  $(REM_MOD)_CFLAGS.x86      = -m32
-  $(REM_MOD)_CFLAGS.amd64    = -m64
-  $(REM_MOD)_CFLAGS.debug    = -g -O0
-  $(REM_MOD)_CFLAGS.release += -O2
- else
-  $(REM_MOD)_TEMPLATE  = VBOXR3NP
- endif
+ $(REM_MOD)_TEMPLATE  = VBOXR3NP
 
  IMPORT_LIBS          += VBoxREM
 endif
@@ -131,8 +119,6 @@ $(REM_MOD)_SOURCES          = 	\
 	target-i386/op_helper.c \
 	target-i386/helper.c 	\
 	target-i386/translate.c
-
-#target-i386/helper.c_TOOL = GCC3V3
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  $(REM_MOD)_DEFS             += __x86_64__

@@ -4108,7 +4108,11 @@ void helper_fildll_ST0(int64_t val)
     env->fptags[new_fpstt] = 0; /* validate stack entry */
 }
 
+#ifndef VBOX
 uint32_t helper_fsts_ST0(void)
+#else
+RTCCUINTREG helper_fsts_ST0(void)
+#endif
 {
     union {
         float32 f;
@@ -4127,8 +4131,11 @@ uint64_t helper_fstl_ST0(void)
     u.f = floatx_to_float64(ST0, &env->fp_status);
     return u.i;
 }
-
+#ifndef VBOX
 int32_t helper_fist_ST0(void)
+#else
+RTCCINTREG helper_fist_ST0(void)
+#endif
 {
     int32_t val;
     val = floatx_to_int32(ST0, &env->fp_status);
@@ -4137,7 +4144,11 @@ int32_t helper_fist_ST0(void)
     return val;
 }
 
+#ifndef VBOX
 int32_t helper_fistl_ST0(void)
+#else
+RTCCINTREG helper_fistl_ST0(void)
+#endif
 {
     int32_t val;
     val = floatx_to_int32(ST0, &env->fp_status);
@@ -4151,7 +4162,11 @@ int64_t helper_fistll_ST0(void)
     return val;
 }
 
+#ifndef VBOX
 int32_t helper_fistt_ST0(void)
+#else
+RTCCINTREG helper_fistt_ST0(void)
+#endif
 {
     int32_t val;
     val = floatx_to_int32_round_to_zero(ST0, &env->fp_status);
@@ -4160,7 +4175,11 @@ int32_t helper_fistt_ST0(void)
     return val;
 }
 
+#ifndef VBOX
 int32_t helper_fisttl_ST0(void)
+#else
+RTCCINTREG helper_fisttl_ST0(void)
+#endif
 {
     int32_t val;
     val = floatx_to_int32_round_to_zero(ST0, &env->fp_status);
@@ -4412,12 +4431,20 @@ void helper_fldz_FT0(void)
     FT0 = f15rk[0];
 }
 
+#ifndef VBOX
 uint32_t helper_fnstsw(void)
+#else
+RTCCUINTREG helper_fnstsw(void)
+#endif
 {
     return (env->fpus & ~0x3800) | (env->fpstt & 0x7) << 11;
 }
 
+#ifndef VBOX
 uint32_t helper_fnstcw(void)
+#else
+RTCCUINTREG helper_fnstcw(void)
+#endif
 {
     return env->fpuc;
 }
