@@ -243,7 +243,6 @@ uint8_t* code_gen_prologue;
 REMR3DECL(int) REMR3Init(PVM pVM)
 {
     uint32_t u32Dummy;
-    unsigned i;
     int rc;
 
     /*
