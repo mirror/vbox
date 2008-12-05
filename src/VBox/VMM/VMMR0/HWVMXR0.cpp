@@ -328,21 +328,15 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                 | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
 
         /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch failure with an invalid control fields error. (combined with some other exit reasons) */
-
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
-        if (VMX_IS_64BIT_HOST_MODE())
+        if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         {
-            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
-            {
-                /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
-                val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
-                Assert(pVM->hwaccm.s.vmx.pAPIC);
-            }
-            else
-                /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
-                val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
+            /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
+            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+            Assert(pVM->hwaccm.s.vmx.pAPIC);
         }
-#endif
+        else
+            /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
+            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
 
 #ifdef VBOX_WITH_VTX_MSR_BITMAPS
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
