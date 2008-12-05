@@ -68,7 +68,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (HRESULT *aResultCode)
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (GUIDPARAMOUT aIID)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (OUT_GUID aIID)
 {
     if (!aIID)
         return E_POINTER;

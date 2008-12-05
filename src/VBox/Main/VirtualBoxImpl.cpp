@@ -744,10 +744,10 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 /////////////////////////////////////////////////////////////////////////////
 
 /** @note Locks mSystemProperties object for reading. */
-STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aName,
-                                        INPTR BSTR aOsTypeId,
-                                        INPTR BSTR aBaseFolder,
-                                        INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
+                                        IN_BSTR aOsTypeId,
+                                        IN_BSTR aBaseFolder,
+                                        IN_GUID aId,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
@@ -825,10 +825,10 @@ STDMETHODIMP VirtualBox::CreateMachine (INPTR BSTR aName,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
-                                              INPTR BSTR aOsTypeId,
-                                              INPTR BSTR aSettingsFile,
-                                              INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
+                                              IN_BSTR aOsTypeId,
+                                              IN_BSTR aSettingsFile,
+                                              IN_GUID aId,
                                               IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull (aName);
@@ -890,7 +890,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (INPTR BSTR aName,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::OpenMachine (INPTR BSTR aSettingsFile,
+STDMETHODIMP VirtualBox::OpenMachine (IN_BSTR aSettingsFile,
                                       IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull(aSettingsFile);
@@ -962,7 +962,7 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetMachine (INPTR GUIDPARAM aId, IMachine **aMachine)
+STDMETHODIMP VirtualBox::GetMachine (IN_GUID aId, IMachine **aMachine)
 {
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
@@ -979,7 +979,7 @@ STDMETHODIMP VirtualBox::GetMachine (INPTR GUIDPARAM aId, IMachine **aMachine)
 }
 
 /** @note Locks this object for reading, then some machine objects for reading. */
-STDMETHODIMP VirtualBox::FindMachine (INPTR BSTR aName, IMachine **aMachine)
+STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
@@ -1030,7 +1030,7 @@ STDMETHODIMP VirtualBox::FindMachine (INPTR BSTR aName, IMachine **aMachine)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::UnregisterMachine (INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::UnregisterMachine (IN_GUID aId,
                                             IMachine **aMachine)
 {
     Guid id = aId;
@@ -1065,8 +1065,8 @@ STDMETHODIMP VirtualBox::UnregisterMachine (INPTR GUIDPARAM aId,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::CreateHardDisk2 (INPTR BSTR aFormat,
-                                          INPTR BSTR aLocation,
+STDMETHODIMP VirtualBox::CreateHardDisk2 (IN_BSTR aFormat,
+                                          IN_BSTR aLocation,
                                           IHardDisk2 **aHardDisk)
 {
     CheckComArgStrNotEmptyOrNull (aFormat);
@@ -1096,7 +1096,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk2 (INPTR BSTR aFormat,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::OpenHardDisk2 (INPTR BSTR aLocation,
+STDMETHODIMP VirtualBox::OpenHardDisk2 (IN_BSTR aLocation,
                                         IHardDisk2 **aHardDisk)
 {
     CheckComArgNotNull(aLocation);
@@ -1130,7 +1130,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk2 (INPTR BSTR aLocation,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::GetHardDisk2 (INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::GetHardDisk2 (IN_GUID aId,
                                        IHardDisk2 **aHardDisk)
 {
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
@@ -1148,7 +1148,7 @@ STDMETHODIMP VirtualBox::GetHardDisk2 (INPTR GUIDPARAM aId,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::FindHardDisk2 (INPTR BSTR aLocation,
+STDMETHODIMP VirtualBox::FindHardDisk2 (IN_BSTR aLocation,
                                         IHardDisk2 **aHardDisk)
 {
     CheckComArgNotNull(aLocation);
@@ -1167,7 +1167,7 @@ STDMETHODIMP VirtualBox::FindHardDisk2 (INPTR BSTR aLocation,
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenDVDImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_GUID aId,
                                        IDVDImage2 **aDVDImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1198,7 +1198,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetDVDImage (INPTR GUIDPARAM aId, IDVDImage2 **aDVDImage)
+STDMETHODIMP VirtualBox::GetDVDImage (IN_GUID aId, IDVDImage2 **aDVDImage)
 {
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
@@ -1216,7 +1216,7 @@ STDMETHODIMP VirtualBox::GetDVDImage (INPTR GUIDPARAM aId, IDVDImage2 **aDVDImag
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindDVDImage (INPTR BSTR aLocation, IDVDImage2 **aDVDImage)
+STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage2 **aDVDImage)
 {
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
@@ -1234,7 +1234,7 @@ STDMETHODIMP VirtualBox::FindDVDImage (INPTR BSTR aLocation, IDVDImage2 **aDVDIm
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenFloppyImage (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_GUID aId,
                                           IFloppyImage2 **aFloppyImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1265,7 +1265,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (INPTR BSTR aLocation, INPTR GUIDPARAM 
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetFloppyImage (INPTR GUIDPARAM aId,
+STDMETHODIMP VirtualBox::GetFloppyImage (IN_GUID aId,
                                          IFloppyImage2 **aFloppyImage)
 
 {
@@ -1285,7 +1285,7 @@ STDMETHODIMP VirtualBox::GetFloppyImage (INPTR GUIDPARAM aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindFloppyImage (INPTR BSTR aLocation,
+STDMETHODIMP VirtualBox::FindFloppyImage (IN_BSTR aLocation,
                                           IFloppyImage2 **aFloppyImage)
 {
     CheckComArgNotNull(aLocation);
@@ -1304,7 +1304,7 @@ STDMETHODIMP VirtualBox::FindFloppyImage (INPTR BSTR aLocation,
 }
 
 /** @note Locks this object for reading. */
-STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
+STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 {
     CheckComArgNotNull(aType);
 
@@ -1335,7 +1335,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (INPTR BSTR aId, IGuestOSType **aType)
 }
 
 STDMETHODIMP
-VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
+VirtualBox::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aHostPath);
@@ -1346,7 +1346,7 @@ VirtualBox::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWr
     return setError (E_NOTIMPL, "Not yet implemented");
 }
 
-STDMETHODIMP VirtualBox::RemoveSharedFolder (INPTR BSTR aName)
+STDMETHODIMP VirtualBox::RemoveSharedFolder (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
@@ -1360,7 +1360,7 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder (INPTR BSTR aName)
  *  @note Locks this object for reading.
  */
 STDMETHODIMP VirtualBox::
-GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
+GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
     CheckComArgNotNull(aNextKey);
 
@@ -1458,7 +1458,7 @@ GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
 {
     CheckComArgNotNull(aKey);
     CheckComArgNotNull(aValue);
@@ -1519,7 +1519,7 @@ STDMETHODIMP VirtualBox::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
+STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
 {
     CheckComArgNotNull(aKey);
 
@@ -1575,7 +1575,7 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
             if (!onExtraDataCanChange (Guid::Empty, aKey, aValue, error))
             {
                 const char *sep = error.isEmpty() ? "" : ": ";
-                const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
+                CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
                 LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
                                  sep, err));
                 return setError (E_ACCESSDENIED,
@@ -1623,7 +1623,7 @@ STDMETHODIMP VirtualBox::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
 /**
  *  @note Locks objects!
  */
-STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachineId)
+STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_GUID aMachineId)
 {
     CheckComArgNotNull(aSession);
 
@@ -1671,9 +1671,9 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, INPTR GUIDPARAM aMachi
  *  @note Locks objects!
  */
 STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
-                                            INPTR GUIDPARAM aMachineId,
-                                            INPTR BSTR aType,
-                                            INPTR BSTR aEnvironment,
+                                            IN_GUID aMachineId,
+                                            IN_BSTR aType,
+                                            IN_BSTR aEnvironment,
                                             IProgress **aProgress)
 {
     CheckComArgNotNull(aSession);
@@ -1730,7 +1730,7 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
  *  @note Locks objects!
  */
 STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
-                                              INPTR GUIDPARAM aMachineId)
+                                              IN_GUID aMachineId)
 {
     CheckComArgNotNull(aSession);
 
@@ -1807,7 +1807,7 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
     return rc;
 }
 
-STDMETHODIMP VirtualBox::WaitForPropertyChange (INPTR BSTR aWhat, ULONG aTimeout,
+STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR aWhat, ULONG aTimeout,
                                                 BSTR *aChanged, BSTR *aValues)
 {
     ReturnComNotImplemented();
@@ -1921,7 +1921,7 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
  *
  * @note Doesn't lock objects.
  */
-HRESULT VirtualBox::removeProgress (INPTR GUIDPARAM aId)
+HRESULT VirtualBox::removeProgress (IN_GUID aId)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2282,7 +2282,7 @@ void VirtualBox::onMachineDataChange (const Guid &aId)
 /**
  *  @note Locks this object for reading.
  */
-BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue,
+BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                                        Bstr &aError)
 {
     LogFlowThisFunc (("machine={%s} aKey={%ls} aValue={%ls}\n",
@@ -2322,7 +2322,7 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, INPTR BSTR aKey, INPTR B
 struct ExtraDataEvent : public VirtualBox::CallbackEvent
 {
     ExtraDataEvent (VirtualBox *aVB, const Guid &aMachineId,
-                    INPTR BSTR aKey, INPTR BSTR aVal)
+                    IN_BSTR aKey, IN_BSTR aVal)
         : CallbackEvent (aVB), machineId (aMachineId)
         , key (aKey), val (aVal)
         {}
@@ -2341,7 +2341,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onExtraDataChange (const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue)
+void VirtualBox::onExtraDataChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aValue)
 {
     postEvent (new ExtraDataEvent (this, aId, aKey, aValue));
 }
@@ -2450,7 +2450,7 @@ void VirtualBox::onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshot
 struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 {
     GuestPropertyEvent (VirtualBox *aVBox, const Guid &aMachineId,
-                        INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
+                        IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
         : CallbackEvent (aVBox), machineId (aMachineId)
         , name (aName), value (aValue), flags(aFlags)
         {}
@@ -2469,8 +2469,8 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onGuestPropertyChange (const Guid &aMachineId, INPTR BSTR aName,
-                                        INPTR BSTR aValue, INPTR BSTR aFlags)
+void VirtualBox::onGuestPropertyChange (const Guid &aMachineId, IN_BSTR aName,
+                                        IN_BSTR aValue, IN_BSTR aFlags)
 {
     postEvent (new GuestPropertyEvent (this, aMachineId, aName, aValue, aFlags));
 }
@@ -2607,7 +2607,7 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
  * @note Locks this object and hard disk objects for reading.
  */
 HRESULT VirtualBox::
-findHardDisk2 (const Guid *aId, const BSTR aLocation,
+findHardDisk2 (const Guid *aId, CBSTR aLocation,
                bool aSetError, ComObjPtr <HardDisk2> *aHardDisk /*= NULL*/)
 {
     AssertReturn (aId || aLocation, E_INVALIDARG);
@@ -2682,7 +2682,7 @@ findHardDisk2 (const Guid *aId, const BSTR aLocation,
  *
  * @note Locks this object and image objects for reading.
  */
-HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
+HRESULT VirtualBox::findDVDImage2 (const Guid *aId, CBSTR aLocation,
                                    bool aSetError,
                                    ComObjPtr <DVDImage2> *aImage /* = NULL */)
 {
@@ -2754,7 +2754,7 @@ HRESULT VirtualBox::findDVDImage2 (const Guid *aId, const BSTR aLocation,
  *
  * @note Locks this object and image objects for reading.
  */
-HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, const BSTR aLocation,
+HRESULT VirtualBox::findFloppyImage2 (const Guid *aId, CBSTR aLocation,
                                       bool aSetError,
                                       ComObjPtr <FloppyImage2> *aImage /* = NULL */)
 {

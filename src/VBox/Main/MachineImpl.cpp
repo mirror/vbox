@@ -379,8 +379,8 @@ void Machine::FinalRelease()
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
-HRESULT Machine::init (VirtualBox *aParent, const BSTR aConfigFile,
-                       InitMode aMode, const BSTR aName /* = NULL */,
+HRESULT Machine::init (VirtualBox *aParent, CBSTR aConfigFile,
+                       InitMode aMode, CBSTR aName /* = NULL */,
                        GuestOSType *aOsType /* = NULL */,
                        BOOL aNameSync /* = TRUE */,
                        const Guid *aId /* = NULL */)
@@ -810,7 +810,7 @@ STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(Name) (INPTR BSTR aName)
+STDMETHODIMP Machine::COMSETTER(Name) (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
@@ -846,7 +846,7 @@ STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
+STDMETHODIMP Machine::COMSETTER(Description) (IN_BSTR aDescription)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -862,7 +862,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (INPTR BSTR aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(Id) (GUIDPARAMOUT aId)
+STDMETHODIMP Machine::COMGETTER(Id) (OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -890,7 +890,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(OSTypeId) (INPTR BSTR aOSTypeId)
+STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
 {
     CheckComArgNotNull(aOSTypeId);
 
@@ -1332,7 +1332,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (INPTR BSTR aSnapshotFolder)
+STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
 {
     /* @todo (r=dmik):
      *  1. Allow to change the name of the snapshot folder containing snapshots
@@ -1778,7 +1778,7 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 }
 
 STDMETHODIMP
-Machine::COMSETTER(GuestPropertyNotificationPatterns) (INPTR BSTR aPatterns)
+Machine::COMSETTER(GuestPropertyNotificationPatterns) (IN_BSTR aPatterns)
 {
     AssertLogRelReturn (VALID_PTR(aPatterns), E_POINTER);
     AutoCaller autoCaller (this);
@@ -1841,7 +1841,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
     return S_OK;
 }
 
-STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
+STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
                                        StorageBus_T aBus, LONG aChannel,
                                        LONG aDevice)
 {
@@ -2335,7 +2335,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
+STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
     CheckComArgOutPointerValid(aNextKey);
 
@@ -2438,7 +2438,7 @@ STDMETHODIMP Machine::GetNextExtraDataKey (INPTR BSTR aKey, BSTR *aNextKey, BSTR
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
+STDMETHODIMP Machine::GetExtraData (IN_BSTR aKey, BSTR *aValue)
 {
     CheckComArgNotNull(aKey);
     CheckComArgOutPointerValid(aValue);
@@ -2504,7 +2504,7 @@ STDMETHODIMP Machine::GetExtraData (INPTR BSTR aKey, BSTR *aValue)
 /**
  *  @note Locks mParent for writing + this object for writing.
  */
-STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
+STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
 {
     CheckComArgNotNull(aKey);
 
@@ -2575,7 +2575,7 @@ STDMETHODIMP Machine::SetExtraData (INPTR BSTR aKey, INPTR BSTR aValue)
             if (!mParent->onExtraDataCanChange (mData->mUuid, aKey, aValue, error))
             {
                 const char *sep = error.isEmpty() ? "" : ": ";
-                const BSTR err = error.isNull() ? (const BSTR) L"" : error.raw();
+                CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
                 LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
                                  sep, err));
                 return setError (E_ACCESSDENIED,
@@ -2772,7 +2772,7 @@ STDMETHODIMP Machine::DeleteSettings()
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetSnapshot (INPTR GUIDPARAM aId, ISnapshot **aSnapshot)
+STDMETHODIMP Machine::GetSnapshot (IN_GUID aId, ISnapshot **aSnapshot)
 {
     CheckComArgOutPointerValid(aSnapshot);
 
@@ -2790,7 +2790,7 @@ STDMETHODIMP Machine::GetSnapshot (INPTR GUIDPARAM aId, ISnapshot **aSnapshot)
     return rc;
 }
 
-STDMETHODIMP Machine::FindSnapshot (INPTR BSTR aName, ISnapshot **aSnapshot)
+STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
 {
     CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aSnapshot);
@@ -2808,7 +2808,7 @@ STDMETHODIMP Machine::FindSnapshot (INPTR BSTR aName, ISnapshot **aSnapshot)
     return rc;
 }
 
-STDMETHODIMP Machine::SetCurrentSnapshot (INPTR GUIDPARAM aId)
+STDMETHODIMP Machine::SetCurrentSnapshot (IN_GUID aId)
 {
     /// @todo (dmik) don't forget to set
     //  mData->mCurrentStateModified to FALSE
@@ -2817,7 +2817,7 @@ STDMETHODIMP Machine::SetCurrentSnapshot (INPTR GUIDPARAM aId)
 }
 
 STDMETHODIMP
-Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
+Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aHostPath);
@@ -2858,7 +2858,7 @@ Machine::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     return S_OK;
 }
 
-STDMETHODIMP Machine::RemoveSharedFolder (INPTR BSTR aName)
+STDMETHODIMP Machine::RemoveSharedFolder (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
@@ -2941,7 +2941,7 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
     return directControl->OnShowWindow (FALSE /* aCheck */, &dummy, aWinId);
 }
 
-STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
+STDMETHODIMP Machine::GetGuestProperty (IN_BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
@@ -2997,21 +2997,21 @@ STDMETHODIMP Machine::GetGuestProperty (INPTR BSTR aName, BSTR *aValue, ULONG64 
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
-STDMETHODIMP Machine::GetGuestPropertyValue (INPTR BSTR aName, BSTR *aValue)
+STDMETHODIMP Machine::GetGuestPropertyValue (IN_BSTR aName, BSTR *aValue)
 {
     ULONG64 dummyTimestamp;
     BSTR dummyFlags;
     return GetGuestProperty(aName, aValue, &dummyTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::GetGuestPropertyTimestamp (INPTR BSTR aName, ULONG64 *aTimestamp)
+STDMETHODIMP Machine::GetGuestPropertyTimestamp (IN_BSTR aName, ULONG64 *aTimestamp)
 {
     BSTR dummyValue;
     BSTR dummyFlags;
     return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
+STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
@@ -3130,12 +3130,12 @@ STDMETHODIMP Machine::SetGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INP
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
 
-STDMETHODIMP Machine::SetGuestPropertyValue (INPTR BSTR aName, INPTR BSTR aValue)
+STDMETHODIMP Machine::SetGuestPropertyValue (IN_BSTR aName, IN_BSTR aValue)
 {
     return SetGuestProperty(aName, aValue, NULL);
 }
 
-STDMETHODIMP Machine::EnumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+STDMETHODIMP Machine::EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
@@ -3550,7 +3550,7 @@ HRESULT Machine::openSession (IInternalSessionControl *aControl)
  *        (inside the lock).
  */
 HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
-                                    INPTR BSTR aType, INPTR BSTR aEnvironment,
+                                    IN_BSTR aType, IN_BSTR aEnvironment,
                                     Progress *aProgress)
 {
     LogFlowThisFuncEnter();
@@ -4625,7 +4625,7 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
  *  @note
  *      must be called from under the object's lock!
  */
-HRESULT Machine::findSharedFolder (const BSTR aName,
+HRESULT Machine::findSharedFolder (CBSTR aName,
                                    ComObjPtr <SharedFolder> &aSharedFolder,
                                    bool aSetError /* = false */)
 {
@@ -5509,7 +5509,7 @@ HRESULT Machine::findSnapshot (const Guid &aId, ComObjPtr <Snapshot> &aSnapshot,
  *  @param aSnapshot    where to return the found snapshot
  *  @param aSetError    true to set extended error info on failure
  */
-HRESULT Machine::findSnapshot (const BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
+HRESULT Machine::findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
                                bool aSetError /* = false */)
 {
     AssertReturn (aName, E_INVALIDARG);
@@ -8097,7 +8097,7 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 /**
  *  @note Locks the same as Host::captureUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
+STDMETHODIMP SessionMachine::CaptureUSBDevice (IN_GUID aId)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8120,7 +8120,7 @@ STDMETHODIMP SessionMachine::CaptureUSBDevice (INPTR GUIDPARAM aId)
 /**
  *  @note Locks the same as Host::detachUSBDevice() does.
  */
-STDMETHODIMP SessionMachine::DetachUSBDevice (INPTR GUIDPARAM aId, BOOL aDone)
+STDMETHODIMP SessionMachine::DetachUSBDevice (IN_GUID aId, BOOL aDone)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8354,7 +8354,7 @@ STDMETHODIMP SessionMachine::EndSavingState (BOOL aSuccess)
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
+STDMETHODIMP SessionMachine::AdoptSavedState (IN_BSTR aSavedStateFile)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8388,7 +8388,7 @@ STDMETHODIMP SessionMachine::AdoptSavedState (INPTR BSTR aSavedStateFile)
  *  @note Locks mParent + this object for writing.
  */
 STDMETHODIMP SessionMachine::BeginTakingSnapshot (
-    IConsole *aInitiator, INPTR BSTR aName, INPTR BSTR aDescription,
+    IConsole *aInitiator, IN_BSTR aName, IN_BSTR aDescription,
     IProgress *aProgress, BSTR *aStateFilePath,
     IProgress **aServerProgress)
 {
@@ -8576,7 +8576,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
  *  @note Locks mParent + this + children objects for writing!
  */
 STDMETHODIMP SessionMachine::DiscardSnapshot (
-    IConsole *aInitiator, INPTR GUIDPARAM aId,
+    IConsole *aInitiator, IN_GUID aId,
     MachineState_T *aMachineState, IProgress **aProgress)
 {
     LogFlowThisFunc (("\n"));
@@ -8854,10 +8854,10 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
 #endif
 }
 
-STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNames),
-                                                  ComSafeArrayIn(INPTR BSTR, aValues),
+STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(IN_BSTR, aNames),
+                                                  ComSafeArrayIn(IN_BSTR, aValues),
                                                   ComSafeArrayIn(ULONG64, aTimestamps),
-                                                  ComSafeArrayIn(INPTR BSTR, aFlags))
+                                                  ComSafeArrayIn(IN_BSTR, aFlags))
 {
     LogFlowThisFunc (("\n"));
 
@@ -8886,10 +8886,10 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
     AssertReturn(!ComSafeArrayInIsNull (aTimestamps), E_POINTER);
     AssertReturn(!ComSafeArrayInIsNull (aFlags), E_POINTER);
 
-    com::SafeArray <INPTR BSTR> names(ComSafeArrayInArg(aNames));
-    com::SafeArray <INPTR BSTR> values(ComSafeArrayInArg(aValues));
+    com::SafeArray <IN_BSTR> names(ComSafeArrayInArg(aNames));
+    com::SafeArray <IN_BSTR> values(ComSafeArrayInArg(aValues));
     com::SafeArray <ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
-    com::SafeArray <INPTR BSTR> flags(ComSafeArrayInArg(aFlags));
+    com::SafeArray <IN_BSTR> flags(ComSafeArrayInArg(aFlags));
     DiscardSettings();
     mHWData.backup();
     mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
@@ -8912,8 +8912,8 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(INPTR BSTR, aNa
 #endif
 }
 
-STDMETHODIMP SessionMachine::PushGuestProperty (INPTR BSTR aName, INPTR BSTR aValue,
-                                                ULONG64 aTimestamp, INPTR BSTR aFlags)
+STDMETHODIMP SessionMachine::PushGuestProperty (IN_BSTR aName, IN_BSTR aValue,
+                                                ULONG64 aTimestamp, IN_BSTR aFlags)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9316,7 +9316,7 @@ HRESULT SessionMachine::onUSBDeviceAttach (IUSBDevice *aDevice,
 /**
  *  @note The calls shall hold no locks. Will temporarily lock this object for reading.
  */
-HRESULT SessionMachine::onUSBDeviceDetach (INPTR GUIDPARAM aId,
+HRESULT SessionMachine::onUSBDeviceDetach (IN_GUID aId,
                                            IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
@@ -10506,8 +10506,8 @@ void SnapshotMachine::FinalRelease()
  *  @note The aSessionMachine must be locked for writing.
  */
 HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
-                               INPTR GUIDPARAM aSnapshotId,
-                               INPTR BSTR aStateFilePath)
+                               IN_GUID aSnapshotId,
+                               IN_BSTR aStateFilePath)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("mName={%ls}\n", aSessionMachine->mUserData->mName.raw()));
@@ -10633,7 +10633,7 @@ HRESULT SnapshotMachine::init (SessionMachine *aSessionMachine,
 HRESULT SnapshotMachine::init (Machine *aMachine,
                                const settings::Key &aHWNode,
                                const settings::Key &aHDAsNode,
-                               INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath)
+                               IN_GUID aSnapshotId, IN_BSTR aStateFilePath)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc (("mName={%ls}\n", aMachine->mUserData->mName.raw()));

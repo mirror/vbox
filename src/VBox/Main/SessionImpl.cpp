@@ -628,7 +628,7 @@ STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
     return mConsole->onUSBDeviceAttach (aDevice, aError, aMaskedIfs);
 }
 
-STDMETHODIMP Session::OnUSBDeviceDetach (INPTR GUIDPARAM aId,
+STDMETHODIMP Session::OnUSBDeviceDetach (IN_GUID aId,
                                          IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc (("\n"));
@@ -666,7 +666,7 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
     return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
 }
 
-STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags,
+STDMETHODIMP Session::AccessGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
                                            BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -700,7 +700,7 @@ STDMETHODIMP Session::AccessGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, 
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
-STDMETHODIMP Session::EnumerateGuestProperties (INPTR BSTR aPatterns,
+STDMETHODIMP Session::EnumerateGuestProperties (IN_BSTR aPatterns,
                                                 ComSafeArrayOut(BSTR, aNames),
                                                 ComSafeArrayOut(BSTR, aValues),
                                                 ComSafeArrayOut(ULONG64, aTimestamps),

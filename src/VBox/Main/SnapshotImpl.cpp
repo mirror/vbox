@@ -64,7 +64,7 @@ void Snapshot::FinalRelease()
  *  @param  aMachine       machine associated with this snapshot
  *  @param  aParent        parent snapshot (NULL if no parent)
  */
-HRESULT Snapshot::init (const Guid &aId, INPTR BSTR aName, INPTR BSTR aDescription,
+HRESULT Snapshot::init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
                         RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
                         Snapshot *aParent)
 {
@@ -164,7 +164,7 @@ void Snapshot::discard()
 // ISnapshot methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Snapshot::COMGETTER(Id) (GUIDPARAMOUT aId)
+STDMETHODIMP Snapshot::COMGETTER(Id) (OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -190,7 +190,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
  *  @note Locks this object for writing, then calls Machine::onSnapshotChange()
  *  (see its lock requirements).
  */
-STDMETHODIMP Snapshot::COMSETTER(Name) (INPTR BSTR aName)
+STDMETHODIMP Snapshot::COMSETTER(Name) (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
@@ -220,7 +220,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMSETTER(Description) (INPTR BSTR aDescription)
+STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
 {
     CheckComArgNotNull(aDescription);
 
@@ -338,7 +338,7 @@ ULONG Snapshot::descendantCount()
  *  Searches for a snapshot with the given ID among children, grand-children,
  *  etc. of this snapshot. This snapshot itself is also included in the search.
  */
-ComObjPtr <Snapshot> Snapshot::findChildOrSelf (INPTR GUIDPARAM aId)
+ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_GUID aId)
 {
     ComObjPtr <Snapshot> child;
 
@@ -365,7 +365,7 @@ ComObjPtr <Snapshot> Snapshot::findChildOrSelf (INPTR GUIDPARAM aId)
  *  grand-children, etc. of this snapshot. This snapshot itself is also included
  *  in the search.
  */
-ComObjPtr <Snapshot> Snapshot::findChildOrSelf (INPTR BSTR aName)
+ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_BSTR aName)
 {
     ComObjPtr <Snapshot> child;
     AssertReturn (aName, child);

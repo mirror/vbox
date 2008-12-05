@@ -385,13 +385,13 @@ namespace pm
     class Filter
     {
     public:
-        Filter(ComSafeArrayIn(INPTR BSTR, metricNames),
+        Filter(ComSafeArrayIn(IN_BSTR, metricNames),
                ComSafeArrayIn(IUnknown * , objects));
         static bool patternMatch(const char *pszPat, const char *pszName,
                                  bool fSeenColon = false);
         bool match(const ComPtr<IUnknown> object, const std::string &name) const;
     private:
-        void init(ComSafeArrayIn(INPTR BSTR, metricNames),
+        void init(ComSafeArrayIn(IN_BSTR, metricNames),
                   ComSafeArrayIn(IUnknown * , objects));
 
         typedef std::pair<const ComPtr<IUnknown>, const std::string> FilterElement;

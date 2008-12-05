@@ -50,7 +50,7 @@ DEFINE_EMPTY_CTOR_DTOR (MediumBase)
 // IMedium properties
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP MediumBase::COMGETTER(Id) (GUIDPARAMOUT aId)
+STDMETHODIMP MediumBase::COMGETTER(Id) (OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -78,7 +78,7 @@ STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
     return S_OK;
 }
 
-STDMETHODIMP MediumBase::COMSETTER(Description) (INPTR BSTR aDescription)
+STDMETHODIMP MediumBase::COMSETTER(Description) (IN_BSTR aDescription)
 {
     CheckComArgNotNull(aDescription);
 
@@ -139,7 +139,7 @@ STDMETHODIMP MediumBase::COMGETTER(Location) (BSTR *aLocation)
     return S_OK;
 }
 
-STDMETHODIMP MediumBase::COMSETTER(Location) (INPTR BSTR aLocation)
+STDMETHODIMP MediumBase::COMSETTER(Location) (IN_BSTR aLocation)
 {
     CheckComArgNotNull(aLocation);
 
@@ -234,7 +234,7 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
 // IMedium methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP MediumBase::GetSnapshotIds (INPTR GUIDPARAM aMachineId,
+STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
                                          ComSafeGUIDArrayOut (aSnapshotIds))
 {
     if (Guid (aMachineId).isEmpty())
@@ -693,7 +693,7 @@ Utf8Str MediumBase::name()
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT MediumBase::setLocation (const BSTR aLocation)
+HRESULT MediumBase::setLocation (CBSTR aLocation)
 {
     /* get the full file name */
     Utf8Str locationFull;
@@ -930,7 +930,7 @@ HRESULT MediumBase::setStateError()
  *                      VirtualBox home directory).
  * @param aId           UUID of the image.
  */
-HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, const BSTR aLocation,
+HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation,
                                         const Guid &aId)
 {
     LogFlowThisFunc (("aLocation='%ls', aId={%RTuuid}\n", aLocation, aId.raw()));

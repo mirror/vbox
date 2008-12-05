@@ -91,19 +91,19 @@ public:
     typedef std::list <BackRef> BackRefList;
 
     // IMedium properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
+    STDMETHOD(COMSETTER(Description)) (IN_BSTR aDescription);
     STDMETHOD(COMGETTER(State)) (MediaState_T *aState);
     STDMETHOD(COMGETTER(Location)) (BSTR *aLocation);
-    STDMETHOD(COMSETTER(Location)) (INPTR BSTR aLocation);
+    STDMETHOD(COMSETTER(Location)) (IN_BSTR aLocation);
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
     STDMETHOD(COMGETTER(Size)) (ULONG64 *aSize);
     STDMETHOD(COMGETTER(LastAccessError)) (BSTR *aLastAccessError);
     STDMETHOD(COMGETTER(MachineIds)) (ComSafeGUIDArrayOut (aMachineIds));
 
     // IMedium methods
-    STDMETHOD(GetSnapshotIds) (INPTR GUIDPARAM aMachineId,
+    STDMETHOD(GetSnapshotIds) (IN_GUID aMachineId,
                                ComSafeGUIDArrayOut (aSnapshotIds));
     STDMETHOD(LockRead) (MediaState_T *aState);
     STDMETHOD(UnlockRead) (MediaState_T *aState);
@@ -141,7 +141,7 @@ protected:
 
     virtual Utf8Str name();
 
-    virtual HRESULT setLocation (const BSTR aLocation);
+    virtual HRESULT setLocation (CBSTR aLocation);
     virtual HRESULT queryInfo();
 
     /**
@@ -221,7 +221,7 @@ public:
 protected:
 
     // protected initializer/uninitializer for internal purposes only
-    HRESULT protectedInit (VirtualBox *aVirtualBox, const BSTR aLocation,
+    HRESULT protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation,
                            const Guid &aId);
     HRESULT protectedInit (VirtualBox *aVirtualBox, const settings::Key &aImageNode);
     void protectedUninit();
@@ -264,7 +264,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    HRESULT init (VirtualBox *aParent, const BSTR aFilePath,
+    HRESULT init (VirtualBox *aParent, CBSTR aFilePath,
                   const Guid &aId)
     {
         return protectedInit (aParent, aFilePath, aId);
@@ -317,7 +317,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    HRESULT init (VirtualBox *aParent, const BSTR aFilePath,
+    HRESULT init (VirtualBox *aParent, CBSTR aFilePath,
                   const Guid &aId)
     {
         return protectedInit (aParent, aFilePath, aId);

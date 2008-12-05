@@ -52,8 +52,8 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (INPTR BSTR aName, INPTR BSTR aUdi = NULL,
-                  INPTR BSTR aDescription = NULL);
+    HRESULT init (IN_BSTR aName, IN_BSTR aUdi = NULL,
+                  IN_BSTR aDescription = NULL);
     void uninit();
 
     // IHostFloppyDrive properties
@@ -84,7 +84,7 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostFloppyDrive)
 
-    STDMETHOD(FindByName) (INPTR BSTR aName, IHostFloppyDrive **aDrive)
+    STDMETHOD(FindByName) (IN_BSTR aName, IHostFloppyDrive **aDrive)
     {
         if (!aName)
             return E_INVALIDARG;

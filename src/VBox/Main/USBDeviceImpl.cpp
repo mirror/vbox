@@ -143,7 +143,7 @@ void OUSBDevice::uninit()
  * @returns COM status code
  * @param   aId   Address of result variable.
  */
-STDMETHODIMP OUSBDevice::COMGETTER(Id)(GUIDPARAMOUT aId)
+STDMETHODIMP OUSBDevice::COMGETTER(Id)(OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 

@@ -85,7 +85,7 @@ public:
 
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
-    STDMETHOD(COMGETTER(InterfaceID)) (GUIDPARAMOUT aIID);
+    STDMETHOD(COMGETTER(InterfaceID)) (OUT_GUID aIID);
     STDMETHOD(COMGETTER(Component)) (BSTR *aComponent);
     STDMETHOD(COMGETTER(Text)) (BSTR *aText);
     STDMETHOD(COMGETTER(Next)) (IVirtualBoxErrorInfo **aNext);

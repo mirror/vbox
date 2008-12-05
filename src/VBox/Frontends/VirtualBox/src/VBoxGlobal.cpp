@@ -695,21 +695,21 @@ public:
     // some property) directly from the callback method will definitely cause
     // a deadlock.
 
-    STDMETHOD(OnMachineStateChange) (IN_GUIDPARAM id, MachineState_T state)
+    STDMETHOD(OnMachineStateChange) (IN_GUID id, MachineState_T state)
     {
         postEvent (new VBoxMachineStateChangeEvent (COMBase::ToQUuid (id),
                                                     (KMachineState) state));
         return S_OK;
     }
 
-    STDMETHOD(OnMachineDataChange) (IN_GUIDPARAM id)
+    STDMETHOD(OnMachineDataChange) (IN_GUID id)
     {
         postEvent (new VBoxMachineDataChangeEvent (COMBase::ToQUuid (id)));
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataCanChange)(IN_GUIDPARAM id,
-                                    IN_BSTRPARAM key, IN_BSTRPARAM value,
+    STDMETHOD(OnExtraDataCanChange)(IN_GUID id,
+                                    IN_BSTR key, IN_BSTR value,
                                     BSTR *error, BOOL *allowChange)
     {
         if (!error || !allowChange)
@@ -761,8 +761,8 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataChange) (IN_GUIDPARAM id,
-                                  IN_BSTRPARAM key, IN_BSTRPARAM value)
+    STDMETHOD(OnExtraDataChange) (IN_GUID id,
+                                  IN_BSTR key, IN_BSTR value)
     {
         if (COMBase::ToQUuid (id).isNull())
         {
@@ -795,7 +795,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered) (IN_GUIDPARAM id, DeviceType_T type,
+    STDMETHOD(OnMediaRegistered) (IN_GUID id, DeviceType_T type,
                                   BOOL registered)
     {
         /** @todo */
@@ -805,21 +805,21 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMachineRegistered) (IN_GUIDPARAM id, BOOL registered)
+    STDMETHOD(OnMachineRegistered) (IN_GUID id, BOOL registered)
     {
         postEvent (new VBoxMachineRegisteredEvent (COMBase::ToQUuid (id),
                                                    registered));
         return S_OK;
     }
 
-    STDMETHOD(OnSessionStateChange) (IN_GUIDPARAM id, SessionState_T state)
+    STDMETHOD(OnSessionStateChange) (IN_GUID id, SessionState_T state)
     {
         postEvent (new VBoxSessionStateChangeEvent (COMBase::ToQUuid (id),
                                                     (KSessionState) state));
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotTaken) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotTaken) (IN_GUID aMachineId, IN_GUID aSnapshotId)
     {
         postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
                                           COMBase::ToQUuid (aSnapshotId),
@@ -827,7 +827,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotDiscarded) (IN_GUID aMachineId, IN_GUID aSnapshotId)
     {
         postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
                                           COMBase::ToQUuid (aSnapshotId),
@@ -835,7 +835,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotChange) (IN_GUIDPARAM aMachineId, IN_GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotChange) (IN_GUID aMachineId, IN_GUID aSnapshotId)
     {
         postEvent (new VBoxSnapshotEvent (COMBase::ToQUuid (aMachineId),
                                           COMBase::ToQUuid (aSnapshotId),
@@ -843,10 +843,10 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnGuestPropertyChange) (IN_GUIDPARAM /* id */,
-                                      IN_BSTRPARAM /* key */,
-                                      IN_BSTRPARAM /* value */,
-                                      IN_BSTRPARAM /* flags */)
+    STDMETHOD(OnGuestPropertyChange) (IN_GUID /* id */,
+                                      IN_BSTR /* key */,
+                                      IN_BSTR /* value */,
+                                      IN_BSTR /* flags */)
     {
         return S_OK;
     }

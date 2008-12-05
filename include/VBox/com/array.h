@@ -154,8 +154,8 @@
  * SafeConstGUIDArray, customized SafeArray<> specializations.
  *
  * Also note that in order to pass input BSTR array parameters declared
- * using the ComSafeArrayIn (INPTR BSTR, aParam) macro to the SafeArray<>
- * constructor using the ComSafeArrayInArg() macro, you should use INPTR BSTR
+ * using the ComSafeArrayIn (IN_BSTR, aParam) macro to the SafeArray<>
+ * constructor using the ComSafeArrayInArg() macro, you should use IN_BSTR
  * as the SafeArray<> template argument, not just BSTR.
  *
  * Arrays of interface pointers are also supported but they require to use a

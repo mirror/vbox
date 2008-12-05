@@ -101,7 +101,7 @@ public:
     STDMETHOD(COMGETTER(DeviceFilters)) (IUSBDeviceFilterCollection **aDevicesFilters);
 
     // IUSBController methods
-    STDMETHOD(CreateDeviceFilter) (INPTR BSTR aName, IUSBDeviceFilter **aFilter);
+    STDMETHOD(CreateDeviceFilter) (IN_BSTR aName, IUSBDeviceFilter **aFilter);
     STDMETHOD(InsertDeviceFilter) (ULONG aPosition, IUSBDeviceFilter *aFilter);
     STDMETHOD(RemoveDeviceFilter) (ULONG aPosition, IUSBDeviceFilter **aFilter);
 

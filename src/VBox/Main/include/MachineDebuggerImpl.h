@@ -81,9 +81,9 @@ public:
     STDMETHOD(InjectNMI)();
 
     // IMachineDebugger methods
-    STDMETHOD(ResetStats (INPTR BSTR aPattern));
-    STDMETHOD(DumpStats (INPTR BSTR aPattern));
-    STDMETHOD(GetStats (INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
+    STDMETHOD(ResetStats (IN_BSTR aPattern));
+    STDMETHOD(DumpStats (IN_BSTR aPattern));
+    STDMETHOD(GetStats (IN_BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats));
 
 
     // "public-private methods"

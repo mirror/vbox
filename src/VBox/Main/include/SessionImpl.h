@@ -103,11 +103,11 @@ public:
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);
     STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
-    STDMETHOD(OnUSBDeviceDetach) (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
+    STDMETHOD(OnUSBDeviceDetach) (IN_GUID aId, IVirtualBoxErrorInfo *aError);
     STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
-    STDMETHOD(AccessGuestProperty) (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags,
+    STDMETHOD(AccessGuestProperty) (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
                                     BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags);
-    STDMETHOD(EnumerateGuestProperties) (INPTR BSTR aPatterns,
+    STDMETHOD(EnumerateGuestProperties) (IN_BSTR aPatterns,
                                          ComSafeArrayOut(BSTR, aNames),
                                          ComSafeArrayOut(BSTR, aValues),
                                          ComSafeArrayOut(ULONG64, aTimestamps),

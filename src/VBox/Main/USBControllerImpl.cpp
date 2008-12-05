@@ -334,25 +334,25 @@ public:
 
     // IUSBDeviceFilter properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMSETTER(Name)) (INPTR BSTR aName);
+    STDMETHOD(COMSETTER(Name)) (IN_BSTR aName);
     STDMETHOD(COMGETTER(Active)) (BOOL *aActive);
     STDMETHOD(COMSETTER(Active)) (BOOL aActive);
     STDMETHOD(COMGETTER(VendorId)) (BSTR *aVendorId);
-    STDMETHOD(COMSETTER(VendorId)) (INPTR BSTR aVendorId);
+    STDMETHOD(COMSETTER(VendorId)) (IN_BSTR aVendorId);
     STDMETHOD(COMGETTER(ProductId)) (BSTR *aProductId);
-    STDMETHOD(COMSETTER(ProductId)) (INPTR BSTR aProductId);
+    STDMETHOD(COMSETTER(ProductId)) (IN_BSTR aProductId);
     STDMETHOD(COMGETTER(Revision)) (BSTR *aRevision);
-    STDMETHOD(COMSETTER(Revision)) (INPTR BSTR aRevision);
+    STDMETHOD(COMSETTER(Revision)) (IN_BSTR aRevision);
     STDMETHOD(COMGETTER(Manufacturer)) (BSTR *aManufacturer);
-    STDMETHOD(COMSETTER(Manufacturer)) (INPTR BSTR aManufacturer);
+    STDMETHOD(COMSETTER(Manufacturer)) (IN_BSTR aManufacturer);
     STDMETHOD(COMGETTER(Product)) (BSTR *aProduct);
-    STDMETHOD(COMSETTER(Product)) (INPTR BSTR aProduct);
+    STDMETHOD(COMSETTER(Product)) (IN_BSTR aProduct);
     STDMETHOD(COMGETTER(SerialNumber)) (BSTR *aSerialNumber);
-    STDMETHOD(COMSETTER(SerialNumber)) (INPTR BSTR aSerialNumber);
+    STDMETHOD(COMSETTER(SerialNumber)) (IN_BSTR aSerialNumber);
     STDMETHOD(COMGETTER(Port)) (BSTR *aPort);
-    STDMETHOD(COMSETTER(Port)) (INPTR BSTR aPort);
+    STDMETHOD(COMSETTER(Port)) (IN_BSTR aPort);
     STDMETHOD(COMGETTER(Remote)) (BSTR *aRemote);
-    STDMETHOD(COMSETTER(Remote)) (INPTR BSTR aRemote);
+    STDMETHOD(COMSETTER(Remote)) (IN_BSTR aRemote);
     STDMETHOD(COMGETTER(MaskedInterfaces)) (ULONG *aMaskedIfs);
     STDMETHOD(COMSETTER(MaskedInterfaces)) (ULONG aMaskedIfs);
 };
@@ -383,7 +383,7 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (IUSBDeviceFilterCollection
 // IUSBController methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP USBController::CreateDeviceFilter (INPTR BSTR aName,
+STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
                                                 IUSBDeviceFilter **aFilter)
 {
 #ifdef VBOX_WITH_USB

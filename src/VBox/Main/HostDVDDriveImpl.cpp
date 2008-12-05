@@ -49,9 +49,9 @@ void HostDVDDrive::FinalRelease()
  *
  * @return COM result indicator.
  */
-HRESULT HostDVDDrive::init (INPTR BSTR aName,
-                            INPTR BSTR aUdi /* = NULL */,
-                            INPTR BSTR aDescription /* = NULL */)
+HRESULT HostDVDDrive::init (IN_BSTR aName,
+                            IN_BSTR aUdi /* = NULL */,
+                            IN_BSTR aDescription /* = NULL */)
 {
     ComAssertRet (aName, E_INVALIDARG);
 

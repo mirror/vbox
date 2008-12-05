@@ -120,7 +120,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(COMGETTER(Id))(GUIDPARAMOUT a_pId)                { return E_NOTIMPL; }
+    STDMETHOD(COMGETTER(Id))(OUT_GUID a_pId)                    { return E_NOTIMPL; }
     STDMETHOD(COMGETTER(VendorId))(USHORT *a_pusVendorId)       { *a_pusVendorId    = m_usVendorId;     return S_OK; }
     STDMETHOD(COMGETTER(ProductId))(USHORT *a_pusProductId)     { *a_pusProductId   = m_usProductId;    return S_OK; }
     STDMETHOD(COMGETTER(Revision))(USHORT *a_pusRevision)       { *a_pusRevision    = m_bcdRevision;    return S_OK; }
@@ -5302,11 +5302,11 @@ static int handleVMStatistics(int argc, char *argv[],
             if (SUCCEEDED(rc))
             {
                 if (fReset)
-                    CHECK_ERROR(debugger, ResetStats(Bstr(pszPattern).raw()));
+                    CHECK_ERROR(debugger, ResetStats(Bstr(pszPattern)));
                 else
                 {
                     Bstr stats;
-                    CHECK_ERROR(debugger, GetStats(Bstr(pszPattern).raw(), fWithDescriptions, stats.asOutParam()));
+                    CHECK_ERROR(debugger, GetStats(Bstr(pszPattern), fWithDescriptions, stats.asOutParam()));
                     if (SUCCEEDED(rc))
                     {
                         /* if (fFormatted)

@@ -103,7 +103,7 @@ public:
     STDMETHOD(COMGETTER(IOBase) )  (ULONG     *aIOBase);
     STDMETHOD(COMSETTER(IOBase))   (ULONG      aIOBase);
     STDMETHOD(COMGETTER(Path))     (BSTR      *aPath);
-    STDMETHOD(COMSETTER(Path))     (INPTR BSTR aPath);
+    STDMETHOD(COMSETTER(Path))     (IN_BSTR aPath);
     STDMETHOD(COMGETTER(Server))   (BOOL      *aServer);
     STDMETHOD(COMSETTER(Server))   (BOOL       aServer);
 
@@ -126,7 +126,7 @@ public:
 
 private:
 
-    HRESULT checkSetPath (const BSTR aPath);
+    HRESULT checkSetPath (CBSTR aPath);
 
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <SerialPort> mPeer;

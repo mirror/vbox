@@ -457,8 +457,8 @@ public:
     enum InitMode { Init_New, Init_Existing, Init_Registered };
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *aParent, const BSTR aConfigFile,
-                  InitMode aMode, const BSTR aName = NULL,
+    HRESULT init (VirtualBox *aParent, CBSTR aConfigFile,
+                  InitMode aMode, CBSTR aName = NULL,
                   GuestOSType *aOsType = NULL,
                   BOOL aNameSync = TRUE, const Guid *aId = NULL);
     void uninit();
@@ -468,12 +468,12 @@ public:
     STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
     STDMETHOD(COMGETTER(AccessError)) (IVirtualBoxErrorInfo **aAccessError);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMSETTER(Name))(INPTR BSTR aName);
+    STDMETHOD(COMSETTER(Name))(IN_BSTR aName);
     STDMETHOD(COMGETTER(Description))(BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description))(INPTR BSTR aDescription);
-    STDMETHOD(COMGETTER(Id))(GUIDPARAMOUT aId);
+    STDMETHOD(COMSETTER(Description))(IN_BSTR aDescription);
+    STDMETHOD(COMGETTER(Id))(OUT_GUID aId);
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
-    STDMETHOD(COMSETTER(OSTypeId)) (INPTR BSTR aOSTypeId);
+    STDMETHOD(COMSETTER(OSTypeId)) (IN_BSTR aOSTypeId);
     STDMETHOD(COMGETTER(MemorySize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(MemorySize))(ULONG memorySize);
     STDMETHOD(COMGETTER(CPUCount))(ULONG *cpuCount);
@@ -498,7 +498,7 @@ public:
     STDMETHOD(COMGETTER(PAEEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(PAEEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
-    STDMETHOD(COMSETTER(SnapshotFolder))(INPTR BSTR aSavedStateFolder);
+    STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);
     STDMETHOD(COMGETTER(HardDisk2Attachments))(ComSafeArrayOut (IHardDisk2Attachment *, aAttachments));
     STDMETHOD(COMGETTER(VRDPServer))(IVRDPServer **vrdpServer);
     STDMETHOD(COMGETTER(DVDDrive))(IDVDDrive **dvdDrive);
@@ -523,12 +523,12 @@ public:
     STDMETHOD(COMGETTER(ClipboardMode)) (ClipboardMode_T *aClipboardMode);
     STDMETHOD(COMSETTER(ClipboardMode)) (ClipboardMode_T aClipboardMode);
     STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns)) (BSTR *aPattern);
-    STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns)) (INPTR BSTR aPattern);
+    STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns)) (IN_BSTR aPattern);
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
     STDMETHOD(GetBootOrder)(ULONG aPosition, DeviceType_T *aDevice);
-    STDMETHOD(AttachHardDisk2) (INPTR GUIDPARAM aId, StorageBus_T aBus,
+    STDMETHOD(AttachHardDisk2) (IN_GUID aId, StorageBus_T aBus,
                                 LONG aChannel, LONG aDevice);
     STDMETHOD(GetHardDisk2) (StorageBus_T aBus, LONG aChannel, LONG aDevice,
                              IHardDisk2 **aHardDisk);
@@ -536,26 +536,26 @@ public:
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
-    STDMETHOD(GetNextExtraDataKey)(INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
-    STDMETHOD(GetExtraData)(INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetExtraData)(INPTR BSTR aKey, INPTR BSTR aValue);
+    STDMETHOD(GetNextExtraDataKey)(IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
+    STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
     STDMETHOD(SaveSettings)();
     STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
-    STDMETHOD(GetSnapshot) (INPTR GUIDPARAM aId, ISnapshot **aSnapshot);
-    STDMETHOD(FindSnapshot) (INPTR BSTR aName, ISnapshot **aSnapshot);
-    STDMETHOD(SetCurrentSnapshot) (INPTR GUIDPARAM aId);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
-    STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
+    STDMETHOD(GetSnapshot) (IN_GUID aId, ISnapshot **aSnapshot);
+    STDMETHOD(FindSnapshot) (IN_BSTR aName, ISnapshot **aSnapshot);
+    STDMETHOD(SetCurrentSnapshot) (IN_GUID aId);
+    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
     STDMETHOD(CanShowConsoleWindow) (BOOL *aCanShow);
     STDMETHOD(ShowConsoleWindow) (ULONG64 *aWinId);
-    STDMETHOD(GetGuestProperty) (INPTR BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
-    STDMETHOD(GetGuestPropertyValue) (INPTR BSTR aName, BSTR *aValue);
-    STDMETHOD(GetGuestPropertyTimestamp) (INPTR BSTR aName, ULONG64 *aTimestamp);
-    STDMETHOD(SetGuestProperty) (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags);
-    STDMETHOD(SetGuestPropertyValue) (INPTR BSTR aName, INPTR BSTR aValue);
-    STDMETHOD(EnumerateGuestProperties) (INPTR BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(GetGuestProperty) (IN_BSTR aName, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
+    STDMETHOD(GetGuestPropertyValue) (IN_BSTR aName, BSTR *aValue);
+    STDMETHOD(GetGuestPropertyTimestamp) (IN_BSTR aName, ULONG64 *aTimestamp);
+    STDMETHOD(SetGuestProperty) (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags);
+    STDMETHOD(SetGuestPropertyValue) (IN_BSTR aName, IN_BSTR aValue);
+    STDMETHOD(EnumerateGuestProperties) (IN_BSTR aPattern, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
 
     // public methods only for internal purposes
 
@@ -635,7 +635,7 @@ public:
 
     HRESULT openSession (IInternalSessionControl *aControl);
     HRESULT openRemoteSession (IInternalSessionControl *aControl,
-                               INPTR BSTR aType, INPTR BSTR aEnvironment,
+                               IN_BSTR aType, IN_BSTR aEnvironment,
                                Progress *aProgress);
     HRESULT openExistingSession (IInternalSessionControl *aControl);
 
@@ -681,7 +681,7 @@ public:
 
     HRESULT trySetRegistered (BOOL aRegistered);
 
-    HRESULT getSharedFolder (const BSTR aName,
+    HRESULT getSharedFolder (CBSTR aName,
                              ComObjPtr <SharedFolder> &aSharedFolder,
                              bool aSetError = false)
     {
@@ -712,7 +712,7 @@ protected:
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 
-    HRESULT findSharedFolder (const BSTR aName,
+    HRESULT findSharedFolder (CBSTR aName,
                               ComObjPtr <SharedFolder> &aSharedFolder,
                               bool aSetError = false);
 
@@ -729,7 +729,7 @@ protected:
 
     HRESULT findSnapshot (const Guid &aId, ComObjPtr <Snapshot> &aSnapshot,
                           bool aSetError = false);
-    HRESULT findSnapshot (const BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
+    HRESULT findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
                           bool aSetError = false);
 
     enum
@@ -874,20 +874,20 @@ public:
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(RunUSBDeviceFilters) (IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
-    STDMETHOD(CaptureUSBDevice) (INPTR GUIDPARAM aId);
-    STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, BOOL aDone);
+    STDMETHOD(CaptureUSBDevice) (IN_GUID aId);
+    STDMETHOD(DetachUSBDevice) (IN_GUID aId, BOOL aDone);
     STDMETHOD(AutoCaptureUSBDevices)();
     STDMETHOD(DetachAllUSBDevices)(BOOL aDone);
     STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
     STDMETHOD(BeginSavingState) (IProgress *aProgress, BSTR *aStateFilePath);
     STDMETHOD(EndSavingState) (BOOL aSuccess);
-    STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
+    STDMETHOD(AdoptSavedState) (IN_BSTR aSavedStateFile);
     STDMETHOD(BeginTakingSnapshot) (IConsole *aInitiator,
-                                    INPTR BSTR aName, INPTR BSTR aDescription,
+                                    IN_BSTR aName, IN_BSTR aDescription,
                                     IProgress *aProgress, BSTR *aStateFilePath,
                                     IProgress **aServerProgress);
     STDMETHOD(EndTakingSnapshot) (BOOL aSuccess);
-    STDMETHOD(DiscardSnapshot) (IConsole *aInitiator, INPTR GUIDPARAM aId,
+    STDMETHOD(DiscardSnapshot) (IConsole *aInitiator, IN_GUID aId,
                                MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(DiscardCurrentState) (
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
@@ -895,10 +895,10 @@ public:
         IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(PullGuestProperties) (ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
               ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
-    STDMETHOD(PushGuestProperties) (ComSafeArrayIn(INPTR BSTR, aNames), ComSafeArrayIn(INPTR BSTR, aValues),
-              ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(INPTR BSTR, aFlags));
-    STDMETHOD(PushGuestProperty) (INPTR BSTR aName, INPTR BSTR aValue,
-                                  ULONG64 aTimestamp, INPTR BSTR aFlags);
+    STDMETHOD(PushGuestProperties) (ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayIn(IN_BSTR, aValues),
+              ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(IN_BSTR, aFlags));
+    STDMETHOD(PushGuestProperty) (IN_BSTR aName, IN_BSTR aValue,
+                                  ULONG64 aTimestamp, IN_BSTR aFlags);
 
     // public methods only for internal purposes
 
@@ -914,7 +914,7 @@ public:
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice,
                                IVirtualBoxErrorInfo *aError,
                                ULONG aMaskedIfs);
-    HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId,
+    HRESULT onUSBDeviceDetach (IN_GUID aId,
                                IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
 
@@ -1027,10 +1027,10 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (SessionMachine *aSessionMachine,
-                  INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath);
+                  IN_GUID aSnapshotId, IN_BSTR aStateFilePath);
     HRESULT init (Machine *aMachine,
                   const settings::Key &aHWNode, const settings::Key &aHDAsNode,
-                  INPTR GUIDPARAM aSnapshotId, INPTR BSTR aStateFilePath);
+                  IN_GUID aSnapshotId, IN_BSTR aStateFilePath);
     void uninit();
 
     // util::Lockable interface

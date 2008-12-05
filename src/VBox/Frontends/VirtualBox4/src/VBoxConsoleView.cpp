@@ -531,7 +531,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTRPARAM id, IN_BSTRPARAM message)
+    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
     {
         QApplication::postEvent (mView,
                                  new RuntimeErrorEvent (!!fatal,

@@ -69,12 +69,12 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (HRESULT aResultCode, const GUID &aIID,
-                  const BSTR aComponent, const BSTR aText,
+                  CBSTR aComponent, CBSTR aText,
                   IVirtualBoxErrorInfo *aNext = NULL);
 
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode)) (HRESULT *aResultCode);
-    STDMETHOD(COMGETTER(InterfaceID)) (GUIDPARAMOUT aIID);
+    STDMETHOD(COMGETTER(InterfaceID)) (OUT_GUID aIID);
     STDMETHOD(COMGETTER(Component)) (BSTR *aComponent);
     STDMETHOD(COMGETTER(Text)) (BSTR *aText);
     STDMETHOD(COMGETTER(Next)) (IVirtualBoxErrorInfo **aNext);

@@ -90,7 +90,7 @@ public:
     STDMETHOD(COMGETTER(State)) (DriveState_T *aState);
 
     // IFloppyDrive methods
-    STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
+    STDMETHOD(MountImage) (IN_GUID aImageId);
     STDMETHOD(CaptureHostDrive) (IHostFloppyDrive *aHostFloppyDrive);
     STDMETHOD(Unmount)();
     STDMETHOD(GetImage) (IFloppyImage2 **aFloppyImage);

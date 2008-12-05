@@ -90,9 +90,6 @@
  * Additional COM / XPCOM defines and includes
  */
 
-#define IN_BSTRPARAM    INPTR BSTR
-#define IN_GUIDPARAM    INPTR GUIDPARAM
-
 #if !defined (VBOX_WITH_XPCOM)
 
 #else /* !defined (VBOX_WITH_XPCOM) */

@@ -1062,7 +1062,7 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
     return rc;
 }
 
-HRESULT Console::doEnumerateGuestProperties (INPTR BSTR aPatterns,
+HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
                                              ComSafeArrayOut(BSTR, aNames),
                                              ComSafeArrayOut(BSTR, aValues),
                                              ComSafeArrayOut(ULONG64, aTimestamps),
@@ -1845,7 +1845,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     return rc;
 }
 
-STDMETHODIMP Console::AdoptSavedState (INPTR BSTR aSavedStateFile)
+STDMETHODIMP Console::AdoptSavedState (IN_BSTR aSavedStateFile)
 {
     CheckComArgNotNull(aSavedStateFile);
 
@@ -1979,7 +1979,7 @@ STDMETHODIMP Console::GetDeviceActivity (DeviceType_T aDeviceType,
     return S_OK;
 }
 
-STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
+STDMETHODIMP Console::AttachUSBDevice (IN_GUID aId)
 {
 #ifdef VBOX_WITH_USB
     AutoCaller autoCaller (this);
@@ -2036,7 +2036,7 @@ STDMETHODIMP Console::AttachUSBDevice (INPTR GUIDPARAM aId)
 #endif  /* !VBOX_WITH_USB */
 }
 
-STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice)
+STDMETHODIMP Console::DetachUSBDevice (IN_GUID aId, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgOutPointerValid(aDevice);
@@ -2097,7 +2097,7 @@ STDMETHODIMP Console::DetachUSBDevice (INPTR GUIDPARAM aId, IUSBDevice **aDevice
 }
 
 STDMETHODIMP
-Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable)
+Console::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aHostPath);
@@ -2169,7 +2169,7 @@ Console::CreateSharedFolder (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWrita
     return rc;
 }
 
-STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
+STDMETHODIMP Console::RemoveSharedFolder (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
@@ -2227,7 +2227,7 @@ STDMETHODIMP Console::RemoveSharedFolder (INPTR BSTR aName)
     return rc;
 }
 
-STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
+STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
                                     IProgress **aProgress)
 {
     LogFlowThisFuncEnter();
@@ -2400,7 +2400,7 @@ STDMETHODIMP Console::TakeSnapshot (INPTR BSTR aName, INPTR BSTR aDescription,
     return rc;
 }
 
-STDMETHODIMP Console::DiscardSnapshot (INPTR GUIDPARAM aId, IProgress **aProgress)
+STDMETHODIMP Console::DiscardSnapshot (IN_GUID aId, IProgress **aProgress)
 {
     CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
     CheckComArgOutPointerValid(aProgress);
@@ -3497,7 +3497,7 @@ HRESULT Console::onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *a
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
+HRESULT Console::onUSBDeviceDetach (IN_GUID aId,
                                     IVirtualBoxErrorInfo *aError)
 {
 #ifdef VBOX_WITH_USB
@@ -3578,7 +3578,7 @@ HRESULT Console::onUSBDeviceDetach (INPTR GUIDPARAM aId,
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
+HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
                                    ULONG64 *aTimestamp, BSTR *aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
@@ -3647,7 +3647,7 @@ HRESULT Console::getGuestProperty (INPTR BSTR aName, BSTR *aValue,
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::setGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BSTR aFlags)
+HRESULT Console::setGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
@@ -3721,7 +3721,7 @@ HRESULT Console::setGuestProperty (INPTR BSTR aName, INPTR BSTR aValue, INPTR BS
 /**
  * @note Temporarily locks this object for writing.
  */
-HRESULT Console::enumerateGuestProperties (INPTR BSTR aPatterns,
+HRESULT Console::enumerateGuestProperties (IN_BSTR aPatterns,
                                            ComSafeArrayOut(BSTR, aNames),
                                            ComSafeArrayOut(BSTR, aValues),
                                            ComSafeArrayOut(ULONG64, aTimestamps),
@@ -3969,7 +3969,7 @@ void Console::onUSBDeviceStateChange (IUSBDevice *aDevice, bool aAttached,
 /**
  *  @note Locks this object for reading.
  */
-void Console::onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage)
+void Console::onRuntimeError (BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
 {
     AutoCaller autoCaller (this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -4934,7 +4934,7 @@ HRESULT Console::setMachineState (MachineState_T aMachineState,
  *
  *  @note The caller must lock this object for writing.
  */
-HRESULT Console::findSharedFolder (const BSTR aName,
+HRESULT Console::findSharedFolder (CBSTR aName,
                                    ComObjPtr <SharedFolder> &aSharedFolder,
                                    bool aSetError /* = false */)
 {
@@ -5085,7 +5085,7 @@ HRESULT Console::fetchSharedFolders (BOOL aGlobal)
  *
  *  @note The caller must lock this object for reading.
  */
-bool Console::findOtherSharedFolder (INPTR BSTR aName,
+bool Console::findOtherSharedFolder (IN_BSTR aName,
                                      SharedFolderDataMap::const_iterator &aIt)
 {
     /* sanity check */
@@ -5113,7 +5113,7 @@ bool Console::findOtherSharedFolder (INPTR BSTR aName,
  *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
  *  @note Doesn't lock anything.
  */
-HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
+HRESULT Console::createSharedFolder (CBSTR aName, SharedFolderData aData)
 {
     ComAssertRet (aName && *aName, E_FAIL);
     ComAssertRet (aData.mHostPath, E_FAIL);
@@ -5185,7 +5185,7 @@ HRESULT Console::createSharedFolder (INPTR BSTR aName, SharedFolderData aData)
  *  @note Must be called from under AutoVMCaller and when mpVM != NULL!
  *  @note Doesn't lock anything.
  */
-HRESULT Console::removeSharedFolder (INPTR BSTR aName)
+HRESULT Console::removeSharedFolder (CBSTR aName)
 {
     ComAssertRet (aName && *aName, E_FAIL);
 

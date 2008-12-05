@@ -242,7 +242,7 @@ STDMETHODIMP DVDDrive::COMSETTER(Passthrough) (BOOL aPassthrough)
 // IDVDDrive methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP DVDDrive::MountImage (INPTR GUIDPARAM aImageId)
+STDMETHODIMP DVDDrive::MountImage (IN_GUID aImageId)
 {
     Guid imageId = aImageId;
     if (imageId.isEmpty())

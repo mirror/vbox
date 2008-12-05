@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT VirtualBoxErrorInfo::init (HRESULT aResultCode, const GUID &aIID,
-                                   const BSTR aComponent, const BSTR aText,
+                                   CBSTR aComponent, CBSTR aText,
                                    IVirtualBoxErrorInfo *aNext)
 {
     mResultCode = aResultCode;
@@ -49,7 +49,7 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (HRESULT *aResultCode)
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (GUIDPARAMOUT aIID)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (OUT_GUID aIID)
 {
     CheckComArgOutPointerValid(aIID);
 

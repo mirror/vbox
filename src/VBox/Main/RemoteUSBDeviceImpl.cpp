@@ -131,7 +131,7 @@ void RemoteUSBDevice::uninit()
 // IUSBDevice properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (GUIDPARAMOUT aId)
+STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 

@@ -236,7 +236,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnRuntimeError)(BOOL fatal, INPTR BSTR id, INPTR BSTR message)
+    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
     {
         return S_OK;
     }

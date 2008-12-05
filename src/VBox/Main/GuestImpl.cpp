@@ -257,8 +257,8 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
     return ret;
 }
 
-STDMETHODIMP Guest::SetCredentials(INPTR BSTR aUserName, INPTR BSTR aPassword,
-                                   INPTR BSTR aDomain, BOOL aAllowInteractiveLogon)
+STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
+                                   IN_BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
     CheckComArgNotNull(aUserName);
     CheckComArgNotNull(aPassword);

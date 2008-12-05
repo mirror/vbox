@@ -506,8 +506,8 @@ void HardDisk2::FinalRelease()
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
-                         const BSTR aLocation)
+HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aFormat,
+                         CBSTR aLocation)
 {
     AssertReturn (aVirtualBox != NULL, E_FAIL);
     AssertReturn (aFormat != NULL && *aFormat != '\0', E_FAIL);
@@ -586,7 +586,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aFormat,
  * @param aVirtualBox   VirtualBox object.
  * @param aLocaiton     Storage unit location.
  */
-HRESULT HardDisk2::init (VirtualBox *aVirtualBox, const BSTR aLocation)
+HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aLocation)
 {
     AssertReturn (aVirtualBox, E_INVALIDARG);
     AssertReturn (aLocation, E_INVALIDARG);
@@ -1003,7 +1003,7 @@ STDMETHODIMP HardDisk2::COMGETTER(LogicalSize) (ULONG64 *aLogicalSize)
 // IHardDisk2 methods
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP HardDisk2::GetProperty (INPTR BSTR aName, BSTR *aValue)
+STDMETHODIMP HardDisk2::GetProperty (IN_BSTR aName, BSTR *aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgOutPointerValid (aValue);
@@ -1023,7 +1023,7 @@ STDMETHODIMP HardDisk2::GetProperty (INPTR BSTR aName, BSTR *aValue)
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
+STDMETHODIMP HardDisk2::SetProperty (IN_BSTR aName, IN_BSTR aValue)
 {
     CheckComArgStrNotEmptyOrNull (aName);
 
@@ -1054,7 +1054,7 @@ STDMETHODIMP HardDisk2::SetProperty (INPTR BSTR aName, INPTR BSTR aValue)
     return rc;
 }
 
-STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
+STDMETHODIMP HardDisk2::GetProperties (IN_BSTR aNames,
                                        ComSafeArrayOut (BSTR, aReturnNames),
                                        ComSafeArrayOut (BSTR, aReturnValues))
 {
@@ -1087,8 +1087,8 @@ STDMETHODIMP HardDisk2::GetProperties (INPTR BSTR aNames,
     return S_OK;
 }
 
-STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (INPTR BSTR, aNames),
-                                       ComSafeArrayIn (INPTR BSTR, aValues))
+STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (IN_BSTR, aNames),
+                                       ComSafeArrayIn (IN_BSTR, aValues))
 {
     CheckComArgSafeArrayNotNull (aNames);
     CheckComArgSafeArrayNotNull (aValues);
@@ -1099,8 +1099,8 @@ STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (INPTR BSTR, aNames),
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock (mVirtualBox, this);
 
-    com::SafeArray <INPTR BSTR> names (ComSafeArrayInArg (aNames));
-    com::SafeArray <INPTR BSTR> values (ComSafeArrayInArg (aValues));
+    com::SafeArray <IN_BSTR> names (ComSafeArrayInArg (aNames));
+    com::SafeArray <IN_BSTR> values (ComSafeArrayInArg (aValues));
 
     /* first pass: validate names */
     for (size_t i = 0; i < names.size(); ++ i)
@@ -1295,7 +1295,7 @@ STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aPro
     return rc;
 }
 
-STDMETHODIMP HardDisk2::MergeTo (INPTR GUIDPARAM aTargetId, IProgress **aProgress)
+STDMETHODIMP HardDisk2::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2431,7 +2431,7 @@ void HardDisk2::cancelMergeTo (MergeChain *aChain)
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT HardDisk2::setLocation (const BSTR aLocation)
+HRESULT HardDisk2::setLocation (CBSTR aLocation)
 {
     /// @todo so far, we assert but later it makes sense to support null
     /// locations for hard disks that are not yet created fail to create a
@@ -2583,7 +2583,7 @@ HRESULT HardDisk2::setLocation (const BSTR aLocation)
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT HardDisk2::setFormat (const BSTR aFormat)
+HRESULT HardDisk2::setFormat (CBSTR aFormat)
 {
     /* get the format object first */
     {

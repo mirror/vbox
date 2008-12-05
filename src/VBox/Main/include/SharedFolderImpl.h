@@ -66,10 +66,10 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aMachine, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
+    HRESULT init (Machine *aMachine, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
     HRESULT initCopy (Machine *aMachine, SharedFolder *aThat);
-    HRESULT init (Console *aConsole, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
-    HRESULT init (VirtualBox *aVirtualBox, const BSTR aName, const BSTR aHostPath, BOOL aWritable);
+    HRESULT init (Console *aConsole, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
+    HRESULT init (VirtualBox *aVirtualBox, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
     void uninit();
 
     // ISharedFolder properties
@@ -94,7 +94,7 @@ public:
 protected:
 
     HRESULT protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
-                           const BSTR aName, const BSTR aHostPath, BOOL aWritable);
+                           CBSTR aName, CBSTR aHostPath, BOOL aWritable);
 
 private:
 
@@ -110,7 +110,7 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (SharedFolder)
 
-    STDMETHOD(FindByName) (INPTR BSTR aName, ISharedFolder **aSharedFolder)
+    STDMETHOD(FindByName) (IN_BSTR aName, ISharedFolder **aSharedFolder)
     {
         if (!aName)
             return E_INVALIDARG;

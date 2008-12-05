@@ -97,7 +97,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(Name) (BSTR *aInterfaceName)
  * @returns COM status code
  * @param   aGuid address of result pointer
  */
-STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (GUIDPARAMOUT aGuid)
+STDMETHODIMP HostNetworkInterface::COMGETTER(Id) (OUT_GUID aGuid)
 {
     CheckComArgOutPointerValid(aGuid);
 
