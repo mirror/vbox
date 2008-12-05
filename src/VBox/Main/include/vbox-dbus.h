@@ -101,6 +101,8 @@ extern void (*dbus_message_iter_get_basic) (DBusMessageIter *, void *);
 extern dbus_bool_t (*dbus_message_iter_next) (DBusMessageIter *);
 
 extern bool VBoxDBusCheckPresence(void);
+extern void VBoxDBusConnectionUnref(DBusConnection *pConnection);
+extern void VBoxDBusMessageUnref(DBusMessage *pMessage);
 
 #endif /* ____H_VBOX_DBUS not defined */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
