@@ -329,7 +329,11 @@ struct  ipasfrag
     ipasfragp_32 ipf_next;          /* next fragment */
     ipasfragp_32 ipf_prev;          /* previous fragment */
 };
+#ifdef RT_ARCH_X86 || !defined(VBOX_WITH_BSD_REASS)
 AssertCompileSize(struct ipasfrag, 20);
+#else
+AssertCompileSize(struct ipasfrag, 32);
+#endif
 
 /*
  * Structure stored in mbuf in inpcb.ip_options
