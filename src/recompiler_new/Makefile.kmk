@@ -57,7 +57,7 @@ else
 
  # Unfortunately little pinguins tend to have default compilers no suitable 
  # for real compilation, so search better alternatives 
- if1of ($(KBUILD_TARGET), linux)
+ if1of ($(KBUILD_TARGET), )
   $(REM_MOD)_TOOL      = GCC3V3
   $(REM_MOD)_TEMPLATE  = DUMMY
   $(REM_MOD)_CFLAGS    = -fPIC                                          \
@@ -68,7 +68,7 @@ else
   $(REM_MOD)_CFLAGS.debug    = -g -O0
   $(REM_MOD)_CFLAGS.release += -O2
  else
-  $(REM_MOD)_TEMPLATE  = VBOXR3N
+  $(REM_MOD)_TEMPLATE  = VBOXR3NP
  endif
 
  IMPORT_LIBS          += VBoxREM
