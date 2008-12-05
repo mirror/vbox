@@ -2725,16 +2725,29 @@
         Called by the VM process to inform the server that saving
         the state previously requested by #beginSavingState is either
         successfully finished or there was a failure.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
 
       <param name="success" type="boolean" dir="in">
-        <desc><tt>true</tt> to indicate success and <tt>false</tt> otherwise</desc>
+        <desc><tt>true</tt> to indicate success and <tt>false</tt>
+          otherwise.
+        </desc>
       </param>
     </method>
 
     <method name="adoptSavedState">
       <desc>
         Gets called by IConsole::adoptSavedState.
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid saved state file path.
+        </result>
       </desc>
       <param name="savedStateFile" type="wstring" dir="in">
         <desc>Path to the saved state file to adopt.</desc>
@@ -2745,15 +2758,22 @@
       <desc>
         Called by the VM process to inform the server it wants to
         take a snapshot.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
       </param>
       <param name="name" type="wstring" dir="in">
-        <desc>Snapshot name</desc>
+        <desc>Snapshot name.</desc>
       </param>
       <param name="description" type="wstring" dir="in">
-        <desc>Snapshot description</desc>
+        <desc>Snapshot description.</desc>
       </param>
       <param name="progress" type="IProgress" dir="in">
         <desc>
@@ -2789,6 +2809,9 @@
     <method name="discardSnapshot">
       <desc>
         Gets called by IConsole::discardSnapshot.
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Snapshot has more than one child snapshot.
+        </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
@@ -2807,6 +2830,9 @@
     <method name="discardCurrentState">
       <desc>
         Gets called by IConsole::discardCurrentState.
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Virtual machine does not have any snapshot.
+        </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
@@ -2822,6 +2848,9 @@
     <method name="discardCurrentSnapshotAndState">
       <desc>
         Gets called by IConsole::discardCurrentSnapshotAndState.
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Virtual machine does not have any snapshot.
+        </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
