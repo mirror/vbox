@@ -90,7 +90,7 @@ public:
     STDMETHOD(COMSETTER(Passthrough)) (BOOL aPassthrough);
 
     // IDVDDrive methods
-    STDMETHOD(MountImage) (INPTR GUIDPARAM aImageId);
+    STDMETHOD(MountImage) (IN_GUID aImageId);
     STDMETHOD(CaptureHostDrive) (IHostDVDDrive *aHostDVDDrive);
     STDMETHOD(Unmount)();
     STDMETHOD(GetImage) (IDVDImage2 **aDVDImage);

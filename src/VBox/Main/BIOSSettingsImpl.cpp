@@ -261,7 +261,7 @@ STDMETHODIMP BIOSSettings::COMGETTER(LogoImagePath)(BSTR *imagePath)
     return S_OK;
 }
 
-STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(INPTR BSTR imagePath)
+STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(IN_BSTR imagePath)
 {
     /* empty strings are not allowed as path names */
     if (imagePath && !(*imagePath))

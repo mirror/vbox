@@ -63,7 +63,7 @@ public:
     void uninit();
 
     // IUSBDevice properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
     STDMETHOD(COMGETTER(VendorId)) (USHORT *aVendorId);
     STDMETHOD(COMGETTER(ProductId)) (USHORT *aProductId);
     STDMETHOD(COMGETTER(Revision)) (USHORT *aRevision);
@@ -139,7 +139,7 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHostUSBDevice, RemoteUSBDevice)
 
-    STDMETHOD(FindById) (INPTR GUIDPARAM aId, IHostUSBDevice **aDevice)
+    STDMETHOD(FindById) (IN_GUID aId, IHostUSBDevice **aDevice)
     {
         Guid idToFind = aId;
         if (idToFind.isEmpty())
@@ -167,7 +167,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_EX_BEGIN (ComObjPtr <RemoteUSBDevice>, IHo
         return found.queryInterfaceTo (aDevice);
     }
 
-    STDMETHOD(FindByAddress) (INPTR BSTR aAddress, IHostUSBDevice **aDevice)
+    STDMETHOD(FindByAddress) (IN_BSTR aAddress, IHostUSBDevice **aDevice)
     {
         if (!aAddress)
             return E_INVALIDARG;

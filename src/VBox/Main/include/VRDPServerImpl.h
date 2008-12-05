@@ -91,7 +91,7 @@ public:
     STDMETHOD(COMGETTER(Port)) (ULONG *aPort);
     STDMETHOD(COMSETTER(Port)) (ULONG aPort);
     STDMETHOD(COMGETTER(NetAddress)) (BSTR *aAddress);
-    STDMETHOD(COMSETTER(NetAddress)) (INPTR BSTR aAddress);
+    STDMETHOD(COMSETTER(NetAddress)) (IN_BSTR aAddress);
     STDMETHOD(COMGETTER(AuthType)) (VRDPAuthType_T *aType);
     STDMETHOD(COMSETTER(AuthType)) (VRDPAuthType_T aType);
     STDMETHOD(COMGETTER(AuthTimeout)) (ULONG *aTimeout);

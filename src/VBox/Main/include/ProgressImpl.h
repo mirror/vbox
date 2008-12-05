@@ -59,14 +59,14 @@ protected:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const BSTR aDescription, GUIDPARAMOUT aId = NULL);
+                  CBSTR aDescription, OUT_GUID aId = NULL);
     HRESULT protectedInit (AutoInitSpan &aAutoInitSpan);
     void protectedUninit (AutoUninitSpan &aAutoUninitSpan);
 
 public:
 
     // IProgress properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
     STDMETHOD(COMGETTER(Initiator)) (IUnknown **aInitiator);
 
@@ -153,8 +153,8 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const BSTR aDescription, BOOL aCancelable,
-                  GUIDPARAMOUT aId = NULL)
+                  CBSTR aDescription, BOOL aCancelable,
+                  OUT_GUID aId = NULL)
     {
         return init (
 #if !defined (VBOX_COM_INPROC)
@@ -168,12 +168,12 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const BSTR aDescription, BOOL aCancelable,
-                  ULONG aOperationCount, const BSTR aOperationDescription,
-                  GUIDPARAMOUT aId = NULL);
+                  CBSTR aDescription, BOOL aCancelable,
+                  ULONG aOperationCount, CBSTR aOperationDescription,
+                  OUT_GUID aId = NULL);
 
     HRESULT init (BOOL aCancelable, ULONG aOperationCount,
-                  const BSTR aOperationDescription);
+                  CBSTR aOperationDescription);
 
     void uninit();
 
@@ -185,7 +185,7 @@ public:
     // public methods only for internal purposes
 
     HRESULT notifyProgress (LONG aPercent);
-    HRESULT advanceOperation (const BSTR aOperationDescription);
+    HRESULT advanceOperation (CBSTR aOperationDescription);
 
     HRESULT notifyComplete (HRESULT aResultCode);
     HRESULT notifyComplete (HRESULT aResultCode, const GUID &aIID,
@@ -270,9 +270,9 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const BSTR aDescription,
+                  CBSTR aDescription,
                   IProgress *aProgress1, IProgress *aProgress2,
-                  GUIDPARAMOUT aId = NULL);
+                  OUT_GUID aId = NULL);
 
     /**
      * Initializes the combined progress object given the first and the last
@@ -291,9 +291,9 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const BSTR aDescription,
+                  CBSTR aDescription,
                   InputIterator aFirstProgress, InputIterator aLastProgress,
-                  GUIDPARAMOUT aId = NULL)
+                  OUT_GUID aId = NULL)
     {
         /* Enclose the state transition NotReady->InInit->Ready */
         AutoInitSpan autoInitSpan (this);
@@ -321,7 +321,7 @@ protected:
                            VirtualBox *aParent,
 #endif
                            IUnknown *aInitiator,
-                           const BSTR aDescription, GUIDPARAMOUT aId);
+                           CBSTR aDescription, OUT_GUID aId);
 
 public:
 

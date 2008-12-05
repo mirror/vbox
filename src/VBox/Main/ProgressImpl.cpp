@@ -89,7 +89,7 @@ HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
                             VirtualBox *aParent,
 #endif
                             IUnknown *aInitiator,
-                            const BSTR aDescription, GUIDPARAMOUT aId /* = NULL */)
+                            CBSTR aDescription, OUT_GUID aId /* = NULL */)
 {
     /* Guarantees subclasses call this method at the proper time */
     NOREF (aAutoInitSpan);
@@ -192,7 +192,7 @@ void ProgressBase::protectedUninit (AutoUninitSpan &aAutoUninitSpan)
 // IProgress properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP ProgressBase::COMGETTER(Id) (GUIDPARAMOUT aId)
+STDMETHODIMP ProgressBase::COMGETTER(Id) (OUT_GUID aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -479,9 +479,9 @@ HRESULT Progress::init (
                         VirtualBox *aParent,
 #endif
                         IUnknown *aInitiator,
-                        const BSTR aDescription, BOOL aCancelable,
-                        ULONG aOperationCount, const BSTR aOperationDescription,
-                        GUIDPARAMOUT aId /* = NULL */)
+                        CBSTR aDescription, BOOL aCancelable,
+                        ULONG aOperationCount, CBSTR aOperationDescription,
+                        OUT_GUID aId /* = NULL */)
 {
     LogFlowThisFunc (("aDescription=\"%ls\"\n", aDescription));
 
@@ -535,7 +535,7 @@ HRESULT Progress::init (
  * @param aOperationDescription Description of the individual operation.
  */
 HRESULT Progress::init (BOOL aCancelable, ULONG aOperationCount,
-                        const BSTR aOperationDescription)
+                        CBSTR aOperationDescription)
 {
     LogFlowThisFunc (("aOperationDescription=\"%ls\"\n", aOperationDescription));
 
@@ -780,7 +780,7 @@ HRESULT Progress::notifyProgress (LONG aPercent)
  *
  * @note The current operation must not be the last one.
  */
-HRESULT Progress::advanceOperation (const BSTR aOperationDescription)
+HRESULT Progress::advanceOperation (CBSTR aOperationDescription)
 {
     AssertReturn (aOperationDescription, E_INVALIDARG);
 
@@ -1004,7 +1004,7 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
                                          VirtualBox *aParent,
 #endif
                                          IUnknown *aInitiator,
-                                         const BSTR aDescription, GUIDPARAMOUT aId)
+                                         CBSTR aDescription, OUT_GUID aId)
 {
     LogFlowThisFunc (("aDescription={%ls} mProgresses.size()=%d\n",
                       aDescription, mProgresses.size()));
@@ -1075,9 +1075,9 @@ HRESULT CombinedProgress::init (
                                 VirtualBox *aParent,
 #endif
                                 IUnknown *aInitiator,
-                                const BSTR aDescription,
+                                CBSTR aDescription,
                                 IProgress *aProgress1, IProgress *aProgress2,
-                                GUIDPARAMOUT aId /* = NULL */)
+                                OUT_GUID aId /* = NULL */)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);

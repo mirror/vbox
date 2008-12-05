@@ -121,22 +121,22 @@ public:
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(MACAddress)) (BSTR *aMACAddress);
-    STDMETHOD(COMSETTER(MACAddress)) (INPTR BSTR aMACAddress);
+    STDMETHOD(COMSETTER(MACAddress)) (IN_BSTR aMACAddress);
     STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
     STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
-    STDMETHOD(COMSETTER(HostInterface)) (INPTR BSTR aHostInterface);
+    STDMETHOD(COMSETTER(HostInterface)) (IN_BSTR aHostInterface);
 #ifndef RT_OS_WINDOWS /** @todo ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: need to find a way to exclude this in the xidl... */
     STDMETHOD(COMGETTER(TAPFileDescriptor)) (LONG *aTAPFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor)) (LONG aTAPFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication)) (BSTR *aTAPSetupApplication);
-    STDMETHOD(COMSETTER(TAPSetupApplication)) (INPTR BSTR aTAPSetupApplication);
+    STDMETHOD(COMSETTER(TAPSetupApplication)) (IN_BSTR aTAPSetupApplication);
     STDMETHOD(COMGETTER(TAPTerminateApplication)) (BSTR *aTAPTerminateApplication);
-    STDMETHOD(COMSETTER(TAPTerminateApplication)) (INPTR BSTR aTAPTerminateApplication);
+    STDMETHOD(COMSETTER(TAPTerminateApplication)) (IN_BSTR aTAPTerminateApplication);
 #endif
     STDMETHOD(COMGETTER(InternalNetwork)) (BSTR *aInternalNetwork);
-    STDMETHOD(COMSETTER(InternalNetwork)) (INPTR BSTR aInternalNetwork);
+    STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
     STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);
-    STDMETHOD(COMSETTER(NATNetwork)) (INPTR BSTR aNATNetwork);
+    STDMETHOD(COMSETTER(NATNetwork)) (IN_BSTR aNATNetwork);
     STDMETHOD(COMGETTER(CableConnected)) (BOOL *aConnected);
     STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
     STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
@@ -144,7 +144,7 @@ public:
     STDMETHOD(COMGETTER(LineSpeed)) (ULONG *aSpeed);
     STDMETHOD(COMSETTER(LineSpeed)) (ULONG aSpeed);
     STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
-    STDMETHOD(COMSETTER(TraceFile)) (INPTR BSTR aTraceFile);
+    STDMETHOD(COMSETTER(TraceFile)) (IN_BSTR aTraceFile);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();

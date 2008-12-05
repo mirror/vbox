@@ -58,7 +58,7 @@ public:
 
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aGuid);
+    STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
@@ -70,7 +70,7 @@ private:
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostNetworkInterface)
 
-    STDMETHOD(FindByName) (INPTR BSTR name, IHostNetworkInterface **networkInterface)
+    STDMETHOD(FindByName) (IN_BSTR name, IHostNetworkInterface **networkInterface)
     {
         if (!name)
             return E_INVALIDARG;
@@ -96,7 +96,7 @@ COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostNetworkInterface)
         return found.queryInterfaceTo (networkInterface);
     }
 
-    STDMETHOD(FindById) (INPTR GUIDPARAM id, IHostNetworkInterface **networkInterface)
+    STDMETHOD(FindById) (IN_GUID id, IHostNetworkInterface **networkInterface)
     {
         if (Guid(id).isEmpty())
             return E_INVALIDARG;

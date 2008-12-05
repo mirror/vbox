@@ -687,7 +687,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(VM) (ULONG64 *aVm)
  * @returns COM status code.
  * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::ResetStats (INPTR BSTR aPattern)
+STDMETHODIMP MachineDebugger::ResetStats (IN_BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 
@@ -703,7 +703,7 @@ STDMETHODIMP MachineDebugger::ResetStats (INPTR BSTR aPattern)
  * @returns COM status code.
  * @param   aPattern            The selection pattern. A bit similar to filename globbing.
  */
-STDMETHODIMP MachineDebugger::DumpStats (INPTR BSTR aPattern)
+STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 
@@ -721,7 +721,7 @@ STDMETHODIMP MachineDebugger::DumpStats (INPTR BSTR aPattern)
  * @param   aWithDescriptions   Whether to include the descriptions.
  * @param   aStats              The XML document containing the statistics.
  */
-STDMETHODIMP MachineDebugger::GetStats (INPTR BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats)
+STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions, BSTR *aStats)
 {
     Console::SafeVMPtrQuiet pVM (mParent);
 

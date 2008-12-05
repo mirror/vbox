@@ -214,7 +214,7 @@ HRESULT PerformanceCollector::toIPerformanceMetric(pm::BaseMetric *src, IPerform
 }
 
 STDMETHODIMP
-PerformanceCollector::GetMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
+PerformanceCollector::GetMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                   ComSafeArrayIn (IUnknown *, objects),
                                   ComSafeArrayOut (IPerformanceMetric *, outMetrics))
 {
@@ -256,7 +256,7 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 }
 
 STDMETHODIMP
-PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
+PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                     ComSafeArrayIn (IUnknown *, objects),
                                     ULONG aPeriod, ULONG aCount,
                                     ComSafeArrayOut (IPerformanceMetric *,
@@ -306,7 +306,7 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 }
 
 STDMETHODIMP
-PerformanceCollector::EnableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
+PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                      ComSafeArrayIn (IUnknown *, objects),
                                      ComSafeArrayOut (IPerformanceMetric *,
                                                       outMetrics))
@@ -343,7 +343,7 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 }
 
 STDMETHODIMP
-PerformanceCollector::DisableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
+PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                       ComSafeArrayIn (IUnknown *, objects),
                                       ComSafeArrayOut (IPerformanceMetric *,
                                                        outMetrics))
@@ -380,7 +380,7 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (INPTR BSTR, metricNames),
 }
 
 STDMETHODIMP
-PerformanceCollector::QueryMetricsData (ComSafeArrayIn (INPTR BSTR, metricNames),
+PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
                                         ComSafeArrayIn (IUnknown *, objects),
                                         ComSafeArrayOut (BSTR, outMetricNames),
                                         ComSafeArrayOut (IUnknown *, outObjects),

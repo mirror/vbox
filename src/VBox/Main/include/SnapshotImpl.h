@@ -69,7 +69,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer only for internal purposes
-    HRESULT init (const Guid &aId, INPTR BSTR aName, INPTR BSTR aDescription,
+    HRESULT init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
                   RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
                   Snapshot *aParent);
     void uninit();
@@ -77,11 +77,11 @@ public:
     void discard();
 
     // ISnapshot properties
-    STDMETHOD(COMGETTER(Id)) (GUIDPARAMOUT aId);
+    STDMETHOD(COMGETTER(Id)) (OUT_GUID aId);
     STDMETHOD(COMGETTER(Name)) (BSTR *aName);
-    STDMETHOD(COMSETTER(Name)) (INPTR BSTR aName);
+    STDMETHOD(COMSETTER(Name)) (IN_BSTR aName);
     STDMETHOD(COMGETTER(Description)) (BSTR *aDescription);
-    STDMETHOD(COMSETTER(Description)) (INPTR BSTR aDescription);
+    STDMETHOD(COMSETTER(Description)) (IN_BSTR aDescription);
     STDMETHOD(COMGETTER(TimeStamp)) (LONG64 *aTimeStamp);
     STDMETHOD(COMGETTER(Online)) (BOOL *aOnline);
     STDMETHOD(COMGETTER(Machine)) (IMachine **aMachine);
@@ -109,8 +109,8 @@ public:
     const SnapshotList &children() const { return dependentChildren(); }
 
     ULONG descendantCount();
-    ComObjPtr <Snapshot> findChildOrSelf (INPTR GUIDPARAM aId);
-    ComObjPtr <Snapshot> findChildOrSelf (INPTR BSTR aName);
+    ComObjPtr <Snapshot> findChildOrSelf (IN_GUID aId);
+    ComObjPtr <Snapshot> findChildOrSelf (IN_BSTR aName);
 
     void updateSavedStatePaths (const char *aOldPath, const char *aNewPath);
 

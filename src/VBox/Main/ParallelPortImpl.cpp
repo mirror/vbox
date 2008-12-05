@@ -507,7 +507,7 @@ STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
 /**
  *  Validates COMSETTER(Path) arguments.
  */
-HRESULT ParallelPort::checkSetPath (const BSTR aPath)
+HRESULT ParallelPort::checkSetPath (CBSTR aPath)
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -521,7 +521,7 @@ HRESULT ParallelPort::checkSetPath (const BSTR aPath)
     return S_OK;
 }
 
-STDMETHODIMP ParallelPort::COMSETTER(Path) (INPTR BSTR aPath)
+STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

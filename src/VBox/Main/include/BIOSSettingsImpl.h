@@ -106,7 +106,7 @@ public:
     STDMETHOD(COMGETTER(LogoDisplayTime))(ULONG *displayTime);
     STDMETHOD(COMSETTER(LogoDisplayTime))(ULONG displayTime);
     STDMETHOD(COMGETTER(LogoImagePath))(BSTR *imagePath);
-    STDMETHOD(COMSETTER(LogoImagePath))(INPTR BSTR imagePath);
+    STDMETHOD(COMSETTER(LogoImagePath))(IN_BSTR imagePath);
     STDMETHOD(COMGETTER(BootMenuMode))(BIOSBootMenuMode_T *bootMenuMode);
     STDMETHOD(COMSETTER(BootMenuMode))(BIOSBootMenuMode_T bootMenuMode);
     STDMETHOD(COMGETTER(ACPIEnabled))(BOOL *enabled);

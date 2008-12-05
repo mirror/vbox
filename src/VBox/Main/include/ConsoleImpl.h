@@ -140,17 +140,17 @@ public:
     STDMETHOD(GetPowerButtonHandled)(BOOL *aHandled);
     STDMETHOD(GetGuestEnteredACPIMode)(BOOL *aEntered);
     STDMETHOD(SaveState) (IProgress **aProgress);
-    STDMETHOD(AdoptSavedState) (INPTR BSTR aSavedStateFile);
+    STDMETHOD(AdoptSavedState) (IN_BSTR aSavedStateFile);
     STDMETHOD(DiscardSavedState)();
     STDMETHOD(GetDeviceActivity) (DeviceType_T aDeviceType,
                                  DeviceActivity_T *aDeviceActivity);
-    STDMETHOD(AttachUSBDevice) (INPTR GUIDPARAM aId);
-    STDMETHOD(DetachUSBDevice) (INPTR GUIDPARAM aId, IUSBDevice **aDevice);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
-    STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
-    STDMETHOD(TakeSnapshot) (INPTR BSTR aName, INPTR BSTR aDescription,
+    STDMETHOD(AttachUSBDevice) (IN_GUID aId);
+    STDMETHOD(DetachUSBDevice) (IN_GUID aId, IUSBDevice **aDevice);
+    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
+    STDMETHOD(TakeSnapshot) (IN_BSTR aName, IN_BSTR aDescription,
                              IProgress **aProgress);
-    STDMETHOD(DiscardSnapshot) (INPTR GUIDPARAM aId, IProgress **aProgress);
+    STDMETHOD(DiscardSnapshot) (IN_GUID aId, IProgress **aProgress);
     STDMETHOD(DiscardCurrentState) (IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
@@ -188,10 +188,10 @@ public:
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
     HRESULT onUSBDeviceAttach (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
-    HRESULT onUSBDeviceDetach (INPTR GUIDPARAM aId, IVirtualBoxErrorInfo *aError);
-    HRESULT getGuestProperty (INPTR BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
-    HRESULT setGuestProperty (INPTR BSTR aKey, INPTR BSTR aValue, INPTR BSTR aFlags);
-    HRESULT enumerateGuestProperties (INPTR BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    HRESULT onUSBDeviceDetach (IN_GUID aId, IVirtualBoxErrorInfo *aError);
+    HRESULT getGuestProperty (IN_BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
+    HRESULT setGuestProperty (IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
+    HRESULT enumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer () { return mAudioSniffer; }
 
@@ -217,7 +217,7 @@ public:
     void onKeyboardLedsChange (bool fNumLock, bool fCapsLock, bool fScrollLock);
     void onUSBDeviceStateChange (IUSBDevice *aDevice, bool aAttached,
                                  IVirtualBoxErrorInfo *aError);
-    void onRuntimeError (BOOL aFatal, INPTR BSTR aErrorID, INPTR BSTR aMessage);
+    void onRuntimeError (BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage);
     HRESULT onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
 
     static const PDMDRVREG DrvStatusReg;
@@ -420,16 +420,16 @@ private:
         return setMachineState (aMachineState, false /* aUpdateServer */);
     }
 
-    HRESULT findSharedFolder (const BSTR aName,
+    HRESULT findSharedFolder (CBSTR aName,
                               ComObjPtr <SharedFolder> &aSharedFolder,
                               bool aSetError = false);
 
     HRESULT fetchSharedFolders (BOOL aGlobal);
-    bool findOtherSharedFolder (INPTR BSTR aName,
+    bool findOtherSharedFolder (IN_BSTR aName,
                                 SharedFolderDataMap::const_iterator &aIt);
 
-    HRESULT createSharedFolder (INPTR BSTR aName, SharedFolderData aData);
-    HRESULT removeSharedFolder (INPTR BSTR aName);
+    HRESULT createSharedFolder (CBSTR aName, SharedFolderData aData);
+    HRESULT removeSharedFolder (CBSTR aName);
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
@@ -493,7 +493,7 @@ private:
 #ifdef VBOX_WITH_GUEST_PROPS
     static DECLCALLBACK(int)    doGuestPropNotification (void *pvExtension, uint32_t,
                                                          void *pvParms, uint32_t cbParms);
-    HRESULT doEnumerateGuestProperties (INPTR BSTR aPatterns,
+    HRESULT doEnumerateGuestProperties (CBSTR aPatterns,
                                         ComSafeArrayOut(BSTR, aNames),
                                         ComSafeArrayOut(BSTR, aValues),
                                         ComSafeArrayOut(ULONG64, aTimestamps),

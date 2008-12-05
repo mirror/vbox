@@ -76,10 +76,10 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *aVirtualBox, const BSTR aFormat,
-                  const BSTR aLocation);
+    HRESULT init (VirtualBox *aVirtualBox, CBSTR aFormat,
+                  CBSTR aLocation);
     HRESULT init (VirtualBox *aVirtualBox,
-                  const BSTR aLocation);
+                  CBSTR aLocation);
     HRESULT init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
                   const settings::Key &aNode);
     void uninit();
@@ -98,18 +98,18 @@ public:
     STDMETHOD(COMGETTER(LogicalSize)) (ULONG64 *aLogicalSize);
 
     // IHardDisk2 methods
-    STDMETHOD(GetProperty) (INPTR BSTR aName, BSTR *aValue);
-    STDMETHOD(SetProperty) (INPTR BSTR aName, INPTR BSTR aValue);
-    STDMETHOD(GetProperties) (INPTR BSTR aNames,
+    STDMETHOD(GetProperty) (IN_BSTR aName, BSTR *aValue);
+    STDMETHOD(SetProperty) (IN_BSTR aName, IN_BSTR aValue);
+    STDMETHOD(GetProperties) (IN_BSTR aNames,
                               ComSafeArrayOut (BSTR, aReturnNames),
                               ComSafeArrayOut (BSTR, aReturnValues));
-    STDMETHOD(SetProperties) (ComSafeArrayIn (INPTR BSTR, aNames),
-                              ComSafeArrayIn (INPTR BSTR, aValues));
+    STDMETHOD(SetProperties) (ComSafeArrayIn (IN_BSTR, aNames),
+                              ComSafeArrayIn (IN_BSTR, aValues));
     STDMETHOD(CreateDynamicStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(CreateFixedStorage) (ULONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(DeleteStorage) (IProgress **aProgress);
     STDMETHOD(CreateDiffStorage) (IHardDisk2 *aTarget, IProgress **aProgress);
-    STDMETHOD(MergeTo) (INPTR GUIDPARAM aTargetId, IProgress **aProgress);
+    STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
     STDMETHOD(CloneTo) (IHardDisk2 *aTarget, IProgress **aProgress);
     STDMETHOD(FlattenTo) (IHardDisk2 *aTarget, IProgress **aProgress);
 
@@ -231,8 +231,8 @@ protected:
 
 private:
 
-    HRESULT setLocation (const BSTR aLocation);
-    HRESULT setFormat (const BSTR aFormat);
+    HRESULT setLocation (CBSTR aLocation);
+    HRESULT setFormat (CBSTR aFormat);
 
     HRESULT queryInfo();
 

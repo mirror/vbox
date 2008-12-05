@@ -298,7 +298,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(INPTR BSTR aMACAddress)
+STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -407,7 +407,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(INPTR BSTR aHostInterface)
+STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 {
     /** @todo Validate input string length. r=dmik: do it in XML schema?*/
 
@@ -525,7 +525,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPSetupApplication) (
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TAPSetupApplication) (
-    INPTR BSTR aTAPSetupApplication)
+    IN_BSTR aTAPSetupApplication)
 {
 # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     /* empty strings are not allowed as path names */
@@ -579,7 +579,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TAPTerminateApplication) (
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(TAPTerminateApplication) (
-    INPTR BSTR aTAPTerminateApplication)
+    IN_BSTR aTAPTerminateApplication)
 {
 # ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     /* empty strings are not allowed as path names */
@@ -628,7 +628,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(InternalNetwork) (BSTR *aInternalNetwork)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (INPTR BSTR aInternalNetwork)
+STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwork)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -676,7 +676,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(NATNetwork) (BSTR *aNATNetwork)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (INPTR BSTR aNATNetwork)
+STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -831,7 +831,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(TraceFile) (BSTR *aTraceFile)
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (INPTR BSTR aTraceFile)
+STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

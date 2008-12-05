@@ -603,7 +603,7 @@ STDMETHODIMP SerialPort::COMGETTER(Path) (BSTR *aPath)
 /**
  *  Validates COMSETTER(Path) arguments.
  */
-HRESULT SerialPort::checkSetPath (const BSTR aPath)
+HRESULT SerialPort::checkSetPath (CBSTR aPath)
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -618,7 +618,7 @@ HRESULT SerialPort::checkSetPath (const BSTR aPath)
     return S_OK;
 }
 
-STDMETHODIMP SerialPort::COMSETTER(Path) (INPTR BSTR aPath)
+STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());

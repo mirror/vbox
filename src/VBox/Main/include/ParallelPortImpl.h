@@ -94,7 +94,7 @@ public:
     STDMETHOD(COMGETTER(IOBase))  (ULONG     *aIOBase);
     STDMETHOD(COMSETTER(IOBase))  (ULONG      aIOBase);
     STDMETHOD(COMGETTER(Path))    (BSTR      *aPath);
-    STDMETHOD(COMSETTER(Path))    (INPTR BSTR aPath);
+    STDMETHOD(COMSETTER(Path))    (IN_BSTR aPath);
 
     // public methods only for internal purposes
 
@@ -115,7 +115,7 @@ public:
 
 private:
 
-    HRESULT checkSetPath (const BSTR aPath);
+    HRESULT checkSetPath (CBSTR aPath);
 
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <ParallelPort> mPeer;

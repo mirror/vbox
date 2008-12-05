@@ -75,17 +75,20 @@ class Bstr
 public:
 
     typedef BSTR String;
-    typedef const BSTR ConstString;
+    typedef CBSTR ConstString;
 
     Bstr () : bstr (NULL) {}
 
     Bstr (const Bstr &that) : bstr (NULL) { raw_copy (bstr, that.bstr); }
-    Bstr (const BSTR that) : bstr (NULL) { raw_copy (bstr, that); }
+    Bstr (CBSTR that) : bstr (NULL) { raw_copy (bstr, that); }
+
+#if defined (VBOX_WITH_XPCOM)
     Bstr (const wchar_t *that) : bstr (NULL)
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        raw_copy (bstr, (const BSTR) that);
+        raw_copy (bstr, (CBSTR) that);
     }
+#endif
 
     Bstr (const Utf8Str &that);
     Bstr (const char *that);
@@ -96,7 +99,7 @@ public:
     ~Bstr () { setNull(); }
 
     Bstr &operator = (const Bstr &that) { safe_assign (that.bstr); return *this; }
-    Bstr &operator = (const BSTR that) { safe_assign (that); return *this; }
+    Bstr &operator = (CBSTR that) { safe_assign (that); return *this; }
 
     Bstr &operator = (const Utf8Str &that);
     Bstr &operator = (const char *that);
@@ -139,34 +142,48 @@ public:
         return *this;
     }
 
-    int compare (const BSTR str) const
+    int compare (CBSTR str) const
+    {
+        return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
+    }
+
+    int compare (BSTR str) const
     {
         return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
     }
 
     bool operator == (const Bstr &that) const { return !compare (that.bstr); }
     bool operator != (const Bstr &that) const { return !!compare (that.bstr); }
-    bool operator == (const BSTR that) const { return !compare (that); }
+    bool operator == (CBSTR that) const { return !compare (that); }
+    bool operator == (BSTR that) const { return !compare (that); }
+
+#if defined (VBOX_WITH_XPCOM)
     bool operator != (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return !!compare ((const BSTR) that);
+        return !!compare ((CBSTR) that);
     }
     bool operator == (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return !compare ((const BSTR) that);
+        return !compare ((CBSTR) that);
     }
-    bool operator != (const BSTR that) const { return !!compare (that); }
+#endif
+
+    bool operator != (CBSTR that) const { return !!compare (that); }
+    bool operator != (BSTR that) const { return !!compare (that); }
     bool operator < (const Bstr &that) const { return compare (that.bstr) < 0; }
-    bool operator < (const BSTR that) const { return compare (that) < 0; }
+    bool operator < (CBSTR that) const { return compare (that) < 0; }
+    bool operator < (BSTR that) const { return compare (that) < 0; }
+#if defined (VBOX_WITH_XPCOM)
     bool operator < (const wchar_t *that) const
     {
         AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return compare ((const BSTR) that) < 0;
+        return compare ((CBSTR) that) < 0;
     }
+#endif
 
-    int compareIgnoreCase (const BSTR str) const
+    int compareIgnoreCase (CBSTR str) const
     {
         return ::RTUtf16LocaleICmp (bstr, str);
     }
@@ -178,12 +195,21 @@ public:
 
     size_t length() const { return isNull() ? 0 : ::RTUtf16Len ((PRTUTF16) bstr); }
 
-    /** Intended to to pass instances as |BSTR| input parameters to methods. */
-    operator const BSTR () const { return bstr; }
+    /** Intended to to pass instances as |CBSTR| input parameters to methods. */
+    operator CBSTR () const { return bstr; }
 
-    /** The same as operator const BSTR(), but for situations where the compiler
-        cannot typecast implicitly (for example, in printf() argument list). */
-    const BSTR raw() const { return bstr; }
+    /**
+     * Intended to to pass instances as |BSTR| input parameters to methods.
+     * Note that we have to provide this mutable BSTR operator since in MS COM
+     * input BSTR parameters of interface methods are not const.
+     */
+    operator BSTR () { return bstr; }
+
+    /**
+     *  The same as operator CBSTR(), but for situations where the compiler
+     *  cannot typecast implicitly (for example, in printf() argument list).
+     */
+    CBSTR raw() const { return bstr; }
 
     /**
      *  Returns a non-const raw pointer that allows to modify the string directly.
@@ -244,7 +270,7 @@ public:
 
 protected:
 
-    void safe_assign (const BSTR str)
+    void safe_assign (CBSTR str)
     {
         if (bstr != str)
         {
@@ -253,7 +279,7 @@ protected:
         }
     }
 
-    inline static void raw_copy (BSTR &ls, const BSTR rs)
+    inline static void raw_copy (BSTR &ls, CBSTR rs)
     {
         if (rs)
             ls = ::SysAllocString ((const OLECHAR *) rs);
@@ -276,8 +302,10 @@ protected:
 };
 
 /* symmetric compare operators */
-inline bool operator== (const BSTR l, const Bstr &r) { return r.operator== (l); }
-inline bool operator!= (const BSTR l, const Bstr &r) { return r.operator!= (l); }
+inline bool operator== (CBSTR l, const Bstr &r) { return r.operator== (l); }
+inline bool operator!= (CBSTR l, const Bstr &r) { return r.operator!= (l); }
+inline bool operator== (BSTR l, const Bstr &r) { return r.operator== (l); }
+inline bool operator!= (BSTR l, const Bstr &r) { return r.operator!= (l); }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -308,7 +336,7 @@ public:
     Utf8Str (const char *that) : str (NULL) { raw_copy (str, that); }
 
     Utf8Str (const Bstr &that) : str (NULL) { raw_copy (str, that); }
-    Utf8Str (const BSTR that) : str (NULL) { raw_copy (str, that); }
+    Utf8Str (CBSTR that) : str (NULL) { raw_copy (str, that); }
 
     /** Shortcut that calls #alloc(aSize) right after object creation. */
     Utf8Str (size_t aSize) : str (NULL) { alloc(aSize); }
@@ -324,7 +352,7 @@ public:
         raw_copy (str, that);
         return *this;
     }
-    Utf8Str &operator = (const BSTR that)
+    Utf8Str &operator = (CBSTR that)
     {
         setNull();
         raw_copy (str, that);
@@ -499,7 +527,7 @@ protected:
 #endif
     }
 
-    inline static void raw_copy (char *&ls, const BSTR rs)
+    inline static void raw_copy (char *&ls, CBSTR rs)
     {
         if (rs)
         {

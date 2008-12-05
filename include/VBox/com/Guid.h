@@ -118,7 +118,7 @@ public:
     bool operator< (const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) < 0; }
     bool operator< (const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) < 0; }
 
-    /* to pass instances as GUIDPARAM parameters to interface methods */
+    /* to pass instances as IN_GUID parameters to interface methods */
     operator const GUID &() const { return *(GUID *) &uuid; }
 
     /* to directly pass instances to RTPrintf("%Vuuid") */
@@ -132,7 +132,7 @@ public:
 
 #if !defined (VBOX_WITH_XPCOM)
 
-    /* to assign instances to GUIDPARAMOUT parameters from within the
+    /* to assign instances to OUT_GUID parameters from within the
      *  interface method */
     const Guid &cloneTo (GUID *pguid) const
     {
@@ -140,12 +140,12 @@ public:
         return *this;
     }
 
-    /* to pass instances as GUIDPARAMOUT parameters to interface methods */
+    /* to pass instances as OUT_GUID parameters to interface methods */
     GUID *asOutParam() { return (GUID *) &uuid; }
 
 #else
 
-    /* to assign instances to GUIDPARAMOUT parameters from within the
+    /* to assign instances to OUT_GUID parameters from within the
      * interface method */
     const Guid &cloneTo (nsID **ppguid) const
     {
@@ -170,12 +170,12 @@ public:
         friend class Guid;
     };
 
-    /* to pass instances as GUIDPARAMOUT parameters to interface methods */
+    /* to pass instances as OUT_GUID parameters to interface methods */
     GuidOutParam asOutParam() { return GuidOutParam (*this); }
 
 #endif
 
-    /* to directly test GUIDPARAM interface method's parameters */
+    /* to directly test IN_GUID interface method's parameters */
     static bool isEmpty (const GUID &guid)
     {
         return ::RTUuidIsNull ((PRTUUID) &guid);

@@ -249,7 +249,7 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 // IFloppyDrive methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP FloppyDrive::MountImage (INPTR GUIDPARAM aImageId)
+STDMETHODIMP FloppyDrive::MountImage (IN_GUID aImageId)
 {
     Guid imageId = aImageId;
     if (imageId.isEmpty())

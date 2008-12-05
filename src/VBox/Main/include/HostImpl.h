@@ -98,14 +98,14 @@ public:
 
     // IHost methods
 #ifdef RT_OS_WINDOWS
-    STDMETHOD(CreateHostNetworkInterface) (INPTR BSTR aName,
+    STDMETHOD(CreateHostNetworkInterface) (IN_BSTR aName,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
-    STDMETHOD(RemoveHostNetworkInterface) (INPTR GUIDPARAM aId,
+    STDMETHOD(RemoveHostNetworkInterface) (IN_GUID aId,
                                            IHostNetworkInterface **aHostNetworkInterface,
                                            IProgress **aProgress);
 #endif
-    STDMETHOD(CreateUSBDeviceFilter) (INPTR BSTR aName, IHostUSBDeviceFilter **aFilter);
+    STDMETHOD(CreateUSBDeviceFilter) (IN_BSTR aName, IHostUSBDeviceFilter **aFilter);
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
     STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter **aFilter);
 

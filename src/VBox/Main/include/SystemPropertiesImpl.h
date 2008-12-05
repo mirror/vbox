@@ -75,16 +75,16 @@ public:
     STDMETHOD(COMGETTER(ParallelPortCount) (ULONG *count));
     STDMETHOD(COMGETTER(MaxBootPosition) (ULONG *aMaxBootPosition));
     STDMETHOD(COMGETTER(DefaultMachineFolder)) (BSTR *aDefaultMachineFolder);
-    STDMETHOD(COMSETTER(DefaultMachineFolder)) (INPTR BSTR aDefaultMachineFolder);
+    STDMETHOD(COMSETTER(DefaultMachineFolder)) (IN_BSTR aDefaultMachineFolder);
     STDMETHOD(COMGETTER(DefaultHardDiskFolder)) (BSTR *aDefaultHardDiskFolder);
-    STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (INPTR BSTR aDefaultHardDiskFolder);
+    STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (IN_BSTR aDefaultHardDiskFolder);
     STDMETHOD(COMGETTER(HardDiskFormats)) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats));
     STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFolder);
-    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (INPTR BSTR aDefaultHardDiskFolder);
+    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (IN_BSTR aDefaultHardDiskFolder);
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
-    STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (INPTR BSTR aRemoteDisplayAuthLibrary);
+    STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (IN_BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
-    STDMETHOD(COMSETTER(WebServiceAuthLibrary)) (INPTR BSTR aWebServiceAuthLibrary);
+    STDMETHOD(COMSETTER(WebServiceAuthLibrary)) (IN_BSTR aWebServiceAuthLibrary);
     STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *enabled);
     STDMETHOD(COMSETTER(HWVirtExEnabled)) (BOOL enabled);
     STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
@@ -95,7 +95,7 @@ public:
     HRESULT loadSettings (const settings::Key &aGlobal);
     HRESULT saveSettings (settings::Key &aGlobal);
 
-    ComObjPtr <HardDiskFormat> hardDiskFormat (const BSTR aFormat);
+    ComObjPtr <HardDiskFormat> hardDiskFormat (CBSTR aFormat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -119,12 +119,12 @@ private:
 
     typedef std::list <ComObjPtr <HardDiskFormat> > HardDiskFormatList;
 
-    HRESULT setDefaultMachineFolder (const BSTR aPath);
-    HRESULT setDefaultHardDiskFolder (const BSTR aPath);
-    HRESULT setDefaultHardDiskFormat (const BSTR aFormat);
+    HRESULT setDefaultMachineFolder (CBSTR aPath);
+    HRESULT setDefaultHardDiskFolder (CBSTR aPath);
+    HRESULT setDefaultHardDiskFormat (CBSTR aFormat);
 
-    HRESULT setRemoteDisplayAuthLibrary (const BSTR aPath);
-    HRESULT setWebServiceAuthLibrary (const BSTR aPath);
+    HRESULT setRemoteDisplayAuthLibrary (CBSTR aPath);
+    HRESULT setWebServiceAuthLibrary (CBSTR aPath);
 
     const ComObjPtr <VirtualBox, ComWeakRef> mParent;
 

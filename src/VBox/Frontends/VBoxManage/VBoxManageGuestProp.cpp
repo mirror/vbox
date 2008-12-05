@@ -93,19 +93,19 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    STDMETHOD(OnMachineStateChange)(INPTR GUIDPARAM machineId,
+    STDMETHOD(OnMachineStateChange)(IN_GUID machineId,
                                     MachineState_T state)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnMachineDataChange)(INPTR GUIDPARAM machineId)
+    STDMETHOD(OnMachineDataChange)(IN_GUID machineId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataCanChange)(INPTR GUIDPARAM machineId, INPTR BSTR key,
-                                    INPTR BSTR value, BSTR *error,
+    STDMETHOD(OnExtraDataCanChange)(IN_GUID machineId, IN_BSTR key,
+                                    IN_BSTR value, BSTR *error,
                                     BOOL *changeAllowed)
     {
         /* we never disagree */
@@ -115,13 +115,13 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataChange)(INPTR GUIDPARAM machineId, INPTR BSTR key,
-                                 INPTR BSTR value)
+    STDMETHOD(OnExtraDataChange)(IN_GUID machineId, IN_BSTR key,
+                                 IN_BSTR value)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered) (INPTR GUIDPARAM mediaId,
+    STDMETHOD(OnMediaRegistered) (IN_GUID mediaId,
                                   DeviceType_T mediaType, BOOL registered)
     {
         NOREF (mediaId);
@@ -130,38 +130,38 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMachineRegistered)(INPTR GUIDPARAM machineId, BOOL registered)
+    STDMETHOD(OnMachineRegistered)(IN_GUID machineId, BOOL registered)
     {
         return S_OK;
     }
 
-     STDMETHOD(OnSessionStateChange)(INPTR GUIDPARAM machineId,
+     STDMETHOD(OnSessionStateChange)(IN_GUID machineId,
                                     SessionState_T state)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotTaken) (INPTR GUIDPARAM aMachineId,
-                                INPTR GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotTaken) (IN_GUID aMachineId,
+                                IN_GUID aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded) (INPTR GUIDPARAM aMachineId,
-                                    INPTR GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotDiscarded) (IN_GUID aMachineId,
+                                    IN_GUID aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotChange) (INPTR GUIDPARAM aMachineId,
-                                 INPTR GUIDPARAM aSnapshotId)
+    STDMETHOD(OnSnapshotChange) (IN_GUID aMachineId,
+                                 IN_GUID aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnGuestPropertyChange)(INPTR GUIDPARAM machineId,
-                                     INPTR BSTR name, INPTR BSTR value,
-                                     INPTR BSTR flags)
+    STDMETHOD(OnGuestPropertyChange)(IN_GUID machineId,
+                                     IN_BSTR name, IN_BSTR value,
+                                     IN_BSTR flags)
     {
         int rc = S_OK;
         Utf8Str utf8Name (name);

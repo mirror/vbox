@@ -90,18 +90,21 @@
 /** Returns @c true if @a rc represents a warning result code */
 #define SUCCEEDED_WARNING(rc)   (SUCCEEDED (rc) && (rc) != S_OK)
 
-/** Input pointer argument prefix in the interface method declaration. */
-#define INPTR
+/** Immutable BSTR string */
+typedef const OLECHAR *CBSTR;
+
+/** Input BSTR argument the interface method declaration. */
+#define IN_BSTR BSTR
+
+/** Input GUID argument the interface method declaration. */
+#define IN_GUID GUID
+/** Output GUID argument the interface method declaration. */
+#define OUT_GUID GUID*
 
 /** Makes the name of the getter interface function (n must be capitalized). */
 #define COMGETTER(n)    get_##n
 /** Makes the name of the setter interface function (n must be capitalized). */
 #define COMSETTER(n)    put_##n
-
-/** Type for an input GUID parameter in the interface method declaration. */
-#define GUIDPARAM           GUID
-/** Type for an output GUID parameter in the interface method declaration. */
-#define GUIDPARAMOUT        GUID*
 
 /**
  * Declares an input safearray parameter in the COM method implementation. Also
@@ -264,30 +267,33 @@
 #define LONG64  PRInt64
 #define ULONG64 PRUint64
 
-#define BSTR    PRUnichar *
-#define LPBSTR  BSTR *
+#define FALSE   PR_FALSE
+#define TRUE    PR_TRUE
+
 #define OLECHAR wchar_t
 
-#define FALSE PR_FALSE
-#define TRUE PR_TRUE
+/* note: typedef to semantically match BSTR on Win32 */
+typedef PRUnichar *BSTR;
+typedef const PRUnichar *CBSTR;
+typedef BSTR *LPBSTR;
 
-/** Input pointer argument prefix in the interface method declaration. */
-#define INPTR const
-
-/** Makes the name of the getter interface function (n must be capitalized). */
-#define COMGETTER(n)    Get##n
-/** Makes the name of the setter interface function (n must be capitalized). */
-#define COMSETTER(n)    Set##n
+/** Input BSTR argument the interface method declaration. */
+#define IN_BSTR CBSTR
 
 /**
  * Type to define a raw GUID variable (for members use the com::Guid class
  * instead).
  */
-#define GUID                nsID
-/** Type for an input GUID parameter in the interface method declaration. */
-#define GUIDPARAM           nsID &
-/** Type for an output GUID parameter in the interface method declaration.  */
-#define GUIDPARAMOUT        nsID **
+#define GUID        nsID
+/** Input GUID argument the interface method declaration. */
+#define IN_GUID     const nsID &
+/** Output GUID argument the interface method declaration. */
+#define OUT_GUID    nsID **
+
+/** Makes the name of the getter interface function (n must be capitalized). */
+#define COMGETTER(n)    Get##n
+/** Makes the name of the setter interface function (n must be capitalized). */
+#define COMSETTER(n)    Set##n
 
 /* safearray input parameter macros */
 #define ComSafeArrayIn(aType, aArg)         PRUint32 aArg##Size, aType *aArg

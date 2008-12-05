@@ -136,48 +136,48 @@ public:
 
     /* IVirtualBox methods */
 
-    STDMETHOD(CreateMachine) (INPTR BSTR aName, INPTR BSTR aOsTypeId, INPTR BSTR aBaseFolder,
-                              INPTR GUIDPARAM aId, IMachine **aMachine);
-    STDMETHOD(CreateLegacyMachine) (INPTR BSTR aName, INPTR BSTR aOsTypeId, INPTR BSTR aSettingsFile,
-                                    INPTR GUIDPARAM aId, IMachine **aMachine);
-    STDMETHOD(OpenMachine) (INPTR BSTR aSettingsFile, IMachine **aMachine);
+    STDMETHOD(CreateMachine) (IN_BSTR aName, IN_BSTR aOsTypeId, IN_BSTR aBaseFolder,
+                              IN_GUID aId, IMachine **aMachine);
+    STDMETHOD(CreateLegacyMachine) (IN_BSTR aName, IN_BSTR aOsTypeId, IN_BSTR aSettingsFile,
+                                    IN_GUID aId, IMachine **aMachine);
+    STDMETHOD(OpenMachine) (IN_BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine) (IMachine *aMachine);
-    STDMETHOD(GetMachine) (INPTR GUIDPARAM aId, IMachine **aMachine);
-    STDMETHOD(FindMachine) (INPTR BSTR aName, IMachine **aMachine);
-    STDMETHOD(UnregisterMachine) (INPTR GUIDPARAM aId, IMachine **aMachine);
+    STDMETHOD(GetMachine) (IN_GUID aId, IMachine **aMachine);
+    STDMETHOD(FindMachine) (IN_BSTR aName, IMachine **aMachine);
+    STDMETHOD(UnregisterMachine) (IN_GUID aId, IMachine **aMachine);
 
-    STDMETHOD(CreateHardDisk2) (INPTR BSTR aFormat, INPTR BSTR aLocation,
+    STDMETHOD(CreateHardDisk2) (IN_BSTR aFormat, IN_BSTR aLocation,
                                 IHardDisk2 **aHardDisk);
-    STDMETHOD(OpenHardDisk2) (INPTR BSTR aLocation, IHardDisk2 **aHardDisk);
-    STDMETHOD(GetHardDisk2) (INPTR GUIDPARAM aId, IHardDisk2 **aHardDisk);
-    STDMETHOD(FindHardDisk2) (INPTR BSTR aLocation, IHardDisk2 **aHardDisk);
+    STDMETHOD(OpenHardDisk2) (IN_BSTR aLocation, IHardDisk2 **aHardDisk);
+    STDMETHOD(GetHardDisk2) (IN_GUID aId, IHardDisk2 **aHardDisk);
+    STDMETHOD(FindHardDisk2) (IN_BSTR aLocation, IHardDisk2 **aHardDisk);
 
-    STDMETHOD(OpenDVDImage) (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+    STDMETHOD(OpenDVDImage) (IN_BSTR aLocation, IN_GUID aId,
                              IDVDImage2 **aDVDImage);
-    STDMETHOD(GetDVDImage) (INPTR GUIDPARAM aId, IDVDImage2 **aDVDImage);
-    STDMETHOD(FindDVDImage) (INPTR BSTR aLocation, IDVDImage2 **aDVDImage);
+    STDMETHOD(GetDVDImage) (IN_GUID aId, IDVDImage2 **aDVDImage);
+    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IDVDImage2 **aDVDImage);
 
-    STDMETHOD(OpenFloppyImage) (INPTR BSTR aLocation, INPTR GUIDPARAM aId,
+    STDMETHOD(OpenFloppyImage) (IN_BSTR aLocation, IN_GUID aId,
                                 IFloppyImage2 **aFloppyImage);
-    STDMETHOD(GetFloppyImage) (INPTR GUIDPARAM aId, IFloppyImage2 **aFloppyImage);
-    STDMETHOD(FindFloppyImage) (INPTR BSTR aLocation, IFloppyImage2 **aFloppyImage);
+    STDMETHOD(GetFloppyImage) (IN_GUID aId, IFloppyImage2 **aFloppyImage);
+    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IFloppyImage2 **aFloppyImage);
 
-    STDMETHOD(GetGuestOSType) (INPTR BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder) (INPTR BSTR aName, INPTR BSTR aHostPath, BOOL aWritable);
-    STDMETHOD(RemoveSharedFolder) (INPTR BSTR aName);
-    STDMETHOD(GetNextExtraDataKey) (INPTR BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
-    STDMETHOD(GetExtraData) (INPTR BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetExtraData) (INPTR BSTR aKey, INPTR BSTR aValue);
-    STDMETHOD(OpenSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
-    STDMETHOD(OpenRemoteSession) (ISession *aSession, INPTR GUIDPARAM aMachineId,
-                                  INPTR BSTR aType, INPTR BSTR aEnvironment,
+    STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
+    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
+    STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
+    STDMETHOD(GetNextExtraDataKey) (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
+    STDMETHOD(GetExtraData) (IN_BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetExtraData) (IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(OpenSession) (ISession *aSession, IN_GUID aMachineId);
+    STDMETHOD(OpenRemoteSession) (ISession *aSession, IN_GUID aMachineId,
+                                  IN_BSTR aType, IN_BSTR aEnvironment,
                                   IProgress **aProgress);
-    STDMETHOD(OpenExistingSession) (ISession *aSession, INPTR GUIDPARAM aMachineId);
+    STDMETHOD(OpenExistingSession) (ISession *aSession, IN_GUID aMachineId);
 
     STDMETHOD(RegisterCallback) (IVirtualBoxCallback *aCallback);
     STDMETHOD(UnregisterCallback) (IVirtualBoxCallback *aCallback);
 
-    STDMETHOD(WaitForPropertyChange) (INPTR BSTR aWhat, ULONG aTimeout,
+    STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);
 
     STDMETHOD(SaveSettings)();
@@ -188,7 +188,7 @@ public:
     HRESULT postEvent (Event *event);
 
     HRESULT addProgress (IProgress *aProgress);
-    HRESULT removeProgress (INPTR GUIDPARAM aId);
+    HRESULT removeProgress (IN_GUID aId);
 
 #ifdef RT_OS_WINDOWS
     typedef DECLCALLBACKPTR (HRESULT, SVCHelperClientFunc)
@@ -203,17 +203,17 @@ public:
 
     void onMachineStateChange (const Guid &aId, MachineState_T aState);
     void onMachineDataChange (const Guid &aId);
-    BOOL onExtraDataCanChange(const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue,
+    BOOL onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                               Bstr &aError);
-    void onExtraDataChange(const Guid &aId, INPTR BSTR aKey, INPTR BSTR aValue);
+    void onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
     void onMachineRegistered (const Guid &aId, BOOL aRegistered);
     void onSessionStateChange (const Guid &aId, SessionState_T aState);
 
     void onSnapshotTaken (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotDiscarded (const Guid &aMachineId, const Guid &aSnapshotId);
     void onSnapshotChange (const Guid &aMachineId, const Guid &aSnapshotId);
-    void onGuestPropertyChange (const Guid &aMachineId, INPTR BSTR aName, INPTR BSTR aValue,
-                                INPTR BSTR aFlags);
+    void onGuestPropertyChange (const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
+                                IN_BSTR aFlags);
 
     ComObjPtr <GuestOSType> getUnknownOSType();
 
@@ -233,11 +233,11 @@ public:
     HRESULT findMachine (const Guid &aId, bool aSetError,
                          ComObjPtr <Machine> *machine = NULL);
 
-    HRESULT findHardDisk2 (const Guid *aId, const BSTR aLocation,
+    HRESULT findHardDisk2 (const Guid *aId, CBSTR aLocation,
                            bool aSetError, ComObjPtr <HardDisk2> *aHardDisk = NULL);
-    HRESULT findDVDImage2 (const Guid *aId, const BSTR aLocation,
+    HRESULT findDVDImage2 (const Guid *aId, CBSTR aLocation,
                            bool aSetError, ComObjPtr <DVDImage2> *aImage = NULL);
-    HRESULT findFloppyImage2 (const Guid *aId, const BSTR aLocation,
+    HRESULT findFloppyImage2 (const Guid *aId, CBSTR aLocation,
                               bool aSetError, ComObjPtr <FloppyImage2> *aImage = NULL);
 
     const ComObjPtr <Host> &host() { return mData.mHost; }

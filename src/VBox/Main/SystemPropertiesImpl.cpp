@@ -299,7 +299,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (INPTR BSTR aDefaultMachineFolder)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (IN_BSTR aDefaultMachineFolder)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -328,7 +328,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (INPTR BSTR aDefaultHardDiskFolder)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaultHardDiskFolder)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -374,7 +374,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (INPTR BSTR aDefaultHardDiskFormat)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (IN_BSTR aDefaultHardDiskFormat)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -403,7 +403,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (INPTR BSTR aRemoteDisplayAuthLibrary)
+STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (IN_BSTR aRemoteDisplayAuthLibrary)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -432,7 +432,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (INPTR BSTR aWebServiceAuthLibrary)
+STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebServiceAuthLibrary)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -603,7 +603,7 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
  *
  * @return ComObjPtr<HardDiskFormat>
  */
-ComObjPtr <HardDiskFormat> SystemProperties::hardDiskFormat (const BSTR aFormat)
+ComObjPtr <HardDiskFormat> SystemProperties::hardDiskFormat (CBSTR aFormat)
 {
     ComObjPtr <HardDiskFormat> format;
 
@@ -630,7 +630,7 @@ ComObjPtr <HardDiskFormat> SystemProperties::hardDiskFormat (const BSTR aFormat)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::setDefaultMachineFolder (const BSTR aPath)
+HRESULT SystemProperties::setDefaultMachineFolder (CBSTR aPath)
 {
     Utf8Str path;
     if (aPath && *aPath)
@@ -652,7 +652,7 @@ HRESULT SystemProperties::setDefaultMachineFolder (const BSTR aPath)
     return S_OK;
 }
 
-HRESULT SystemProperties::setDefaultHardDiskFolder (const BSTR aPath)
+HRESULT SystemProperties::setDefaultHardDiskFolder (CBSTR aPath)
 {
     Utf8Str path;
     if (aPath && *aPath)
@@ -674,7 +674,7 @@ HRESULT SystemProperties::setDefaultHardDiskFolder (const BSTR aPath)
     return S_OK;
 }
 
-HRESULT SystemProperties::setDefaultHardDiskFormat (const BSTR aFormat)
+HRESULT SystemProperties::setDefaultHardDiskFormat (CBSTR aFormat)
 {
     if (aFormat && *aFormat)
         mDefaultHardDiskFormat = aFormat;
@@ -684,7 +684,7 @@ HRESULT SystemProperties::setDefaultHardDiskFormat (const BSTR aFormat)
     return S_OK;
 }
 
-HRESULT SystemProperties::setRemoteDisplayAuthLibrary (const BSTR aPath)
+HRESULT SystemProperties::setRemoteDisplayAuthLibrary (CBSTR aPath)
 {
     if (aPath && *aPath)
         mRemoteDisplayAuthLibrary = aPath;
@@ -694,7 +694,7 @@ HRESULT SystemProperties::setRemoteDisplayAuthLibrary (const BSTR aPath)
     return S_OK;
 }
 
-HRESULT SystemProperties::setWebServiceAuthLibrary (const BSTR aPath)
+HRESULT SystemProperties::setWebServiceAuthLibrary (CBSTR aPath)
 {
     if (aPath && *aPath)
         mWebServiceAuthLibrary = aPath;
