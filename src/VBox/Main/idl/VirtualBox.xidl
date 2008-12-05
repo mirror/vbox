@@ -3569,6 +3569,14 @@
         <link to="DeviceType::Null"/> should be used.
 
         @todo setHardDiskBootOrder(), setNetworkBootOrder()
+
+        <result name="E_INVALIDARG">
+          Boot @a position out of range.
+        </result>
+        <result name="E_NOTIMPL">
+          Booting from USB @a device currently not supported.
+        </result>
+
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>
@@ -3598,8 +3606,13 @@
         <link to="DeviceType::Null"/> is returned.
 
         @todo getHardDiskBootOrder(), getNetworkBootOrder()
+
+        <result name="E_INVALIDARG">
+          Boot @a position out of range.
+        </result>
+
       </desc>
-      <param name="order" type="unsigned long" dir="in">
+      <param name="position" type="unsigned long" dir="in">
         <desc>
           Position in the boot order (<tt>1</tt> to the total number of
           devices the machine can boot from, as returned by
@@ -3615,21 +3628,21 @@
 
     <method name="attachHardDisk2">
       <desc>
-        Attaches a virtual hard disk identified by the given UUID to a device
-        slot of the specified bus.
+        Attaches a virtual hard disk identified by the given UUID @a id
+        to a device slot of the specified bus.
 
         For the IDE bus, the @a channel parameter can be either @c 0 or @c 1, to
         specify the primary or secondary IDE controller, respectively. The
-        SATA bus supports 30 channels, so this parameter can be a number in
-        range from @c 0 to @c 29.
+        SATA bus supports 30 channels, so this parameter can be a number
+        ranging from @c 0 to @c 29.
 
         For the primary controller of the IDE bus, the @a device number can be
         either @c 0 or @c 1, to specify the master or the slave device,
         respectively. For the secondary IDE controller, the device number is
         always @c 1 because the master device is reserved for the CD-ROM drive.
 
-        For the SATA bus, the @a device parameter is not currently used and
-        must always be @c 0.
+        For the SATA bus, the @a device parameter is currently unused and
+        must be @c 0.
 
         The specified device slot must not have another disk attached to it, or
         this method will fail.
@@ -3644,12 +3657,26 @@
         </note>
         <note>
           If the hard disk is being attached indirectly, a new differencing hard
-          disk will be implicitly created for it and attached instead. If the
+          disk will implicitly be created for it and attached instead. If the
           changes made to the machine settings (including this indirect
           attachment) are later cancelled using <link to="#discardSettings()"/>,
-          this implicitly created differencing hard disk will be implicitly
-          deleted.
+          this implicitly created differencing hard disk will implicitly
+          be deleted.
         </note>
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA channel, IDE channel or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to attach hard disk to an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Hard disk already attached to this or another virtual machine.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the hard disk to attach.</desc>
@@ -3677,6 +3704,11 @@
         method will return not the same object as passed to the
         <link to="#attachHardDisk2()"/> call. See <link to="IHardDisk2"/> for
         more detailed information about attaching hard disks.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No hard disk attached to given slot/bus.
+        </result>
+
       </desc>
       <param name="bus" type="StorageBus" dir="in">
         <desc>Type of the storage bus to query (IDE or SATA).</desc>
@@ -3715,6 +3747,16 @@
           detached and the settings are saved with
           <link to="#saveSettings()"/>, if it is the desired action.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Attempt to detach hard disk from a running virtual machine.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No hard disk attached to given slot/bus.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Hard disk format does not support storage deletion.
+        </result>
 
       </desc>
       <param name="bus" type="StorageBus" dir="in">
