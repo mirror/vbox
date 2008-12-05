@@ -282,6 +282,7 @@ struct ipq_t
 };
 
 #ifdef VBOX_WITH_BSD_REASS
+
 /*
 * IP datagram reassembly.
 */
@@ -291,7 +292,8 @@ struct ipq_t
 #define IPREASS_HASH(x,y) \
 (((((x) & 0xF) | ((((x) >> 8) & 0xF) << 4)) ^ (y)) & IPREASS_HMASK)
 TAILQ_HEAD(ipqhead,ipq_t);
-#endif /* VBOX_WITH_BSD_REASS */
+
+#else /* !VBOX_WITH_BSD_REASS */
 
 /*
  * Ip header, when holding a fragment.
@@ -329,11 +331,9 @@ struct  ipasfrag
     ipasfragp_32 ipf_next;          /* next fragment */
     ipasfragp_32 ipf_prev;          /* previous fragment */
 };
-#ifdef RT_ARCH_X86 || !defined(VBOX_WITH_BSD_REASS)
 AssertCompileSize(struct ipasfrag, 20);
-#else
-AssertCompileSize(struct ipasfrag, 32);
-#endif
+
+#endif /* !VBOX_WITH_BSD_REASS */
 
 /*
  * Structure stored in mbuf in inpcb.ip_options
