@@ -366,10 +366,17 @@ udp_detach(PNATState pData, struct socket *so)
 {
         /* Correctly update list if detaching last socket in list. */
         if (so == udp_last_so) udp_last_so = &udb;
+#ifndef VBOX_WITH_SLIRP_ICMP
         closesocket(so->s);
         /* if (so->so_m) m_free(so->so_m);    done by sofree */
 
         sofree(pData, so);
+#else /*! VBOX_WITH_SLIRP_ICMP */
+        if (so != &pData->icmp_socket) {
+            closesocket(so->s);
+            sofree(pData, so);
+        }
+#endif /* VBOX_WITH_SLIRP_ICMP */
 }
 
 static const struct tos_t udptos[] = {

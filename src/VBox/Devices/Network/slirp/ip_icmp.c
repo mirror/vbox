@@ -66,12 +66,79 @@ static const int icmp_flush[19] = {
 };
 
 #ifdef VBOX_WITH_SLIRP_ICMP
+int
+icmp_init(PNATState pData)
+{
+        pData->icmp_socket.so_type = IPPROTO_ICMP;
+        pData->icmp_socket.so_state = SS_ISFCONNECTED;
+        pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+        insque(pData, &pData->icmp_socket, &udb);
+        LIST_INIT(&pData->icmp_msg_head);
+        return (0);
+}
+
+/*
+ * ip here is ip header + 64bytes readed from ICMP packet
+ */
+struct icmp_msg *
+icmp_find_original_mbuf(PNATState pData, struct ip *ip)
+{
+    struct mbuf *m0;
+    struct ip *ip0;
+    struct icmp *icp, *icp0;
+    struct icmp_msg *icm;
+    int found = 0;
+    struct socket *head_socket;
+    struct in_addr laddr, faddr;
+    u_int lport, fport;
+
+    switch (ip->ip_p) {
+    case IPPROTO_ICMP:
+        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+        LIST_FOREACH(icm, &pData->icmp_msg_head, im_list)
+        {
+            m0 = icm->im_m;
+            ip0 = mtod(m0, struct ip *);
+            AssertRelease(ip0->ip_p == IPPROTO_ICMP);
+            icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
+            LogRel(("ip(src:%R[IP4], dst:%R[IP4],id:%x) ip0(src:%R[IP4],dst:%R[IP4],id:%x)\n",
+                    ip->ip_src.s_addr,
+                    ip->ip_dst.s_addr,
+                    ip->ip_id,
+                    ip0->ip_src.s_addr,
+                    ip0->ip_dst.s_addr,
+                    ip0->ip_id));
+            LogRel(("icp(id:%x, seq:%x, type=%d) icp0(id:%x, seq:%x)\n",icp->icmp_id, icp->icmp_seq, icp->icmp_type, icp0->icmp_id, icp0->icmp_seq));
+            if (
+                ((icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
+                ||(icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
+                && icp->icmp_id == icp0->icmp_id
+                && icp->icmp_seq == icp->icmp_seq) {
+                found = 1;
+                break;
+            }
+        }
+    case IPPROTO_UDP:
+        head_socket = &udb;
+    case IPPROTO_TCP:
+        head_socket = (head_socket != NULL ? head_socket : &tcb); /* head_socket could be initialized with udb*/
+    }
+    if (found == 1) {
+        return (icm);
+    }
+    return (NULL);
+}
+
 static int
-icmp_attach(PNATState pData, struct socket *so) {
-    AssertRelease(so != NULL);
-    so->s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-    insque(pData, so, &udb); /*adding it udb queue*/
-    return (so->s);
+icmp_attach(PNATState pData, struct mbuf *m) {
+    struct icmp_msg *icm;
+    struct ip *ip;
+    ip = mtod(m, struct ip *);
+    Assert(ip->ip_p == IPPROTO_ICMP);
+    icm = malloc(sizeof(struct icmp_msg));
+    icm->im_m = m;
+    LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
+    return (0);
 }
 #endif /* VBOX_WITH_SLIRP_ICMP */
 
@@ -84,6 +151,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
   register struct icmp *icp;
   register struct ip *ip=mtod(m, struct ip *);
   int icmplen=ip->ip_len;
+  int status;
   /* int code; */
 
   DEBUG_CALL("icmp_input");
@@ -122,8 +190,10 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 #ifndef VBOX_WITH_SLIRP_ICMP
     icp->icmp_type = ICMP_ECHOREPLY;
 #endif /* !VBOX_WITH_SLIRP_ICMP */
+
     ip->ip_len += hlen;              /* since ip_input subtracts this */
-    if (ip->ip_dst.s_addr == alias_addr.s_addr) {
+    if (ip->ip_dst.s_addr == alias_addr.s_addr
+    ) {
 #ifdef VBOX_WITH_SLIRP_ICMP
       icp->icmp_type = ICMP_ECHOREPLY;
 #endif /* VBOX_WITH_SLIRP_ICMP */
@@ -131,12 +201,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     } else {
       struct socket *so;
       struct sockaddr_in addr;
-      if ((so = socreate()) == NULL) goto freeit;
 #ifndef VBOX_WITH_SLIRP_ICMP
+      if ((so = socreate()) == NULL) goto freeit;
       if(udp_attach(pData, so) == -1)
-#else
-      if(icmp_attach(pData, so) == -1)
-#endif
       {
         DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
                     errno,strerror(errno)));
@@ -153,7 +220,6 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
       so->so_type = IPPROTO_ICMP;
       so->so_state = SS_ISFCONNECTED;
 
-      /* Send the packet */
       addr.sin_family = AF_INET;
       if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
         /* It's an alias */
@@ -170,7 +236,6 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         addr.sin_addr = so->so_faddr;
       }
       addr.sin_port = so->so_fport;
-#ifndef VBOX_WITH_SLIRP_ICMP
       if(sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
                 (struct sockaddr *)&addr, sizeof(addr)) == -1) {
         DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
@@ -179,12 +244,33 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         udp_detach(pData, so);
       }
 #else /* !VBOX_WITH_SLIRP_ICMP */
-      if(sendto(so->s, icp, icmplen, 0,
+      addr.sin_family = AF_INET;
+      if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
+        /* It's an alias */
+        switch(ntohl(ip->ip_dst.s_addr) & ~pData->netmask) {
+        case CTL_DNS:
+          addr.sin_addr = dns_addr;
+          break;
+        case CTL_ALIAS:
+        default:
+          addr.sin_addr = loopback_addr;
+          break;
+        }
+      } else {
+            addr.sin_addr.s_addr = ip->ip_dst.s_addr;
+      }
+      icmp_attach(pData, m);
+      /* Send the packet */
+      status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
+      if (status < 0) {
+            LogRel(("error(%s) occured while setting TTL attribute of IP packet\n", strerror(errno)));
+      }
+      if(sendto(pData->icmp_socket.s, icp, icmplen, 0,
                 (struct sockaddr *)&addr, sizeof(addr)) == -1) {
         DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                     errno,strerror(errno)));
         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-        udp_detach(pData, so);
+        m_free(pData, m);
       }
 
 #endif /* VBOX_WITH_SLIRP_ICMP */
@@ -381,9 +467,9 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     ip->ip_len -= optlen;
     m->m_len -= optlen;
   }
-
-  ip->ip_ttl = MAXTTL;
+  LogRel(("%s, ttl %d msg_type=%d code=%d\n", __FUNCTION__, ip->ip_ttl, icp->icmp_type, icp->icmp_code ));
 #ifndef VBOX_WITH_SLIRP_ICMP
+  ip->ip_ttl = MAXTTL;
   { /* swap */
     struct in_addr icmp_dst;
     icmp_dst = ip->ip_dst;

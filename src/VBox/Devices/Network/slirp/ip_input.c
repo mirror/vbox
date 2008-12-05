@@ -137,11 +137,14 @@ ip_input(PNATState pData, struct mbuf *m)
            m_adj(m, ip->ip_len - m->m_len);
 
         /* check ip_ttl for a correct ICMP reply */
-        if(ip->ip_ttl==0 || ip->ip_ttl==1) {
+        if(ip->ip_ttl==0 || ip->ip_ttl == 1) {
           icmp_error(pData, m, ICMP_TIMXCEED,ICMP_TIMXCEED_INTRANS, 0,"ttl");
           goto bad;
         }
 
+#ifdef VBOX_WITH_SLIRP_ICMP
+        ip->ip_ttl--;
+#endif
         /*
          * Process options and, if not destined for us,
          * ship it on.  ip_dooptions returns 1 when an

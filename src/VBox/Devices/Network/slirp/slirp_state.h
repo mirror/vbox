@@ -20,6 +20,9 @@
 
 #ifndef _slirp_state_h_
 #define _slirp_state_h_
+#ifdef VBOX_WITH_SLIRP_ICMP
+#include "ip_icmp.h"
+#endif
 
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
@@ -128,6 +131,10 @@ typedef struct NATState
     struct udpstat_t udpstat;
     struct socket udb;
     struct socket *udp_last_so;
+#ifdef VBOX_WITH_SLIRP_ICMP
+    struct socket icmp_socket;
+    struct icmp_storage icmp_msg_head;
+#endif
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
