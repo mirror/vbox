@@ -1458,7 +1458,7 @@ void VBoxGlobal::trayIconShowSelector()
 # else
     const char * args[] = {path, 0 };
 # endif
-    rc = RTProcCreate (path, args, env, 0, &pid);
+    rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE, &pid);
     if (RT_FAILURE (rc))
         LogRel(("Systray: Failed to start new selector window! Path=%s, rc=%Rrc\n", path, rc));
 }
@@ -1509,7 +1509,7 @@ bool VBoxGlobal::trayIconInstall()
     # else
         const char * args[] = {path, "-systray", 0 };
     # endif
-        rc = RTProcCreate (path, args, env, 0, &pid);
+        rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE, &pid);
         if (RT_FAILURE (rc))
         {
             LogRel(("Systray: Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
