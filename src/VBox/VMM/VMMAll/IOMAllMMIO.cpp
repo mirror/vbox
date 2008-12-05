@@ -97,16 +97,16 @@ DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFau
 /**
  * Wrapper which does the read and updates range statistics when such are enabled.
  */
-DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, void *pvData, unsigned cb)
+DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void *pvValue, unsigned cbValue)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhysFault, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
     Assert(pStats);
 #endif
 
     int rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
-        rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, pvData, cb);
+        rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
     else
         rc = VINF_IOM_MMIO_UNUSED_FF;
     if (rc != VINF_SUCCESS)
@@ -116,10 +116,10 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
             case VINF_IOM_MMIO_UNUSED_FF:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0xff); break;
-                    case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
-                    case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
-                    case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
+                    case 1: *(uint8_t  *)pvValue = UINT8_C(0xff); break;
+                    case 2: *(uint16_t *)pvValue = UINT16_C(0xffff); break;
+                    case 4: *(uint32_t *)pvValue = UINT32_C(0xffffffff); break;
+                    case 8: *(uint64_t *)pvValue = UINT64_C(0xffffffffffffffff); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
                 }
                 rc = VINF_SUCCESS;
@@ -128,10 +128,10 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
             case VINF_IOM_MMIO_UNUSED_00:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0x00); break;
-                    case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
-                    case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
-                    case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
+                    case 1: *(uint8_t  *)pvValue = UINT8_C(0x00); break;
+                    case 2: *(uint16_t *)pvValue = UINT16_C(0x0000); break;
+                    case 4: *(uint32_t *)pvValue = UINT32_C(0x00000000); break;
+                    case 8: *(uint64_t *)pvValue = UINT64_C(0x0000000000000000); break;
                     default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
                 }
                 rc = VINF_SUCCESS;
