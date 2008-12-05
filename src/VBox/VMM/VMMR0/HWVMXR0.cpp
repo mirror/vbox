@@ -3436,7 +3436,53 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64);
+    int             rc, rc2;
+    RTCCUINTREG     uFlags;
+    PHWACCM_CPUINFO pCpu;
+    RTHCPHYS        pPageCpuPhys;
+
+    /* @todo This code is not guest SMP safe (hyper context) */
+    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+    AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
+
+    pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+    /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
+    VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+
+    /* Leave VMX Root Mode. */
+    VMXDisable();
+
+    uFlags = ASMIntDisableFlags();
+
+    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
+    CPUMPushHyper(pVM, (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32));    /* Param 2: pVMCBHostPhys - Hi. */
+    CPUMPushHyper(pVM, (uint32_t)pVCpu->hwaccm.s.vmx.pVMCSPhys);            /* Param 2: pVMCBHostPhys - Lo. */
+    CPUMPushHyper(pVM, (uint32_t)(pPageCpuPhys >> 32));                     /* Param 1: pVMCBPhys - Hi. */
+    CPUMPushHyper(pVM, (uint32_t)pPageCpuPhys);                             /* Param 1: pVMCBPhys - Lo. */
+    CPUMSetHyperEIP(pVM, pVM->hwaccm.s.pfnVMXGCStartVM64);
+
+    /* Call switcher. */
+    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
+
+    ASMSetFlags(uFlags);
+
+    /* Make sure the VMX instructions don't cause #UD faults. */
+    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
+
+    /* Enter VMX Root Mode */
+    rc2 = VMXEnable(pPageCpuPhys);
+    if (RT_FAILURE(rc2))
+    {
+        if (pVM)
+            VMXR0CheckError(pVM, pVCpu, rc2);
+        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        return VERR_VMX_VMXON_FAILED;
+    }
+
+    VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    return rc;
 }
 
 /**
