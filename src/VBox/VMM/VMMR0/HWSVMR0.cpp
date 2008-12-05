@@ -1658,7 +1658,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         Log2(("SVM: %RGv mov cr%d, \n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_CR0));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxWrite);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxWrite[exitCode - SVM_EXIT_WRITE_CR0]);
         rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
 
         switch (exitCode - SVM_EXIT_WRITE_CR0)
@@ -1712,7 +1712,7 @@ ResumeExecution:
         uint32_t cbSize;
 
         Log2(("SVM: %RGv mov x, cr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_CR0));
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead[exitCode - SVM_EXIT_WRITE_CR0]);
         rc = EMInterpretInstruction(pVM, CPUMCTX2CORE(pCtx), 0, &cbSize);
         if (rc == VINF_SUCCESS)
         {
