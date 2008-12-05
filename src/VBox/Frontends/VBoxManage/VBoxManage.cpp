@@ -1321,22 +1321,40 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
 
         if (!port.isNull())
             server = BstrFmt ("%ls:%ls", server.raw(), port.raw());
-        CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("TargetAddress"), server));
-        CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("TargetName"), target));
+
+        com::SafeArray <BSTR> names;
+        com::SafeArray <BSTR> values;
+
+        Bstr ("TargetAddress").detachTo (names.appendedRaw());
+        server.detachTo (values.appendedRaw());
+        Bstr ("TargetName").detachTo (names.appendedRaw());
+        target.detachTo (values.appendedRaw());
 
         if (!lun.isNull())
-            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("LUN"), lun));
+        {
+            Bstr ("LUN").detachTo (names.appendedRaw());
+            lun.detachTo (values.appendedRaw());
+        }
         if (!username.isNull())
-            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("InitiatorUsername"), username));
+        {
+            Bstr ("InitiatorUsername").detachTo (names.appendedRaw());
+            username.detachTo (values.appendedRaw());
+        }
         if (!password.isNull())
-            CHECK_ERROR_BREAK(hardDisk, SetProperty(Bstr("InitiatorSecret"), password));
+        {
+            Bstr ("InitiatorSecret").detachTo (names.appendedRaw());
+            password.detachTo (values.appendedRaw());
+        }
 
         /// @todo add -initiator option
-        CHECK_ERROR_BREAK(hardDisk,
-            SetProperty(Bstr("InitiatorName"),
-                        Bstr("iqn.2008-04.com.sun.virtualbox.initiator")));
+        Bstr ("InitiatorName").detachTo (names.appendedRaw());
+        Bstr ("iqn.2008-04.com.sun.virtualbox.initiator").detachTo (values.appendedRaw());
 
         /// @todo add -targetName and -targetPassword options
+
+        CHECK_ERROR_BREAK (hardDisk,
+            SetProperties (ComSafeArrayAsInParam (names),
+                           ComSafeArrayAsInParam (values)));
 
         Guid guid;
         CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
