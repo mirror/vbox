@@ -839,29 +839,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 /* The async transport driver has no config options yet. */
             }
 #endif
-
-            /* Create an inversed tree of parents. */
-            ComPtr <IHardDisk2> parentHardDisk = hardDisk;
-            for (PCFGMNODE pParent = pCfg;;)
-            {
-                hrc = parentHardDisk->
-                    COMGETTER(Parent) (hardDisk.asOutParam());                  H();
-                if (hardDisk.isNull())
-                    break;
-
-                PCFGMNODE pCur;
-                rc = CFGMR3InsertNode (pParent, "Parent", &pCur);               RC_CHECK();
-                hrc = hardDisk->COMGETTER(Location) (bstr.asOutParam());        H();
-                rc = CFGMR3InsertString (pCur, "Path", Utf8Str (bstr));         RC_CHECK();
-
-                hrc = hardDisk->COMGETTER(Format) (bstr.asOutParam());              H();
-                rc = CFGMR3InsertString (pCur, "Format", Utf8Str (bstr));           RC_CHECK();
-
-                /* next */
-                pParent = pCur;
-                parentHardDisk = hardDisk;
-            }
-
             /* Pass all custom parameters. */
             SafeArray <BSTR> names;
             SafeArray <BSTR> values;
@@ -878,6 +855,46 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     rc = CFGMR3InsertString (pVDC, Utf8Str (names [i]),
                                              Utf8Str (values [i]));             RC_CHECK();
                 }
+            }
+
+            /* Create an inversed tree of parents. */
+            ComPtr <IHardDisk2> parentHardDisk = hardDisk;
+            for (PCFGMNODE pParent = pCfg;;)
+            {
+                hrc = parentHardDisk->
+                    COMGETTER(Parent) (hardDisk.asOutParam());                  H();
+                if (hardDisk.isNull())
+                    break;
+
+                PCFGMNODE pCur;
+                rc = CFGMR3InsertNode (pParent, "Parent", &pCur);               RC_CHECK();
+                hrc = hardDisk->COMGETTER(Location) (bstr.asOutParam());        H();
+                rc = CFGMR3InsertString (pCur, "Path", Utf8Str (bstr));         RC_CHECK();
+
+                hrc = hardDisk->COMGETTER(Format) (bstr.asOutParam());          H();
+                rc = CFGMR3InsertString (pCur, "Format", Utf8Str (bstr));       RC_CHECK();
+
+                /* Pass all custom parameters. */
+                SafeArray <BSTR> names;
+                SafeArray <BSTR> values;
+                hrc = hardDisk->GetProperties (NULL,
+                                               ComSafeArrayAsOutParam (names),
+                                               ComSafeArrayAsOutParam (values));H();
+
+                if (names.size() != 0)
+                {
+                    PCFGMNODE pVDC;
+                    rc = CFGMR3InsertNode (pCfg, "VDConfig", &pVDC);            RC_CHECK();
+                    for (size_t i = 0; i < names.size(); ++ i)
+                    {
+                        rc = CFGMR3InsertString (pVDC, Utf8Str (names [i]),
+                                                 Utf8Str (values [i]));         RC_CHECK();
+                    }
+                }
+
+                /* next */
+                pParent = pCur;
+                parentHardDisk = hardDisk;
             }
         }
     }
