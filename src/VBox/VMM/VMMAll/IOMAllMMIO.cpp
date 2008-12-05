@@ -108,23 +108,38 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFaul
     if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
         rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, pvData, cb);
     else
+        rc = VINF_IOM_MMIO_UNUSED_FF;
+    if (rc != VINF_SUCCESS)
     {
-/** @todo r=bird: this is (probably) wrong, all bits should be set here I
- *        think. */
-        switch (cb)
+        switch (rc)
         {
-            case 1: *(uint8_t  *)pvData = 0; break;
-            case 2: *(uint16_t *)pvData = 0; break;
-            case 4: *(uint32_t *)pvData = 0; break;
-            case 8: *(uint64_t *)pvData = 0; break;
-            default:
-                memset(pvData, 0, cb);
+            case VINF_IOM_MMIO_UNUSED_FF:
+                switch (cbValue)
+                {
+                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0xff); break;
+                    case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
+                    case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
+                    case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
+                }
+                rc = VINF_SUCCESS;
+                break;
+
+            case VINF_IOM_MMIO_UNUSED_00:
+                switch (cbValue)
+                {
+                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0x00); break;
+                    case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
+                    case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
+                    case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
+                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
+                }
+                rc = VINF_SUCCESS;
                 break;
         }
-        rc = VINF_SUCCESS;
+        if (rc != VINF_IOM_HC_MMIO_READ)
+            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
     }
-    if (rc != VINF_IOM_HC_MMIO_READ)
-        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
     return rc;
 }
 
