@@ -1807,8 +1807,8 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
                 aPosition, SchemaDefs::MaxBootPosition);
 
     if (aDevice == DeviceType_USB)
-        return setError (E_FAIL,
-            tr ("Booting from USB devices is not currently supported"));
+        return setError (E_NOTIMPL,
+            tr ("Booting from USB device is currently not supported"));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1864,14 +1864,14 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
     else if (aBus == StorageBus_IDE)
     {
         if (aChannel < 0 || aChannel > 1)
-            return setError (E_FAIL,
+            return setError (E_INVALIDARG,
                 tr ("Invalid IDE channel: %l (must be in range [0, 1])"),
                 aChannel);
 
         if (aChannel == 0)
         {
             if (aDevice < 0 || aDevice > 1)
-                return setError (E_FAIL,
+                return setError (E_INVALIDARG,
                     tr ("Invalid IDE device slot: %l (must be in range "
                         "[0, 1] for channel 0)"),
                     aDevice);
@@ -1881,7 +1881,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
         {
             /* Device slot 0 is reserved for the CD/DVD drive. */
             if (aDevice != 1)
-                return setError (E_FAIL,
+                return setError (E_INVALIDARG,
                     tr ("Invalid IDE device slot: %l (must be "
                         "1 for channel 1)"),
                     aDevice);
@@ -1903,13 +1903,13 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
 
     /// @todo NEWMEDIA implicit machine registration
     if (!mData->mRegistered)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("Cannot attach hard disks to an unregistered machine"));
 
     AssertReturn (mData->mMachineState != MachineState_Saved, E_FAIL);
 
     if (mData->mMachineState >= MachineState_Running)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Invalid machine state: %d"), mData->mMachineState);
 
     /* check if the device slot is already busy */
@@ -1922,7 +1922,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
     {
         ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
         AutoReadLock hdLock (hd);
-        return setError (E_FAIL,
+        return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Hard disk '%ls' is already attached to device slot %d on "
                 "channel %d of bus %d of this virtual machine"),
             hd->locationFull().raw(), aDevice, aChannel, aBus);
@@ -1945,7 +1945,7 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
                       HardDisk2Attachment::RefersTo (hd)) !=
             mHDData->mAttachments.end())
     {
-        return setError (E_FAIL,
+        return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Hard disk '%ls' is already attached to this virtual machine"),
             hd->locationFull().raw());
     }
@@ -2188,8 +2188,8 @@ STDMETHODIMP Machine::AttachHardDisk2 (INPTR GUIDPARAM aId,
 STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
                                     LONG aDevice, IHardDisk2 **aHardDisk)
 {
-    if (aBus == StorageBus_Null)
-        return E_INVALIDARG;
+    CheckComArgExpr(aBus, aBus != StorageBus_Null);
+    CheckComArgOutPointerValid(aHardDisk);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2204,7 +2204,7 @@ STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
                       HardDisk2Attachment::EqualsTo (aBus, aChannel, aDevice));
 
     if (it == mHDData->mAttachments.end())
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("No hard disk attached to device slot %d on channel %d of bus %d"),
             aDevice, aChannel, aBus);
 
@@ -2216,8 +2216,7 @@ STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
 STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
                                        LONG aDevice)
 {
-    if (aBus == StorageBus_Null)
-        return E_INVALIDARG;
+    CheckComArgExpr(aBus, aBus != StorageBus_Null);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2230,7 +2229,7 @@ STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
     AssertReturn (mData->mMachineState != MachineState_Saved, E_FAIL);
 
     if (mData->mMachineState >= MachineState_Running)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Invalid machine state: %d"), mData->mMachineState);
 
     HDData::AttachmentList::const_iterator it =
@@ -2239,7 +2238,7 @@ STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
                       HardDisk2Attachment::EqualsTo (aBus, aChannel, aDevice));
 
     if (it == mHDData->mAttachments.end())
-        return setError (E_INVALIDARG,
+        return setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("No hard disk attached to device slot %d on channel %d of bus %d"),
             aDevice, aChannel, aBus);
 
