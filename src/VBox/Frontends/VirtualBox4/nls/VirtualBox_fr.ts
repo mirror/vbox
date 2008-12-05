@@ -591,7 +591,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1606"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Ajustement automatique de la taille de l&apos;écran de l&apos;invité si la taille de la fenêtre est modifiée (exige les additions invité)</translation>
+        <translation>Ajustement automatique de la taille de l&apos;écran de l&apos;invité si la taille de la fenêtre est modifiée (exige les Additions invité)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1608"/>
@@ -726,12 +726,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1677"/>
         <source>&amp;Install Guest Additions...</source>
-        <translation>I&amp;nstaller les Additions Client...</translation>
+        <translation>I&amp;nstaller les Additions invité...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1679"/>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Insérer le fichier image des Additions Client</translation>
+        <translation>Insérer le fichier image des Additions invité</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1698"/>
@@ -771,7 +771,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation invité&amp;nbsp;:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des additions invité sur le système d&apos;exploitation invité.</translation>
+        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation invité&amp;nbsp;:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des Additions invité sur le système d&apos;exploitation invité.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1599"/>
@@ -3686,17 +3686,17 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1580"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Les additions invités installées sont trop anciennes; la version installée est %1, la version requise est %2, Certaines propriétés (intégration de la souris, autoajustement de la fenêtre) peuvent ne pas fonctionner correctement,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Les Additions invités installées sont trop anciennes; la version installée est %1, la version requise est %2, Certaines propriétés (intégration de la souris, autoajustement de la fenêtre) peuvent ne pas fonctionner correctement,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les Additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1596"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Les additions invités installées sont périmée; la version installée est %1, la version requise est %2, Certaines propriétés (intégration de la souris, autoajustement de la fenêtre) peuvent ne pas fonctionner correctement,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Les Additions invités installées sont périmée; la version installée est %1, la version requise est %2, Certaines propriétés (intégration de la souris, autoajustement de la fenêtre) peuvent ne pas fonctionner correctement,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les Additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1612"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Les additions invités installées sont trop récentes; la version installée est %1, la version requise est %2, L&apos;utilisation de nouvelles additions invité avec une version plus ancienne de Virtualbox n&apos;est pas prévue,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Les Additions invités installées sont trop récentes; la version installée est %1, la version requise est %2, L&apos;utilisation de nouvelles Additions invité avec une version plus ancienne de Virtualbox n&apos;est pas prévue,&lt;/p&gt;&lt;p&gt;Veuillez installer la version actuelle à partir du menu Périphériques en choisissant &lt;b&gt;Installer les Additions invité...&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="932"/>
@@ -6187,7 +6187,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Affiche tous les répertoires partagés accessible par cette machine. Utilisez &apos;net use x: \\vboxsvr\share&apos; pour accéder un répertoire partagé nommé &lt;i&gt;share&lt;/i&gt; à partir d&apos;un système d&apos;exploitation de type DOS, ou bien &apos;mount -t vboxsf share mount_point&apos; pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci nécessite l&apos;installation des additions invité.</translation>
+        <translation>Affiche tous les répertoires partagés accessible par cette machine. Utilisez &apos;net use x: \\vboxsvr\share&apos; pour accéder un répertoire partagé nommé &lt;i&gt;share&lt;/i&gt; à partir d&apos;un système d&apos;exploitation de type DOS, ou bien &apos;mount -t vboxsf share mount_point&apos; pour y accéder à partir d&apos;un système d&apos;exploitation Linux. Ceci nécessite l&apos;installation des Additions invité.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
