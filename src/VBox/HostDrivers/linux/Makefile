@@ -59,7 +59,7 @@ clean:
 	rm -f vboxdrv.ko vboxnetflt.ko
 
 load:
-	@rmmod vboxnetflt || true
-	@rmmod vboxdrv || true
-	@insmod vboxdrv.ko
-	@if [ -f vboxnetflt.ko ]; then insmod vboxnetflt.ko; fi
+	@/sbin/rmmod vboxnetflt || true
+	@/sbin/rmmod vboxdrv || true
+	@/sbin/insmod vboxdrv.ko
+	@if [ -f vboxnetflt.ko ]; then /sbin/insmod vboxnetflt.ko; fi
