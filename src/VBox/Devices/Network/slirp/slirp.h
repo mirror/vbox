@@ -267,22 +267,6 @@ void if_start _P((PNATState));
  long gethostid _P((void));
 #endif
 
-DECLINLINE(void) lprint (const char *pszFormat, ...)
-{
-#ifdef LOG_ENABLED
-    va_list args;
-    va_start(args, pszFormat);
-#if 1 /* nearly only for stats which we always want. */
-    RTLogPrintfV(pszFormat, args);
-#else
-    Log(("%N", pszFormat, &args));
-#endif
-    va_end(args);
-#endif
-}
-
-extern int do_echo;
-
 #if SIZEOF_CHAR_P == 4
 # define insque_32 insque
 # define remque_32 remque

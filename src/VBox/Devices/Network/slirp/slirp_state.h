@@ -34,14 +34,16 @@
 #define LEASE_TIME (24 * 3600)
 
 /** Entry in the table of known DHCP clients. */
-typedef struct {
+typedef struct
+{
     bool allocated;
     uint8_t macaddr[6];
 } BOOTPClient;
 
 
 /** TFTP session entry. */
-struct tftp_session {
+struct tftp_session
+{
     int in_use;
     unsigned char filename[TFTP_FILENAME_MAX];
 
@@ -280,6 +282,5 @@ typedef struct NATState
 #endif
 
 #endif
-
 
 #endif /* !_slirp_state_h_ */

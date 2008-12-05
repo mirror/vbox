@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)icmp_var.h	8.1 (Berkeley) 6/10/93
+ *      @(#)icmp_var.h  8.1 (Berkeley) 6/10/93
  * icmp_var.h,v 1.4 1995/02/16 00:27:40 wollman Exp
  */
 
@@ -44,25 +44,25 @@
 struct icmpstat_t
 {
 /* statistics related to input messages processed */
-    u_long  icps_received;		/* #ICMP packets received */
-    u_long	icps_tooshort;		/* packet < ICMP_MINLEN */
-    u_long	icps_checksum;		/* bad checksum */
-    u_long	icps_notsupp;		/* #ICMP packets not supported */
-    u_long  icps_badtype;		/* #with bad type feild */
-    u_long	icps_reflect;		/* number of responses */
+    u_long  icps_received;              /* #ICMP packets received */
+    u_long  icps_tooshort;              /* packet < ICMP_MINLEN */
+    u_long  icps_checksum;              /* bad checksum */
+    u_long  icps_notsupp;               /* #ICMP packets not supported */
+    u_long  icps_badtype;               /* #with bad type feild */
+    u_long  icps_reflect;               /* number of responses */
 };
 
 /*
  * Names for ICMP sysctl objects
  */
-#define	ICMPCTL_MASKREPL	1	/* allow replies to netmask requests */
-#define	ICMPCTL_STATS		2	/* statistics (read-only) */
-#define ICMPCTL_MAXID		3
+#define ICMPCTL_MASKREPL        1       /* allow replies to netmask requests */
+#define ICMPCTL_STATS           2       /* statistics (read-only) */
+#define ICMPCTL_MAXID           3
 
 #define ICMPCTL_NAMES { \
-	{ 0, 0 }, \
-	{ "maskrepl", CTLTYPE_INT }, \
-	{ "stats", CTLTYPE_STRUCT }, \
+        { 0, 0 }, \
+        { "maskrepl", CTLTYPE_INT }, \
+        { "stats", CTLTYPE_STRUCT }, \
 }
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1982, 1986, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *      The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,17 +30,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tcp.h	8.1 (Berkeley) 6/10/93
+ *      @(#)tcp.h       8.1 (Berkeley) 6/10/93
  * tcp.h,v 1.3 1994/08/21 05:27:34 paul Exp
  */
 
 #ifndef _TCP_H_
 #define _TCP_H_
 
-typedef	u_int32_t	tcp_seq;
+typedef uint32_t  tcp_seq;
 
-#define      PR_SLOWHZ       2               /* 2 slow timeouts per second (approx) */
-#define      PR_FASTHZ       5               /* 5 fast timeouts per second (not important) */
+#define PR_SLOWHZ       2               /* 2 slow timeouts per second (approx) */
+#define PR_FASTHZ       5               /* 5 fast timeouts per second (not important) */
 
 extern int tcp_rcvspace;
 extern int tcp_sndspace;
@@ -53,53 +53,58 @@ extern struct socket *tcp_last_so;
  * TCP header.
  * Per RFC 793, September, 1981.
  */
-struct tcphdr {
-	u_int16_t	th_sport;		/* source port */
-	u_int16_t	th_dport;		/* destination port */
-	tcp_seq	th_seq;			/* sequence number */
-	tcp_seq	th_ack;			/* acknowledgement number */
-/*
- * bitfield types must be u_int8_t for MSVC, otherwise it will use a full dword (for u_int)
- */
+struct tcphdr
+{
+    uint16_t   th_sport;                /* source port */
+    uint16_t   th_dport;                /* destination port */
+    tcp_seq    th_seq;                  /* sequence number */
+    tcp_seq    th_ack;                  /* acknowledgement number */
 #ifdef WORDS_BIGENDIAN
-	u_int	th_off:4,		/* data offset */
-		th_x2:4;		/* (unused) */
+# ifdef _MSC_VER
+    uint8_t    th_off:4;               /* data offset */
+    uint8_t    th_x2:4;                /* (unused) */
+# else
+    unsigned   th_off:4;               /* data offset */
+    unsigned   th_x2:4;                /* (unused) */
+# endif
 #else
-#ifdef _MSC_VER
-	u_int8_t	th_x2:4,		/* (unused) */
-#else
-	u_int	th_x2:4,		/* (unused) */
+# ifdef _MSC_VER
+    uint8_t    th_x2:4;                /* (unused) */
+    uint8_t    th_off:4;               /* data offset */
+# else
+    unsigned   th_x2:4;                /* (unused) */
+    unsigned   th_off:4;               /* data offset */
+# endif
 #endif
-		th_off:4;		/* data offset */
-#endif
-	u_int8_t	th_flags;
-#define	TH_FIN	0x01
-#define	TH_SYN	0x02
-#define	TH_RST	0x04
-#define	TH_PUSH	0x08
-#define	TH_ACK	0x10
-#define	TH_URG	0x20
-	u_int16_t	th_win;			/* window */
-	u_int16_t	th_sum;			/* checksum */
-	u_int16_t	th_urp;			/* urgent pointer */
+    uint8_t    th_flags;
+#define TH_FIN  0x01
+#define TH_SYN  0x02
+#define TH_RST  0x04
+#define TH_PUSH 0x08
+#define TH_ACK  0x10
+#define TH_URG  0x20
+    uint16_t   th_win;                 /* window */
+    uint16_t   th_sum;                 /* checksum */
+    uint16_t   th_urp;                 /* urgent pointer */
 };
+AssertCompileSize(struct tcphdr, 20);
 
 #include "tcp_var.h"
 
-#define	TCPOPT_EOL		0
-#define	TCPOPT_NOP		1
-#define	TCPOPT_MAXSEG		2
-#define    TCPOLEN_MAXSEG		4
-#define TCPOPT_WINDOW		3
-#define    TCPOLEN_WINDOW		3
-#define TCPOPT_SACK_PERMITTED	4		/* Experimental */
-#define    TCPOLEN_SACK_PERMITTED	2
-#define TCPOPT_SACK		5		/* Experimental */
-#define TCPOPT_TIMESTAMP	8
-#define    TCPOLEN_TIMESTAMP		10
-#define    TCPOLEN_TSTAMP_APPA		(TCPOLEN_TIMESTAMP+2) /* appendix A */
+#define TCPOPT_EOL              0
+#define TCPOPT_NOP              1
+#define TCPOPT_MAXSEG           2
+#define    TCPOLEN_MAXSEG               4
+#define TCPOPT_WINDOW           3
+#define    TCPOLEN_WINDOW               3
+#define TCPOPT_SACK_PERMITTED   4               /* Experimental */
+#define    TCPOLEN_SACK_PERMITTED       2
+#define TCPOPT_SACK             5               /* Experimental */
+#define TCPOPT_TIMESTAMP        8
+#define    TCPOLEN_TIMESTAMP            10
+#define    TCPOLEN_TSTAMP_APPA          (TCPOLEN_TIMESTAMP+2) /* appendix A */
 
-#define TCPOPT_TSTAMP_HDR	\
+#define TCPOPT_TSTAMP_HDR       \
     (TCPOPT_NOP<<24|TCPOPT_NOP<<16|TCPOPT_TIMESTAMP<<8|TCPOLEN_TIMESTAMP)
 
 /*
@@ -110,11 +115,11 @@ struct tcphdr {
  *
  * We make this 1460 because we only care about Ethernet in the qemu context.
  */
-#define	TCP_MSS	1460
+#define TCP_MSS 1460
 
-#define	TCP_MAXWIN	65535	/* largest value for (unscaled) window */
+#define TCP_MAXWIN      65535   /* largest value for (unscaled) window */
 
-#define TCP_MAX_WINSHIFT	14	/* maximum window shift */
+#define TCP_MAX_WINSHIFT        14      /* maximum window shift */
 
 /*
  * User-settable options (used with setsockopt).
@@ -124,9 +129,9 @@ struct tcphdr {
  * so we undefine them.
  */
 #undef TCP_NODELAY
-#define	TCP_NODELAY	0x01	/* don't delay send to coalesce packets */
+#define TCP_NODELAY     0x01    /* don't delay send to coalesce packets */
 #undef TCP_MAXSEG
-/* #define	TCP_MAXSEG	0x02 */	/* set maximum segment size */
+/* #define      TCP_MAXSEG      0x02 */ /* set maximum segment size */
 
 /*
  * TCP FSM state definitions.
@@ -155,9 +160,8 @@ struct tcphdr {
 #define TCPS_HAVERCVDFIN(s)     ((s) >= TCPS_TIME_WAIT)
 
 /*
- * TCP sequence numbers are 32 bit integers operated
- * on with modular arithmetic.  These macros can be
- * used to compare such integers.
+ * TCP sequence numbers are 32 bit integers operated on with modular arithmetic.
+ * These macros can be used to compare such integers.
  */
 #define SEQ_LT(a,b)     ((int)((a)-(b)) < 0)
 #define SEQ_LEQ(a,b)    ((int)((a)-(b)) <= 0)

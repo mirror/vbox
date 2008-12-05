@@ -25,34 +25,25 @@
 
 /* XXX: only DHCP is supported */
 
-
 static const uint8_t rfc1533_cookie[] = { RFC1533_COOKIE };
-
-DECLINLINE(void) dprintf(const char *pszFormat, ...)
-{
-#ifdef LOG_ENABLED
-    va_list args;
-    va_start(args, pszFormat);
-    Log(("dhcp: %N", pszFormat, &args));
-    va_end(args);
-#endif
-}
 
 static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
 {
-    BOOTPClient *bc;
     int i;
 
-    for(i = 0; i < NB_ADDR; i++) {
+    for(i = 0; i < NB_ADDR; i++)
+    {
         if (!bootp_clients[i].allocated)
-            goto found;
+        {
+            BOOTPClient *bc;
+
+            bc = &bootp_clients[i];
+            bc->allocated = 1;
+            paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
+            return bc;
+        }
     }
     return NULL;
- found:
-    bc = &bootp_clients[i];
-    bc->allocated = 1;
-    paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
-    return bc;
 }
 
 static int release_addr(PNATState pData, struct in_addr *paddr)
@@ -62,6 +53,7 @@ static int release_addr(PNATState pData, struct in_addr *paddr)
     i = ntohl(paddr->s_addr) - START_ADDR - ntohl(special_addr.s_addr);
     if (i >= NB_ADDR)
         return 0;
+
     memset(bootp_clients[i].macaddr, '\0', 6);
     bootp_clients[i].allocated = 0;
     return 1;
@@ -69,19 +61,21 @@ static int release_addr(PNATState pData, struct in_addr *paddr)
 
 static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint8_t *macaddr)
 {
-    BOOTPClient *bc;
     int i;
 
-    for(i = 0; i < NB_ADDR; i++) {
+    for(i = 0; i < NB_ADDR; i++)
+    {
         if (!memcmp(macaddr, bootp_clients[i].macaddr, 6))
-            goto found;
+        {
+            BOOTPClient *bc;
+
+            bc = &bootp_clients[i];
+            bc->allocated = 1;
+            paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
+            return bc;
+        }
     }
     return NULL;
- found:
-    bc = &bootp_clients[i];
-    bc->allocated = 1;
-    paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (i + START_ADDR));
-    return bc;
 }
 
 static void dhcp_decode(const uint8_t *buf, int size,
@@ -99,30 +93,33 @@ static void dhcp_decode(const uint8_t *buf, int size,
     if (memcmp(p, rfc1533_cookie, 4) != 0)
         return;
     p += 4;
-    while (p < p_end) {
+    while (p < p_end)
+    {
         tag = p[0];
-        if (tag == RFC1533_PAD) {
+        if (tag == RFC1533_PAD)
             p++;
-        } else if (tag == RFC1533_END) {
+        else if (tag == RFC1533_END)
             break;
-        } else {
+        else
+        {
             p++;
             if (p >= p_end)
                 break;
             len = *p++;
-            dprintf("dhcp: tag=0x%02x len=%d\n", tag, len);
+            Log(("dhcp: tag=0x%02x len=%d\n", tag, len));
 
-            switch(tag) {
-            case RFC2132_REQ_ADDR:
-                if (len >= 4)
-                    *req_ip = *(struct in_addr*)p;
-                break;
-            case RFC2132_MSG_TYPE:
-                if (len >= 1)
-                    *pmsg_type = p[0];
-                break;
-            default:
-                break;
+            switch(tag)
+            {
+                case RFC2132_REQ_ADDR:
+                    if (len >= 4)
+                        *req_ip = *(struct in_addr*)p;
+                    break;
+                case RFC2132_MSG_TYPE:
+                    if (len >= 1)
+                        *pmsg_type = p[0];
+                    break;
+                default:
+                    break;
             }
             p += len;
         }
@@ -140,30 +137,29 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     uint8_t *q;
     struct in_addr requested_ip; /* the requested IP in DHCPREQUEST */
     int send_nak = 0;
-    uint32_t ipv4_addr;
 
     /* extract exact DHCP msg type */
     requested_ip.s_addr = 0xffffffff;
     dhcp_decode(bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type, &requested_ip);
-    dprintf("bootp packet op=%d msgtype=%d\n", bp->bp_op, dhcp_msg_type);
+    Log(("bootp packet op=%d msgtype=%d\n", bp->bp_op, dhcp_msg_type));
 
     if (dhcp_msg_type == 0)
         dhcp_msg_type = DHCPREQUEST; /* Force reply for old BOOTP clients */
 
-    if (dhcp_msg_type == DHCPRELEASE) {
+    if (dhcp_msg_type == DHCPRELEASE)
+    {
         int rc;
-        ipv4_addr = ntohl(bp->bp_ciaddr.s_addr);
         rc = release_addr(pData, &bp->bp_ciaddr);
-        LogRel(("NAT: %s %u.%u.%u.%u\n",
+        LogRel(("NAT: %s %R[IP4]\n",
                 rc ? "DHCP released IP address" : "Ignored DHCP release for IP address",
-                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
-        dprintf("released addr=%08x\n", ntohl(bp->bp_ciaddr.s_addr));
+                &bp->bp_ciaddr));
         /* This message is not to be answered in any way. */
         return;
     }
-    if (dhcp_msg_type != DHCPDISCOVER &&
-        dhcp_msg_type != DHCPREQUEST)
+    if (   dhcp_msg_type != DHCPDISCOVER
+        && dhcp_msg_type != DHCPREQUEST)
         return;
+
     /* XXX: this is a hack to get the client mac address */
     memcpy(client_ethaddr, bp->bp_hwaddr, 6);
 
@@ -174,30 +170,37 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     m->m_data += sizeof(struct udpiphdr);
     memset(rbp, 0, sizeof(struct bootp_t));
 
-    if (dhcp_msg_type == DHCPDISCOVER) {
+    if (dhcp_msg_type == DHCPDISCOVER)
+    {
         /* Do not allocate a new lease for clients that forgot that they had a lease. */
         bc = find_addr(pData, &daddr.sin_addr, bp->bp_hwaddr);
         if (!bc)
         {
     new_addr:
             bc = get_new_addr(pData, &daddr.sin_addr);
-            if (!bc) {
+            if (!bc)
+            {
                 LogRel(("NAT: DHCP no IP address left\n"));
-                dprintf("no address left\n");
+                Log(("no address left\n"));
                 return;
             }
             memcpy(bc->macaddr, client_ethaddr, 6);
         }
-    } else {
+    }
+    else
+    {
         bc = find_addr(pData, &daddr.sin_addr, bp->bp_hwaddr);
-        if (!bc) {
+        if (!bc)
+        {
             /* if never assigned, behaves as if it was already
                assigned (windows fix because it remembers its address) */
             goto new_addr;
         }
     }
 
-    if (tftp_prefix && RTDirExists(tftp_prefix) && bootp_filename)
+    if (   tftp_prefix
+        && RTDirExists(tftp_prefix)
+        && bootp_filename)
         RTStrPrintf((char*)rbp->bp_file, sizeof(rbp->bp_file), "%s", bootp_filename);
 
     saddr.sin_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
@@ -218,11 +221,14 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     memcpy(q, rfc1533_cookie, 4);
     q += 4;
 
-    if (dhcp_msg_type == DHCPDISCOVER) {
+    if (dhcp_msg_type == DHCPDISCOVER)
+    {
         *q++ = RFC2132_MSG_TYPE;
         *q++ = 1;
         *q++ = DHCPOFFER;
-    } else if (dhcp_msg_type == DHCPREQUEST) {
+    }
+    else if (dhcp_msg_type == DHCPREQUEST)
+    {
         *q++ = RFC2132_MSG_TYPE;
         *q++ = 1;
         if (   requested_ip.s_addr != 0xffffffff
@@ -237,21 +243,15 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     }
 
     if (send_nak)
-    {
-        ipv4_addr = ntohl(requested_ip.s_addr);
-        LogRel(("NAT: Client requested IP address %u.%u.%u.%u -- sending NAK\n",
-                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
-    }
+        LogRel(("NAT: Client requested IP address %R[IP4] -- sending NAK\n",
+                &requested_ip));
     else
-    {
-        ipv4_addr = ntohl(daddr.sin_addr.s_addr);
-        LogRel(("NAT: DHCP offered IP address %u.%u.%u.%u\n",
-                ipv4_addr >> 24, (ipv4_addr >> 16) & 0xff, (ipv4_addr >> 8) & 0xff, ipv4_addr & 0xff));
-        dprintf("offered addr=%08x\n", ntohl(daddr.sin_addr.s_addr));
-    }
+        LogRel(("NAT: DHCP offered IP address %R[IP4]\n",
+                &daddr.sin_addr));
 
-    if (dhcp_msg_type == DHCPDISCOVER ||
-        dhcp_msg_type == DHCPREQUEST) {
+    if (   dhcp_msg_type == DHCPDISCOVER
+        || dhcp_msg_type == DHCPREQUEST)
+    {
         *q++ = RFC2132_SRV_ID;
         *q++ = 4;
         memcpy(q, &saddr.sin_addr, 4);
@@ -259,8 +259,9 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     }
 
     if (!send_nak &&
-        (dhcp_msg_type == DHCPDISCOVER ||
-         dhcp_msg_type == DHCPREQUEST)) {
+        (   dhcp_msg_type == DHCPDISCOVER
+         || dhcp_msg_type == DHCPREQUEST))
+    {
         *q++ = RFC1533_NETMASK;
         *q++ = 4;
         *q++ = (pData->netmask & 0xff000000) >> 24;
@@ -285,7 +286,8 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         memcpy(q, &val, 4);
         q += 4;
 
-        if (*slirp_hostname) {
+        if (*slirp_hostname)
+        {
             val = strlen(slirp_hostname);
             *q++ = RFC1533_HOSTNAME;
             *q++ = val;
