@@ -861,6 +861,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 pParent = pCur;
                 parentHardDisk = hardDisk;
             }
+
+            /* Pass all custom parameters. */
+            SafeArray <BSTR> names;
+            SafeArray <BSTR> values;
+            hrc = hardDisk->GetProperties (NULL,
+                                           ComSafeArrayAsOutParam (names),
+                                           ComSafeArrayAsOutParam (values));    H();
+
+            if (names.size() != 0)
+            {
+                PCFGMNODE pVDC;
+                rc = CFGMR3InsertNode (pCfg, "VDConfig", &pVDC);                RC_CHECK();
+                for (size_t i = 0; i < names.size(); ++ i)
+                {
+                    rc = CFGMR3InsertString (pVDC, Utf8Str (names [i]),
+                                             Utf8Str (values [i]));             RC_CHECK();
+                }
+            }
         }
     }
     H();
