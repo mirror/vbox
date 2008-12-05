@@ -91,11 +91,6 @@ LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
 PKGCONFIG="`which_wrapper pkg-config`"
-if [ -n $PKGCONFIG ]; then
-  FLAGSDBUS="`$PKGCONFIG dbus-1 --cflags 2>/dev/null`"
-  LIBDIRDBUS="`$PKGCONFIG dbus-1 --libs-only-L 2>/dev/null`"
-  LIBDBUS="`$PKGCONFIG dbus-1 --libs-only-l 2>/dev/null`"
-fi
 PYTHONDIR="/usr /usr/local"
 QT3DIR="/usr/qt/3 /usr/lib/qt3 /usr/lib/qt-3.3 /usr/share/qt3"
 QT3DIR="$QT3DIR /usr/lib64/qt-3.3 /usr/X11R6 /usr/lib/qt"
@@ -1164,25 +1159,6 @@ EOF
 
 
 #
-# Check for DBus
-#
-check_dbus()
-{
-  test_header "DBus"
-  cat > .tmp_src.cc << EOF
-#include <dbus/dbus.h>
-extern "C" int main(void)
-{
-  return 0;
-}
-EOF
-  if [ -n $PKGCONFIG ] && test_compile "$FLAGSDBUS $LIBDIRDBUS $LIBDBUS" DBus DBus; then
-    log_success "found"
-  fi
-}
-
-
-#
 # Check for the Xcursor library, needed by VBoxSDL and VBoxBFE
 #
 check_xcursor()
@@ -2084,9 +2060,7 @@ if [ "$OS" = "linux" ]; then
   else
     cnf_append "VBOX_WITH_PULSE" ""
   fi
-  if [ $WITH_DBUS -eq 1 ]; then
-    check_dbus
-  else
+  if [ $WITH_DBUS -eq 0 ]; then
     cnf_append "VBOX_WITH_DBUS" ""
   fi
   check_compiler_h

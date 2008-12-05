@@ -301,7 +301,7 @@ VBOX_WITH_ALSA = 1
 VBOX_WITH_PULSE = 1
 # Enable statically linked dbus support for Linux
 ifeq ($(KBUILD_TARGET),linux)
-# VBOX_WITH_DBUS = 1
+ VBOX_WITH_DBUS = 1
 endif
 # Disable WINMM support for Windows (not implemented)
 VBOX_WITH_WINMM =
@@ -1336,15 +1336,6 @@ endif
 
 # 32bit X11 LIBPATH for building 32bit guest additions
 VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
-
-# dbus settings for Linux
-ifeq ($(KBUILD_TARGET),linux)
- if defined(VBOX_WITH_DBUS) && (!defined(VBOX_DBUS_CFLAGS) || !defined(VBOX_DBUS_CXXFLAGS) || !defined(VBOX_DBUS_LDFLAGS))
-  export VBOX_DBUS_CFLAGS   := $(shell pkg-config dbus-1 --cflags) -DDBUS_API_SUBJECT_TO_CHANGE
-  export VBOX_DBUS_CXXFLAGS := $(VBOX_DBUS_CFLAGS)
-  export VBOX_DBUS_LDFLAGS  := $(shell pkg-config dbus-1 --libs)
- endif
-endif
 
 #
 # Macros dealing with the darwin version we're targeting.
