@@ -53,6 +53,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 #include <iprt/alloc.h>
+#include <iprt/power.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -65,6 +66,7 @@
 #include <sys/proc.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOUserclient.h>
+#include <IOKit/pwr_mgt/RootDomain.h>
 
 
 /*******************************************************************************
@@ -89,6 +91,8 @@ static int              VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData
 static int              VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
 
 static int              VBoxDrvDarwinErr2DarwinErr(int rc);
+
+static IOReturn         VBoxDrvDarwinSleepHandler(void *pvTarget, void *pvRefCon, UInt32 uMessageType, IOService *pProvider, void *pvMessageArgument, vm_size_t argSize);
 __END_DECLS
 
 
@@ -201,6 +205,8 @@ static PSUPDRVSESSION   g_apSessionHashTab[19];
 #define SESSION_HASH(pid)     ((pid) % RT_ELEMENTS(g_apSessionHashTab))
 /** The number of open sessions. */
 static int32_t volatile g_cSessions = 0;
+/** The notifier handle for the sleep callback handler. */
+static IONotifier *g_pSleepNotifier = NULL;
 
 
 
@@ -250,6 +256,16 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
                     {
                         LogRel(("VBoxDrv: version " VBOX_VERSION_STRING " r%d; IOCtl version %#x; IDC version %#x; dev major=%d\n",
                                 VBOX_SVN_REV, SUPDRV_IOC_VERSION, SUPDRV_IDC_VERSION, g_iMajorDeviceNo));
+
+/* Bird: please acknowledge! */
+#if 0
+                        /* Register a sleep/wakeup notification callback */
+                        void *pvData = NULL;
+                        g_pSleepNotifier = registerPrioritySleepWakeInterest(&VBoxDrvDarwinSleepHandler, pvData, NULL);
+                        if (g_pSleepNotifier == NULL)
+                            LogRel(("VBoxDrv: register for sleep/wakeup events failed\n"));
+#endif
+
                         return KMOD_RETURN_SUCCESS;
                     }
 
@@ -292,6 +308,12 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
     /*
      * Undo the work done during start (in reverse order).
      */
+    if (g_pSleepNotifier)
+    {
+        g_pSleepNotifier->remove();
+        g_pSleepNotifier = NULL;
+    }
+
     devfs_remove(g_hDevFsDevice);
     g_hDevFsDevice = NULL;
 
@@ -657,6 +679,20 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     NOREF(pszObjName);
     NOREF(prc);
     return false;
+}
+
+IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32 uMessageType, IOService * /* pProvider */, void * /* pvMessageArgument */, vm_size_t /* argSize */)
+{
+    /* IOLog("VBoxDrv: Got sleep/wake notice. Message type was %X\n", (uint)uMessageType); */
+
+    if (uMessageType == kIOMessageSystemWillSleep)
+        RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
+    else if (uMessageType == kIOMessageSystemHasPoweredOn)
+        RTPowerSignalEvent(RTPOWEREVENT_RESUME);
+
+    acknowledgeSleepWakeNotification(pvRefCon);
+
+    return 0;
 }
 
 #if 0 /* doesn't work. */
