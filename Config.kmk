@@ -227,9 +227,7 @@ ifdef VBOX_ONLY_SDK
 endif
 
 ## Enable new TCG-based recompiler
-ifn1of ($(KBUILD_TARGET),darwin)
 VBOX_WITH_NEW_RECOMPILER = 1
-endif
 
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
