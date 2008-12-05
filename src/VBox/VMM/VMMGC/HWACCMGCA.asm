@@ -86,16 +86,14 @@
 
 ; trashes rax & rdx
  %macro VMCSWRITE 2
-    mov     rdx, %2
     mov     eax, %1
-    vmwrite rax, rdx
+    vmwrite rax, %2
  %endmacro
 
 ; trashes rax & rdx
  %macro VMCSREAD 2
     mov     eax, %1
-    vmwrite rax, rdx
-    mov     %2, rdx
+    vmwrite rax, %2
  %endmacro
 
 BEGINCODE
@@ -132,7 +130,12 @@ BEGINPROC VMXGCStartVM64
     mov     rax, VERR_VMX_INVALID_VMCS_PTR
     jmp     .vmstart64_vmoff_end
     
-.vmptrld_success:    
+.vmptrld_success:
+    ; Signal that we're in 64 bits mode now!
+    VMCSREAD VMX_VMCS_CTRL_EXIT_CONTROLS,       rdx
+    or      rdx, VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
+    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx
+    
     ; Have to sync half the guest state as we can't access most of the 64 bits state in 32 bits mode. Sigh.
     VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
     VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
@@ -273,6 +276,11 @@ ALIGNCODE(16)
     mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
+    ; Signal that we're going back to 32 bits mode!
+    VMCSREAD VMX_VMCS_CTRL_EXIT_CONTROLS,       rdx
+    and      rdx, ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
+    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx
+
     ; Write back the data and disable the VMCS
     vmclear [rbp + 16 + 8]  ;pVMCS
 
