@@ -426,21 +426,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 int main (int argc, char **argv, char **envp)
 {
-#if 0
-    /* 1. Does (at least currently) not work with -startvm.
-     * 2. Probably not a good idea with -startvm because we don't see any further
-     *    messages on the console */
-#if defined(VBOX_GUI_WITH_SYSTRAY) && \
-    (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
-    int rc = RTProcDaemonize(false /* fNoChDir */, false /* fNoClose */, NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(g_pStdErr, "VirtualBox: Failed to daemonize, rc=%Rrc. Exiting.\n", rc);
-        exit(1);
-    }
-#endif
-#endif
-
     /* Initialize VBox Runtime. Initialize the SUPLib as well only if we
      * are really about to start a VM. Don't do this if we are only starting
      * the selector window. */
