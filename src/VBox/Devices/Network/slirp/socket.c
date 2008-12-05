@@ -422,15 +422,12 @@ sorecvfrom(PNATState pData, struct socket *so)
     DEBUG_CALL("sorecvfrom");
     DEBUG_ARG("so = %lx", (long)so);
 
-    if (so->so_type == IPPROTO_ICMP)
-    {
-        /* This is a "ping" reply */
-        char buff[256];
-        int len;
-
-        len = recvfrom(so->s, buff, sizeof(buff), 0,
-                       (struct sockaddr *)&addr, &addrlen);
-        /* XXX Check if reply is "correct"? */
+        if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
+          char buff[1500];
+          int len;
+          len = recvfrom(so->s, buff, 1500, 0,
+                         (struct sockaddr *)&addr, &addrlen);
+          /* XXX Check if reply is "correct"? */
 
         if(len == -1 || len == 0)
         {
@@ -441,6 +438,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             else if(errno == ENETUNREACH)
                 code=ICMP_UNREACH_NET;
 
+
             DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
                         errno,strerror(errno)));
             icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
@@ -449,28 +447,65 @@ sorecvfrom(PNATState pData, struct socket *so)
         {
 #ifdef VBOX_WITH_SLIRP_ICMP
             struct ip *ip;
-            uint32_t dst;
-            ip = mtod(so->so_m, struct ip *);
-            dst = ip->ip_src.s_addr;
-            memcpy(so->so_m->m_data, buff, len); /* ovveride ther tail of old packet */
-            /* the low level expects fields to be in host format so let's convert them*/
-            ip = mtod(so->so_m, struct ip *);
+            uint32_t dst,src;
+            char ip_copy[256];
+            struct icmp *icp;
+            int old_ip_len;
+            struct mbuf *orig_m;
+            struct icmp_msg *icm;
+
+            ip = (struct ip *)buff;
+            icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+            Assert(icp->icmp_type != ICMP_ECHO);
+            if (icp->icmp_type >= ICMP_UNREACH ) {
+                ip = &icp->icmp_ip;
+            }
+            icm = icmp_find_original_mbuf(pData, ip);
+            if (icm == NULL) {
+                LogRel(("Can't find the corresponding packet for the received ICMP\n"));
+                return;
+            }
+            orig_m = icm->im_m;
+            Assert(orig_m != NULL);
+
+            LogRel(("ICMP message arrived on socket %d\n", so->s));
+            src = addr.sin_addr.s_addr;
+
+            ip = mtod(orig_m, struct ip *); /* Now ip is old header */
+            old_ip_len = (ip->ip_hl << 2) + 64;
+            memcpy(ip_copy, ip, old_ip_len);
+
+            dst = ip->ip_src.s_addr; /* source address from original IP packet*/
+
+            memcpy(orig_m->m_data, buff, len); /* overide ther tail of old packet */
+            orig_m->m_len = len;
+            ip = mtod(orig_m, struct ip *); /* ip is from mbuf we've overrided */
+
+            icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
             NTOHS(ip->ip_len);
+            if (icp->icmp_type >= ICMP_UNREACH && icp->icmp_type != ICMP_ECHO) {
+                memcpy(&icp->icmp_ip, ip_copy, old_ip_len); /* according RFC 793 error messages required copy of initial IP header + 64 bit */
+                ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+            }
+            /* the low level expects fields to be in host format so let's convert them*/
             NTOHS(ip->ip_off);
             NTOHS(ip->ip_id);
+            ip->ip_src.s_addr = src;
             ip->ip_dst.s_addr = dst;
-#endif
+            icmp_reflect(pData, orig_m);
+            LIST_REMOVE(icm, im_list);
+            /* Don't call m_free here*/
+            free(icm);
+#else
             icmp_reflect(pData, so->so_m);
             so->so_m = 0; /* Don't m_free() it again! */
-        }
-        /* No need for this socket anymore, udp_detach it */
-        udp_detach(pData, so);
-    }
-    else
-    { 
-        /* A "normal" UDP packet */
-        struct mbuf *m;
-        int len, n;
+#endif
+          }
+          /* No need for this socket anymore, udp_detach it */
+          udp_detach(pData, so);
+        } else {                                /* A "normal" UDP packet */
+          struct mbuf *m;
+          int len, n;
 
         if (!(m = m_get(pData)))
             return;
@@ -532,7 +567,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 m_inc(m, MINCSIZE);
                 m->m_len = 0;
             }
-#endif            
+#endif
 
             /*
              * If this packet was destined for CTL_ADDR,
@@ -752,7 +787,7 @@ sofcantrcvmore(struct  socket *so)
     }
     so->so_state &= ~(SS_ISFCONNECTING);
     if (so->so_state & SS_FCANTSENDMORE)
-        so->so_state = SS_NOFDREF; /* Don't select it */ 
+        so->so_state = SS_NOFDREF; /* Don't select it */
                                    /* XXX close() here as well? */
     else
         so->so_state |= SS_FCANTRCVMORE;

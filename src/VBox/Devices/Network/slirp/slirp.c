@@ -245,6 +245,9 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     debug_init();
     if_init(pData);
     ip_init(pData);
+#ifdef VBOX_WITH_SLIRP_ICMP
+    icmp_init(pData);
+#endif /* VBOX_WITH_SLIRP_ICMP */
 
     /* Initialise mbufs *after* setting the MTU */
     m_init(pData);
@@ -554,7 +557,7 @@ engage_event:
              * Note that even though we try and limit this to 4 packets,
              * the session could have more queued if the packets needed
              * to be fragmented.
-             * 
+             *
              * (XXX <= 4 ?)
              */
             if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4)
