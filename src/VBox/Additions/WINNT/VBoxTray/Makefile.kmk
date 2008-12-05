@@ -54,9 +54,9 @@ VBoxTray.rc_DEPS = $(PATH_VBoxTray)/VBoxTray-icon.rc
 VBoxTray.rc_CLEAN = $(PATH_VBoxTray)/VBoxTray-icon.rc
 
 # Icon include file.
-$$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $$(VBoxTray_PATH)/Makefile.kmk | $$(dir $$@)
+$$(PATH_VBoxTray)/VBoxTray-icon.rc: $(VBOX_WINDOWS_GA_ICON_FILE) $$(VBoxTray_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
-	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_GA_ICON_FILE))"'
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
