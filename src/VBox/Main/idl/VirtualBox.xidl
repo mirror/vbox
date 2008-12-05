@@ -2966,9 +2966,9 @@
       <desc>
         Offset in milliseconds from the host system time. This allows for
         guests running with a different system date/time than the host.
-        It is equivalent to setting the system date/time in the BIOS other
-        than it's not an absolute value but a relative one. Guest Additions
-        time synchronization also honors this offset.
+        It is equivalent to setting the system date/time in the BIOS except
+        it is not an absolute value but a relative one. Guest Additions
+        time synchronization honors this offset.
       </desc>
     </attribute>
 
