@@ -155,3 +155,4 @@
 %define VMX_VMCS_HOST_RSP                                       06C14h
 %define VMX_VMCS_HOST_RIP                                       06C16h
 
+%define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64                  RT_BIT(9)
