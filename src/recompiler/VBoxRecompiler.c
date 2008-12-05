@@ -2401,17 +2401,17 @@ static void remR3StateUpdate(PVM pVM)
         pCtx->dr[i] = pVM->rem.s.Env.dr[i];
 
     pCtx->gdtr.cbGdt    = pVM->rem.s.Env.gdt.limit;
-    if (pCtx->gdtr.pGdt != (uint32_t)pVM->rem.s.Env.gdt.base)
+    if (pCtx->gdtr.pGdt != (RTGCPTR)pVM->rem.s.Env.gdt.base)
     {
-        pCtx->gdtr.pGdt     = (uint32_t)pVM->rem.s.Env.gdt.base;
+        pCtx->gdtr.pGdt     = (RTGCPTR)pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
         VM_FF_SET(pVM, VM_FF_SELM_SYNC_GDT);
     }
 
     pCtx->idtr.cbIdt    = pVM->rem.s.Env.idt.limit;
-    if (pCtx->idtr.pIdt != (uint32_t)pVM->rem.s.Env.idt.base)
+    if (pCtx->idtr.pIdt != (RTGCPTR)pVM->rem.s.Env.idt.base)
     {
-        pCtx->idtr.pIdt     = (uint32_t)pVM->rem.s.Env.idt.base;
+        pCtx->idtr.pIdt     = (RTGCPTR)pVM->rem.s.Env.idt.base;
         STAM_COUNTER_INC(&gStatREMIDTChange);
         VM_FF_SET(pVM, VM_FF_TRPM_SYNC_IDT);
     }
