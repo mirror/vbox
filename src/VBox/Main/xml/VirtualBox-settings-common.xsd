@@ -196,6 +196,7 @@
   </xsd:restriction>
 </xsd:simpleType>
 
+
 <xsd:simpleType name="TVRDPAuthType">
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Null"/>
