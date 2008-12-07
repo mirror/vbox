@@ -2249,7 +2249,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
 #if HC_ARCH_BITS == 32
         /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invlpga takes only 32 bits addresses. */
-        if (CPUMIsGuestInLongMode(pVM)
+        if (CPUMIsGuestInLongMode(pVM))
             pVCpu->hwaccm.s.fForceTLBFlush = true;
         else
 #endif
