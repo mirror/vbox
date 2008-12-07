@@ -451,48 +451,59 @@ sorecvfrom(PNATState pData, struct socket *so)
             char ip_copy[256];
             struct icmp *icp;
             int old_ip_len;
-            struct mbuf *orig_m;
+            struct mbuf *m;
             struct icmp_msg *icm;
 
             ip = (struct ip *)buff;
             icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-            Assert(icp->icmp_type != ICMP_ECHO);
-            if (icp->icmp_type >= ICMP_UNREACH ) {
+
+            Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
+
+            if (icp->icmp_type == ICMP_TIMXCEED ) {
                 ip = &icp->icmp_ip;
             }
+
             icm = icmp_find_original_mbuf(pData, ip);
+
             if (icm == NULL) {
                 LogRel(("Can't find the corresponding packet for the received ICMP\n"));
                 return;
             }
-            orig_m = icm->im_m;
-            Assert(orig_m != NULL);
 
-            LogRel(("ICMP message arrived on socket %d\n", so->s));
+            m = icm->im_m;
+            Assert(m != NULL);
+
             src = addr.sin_addr.s_addr;
 
-            ip = mtod(orig_m, struct ip *); /* Now ip is old header */
-            old_ip_len = (ip->ip_hl << 2) + 64;
-            memcpy(ip_copy, ip, old_ip_len);
+            ip = mtod(m, struct ip *);
+            /* Now ip is pointing on header we've sent from guest */
+            if (icp->icmp_type == ICMP_TIMXCEED) {
+                old_ip_len = (ip->ip_hl << 2) + 64;
+                memcpy(ip_copy, ip, old_ip_len);
+            }
 
-            dst = ip->ip_src.s_addr; /* source address from original IP packet*/
+            /* source address from original IP packet*/
+            dst = ip->ip_src.s_addr;
 
-            memcpy(orig_m->m_data, buff, len); /* overide ther tail of old packet */
-            orig_m->m_len = len;
-            ip = mtod(orig_m, struct ip *); /* ip is from mbuf we've overrided */
+            /* overide ther tail of old packet */
+            memcpy(m->m_data, buff, len);
+            m->m_len = len;
+            ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
 
             icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-            NTOHS(ip->ip_len);
-            if (icp->icmp_type >= ICMP_UNREACH && icp->icmp_type != ICMP_ECHO) {
-                memcpy(&icp->icmp_ip, ip_copy, old_ip_len); /* according RFC 793 error messages required copy of initial IP header + 64 bit */
+            if (icp->icmp_type == ICMP_TIMXCEED) {
+                /* according RFC 793 error messages required copy of initial IP header + 64 bit */
+                memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
                 ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
             }
+
             /* the low level expects fields to be in host format so let's convert them*/
+            NTOHS(ip->ip_len);
             NTOHS(ip->ip_off);
             NTOHS(ip->ip_id);
             ip->ip_src.s_addr = src;
             ip->ip_dst.s_addr = dst;
-            icmp_reflect(pData, orig_m);
+            icmp_reflect(pData, m);
             LIST_REMOVE(icm, im_list);
             /* Don't call m_free here*/
             free(icm);
