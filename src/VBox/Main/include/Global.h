@@ -34,6 +34,11 @@
 
 #include <iprt/types.h>
 
+#define VBOXOSHINT_NONE                 0
+#define VBOXOSHINT_64BIT                RT_BIT(0)
+#define VBOXOSHINT_HWVIRTEX             RT_BIT(1)
+#define VBOXOSHINT_IOAPIC               RT_BIT(2)
+
 /**
  * Contains global static definitions that can be referenced by all COM classes
  * regardless of the apartment.
@@ -50,9 +55,7 @@ public:
         const char                 *id;          /* utf-8 */
         const char                 *description; /* utf-8 */
         const VBOXOSTYPE            osType;
-        const bool                  is64Bit;
-        const bool                  recommendedIOAPIC;
-        const bool                  recommendedVirtEx;
+        const uint32_t              osHint;
         const uint32_t              recommendedRAM;
         const uint32_t              recommendedVRAM;
         const uint32_t              recommendedHDD;

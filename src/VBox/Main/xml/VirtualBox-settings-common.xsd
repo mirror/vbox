@@ -192,6 +192,7 @@
     <xsd:enumeration value="Solaris_64"/>
     <xsd:enumeration value="OpenSolaris"/>
     <xsd:enumeration value="OpenSolaris_64"/>
+    <xsd:enumeration value="QNX"/>
   </xsd:restriction>
 </xsd:simpleType>
 
