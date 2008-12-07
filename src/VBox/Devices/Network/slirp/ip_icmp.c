@@ -36,6 +36,10 @@
 
 #include "slirp.h"
 #include "ip_icmp.h"
+#ifdef RT_OS_WINDOWS
+#include <Icmpapi.h>
+#include <Iphlpapi.h>
+#endif
 
 
 /* The message sent when emulating PING */
@@ -71,7 +75,11 @@ icmp_init(PNATState pData)
 {
         pData->icmp_socket.so_type = IPPROTO_ICMP;
         pData->icmp_socket.so_state = SS_ISFCONNECTED;
+#ifndef RT_OS_WINDOWS
         pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+#else
+        pData->icmp_socket.s = IcmpCreateFile();
+#endif
         insque(pData, &pData->icmp_socket, &udb);
         LIST_INIT(&pData->icmp_msg_head);
         return (0);
@@ -235,6 +243,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         udp_detach(pData, so);
       }
 #else /* !VBOX_WITH_SLIRP_ICMP */
+#ifdef RT_OS_WINDOWS      
+      IP_OPTION_INFORMATION ipopt;
+#endif
       addr.sin_family = AF_INET;
       if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
         /* It's an alias */
@@ -252,6 +263,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
       }
       icmp_attach(pData, m);
       /* Send the packet */
+#ifndef RT_OS_WINDOWS
       status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
       if (status < 0) {
             LogRel(("error(%s) occured while setting TTL attribute of IP packet\n", strerror(errno)));
@@ -263,6 +275,15 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
         m_free(pData, m);
       }
+#else
+      memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
+      ipopt.Ttl = ip->ip_ttl;
+      m->m_ext = malloc(1500);
+      status = IcmpSendEcho(pData->icmp_socket.s, VBOX_SOCKET_EVENT, &addr, icp, icmplen, m->m_ext, 1500, 0);
+      if (status == 0) {
+            LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
+      }
+#endif
 
 #endif /* VBOX_WITH_SLIRP_ICMP */
     } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
