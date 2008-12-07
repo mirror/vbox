@@ -3192,13 +3192,23 @@ static void vmxR0FlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPHYS GC
  */
 static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GCPtr)
 {
-    uint64_t descriptor[2];
+#if HC_ARCH_BITS == 32
+    /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invvpid probably takes only 32 bits addresses. (@todo) */
+    if (CPUMIsGuestInLongMode(pVM)
+    {
+        pVCpu->hwaccm.s.fForceTLBFlush = true;
+    }
+    else
+#endif
+    {
+        uint64_t descriptor[2];
 
-    Assert(pVM->hwaccm.s.vmx.fVPID);
-    descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
-    descriptor[1] = GCPtr;
-    int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
-    AssertRC(rc);
+        Assert(pVM->hwaccm.s.vmx.fVPID);
+        descriptor[0] = pVCpu->hwaccm.s.uCurrentASID;
+        descriptor[1] = GCPtr;
+        int rc = VMXR0InvVPID(enmFlush, &descriptor[0]);
+        AssertRC(rc);
+    }
 }
 #endif /* HWACCM_VTX_WITH_VPID */
 

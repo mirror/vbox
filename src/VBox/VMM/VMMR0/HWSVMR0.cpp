@@ -2247,7 +2247,13 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageManual);
-        SVMR0InvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
+#if HC_ARCH_BITS == 32
+        /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invlpga takes only 32 bits addresses. */
+        if (CPUMIsGuestInLongMode(pVM)
+            pVCpu->hwaccm.s.fForceTLBFlush = true;
+        else
+#endif
+            SVMR0InvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
     }
     return VINF_SUCCESS;
 }
