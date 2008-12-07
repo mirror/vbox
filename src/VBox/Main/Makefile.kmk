@@ -702,4 +702,3 @@ testconverter:: $(VBOX_USER_HOME)/VirtualBox.xml
 testconverter2:: $(VBOX_USER_HOME)/Machines/dos/dos.xml
 	$(call MSG_TOOL,xsltproc,Test Settings Converter,$<,$<.test)
 	$(QUIET)$(VBOX_XSLTPROC) -o $<.test xml/SettingsConverter.xsl $<
-
