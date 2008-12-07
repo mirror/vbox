@@ -24,6 +24,7 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
+#include "Global.h"
 
 #include <VBox/ostypes.h>
 
@@ -56,8 +57,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init (const char *aFamilyId, const char *aFamilyDescription,
                   const char *aId, const char *aDescription,
-                  VBOXOSTYPE aOSType, bool aIs64Bit,
-                  bool aRecommendedIOAPIC, bool aRecommendedVirtEx,
+                  VBOXOSTYPE aOSType, uint32_t aOSHint,
                   uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
                   NetworkAdapterType_T aNetworkAdapterType);
     void uninit();
@@ -77,9 +77,9 @@ public:
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
-    bool is64Bit() const { return mIs64Bit; }
-    bool recommendedIOAPIC() const { return mRecommendedIOAPIC; }
-    bool recommendedVirtEx() const { return mRecommendedVirtEx; }
+    bool is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
+    bool recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
+    bool recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
     NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
 
     // for VirtualBoxSupportErrorInfoImpl
@@ -92,9 +92,7 @@ private:
     const Bstr mID;
     const Bstr mDescription;
     const VBOXOSTYPE mOSType;
-    const bool mIs64Bit;
-    const bool mRecommendedIOAPIC;
-    const bool mRecommendedVirtEx;
+    const uint32_t mOSHint;
     const uint32_t mRAMSize;
     const uint32_t mVRAMSize;
     const uint32_t mHDDSize;
