@@ -101,16 +101,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             ip0 = mtod(m0, struct ip *);
             AssertRelease(ip0->ip_p == IPPROTO_ICMP);
             icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
-            LogRel(("ip(src:%R[IP4], dst:%R[IP4],id:%x) ip0(src:%R[IP4],dst:%R[IP4],id:%x)\n",
-                    ip->ip_src.s_addr,
-                    ip->ip_dst.s_addr,
-                    ip->ip_id,
-                    ip0->ip_src.s_addr,
-                    ip0->ip_dst.s_addr,
-                    ip0->ip_id));
-            LogRel(("icp(id:%x, seq:%x, type=%d) icp0(id:%x, seq:%x)\n",icp->icmp_id, icp->icmp_seq, icp->icmp_type, icp0->icmp_id, icp0->icmp_seq));
-            if (
-                ((icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
+            if (((icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
                 ||(icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
                 && icp->icmp_id == icp0->icmp_id
                 && icp->icmp_seq == icp->icmp_seq) {
@@ -454,6 +445,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
   m->m_data -= hlen;
   m->m_len += hlen;
 
+#ifndef VBOX_WITH_SLIRP_ICMP
   /* fill in ip */
   if (optlen > 0) {
     /*
@@ -467,8 +459,6 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     ip->ip_len -= optlen;
     m->m_len -= optlen;
   }
-  LogRel(("%s, ttl %d msg_type=%d code=%d\n", __FUNCTION__, ip->ip_ttl, icp->icmp_type, icp->icmp_code ));
-#ifndef VBOX_WITH_SLIRP_ICMP
   ip->ip_ttl = MAXTTL;
   { /* swap */
     struct in_addr icmp_dst;
@@ -476,7 +466,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     ip->ip_dst = ip->ip_src;
     ip->ip_src = icmp_dst;
   }
-#endif
+#endif /* !VBOX_WITH_SLIRP_ICMP */
 
   (void ) ip_output(pData, (struct socket *)NULL, m);
 
