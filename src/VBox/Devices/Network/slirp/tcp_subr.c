@@ -52,12 +52,12 @@
 void
 tcp_init(PNATState pData)
 {
-        tcp_iss = 1;            /* wrong */
-        tcb.so_next = tcb.so_prev = &tcb;
-        tcp_last_so = &tcb;
+    tcp_iss = 1;            /* wrong */
+    tcb.so_next = tcb.so_prev = &tcb;
+    tcp_last_so = &tcb;
 #ifdef VBOX_WITH_BSD_REASS
-        tcp_reass_maxqlen = 48;
-        tcp_reass_maxseg  = 256;
+    tcp_reass_maxqlen = 48;
+    tcp_reass_maxseg  = 256;
 #endif /* VBOX_WITH_BSD_REASS */
 }
 
@@ -69,33 +69,32 @@ tcp_init(PNATState pData)
  */
 /* struct tcpiphdr * */
 void
-tcp_template(tp)
-        struct tcpcb *tp;
+tcp_template(struct tcpcb *tp)
 {
-        struct socket *so = tp->t_socket;
-        register struct tcpiphdr *n = &tp->t_template;
+    struct socket *so = tp->t_socket;
+    register struct tcpiphdr *n = &tp->t_template;
 
 #if !defined(VBOX_WITH_BSD_REASS)
-        n->ti_next = n->ti_prev = 0;
-        n->ti_x1 = 0;
+    n->ti_next = n->ti_prev = 0;
+    n->ti_x1 = 0;
 #else
-        memset(n->ti_x1, 0, 9);
+    memset(n->ti_x1, 0, 9);
 #endif
-        n->ti_pr = IPPROTO_TCP;
-        n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
-        n->ti_src = so->so_faddr;
-        n->ti_dst = so->so_laddr;
-        n->ti_sport = so->so_fport;
-        n->ti_dport = so->so_lport;
+    n->ti_pr = IPPROTO_TCP;
+    n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
+    n->ti_src = so->so_faddr;
+    n->ti_dst = so->so_laddr;
+    n->ti_sport = so->so_fport;
+    n->ti_dport = so->so_lport;
 
-        n->ti_seq = 0;
-        n->ti_ack = 0;
-        n->ti_x2 = 0;
-        n->ti_off = 5;
-        n->ti_flags = 0;
-        n->ti_win = 0;
-        n->ti_sum = 0;
-        n->ti_urp = 0;
+    n->ti_seq = 0;
+    n->ti_ack = 0;
+    n->ti_x2 = 0;
+    n->ti_off = 5;
+    n->ti_flags = 0;
+    n->ti_win = 0;
+    n->ti_sum = 0;
+    n->ti_urp = 0;
 }
 
 /*
@@ -114,75 +113,78 @@ tcp_template(tp)
 void
 tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf *m, tcp_seq ack, tcp_seq seq, int flags)
 {
-        register int tlen;
-        int win = 0;
+    register int tlen;
+    int win = 0;
 
-        DEBUG_CALL("tcp_respond");
-        DEBUG_ARG("tp = %lx", (long)tp);
-        DEBUG_ARG("ti = %lx", (long)ti);
-        DEBUG_ARG("m = %lx", (long)m);
-        DEBUG_ARG("ack = %u", ack);
-        DEBUG_ARG("seq = %u", seq);
-        DEBUG_ARG("flags = %x", flags);
+    DEBUG_CALL("tcp_respond");
+    DEBUG_ARG("tp = %lx", (long)tp);
+    DEBUG_ARG("ti = %lx", (long)ti);
+    DEBUG_ARG("m = %lx", (long)m);
+    DEBUG_ARG("ack = %u", ack);
+    DEBUG_ARG("seq = %u", seq);
+    DEBUG_ARG("flags = %x", flags);
 
-        if (tp)
-                win = sbspace(&tp->t_socket->so_rcv);
-        if (m == 0) {
-                if ((m = m_get(pData)) == NULL)
-                        return;
+    if (tp)
+        win = sbspace(&tp->t_socket->so_rcv);
+    if (m == 0)
+    {
+        if ((m = m_get(pData)) == NULL)
+            return;
 #ifdef TCP_COMPAT_42
-                tlen = 1;
+        tlen = 1;
 #else
-                tlen = 0;
+        tlen = 0;
 #endif
-                m->m_data += if_maxlinkhdr;
-                *mtod(m, struct tcpiphdr *) = *ti;
-                ti = mtod(m, struct tcpiphdr *);
-                flags = TH_ACK;
-        } else {
-                /*
-                 * ti points into m so the next line is just making
-                 * the mbuf point to ti
-                 */
-                m->m_data = (caddr_t)ti;
+        m->m_data += if_maxlinkhdr;
+        *mtod(m, struct tcpiphdr *) = *ti;
+        ti = mtod(m, struct tcpiphdr *);
+        flags = TH_ACK;
+    }
+    else
+    {
+        /*
+         * ti points into m so the next line is just making
+         * the mbuf point to ti
+         */
+        m->m_data = (caddr_t)ti;
 
-                m->m_len = sizeof (struct tcpiphdr);
-                tlen = 0;
+        m->m_len = sizeof (struct tcpiphdr);
+        tlen = 0;
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
-                xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_int32_t);
-                xchg(ti->ti_dport, ti->ti_sport, u_int16_t);
+        xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_int32_t);
+        xchg(ti->ti_dport, ti->ti_sport, u_int16_t);
 #undef xchg
-        }
-        ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
-        tlen += sizeof (struct tcpiphdr);
-        m->m_len = tlen;
+    }
+    ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
+    tlen += sizeof (struct tcpiphdr);
+    m->m_len = tlen;
 
 #if !defined(VBOX_WITH_BSD_REASS)
-        ti->ti_next = ti->ti_prev = 0;
-        ti->ti_x1 = 0;
+    ti->ti_next = ti->ti_prev = 0;
+    ti->ti_x1 = 0;
 #else
-        memset(ti->ti_x1, 0, 9);
+    memset(ti->ti_x1, 0, 9);
 #endif
-        ti->ti_seq = htonl(seq);
-        ti->ti_ack = htonl(ack);
-        ti->ti_x2 = 0;
-        ti->ti_off = sizeof (struct tcphdr) >> 2;
-        ti->ti_flags = flags;
-        if (tp)
-                ti->ti_win = htons((u_int16_t) (win >> tp->rcv_scale));
-        else
-                ti->ti_win = htons((u_int16_t)win);
-        ti->ti_urp = 0;
-        ti->ti_sum = 0;
-        ti->ti_sum = cksum(m, tlen);
-        ((struct ip *)ti)->ip_len = tlen;
+    ti->ti_seq = htonl(seq);
+    ti->ti_ack = htonl(ack);
+    ti->ti_x2 = 0;
+    ti->ti_off = sizeof (struct tcphdr) >> 2;
+    ti->ti_flags = flags;
+    if (tp)
+        ti->ti_win = htons((u_int16_t) (win >> tp->rcv_scale));
+    else
+        ti->ti_win = htons((u_int16_t)win);
+    ti->ti_urp = 0;
+    ti->ti_sum = 0;
+    ti->ti_sum = cksum(m, tlen);
+    ((struct ip *)ti)->ip_len = tlen;
 
-        if(flags & TH_RST)
-          ((struct ip *)ti)->ip_ttl = MAXTTL;
-        else
-          ((struct ip *)ti)->ip_ttl = ip_defttl;
+    if(flags & TH_RST)
+        ((struct ip *)ti)->ip_ttl = MAXTTL;
+    else
+        ((struct ip *)ti)->ip_ttl = ip_defttl;
 
-        (void) ip_output(pData, (struct socket *)0, m);
+    (void) ip_output(pData, (struct socket *)0, m);
 }
 
 /*
@@ -193,41 +195,41 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
 struct tcpcb *
 tcp_newtcpcb(PNATState pData, struct socket *so)
 {
-        register struct tcpcb *tp;
+    register struct tcpcb *tp;
 
-        tp = (struct tcpcb *)malloc(sizeof(*tp));
-        if (tp == NULL)
-                return ((struct tcpcb *)0);
+    tp = (struct tcpcb *)malloc(sizeof(*tp));
+    if (tp == NULL)
+        return ((struct tcpcb *)0);
 
-        memset((char *) tp, 0, sizeof(struct tcpcb));
+    memset((char *) tp, 0, sizeof(struct tcpcb));
 #ifndef VBOX_WITH_BSD_REASS
-        tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
+    tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
 #endif /* !VBOX_WITH_BSD_REASS */
-        tp->t_maxseg = tcp_mssdflt;
+    tp->t_maxseg = tcp_mssdflt;
 
-        tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
-        tp->t_socket = so;
+    tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
+    tp->t_socket = so;
 
-        /*
-         * Init srtt to TCPTV_SRTTBASE (0), so we can tell that we have no
-         * rtt estimate.  Set rttvar so that srtt + 2 * rttvar gives
-         * reasonable initial retransmit time.
-         */
-        tp->t_srtt = TCPTV_SRTTBASE;
-        tp->t_rttvar = tcp_rttdflt * PR_SLOWHZ << 2;
-        tp->t_rttmin = TCPTV_MIN;
+    /*
+     * Init srtt to TCPTV_SRTTBASE (0), so we can tell that we have no
+     * rtt estimate.  Set rttvar so that srtt + 2 * rttvar gives
+     * reasonable initial retransmit time.
+     */
+    tp->t_srtt = TCPTV_SRTTBASE;
+    tp->t_rttvar = tcp_rttdflt * PR_SLOWHZ << 2;
+    tp->t_rttmin = TCPTV_MIN;
 
-        TCPT_RANGESET(tp->t_rxtcur,
-            ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
-            TCPTV_MIN, TCPTV_REXMTMAX);
+    TCPT_RANGESET(tp->t_rxtcur,
+                  ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
+                  TCPTV_MIN, TCPTV_REXMTMAX);
 
-        tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
-        tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
-        tp->t_state = TCPS_CLOSED;
+    tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
+    tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
+    tp->t_state = TCPS_CLOSED;
 
-        so->so_tcpcb = tp;
+    so->so_tcpcb = tp;
 
-        return (tp);
+    return (tp);
 }
 
 /*
@@ -242,22 +244,25 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
         int errno;
 {
 */
+    DEBUG_CALL("tcp_drop");
+    DEBUG_ARG("tp = %lx", (long)tp);
+    DEBUG_ARG("errno = %d", errno);
 
-        DEBUG_CALL("tcp_drop");
-        DEBUG_ARG("tp = %lx", (long)tp);
-        DEBUG_ARG("errno = %d", errno);
+    if (TCPS_HAVERCVDSYN(tp->t_state))
+    {
+        tp->t_state = TCPS_CLOSED;
+        (void) tcp_output(pData, tp);
+        tcpstat.tcps_drops++;
+    }
+    else
+        tcpstat.tcps_conndrops++;
+#if 0
+      if (errno == ETIMEDOUT && tp->t_softerror)
+              errno = tp->t_softerror;
 
-        if (TCPS_HAVERCVDSYN(tp->t_state)) {
-                tp->t_state = TCPS_CLOSED;
-                (void) tcp_output(pData, tp);
-                tcpstat.tcps_drops++;
-        } else
-                tcpstat.tcps_conndrops++;
-/*      if (errno == ETIMEDOUT && tp->t_softerror)
- *              errno = tp->t_softerror;
- */
-/*      so->so_error = errno; */
-        return (tcp_close(pData, tp));
+      so->so_error = errno;
+#endif
+      return (tcp_close(pData, tp));
 }
 
 /*
@@ -269,58 +274,62 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
 struct tcpcb *
 tcp_close(PNATState pData, register struct tcpcb *tp)
 {
-        register struct tcpiphdr *t;
-        struct socket *so = tp->t_socket;
-        register struct mbuf *m;
+    register struct tcpiphdr *t;
+    struct socket *so = tp->t_socket;
+    register struct mbuf *m;
 
 #ifndef VBOX_WITH_BSD_REASS
-        DEBUG_CALL("tcp_close");
-        DEBUG_ARG("tp = %lx", (long )tp);
+    DEBUG_CALL("tcp_close");
+    DEBUG_ARG("tp = %lx", (long )tp);
 
-        /* free the reassembly queue, if any */
-        t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
-        while (t != (struct tcpiphdr *)tp) {
-                t = u32_to_ptr(pData, t->ti_next, struct tcpiphdr *);
-                m = REASS_MBUF_GET(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-                remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-                m_freem(pData, m);
-        }
-        /* It's static */
-/*      if (tp->t_template)
- *              (void) m_free(dtom(tp->t_template));
- */
-/*      free(tp, M_PCB);  */
-        u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
+    /* free the reassembly queue, if any */
+    t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
+    while (t != (struct tcpiphdr *)tp)
+    {
+        t = u32_to_ptr(pData, t->ti_next, struct tcpiphdr *);
+        m = REASS_MBUF_GET(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
+        remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
+        m_freem(pData, m);
+    }
+    /* It's static */
+#if 0
+    if (tp->t_template)
+        (void) m_free(dtom(tp->t_template));
+
+    free(tp, M_PCB);  
+#endif
+    u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
 #else  /* VBOX_WITH_BSD_REASS */
-        struct tseg_qent *te;
-        DEBUG_CALL("tcp_close");
-        DEBUG_ARG("tp = %lx", (long )tp);
-        /*XXX: freeing the reassembly queue */
-        LIST_FOREACH(te, &tp->t_segq, tqe_q) {
-            LIST_REMOVE(te, tqe_q);
-            m_freem(pData, te->tqe_m);
-            free(te);
-            tcp_reass_qsize--;
-        }
+    struct tseg_qent *te;
+    DEBUG_CALL("tcp_close");
+    DEBUG_ARG("tp = %lx", (long )tp);
+    /*XXX: freeing the reassembly queue */
+    LIST_FOREACH(te, &tp->t_segq, tqe_q)
+    {
+        LIST_REMOVE(te, tqe_q);
+        m_freem(pData, te->tqe_m);
+        free(te);
+        tcp_reass_qsize--;
+    }
 #endif /* VBOX_WITH_BSD_REASS */
-        free(tp);
-        so->so_tcpcb = 0;
-        soisfdisconnected(so);
-        /* clobber input socket cache if we're closing the cached connection */
-        if (so == tcp_last_so)
-                tcp_last_so = &tcb;
-        closesocket(so->s);
-        sbfree(&so->so_rcv);
-        sbfree(&so->so_snd);
-        sofree(pData, so);
-        tcpstat.tcps_closed++;
-        return ((struct tcpcb *)0);
+    free(tp);
+    so->so_tcpcb = 0;
+    soisfdisconnected(so);
+    /* clobber input socket cache if we're closing the cached connection */
+    if (so == tcp_last_so)
+        tcp_last_so = &tcb;
+    closesocket(so->s);
+    sbfree(&so->so_rcv);
+    sbfree(&so->so_snd);
+    sofree(pData, so);
+    tcpstat.tcps_closed++;
+    return ((struct tcpcb *)0);
 }
 
 void
 tcp_drain()
 {
-        /* XXX */
+    /* XXX */
 }
 
 /*
@@ -328,20 +337,18 @@ tcp_drain()
  * to one segment.  We will gradually open it again as we proceed.
  */
 
-#ifdef notdef
+#if 0
 
 void
-tcp_quench(i, errno)
-
-        int errno;
+tcp_quench(i, int errno)
 {
-        struct tcpcb *tp = intotcpcb(inp);
+    struct tcpcb *tp = intotcpcb(inp);
 
-        if (tp)
-                tp->snd_cwnd = tp->t_maxseg;
+    if (tp)
+        tp->snd_cwnd = tp->t_maxseg;
 }
 
-#endif /* notdef */
+#endif
 
 /*
  * TCP protocol interface to socket abstraction.
@@ -360,33 +367,33 @@ tcp_quench(i, errno)
 void
 tcp_sockclosed(PNATState pData, struct tcpcb *tp)
 {
+    DEBUG_CALL("tcp_sockclosed");
+    DEBUG_ARG("tp = %lx", (long)tp);
 
-        DEBUG_CALL("tcp_sockclosed");
-        DEBUG_ARG("tp = %lx", (long)tp);
-
-        switch (tp->t_state) {
-
+    switch (tp->t_state)
+    {
         case TCPS_CLOSED:
         case TCPS_LISTEN:
         case TCPS_SYN_SENT:
-                tp->t_state = TCPS_CLOSED;
-                tp = tcp_close(pData, tp);
-                break;
+            tp->t_state = TCPS_CLOSED;
+            tp = tcp_close(pData, tp);
+            break;
 
         case TCPS_SYN_RECEIVED:
         case TCPS_ESTABLISHED:
-                tp->t_state = TCPS_FIN_WAIT_1;
-                break;
+            tp->t_state = TCPS_FIN_WAIT_1;
+            break;
 
         case TCPS_CLOSE_WAIT:
-                tp->t_state = TCPS_LAST_ACK;
-                break;
-        }
-/*      soisfdisconnecting(tp->t_socket); */
-        if (tp && tp->t_state >= TCPS_FIN_WAIT_2)
-                soisfdisconnected(tp->t_socket);
-        if (tp)
-                tcp_output(pData, tp);
+            tp->t_state = TCPS_LAST_ACK;
+            break;
+    }
+/*  soisfdisconnecting(tp->t_socket); */
+    if (   tp 
+        && tp->t_state >= TCPS_FIN_WAIT_2)
+        soisfdisconnected(tp->t_socket);
+    if (tp)
+        tcp_output(pData, tp);
 }
 
 /*
@@ -401,54 +408,58 @@ tcp_sockclosed(PNATState pData, struct tcpcb *tp)
  */
 int tcp_fconnect(PNATState pData, struct socket *so)
 {
-  int ret=0;
+    int ret=0;
 
-  DEBUG_CALL("tcp_fconnect");
-  DEBUG_ARG("so = %lx", (long )so);
+    DEBUG_CALL("tcp_fconnect");
+    DEBUG_ARG("so = %lx", (long )so);
 
-  if( (ret=so->s=socket(AF_INET,SOCK_STREAM,0)) >= 0) {
-    int opt, s=so->s;
-    struct sockaddr_in addr;
+    if ((ret = so->s=socket(AF_INET,SOCK_STREAM,0)) >= 0)
+    {
+        int opt, s=so->s;
+        struct sockaddr_in addr;
 
-    fd_nonblock(s);
-    opt = 1;
-    setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(opt ));
-    opt = 1;
-    setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(opt ));
+        fd_nonblock(s);
+        opt = 1;
+        setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt, sizeof(opt));
+        opt = 1;
+        setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt, sizeof(opt));
 
-    addr.sin_family = AF_INET;
-    if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
-      /* It's an alias */
-      switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
-      case CTL_DNS:
-        if (!get_dns_addr(pData, &dns_addr))
-            addr.sin_addr = dns_addr;
+        addr.sin_family = AF_INET;
+        if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+        {
+            /* It's an alias */
+            switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask)
+            {
+                case CTL_DNS:
+                    if (!get_dns_addr(pData, &dns_addr))
+                        addr.sin_addr = dns_addr;
+                    else
+                        addr.sin_addr = loopback_addr;
+                    break;
+                case CTL_ALIAS:
+                default:
+                    addr.sin_addr = loopback_addr;
+                    break;
+            }
+        }
         else
-            addr.sin_addr = loopback_addr;
-        break;
-      case CTL_ALIAS:
-      default:
-        addr.sin_addr = loopback_addr;
-        break;
-      }
-    } else
-      addr.sin_addr = so->so_faddr;
-    addr.sin_port = so->so_fport;
+            addr.sin_addr = so->so_faddr;
+        addr.sin_port = so->so_fport;
 
-    DEBUG_MISC((dfd, " connect()ing, addr.sin_port=%d, "
-                "addr.sin_addr.s_addr=%.16s\n",
-                ntohs(addr.sin_port), inet_ntoa(addr.sin_addr)));
-    /* We don't care what port we get */
-    ret = connect(s,(struct sockaddr *)&addr,sizeof (addr));
+        DEBUG_MISC((dfd, " connect()ing, addr.sin_port=%d, "
+                         "addr.sin_addr.s_addr=%.16s\n",
+                         ntohs(addr.sin_port), inet_ntoa(addr.sin_addr)));
+        /* We don't care what port we get */
+        ret = connect(s,(struct sockaddr *)&addr,sizeof (addr));
 
-    /*
-     * If it's not in progress, it failed, so we just return 0,
-     * without clearing SS_NOFDREF
-     */
-    soisfconnecting(so);
-  }
+        /*
+         * If it's not in progress, it failed, so we just return 0,
+         * without clearing SS_NOFDREF
+         */
+        soisfconnecting(so);
+    }
 
-  return(ret);
+    return(ret);
 }
 
 /*
@@ -466,84 +477,91 @@ int tcp_fconnect(PNATState pData, struct socket *so)
 void
 tcp_connect(PNATState pData, struct socket *inso)
 {
-        struct socket *so;
-        struct sockaddr_in addr;
-        socklen_t addrlen = sizeof(struct sockaddr_in);
-        struct tcpcb *tp;
-        int s, opt;
+    struct socket *so;
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(struct sockaddr_in);
+    struct tcpcb *tp;
+    int s, opt;
 
-        DEBUG_CALL("tcp_connect");
-        DEBUG_ARG("inso = %lx", (long)inso);
+    DEBUG_CALL("tcp_connect");
+    DEBUG_ARG("inso = %lx", (long)inso);
 
-        /*
-         * If it's an SS_ACCEPTONCE socket, no need to socreate()
-         * another socket, just use the accept() socket.
-         */
-        if (inso->so_state & SS_FACCEPTONCE) {
-                /* FACCEPTONCE already have a tcpcb */
-                so = inso;
-        } else {
-                if ((so = socreate()) == NULL) {
-                        /* If it failed, get rid of the pending connection */
-                        closesocket(accept(inso->s,(struct sockaddr *)&addr,&addrlen));
-                        return;
-                }
-                if (tcp_attach(pData, so) < 0) {
-                        free(so); /* NOT sofree */
-                        return;
-                }
-                so->so_laddr = inso->so_laddr;
-                so->so_lport = inso->so_lport;
+    /*
+     * If it's an SS_ACCEPTONCE socket, no need to socreate()
+     * another socket, just use the accept() socket.
+     */
+    if (inso->so_state & SS_FACCEPTONCE)
+    {
+        /* FACCEPTONCE already have a tcpcb */
+        so = inso;
+    }
+    else
+    {
+        if ((so = socreate()) == NULL)
+        {
+            /* If it failed, get rid of the pending connection */
+            closesocket(accept(inso->s,(struct sockaddr *)&addr,&addrlen));
+            return;
         }
-
-        (void) tcp_mss(pData, sototcpcb(so), 0);
-
-        if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0) {
-                tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */
-                return;
+        if (tcp_attach(pData, so) < 0)
+        {
+            free(so); /* NOT sofree */
+            return;
         }
-        fd_nonblock(s);
-        opt = 1;
-        setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));
-        opt = 1;
-        setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(int));
-        opt = 1;
-        setsockopt(s,IPPROTO_TCP,TCP_NODELAY,(char *)&opt,sizeof(int));
+        so->so_laddr = inso->so_laddr;
+        so->so_lport = inso->so_lport;
+    }
 
-        so->so_fport = addr.sin_port;
-        so->so_faddr = addr.sin_addr;
-        /* Translate connections from localhost to the real hostname */
-        if (so->so_faddr.s_addr == 0 || so->so_faddr.s_addr == loopback_addr.s_addr)
-           so->so_faddr = alias_addr;
+    (void) tcp_mss(pData, sototcpcb(so), 0);
 
-        /* Close the accept() socket, set right state */
-        if (inso->so_state & SS_FACCEPTONCE) {
-                closesocket(so->s); /* If we only accept once, close the accept() socket */
-                so->so_state = SS_NOFDREF; /* Don't select it yet, even though we have an FD */
-                                           /* if it's not FACCEPTONCE, it's already NOFDREF */
-        }
-        so->s = s;
+    if ((s = accept(inso->s,(struct sockaddr *)&addr,&addrlen)) < 0)
+    {
+        tcp_close(pData, sototcpcb(so)); /* This will sofree() as well */
+        return;
+    }
+    fd_nonblock(s);
+    opt = 1;
+    setsockopt(s,SOL_SOCKET,SO_REUSEADDR,(char *)&opt,sizeof(int));
+    opt = 1;
+    setsockopt(s,SOL_SOCKET,SO_OOBINLINE,(char *)&opt,sizeof(int));
+    opt = 1;
+    setsockopt(s,IPPROTO_TCP,TCP_NODELAY,(char *)&opt,sizeof(int));
 
-        so->so_iptos = tcp_tos(so);
-        tp = sototcpcb(so);
+    so->so_fport = addr.sin_port;
+    so->so_faddr = addr.sin_addr;
+    /* Translate connections from localhost to the real hostname */
+    if (so->so_faddr.s_addr == 0 || so->so_faddr.s_addr == loopback_addr.s_addr)
+        so->so_faddr = alias_addr;
 
-        tcp_template(tp);
+    /* Close the accept() socket, set right state */
+    if (inso->so_state & SS_FACCEPTONCE)
+    {
+        closesocket(so->s);        /* If we only accept once, close the accept() socket */
+        so->so_state = SS_NOFDREF; /* Don't select it yet, even though we have an FD */
+                                   /* if it's not FACCEPTONCE, it's already NOFDREF */
+    }
+    so->s = s;
 
-        /* Compute window scaling to request.  */
-/*      while (tp->request_r_scale < TCP_MAX_WINSHIFT &&
- *              (TCP_MAXWIN << tp->request_r_scale) < so->so_rcv.sb_hiwat)
- *              tp->request_r_scale++;
+    so->so_iptos = tcp_tos(so);
+    tp = sototcpcb(so);
+
+    tcp_template(tp);
+
+    /* Compute window scaling to request.  */
+/*  while (tp->request_r_scale < TCP_MAX_WINSHIFT
+ *         && (TCP_MAXWIN << tp->request_r_scale) < so->so_rcv.sb_hiwat)
+ *      tp->request_r_scale++;
  */
 
-/*      soisconnecting(so); */ /* NOFDREF used instead */
-        tcpstat.tcps_connattempt++;
+/*  soisconnecting(so); */ /* NOFDREF used instead */
+    tcpstat.tcps_connattempt++;
 
-        tp->t_state = TCPS_SYN_SENT;
-        tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
-        tp->iss = tcp_iss;
-        tcp_iss += TCP_ISSINCR/2;
-        tcp_sendseqinit(tp);
-        tcp_output(pData, tp);
+    tp->t_state = TCPS_SYN_SENT;
+    tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
+    tp->iss = tcp_iss;
+    tcp_iss += TCP_ISSINCR/2;
+    tcp_sendseqinit(tp);
+    tcp_output(pData, tp);
 }
 
 /*
@@ -552,394 +570,413 @@ tcp_connect(PNATState pData, struct socket *inso)
 int
 tcp_attach(PNATState pData, struct socket *so)
 {
-        if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
-           return -1;
+    if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
+        return -1;
 
-        insque(pData, so, &tcb);
-
-        return 0;
+    insque(pData, so, &tcb);
+    return 0;
 }
 
 /*
  * Set the socket's type of service field
  */
-static const struct tos_t tcptos[] = {
-          {0, 20, IPTOS_THROUGHPUT, 0}, /* ftp data */
-          {21, 21, IPTOS_LOWDELAY,  EMU_FTP},   /* ftp control */
-          {0, 23, IPTOS_LOWDELAY, 0},   /* telnet */
-          {0, 80, IPTOS_THROUGHPUT, 0}, /* WWW */
-          {0, 513, IPTOS_LOWDELAY, EMU_RLOGIN|EMU_NOCONNECT},   /* rlogin */
-          {0, 514, IPTOS_LOWDELAY, EMU_RSH|EMU_NOCONNECT},      /* shell */
-          {0, 544, IPTOS_LOWDELAY, EMU_KSH},            /* kshell */
-          {0, 543, IPTOS_LOWDELAY, 0},  /* klogin */
-          {0, 6667, IPTOS_THROUGHPUT, EMU_IRC}, /* IRC */
-          {0, 6668, IPTOS_THROUGHPUT, EMU_IRC}, /* IRC undernet */
-          {0, 7070, IPTOS_LOWDELAY, EMU_REALAUDIO }, /* RealAudio control */
-          {0, 113, IPTOS_LOWDELAY, EMU_IDENT }, /* identd protocol */
-          {0, 0, 0, 0}
+static const struct tos_t tcptos[] =
+{
+    {0, 20, IPTOS_THROUGHPUT, 0},                       /* ftp data */
+    {21, 21, IPTOS_LOWDELAY,  EMU_FTP},                 /* ftp control */
+    {0, 23, IPTOS_LOWDELAY, 0},                         /* telnet */
+    {0, 80, IPTOS_THROUGHPUT, 0},                       /* WWW */
+    {0, 513, IPTOS_LOWDELAY, EMU_RLOGIN|EMU_NOCONNECT}, /* rlogin */
+    {0, 514, IPTOS_LOWDELAY, EMU_RSH|EMU_NOCONNECT},    /* shell */
+    {0, 544, IPTOS_LOWDELAY, EMU_KSH},                  /* kshell */
+    {0, 543, IPTOS_LOWDELAY, 0},                        /* klogin */
+    {0, 6667, IPTOS_THROUGHPUT, EMU_IRC},               /* IRC */
+    {0, 6668, IPTOS_THROUGHPUT, EMU_IRC},               /* IRC undernet */
+    {0, 7070, IPTOS_LOWDELAY, EMU_REALAUDIO },          /* RealAudio control */
+    {0, 113, IPTOS_LOWDELAY, EMU_IDENT },               /* identd protocol */
+    {0, 0, 0, 0}
 };
 
 /*
  * Return TOS according to the above table
  */
 u_int8_t
-tcp_tos(so)
-        struct socket *so;
+tcp_tos(struct socket *so)
 {
-        int i = 0;
+    int i = 0;
 
-        while(tcptos[i].tos) {
-                if ((tcptos[i].fport && (ntohs(so->so_fport) == tcptos[i].fport)) ||
-                    (tcptos[i].lport && (ntohs(so->so_lport) == tcptos[i].lport))) {
-                        so->so_emu = tcptos[i].emu;
-                        return tcptos[i].tos;
-                }
-                i++;
+    while(tcptos[i].tos)
+    {
+        if (   (tcptos[i].fport && (ntohs(so->so_fport) == tcptos[i].fport))
+            || (tcptos[i].lport && (ntohs(so->so_lport) == tcptos[i].lport)))
+        {
+            so->so_emu = tcptos[i].emu;
+            return tcptos[i].tos;
         }
+        i++;
+    }
 
-        return 0;
+    return 0;
 }
 
 /*
- * Emulate programs that try and connect to us
- * This includes ftp (the data connection is
- * initiated by the server) and IRC (DCC CHAT and
- * DCC SEND) for now
+ * Emulate programs that try and connect to us. This includes ftp (the data
+ * connection is initiated by the server) and IRC (DCC CHAT and DCC SEND)
+ * for now
  *
- * NOTE: It's possible to crash SLiRP by sending it
- * unstandard strings to emulate... if this is a problem,
- * more checks are needed here
+ * NOTE: It's possible to crash SLiRP by sending it unstandard strings to
+ * emulate... if this is a problem, more checks are needed here.
  *
- * XXX Assumes the whole command came in one packet
+ * XXX Assumes the whole command cames in one packet
  *
- * XXX Some ftp clients will have their TOS set to
- * LOWDELAY and so Nagel will kick in.  Because of this,
- * we'll get the first letter, followed by the rest, so
- * we simply scan for ORT instead of PORT...
- * DCC doesn't have this problem because there's other stuff
- * in the packet before the DCC command.
+ * XXX Some ftp clients will have their TOS set to LOWDELAY and so Nagel will
+ * kick in.  Because of this, we'll get the first letter, followed by the
+ * rest, so we simply scan for ORT instead of PORT... DCC doesn't have this
+ * problem because there's other stuff in the packet before the DCC command.
  *
- * Return 1 if the mbuf m is still valid and should be
- * sbappend()ed
+ * Return 1 if the mbuf m is still valid and should be sbappend()ed
  *
  * NOTE: if you return 0 you MUST m_free() the mbuf!
  */
 int
 tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
 {
-        u_int n1, n2, n3, n4, n5, n6;
-        char buff[256];
-        u_int32_t laddr;
-        u_int lport;
-        char *bptr;
+    u_int n1, n2, n3, n4, n5, n6;
+    char buff[256];
+    u_int32_t laddr;
+    u_int lport;
+    char *bptr;
 
-        DEBUG_CALL("tcp_emu");
-        DEBUG_ARG("so = %lx", (long)so);
-        DEBUG_ARG("m = %lx", (long)m);
+    DEBUG_CALL("tcp_emu");
+    DEBUG_ARG("so = %lx", (long)so);
+    DEBUG_ARG("m = %lx", (long)m);
 
-        switch(so->so_emu) {
-                int x, i;
+    switch(so->so_emu)
+    {
+        int x, i;
 
-         case EMU_IDENT:
-                /*
-                 * Identification protocol as per rfc-1413
-                 */
+        case EMU_IDENT:
+        /*
+         * Identification protocol as per rfc-1413
+         */
+        {
+            struct socket *tmpso;
+            struct sockaddr_in addr;
+            socklen_t addrlen = sizeof(struct sockaddr_in);
+            struct sbuf *so_rcv = &so->so_rcv;
 
+            memcpy(so_rcv->sb_wptr, m->m_data, m->m_len);
+            so_rcv->sb_wptr += m->m_len;
+            so_rcv->sb_rptr += m->m_len;
+            m->m_data[m->m_len] = 0; /* NULL terminate */
+            if (strchr(m->m_data, '\r') || strchr(m->m_data, '\n'))
+            {
+                if (sscanf(so_rcv->sb_data, "%u%*[ ,]%u", &n1, &n2) == 2)
                 {
-                        struct socket *tmpso;
-                        struct sockaddr_in addr;
-                        socklen_t addrlen = sizeof(struct sockaddr_in);
-                        struct sbuf *so_rcv = &so->so_rcv;
-
-                        memcpy(so_rcv->sb_wptr, m->m_data, m->m_len);
-                        so_rcv->sb_wptr += m->m_len;
-                        so_rcv->sb_rptr += m->m_len;
-                        m->m_data[m->m_len] = 0; /* NULL terminate */
-                        if (strchr(m->m_data, '\r') || strchr(m->m_data, '\n')) {
-                                if (sscanf(so_rcv->sb_data, "%u%*[ ,]%u", &n1, &n2) == 2) {
-                                        HTONS(n1);
-                                        HTONS(n2);
-                                        /* n2 is the one on our host */
-                                        for (tmpso = tcb.so_next; tmpso != &tcb; tmpso = tmpso->so_next) {
-                                                if (tmpso->so_laddr.s_addr == so->so_laddr.s_addr &&
-                                                    tmpso->so_lport == n2 &&
-                                                    tmpso->so_faddr.s_addr == so->so_faddr.s_addr &&
-                                                    tmpso->so_fport == n1) {
-                                                        if (getsockname(tmpso->s,
-                                                                (struct sockaddr *)&addr, &addrlen) == 0)
-                                                           n2 = ntohs(addr.sin_port);
-                                                        break;
-                                                }
-                                        }
-                                }
-                                so_rcv->sb_cc = sprintf(so_rcv->sb_data, "%d,%d\r\n", n1, n2);
-                                so_rcv->sb_rptr = so_rcv->sb_data;
-                                so_rcv->sb_wptr = so_rcv->sb_data + so_rcv->sb_cc;
+                    HTONS(n1);
+                    HTONS(n2);
+                    /* n2 is the one on our host */
+                    for (tmpso = tcb.so_next; tmpso != &tcb; tmpso = tmpso->so_next)
+                    {
+                        if (   tmpso->so_laddr.s_addr == so->so_laddr.s_addr
+                            && tmpso->so_lport == n2
+                            && tmpso->so_faddr.s_addr == so->so_faddr.s_addr
+                            && tmpso->so_fport == n1)
+                        {
+                            if (getsockname(tmpso->s,
+                                            (struct sockaddr *)&addr, &addrlen) == 0)
+                                n2 = ntohs(addr.sin_port);
+                            break;
                         }
-                        m_free(pData, m);
-                        return 0;
+                    }
                 }
+                so_rcv->sb_cc = sprintf(so_rcv->sb_data, "%d,%d\r\n", n1, n2);
+                so_rcv->sb_rptr = so_rcv->sb_data;
+                so_rcv->sb_wptr = so_rcv->sb_data + so_rcv->sb_cc;
+            }
+            m_free(pData, m);
+            return 0;
+        }
 
-        case EMU_FTP: /* ftp */
-                *(m->m_data+m->m_len) = 0; /* NULL terminate for strstr */
-                if ((bptr = (char *)strstr(m->m_data, "ORT")) != NULL) {
-                        /*
-                         * Need to emulate the PORT command
-                         */
-                        x = sscanf(bptr, "ORT %u,%u,%u,%u,%u,%u\r\n%256[^\177]",
-                                   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-                        if (x < 6)
-                           return 1;
-
-                        laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
-                        lport = htons((n5 << 8) | (n6));
-
-                        if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-                           return 1;
-
-                        n6 = ntohs(so->so_fport);
-
-                        n5 = (n6 >> 8) & 0xff;
-                        n6 &= 0xff;
-
-                        laddr = ntohl(so->so_faddr.s_addr);
-
-                        n1 = ((laddr >> 24) & 0xff);
-                        n2 = ((laddr >> 16) & 0xff);
-                        n3 = ((laddr >> 8)  & 0xff);
-                        n4 =  (laddr & 0xff);
-
-                        m->m_len = bptr - m->m_data; /* Adjust length */
-                        m->m_len += sprintf(bptr,"ORT %d,%d,%d,%d,%d,%d\r\n%s",
-                                            n1, n2, n3, n4, n5, n6, x==7?buff:"");
-                        return 1;
-                } else if ((bptr = (char *)strstr(m->m_data, "27 Entering")) != NULL) {
-                        /*
-                         * Need to emulate the PASV response
-                         */
-                        x = sscanf(bptr, "27 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n%256[^\177]",
-                                   &n1, &n2, &n3, &n4, &n5, &n6, buff);
-                        if (x < 6)
-                           return 1;
-
-                        laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
-                        lport = htons((n5 << 8) | (n6));
-
-                        if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
-                           return 1;
-
-                        n6 = ntohs(so->so_fport);
-
-                        n5 = (n6 >> 8) & 0xff;
-                        n6 &= 0xff;
-
-                        laddr = ntohl(so->so_faddr.s_addr);
-
-                        n1 = ((laddr >> 24) & 0xff);
-                        n2 = ((laddr >> 16) & 0xff);
-                        n3 = ((laddr >> 8)  & 0xff);
-                        n4 =  (laddr & 0xff);
-
-                        m->m_len = bptr - m->m_data; /* Adjust length */
-                        m->m_len += sprintf(bptr,"27 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n%s",
-                                            n1, n2, n3, n4, n5, n6, x==7?buff:"");
-
-                        return 1;
-                }
-
-                return 1;
-
-         case EMU_KSH:
+        case EMU_FTP:
+            *(m->m_data+m->m_len) = 0; /* NULL terminate for strstr */
+            if ((bptr = (char *)strstr(m->m_data, "ORT")) != NULL)
+            {
                 /*
-                 * The kshell (Kerberos rsh) and shell services both pass
-                 * a local port port number to carry signals to the server
-                 * and stderr to the client.  It is passed at the beginning
-                 * of the connection as a NUL-terminated decimal ASCII string.
+                 * Need to emulate the PORT command
                  */
-                so->so_emu = 0;
-                for (lport = 0, i = 0; i < m->m_len-1; ++i) {
-                        if (m->m_data[i] < '0' || m->m_data[i] > '9')
-                                return 1;       /* invalid number */
-                        lport *= 10;
-                        lport += m->m_data[i] - '0';
-                }
-                if (m->m_data[m->m_len-1] == '\0' && lport != 0 &&
-                    (so = solisten(pData, 0, so->so_laddr.s_addr, htons(lport), SS_FACCEPTONCE)) != NULL)
-                        m->m_len = sprintf(m->m_data, "%d", ntohs(so->so_fport))+1;
-                return 1;
+                x = sscanf(bptr, "ORT %u,%u,%u,%u,%u,%u\r\n%256[^\177]",
+                           &n1, &n2, &n3, &n4, &n5, &n6, buff);
+                if (x < 6)
+                    return 1;
 
-         case EMU_IRC:
+                laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
+                lport = htons((n5 << 8) | (n6));
+
+                if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
+                    return 1;
+
+                n6 = ntohs(so->so_fport);
+
+                n5 = (n6 >> 8) & 0xff;
+                n6 &= 0xff;
+
+                laddr = ntohl(so->so_faddr.s_addr);
+
+                n1 = ((laddr >> 24) & 0xff);
+                n2 = ((laddr >> 16) & 0xff);
+                n3 = ((laddr >> 8)  & 0xff);
+                n4 = ( laddr        & 0xff);
+
+                m->m_len = bptr - m->m_data; /* Adjust length */
+                m->m_len += sprintf(bptr, "ORT %d,%d,%d,%d,%d,%d\r\n%s",
+                                    n1, n2, n3, n4, n5, n6, x==7?buff:"");
+                return 1;
+            }
+            else if ((bptr = (char *)strstr(m->m_data, "27 Entering")) != NULL)
+            {
                 /*
-                 * Need to emulate DCC CHAT, DCC SEND and DCC MOVE
+                 * Need to emulate the PASV response
                  */
-                *(m->m_data+m->m_len) = 0; /* NULL terminate the string for strstr */
-                if ((bptr = (char *)strstr(m->m_data, "DCC")) == NULL)
-                         return 1;
+                x = sscanf(bptr, "27 Entering Passive Mode (%u,%u,%u,%u,%u,%u)\r\n%256[^\177]",
+                           &n1, &n2, &n3, &n4, &n5, &n6, buff);
+                if (x < 6)
+                    return 1;
 
-                /* The %256s is for the broken mIRC */
-                if (sscanf(bptr, "DCC CHAT %256s %u %u", buff, &laddr, &lport) == 3) {
-                        if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-                                return 1;
+                laddr = htonl((n1 << 24) | (n2 << 16) | (n3 << 8) | (n4));
+                lport = htons((n5 << 8) | (n6));
 
-                        m->m_len = bptr - m->m_data; /* Adjust length */
-                        m->m_len += sprintf(bptr, "DCC CHAT chat %lu %u%c\n",
-                             (unsigned long)ntohl(so->so_faddr.s_addr),
-                             ntohs(so->so_fport), 1);
-                } else if (sscanf(bptr, "DCC SEND %256s %u %u %u", buff, &laddr, &lport, &n1) == 4) {
-                        if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-                                return 1;
+                if ((so = solisten(pData, 0, laddr, lport, SS_FACCEPTONCE)) == NULL)
+                    return 1;
 
-                        m->m_len = bptr - m->m_data; /* Adjust length */
-                        m->m_len += sprintf(bptr, "DCC SEND %s %lu %u %u%c\n",
-                              buff, (unsigned long)ntohl(so->so_faddr.s_addr),
-                              ntohs(so->so_fport), n1, 1);
-                } else if (sscanf(bptr, "DCC MOVE %256s %u %u %u", buff, &laddr, &lport, &n1) == 4) {
-                        if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
-                                return 1;
+                n6 = ntohs(so->so_fport);
 
-                        m->m_len = bptr - m->m_data; /* Adjust length */
-                        m->m_len += sprintf(bptr, "DCC MOVE %s %lu %u %u%c\n",
-                              buff, (unsigned long)ntohl(so->so_faddr.s_addr),
-                              ntohs(so->so_fport), n1, 1);
-                }
+                n5 = (n6 >> 8) & 0xff;
+                n6 &= 0xff;
+
+                laddr = ntohl(so->so_faddr.s_addr);
+
+                n1 = ((laddr >> 24) & 0xff);
+                n2 = ((laddr >> 16) & 0xff);
+                n3 = ((laddr >> 8)  & 0xff);
+                n4 =  (laddr & 0xff);
+
+                m->m_len = bptr - m->m_data; /* Adjust length */
+                m->m_len += sprintf(bptr, "27 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n%s",
+                                    n1, n2, n3, n4, n5, n6, x==7?buff:"");
+
                 return 1;
+            }
+            return 1;
+
+        case EMU_KSH:
+            /*
+             * The kshell (Kerberos rsh) and shell services both pass
+             * a local port port number to carry signals to the server
+             * and stderr to the client.  It is passed at the beginning
+             * of the connection as a NUL-terminated decimal ASCII string.
+             */
+            so->so_emu = 0;
+            for (lport = 0, i = 0; i < m->m_len-1; ++i)
+            {
+                if (m->m_data[i] < '0' || m->m_data[i] > '9')
+                    return 1;       /* invalid number */
+                lport *= 10;
+                lport += m->m_data[i] - '0';
+            }
+            if (   m->m_data[m->m_len-1] == '\0'
+                && lport != 0
+                && (so = solisten(pData, 0, so->so_laddr.s_addr, 
+                                  htons(lport), SS_FACCEPTONCE)) != NULL)
+                m->m_len = sprintf(m->m_data, "%d", ntohs(so->so_fport))+1;
+            return 1;
+
+        case EMU_IRC:
+            /*
+             * Need to emulate DCC CHAT, DCC SEND and DCC MOVE
+             */
+            *(m->m_data+m->m_len) = 0; /* NULL terminate the string for strstr */
+            if ((bptr = (char *)strstr(m->m_data, "DCC")) == NULL)
+                return 1;
+
+            /* The %256s is for the broken mIRC */
+            if (sscanf(bptr, "DCC CHAT %256s %u %u", buff, &laddr, &lport) == 3)
+            {
+                if ((so = solisten(pData, 0, htonl(laddr), 
+                                   htons(lport), SS_FACCEPTONCE)) == NULL)
+                    return 1;
+
+                m->m_len = bptr - m->m_data; /* Adjust length */
+                m->m_len += sprintf(bptr, "DCC CHAT chat %lu %u%c\n",
+                                    (unsigned long)ntohl(so->so_faddr.s_addr),
+                                    ntohs(so->so_fport), 1);
+            }
+            else if (sscanf(bptr, "DCC SEND %256s %u %u %u", buff, &laddr, &lport, &n1) == 4)
+            {
+                if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
+                    return 1;
+
+                m->m_len = bptr - m->m_data; /* Adjust length */
+                m->m_len += sprintf(bptr, "DCC SEND %s %lu %u %u%c\n",
+                                    buff, (unsigned long)ntohl(so->so_faddr.s_addr),
+                                    ntohs(so->so_fport), n1, 1);
+            }
+            else if (sscanf(bptr, "DCC MOVE %256s %u %u %u", buff, &laddr, &lport, &n1) == 4)
+            {
+                if ((so = solisten(pData, 0, htonl(laddr), htons(lport), SS_FACCEPTONCE)) == NULL)
+                    return 1;
+
+                m->m_len = bptr - m->m_data; /* Adjust length */
+                m->m_len += sprintf(bptr, "DCC MOVE %s %lu %u %u%c\n",
+                                    buff, (unsigned long)ntohl(so->so_faddr.s_addr),
+                                    ntohs(so->so_fport), n1, 1);
+            }
+            return 1;
 
 #ifdef VBOX
-         /** @todo Disabled EMU_REALAUDIO, because it uses a static variable.
-          * This is not legal when more than one slirp instance is active. */
+            /** @todo Disabled EMU_REALAUDIO, because it uses a static variable.
+             * This is not legal when more than one slirp instance is active. */
 #else /* !VBOX */
-         case EMU_REALAUDIO:
-                /*
-                 * RealAudio emulation - JP. We must try to parse the incoming
-                 * data and try to find the two characters that contain the
-                 * port number. Then we redirect an udp port and replace the
-                 * number with the real port we got.
-                 *
-                 * The 1.0 beta versions of the player are not supported
-                 * any more.
-                 *
-                 * A typical packet for player version 1.0 (release version):
-                 *
-                 * 0000:50 4E 41 00 05
-                 * 0000:00 01 00 02 1B D7 00 00 67 E6 6C DC 63 00 12 50 .....×..gælÜc..P
-                 * 0010:4E 43 4C 49 45 4E 54 20 31 30 31 20 41 4C 50 48 NCLIENT 101 ALPH
-                 * 0020:41 6C 00 00 52 00 17 72 61 66 69 6C 65 73 2F 76 Al..R..rafiles/v
-                 * 0030:6F 61 2F 65 6E 67 6C 69 73 68 5F 2E 72 61 79 42 oa/english_.rayB
-                 *
-                 * Now the port number 0x1BD7 is found at offset 0x04 of the
-                 * Now the port number 0x1BD7 is found at offset 0x04 of the
-                 * second packet. This time we received five bytes first and
-                 * then the rest. You never know how many bytes you get.
-                 *
-                 * A typical packet for player version 2.0 (beta):
-                 *
-                 * 0000:50 4E 41 00 06 00 02 00 00 00 01 00 02 1B C1 00 PNA...........Á.
-                 * 0010:00 67 75 78 F5 63 00 0A 57 69 6E 32 2E 30 2E 30 .guxõc..Win2.0.0
-                 * 0020:2E 35 6C 00 00 52 00 1C 72 61 66 69 6C 65 73 2F .5l..R..rafiles/
-                 * 0030:77 65 62 73 69 74 65 2F 32 30 72 65 6C 65 61 73 website/20releas
-                 * 0040:65 2E 72 61 79 53 00 00 06 36 42                e.rayS...6B
-                 *
-                 * Port number 0x1BC1 is found at offset 0x0d.
-                 *
-                 * This is just a horrible switch statement. Variable ra tells
-                 * us where we're going.
-                 */
+        case EMU_REALAUDIO:
+            /*
+             * RealAudio emulation - JP. We must try to parse the incoming
+             * data and try to find the two characters that contain the
+             * port number. Then we redirect an udp port and replace the
+             * number with the real port we got.
+             *
+             * The 1.0 beta versions of the player are not supported
+             * any more.
+             *
+             * A typical packet for player version 1.0 (release version):
+             *
+             * 0000:50 4E 41 00 05
+             * 0000:00 01 00 02 1B D7 00 00 67 E6 6C DC 63 00 12 50 .....×..gælÜc..P
+             * 0010:4E 43 4C 49 45 4E 54 20 31 30 31 20 41 4C 50 48 NCLIENT 101 ALPH
+             * 0020:41 6C 00 00 52 00 17 72 61 66 69 6C 65 73 2F 76 Al..R..rafiles/v
+             * 0030:6F 61 2F 65 6E 67 6C 69 73 68 5F 2E 72 61 79 42 oa/english_.rayB
+             *
+             * Now the port number 0x1BD7 is found at offset 0x04 of the
+             * Now the port number 0x1BD7 is found at offset 0x04 of the
+             * second packet. This time we received five bytes first and
+             * then the rest. You never know how many bytes you get.
+             *
+             * A typical packet for player version 2.0 (beta):
+             *
+             * 0000:50 4E 41 00 06 00 02 00 00 00 01 00 02 1B C1 00 PNA...........Á.
+             * 0010:00 67 75 78 F5 63 00 0A 57 69 6E 32 2E 30 2E 30 .guxõc..Win2.0.0
+             * 0020:2E 35 6C 00 00 52 00 1C 72 61 66 69 6C 65 73 2F .5l..R..rafiles/
+             * 0030:77 65 62 73 69 74 65 2F 32 30 72 65 6C 65 61 73 website/20releas
+             * 0040:65 2E 72 61 79 53 00 00 06 36 42                e.rayS...6B
+             *
+             * Port number 0x1BC1 is found at offset 0x0d.
+             *
+             * This is just a horrible switch statement. Variable ra tells
+             * us where we're going.
+             */
 
-                bptr = m->m_data;
-                while (bptr < m->m_data + m->m_len) {
-                        u_short p;
-                        static int ra = 0;
-                        char ra_tbl[4];
+            bptr = m->m_data;
+            while (bptr < m->m_data + m->m_len)
+            {
+                u_short p;
+                static int ra = 0;
+                char ra_tbl[4];
 
-                        ra_tbl[0] = 0x50;
-                        ra_tbl[1] = 0x4e;
-                        ra_tbl[2] = 0x41;
-                        ra_tbl[3] = 0;
+                ra_tbl[0] = 0x50;
+                ra_tbl[1] = 0x4e;
+                ra_tbl[2] = 0x41;
+                ra_tbl[3] = 0;
 
-                        switch (ra) {
-                         case 0:
-                         case 2:
-                         case 3:
-                                if (*bptr++ != ra_tbl[ra]) {
-                                        ra = 0;
-                                        continue;
-                                }
-                                break;
-
-                         case 1:
-                                /*
-                                 * We may get 0x50 several times, ignore them
-                                 */
-                                if (*bptr == 0x50) {
-                                        ra = 1;
-                                        bptr++;
-                                        continue;
-                                } else if (*bptr++ != ra_tbl[ra]) {
-                                        ra = 0;
-                                        continue;
-                                }
-                                break;
-
-                         case 4:
-                                /*
-                                 * skip version number
-                                 */
-                                bptr++;
-                                break;
-
-                         case 5:
-                                /*
-                                 * The difference between versions 1.0 and
-                                 * 2.0 is here. For future versions of
-                                 * the player this may need to be modified.
-                                 */
-                                if (*(bptr + 1) == 0x02)
-                                   bptr += 8;
-                                else
-                                   bptr += 4;
-                                break;
-
-                         case 6:
-                                /* This is the field containing the port
-                                 * number that RA-player is listening to.
-                                 */
-                                lport = (((u_char*)bptr)[0] << 8)
-                                + ((u_char *)bptr)[1];
-                                if (lport < 6970)
-                                   lport += 256;   /* don't know why */
-                                if (lport < 6970 || lport > 7170)
-                                   return 1;       /* failed */
-
-                                /* try to get udp port between 6970 - 7170 */
-                                for (p = 6970; p < 7071; p++) {
-                                        if (udp_listen( htons(p),
-                                                       so->so_laddr.s_addr,
-                                                       htons(lport),
-                                                       SS_FACCEPTONCE)) {
-                                                break;
-                                        }
-                                }
-                                if (p == 7071)
-                                   p = 0;
-                                *(u_char *)bptr++ = (p >> 8) & 0xff;
-                                *(u_char *)bptr++ = p & 0xff;
-                                ra = 0;
-                                return 1;   /* port redirected, we're done */
-                                break;
-
-                         default:
-                                ra = 0;
+                switch (ra)
+                {
+                    case 0:
+                    case 2:
+                    case 3:
+                        if (*bptr++ != ra_tbl[ra])
+                        {
+                            ra = 0;
+                            continue;
                         }
-                        ra++;
+                        break;
+
+                    case 1:
+                        /*
+                         * We may get 0x50 several times, ignore them
+                         */
+                        if (*bptr == 0x50)
+                        {
+                            ra = 1;
+                            bptr++;
+                            continue;
+                        }
+                        else if (*bptr++ != ra_tbl[ra])
+                        {
+                            ra = 0;
+                            continue;
+                        }
+                        break;
+
+                    case 4:
+                        /*
+                         * skip version number
+                         */
+                        bptr++;
+                        break;
+
+                    case 5:
+                        /*
+                         * The difference between versions 1.0 and
+                         * 2.0 is here. For future versions of
+                         * the player this may need to be modified.
+                         */
+                        if (*(bptr + 1) == 0x02)
+                            bptr += 8;
+                        else
+                            bptr += 4;
+                        break;
+
+                    case 6:
+                        /* This is the field containing the port
+                         * number that RA-player is listening to.
+                         */
+                        lport = (((u_char*)bptr)[0] << 8)
+                              + ((u_char *)bptr)[1];
+                        if (lport < 6970)
+                            lport += 256;   /* don't know why */
+                        if (lport < 6970 || lport > 7170)
+                            return 1;       /* failed */
+
+                        /* try to get udp port between 6970 - 7170 */
+                        for (p = 6970; p < 7071; p++)
+                        {
+                            if (udp_listen(htons(p),
+                                           so->so_laddr.s_addr,
+                                           htons(lport),
+                                           SS_FACCEPTONCE))
+                            {
+                                break;
+                            }
+                        }
+                        if (p == 7071)
+                            p = 0;
+                        *(u_char *)bptr++ = (p >> 8) & 0xff;
+                        *(u_char *)bptr++ = p & 0xff;
+                        ra = 0;
+                        return 1;   /* port redirected, we're done */
+                        break;
+
+                    default:
+                        ra = 0;
                 }
-                return 1;
+                ra++;
+            }
+            return 1;
 #endif /* !VBOX */
 
-         default:
-                /* Ooops, not emulated, won't call tcp_emu again */
-                so->so_emu = 0;
-                return 1;
-        }
+        default:
+            /* Ooops, not emulated, won't call tcp_emu again */
+            so->so_emu = 0;
+            return 1;
+    }
 }
 
 #if SIZEOF_CHAR_P != 4 && !defined(VBOX_WITH_BSD_REASS)

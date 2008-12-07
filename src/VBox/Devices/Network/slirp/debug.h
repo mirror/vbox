@@ -10,8 +10,6 @@
 
 /* Unused anyway, using VBox Log facility. */
 #define dfd NULL
-extern int dostats;
-extern int slirp_debug;
 
 #define DBG_CALL 0x1
 #define DBG_MISC 0x2
