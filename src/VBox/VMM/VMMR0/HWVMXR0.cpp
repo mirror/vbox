@@ -3194,7 +3194,7 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
 {
 #if HC_ARCH_BITS == 32
     /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invvpid probably takes only 32 bits addresses. (@todo) */
-    if (CPUMIsGuestInLongMode(pVM)
+    if (CPUMIsGuestInLongMode(pVM))
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
