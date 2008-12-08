@@ -28,13 +28,13 @@
 # else /* !RT_OS_WINDOWS */
 #  define DO_ENGAGE_EVENT1(so, fdset0, label)                                                           \
         do {                                                                                            \
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                           \
+                rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
                 if (rc == SOCKET_ERROR)                                                                 \
                 {                                                                                       \
                     /* This should not happen */                                                        \
                     error = WSAGetLastError();                                                          \
                     LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n",    \
-                             error, so, so->s, VBOX_SOCKET_EVENT));                                     \
+                             error, (so), (so)->s, VBOX_SOCKET_EVENT));                                 \
                 }                                                                                       \
         } while(0);                                                                                     \
 
