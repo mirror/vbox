@@ -139,6 +139,11 @@ typedef struct NATState
 #ifdef RT_OS_WINDOWS
     void *pvIcmpBuffer;
     size_t szIcmpBuffer;
+    /* Accordin MSDN specification IcmpParseReplies 
+     * function should be detected in runtime
+     */
+    long (WINAPI * pfIcmpParseReplies)(void *, long);
+    HMODULE hmIcmpLibrary;
 #endif
 #endif
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
