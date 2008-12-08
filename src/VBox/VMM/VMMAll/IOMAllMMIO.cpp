@@ -1078,7 +1078,7 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
 #endif /* !IN_RING3 */
 
     /*
-     * Disassemble the instruction and interprete it.
+     * Disassemble the instruction and interpret it.
      */
     DISCPUSTATE Cpu;
     unsigned cbOp;
