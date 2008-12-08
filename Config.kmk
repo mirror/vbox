@@ -67,6 +67,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_VBOXNETFLT      = $(INST_DIST)VBoxNetFlt.kext/
  INST_VBOXNETTAP      = $(INST_DIST)VBoxNetTap.kext/
  INST_VBOXUSB         = $(INST_DIST)VBoxUSB.kext/
+ INST_VBOXUSB_TIGER   = $(INST_DIST)VBoxUSBTiger.kext/
 
  # put everything in the VirtualBox app bundle.
  INST_BIN             = $(INST_VIRTUALBOX)Contents/MacOS/

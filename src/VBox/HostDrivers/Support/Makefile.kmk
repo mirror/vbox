@@ -308,10 +308,8 @@ VBoxDrvTiger_SOURCES     = \
 
 INSTALLS += VBoxDrvTiger.kext
 VBoxDrvTiger.kext_INST     = $(INST_VBOXDRV_TIGER)Contents/
-VBoxDrvTiger.kext_SOURCES  = \
-	$(PATH_VBoxDrvTiger.kext)/Info.plist
-VBoxDrvTiger.kext_CLEAN    = \
-	$(PATH_VBoxDrvTiger.kext)/Info.plist
+VBoxDrvTiger.kext_SOURCES  = $(PATH_VBoxDrvTiger.kext)/Info.plist
+VBoxDrvTiger.kext_CLEAN    = $(PATH_VBoxDrvTiger.kext)/Info.plist
 
 $$(PATH_VBoxDrvTiger.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info-Tiger.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrvTiger,$@,$<)
@@ -321,7 +319,8 @@ $$(PATH_VBoxDrvTiger.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info-Tiger.pli
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		$< > $@
+		--output $@ \
+		$<
 
 # The Leopard variant.
 SYSMODS += VBoxDrv
@@ -333,10 +332,8 @@ VBoxDrv_DEFS       = VBOX_WITH_HOST_VMX
 
 INSTALLS += VBoxDrv.kext
 VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
-VBoxDrv.kext_SOURCES  = \
-	$(PATH_VBoxDrv.kext)/Info.plist
-VBoxDrv.kext_CLEAN    = \
-	$(PATH_VBoxDrv.kext)/Info.plist
+VBoxDrv.kext_SOURCES  =	$(PATH_VBoxDrv.kext)/Info.plist
+VBoxDrv.kext_CLEAN    =	$(PATH_VBoxDrv.kext)/Info.plist
 
 $$(PATH_VBoxDrv.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxDrv,$@,$<)
@@ -346,7 +343,8 @@ $$(PATH_VBoxDrv.kext)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_V
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		$< > $@
+		--output $@ \
+		$<
 
 # Common manual loader script.
 INSTALLS += Scripts
