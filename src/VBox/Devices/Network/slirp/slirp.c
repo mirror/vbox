@@ -14,7 +14,7 @@
 # if !defined(RT_OS_WINDOWS)
 #  define DO_ENGAGE_EVENT1(so, fdset, label)            \
         do {                                            \
-                FD_SET((so)->s, (fdset0));              \
+                FD_SET((so)->s, (fdset));              \
                 UPD_NFDS((so)->s);                      \
         while(0)
 
