@@ -530,6 +530,12 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     sf_light->setStateIcon (KDeviceActivity_Null, QPixmap (":/shared_folder_disabled_16px.png"));
     indicatorBoxHLayout->addWidget (sf_light);
 
+    /* virtualization */
+    mVirtLed = new QIStateIndicator (0);
+    mVirtLed->setStateIcon (0, QPixmap (":/vtx_amdv_disabled_16px.png"));
+    mVirtLed->setStateIcon (1, QPixmap (":/vtx_amdv_16px.png"));
+    indicatorBoxHLayout->addWidget (mVirtLed);
+
     QFrame *separator = new QFrame();
     separator->setFrameStyle (QFrame::VLine | QFrame::Sunken);
     indicatorBoxHLayout->addWidget (separator);
@@ -2051,6 +2057,25 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                        "Shared folders tooltip");
 
         sf_light->setToolTip (tip.arg (data));
+    }
+    if (element & VirtualizationStuff)
+    {
+        bool virtEnabled = cconsole.GetDebugger().GetHWVirtExEnabled();
+        bool nestEnabled = cconsole.GetDebugger().GetHWVirtExNestedPagingEnabled();
+
+        QString tip ("<qt><nobr>%1&nbsp;%2</nobr><br><nobr>%3&nbsp;%4</nobr></qt>");
+        QString virtualization = virtEnabled ?
+            VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
+            VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
+        QString nestedPaging = nestEnabled ?
+            VBoxVMInformationDlg::tr ("Enabled", "nested paging") :
+            VBoxVMInformationDlg::tr ("Disabled", "nested paging");
+
+        mVirtLed->setToolTip (tip
+            .arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization)
+            .arg (VBoxVMInformationDlg::tr ("Nested Paging"), nestedPaging));
+
+        mVirtLed->setState (virtEnabled);
     }
     if (element & PauseAction)
     {

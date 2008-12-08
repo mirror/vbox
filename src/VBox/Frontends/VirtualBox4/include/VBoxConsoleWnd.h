@@ -129,6 +129,7 @@ private:
         USBStuff                    = 0x80,
         VRDPStuff                   = 0x100,
         SharedFolderStuff           = 0x200,
+        VirtualizationStuff         = 0x400,
         AllStuff                    = 0xFFFF,
     };
 
@@ -287,6 +288,7 @@ private:
     // widgets
     VBoxConsoleView *console;
     QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light, *sf_light;
+    QIStateIndicator *mVirtLed;
     QIStateIndicator *mouse_state, *hostkey_state;
     QIStateIndicator *autoresize_state;
     QIStateIndicator *vrdp_state;
