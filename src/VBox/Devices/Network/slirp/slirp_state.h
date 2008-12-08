@@ -136,6 +136,10 @@ typedef struct NATState
 #ifdef VBOX_WITH_SLIRP_ICMP
     struct socket icmp_socket;
     struct icmp_storage icmp_msg_head;
+#ifdef RT_OS_WINDOWS
+    void *pvIcmpBuffer;
+    size_t szIcmpBuffer;
+#endif
 #endif
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])

@@ -68,10 +68,23 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
  */
 #define VBOX_SOCKET_EVENT_INDEX         1
 
+#ifdef VBOX_WITH_SLIRP_ICMP
+/*
+ * ICMP handle state change
+ */
+#define VBOX_ICMP_EVENT_INDEX         2
+
+/*
+ * The number of events for WSAWaitForMultipleEvents().
+ */
+#define VBOX_EVENT_COUNT                3
+#else
 /*
  * The number of events for WSAWaitForMultipleEvents().
  */
 #define VBOX_EVENT_COUNT                2
+
+#endif
 
 HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);

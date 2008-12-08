@@ -79,6 +79,7 @@ icmp_init(PNATState pData)
         pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 #else
         pData->icmp_socket.s = IcmpCreateFile();
+    	pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
         insque(pData, &pData->icmp_socket, &udb);
         LIST_INIT(&pData->icmp_msg_head);
@@ -278,8 +279,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 #else
       memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
       ipopt.Ttl = ip->ip_ttl;
-      m->m_ext = malloc(1500);
-      status = IcmpSendEcho(pData->icmp_socket.s, VBOX_SOCKET_EVENT, &addr, icp, icmplen, m->m_ext, 1500, 0);
+      status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX], NULL, NULL, &addr, icp, icmplen, &ipopt, pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);
       if (status == 0) {
             LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
       }

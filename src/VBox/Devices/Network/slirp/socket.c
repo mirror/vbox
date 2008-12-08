@@ -12,6 +12,15 @@
 #ifdef __sun__
 #include <sys/filio.h>
 #endif
+#if defined(VBOX_WITH_SLIRP_ICMP) && defined (RT_OS_WINDOWS) 
+#include <icmpapi.h>
+#endif
+
+#ifdef VBOX_WITH_SLIRP_ICMP
+static void send_icmp_to_guest(PNATState, char *, struct socket *);
+static void sorecvfrom_icmp_win(PNATState, struct socket *);
+#endif
+static void sorecvfrom_icmp_unix(PNATState, struct socket *);
 
 void
 so_init()
@@ -422,99 +431,10 @@ sorecvfrom(PNATState pData, struct socket *so)
     DEBUG_CALL("sorecvfrom");
     DEBUG_ARG("so = %lx", (long)so);
 
-        if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
-          char buff[1500];
-          int len;
-          len = recvfrom(so->s, buff, 1500, 0,
-                         (struct sockaddr *)&addr, &addrlen);
-          /* XXX Check if reply is "correct"? */
-
-        if(len == -1 || len == 0)
-        {
-            u_char code = ICMP_UNREACH_PORT;
-
-            if (errno == EHOSTUNREACH)
-                code=ICMP_UNREACH_HOST;
-            else if(errno == ENETUNREACH)
-                code=ICMP_UNREACH_NET;
-
-
-            DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
-                        errno,strerror(errno)));
-            icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
-        }
-        else
-        {
-#ifdef VBOX_WITH_SLIRP_ICMP
-            struct ip *ip;
-            uint32_t dst,src;
-            char ip_copy[256];
-            struct icmp *icp;
-            int old_ip_len;
-            struct mbuf *m;
-            struct icmp_msg *icm;
-
-            ip = (struct ip *)buff;
-            icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-
-            Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
-
-            if (icp->icmp_type == ICMP_TIMXCEED ) {
-                ip = &icp->icmp_ip;
-            }
-
-            icm = icmp_find_original_mbuf(pData, ip);
-
-            if (icm == NULL) {
-                LogRel(("Can't find the corresponding packet for the received ICMP\n"));
-                return;
-            }
-
-            m = icm->im_m;
-            Assert(m != NULL);
-
-            src = addr.sin_addr.s_addr;
-
-            ip = mtod(m, struct ip *);
-            /* Now ip is pointing on header we've sent from guest */
-            if (icp->icmp_type == ICMP_TIMXCEED) {
-                old_ip_len = (ip->ip_hl << 2) + 64;
-                memcpy(ip_copy, ip, old_ip_len);
-            }
-
-            /* source address from original IP packet*/
-            dst = ip->ip_src.s_addr;
-
-            /* overide ther tail of old packet */
-            memcpy(m->m_data, buff, len);
-            m->m_len = len;
-            ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
-
-            icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-            if (icp->icmp_type == ICMP_TIMXCEED) {
-                /* according RFC 793 error messages required copy of initial IP header + 64 bit */
-                memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
-                ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
-            }
-
-            /* the low level expects fields to be in host format so let's convert them*/
-            NTOHS(ip->ip_len);
-            NTOHS(ip->ip_off);
-            NTOHS(ip->ip_id);
-            ip->ip_src.s_addr = src;
-            ip->ip_dst.s_addr = dst;
-            icmp_reflect(pData, m);
-            LIST_REMOVE(icm, im_list);
-            /* Don't call m_free here*/
-            free(icm);
-#else
-            icmp_reflect(pData, so->so_m);
-            so->so_m = 0; /* Don't m_free() it again! */
-#endif
-          }
-          /* No need for this socket anymore, udp_detach it */
+    if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
+          sorecvfrom_icmp_unix(pData, so);
           udp_detach(pData, so);
-        } else {                                /* A "normal" UDP packet */
+    } else {                                /* A "normal" UDP packet */
           struct mbuf *m;
           int len, n;
 
@@ -842,3 +762,112 @@ sofwdrain(struct socket *so)
     else
         sofcantsendmore(so);
 }
+
+#ifdef VBOX_WITH_SLIRP_ICMP
+static void 
+send_icmp_to_guest(PNATState pData, char *buff, struct socket *so)
+{
+        struct ip *ip;
+        uint32_t dst,src;
+        char ip_copy[256];
+        struct icmp *icp;
+        int old_ip_len;
+        struct mbuf *m;
+        struct icmp_msg *icm;
+        
+        ip = (struct ip *)buff;
+        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+        
+        Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
+        
+        if (icp->icmp_type == ICMP_TIMXCEED ) {
+            ip = &icp->icmp_ip;
+        }
+        
+        icm = icmp_find_original_mbuf(pData, ip);
+        
+        if (icm == NULL) {
+            LogRel(("Can't find the corresponding packet for the received ICMP\n"));
+            return;
+        }
+        
+        m = icm->im_m;
+        Assert(m != NULL);
+        
+        src = addr.sin_addr.s_addr;
+        
+        ip = mtod(m, struct ip *);
+        /* Now ip is pointing on header we've sent from guest */
+        if (icp->icmp_type == ICMP_TIMXCEED) {
+            old_ip_len = (ip->ip_hl << 2) + 64;
+            memcpy(ip_copy, ip, old_ip_len);
+        }
+        
+        /* source address from original IP packet*/
+        dst = ip->ip_src.s_addr;
+        
+        /* overide ther tail of old packet */
+        memcpy(m->m_data, buff, len);
+        m->m_len = len;
+        ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
+        
+        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+        if (icp->icmp_type == ICMP_TIMXCEED) {
+            /* according RFC 793 error messages required copy of initial IP header + 64 bit */
+            memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
+            ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+        }
+        
+        /* the low level expects fields to be in host format so let's convert them*/
+        NTOHS(ip->ip_len);
+        NTOHS(ip->ip_off);
+        NTOHS(ip->ip_id);
+        ip->ip_src.s_addr = src;
+        ip->ip_dst.s_addr = dst;
+        icmp_reflect(pData, m);
+        LIST_REMOVE(icm, im_list);
+        /* Don't call m_free here*/
+        free(icm);
+}
+#endif
+static void sorecvfrom_icmp_win(PNATState pData, struct socket *so){
+#if 0
+	int i;
+	len = IcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
+#endif
+}
+static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
+{
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(struct sockaddr_in);
+    char buff[1500];
+    int len;
+    len = recvfrom(so->s, buff, 1500, 0,
+                   (struct sockaddr *)&addr, &addrlen);
+    /* XXX Check if reply is "correct"? */
+
+    if(len == -1 || len == 0)
+    {
+        u_char code = ICMP_UNREACH_PORT;
+
+        if (errno == EHOSTUNREACH)
+            code=ICMP_UNREACH_HOST;
+        else if(errno == ENETUNREACH)
+            code=ICMP_UNREACH_NET;
+
+
+        DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
+                    errno,strerror(errno)));
+        icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
+    }
+    else
+    {
+#ifdef VBOX_WITH_SLIRP_ICMP
+        send_icmp_to_guest(pData, buff, so);
+#else
+        icmp_reflect(pData, so->so_m);
+        so->so_m = 0; /* Don't m_free() it again! */
+#endif
+    }
+}
+
