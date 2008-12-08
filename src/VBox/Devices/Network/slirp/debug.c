@@ -246,6 +246,7 @@ debug_init()
          */
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
         AssertRC(rc);
+        g_fFormatRegistered = 1;
     }
 
     return rc;
