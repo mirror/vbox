@@ -617,7 +617,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
          */
         int iLastSet = ASMBitLastSetU32(cbRegion);
         Assert(iLastSet  >  0);
-        uint32_t cbRegionAligned = 1 << (iLastSet - 1);
+        uint32_t cbRegionAligned = 1U << (iLastSet - 1);
         if (cbRegion > cbRegionAligned)
             cbRegion = cbRegionAligned * 2; /* round up */
 

@@ -1614,6 +1614,13 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
         AssertMsgFailed(("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS));
         return VERR_INVALID_PARAMETER;
     }
+    int iLastSet = ASMBitLastSetU32(cbRegion);
+    if (   iLastSet == 0
+        || ((1U << (iLastSet - 1)) != cbRegion))
+    {
+        AssertMsgFailed(("Invalid cbRegion=%x (not a power of 2)\n", cbRegion));
+        return VERR_INVALID_PARAMETER;
+    }
 
     /*
      * Register the I/O region.
