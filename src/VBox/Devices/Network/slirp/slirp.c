@@ -530,7 +530,7 @@ tcp_engage_event:
             if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT2(so->s, readfds, xfds);
+                TCP_ENGAGE_EVENT2(so, readfds, xfds);
             }
         }
 
