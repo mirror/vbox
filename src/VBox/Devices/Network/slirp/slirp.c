@@ -26,17 +26,28 @@
                 UPD_NFDS((so)->s);                      \
         } while(0)
 # else /* !RT_OS_WINDOWS */
-#  define DO_ENGAGE_EVENT1(so, fdset0, label)           \
-                goto label;
+#  define DO_ENGAGE_EVENT1(so, fdset0, label)                                                           \
+        do {                                                                                            \
+                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                           \
+                if (rc == SOCKET_ERROR)                                                                 \
+                {                                                                                       \
+                    /* This should not happen */                                                        \
+                    error = WSAGetLastError();                                                          \
+                    LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n",    \
+                             error, so, so->s, VBOX_SOCKET_EVENT));                                     \
+                }                                                                                       \
+        } while(0);                                                                                     \
 
 #  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) DO_ENGAGE_EVENT1((so), (fdset0), label)
 # endif /* RT_OS_WINDOWS */
 
 # define TCP_ENGAGE_EVENT1(so, fdset0)                   \
-        DO_ENGAGE_EVENT1((so), (fdset0), tcp_engage_event)
+        DO_ENGAGE_EVENT1((so), (fdset0), TCP)
 
 # define TCP_ENGAGE_EVENT2(so, fdset0, fdset1)               \
-        DO_ENGAGE_EVENT2((so), (fdset0), (fdset1), tcp_engage_event)
+        DO_ENGAGE_EVENT2((so), (fdset0), (fdset1), TCP)
+
+#define UDP_ENGAGE_EVENT(so, fdset) DO_ENGAGE_EVENT1((so), (fdset), UDP) 
 #endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 static const uint8_t special_ethaddr[6] = {
@@ -490,17 +501,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
                 TCP_ENGAGE_EVENT1(so, readfds);
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-tcp_engage_event:
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
-                if (rc == SOCKET_ERROR)
-                {
-                    /* This should not happen */
-                    error = WSAGetLastError();
-                    LogRel(("WSAEventSelector (TCP) error %d (so=%x, socket=%s, event=%x)\n",
-                             error, so, so->s, VBOX_SOCKET_EVENT));
-                }
-#endif
                 continue;
             }
 
@@ -573,19 +573,7 @@ tcp_engage_event:
             if ((so->so_state & SS_ISFCONNECTED) && so->so_queued <= 4)
             {
                 STAM_REL_COUNTER_INC(&pData->StatUDPHot);
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-                FD_SET(so->s, readfds);
-                UPD_NFDS(so->s);
-#else
-                rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
-                if (rc == SOCKET_ERROR)
-                {
-                    /* This should not happen */
-                    error = WSAGetLastError();
-                    LogRel(("WSAEventSelector (UDP) error %d (so=%x, socket=%s, event=%x)\n",
-                            error, so, so->s, VBOX_SOCKET_EVENT));
-                }
-#endif
+                UDP_ENGAGE_EVENT(so, readfds);
             }
         }
     }
