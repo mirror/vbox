@@ -55,6 +55,8 @@
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
 
+#define VGA_SAVEDSTATE_VERSION  2
+
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
  * The initial value was 256KB but NTAllInOne.iso appears to access more
@@ -2567,8 +2569,9 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
 {
     VGAState *s = (VGAState*)opaque;
     int is_vbe, i;
+    uint32_t u32Dummy;
 
-    if (version_id != 1)
+    if (version_id > VGA_SAVEDSTATE_VERSION)
 #ifndef VBOX
         return -EINVAL;
 #else /* VBOX */
@@ -2617,6 +2620,8 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
         qemu_get_be16s(f, &s->vbe_regs[i]);
     qemu_get_be32s(f, &s->vbe_start_addr);
     qemu_get_be32s(f, &s->vbe_line_offset);
+    if (version_id < 2)
+        qemu_get_be32s(f, &u32Dummy);
     s->vbe_bank_max = s->vram_size >> 16;
 #else
     if (is_vbe)
@@ -5640,9 +5645,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /* save */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 2 /* version */, sizeof(*pThis),
-                                          NULL, vgaR3SaveExec, NULL,
-                                          NULL, vgaR3LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, VGA_SAVEDSTATE_VERSION,
+                              sizeof(*pThis), NULL, vgaR3SaveExec, NULL, NULL, vgaR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
