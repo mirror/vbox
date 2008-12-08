@@ -854,16 +854,15 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
             if (so->s != -1 && FD_ISSET(so->s, readfds))
 #else
-            if (((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0))
-#ifdef VBOX_WITH_SLIRP_ICMP
-		|| (so->s == pData->icmp_socket.s) /* XXX: How check equality of handles */
-#endif
-	    )
+            if (((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)))
 #endif
             {
                 sorecvfrom(pData, so);
             }
         }
+#if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
+        sorecvfrom(pData, &pData->icmp_socket);
+#endif 
     }
 
     /*
