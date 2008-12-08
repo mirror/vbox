@@ -847,6 +847,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
               LogRel(("Error (%d) occured on ICMP receiving \n", GetLastError()));  
               return;
         }
+        LogRel(("IcmpParseReplies returns %ld\n", len));
         icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
         for (i = 0; i < len; ++i) {
                 switch(icr[i].Status) {
@@ -860,6 +861,13 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                         case IP_DEST_PORT_UNREACHABLE:
                                 code = (code != ~0 ? code : ICMP_UNREACH_PORT);
                                 icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occured!!!");
+                        break;
+                        case IP_SUCCESS: /* echo replied */
+                        case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
+                        __asm {int 3}
+                        break;
+                        default:
+                                LogRel(("ICMP: message with Status: %x was received from %R[IP4]\n", icr[i].Status, icr[i].Address));
                         break;
                 }
         }

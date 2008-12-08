@@ -77,11 +77,13 @@ icmp_init(PNATState pData)
         pData->icmp_socket.so_state = SS_ISFCONNECTED;
 #ifndef RT_OS_WINDOWS
         pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+        insque(pData, &pData->icmp_socket, &udb);
 #else
         pData->icmp_socket.s = IcmpCreateFile();
         pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
+		pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
+		pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
 #endif
-        insque(pData, &pData->icmp_socket, &udb);
         LIST_INIT(&pData->icmp_msg_head);
         return (0);
 }
@@ -246,6 +248,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 #else /* !VBOX_WITH_SLIRP_ICMP */
 #ifdef RT_OS_WINDOWS      
       IP_OPTION_INFORMATION ipopt;
+      int error;
 #endif
       addr.sin_family = AF_INET;
       if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
@@ -279,9 +282,28 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 #else
       memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
       ipopt.Ttl = ip->ip_ttl;
-      status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX], NULL, NULL, &addr, icp, icmplen, &ipopt, pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);
-      if (status == 0) {
-            LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
+      status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX], NULL, NULL, addr.sin_addr.s_addr, icp, icmplen, &ipopt, 
+					  pData->pvIcmpBuffer, pData->szIcmpBuffer, 1000);
+      if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING) {
+	    error = GetLastError(); 
+        LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
+	    switch(error) {
+			case ERROR_INVALID_PARAMETER:
+				LogRel(("icmp_socket:%lx is invalid\n", pData->icmp_socket.s));
+				break;
+			case ERROR_NOT_SUPPORTED:
+				LogRel(("operation is unsupported \n"));
+				break;
+			case ERROR_NOT_ENOUGH_MEMORY:
+				LogRel(("OOM!!!\n"));
+				break;
+			case IP_BUF_TOO_SMALL:
+				LogRel(("Buffer too small\n"));
+				break;
+			default:
+				LogRel(("Other error!!!\n"));
+				break;
+	    }
       }
 #endif
 
