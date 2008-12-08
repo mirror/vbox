@@ -489,7 +489,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             if (so->so_state & SS_FACCEPTCONN)
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-                TCP_ENGAGE_EVENT1(so, readfs);
+                TCP_ENGAGE_EVENT1(so, readfds);
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 tcp_engage_event:
                 rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
