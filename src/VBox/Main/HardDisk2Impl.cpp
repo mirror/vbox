@@ -3134,7 +3134,7 @@ DECLCALLBACK(int) HardDisk2::vdConfigQuery (void *pvUser, const char *pszName,
     if (it->second.isNull())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
-    memcpy (pszValue, value, value.length());
+    memcpy (pszValue, value, value.length() + 1);
 
     return VINF_SUCCESS;
 }
