@@ -745,6 +745,13 @@ bool VBoxConsoleWnd::openView (const CSession &session)
         return false;
     }
 
+#ifdef Q_WS_MAC
+    /* We have to make sure that we are get the front most process. This is
+     * necessary for Qt versions > 4.3.3 */
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    ::SetFrontProcess (&psn);
+#endif /* Q_WS_MAC */
+
     csession = session;
 
     if (!centralWidget())
@@ -969,9 +976,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     /*
      *  The further startup procedure should be done after we leave this method
      *  and enter the main event loop in main(), because it may result into
-     *  showing various modal dialigs that will process events from within
+     *  showing various modal dialogs that will process events from within
      *  this method that in turn can lead to various side effects like this
-     *  window is closed before this mehod returns, etc.
+     *  window is closed before this method returns, etc.
      */
 
     QTimer::singleShot (0, this, SLOT (finalizeOpenView()));
