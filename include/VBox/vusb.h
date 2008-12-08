@@ -323,6 +323,16 @@ typedef const VUSBSETUP *PCVUSBSETUP;
 /** @} */
 
 
+/**
+ * USB frame timer callback function.
+ *
+ * @param   pDevIns         Device instance of the device which registered the timer.
+ * @param   pTimer          The timer handle.
+ */
+typedef DECLCALLBACK(void) FNUSBTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer);
+/** Pointer to a device timer callback function. */
+typedef FNUSBTIMERDEV *PFNUSBTIMERDEV;
+
 /** Pointer to a VBox USB device interface. */
 typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
 
@@ -779,7 +789,7 @@ typedef struct VUSBITIMER
      * @param   pfnCallback     Pointer to the timer callback function.
      * @param   rate            Requested frame rate (normally 1,000).
      */
-    DECLR3CALLBACKMEMBER(int, pfnTimerSetup,(PVUSBITIMER pInterface, PFNTMTIMERDEV pfnCallback, uint32_t rate));
+    DECLR3CALLBACKMEMBER(int, pfnTimerSetup,(PVUSBITIMER pInterface, PFNUSBTIMERDEV pfnCallback, uint32_t rate));
 
     /**
      * Requests another tick of the frame timer.
@@ -809,7 +819,7 @@ typedef struct VUSBITIMER
  * @param   pfnCallback     Pointer to the timer callback function.
  * @param   rate            Requested frame rate (normally 1,000).
  */
-DECLINLINE(int) VUSBITimerSetup(PVUSBITIMER pInterface, PFNTMTIMERDEV pfnCallback, uint32_t rate)
+DECLINLINE(int) VUSBITimerSetup(PVUSBITIMER pInterface, PFNUSBTIMERDEV pfnCallback, uint32_t rate)
 {
     return pInterface->pfnTimerSetup(pInterface, pfnCallback, rate);
 }
