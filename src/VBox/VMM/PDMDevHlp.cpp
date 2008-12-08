@@ -558,6 +558,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
         LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (iRegion)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+    /*
+     * Sanity check: don't allow more than 512MB for now. If this limit is increased beyond 2GB, adapt the aligned check below as well!
+     */
+    if (   (enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
+        && (cbRegion > 512 * _1M))
+    {
+        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
     switch (enmType)
     {
         case PCI_ADDRESS_SPACE_MEM:
@@ -594,7 +604,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, cbRegion, RT_ALIGN_32(cbRegion, PAGE_SIZE)));
             cbRegion = RT_ALIGN_32(cbRegion, PAGE_SIZE);
         }
-
+        /*
+         * For registering PCI memory, the size of the region must be a power of 2!
+         */
+        if (enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
+        {
+            int iLastSet = ASMBitLastSetU32(cbRegion);
+            Assert(iLastSet  >  0);
+            uint32_t cbRegionAligned = 1 << (iLastSet - 1);
+            if (cbRegion > cbRegionAligned)
+                cbRegion = cbRegionAligned * 2; /* round up */
+        }
         PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3;
         Assert(pBus);
         pdmLock(pVM);
