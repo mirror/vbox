@@ -851,9 +851,16 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         for (i = 0; i < len; ++i) {
                 switch(icr[i].Status) {
                         case IP_DEST_HOST_UNREACHABLE:
-                                code=ICMP_UNREACH_HOST;
+                                code = (code != ~0 ? code :ICMP_UNREACH_HOST);
                         case IP_DEST_NET_UNREACHABLE:
-                                code=ICMP_UNREACH_NET;
+                                code = (code != ~0 ? code : ICMP_UNREACH_NET);
+                        case IP_DEST_PROT_UNREACHABLE:
+                                code = (code != ~0 ? code : ICMP_UNREACH_PROTOCOL);
+                        /* UNREACH error inject here */
+                        case IP_DEST_PORT_UNREACHABLE:
+                                code = (code != ~0 ? code : ICMP_UNREACH_PORT);
+                                icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occured!!!");
+                        break;
                 }
         }
 }
