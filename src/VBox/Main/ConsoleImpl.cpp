@@ -1055,10 +1055,19 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
        )
         rc = VERR_NO_MEMORY;
     else
-        if (FAILED(pConsole->mControl->PushGuestProperty(name, value,
-                                                         pCBData->u64Timestamp,
-                                                         flags)))
+    {
+        HRESULT hrc = pConsole->mControl->PushGuestProperty(name, value,
+                                                            pCBData->u64Timestamp,
+                                                            flags);
+        if (FAILED (hrc))
+        {
+            LogFunc (("pConsole->mControl->PushGuestProperty failed, hrc=0x%x\n", hrc));
+            LogFunc (("pCBData->pcszName=%s\n", pCBData->pcszName));
+            LogFunc (("pCBData->pcszValue=%s\n", pCBData->pcszValue));
+            LogFunc (("pCBData->pcszFlags=%s\n", pCBData->pcszFlags));
             rc = VERR_UNRESOLVED_ERROR;  /** @todo translate error code */
+        }
+    }
     return rc;
 }
 
