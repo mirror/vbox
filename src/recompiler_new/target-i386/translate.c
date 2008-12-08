@@ -2376,7 +2376,11 @@ static void gen_lea_modrm(DisasContext *s, int modrm, int *reg_ptr, int *offset_
             break;
         default:
         case 2:
+#ifdef VBOX
+            disp = (int32_t)ldl_code(s->pc);
+#else
             disp = ldl_code(s->pc);
+#endif
             s->pc += 4;
             break;
         }
