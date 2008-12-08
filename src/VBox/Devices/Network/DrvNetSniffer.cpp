@@ -407,10 +407,8 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     rc = RTFileOpen(&pThis->File, pThis->szFilename,
                     RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to create file '%s' for writing. rc=%Rrc\n", pThis->szFilename, rc));
-        return rc;
-    }
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("Netsniffer cannot open '%s' for writing. The directory must exist and it must be writable for the current user"), pThis->szFilename);
 
     /*
      * Write pcap header.
