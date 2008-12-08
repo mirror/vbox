@@ -79,7 +79,7 @@ icmp_init(PNATState pData)
         pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 #else
         pData->icmp_socket.s = IcmpCreateFile();
-    	pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
+        pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
         insque(pData, &pData->icmp_socket, &udb);
         LIST_INIT(&pData->icmp_msg_head);
