@@ -10,23 +10,22 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) 
-# if !defined(RT_OS_WINDOWS)
-#  define DO_ENGAGE_EVENT1(so, fdset, label)            \
+#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || (defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS))
+# define DO_ENGAGE_EVENT1(so, fdset, label)             \
         do {                                            \
-                FD_SET((so)->s, (fdset));              \
+                FD_SET((so)->s, (fdset));               \
                 UPD_NFDS((so)->s);                      \
         } while(0)
 
 
-#  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label)   \
+# define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label)    \
         do {                                            \
                 FD_SET((so)->s, (fdset0));              \
                 FD_SET((so)->s, (fdset1));              \
                 UPD_NFDS((so)->s);                      \
         } while(0)
-# else /* !RT_OS_WINDOWS */
-#  define DO_ENGAGE_EVENT1(so, fdset0, label)                                                           \
+#else /* !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || (defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && !defined(RT_OS_WINDOWS) */
+# define DO_ENGAGE_EVENT1(so, fdset0, label)                                                            \
         do {                                                                                            \
                 rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
                 if (rc == SOCKET_ERROR)                                                                 \
@@ -38,8 +37,8 @@
                 }                                                                                       \
         } while(0);                                                                                     \
 
-#  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) DO_ENGAGE_EVENT1((so), (fdset0), label)
-# endif /* RT_OS_WINDOWS */
+# define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) DO_ENGAGE_EVENT1((so), (fdset0), label)
+#endif 
 
 # define TCP_ENGAGE_EVENT1(so, fdset0)                   \
         DO_ENGAGE_EVENT1((so), (fdset0), TCP)
@@ -48,7 +47,6 @@
         DO_ENGAGE_EVENT2((so), (fdset0), (fdset1), TCP)
 
 #define UDP_ENGAGE_EVENT(so, fdset) DO_ENGAGE_EVENT1((so), (fdset), UDP) 
-#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
 
 static const uint8_t special_ethaddr[6] = {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
