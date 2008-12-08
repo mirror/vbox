@@ -68,6 +68,12 @@
 #include <IOKit/IOUserclient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
 
+#ifdef VBOX_WITH_HOST_VMX
+__BEGIN_DECLS
+# include <i386/vmx.h>
+__END_DECLS
+#endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -677,9 +683,12 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
     return false;
 }
 
+/**
+ * Callback for blah blah blah.
+ */
 IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32 uMessageType, IOService * /* pProvider */, void * /* pvMessageArgument */, vm_size_t /* argSize */)
 {
-    /* IOLog("VBoxDrv: Got sleep/wake notice. Message type was %X\n", (uint)uMessageType); */
+    LogFlow(("VBoxDrv: Got sleep/wake notice. Message type was %X\n", (uint)uMessageType));
 
     if (uMessageType == kIOMessageSystemWillSleep)
         RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
@@ -691,42 +700,6 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
     return 0;
 }
 
-#if 0 /* doesn't work. */
-
-/*
- * The following is a weak symbol hack to deal with the lack of
- * host_vmxon & host_vmxoff in Tiger.
- */
-__BEGIN_DECLS
-#if 1
-#pragma weak host_vmxon
-int host_vmxon(int exclusive) __attribute__((weak_import));
-#pragma weak host_vmxoff
-void host_vmxoff(void) __attribute__((weak_import));
-#else
-int host_vmxon(int exclusive) __attribute__((weak));
-void host_vmxoff(void) __attribute__((weak));
-#endif
-__END_DECLS
-PFNRT g_pfn = (PFNRT)&host_vmxon;
-
-static int g_fWeakHostVmxOnOff = false;
-#if 0
-/* weak version for Tiger. */
-int host_vmxon(int exclusive)
-{
-    NOREF(exclusive);
-    g_fWeakHostVmxOnOff = true;
-    return 42;
-}
-
-/* weak version for Tiger. */
-void host_vmxoff(void)
-{
-    g_fWeakHostVmxOnOff = true;
-}
-#endif
-
 
 /**
  * Enables or disables VT-x using kernel functions.
@@ -736,35 +709,26 @@ void host_vmxoff(void)
  */
 int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 {
-#if 0
-    if (host_vmxon == NULL || host_vmxoff == NULL)
-        g_fWeakHostVmxOnOff = true;
-    if (g_fWeakHostVmxOnOff)
-        return VERR_NOT_SUPPORTED;
-
+#ifdef VBOX_WITH_HOST_VMX
     int rc;
     if (fEnable)
     {
         rc = host_vmxon(false /* exclusive */);
-        if (rc == 42)
-            rc = VERR_NOT_SUPPORTED;
-        else
+        if (rc == 0 /* all ok */)
+            rc = VINF_SUCCESS;
+        else if (rc == 1 /* unsupported */)
+            rc = VERR_VMX_NO_VMX;
+        else if (rc == 2 /* exclusive user */)
+            rc = VERR_VMX_IN_VMX_ROOT_MODE;
+        else /* shouldn't happen, but just in case. */
         {
-            AssertReturn(!g_fWeakHostVmxOnOff, VERR_NOT_SUPPORTED);
-            if (rc == 0 /* all ok */)
-                rc = VINF_SUCCESS;
-            else if (rc == 1 /* unsupported */)
-                rc = VERR_VMX_NO_VMX;
-            else if (rc == 2 /* exclusive user */)
-                rc = VERR_VMX_IN_VMX_ROOT_MODE;
-            else
-                rc = VERR_UNRESOLVED_ERROR;
+            LogRel(("host_vmxon returned %d\n", rc));
+            rc = VERR_UNRESOLVED_ERROR;
         }
     }
     else
     {
         host_vmxoff();
-        AssertReturn(!g_fWeakHostVmxOnOff, VERR_NOT_SUPPORTED);
         rc = VINF_SUCCESS;
     }
     return rc;
@@ -772,181 +736,6 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
     return VERR_NOT_SUPPORTED;
 #endif
 }
-
-
-#else /* more non-working code: */
-
-#include <mach-o/loader.h>
-#include </usr/include/mach-o/nlist.h> /* ugly! but it's missing from the Kernel.framework */
-
-__BEGIN_DECLS
-extern struct mach_header  _mh_execute_header;
-//extern kmod_info_t        *kmod;
-typedef struct pmap *pmap_t;
-extern pmap_t kernel_pmap;
-extern ppnum_t pmap_find_phys(pmap_t, addr64_t);
-__END_DECLS
-
-RTDECL(int) RTLdrGetKernelSymbol(const char *pszSymbol, void **ppvValue)
-{
-    struct mach_header const           *pMHdr = &_mh_execute_header;
-
-    /*
-     * Validate basic restrictions.
-     */
-    AssertPtrReturn(pMHdr, VERR_INVALID_POINTER);
-    AssertMsgReturn(pMHdr->magic    == MH_MAGIC,   ("%#x\n", pMHdr->magic),    VERR_INVALID_EXE_SIGNATURE);
-    AssertMsgReturn(pMHdr->filetype == MH_EXECUTE, ("%#x\n", pMHdr->filetype), VERR_BAD_EXE_FORMAT);
-
-    /*
-     * Search for the __LINKEDIT segment and LC_SYMTAB.
-     */
-    struct symtab_command const        *pSymTabCmd = NULL;
-    struct segment_command const       *pLinkEditSeg = NULL;
-    union
-    {
-        void const                     *pv;
-        uint8_t const                  *pb;
-        struct load_command const      *pGen;
-        struct segment_command const   *pSeg;
-        struct symtab_command const    *pSymTab;
-    } Cmd;
-
-    Cmd.pv = pMHdr + 1;
-    uint32_t iCmd = pMHdr->ncmds;
-    uint32_t cbCmdLeft = pMHdr->sizeofcmds;
-    while (iCmd-- > 0)
-    {
-        AssertReturn(Cmd.pGen->cmdsize <= cbCmdLeft, VERR_BAD_EXE_FORMAT);
-
-        if (    Cmd.pGen->cmd == LC_SEGMENT
-            &&  !strcmp(Cmd.pSeg->segname, "__LINKEDIT")
-            &&  !pLinkEditSeg)
-            pLinkEditSeg = Cmd.pSeg;
-        else if (   Cmd.pGen->cmd == LC_SYMTAB
-                 && Cmd.pGen->cmdsize == sizeof(struct symtab_command)
-                 && !pSymTabCmd)
-            pSymTabCmd = Cmd.pSymTab;
-
-        /* advance */
-        cbCmdLeft -= Cmd.pGen->cmdsize;
-        Cmd.pb += Cmd.pGen->cmdsize;
-    }
-
-    /*
-     * Check that the link edit segment and symbol table was found
-     * and that the former contains the latter. Then calculate the
-     * addresses of the symbol and string tables.
-     */
-    AssertReturn(pLinkEditSeg, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pSymTabCmd, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pSymTabCmd->symoff - pLinkEditSeg->fileoff < pLinkEditSeg->filesize, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pSymTabCmd->symoff + pSymTabCmd->nsyms * sizeof(struct nlist) - pLinkEditSeg->fileoff <= pLinkEditSeg->filesize, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pSymTabCmd->stroff - pLinkEditSeg->fileoff < pLinkEditSeg->filesize, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pSymTabCmd->stroff + pSymTabCmd->strsize - pLinkEditSeg->fileoff <= pLinkEditSeg->filesize, VERR_BAD_EXE_FORMAT);
-    AssertReturn(pLinkEditSeg->filesize <= pLinkEditSeg->vmsize, VERR_BAD_EXE_FORMAT);
-    const struct nlist *paSyms    = (const struct nlist *)(pLinkEditSeg->vmaddr + pSymTabCmd->symoff - pLinkEditSeg->fileoff);
-    const char         *pchStrTab = (const char         *)(pLinkEditSeg->vmaddr + pSymTabCmd->stroff - pLinkEditSeg->fileoff);
-
-    /*
-     * Check that the link edit segment wasn't freed yet.
-     */
-    ppnum_t PgNo = pmap_find_phys(kernel_pmap, pLinkEditSeg->vmaddr);
-    if (!PgNo)
-        return VERR_MODULE_NOT_FOUND;
-
-    /*
-     * Search the symbol table for the desired symbol.
-     */
-    uint32_t const cbStrTab = pSymTabCmd->strsize;
-    uint32_t const cSyms    = pSymTabCmd->nsyms;
-    for (uint32_t iSym = 0; iSym < cSyms; iSym++)
-    {
-        unsigned int uSymType = paSyms[iSym].n_type & N_TYPE;
-        if (    (uSymType == N_SECT || uSymType == N_ABS)
-            &&  paSyms[iSym].n_un.n_strx > 0
-            &&  (unsigned long)paSyms[iSym].n_un.n_strx < cbStrTab)
-        {
-            const char *pszName = pchStrTab + paSyms[iSym].n_un.n_strx;
-#ifdef RT_ARCH_X86
-            if (    pszName[0] == '_'  /* cdecl symbols are prefixed */
-                &&  !strcmp(pszName + 1, pszSymbol))
-#else
-            if (!strcmp(pszName, pszSymbol))
-#endif
-            {
-                *ppvValue = (uint8_t *)paSyms[iSym].n_value;
-                return VINF_SUCCESS;
-            }
-        }
-    }
-    return VERR_SYMBOL_NOT_FOUND;
-}
-
-static bool volatile g_fHostVmxResolved = false;
-static int (*g_pfnHostVmxOn)(boolean_t exclusive) = NULL;
-static void (*g_pfnHostVmxOff)(void) = NULL;
-
-
-/**
- * Enables or disables VT-x using kernel functions.
- *
- * @returns VBox status code. VERR_NOT_SUPPORTED has a special meaning.
- * @param   fEnable     Whether to enable or disable.
- */
-int VBOXCALL supdrvOSEnableVTx(bool fEnable)
-{
-    /*
-     * Lazy initialization.
-     */
-    if (!g_fHostVmxResolved)
-    {
-        void *pvOn;
-        int rc = RTLdrGetKernelSymbol("host_vmxon", &pvOn);
-        if (RT_SUCCESS(rc))
-        {
-            void *pvOff;
-            rc = RTLdrGetKernelSymbol("host_vmxoff", &pvOff);
-            if (RT_SUCCESS(rc))
-            {
-                ASMAtomicUoWritePtr((void * volatile *)&g_pfnHostVmxOff, pvOff);
-                ASMAtomicUoWritePtr((void * volatile *)&g_pfnHostVmxOn, pvOn);
-            }
-        }
-        ASMAtomicWriteBool(&g_fHostVmxResolved, true);
-    }
-
-    /*
-     * Available?
-     */
-    if (!g_pfnHostVmxOn || !g_pfnHostVmxOff)
-        return VERR_NOT_SUPPORTED;
-
-    /*
-     * Do the job.
-     */
-    int rc;
-    if (fEnable)
-    {
-        rc = g_pfnHostVmxOn(false /* exclusive */);
-        if (rc == 0 /* all ok */)
-            rc = VINF_SUCCESS;
-        else if (rc == 1 /* unsupported */)
-            rc = VERR_VMX_NO_VMX;
-        else if (rc == 2 /* exclusive user */)
-            rc = VERR_VMX_IN_VMX_ROOT_MODE;
-        else
-            rc = VERR_UNRESOLVED_ERROR;
-    }
-    else
-    {
-        g_pfnHostVmxOff();
-        rc = VINF_SUCCESS;
-    }
-    return rc;
-}
-
-#endif /* doesn't work*/
 
 
 bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)

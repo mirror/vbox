@@ -28,7 +28,12 @@
 # additional information or have any questions.
 #
 
-DRVNAME="VBoxDrv.kext"
+XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
+if [ "$XNU_VERSION" -ge "9" ]; then
+  DRVNAME="VBoxDrv.kext"
+else
+  DRVNAME="VBoxDrvTiger.kext"
+fi
 BUNDLE="org.virtualbox.kext.VBoxDrv"
 
 DIR=`dirname "$0"`
