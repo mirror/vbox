@@ -63,6 +63,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  # the bundles
  INST_VIRTUALBOX      = $(INST_DIST)VirtualBox.app/
  INST_VBOXDRV         = $(INST_DIST)VBoxDrv.kext/
+ INST_VBOXDRV_TIGER   = $(INST_DIST)VBoxDrvTiger.kext/
  INST_VBOXNETFLT      = $(INST_DIST)VBoxNetFlt.kext/
  INST_VBOXNETTAP      = $(INST_DIST)VBoxNetTap.kext/
  INST_VBOXUSB         = $(INST_DIST)VBoxUSB.kext/
@@ -2138,9 +2139,6 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
 TEMPLATE_VBOXR0DRV_TOOL                = GXX4MACHO
 TEMPLATE_VBOXR0DRV_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS) KERNEL KERNEL_PRIVATE DRIVER_PRIVATE APPLE NeXT RT_USE_VISIBILITY_HIDDEN
-# I didn't really know why we have to state explicitly the position of the
-# sdk headers. Maybe it has something to do with the fact that the kernel.framework
-# isn't a real framework according to http://developer.apple.com/qa/qa2001/qa1096.html.
 TEMPLATE_VBOXR0DRV_INCS               += $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/Kernel.framework/Headers
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
@@ -2158,6 +2156,14 @@ TEMPLATE_VBOXR0DRV_CFLAGS.profile      = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.profile)
 TEMPLATE_VBOXR0DRV_CFLAGS.kprofile     = $(TEMPLATE_VBOXR0DRV_CXXFLAGS.kprofile)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
+
+TEMPLATE_VBOXR0DRVOSX105               = Mac OS X 10.5 variant.
+TEMPLATE_VBOXR0DRVOSX105_EXTENDS       = VBOXR0DRV
+TEMPLATE_VBOXR0DRVOSX105_DEFS          = $(subst $(VBOX_DARWIN_DEF_SDK_DEFS),$(VBOX_DARWIN_DEF_SDK_10_5_DEFS),$(TEMPLATE_VBOXR0DRV_DEFS))
+TEMPLATE_VBOXR0DRVOSX105_INCS          = $(subst $(VBOX_PATH_MACOSX_SDK),$(VBOX_PATH_MACOSX_SDK_10_5),$(TEMPLATE_VBOXR0DRV_INCS))
+TEMPLATE_VBOXR0DRVOSX105_CFLAGS        = $(subst $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(VBOX_DARWIN_DEF_SDK_10_5_CFLAGS),$(TEMPLATE_VBOXR0DRV_CFLAGS))
+TEMPLATE_VBOXR0DRVOSX105_CXXFLAGS      = $(subst $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS),$(TEMPLATE_VBOXR0DRV_CXXFLAGS))
+TEMPLATE_VBOXR0DRVOSX105_LDFLAGS       = $(subst $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS),$(TEMPLATE_VBOXR0DRV_LDFLAGS))
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)

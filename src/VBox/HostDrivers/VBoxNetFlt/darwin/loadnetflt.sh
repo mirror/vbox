@@ -4,16 +4,22 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2008 Sun Microsystems, Inc.
 #
 # Sun Microsystems, Inc. confidential
 # All rights reserved
 #
 
+XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
+
 DRVNAME="VBoxNetFlt.kext"
 BUNDLE="org.virtualbox.kext.VBoxNetFlt"
 
-DEP_DRVNAME="VBoxDrv.kext"
+if [ "$XNU_VERSION" -ge "9" ]; then
+  DEP_DRVNAME="VBoxDrv.kext"
+else
+  DEP_DRVNAME="VBoxDrvTiger.kext"
+fi
 DEP_BUNDLE="org.virtualbox.kext.VBoxDrv"
 
 
