@@ -10,8 +10,6 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
-#define UPD_NFDS(x)       if (nfds < (x)) nfds = (x)
-
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) 
 # if !defined(RT_OS_WINDOWS)
 #  define DO_ENGAGE_EVENT1(so, fdset, label)            \
@@ -388,6 +386,7 @@ void slirp_term(PNATState pData)
 
 #define CONN_CANFSEND(so) (((so)->so_state & (SS_FCANTSENDMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
 #define CONN_CANFRCV(so)  (((so)->so_state & (SS_FCANTRCVMORE|SS_ISFCONNECTED)) == SS_ISFCONNECTED)
+#define UPD_NFDS(x)       if (nfds < (x)) nfds = (x)
 
 /*
  * curtime kept to an accuracy of 1ms
