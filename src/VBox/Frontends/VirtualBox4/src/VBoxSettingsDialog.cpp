@@ -222,6 +222,7 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
         mValid = newValid;
         mIconLabel->setWarningPixmap (mErrorIcon);
         mIconLabel->setWarningText (mErrorHint);
+        mIconLabel->setToolTip ("");
         mIconLabel->setVisible (!mValid);
         mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (mValid);
 
@@ -254,6 +255,7 @@ void VBoxSettingsDialog::enableOk (const QIWidgetValidator*)
         mSilent = newSilent;
         mIconLabel->setWarningPixmap (mWarnIcon);
         mIconLabel->setWarningText (mWarnHint);
+        mIconLabel->setToolTip ("");
         mIconLabel->setVisible (!mSilent);
     }
 }
