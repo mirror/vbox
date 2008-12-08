@@ -237,8 +237,16 @@ debug_init()
 {
     int rc = VINF_SUCCESS;
 
-    rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
-    AssertRC(rc);
+    static int g_fFormatRegistered;
+
+    if (!g_fFormatRegistered)
+    {
+        /*
+         * XXX Move this to IPRT using RTNETADDRIPV4. Use the specifier %RNAipv4.
+         */
+        rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
+        AssertRC(rc);
+    }
 
     return rc;
 }
