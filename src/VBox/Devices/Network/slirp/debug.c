@@ -217,7 +217,7 @@ sockstats(PNATState pData)
 }
 #endif
 
-static size_t 
+static DECLCALLBACK(size_t)
 print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                    const char *pszType, void const *pvValue,
                    int cchWidth, int cchPrecision, unsigned fFlags,
