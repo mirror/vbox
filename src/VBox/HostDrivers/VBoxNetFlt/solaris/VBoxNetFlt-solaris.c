@@ -368,6 +368,9 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
 /** The list of all opened streams. */
 vboxnetflt_stream_t *g_VBoxNetFltSolarisStreams;
 
+/** Global mutex protecting open/close. */
+static RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+
 /**
  * g_VBoxNetFltInstance is the current PVBOXNETFLTINS to be associated with the stream being created
  * in ModOpen. This is just shared global data between the dynamic attach and the ModOpen procedure.
@@ -409,25 +412,32 @@ int _init(void)
         g_VBoxNetFltSolarisStreams = NULL;
         g_VBoxNetFltSolarisInstance = NULL;
 
-        /*
-         * Initialize the globals and connect to the support driver.
-         *
-         * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
-         * for establishing the connect to the support driver.
-         */
-        memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-        rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
+        int rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
         if (RT_SUCCESS(rc))
         {
-            rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
-            if (!rc)
-                return rc;
+            /*
+             * Initialize the globals and connect to the support driver.
+             *
+             * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
+             * for establishing the connect to the support driver.
+             */
+            memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
+            rc = vboxNetFltInitGlobals(&g_VBoxNetFltSolarisGlobals);
+            if (RT_SUCCESS(rc))
+            {
+                rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
+                if (!rc)
+                    return rc;
 
-            LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
-            vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
+                LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+                vboxNetFltTryDeleteGlobals(&g_VBoxNetFltSolarisGlobals);
+            }
+            else
+                LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
+
+            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
         }
-        else
-            LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
 
         RTR0Term();
     }
@@ -452,6 +462,12 @@ int _fini(void)
     {
         LogRel((DEVICE_NAME ":_fini - busy!\n"));
         return EBUSY;
+    }
+
+    if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+        g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
     }
 
     RTR0Term();
@@ -594,12 +610,16 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen pQueue=%p pDev=%p fOpenMode=%d fStreamMode=%d\n", pQueue, pDev,
             fOpenMode, fStreamMode));
 
+    int rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
+    AssertRCReturn(rc, rc);
+
     /*
      * Already open?
      */
     if (pQueue->q_ptr)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen invalid open.\n"));
+        RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENOENT;
     }
 
@@ -610,6 +630,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     if (!pThis)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to get VirtualBox instance.\n"));
+        RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENOENT;
     }
 
@@ -619,6 +640,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     if (g_VBoxNetFltSolarisStreamType == kUndefined)
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode.\n"));
+        RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENOENT;
     }
 
@@ -647,6 +669,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pPromiscStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate promiscuous stream data.\n"));
+            RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
             return ENOMEM;
         }
 
@@ -667,6 +690,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         if (RT_UNLIKELY(!pStream))
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed to allocate stream data.\n"));
+            RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
             return ENOMEM;
         }
     }
@@ -700,6 +724,11 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      */
     pStream->pNext = *ppPrevStream;
     *ppPrevStream = pStream;
+
+    /*
+     * Release global lock, & do not hold locks across putnext calls.
+     */
+    RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
 
     qprocson(pQueue);
 
@@ -770,6 +799,9 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModClose pQueue=%p fOpenMode=%d\n", pQueue, fOpenMode));
 
+    int rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
+    AssertRCReturn(rc, rc);
+
     vboxnetflt_stream_t *pStream = NULL;
     vboxnetflt_stream_t **ppPrevStream = NULL;
 
@@ -781,6 +813,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModClose failed to get stream.\n"));
         vboxNetFltRelease(pStream->pThis, false /* fBusy */);
+        RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENXIO;
     }
 
@@ -847,6 +880,8 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 
     NOREF(fOpenMode);
     NOREF(pCred);
+
+    RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
 
     return 0;
 }
