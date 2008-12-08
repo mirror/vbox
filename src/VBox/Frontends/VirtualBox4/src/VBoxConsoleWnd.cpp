@@ -3121,7 +3121,8 @@ void VBoxConsoleWnd::prepareDVDMenu()
 void VBoxConsoleWnd::prepareNetworkMenu()
 {
     mDevicesNetworkMenu->clear();
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+    ulong count = qMin ((ULONG) 4,
+        vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
     for (ulong slot = 0; slot < count; ++ slot)
     {
         CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
