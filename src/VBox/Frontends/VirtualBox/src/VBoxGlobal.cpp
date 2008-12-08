@@ -1815,7 +1815,13 @@ QString VBoxGlobal::details (const CHardDisk2 &aHD,
         /* media may be new and not alredy in the media list, request refresh */
         startEnumeratingMedia();
         if (!findMedium (cmedium, medium))
-            AssertFailedReturn (QString::null);
+        {
+            /// @todo Still not found. Means that we are trying to get details
+            /// of a hard disk that was deleted by a third party before we got a
+            /// chance to complete the task. Returning null in this case should
+            /// be OK, For more information, see *** in VBoxMedium::etails().
+            return QString::null;
+        }
     }
 
     return medium.detailsHTML (true /* aNoDiffs */, aPredictDiff);
@@ -1971,7 +1977,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             CHardDisk2 hd = hda.GetHardDisk();
 
             /// @todo for the explaination of the below isOk() checks, see ***
-            /// in #details (const CHardDisk &, bool).
+            /// in VBoxMedium::details().
             if (hda.isOk())
             {
                 KStorageBus bus = hda.GetBus();
