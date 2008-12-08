@@ -30,6 +30,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     /* Apply UI decorations */
     Ui::VBoxGLSettingsGeneral::setupUi (this);
 
+#ifndef VBOX_GUI_WITH_SYSTRAY
+    mCbCheckTrayIcon->hide();
+#endif
+
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
