@@ -1101,6 +1101,10 @@ void VBoxConsoleWnd::finalizeOpenView()
 #ifdef VBOX_WITH_UPDATE_REQUEST
     vboxGlobal().showUpdateDialog (false /* aForce */);
 #endif
+
+    /* Re-request all the static values finally after
+     * view is really opened and attached. */
+    updateAppearanceOf (VirtualizationStuff);
 }
 
 /**
