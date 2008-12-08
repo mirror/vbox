@@ -558,21 +558,29 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
         LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (iRegion)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-    /*
-     * Sanity check: don't allow more than 512MB for now. If this limit is increased beyond 2GB, adapt the aligned check below as well!
-     */
-    if (   (enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
-        && (cbRegion > 512 * _1M))
-    {
-        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-
     switch (enmType)
     {
-        case PCI_ADDRESS_SPACE_MEM:
         case PCI_ADDRESS_SPACE_IO:
+            /*
+             * Sanity check: don't allow to register more than 32K of the PCI I/O space.
+             */
+            if (cbRegion > 32 * _1K)
+            {
+                LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+                return VERR_INVALID_PARAMETER;
+            }
+            break;
+        case PCI_ADDRESS_SPACE_MEM:
         case PCI_ADDRESS_SPACE_MEM_PREFETCH:
+            /*
+             * Sanity check: don't allow to register more than 512MB of the PCI MMIO space for
+             * now. If this limit is increased beyond 2GB, adapt the aligned check below as well!
+             */
+            if (cbRegion > 512 * _1M)
+            {
+                LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+                return VERR_INVALID_PARAMETER;
+            }
             break;
         default:
             AssertMsgFailed(("enmType=%#x is unknown\n", enmType));
@@ -605,16 +613,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
             cbRegion = RT_ALIGN_32(cbRegion, PAGE_SIZE);
         }
         /*
-         * For registering PCI memory, the size of the region must be a power of 2!
+         * For registering PCI MMIO memory or PCI I/O memory, the size of the region must be a power of 2!
          */
-        if (enmType == PCI_ADDRESS_SPACE_MEM || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH)
-        {
-            int iLastSet = ASMBitLastSetU32(cbRegion);
-            Assert(iLastSet  >  0);
-            uint32_t cbRegionAligned = 1 << (iLastSet - 1);
-            if (cbRegion > cbRegionAligned)
-                cbRegion = cbRegionAligned * 2; /* round up */
-        }
+        int iLastSet = ASMBitLastSetU32(cbRegion);
+        Assert(iLastSet  >  0);
+        uint32_t cbRegionAligned = 1 << (iLastSet - 1);
+        if (cbRegion > cbRegionAligned)
+            cbRegion = cbRegionAligned * 2; /* round up */
+
         PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3;
         Assert(pBus);
         pdmLock(pVM);
