@@ -17,7 +17,7 @@
 #endif
 
 #ifdef VBOX_WITH_SLIRP_ICMP
-static void send_icmp_to_guest(PNATState, char *, struct socket *);
+static void send_icmp_to_guest(PNATState, char *, size_t, struct socket *, const struct sockaddr_in *);
 static void sorecvfrom_icmp_win(PNATState, struct socket *);
 #endif
 static void sorecvfrom_icmp_unix(PNATState, struct socket *);
@@ -432,7 +432,12 @@ sorecvfrom(PNATState pData, struct socket *so)
     DEBUG_ARG("so = %lx", (long)so);
 
     if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
+#if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)) 
           sorecvfrom_icmp_unix(pData, so);
+#endif
+#if defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)
+          sorecvfrom_icmp_win(pData, so);
+#endif
           udp_detach(pData, so);
     } else {                                /* A "normal" UDP packet */
           struct mbuf *m;
@@ -765,7 +770,7 @@ sofwdrain(struct socket *so)
 
 #ifdef VBOX_WITH_SLIRP_ICMP
 static void 
-send_icmp_to_guest(PNATState pData, char *buff, struct socket *so)
+send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
 {
         struct ip *ip;
         uint32_t dst,src;
@@ -794,7 +799,7 @@ send_icmp_to_guest(PNATState pData, char *buff, struct socket *so)
         m = icm->im_m;
         Assert(m != NULL);
         
-        src = addr.sin_addr.s_addr;
+        src = addr->sin_addr.s_addr;
         
         ip = mtod(m, struct ip *);
         /* Now ip is pointing on header we've sent from guest */
@@ -829,13 +834,31 @@ send_icmp_to_guest(PNATState pData, char *buff, struct socket *so)
         /* Don't call m_free here*/
         free(icm);
 }
-#endif
-static void sorecvfrom_icmp_win(PNATState pData, struct socket *so){
-#if 0
+
+static void 
+sorecvfrom_icmp_win(PNATState pData, struct socket *so)
+{
+        int len;
 	int i;
+        ICMP_ECHO_REPLY *icr;
+        u_char code = ~0;
 	len = IcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
-#endif
+        if (len <= 0) {
+              LogRel(("Error (%d) occured on ICMP receiving \n", GetLastError()));  
+              return;
+        }
+        icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
+        for (i = 0; i < len; ++i) {
+                switch(icr[i].Status) {
+                        case IP_DEST_HOST_UNREACHABLE:
+                                code=ICMP_UNREACH_HOST;
+                        case IP_DEST_NET_UNREACHABLE:
+                                code=ICMP_UNREACH_NET;
+                }
+        }
 }
+#endif
+
 static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
@@ -863,7 +886,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     else
     {
 #ifdef VBOX_WITH_SLIRP_ICMP
-        send_icmp_to_guest(pData, buff, so);
+        send_icmp_to_guest(pData, buff, len, so, &addr);
 #else
         icmp_reflect(pData, so->so_m);
         so->so_m = 0; /* Don't m_free() it again! */
