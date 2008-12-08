@@ -207,7 +207,7 @@ int main()
     GEN_CHECK_OFF(VGASTATE, vbe_regs[VBE_DISPI_INDEX_NB - 1]);
     GEN_CHECK_OFF(VGASTATE, vbe_start_addr);
     GEN_CHECK_OFF(VGASTATE, vbe_line_offset);
-    GEN_CHECK_OFF(VGASTATE, vbe_bank_mask);
+    GEN_CHECK_OFF(VGASTATE, vbe_bank_max);
 #endif
     GEN_CHECK_OFF(VGASTATE, font_offsets);
     GEN_CHECK_OFF(VGASTATE, font_offsets[1]);
