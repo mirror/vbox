@@ -1602,25 +1602,19 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
     /*
      * Validate.
      */
-    if (    enmType != PCI_ADDRESS_SPACE_MEM
-        &&  enmType != PCI_ADDRESS_SPACE_IO
-        &&  enmType != PCI_ADDRESS_SPACE_MEM_PREFETCH)
-    {
-        AssertMsgFailed(("Invalid enmType=%#x? Or was this a bitmask after all...\n", enmType));
-        return VERR_INVALID_PARAMETER;
-    }
-    if ((unsigned)iRegion >= PCI_NUM_REGIONS)
-    {
-        AssertMsgFailed(("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(   enmType == PCI_ADDRESS_SPACE_MEM
+                    || enmType == PCI_ADDRESS_SPACE_IO
+                    || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH,
+                    ("Invalid enmType=%#x? Or was this a bitmask after all...\n", enmType),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn((unsigned)iRegion < PCI_NUM_REGIONS,
+                    ("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS),
+                    VERR_INVALID_PARAMETER);
     int iLastSet = ASMBitLastSetU32(cbRegion);
-    if (   iLastSet == 0
-        || ((1U << (iLastSet - 1)) != cbRegion))
-    {
-        AssertMsgFailed(("Invalid cbRegion=%x (not a power of 2)\n", cbRegion));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(    iLastSet != 0
+                    &&  RT_BIT_32(iLastSet - 1) == cbRegion,
+                    ("Invalid cbRegion=%#x iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Register the I/O region.
