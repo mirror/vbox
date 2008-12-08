@@ -16,7 +16,7 @@
         do {                                            \
                 FD_SET((so)->s, (fdset));              \
                 UPD_NFDS((so)->s);                      \
-        while(0)
+        } while(0)
 
 
 #  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label)   \
@@ -24,7 +24,7 @@
                 FD_SET((so)->s, (fdset0));              \
                 FD_SET((so)->s, (fdset1));              \
                 UPD_NFDS((so)->s);                      \
-        while(0)
+        } while(0)
 # else /* !RT_OS_WINDOWS */
 #  define DO_ENGAGE_EVENT1(so, fdset0, label)           \
                 goto label;
