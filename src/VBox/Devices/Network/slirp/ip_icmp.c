@@ -47,45 +47,46 @@
 static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
 
 /* list of actions for icmp_error() on RX of an icmp message */
-static const int icmp_flush[19] = {
-/*  ECHO REPLY (0)  */   0,
-                         1,
-                         1,
-/* DEST UNREACH (3) */   1,
-/* SOURCE QUENCH (4)*/   1,
-/* REDIRECT (5) */       1,
-                         1,
-                         1,
-/* ECHO (8) */           0,
-/* ROUTERADVERT (9) */   1,
-/* ROUTERSOLICIT (10) */ 1,
-/* TIME EXCEEDED (11) */ 1,
+static const int icmp_flush[19] =
+{
+/*  ECHO REPLY (0)  */       0,
+                             1,
+                             1,
+/* DEST UNREACH (3) */       1,
+/* SOURCE QUENCH (4)*/       1,
+/* REDIRECT (5) */           1,
+                             1,
+                             1,
+/* ECHO (8) */               0,
+/* ROUTERADVERT (9) */       1,
+/* ROUTERSOLICIT (10) */     1,
+/* TIME EXCEEDED (11) */     1,
 /* PARAMETER PROBLEM (12) */ 1,
-/* TIMESTAMP (13) */     0,
-/* TIMESTAMP REPLY (14) */ 0,
-/* INFO (15) */          0,
-/* INFO REPLY (16) */    0,
-/* ADDR MASK (17) */     0,
-/* ADDR MASK REPLY (18) */ 0
+/* TIMESTAMP (13) */         0,
+/* TIMESTAMP REPLY (14) */   0,
+/* INFO (15) */              0,
+/* INFO REPLY (16) */        0,
+/* ADDR MASK (17) */         0,
+/* ADDR MASK REPLY (18) */   0
 };
 
 #ifdef VBOX_WITH_SLIRP_ICMP
 int
 icmp_init(PNATState pData)
 {
-        pData->icmp_socket.so_type = IPPROTO_ICMP;
-        pData->icmp_socket.so_state = SS_ISFCONNECTED;
+    pData->icmp_socket.so_type = IPPROTO_ICMP;
+    pData->icmp_socket.so_state = SS_ISFCONNECTED;
 #ifndef RT_OS_WINDOWS
-        pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-        insque(pData, &pData->icmp_socket, &udb);
+    pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    insque(pData, &pData->icmp_socket, &udb);
 #else
-        pData->icmp_socket.s = IcmpCreateFile();
-        pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
-        pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
-        pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
+    pData->icmp_socket.s = IcmpCreateFile();
+    pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
+    pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
+    pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
 #endif
-        LIST_INIT(&pData->icmp_msg_head);
-        return (0);
+    LIST_INIT(&pData->icmp_msg_head);
+    return 0;
 }
 
 /*
@@ -103,36 +104,39 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     struct in_addr laddr, faddr;
     u_int lport, fport;
 
-    switch (ip->ip_p) {
-    case IPPROTO_ICMP:
-        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-        LIST_FOREACH(icm, &pData->icmp_msg_head, im_list)
-        {
-            m0 = icm->im_m;
-            ip0 = mtod(m0, struct ip *);
-            AssertRelease(ip0->ip_p == IPPROTO_ICMP);
-            icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
-            if (((icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
-                ||(icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
-                && icp->icmp_id == icp0->icmp_id
-                && icp->icmp_seq == icp->icmp_seq) {
-                found = 1;
-                break;
+    switch (ip->ip_p)
+    {
+        case IPPROTO_ICMP:
+            icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+            LIST_FOREACH(icm, &pData->icmp_msg_head, im_list)
+            {
+                m0 = icm->im_m;
+                ip0 = mtod(m0, struct ip *);
+                AssertRelease(ip0->ip_p == IPPROTO_ICMP);
+                icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
+                if (  (   (icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
+                       || (icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
+                    && icp->icmp_id == icp0->icmp_id
+                    && icp->icmp_seq == icp->icmp_seq)
+                {
+                    found = 1;
+                    break;
+                }
             }
-        }
-    case IPPROTO_UDP:
-        head_socket = &udb;
-    case IPPROTO_TCP:
-        head_socket = (head_socket != NULL ? head_socket : &tcb); /* head_socket could be initialized with udb*/
+        case IPPROTO_UDP:
+            head_socket = &udb;
+        case IPPROTO_TCP:
+            head_socket = (head_socket != NULL ? head_socket : &tcb); /* head_socket could be initialized with udb*/
     }
-    if (found == 1) {
-        return (icm);
-    }
-    return (NULL);
+    if (found == 1)
+        return cm;
+
+    return NULL;
 }
 
 static int
-icmp_attach(PNATState pData, struct mbuf *m) {
+icmp_attach(PNATState pData, struct mbuf *m)
+{
     struct icmp_msg *icm;
     struct ip *ip;
     ip = mtod(m, struct ip *);
@@ -150,187 +154,201 @@ icmp_attach(PNATState pData, struct mbuf *m) {
 void
 icmp_input(PNATState pData, struct mbuf *m, int hlen)
 {
-  register struct icmp *icp;
-  register struct ip *ip=mtod(m, struct ip *);
-  int icmplen=ip->ip_len;
-  int status;
-  /* int code; */
+    register struct icmp *icp;
+    register struct ip *ip=mtod(m, struct ip *);
+    int icmplen=ip->ip_len;
+    int status;
+    /* int code; */
 
-  DEBUG_CALL("icmp_input");
-  DEBUG_ARG("m = %lx", (long )m);
-  DEBUG_ARG("m_len = %d", m->m_len);
+    DEBUG_CALL("icmp_input");
+    DEBUG_ARG("m = %lx", (long )m);
+    DEBUG_ARG("m_len = %d", m->m_len);
 
-  icmpstat.icps_received++;
+    icmpstat.icps_received++;
 
-  /*
-   * Locate icmp structure in mbuf, and check
-   * that its not corrupted and of at least minimum length.
-   */
-  if (icmplen < ICMP_MINLEN) {          /* min 8 bytes payload */
-    icmpstat.icps_tooshort++;
-  freeit:
-    m_freem(pData, m);
-    goto end_error;
-  }
+    /*
+     * Locate icmp structure in mbuf, and check
+     * that its not corrupted and of at least minimum length.
+     */
+    if (icmplen < ICMP_MINLEN)
+    {          /* min 8 bytes payload */
+        icmpstat.icps_tooshort++;
+freeit:
+        m_freem(pData, m);
+        goto end_error;
+    }
 
-  m->m_len -= hlen;
-  m->m_data += hlen;
-  icp = mtod(m, struct icmp *);
-  if (cksum(m, icmplen)) {
-    icmpstat.icps_checksum++;
-    goto freeit;
-  }
-  m->m_len += hlen;
-  m->m_data -= hlen;
+    m->m_len -= hlen;
+    m->m_data += hlen;
+    icp = mtod(m, struct icmp *);
+    if (cksum(m, icmplen))
+    {
+        icmpstat.icps_checksum++;
+        goto freeit;
+    }
+    m->m_len += hlen;
+    m->m_data -= hlen;
 
-  /*    icmpstat.icps_inhist[icp->icmp_type]++; */
-  /* code = icp->icmp_code; */
+    /*    icmpstat.icps_inhist[icp->icmp_type]++; */
+    /* code = icp->icmp_code; */
 
-  DEBUG_ARG("icmp_type = %d", icp->icmp_type);
-  switch (icp->icmp_type) {
-  case ICMP_ECHO:
+    DEBUG_ARG("icmp_type = %d", icp->icmp_type);
+    switch (icp->icmp_type)
+    {
+        case ICMP_ECHO:
 #ifndef VBOX_WITH_SLIRP_ICMP
-    icp->icmp_type = ICMP_ECHOREPLY;
+            icp->icmp_type = ICMP_ECHOREPLY;
 #endif /* !VBOX_WITH_SLIRP_ICMP */
 
-    ip->ip_len += hlen;              /* since ip_input subtracts this */
-    if (ip->ip_dst.s_addr == alias_addr.s_addr
-    ) {
+            ip->ip_len += hlen;              /* since ip_input subtracts this */
+            if (ip->ip_dst.s_addr == alias_addr.s_addr)
+            {
 #ifdef VBOX_WITH_SLIRP_ICMP
-      icp->icmp_type = ICMP_ECHOREPLY;
+                icp->icmp_type = ICMP_ECHOREPLY;
 #endif /* VBOX_WITH_SLIRP_ICMP */
-      icmp_reflect(pData, m);
-    } else {
-      struct socket *so;
-      struct sockaddr_in addr;
+                icmp_reflect(pData, m);
+            }
+            else
+            {
+                struct socket *so;
+                struct sockaddr_in addr;
 #ifndef VBOX_WITH_SLIRP_ICMP
-      if ((so = socreate()) == NULL) goto freeit;
-      if(udp_attach(pData, so) == -1)
-      {
-        DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
-                    errno,strerror(errno)));
-        sofree(pData, so);
-        m_free(pData, m);
-        goto end_error;
-      }
-      so->so_m = m;
-      so->so_faddr = ip->ip_dst;
-      so->so_fport = htons(7);
-      so->so_laddr = ip->ip_src;
-      so->so_lport = htons(9);
-      so->so_iptos = ip->ip_tos;
-      so->so_type = IPPROTO_ICMP;
-      so->so_state = SS_ISFCONNECTED;
+                if ((so = socreate()) == NULL)
+                    goto freeit;
+                if(udp_attach(pData, so) == -1)
+                {
+                    DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
+                                errno,strerror(errno)));
+                    sofree(pData, so);
+                    m_free(pData, m);
+                    goto end_error;
+                }
+                so->so_m = m;
+                so->so_faddr = ip->ip_dst;
+                so->so_fport = htons(7);
+                so->so_laddr = ip->ip_src;
+                so->so_lport = htons(9);
+                so->so_iptos = ip->ip_tos;
+                so->so_type = IPPROTO_ICMP;
+                so->so_state = SS_ISFCONNECTED;
 
-      addr.sin_family = AF_INET;
-      if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
-        /* It's an alias */
-        switch(ntohl(so->so_faddr.s_addr) & ~pData->netmask) {
-        case CTL_DNS:
-          addr.sin_addr = dns_addr;
-          break;
-        case CTL_ALIAS:
-        default:
-          addr.sin_addr = loopback_addr;
-          break;
-        }
-      } else {
-        addr.sin_addr = so->so_faddr;
-      }
-      addr.sin_port = so->so_fport;
-      if(sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
-                (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-                    errno,strerror(errno)));
-        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-        udp_detach(pData, so);
-      }
-#else /* !VBOX_WITH_SLIRP_ICMP */
-#ifdef RT_OS_WINDOWS      
-      IP_OPTION_INFORMATION ipopt;
-      int error;
-#endif
-      addr.sin_family = AF_INET;
-      if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr) {
-        /* It's an alias */
-        switch(ntohl(ip->ip_dst.s_addr) & ~pData->netmask) {
-        case CTL_DNS:
-          addr.sin_addr = dns_addr;
-          break;
-        case CTL_ALIAS:
-        default:
-          addr.sin_addr = loopback_addr;
-          break;
-        }
-      } else {
-            addr.sin_addr.s_addr = ip->ip_dst.s_addr;
-      }
-      icmp_attach(pData, m);
-      /* Send the packet */
-#ifndef RT_OS_WINDOWS
-      status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
-      if (status < 0) {
-            LogRel(("error(%s) occured while setting TTL attribute of IP packet\n", strerror(errno)));
-      }
-      if(sendto(pData->icmp_socket.s, icp, icmplen, 0,
-                (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-                    errno,strerror(errno)));
-        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-        m_free(pData, m);
-      }
-#else
-      memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
-      ipopt.Ttl = ip->ip_ttl;
-      status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX], NULL, NULL, addr.sin_addr.s_addr, icp, icmplen, &ipopt, 
-                      pData->pvIcmpBuffer, pData->szIcmpBuffer, 10);
-      if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING) {
-        error = GetLastError(); 
-        LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
-        switch(error) 
-        {
-            case ERROR_INVALID_PARAMETER:
-                LogRel(("icmp_socket:%lx is invalid\n", pData->icmp_socket.s));
-                break;
-            case ERROR_NOT_SUPPORTED:
-                LogRel(("operation is unsupported \n"));
-                break;
-            case ERROR_NOT_ENOUGH_MEMORY:
-                LogRel(("OOM!!!\n"));
-                break;
-            case IP_BUF_TOO_SMALL:
-                LogRel(("Buffer too small\n"));
-                break;
-            default:
-                LogRel(("Other error!!!\n"));
-                break;
-        }
-      }
-#endif
-
+                addr.sin_family = AF_INET;
+                if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+                {
+                    /* It's an alias */
+                    switch (ntohl(so->so_faddr.s_addr) & ~pData->netmask)
+                    {
+                        case CTL_DNS:
+                            addr.sin_addr = dns_addr;
+                            break;
+                        case CTL_ALIAS:
+                        default:
+                            addr.sin_addr = loopback_addr;
+                            break;
+                    }
+                }
+                else
+                    addr.sin_addr = so->so_faddr;
+                addr.sin_port = so->so_fport;
+                if(sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
+                            (struct sockaddr *)&addr, sizeof(addr)) == -1)
+                {
+                    DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                                errno,strerror(errno)));
+                    icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+                    udp_detach(pData, so);
+                }
+#else /* VBOX_WITH_SLIRP_ICMP */
+# ifdef RT_OS_WINDOWS      
+                IP_OPTION_INFORMATION ipopt;
+                int error;
+# endif
+                addr.sin_family = AF_INET;
+                if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
+                {
+                    /* It's an alias */
+                    switch(ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
+                    {
+                        case CTL_DNS:
+                            addr.sin_addr = dns_addr;
+                            break;
+                        case CTL_ALIAS:
+                        default:
+                            addr.sin_addr = loopback_addr;
+                            break;
+                    }
+                }
+                else
+                    addr.sin_addr.s_addr = ip->ip_dst.s_addr;
+                icmp_attach(pData, m);
+                /* Send the packet */
+# ifndef RT_OS_WINDOWS
+                status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
+                if (status < 0)
+                {
+                    LogRel(("error(%s) occured while setting TTL attribute of IP packet\n", strerror(errno)));
+                }
+                if(sendto(pData->icmp_socket.s, icp, icmplen, 0,
+                            (struct sockaddr *)&addr, sizeof(addr)) == -1)
+                {
+                    DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                                errno,strerror(errno)));
+                    icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+                    m_free(pData, m);
+                }
+# else /* RT_OS_WINDOWS */
+                memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
+                ipopt.Ttl = ip->ip_ttl;
+                status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
+                                       NULL, NULL, addr.sin_addr.s_addr, icp, icmplen, &ipopt,
+                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 10);
+                if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
+                {
+                    error = GetLastError(); 
+                    LogRel(("error(%d) occured while sending ICMP\n", GetLastError()));
+                    switch(error) 
+                    {
+                        case ERROR_INVALID_PARAMETER:
+                            LogRel(("icmp_socket:%lx is invalid\n", pData->icmp_socket.s));
+                            break;
+                        case ERROR_NOT_SUPPORTED:
+                            LogRel(("operation is unsupported \n"));
+                            break;
+                        case ERROR_NOT_ENOUGH_MEMORY:
+                            LogRel(("OOM!!!\n"));
+                            break;
+                        case IP_BUF_TOO_SMALL:
+                            LogRel(("Buffer too small\n"));
+                            break;
+                        default:
+                            LogRel(("Other error!!!\n"));
+                            break;
+                    }
+                }
+# endif /* RT_OS_WINDOWS */
 #endif /* VBOX_WITH_SLIRP_ICMP */
-    } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
-    break;
-  case ICMP_UNREACH:
-    /* XXX? report error? close socket? */
-  case ICMP_TIMXCEED:
-  case ICMP_PARAMPROB:
-  case ICMP_SOURCEQUENCH:
-  case ICMP_TSTAMP:
-  case ICMP_MASKREQ:
-  case ICMP_REDIRECT:
-    icmpstat.icps_notsupp++;
-    m_freem(pData, m);
-    break;
+            } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
+            break;
+        case ICMP_UNREACH:
+            /* XXX? report error? close socket? */
+        case ICMP_TIMXCEED:
+        case ICMP_PARAMPROB:
+        case ICMP_SOURCEQUENCH:
+        case ICMP_TSTAMP:
+        case ICMP_MASKREQ:
+        case ICMP_REDIRECT:
+            icmpstat.icps_notsupp++;
+            m_freem(pData, m);
+            break;
 
-  default:
-    icmpstat.icps_badtype++;
-    m_freem(pData, m);
-  } /* swith */
+        default:
+            icmpstat.icps_badtype++;
+            m_freem(pData, m);
+    } /* switch */
 
 end_error:
-  /* m is m_free()'d xor put in a socket xor or given to ip_send */
-  return;
+    /* m is m_free()'d xor put in a socket xor or given to ip_send */
+    ;
 }
 
 
@@ -355,112 +373,125 @@ end_error:
 #define ICMP_MAXDATALEN (IP_MSS-28)
 void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, char *message)
 {
-  unsigned hlen, shlen, s_ip_len;
-  register struct ip *ip;
-  register struct icmp *icp;
-  register struct mbuf *m;
+    unsigned hlen, shlen, s_ip_len;
+    register struct ip *ip;
+    register struct icmp *icp;
+    register struct mbuf *m;
 
-  DEBUG_CALL("icmp_error");
-  DEBUG_ARG("msrc = %lx", (long )msrc);
-  DEBUG_ARG("msrc_len = %d", msrc->m_len);
+    DEBUG_CALL("icmp_error");
+    DEBUG_ARG("msrc = %lx", (long )msrc);
+    DEBUG_ARG("msrc_len = %d", msrc->m_len);
 
-  if(type!=ICMP_UNREACH && type!=ICMP_TIMXCEED) goto end_error;
+    if (type!=ICMP_UNREACH && type!=ICMP_TIMXCEED)
+        goto end_error;
 
-  /* check msrc */
-  if(!msrc) goto end_error;
-  ip = mtod(msrc, struct ip *);
+    /* check msrc */
+    if(!msrc)
+        goto end_error;
+
+    ip = mtod(msrc, struct ip *);
 #if DEBUG
-  { char bufa[20], bufb[20];
-    strcpy(bufa, inet_ntoa(ip->ip_src));
-    strcpy(bufb, inet_ntoa(ip->ip_dst));
-    DEBUG_MISC((dfd, " %.16s to %.16s\n", bufa, bufb));
-  }
+    {
+        char bufa[20], bufb[20];
+        strcpy(bufa, inet_ntoa(ip->ip_src));
+        strcpy(bufb, inet_ntoa(ip->ip_dst));
+        DEBUG_MISC((dfd, " %.16s to %.16s\n", bufa, bufb));
+    }
 #endif
-  if(ip->ip_off & IP_OFFMASK) goto end_error;    /* Only reply to fragment 0 */
+    if(ip->ip_off & IP_OFFMASK)
+        goto end_error;    /* Only reply to fragment 0 */
 
-  shlen=ip->ip_hl << 2;
-  s_ip_len=ip->ip_len;
-  if(ip->ip_p == IPPROTO_ICMP) {
-    icp = (struct icmp *)((char *)ip + shlen);
-    /*
-     *  Assume any unknown ICMP type is an error. This isn't
-     *  specified by the RFC, but think about it..
-     */
-    if(icp->icmp_type>18 || icmp_flush[icp->icmp_type]) goto end_error;
-  }
+    shlen=ip->ip_hl << 2;
+    s_ip_len=ip->ip_len;
+    if(ip->ip_p == IPPROTO_ICMP)
+    {
+        icp = (struct icmp *)((char *)ip + shlen);
+        /*
+         *  Assume any unknown ICMP type is an error. This isn't
+         *  specified by the RFC, but think about it..
+         */
+        if (icp->icmp_type>18 || icmp_flush[icp->icmp_type])
+            goto end_error;
+    }
 
-  /* make a copy */
-  if(!(m=m_get(pData))) goto end_error;               /* get mbuf */
-  { int new_m_size;
-    new_m_size=sizeof(struct ip )+ICMP_MINLEN+msrc->m_len+ICMP_MAXDATALEN;
-    if(new_m_size>m->m_size) m_inc(m, new_m_size);
-  }
-  memcpy(m->m_data, msrc->m_data, msrc->m_len);
-  m->m_len = msrc->m_len;                        /* copy msrc to m */
+    /* make a copy */
+    if (!(m=m_get(pData)))
+        goto end_error;               /* get mbuf */
+    {
+        int new_m_size;
+        new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
+        if (new_m_size>m->m_size)
+            m_inc(m, new_m_size);
+    }
+    memcpy(m->m_data, msrc->m_data, msrc->m_len);
+    m->m_len = msrc->m_len;                        /* copy msrc to m */
 
-  /* make the header of the reply packet */
-  ip  = mtod(m, struct ip *);
-  hlen= sizeof(struct ip );     /* no options in reply */
+    /* make the header of the reply packet */
+    ip   = mtod(m, struct ip *);
+    hlen = sizeof(struct ip );     /* no options in reply */
 
-  /* fill in icmp */
-  m->m_data += hlen;
-  m->m_len -= hlen;
+    /* fill in icmp */
+    m->m_data += hlen;
+    m->m_len  -= hlen;
 
-  icp = mtod(m, struct icmp *);
+    icp = mtod(m, struct icmp *);
 
-  if(minsize) s_ip_len=shlen+ICMP_MINLEN;   /* return header+8b only */
-  else if(s_ip_len>ICMP_MAXDATALEN)         /* maximum size */
-    s_ip_len=ICMP_MAXDATALEN;
+    if (minsize)
+        s_ip_len=shlen+ICMP_MINLEN;   /* return header+8b only */
+    else if(s_ip_len>ICMP_MAXDATALEN)         /* maximum size */
+        s_ip_len=ICMP_MAXDATALEN;
 
-  m->m_len=ICMP_MINLEN+s_ip_len;        /* 8 bytes ICMP header */
+    m->m_len=ICMP_MINLEN+s_ip_len;        /* 8 bytes ICMP header */
 
-  /* min. size = 8+sizeof(struct ip)+8 */
+    /* min. size = 8+sizeof(struct ip)+8 */
 
-  icp->icmp_type = type;
-  icp->icmp_code = code;
-  icp->icmp_id = 0;
-  icp->icmp_seq = 0;
+    icp->icmp_type = type;
+    icp->icmp_code = code;
+    icp->icmp_id = 0;
+    icp->icmp_seq = 0;
 
-  memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
-  HTONS(icp->icmp_ip.ip_len);
-  HTONS(icp->icmp_ip.ip_id);
-  HTONS(icp->icmp_ip.ip_off);
+    memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
+    HTONS(icp->icmp_ip.ip_len);
+    HTONS(icp->icmp_ip.ip_id);
+    HTONS(icp->icmp_ip.ip_off);
 
 #if DEBUG
-  if(message) {           /* DEBUG : append message to ICMP packet */
-    int message_len;
-    char *cpnt;
-    message_len=strlen(message);
-    if(message_len>ICMP_MAXDATALEN) message_len=ICMP_MAXDATALEN;
-    cpnt=(char *)m->m_data+m->m_len;
-    memcpy(cpnt, message, message_len);
-    m->m_len+=message_len;
-  }
+    if(message)
+    {
+        /* DEBUG : append message to ICMP packet */
+        int message_len;
+        char *cpnt;
+        message_len=strlen(message);
+        if(message_len>ICMP_MAXDATALEN) message_len=ICMP_MAXDATALEN;
+        cpnt=(char *)m->m_data+m->m_len;
+        memcpy(cpnt, message, message_len);
+        m->m_len+=message_len;
+    }
 #endif
 
-  icp->icmp_cksum = 0;
-  icp->icmp_cksum = cksum(m, m->m_len);
+    icp->icmp_cksum = 0;
+    icp->icmp_cksum = cksum(m, m->m_len);
 
-  m->m_data -= hlen;
-  m->m_len += hlen;
+    m->m_data -= hlen;
+    m->m_len += hlen;
 
-  /* fill in ip */
-  ip->ip_hl = hlen >> 2;
-  ip->ip_len = m->m_len;
+    /* fill in ip */
+    ip->ip_hl = hlen >> 2;
+    ip->ip_len = m->m_len;
 
-  ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+    ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
 
-  ip->ip_ttl = MAXTTL;
-  ip->ip_p = IPPROTO_ICMP;
-  ip->ip_dst = ip->ip_src;    /* ip adresses */
-  ip->ip_src = alias_addr;
+    ip->ip_ttl = MAXTTL;
+    ip->ip_p = IPPROTO_ICMP;
+    ip->ip_dst = ip->ip_src;    /* ip adresses */
+    ip->ip_src = alias_addr;
 
-  (void ) ip_output(pData, (struct socket *)NULL, m);
+    (void ) ip_output(pData, (struct socket *)NULL, m);
 
-  icmpstat.icps_reflect++;
+    icmpstat.icps_reflect++;
 
 end_error:
-  return;
+    ;
 }
 #undef ICMP_MAXDATALEN
 
@@ -470,49 +501,51 @@ end_error:
 void
 icmp_reflect(PNATState pData, struct mbuf *m)
 {
-  register struct ip *ip = mtod(m, struct ip *);
-  int hlen = ip->ip_hl << 2;
-  int optlen = hlen - sizeof(struct ip );
-  register struct icmp *icp;
+    register struct ip *ip = mtod(m, struct ip *);
+    int hlen = ip->ip_hl << 2;
+    int optlen = hlen - sizeof(struct ip );
+    register struct icmp *icp;
 
-  /*
-   * Send an icmp packet back to the ip level,
-   * after supplying a checksum.
-   */
-  m->m_data += hlen;
-  m->m_len -= hlen;
-  icp = mtod(m, struct icmp *);
+    /*
+     * Send an icmp packet back to the ip level,
+     * after supplying a checksum.
+     */
+    m->m_data += hlen;
+    m->m_len -= hlen;
+    icp = mtod(m, struct icmp *);
 
-  icp->icmp_cksum = 0;
-  icp->icmp_cksum = cksum(m, ip->ip_len - hlen);
+    icp->icmp_cksum = 0;
+    icp->icmp_cksum = cksum(m, ip->ip_len - hlen);
 
-  m->m_data -= hlen;
-  m->m_len += hlen;
+    m->m_data -= hlen;
+    m->m_len += hlen;
 
 #ifndef VBOX_WITH_SLIRP_ICMP
-  /* fill in ip */
-  if (optlen > 0) {
-    /*
-     * Strip out original options by copying rest of first
-     * mbuf's data back, and adjust the IP length.
-     */
-    memmove((caddr_t)(ip + 1), (caddr_t)ip + hlen,
-            (unsigned )(m->m_len - hlen));
-    hlen -= optlen;
-    ip->ip_hl = hlen >> 2;
-    ip->ip_len -= optlen;
-    m->m_len -= optlen;
-  }
-  ip->ip_ttl = MAXTTL;
-  { /* swap */
-    struct in_addr icmp_dst;
-    icmp_dst = ip->ip_dst;
-    ip->ip_dst = ip->ip_src;
-    ip->ip_src = icmp_dst;
-  }
+    /* fill in ip */
+    if (optlen > 0)
+    {
+        /*
+         * Strip out original options by copying rest of first
+         * mbuf's data back, and adjust the IP length.
+         */
+        memmove((caddr_t)(ip + 1), (caddr_t)ip + hlen,
+                 (unsigned )(m->m_len - hlen));
+        hlen -= optlen;
+        ip->ip_hl = hlen >> 2;
+        ip->ip_len -= optlen;
+        m->m_len -= optlen;
+    }
+    ip->ip_ttl = MAXTTL;
+    {
+        /* swap */
+        struct in_addr icmp_dst;
+        icmp_dst = ip->ip_dst;
+        ip->ip_dst = ip->ip_src;
+        ip->ip_src = icmp_dst;
+    }
 #endif /* !VBOX_WITH_SLIRP_ICMP */
 
-  (void ) ip_output(pData, (struct socket *)NULL, m);
+    (void ) ip_output(pData, (struct socket *)NULL, m);
 
-  icmpstat.icps_reflect++;
+    icmpstat.icps_reflect++;
 }
