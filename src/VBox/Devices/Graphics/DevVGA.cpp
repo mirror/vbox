@@ -897,12 +897,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             }
             break;
         case VBE_DISPI_INDEX_BANK:
-            if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4) {
-              val &= (s->vbe_bank_mask >> 2);
-            } else {
-              val &= s->vbe_bank_mask;
-            }
-            val &= s->vbe_bank_mask;
+            if (val > s->vbe_bank_max)
+                val = s->vbe_bank_max;
             s->vbe_regs[s->vbe_index] = val;
             s->bank_offset = (val << 16);
 
@@ -2562,7 +2558,6 @@ static void vga_save(QEMUFile *f, void *opaque)
         qemu_put_be16s(f, &s->vbe_regs[i]);
     qemu_put_be32s(f, &s->vbe_start_addr);
     qemu_put_be32s(f, &s->vbe_line_offset);
-    qemu_put_be32s(f, &s->vbe_bank_mask);
 #else
     qemu_put_byte(f, 0);
 #endif
@@ -2622,7 +2617,7 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
         qemu_get_be16s(f, &s->vbe_regs[i]);
     qemu_get_be32s(f, &s->vbe_start_addr);
     qemu_get_be32s(f, &s->vbe_line_offset);
-    qemu_get_be32s(f, &s->vbe_bank_mask);
+    s->vbe_bank_max = s->vram_size >> 16;
 #else
     if (is_vbe)
 #ifndef VBOX
@@ -2728,7 +2723,7 @@ int vga_initialize(PCIBus *bus, DisplayState *ds, uint8_t *vga_ram_base,
 
 #ifdef CONFIG_BOCHS_VBE
     s->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
-    s->vbe_bank_mask = ((s->vram_size >> 16) - 1);
+    s->vbe_bank_max = s->vram_size >> 16;
 #if defined (TARGET_I386)
     register_ioport_read(0x1ce, 1, 2, vbe_ioport_read_index, s);
     register_ioport_read(0x1cf, 1, 2, vbe_ioport_read_data, s);
@@ -5185,7 +5180,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 #ifdef CONFIG_BOCHS_VBE
     pThis->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
     pThis->vbe_regs[VBE_DISPI_INDEX_VBOX_VIDEO] = 0;
-    pThis->vbe_bank_mask    = ((pThis->vram_size >> 16) - 1);
+    pThis->vbe_bank_max   = pThis->vram_size >> 16;
 #endif /* CONFIG_BOCHS_VBE */
 
     /*
@@ -5645,7 +5640,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /* save */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pThis),
+    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 2 /* version */, sizeof(*pThis),
                                           NULL, vgaR3SaveExec, NULL,
                                           NULL, vgaR3LoadExec, NULL);
     if (RT_FAILURE(rc))
