@@ -160,7 +160,13 @@ void VBoxSettingsDialog::setError (const QString &aError)
         return;
 
     if (!mErrorString.isEmpty())
+    {
+#ifndef Q_WS_MAC
         mLbWhatsThis->setText (mErrorString);
+#else /* Q_WS_MAC */
+        mIconLabel->setToolTip (mErrorString);
+#endif /* Q_WS_MAC */
+    }
     else
         updateWhatsThis (true);
 }
@@ -176,7 +182,13 @@ void VBoxSettingsDialog::setWarning (const QString &aWarning)
         return;
 
     if (!mWarnString.isEmpty())
+    {
+#ifndef Q_WS_MAC
         mLbWhatsThis->setText (mWarnString);
+#else /* Q_WS_MAC */
+        mIconLabel->setToolTip (mWarnString);
+#endif /* Q_WS_MAC */
+    }
     else
         updateWhatsThis (true);
 }
