@@ -839,10 +839,10 @@ static void
 sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
         int len;
-	int i;
+        int i;
         ICMP_ECHO_REPLY *icr;
         u_char code = ~0;
-	len = IcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
+        len = IcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
         if (len <= 0) {
               LogRel(("Error (%d) occured on ICMP receiving \n", GetLastError()));  
               return;

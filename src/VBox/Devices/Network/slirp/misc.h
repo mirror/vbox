@@ -10,7 +10,7 @@
 
 struct ex_list
 {
-    int ex_pty;	         /* Do we want a pty? */
+    int ex_pty;          /* Do we want a pty? */
     int ex_addr;         /* The last byte of the address */
     int ex_fport;        /* Port to telnet to */
     char *ex_exec;       /* Command line of what to exec */
@@ -31,7 +31,7 @@ extern struct ex_list *exec_list;
 #define EMU_IDENT     0x7
 #define EMU_RSH       0x8
 
-#define EMU_NOCONNECT 0x10	/* Don't connect */
+#define EMU_NOCONNECT 0x10      /* Don't connect */
 
 /* UDP emulations */
 #define EMU_TALK      0x1
