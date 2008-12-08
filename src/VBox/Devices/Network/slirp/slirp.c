@@ -10,6 +10,35 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) 
+# if !defined(RT_OS_WINDOWS)
+#  define DO_ENGAGE_EVENT1(so, fdset, label)            \
+        do {                                            \
+                FD_SET((so)->s, (fdset0));              \
+                UPD_NFDS((so)->s);                      \
+        while(0)
+
+
+#  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label)   \
+        do {                                            \
+                FD_SET((so)->s, (fdset0));              \
+                FD_SET((so)->s, (fdset1));              \
+                UPD_NFDS((so)->s);                      \
+        while(0)
+# else /* !RT_OS_WINDOWS */
+#  define DO_ENGAGE_EVENT1(so, fdset0, label)           \
+                goto label;
+
+#  define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) DO_ENGAGE_EVENT1((so), (fdset0), label)
+# endif /* RT_OS_WINDOWS */
+
+# define TCP_ENGAGE_EVENT1(so, fdset0)                   \
+        DO_ENGAGE_EVENT1((so), (fdset0), tcp_engage_event)
+
+# define TCP_ENGAGE_EVENT2(so, fdset0, fdset1)               \
+        DO_ENGAGE_EVENT2((so), (fdset0), (fdset1), tcp_engage_event)
+#endif /* VBOX_WITH_SIMPLIFIED_SLIRP_SYNC */
+
 static const uint8_t special_ethaddr[6] = {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
 };
@@ -460,11 +489,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             if (so->so_state & SS_FACCEPTCONN)
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-                FD_SET(so->s, readfds);
-                UPD_NFDS(so->s);
-#else
-engage_event:
+                TCP_ENGAGE_EVENT1(so, readfs);
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+tcp_engage_event:
                 rc = WSAEventSelect(so->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);
                 if (rc == SOCKET_ERROR)
                 {
@@ -483,13 +510,7 @@ engage_event:
             if (so->so_state & SS_ISFCONNECTING)
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-                FD_SET(so->s, writefds);
-                UPD_NFDS(so->s);
-                continue;
-#else
-                goto engage_event;
-#endif
+                TCP_ENGAGE_EVENT1(so, writefds);
             }
 
             /*
@@ -499,12 +520,7 @@ engage_event:
             if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-                FD_SET(so->s, writefds);
-                UPD_NFDS(so->s);
-#else
-                goto engage_event;
-#endif
+                TCP_ENGAGE_EVENT1(so, writefds);
             }
 
             /*
@@ -514,13 +530,7 @@ engage_event:
             if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
             {
                 STAM_REL_COUNTER_INC(&pData->StatTCPHot);
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-                FD_SET(so->s, readfds);
-                FD_SET(so->s, xfds);
-                UPD_NFDS(so->s);
-#else
-                goto engage_event;
-#endif
+                TCP_ENGAGE_EVENT2(so->s, readfds, xfds);
             }
         }
 
@@ -856,7 +866,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
             if (so->s != -1 && FD_ISSET(so->s, readfds))
 #else
-            if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0))
+            if (((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0))
+#ifdef VBOX_WITH_SLIRP_ICMP
+		|| (so->s == pData->icmp_socket.s) /* XXX: How check equality of handles */
+#endif
+	    )
 #endif
             {
                 sorecvfrom(pData, so);
