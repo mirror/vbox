@@ -102,7 +102,7 @@
     uint16_t vbe_regs[VBE_DISPI_INDEX_NB];      \
     uint32_t vbe_start_addr;                    \
     uint32_t vbe_line_offset;                   \
-    uint32_t vbe_bank_mask;
+    uint32_t vbe_bank_max;
 
 #else
 
