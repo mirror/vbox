@@ -151,8 +151,11 @@ typedef enum PDMINTERFACE
     /** VUSBIRHCONFIG           - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
     PDMINTERFACE_VUSB_RH_CONFIG,
 
-    /** VUSBROOTHUBCONNECTOR    - VUSB Device interface.                (Up)     No coupling. */
+    /** VUSBIDEVICE             - VUSB Device interface.                (Up)     No coupling. */
     PDMINTERFACE_VUSB_DEVICE,
+
+    /** VUSBITIMER              - VUSB Timer interface.                 (Up)     No coupling. */
+    PDMINTERFACE_VUSB_TIMER,
 
     /** PDMIHOSTPARALLELPORT    - The Host Parallel port interface.     (Down)   Coupled with PDMINTERFACE_HOST_PARALLEL_CONNECTOR. */
     PDMINTERFACE_HOST_PARALLEL_PORT,
