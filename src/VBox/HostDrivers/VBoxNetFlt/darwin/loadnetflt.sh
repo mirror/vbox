@@ -78,7 +78,7 @@ if test "$OWNER" -ne 0; then
 
     # make a copy and switch over DIR
     mkdir -p "$TMP_DIR/"
-    cp -Rp "$DIR" "$TMP_DIR/"
+    sudo cp -Rp "$DIR" "$TMP_DIR/"
     DIR="$TMP_DIR/$DRVNAME"
 
     # load.sh puts it here.
