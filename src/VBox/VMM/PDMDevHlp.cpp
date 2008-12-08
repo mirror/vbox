@@ -564,23 +564,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
             /*
              * Sanity check: don't allow to register more than 32K of the PCI I/O space.
              */
-            if (cbRegion > 32 * _1K)
-            {
-                LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-                return VERR_INVALID_PARAMETER;
-            }
+            AssertMsgReturn(cbRegion <= _32K,
+                            ("caller='%s'/%d: %#x\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, cbRegion),
+                            VERR_INVALID_PARAMETER);
             break;
+
         case PCI_ADDRESS_SPACE_MEM:
         case PCI_ADDRESS_SPACE_MEM_PREFETCH:
             /*
              * Sanity check: don't allow to register more than 512MB of the PCI MMIO space for
              * now. If this limit is increased beyond 2GB, adapt the aligned check below as well!
              */
-            if (cbRegion > 512 * _1M)
-            {
-                LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (invalid size)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-                return VERR_INVALID_PARAMETER;
-            }
+            AssertMsgReturn(cbRegion <= _512K,
+                            ("caller='%s'/%d: %#x\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, cbRegion),
+                            VERR_INVALID_PARAMETER);
             break;
         default:
             AssertMsgFailed(("enmType=%#x is unknown\n", enmType));
@@ -612,11 +609,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
                  pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, cbRegion, RT_ALIGN_32(cbRegion, PAGE_SIZE)));
             cbRegion = RT_ALIGN_32(cbRegion, PAGE_SIZE);
         }
+
         /*
          * For registering PCI MMIO memory or PCI I/O memory, the size of the region must be a power of 2!
          */
         int iLastSet = ASMBitLastSetU32(cbRegion);
-        Assert(iLastSet  >  0);
+        Assert(iLastSet > 0);
         uint32_t cbRegionAligned = 1U << (iLastSet - 1);
         if (cbRegion > cbRegionAligned)
             cbRegion = cbRegionAligned * 2; /* round up */
