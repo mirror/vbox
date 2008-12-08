@@ -51,7 +51,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
             {
-                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.Locked.pvR3;
+                const RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.Locked.pvR3;
                 if (off < pLookup->cb)
                 {
                     *poff = off;
@@ -62,7 +62,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
             {
-                const uint32_t off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.HCPhys.pvR3;
+                const RTR3UINTPTR off = (RTR3UINTPTR)R3Ptr - (RTR3UINTPTR)pLookup->u.HCPhys.pvR3;
                 if (off < pLookup->cb)
                 {
                     *poff = off;
@@ -113,7 +113,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
         {
             case MMLOOKUPHYPERTYPE_LOCKED:
             {
-                const uint32_t off = (RTR3UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.Locked.pvR0;
+                const RTR0UINTPTR off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.Locked.pvR0;
                 if (off < pLookup->cb && pLookup->u.Locked.pvR0)
                 {
                     *poff = off;
@@ -124,7 +124,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 
             case MMLOOKUPHYPERTYPE_HCPHYS:
             {
-                const uint32_t off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.HCPhys.pvR0;
+                const RTR0UINTPTR off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.HCPhys.pvR0;
                 if (off < pLookup->cb && pLookup->u.HCPhys.pvR0)
                 {
                     *poff = off;
