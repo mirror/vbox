@@ -435,7 +435,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 #if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)) 
           sorecvfrom_icmp_unix(pData, so);
 #endif
-#if defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)
+#if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
           sorecvfrom_icmp_win(pData, so);
 #endif
           udp_detach(pData, so);
@@ -850,7 +850,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         LogRel(("IcmpParseReplies returns %ld\n", len));
         icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
         for (i = 0; i < len; ++i) {
-                switch(icr[i].Status) {
+                switch(icr[i].Status) 
+                {
                         case IP_DEST_HOST_UNREACHABLE:
                                 code = (code != ~0 ? code :ICMP_UNREACH_HOST);
                         case IP_DEST_NET_UNREACHABLE:
