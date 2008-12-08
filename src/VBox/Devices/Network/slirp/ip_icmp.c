@@ -80,6 +80,24 @@ icmp_init(PNATState pData)
     pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
     insque(pData, &pData->icmp_socket, &udb);
 #else
+    pData->hmIcmpLibrary = LoadLibrary("Iphlpapi.dll");
+    if (pData->hmIcmpLibrary != NULL) {
+            pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
+    }
+    if (pData->pfIcmpParseReplies == NULL) {
+            FreeLibrary(pData->hmIcmpLibrary);
+            pData->hmIcmpLibrary = LoadLibrary("Icmp.dll");
+            if (pData->hmIcmpLibrary == NULL) {
+                    LogRel(("Icmp.dll couldn't be loaded"));
+                    return (1);
+            }
+            pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
+    }
+    if (pData->pfIcmpParseReplies == NULL) {
+            LogRel(("Can't find IcmpParseReplies symbol"));
+            FreeLibrary(pData->hmIcmpLibrary);
+            return (1);
+    } 
     pData->icmp_socket.s = IcmpCreateFile();
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
@@ -129,7 +147,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             head_socket = (head_socket != NULL ? head_socket : &tcb); /* head_socket could be initialized with udb*/
     }
     if (found == 1)
-        return cm;
+        return icm;
 
     return NULL;
 }
@@ -300,7 +318,7 @@ freeit:
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
                 status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
-                                       NULL, NULL, addr.sin_addr.s_addr, icp, icmplen, &ipopt,
+                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data, icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
                                        pData->pvIcmpBuffer, pData->szIcmpBuffer, 10);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {

@@ -13,6 +13,7 @@
 #include <sys/filio.h>
 #endif
 #if defined(VBOX_WITH_SLIRP_ICMP) && defined (RT_OS_WINDOWS) 
+#include <iphlpapi.h>
 #include <icmpapi.h>
 #endif
 
@@ -842,7 +843,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         int i;
         ICMP_ECHO_REPLY *icr;
         u_char code = ~0;
-        len = IcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
+        len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
         if (len <= 0) {
               LogRel(("Error (%d) occured on ICMP receiving \n", GetLastError()));  
               return;
