@@ -725,9 +725,8 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
             AssertFailed();
     }
 
-    LogFlowThisFunc (("m.location='%ls', mm.format=%ls, m.id={%RTuuid}\n",
-                      m.location.raw(), mm.format.raw(), m.id.raw()));
-    LogFlowThisFunc (("m.locationFull='%ls'\n", m.locationFull.raw()));
+    LogFlowThisFunc (("m.locationFull='%ls', mm.format=%ls, m.id={%RTuuid}\n",
+                      m.locationFull.raw(), mm.format.raw(), m.id.raw()));
 
     /* Don't call queryInfo() for registered media to prevent the calling
      * thread (i.e. the VirtualBox server startup thread) from an unexpected

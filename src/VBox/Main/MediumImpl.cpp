@@ -1022,9 +1022,8 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox,
             m.description = descNode.keyStringValue();
     }
 
-    LogFlowThisFunc (("m.location='%ls', m.id={%RTuuid}\n",
-                      m.location.raw(), m.id.raw()));
-    LogFlowThisFunc (("m.locationFull='%ls'\n", m.locationFull.raw()));
+    LogFlowThisFunc (("m.locationFull='%ls', m.id={%RTuuid}\n",
+                      m.locationFull.raw(), m.id.raw()));
 
     /* Don't call queryInfo() for registered media to prevent the calling
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
