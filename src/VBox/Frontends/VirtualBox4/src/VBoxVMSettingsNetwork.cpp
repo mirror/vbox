@@ -729,7 +729,7 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
 
     /* Creating Tab Pages */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
+    ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
     for (ulong slot = 0; slot < count; ++ slot)
     {
         /* Get Adapter */
@@ -896,7 +896,7 @@ void VBoxVMSettingsNetworkPage::populateNetworksList()
 
     /* Load internal network list */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong count = vbox.GetSystemProperties().GetNetworkAdapterCount();
+    ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
     CMachineVector vec =  vbox.GetMachines2();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
