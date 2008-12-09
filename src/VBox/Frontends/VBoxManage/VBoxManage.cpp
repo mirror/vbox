@@ -385,11 +385,6 @@ static void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            [-gueststatisticsinterval <seconds>]\n"
                  );
-        if (fLinux)
-        {
-            RTPrintf("                            [-tapsetup<1-N> none|<application>]\n"
-                     "                            [-tapterminate<1-N> none|<application>]\n");
-        }
         RTPrintf("                            [-audio none|null");
         if (fWin)
         {
@@ -1562,10 +1557,6 @@ static int handleModifyVM(int argc, char *argv[],
     std::vector <char *> hostifdev (NetworkAdapterCount, 0);
     std::vector <const char *> intnet (NetworkAdapterCount, 0);
     std::vector <const char *> natnet (NetworkAdapterCount, 0);
-#ifdef RT_OS_LINUX
-    std::vector <char *> tapsetup (NetworkAdapterCount, 0);
-    std::vector <char *> tapterm (NetworkAdapterCount, 0);
-#endif
     std::vector <char *> macs (NetworkAdapterCount, 0);
     std::vector <char *> uarts_mode (SerialPortCount, 0);
     std::vector <ULONG>  uarts_base (SerialPortCount, 0);
@@ -1920,28 +1911,6 @@ static int handleModifyVM(int argc, char *argv[],
             }
             i++;
         }
-#ifdef RT_OS_LINUX
-        else if (strncmp(argv[i], "-tapsetup", 9) == 0)
-        {
-            unsigned n = parseNum(&argv[i][9], NetworkAdapterCount, "NIC");
-            if (!n)
-                return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            tapsetup[n - 1] = argv[i + 1];
-            i++;
-        }
-        else if (strncmp(argv[i], "-tapterminate", 13) == 0)
-        {
-            unsigned n = parseNum(&argv[i][13], NetworkAdapterCount, "NIC");
-            if (!n)
-                return 1;
-            if (argc <= i + 1)
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            tapterm[n - 1] = argv[i + 1];
-            i++;
-        }
-#endif /* RT_OS_LINUX */
         else if (strncmp(argv[i], "-macaddress", 11) == 0)
         {
             unsigned n = parseNum(&argv[i][11], NetworkAdapterCount, "NIC");
@@ -2990,36 +2959,6 @@ static int handleModifyVM(int argc, char *argv[],
             {
                 CHECK_ERROR_RET(nic, COMSETTER(NATNetwork)(Bstr(natnet[n])), 1);
             }
-#ifdef RT_OS_LINUX
-            /* the TAP setup application? */
-            if (tapsetup[n])
-            {
-                /* remove it? */
-                if (strcmp(tapsetup[n], "none") == 0)
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(TAPSetupApplication)(NULL), 1);
-                }
-                else
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(TAPSetupApplication)(Bstr(tapsetup[n])), 1);
-                }
-            }
-
-            /* the TAP terminate application? */
-            if (tapterm[n])
-            {
-                /* remove it? */
-                if (strcmp(tapterm[n], "none") == 0)
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(TAPTerminateApplication)(NULL), 1);
-                }
-                else
-                {
-                    CHECK_ERROR_RET(nic, COMSETTER(TAPTerminateApplication)(Bstr(tapterm[n])), 1);
-                }
-            }
-#endif /* RT_OS_LINUX */
-
         }
         if (FAILED(rc))
             break;
