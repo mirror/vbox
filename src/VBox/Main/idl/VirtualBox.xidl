@@ -6664,6 +6664,11 @@
       <desc>
         Waits until the task is done (including all operations) with a
         given timeout.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Failed to wait for task completion.
+        </result>
+
       </desc>
       <param name="timeout" type="long" dir="in">
         <desc>
@@ -6676,6 +6681,11 @@
     <method name="waitForOperationCompletion">
       <desc>
         Waits until the given operation is done with a given timeout.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Failed to wait for operation completion.
+        </result>
+
       </desc>
       <param name="operation" type="unsigned long" dir="in">
         <desc>
@@ -6698,6 +6708,11 @@
           If <link to="#cancelable"/> is <tt>false</tt>, then
           this method will fail.
         </note>
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Operation cannot be canceled.
+        </result>
+
       </desc>
     </method>
 
