@@ -803,6 +803,9 @@ HRESULT MediumBase::queryInfo()
 
     if (success)
         m.lastAccessError.setNull();
+    else
+        LogWarningFunc (("'%ls' is not accessible (error='%ls', vrc=%Rrc)\n",
+                         m.locationFull.raw(), m.lastAccessError.raw(), vrc));
 
     /* inform other callers if there are any */
     if (m.queryInfoCallers > 0)
@@ -820,15 +823,9 @@ HRESULT MediumBase::queryInfo()
     {
         /* Set the proper state according to the result of the check */
         if (success)
-        {
             m.state = MediaState_Created;
-        }
         else
-        {
             m.state = MediaState_Inaccessible;
-            LogWarningFunc (("'%ls' is not accessible ('%ls')\n",
-                             m.locationFull.raw(), m.lastAccessError.raw()));
-        }
     }
     else
     {
@@ -880,6 +877,9 @@ HRESULT MediumBase::setStateError()
         }
         case MediaState_Inaccessible:
         {
+            AssertMsg (!m.lastAccessError.isEmpty(),
+                       ("There must always be a reason for Inaccessible"));
+
             /* be in sync with Console::powerUpThread() */
             if (!m.lastAccessError.isEmpty())
                 rc = setError (VBOX_E_INVALID_OBJECT_STATE,
