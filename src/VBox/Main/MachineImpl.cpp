@@ -6910,6 +6910,9 @@ HRESULT Machine::deleteImplicitDiffs()
 
         if ((*it)->isImplicit())
         {
+            /* deassociate and mark for deletion */
+            rc = hd->detachFrom (mData->mUuid);
+            AssertComRC (rc);
             implicitAtts.push_back (*it);
             continue;
         }
@@ -6923,11 +6926,14 @@ HRESULT Machine::deleteImplicitDiffs()
             /* no: de-associate */
             rc = hd->detachFrom (mData->mUuid);
             AssertComRC (rc);
+            continue;
         }
     }
 
     /* rollback hard disk changes */
     mHDData.rollback();
+
+    MultiResult mrc (S_OK);
 
     /* delete unused implicit diffs */
     if (implicitAtts.size() != 0)
@@ -6950,20 +6956,7 @@ HRESULT Machine::deleteImplicitDiffs()
         {
             ComObjPtr <HardDisk2> hd = (*it)->hardDisk();
 
-            rc = hd->deleteStorageAndWait();
-
-            /// @todo NEWMEDIA report the error as a warning here. Note that
-            /// we cannot simply abort the rollback because parts of machine
-            /// data may have been already restored from backup and
-            /// overwrote the recent changes. The best we can do is to
-            /// deassociate the hard disk (to prevent the consistency) but
-            /// leave it undeleted.
-
-            if (FAILED (rc))
-            {
-                rc = hd->detachFrom (mData->mUuid);
-                AssertComRC (rc);
-            }
+            mrc = hd->deleteStorageAndWait();
         }
 
         alock.enter();
@@ -6974,7 +6967,7 @@ HRESULT Machine::deleteImplicitDiffs()
         }
     }
 
-    return rc;
+    return mrc;
 }
 
 /**
