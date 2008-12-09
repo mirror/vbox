@@ -25,6 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_MM_HYPER
 #include <VBox/mm.h>
+#include <VBox/vmm.h>
 #include "MMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/log.h>
@@ -244,17 +245,22 @@ DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
  * Calculate the host context ring-0 address of an offset into the HMA memory chunk.
  *
  * @returns the host context ring-0 address.
+ * @param   pVM         Pointer to the shared VM structure.
  * @param   pLookup     The HMA lookup record.
  * @param   off         The offset into the HMA memory chunk.
  */
-DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PMMLOOKUPHYPER pLookup, uint32_t off)
+DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
     switch (pLookup->enmType)
     {
         case MMLOOKUPHYPERTYPE_LOCKED:
             if (pLookup->u.Locked.pvR0)
                 return (RTR0PTR)((RTR0UINTPTR)pLookup->u.Locked.pvR0 + off);
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+            AssertMsg(!VMMIsHwVirtExtForced(pVM), ("%s\n", R3STRING(pLookup->pszDesc)));
+#else
             AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc)));
+#endif
             return NIL_RTR0PTR;
 
         case MMLOOKUPHYPERTYPE_HCPHYS:
@@ -297,7 +303,7 @@ DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t
 #ifdef IN_RC
     return (void *)mmHyperLookupCalcRC(pVM, pLookup, off);
 #elif defined(IN_RING0)
-    return mmHyperLookupCalcR0(pLookup, off);
+    return mmHyperLookupCalcR0(pVM, pLookup, off);
 #else
     return mmHyperLookupCalcR3(pLookup, off);
 #endif
@@ -377,7 +383,7 @@ VMMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
     if (pLookup)
-        return mmHyperLookupCalcR0(pLookup, off);
+        return mmHyperLookupCalcR0(pVM, pLookup, off);
     AssertMsgFailed(("R3Ptr=%p is not inside the hypervisor memory area!\n", R3Ptr));
     return NIL_RTR0PTR;
 }
@@ -457,7 +463,7 @@ VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupRC(pVM, RCPtr, &off);
     if (pLookup)
-        return mmHyperLookupCalcR0(pLookup, off);
+        return mmHyperLookupCalcR0(pVM, pLookup, off);
     return NIL_RTR0PTR;
 }
 
@@ -519,7 +525,7 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
     if (pLookup)
-        return mmHyperLookupCalcR0(pLookup, off);
+        return mmHyperLookupCalcR0(pVM, pLookup, off);
     return NIL_RTR0PTR;
 }
 #endif
