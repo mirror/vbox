@@ -3440,53 +3440,20 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    int             rc, rc2;
-    RTCCUINTREG     uFlags;
+    uint32_t        aParam[4];
+    int             rc;
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
-
-    /* @todo This code is not guest SMP safe (hyper context) */
-    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
-    AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
 
     pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
-    /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
-    VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    aParam[0] = (uint32_t)(pPageCpuPhys >> 32));                            /* Param 1: VMXON physical address - Hi. */
+    aParam[1] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
+    aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32);            /* Param 2: VMCS physical address - Hi. */
+    aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys);                  /* Param 2: VMCS physical address - Lo. */
 
-    /* Leave VMX Root Mode. */
-    VMXDisable();
-
-    uFlags = ASMIntDisableFlags();
-
-    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
-    CPUMPushHyper(pVM, (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32));    /* Param 2: pVMCBHostPhys - Hi. */
-    CPUMPushHyper(pVM, (uint32_t)pVCpu->hwaccm.s.vmx.pVMCSPhys);            /* Param 2: pVMCBHostPhys - Lo. */
-    CPUMPushHyper(pVM, (uint32_t)(pPageCpuPhys >> 32));                     /* Param 1: pVMCBPhys - Hi. */
-    CPUMPushHyper(pVM, (uint32_t)pPageCpuPhys);                             /* Param 1: pVMCBPhys - Lo. */
-    CPUMSetHyperEIP(pVM, pVM->hwaccm.s.pfnVMXGCStartVM64);
-
-    /* Call switcher. */
-    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
-
-    ASMSetFlags(uFlags);
-
-    /* Make sure the VMX instructions don't cause #UD faults. */
-    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
-
-    /* Enter VMX Root Mode */
-    rc2 = VMXEnable(pPageCpuPhys);
-    if (RT_FAILURE(rc2))
-    {
-        if (pVM)
-            VMXR0CheckError(pVM, pVCpu, rc2);
-        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
-        return VERR_VMX_VMXON_FAILED;
-    }
-
-    VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
-    return rc;
+    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 4, &aParam[0]);
 }
 
 /**
@@ -3497,8 +3464,10 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PV
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  * @param   pfnHandler  RC handler
+ * @param   cbParam     Number of parameters
+ * @param   paParam     Array of 32 bits parameters
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler)
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc, rc2;
     RTCCUINTREG     uFlags;
@@ -3522,6 +3491,8 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVM, pfnHandler);
+    for (int i=(int)cbParam-1;i>=0;i++)
+        CPUMPushHyper(pVM, paParam[i]);
 
     /* Call switcher. */
     rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);

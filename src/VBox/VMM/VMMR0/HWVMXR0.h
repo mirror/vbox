@@ -147,8 +147,10 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  * @param   pfnHandler  RC handler
+ * @param   cbParam     Number of parameters
+ * @param   paParam     Array of 32 bits parameters
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler);
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam);
 
 #define VMX_WRITE_SELREG(REG, reg) \
 {                                                                                               \
