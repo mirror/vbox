@@ -33,8 +33,7 @@
             DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
     } while (0)
 # else /* !VBOX_WITH_SLIRP_ICMP */
-#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
-    /* no ICMP socket */
+#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      do {} while (0)
 # endif /* !VBOX_WITH_SLIRP_ICMP */
 
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
@@ -43,19 +42,18 @@
  * On Windows, we will be notified by IcmpSendEcho2() when the response arrives.
  * So no call to WSAEventSelect necessary.
  */
-# define ICMP_ENGAGE_EVENT(so, fdset1, fdset2) \
-    /* ignore */
+# define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)       do {} while(0)
 
-# define DO_ENGAGE_EVENT1(so, fdset1, label)                                                    \
-    do {                                                                                        \
-        rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
-        if (rc == SOCKET_ERROR)                                                                 \
-        {                                                                                       \
-            /* This should not happen */                                                        \
-            error = WSAGetLastError();                                                          \
-            LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n",    \
-                        error, (so), (so)->s, VBOX_SOCKET_EVENT));                              \
-        }                                                                                       \
+# define DO_ENGAGE_EVENT1(so, fdset1, label)         \
+    do {                                             \
+        rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS); \
+        if (rc == SOCKET_ERROR)                      \
+        {                                            \
+            /* This should not happen */             \
+            error = WSAGetLastError();               \
+            LogRel(("WSAEventSelector (" #label ") error %d (so=%x, socket=%s, event=%x)\n", \
+                        error, (so), (so)->s, VBOX_SOCKET_EVENT)); \
+        }                                            \
     } while(0)
 
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
@@ -72,7 +70,8 @@
 #define UDP_ENGAGE_EVENT(so, fdset) \
     DO_ENGAGE_EVENT1((so), (fdset), UDP)
 
-static const uint8_t special_ethaddr[6] = {
+static const uint8_t special_ethaddr[6] =
+{
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
 };
 
