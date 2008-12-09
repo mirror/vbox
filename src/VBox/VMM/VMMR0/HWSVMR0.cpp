@@ -2289,26 +2289,15 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  */
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    int             rc;
-    RTCCUINTREG     uFlags;
+    uint32_t aParam[4];
+    int      rc;
 
-    /* @todo This code is not guest SMP safe (hyper context) */
-    AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+    aParam[0] = (uint32_t)(pVMCBHostPhys >> 32);            /* Param 1: pVMCBHostPhys - Hi. */
+    aParam[1] = (uint32_t)(pVMCBHostPhys);                  /* Param 1: pVMCBHostPhys - Lo. */
+    aParam[2] = (uint32_t)(pVMCBPhys >> 32);                /* Param 2: pVMCBPhys - Hi. */
+    aParam[3] = (uint32_t)(pVMCBPhys);                      /* Param 2: pVMCBPhys - Lo. */
 
-    uFlags = ASMIntDisableFlags();
-
-    CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
-    CPUMPushHyper(pVM, (uint32_t)(pVMCBHostPhys >> 32));    /* Param 2: pVMCBHostPhys - Hi. */
-    CPUMPushHyper(pVM, (uint32_t)pVMCBHostPhys);            /* Param 2: pVMCBHostPhys - Lo. */
-    CPUMPushHyper(pVM, (uint32_t)(pVMCBPhys >> 32));        /* Param 1: pVMCBPhys - Hi. */
-    CPUMPushHyper(pVM, (uint32_t)pVMCBPhys);                /* Param 1: pVMCBPhys - Lo. */
-    CPUMSetHyperEIP(pVM, pVM->hwaccm.s.pfnVMXGCStartVM64);
-
-    /* Call switcher. */
-    rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
-
-    ASMSetFlags(uFlags);
-    return rc;
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 4, &aParam[0]);
 }
 
 /**
@@ -2319,8 +2308,10 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  * @param   pfnHandler  RC handler
+ * @param   cbParam     Number of parameters
+ * @param   paParam     Array of 32 bits parameters
  */
-VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler)
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc;
     RTCCUINTREG     uFlags;
@@ -2332,6 +2323,8 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVM, pfnHandler);
+    for (int i=(int)cbParam-1;i>=0;i++)
+        CPUMPushHyper(pVM, paParam[i]);
 
     /* Call switcher. */
     rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);

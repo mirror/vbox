@@ -1075,9 +1075,9 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64);
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64, 0, NULL);
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64, 0, NULL);
 }
 
 /**
@@ -1091,12 +1091,12 @@ VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64);
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
 }
 
-#ifdef DEBUG
+# ifdef DEBUG
 /**
  * Test the 32->64 bits switcher
  *
@@ -1107,15 +1107,16 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
 {
     PVMCPU   pVCpu = &pVM->aCpus[0];
     CPUMCTX *pCtx;
+    uint32_t aParam[5] = {0, 1, 2, 3, 4};
 
     pCtx = CPUMQueryGuestCtxPtrEx(pVM, pVCpu);
 
     if (pVM->hwaccm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64);
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
 
     return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64);
 }
-#endif
+# endif
 
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
