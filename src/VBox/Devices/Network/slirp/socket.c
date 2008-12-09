@@ -876,12 +876,14 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                                 ip = mtod(m, struct ip *);
                                 ip->ip_src.s_addr = icr[i].Address;
                                 ip->ip_p = IPPROTO_ICMP;
-                                ip->ip_dst.s_addr = inet_addr("10.0.0.15"); /*XXX:hack here*/
+                                ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
                                 ip->ip_hl = sizeof(struct ip) >> 2;
 
                                 icp = (struct icmp *)&ip[1]; /* no options */
                                 icp->icmp_type = ICMP_ECHOREPLY;
                                 icp->icmp_code = 0;
+                                icp->icmp_id = so->so_icmp_id;
+                                icp->icmp_seq = so->so_icmp_seq;
                                 memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
 
                                 ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize; 
