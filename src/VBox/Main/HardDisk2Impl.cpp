@@ -618,7 +618,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, CBSTR aLocation)
          * newly opened media so convert this into an error */
         if (m.state == MediaState_Inaccessible)
         {
-            Assert (!m.lastAccessError.isNull());
+            Assert (!m.lastAccessError.isEmpty());
             rc = setError (E_FAIL, Utf8Str (m.lastAccessError));
         }
 
@@ -676,6 +676,7 @@ HRESULT HardDisk2::init (VirtualBox *aVirtualBox, HardDisk2 *aParent,
     /* see below why we don't call queryInfo() (and therefore treat the medium
      * as inaccessible for now */
     m.state = MediaState_Inaccessible;
+    m.lastAccessError = tr ("Accessibility check was not yet performed");
 
     /* required */
     unconst (m.id) = aNode.value <Guid> ("uuid");
@@ -1915,9 +1916,17 @@ HRESULT HardDisk2::deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait)
             tr ("Hard disk format '%ls' does not support storage deletion"),
             mm.format.raw());
 
+    /* Note that we are fine with Inaccessible state too: a) for symmetry with
+     * create calls and b) because it doesn't really harm to try, if it is
+     * really inaccessibke, the delete operation will fail anyway. Accepting
+     * Inaccessible state is especially important because all registered hard
+     * disks are initially Inaccessible upon VBoxSVC startup until
+     * COMGETTER(State) is called. */
+
     switch (m.state)
     {
         case MediaState_Created:
+        case MediaState_Inaccessible:
             break;
         default:
             return setStateError();
@@ -2875,6 +2884,17 @@ HRESULT HardDisk2::queryInfo()
 
     alock.enter();
 
+    if (success)
+        m.lastAccessError.setNull();
+    else
+    {
+        m.lastAccessError = lastAccessError;
+        LogWarningFunc (("'%ls' is not accessible (error='%ls', "
+                         "rc=%Rhrc, vrc=%Rrc)\n",
+                         m.locationFull.raw(), m.lastAccessError.raw(),
+                         rc, vrc));
+    }
+
     /* inform other callers if there are any */
     if (m.queryInfoCallers > 0)
     {
@@ -2887,24 +2907,18 @@ HRESULT HardDisk2::queryInfo()
         m.queryInfoSem = NIL_RTSEMEVENTMULTI;
     }
 
-    /* Restore the proper state when appropriate. Keep in mind that LockedRead
-     * and LockedWrite are not transitable to Inaccessible. */
-    if (success)
+    if (tempStateSet)
     {
-        if (tempStateSet)
+        /* Set the proper state according to the result of the check */
+        if (success)
             m.state = MediaState_Created;
-        m.lastAccessError.setNull();
+        else
+            m.state = MediaState_Inaccessible;
     }
     else
     {
-        if (tempStateSet)
-            m.state = MediaState_Inaccessible;
-        m.lastAccessError = lastAccessError;
-
-        LogWarningFunc (("'%ls' is not accessible (error='%ls', "
-                         "rc=%Rhrc, vrc=%Rrc)\n",
-                         m.locationFull.raw(), m.lastAccessError.raw(),
-                         rc, vrc));
+        /* we're locked, use a special field to store the result */
+        m.accessibleInLock = success;
     }
 
     return rc;
