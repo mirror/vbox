@@ -217,6 +217,7 @@ extern NAME(SUPR0AbsIs64bit)
 extern NAME(SUPR0Abs64bitKernelCS)
 extern NAME(SUPR0Abs64bitKernelSS)
 extern NAME(SUPR0Abs64bitKernelDS)
+extern NAME(SUPR0AbsKernelCS)
 %endif
 
 
@@ -259,8 +260,11 @@ BEGINPROC VMXWriteVMCS64
     mov         ecx, [esp + 4]          ; idxField
     lea         edx, [esp + 8]          ; &u64Data
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jne         .longmode
+    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmwrite     ecx, [edx]              ; low dword
     jz          .done
@@ -280,18 +284,9 @@ BEGINPROC VMXWriteVMCS64
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     and     edx, 0ffffffffh
     and     ecx, 0ffffffffh
     xor     eax, eax
@@ -300,7 +295,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXWriteVMCS64
@@ -330,7 +327,10 @@ BEGINPROC VMXReadVMCS64
     mov         edx, [esp + 8]          ; pData
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jne         .longmode
+    jz          .legacy_mode
+    db          0xea                    ; jmp far .sixtyfourbit_mode
+    dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmread      [edx], ecx              ; low dword
     jz          .done
@@ -350,18 +350,9 @@ BEGINPROC VMXReadVMCS64
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     and     edx, 0ffffffffh
     and     ecx, 0ffffffffh
     xor     eax, eax
@@ -370,7 +361,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXReadVMCS64
@@ -402,7 +395,10 @@ BEGINPROC VMXReadVMCS32
     mov     edx, [esp + 8]              ; pu32Data
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmread  [edx], ecx
@@ -417,18 +413,9 @@ BEGINPROC VMXReadVMCS32
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     and     edx, 0ffffffffh
     and     ecx, 0ffffffffh
     xor     eax, eax
@@ -438,7 +425,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXReadVMCS32
@@ -470,7 +459,10 @@ BEGINPROC VMXWriteVMCS32
     mov     edx, [esp + 8]              ; u32Data
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmwrite ecx, edx
@@ -485,18 +477,9 @@ BEGINPROC VMXWriteVMCS32
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     and     edx, 0ffffffffh
     and     ecx, 0ffffffffh
     xor     eax, eax
@@ -505,7 +488,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXWriteVMCS32
@@ -530,7 +515,10 @@ BEGINPROC VMXEnable
 %else  ; RT_ARCH_X86
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmxon   [esp + 4]
@@ -550,19 +538,10 @@ BEGINPROC VMXEnable
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    lea     edx, [esp + 4]              ; &HCPhysVMXOn.
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
+    lea     rdx, [rsp + 4]              ; &HCPhysVMXOn.
     and     edx, 0ffffffffh
     xor     eax, eax
     vmxon   [rdx]
@@ -570,7 +549,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXEnable
@@ -583,26 +564,23 @@ ENDPROC VMXEnable
 BEGINPROC VMXDisable
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmxoff
+.the_end:
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     vmxoff
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXDisable
@@ -627,7 +605,10 @@ BEGINPROC VMXClearVMCS
 %else  ; RT_ARCH_X86
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmclear [esp + 4]
@@ -641,25 +622,18 @@ BEGINPROC VMXClearVMCS
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    lea     edx, [esp + 4]              ; &HCPhysVMCS
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
+    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
     and     edx, 0ffffffffh
     xor     eax, eax
     vmclear [rdx]
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
 ENDPROC VMXClearVMCS
@@ -684,7 +658,10 @@ BEGINPROC VMXActivateVMCS
 %else
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     xor     eax, eax
     vmptrld [esp + 4]
@@ -698,25 +675,18 @@ BEGINPROC VMXActivateVMCS
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    lea     edx, [esp + 4]              ; &HCPhysVMCS
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
+    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
     and     edx, 0ffffffffh
     xor     eax, eax
     vmptrld [rdx]
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXActivateVMCS
@@ -743,31 +713,28 @@ BEGINPROC VMXGetActivateVMCS
  %else
   %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
   %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     vmptrst qword [esp+04h]
  %endif
     xor     eax, eax
+.the_end:
     ret
 
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    lea     edx, [esp + 4]              ; &HCPhysVMCS
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
+    lea     rdx, [rsp + 4]              ; &HCPhysVMCS
     and     edx, 0ffffffffh
     vmptrst qword [rdx]
     xor     eax, eax
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 %endif
@@ -795,7 +762,10 @@ BEGINPROC VMXR0InvEPT
 %else
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
     cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jne         .longmode
+    jz          .legacy_mode
+    db          0xea                        ; jmp far .sixtyfourbit_mode
+    dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
@@ -812,22 +782,12 @@ BEGINPROC VMXR0InvEPT
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    mov     ecx, [esp + 4]              ; enmFlush
-    mov     edx, [esp + 8]              ; pDescriptor
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
-    and     ecx, 0ffffffffh
-    and     edx, 0ffffffffh
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    mov     ecx, [rsp + 4]              ; enmFlush
+    mov     edx, [rsp + 8]              ; pDescriptor
     xor     eax, eax
 ;    invept  rcx, qword [rdx]
     DB      0x66, 0x0F, 0x38, 0x80, 0xA
@@ -835,7 +795,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXR0InvEPT
@@ -862,8 +824,11 @@ BEGINPROC VMXR0InvVPID
  %endif
 %else
  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-    cmp         byte [NAME(g_fVMXIs64bitHost)], 0
-    jne         .longmode
+    cmp     byte [NAME(g_fVMXIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
@@ -880,22 +845,12 @@ BEGINPROC VMXR0InvVPID
     ret
 
 %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
-.longmode:
-    mov     ecx, [esp + 4]              ; enmFlush
-    mov     edx, [esp + 8]              ; pDescriptor
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+ALIGNCODE(16)
 BITS 64
-.thunk64:
-    and     ecx, 0ffffffffh
-    and     edx, 0ffffffffh
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    mov     ecx, [rsp + 4]              ; enmFlush
+    mov     edx, [rsp + 8]              ; pDescriptor
     xor     eax, eax
 ;    invvpid rcx, qword [rdx]
     DB      0x66, 0x0F, 0x38, 0x81, 0xA
@@ -903,7 +858,9 @@ BITS 64
     cmovz   eax, r8d
     mov     r9d, VERR_VMX_INVALID_VMCS_PTR
     cmovc   eax, r9d
-    retf                                ; return to caller
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
 ENDPROC VMXR0InvVPID
@@ -978,25 +935,22 @@ ENDPROC SVMR0InvlpgA
 ; */
 ;DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 BEGINPROC hwaccmR0Get64bitGDTRandIDTR
-.longmode:
-    mov     ecx, [esp + 4]              ; pGdtr
-    mov     edx, [esp + 8]              ; pIdtr
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.the_end:
+    ret
+
+ALIGNCODE(16)
 BITS 64
-.thunk64:
-    and     ecx, 0ffffffffh
-    and     edx, 0ffffffffh
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    mov     ecx, [rsp + 4]              ; pGdtr
+    mov     edx, [rsp + 8]              ; pIdtr
     sgdt    [rcx]
     sidt    [rdx]
-    retf
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 ENDPROC   hwaccmR0Get64bitGDTRandIDTR
 
@@ -1007,22 +961,20 @@ ENDPROC   hwaccmR0Get64bitGDTRandIDTR
 ; */
 ;DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
 BEGINPROC hwaccmR0Get64bitCR3
-.longmode:
-    ; Convert return frame into a retf frame 64-bit -> 32-bit
-    xor     eax, eax
-    xchg    eax, [esp]
-    push    cs
-    push    0
-    push    eax                         ; original return address.
-    ; jmp far .thunk64
-    db      0xea
-    dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.the_end:
+    ret
+
+ALIGNCODE(16)
 BITS 64
-.thunk64:
+.sixtyfourbit_mode:
     mov     rax, cr3
     mov     rdx, rax
     shr     rdx, 32
-    retf
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 ENDPROC   hwaccmR0Get64bitCR3
 
