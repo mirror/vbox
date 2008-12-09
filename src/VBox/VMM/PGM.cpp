@@ -1596,7 +1596,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR3DynRamGrow,                  STAMTYPE_COUNTER, "/PGM/DynAlloc/Grow",                 STAMUNIT_OCCURENCES,     "Nr of pgmr3PhysGrowRange calls.");
 
     /* R0 only: */
-    STAM_REG(pVM, &pPGM->StatR0DynMapHCPage,                STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/HCPage",          STAMUNIT_OCCURENCES,     "Calls to PGMDynMapHCPage (ring-0).");
+    STAM_REG(pVM, &pPGM->StatR0DynMapHCPage,                STAMTYPE_PROFILE, "/PGM/R0/DynMapPage/HCPage",          STAMUNIT_OCCURENCES,     "Calls to PGMDynMapHCPage (ring-0).");
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPageSetOptimize,     STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/HCPageSetOptimize", STAMUNIT_OCCURENCES,   "Calls to pgmDynMapOptimizeAutoSet.");
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPageSetSearchHits,   STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/HCPageSetSearchHits", STAMUNIT_OCCURENCES, "Set search hits.");
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPageSetSearchMisses, STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/HCPageSetSearchMisses", STAMUNIT_OCCURENCES, "Set search misses.");
@@ -2886,7 +2886,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
 #endif
 
     /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
-    switch(pVM->pgm.s.enmHostMode)
+    switch (pVM->pgm.s.enmHostMode)
     {
 #if HC_ARCH_BITS == 32
     case SUPPAGINGMODE_32_BIT:
@@ -2916,7 +2916,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
         rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 # endif
         break;
-#endif /* HC_ARCH_BITS != 32 */
+#endif /* HC_ARCH_BITS == 32 */
 
 #if HC_ARCH_BITS == 64 || defined(RT_OS_DARWIN)
     case SUPPAGINGMODE_AMD64:
@@ -2933,7 +2933,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
         break;
-#endif /* HC_ARCH_BITS == 64 || RT_ARCH_DARWIN */
+#endif /* HC_ARCH_BITS == 64 || RT_OS_DARWIN */
 
     default:
         AssertFailed();
