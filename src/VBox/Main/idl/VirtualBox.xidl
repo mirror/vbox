@@ -4449,26 +4449,30 @@
         <desc>
           Address of the shape buffer.
 
-          The buffer contains 1 bpp (bits per pixel) AND mask followed by 32 bpp XOR (color) mask.
+          The @a shape buffer contains a 1-bpp (bits per pixel) AND mask
+          followed by a 32-bpp XOR (color) mask.
 
-          For pointers without alpha channel the XOR mask pixels are 32 bit values: (lsb)BGR0(msb).
-          For pointers with alpha channel the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
+          For pointers without alpha channel the XOR mask pixels are 32
+          bit values: (lsb)BGR0(msb). For pointers with alpha channel
+          the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
 
-          AND mask presents for pointers with alpha channel, so if the callback does not
-          support alpha, the pointer could be displayed as a normal color pointer.
+          An AND mask is used for pointers with alpha channel, so if the
+          callback does not support alpha, the pointer could be
+          displayed as a normal color pointer.
 
-          The AND mask is 1 bpp bitmap with byte aligned scanlines. Size of AND mask,
-          therefore, is <tt>cbAnd = (width + 7) / 8 * height</tt>. The padding bits at the
-          end of any scanline are undefined.
+          The AND mask is a 1-bpp bitmap with byte aligned scanlines. The
+          size of the AND mask therefore is <tt>cbAnd = (width + 7) / 8 *
+          height</tt>. The padding bits at the end of each scanline are
+          undefined.
 
-          The XOR mask follows the AND mask on the next 4 bytes aligned offset:
-          <tt>uint8_t *pXor = pAnd + (cbAnd + 3) &amp; ~3</tt>
+          The XOR mask follows the AND mask on the next 4-byte aligned
+          offset: <tt>uint8_t *pXor = pAnd + (cbAnd + 3) &amp; ~3</tt>.
           Bytes in the gap between the AND and the XOR mask are undefined.
-          XOR mask scanlines have no gap between them and size of XOR mask is:
-          <tt>cXor = width * 4 * height</tt>.
+          The XOR mask scanlines have no gap between them and the size of
+          the XOR mask is: <tt>cXor = width * 4 * height</tt>.
 
           <note>
-            If 'shape' is equal to 0, only pointer visibility is being changed.
+            If @a shape is 0, only the pointer visibility is changed.
           </note>
         </desc>
       </param>

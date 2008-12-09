@@ -418,10 +418,16 @@ static void mousePointerGenerateANDMask (uint8_t *pu8DstAndMask, int cbDstAndMas
     }
 }
 
-STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                                             ULONG width, ULONG height, BYTE *shape)
+STDMETHODIMP VRDPConsoleCallback::OnMousePointerShapeChange (
+    BOOL visible,
+    BOOL alpha,
+    ULONG xHot,
+    ULONG yHot,
+    ULONG width,
+    ULONG height,
+    BYTE *shape)
 {
-    LogSunlover(("VRDPConsoleCallback::OnMousePointerShapeChange: %d, %d, %dx%d, @%d,%d\n", visible, alpha, width, height, xHot, yHot));
+    LogSunlover(("VRDPConsoleCallback::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n", visible, alpha, width, height, xHot, yHot));
 
     if (m_server)
     {
