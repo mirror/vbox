@@ -1114,7 +1114,7 @@ VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM)
     if (pVM->hwaccm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnTest64, 5, &aParam[0]);
 }
 # endif
 

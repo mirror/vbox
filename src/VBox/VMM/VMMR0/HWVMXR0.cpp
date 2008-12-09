@@ -3441,14 +3441,13 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
     uint32_t        aParam[4];
-    int             rc;
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
     pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
-    aParam[0] = (uint32_t)(pPageCpuPhys >> 32));                            /* Param 1: VMXON physical address - Hi. */
+    aParam[0] = (uint32_t)(pPageCpuPhys >> 32);                             /* Param 1: VMXON physical address - Hi. */
     aParam[1] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
     aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32);            /* Param 2: VMCS physical address - Hi. */
     aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys);                  /* Param 2: VMCS physical address - Lo. */
