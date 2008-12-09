@@ -12,14 +12,6 @@
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
-# ifdef VBOX_WITH_SLIRP_ICMP
-#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
-    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), ICMP)
-# else /* !VBOX_WITH_SLIRP_ICMP */
-#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
-    /* no ICMP socket */
-#endif /* !VBOX_WITH_SLIRP_ICMP */
-
 # define DO_ENGAGE_EVENT1(so, fdset, label)          \
     do {                                             \
         FD_SET((so)->s, (fdset));                    \
@@ -33,6 +25,14 @@
         FD_SET((so)->s, (fdset2));                   \
         UPD_NFDS((so)->s);                           \
     } while(0)
+
+# ifdef VBOX_WITH_SLIRP_ICMP
+#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
+    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), ICMP)
+# else /* !VBOX_WITH_SLIRP_ICMP */
+#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
+    /* no ICMP socket */
+# endif /* !VBOX_WITH_SLIRP_ICMP */
 
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
@@ -56,7 +56,7 @@
     } while(0)
 
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
-    O_ENGAGE_EVENT1((so), (fdset1), label)
+    DO_ENGAGE_EVENT1((so), (fdset1), label)
 
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
