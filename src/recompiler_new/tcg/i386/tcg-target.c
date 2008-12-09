@@ -47,9 +47,7 @@ static const int tcg_target_reg_alloc_order[] = {
     TCG_REG_EDX,
     TCG_REG_ECX,
     TCG_REG_EBX,
-#ifndef VBOX
     TCG_REG_ESI,
-#endif
     TCG_REG_EDI,
     TCG_REG_EBP,
 };
@@ -548,21 +546,21 @@ static void *qemu_st_helpers[4] = {
 
 #if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
 static void *vbox_ld_helpers[] = {
-    remR3PhysReadU8,
-    remR3PhysReadU16,
-    remR3PhysReadU32,
-    remR3PhysReadU64,
-    remR3PhysReadS8,
-    remR3PhysReadS16,
-    remR3PhysReadS32,
-    remR3PhysReadS64,
+    __ldub_vbox_phys,
+    __lduw_vbox_phys,
+    __ldul_vbox_phys,
+    __ldq_vbox_phys,
+    __ldb_vbox_phys,
+    __ldw_vbox_phys,
+    __ldl_vbox_phys,
+    __ldq_vbox_phys,
 };
 
 static void *vbox_st_helpers[] = {
-    remR3PhysWriteU8,
-    remR3PhysWriteU16,
-    remR3PhysWriteU32,
-    remR3PhysWriteU64
+    __stb_vbox_phys,
+    __stw_vbox_phys,
+    __stl_vbox_phys,
+    __stq_vbox_phys
 };
 
 static void tcg_out_vbox_phys_read(TCGContext *s, int index,
@@ -574,11 +572,14 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
     /* out parameter (address), note that phys address is always 64-bit */
     AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
-# ifdef RT_OS_DARWIN
-    tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 8);
-# endif
+
+#if 0
     tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
     tcg_out_push(s, addr_reg);
+#else
+    /* mov addr_reg, %eax */
+    tcg_out_mov(s, TCG_REG_EAX, addr_reg);
+#endif
 
     tcg_out_long_call(s, vbox_ld_helpers[index]);
 
@@ -588,13 +589,6 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     /* returned 64-bit value */
     if (useReg2)
       tcg_out_mov(s, data_reg2, TCG_REG_EDX);
-
-    /* clean stack after us */
-# ifdef RT_OS_DARWIN
-    tcg_out_addi(s, TCG_REG_ESP, 16);
-# else
-    tcg_out_addi(s, TCG_REG_ESP, 8);
-# endif
 }
 
 static void tcg_out_vbox_phys_write(TCGContext *s, int index,
@@ -602,11 +596,7 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index,
                                     int val_reg, int val_reg2) {
     int useReg2 = ((index & 3) == 3);
 
-    /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
-# ifdef RT_OS_DARWIN
-    if (!useReg2)
-        tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 4);
-# endif
+#if 0
     /* out parameter (value2) */
     if (useReg2)
         tcg_out_push(s, val_reg2);
@@ -616,14 +606,22 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index,
     AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
     tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
     tcg_out_push(s, addr_reg);
+#else
+    Assert(val_reg !=  TCG_REG_EAX && (!useReg2 || (val_reg2 != TCG_REG_EAX)));
+    /* mov addr_reg, %eax */
+    tcg_out_mov(s, TCG_REG_EAX, addr_reg);
+    Assert(!useReg2 || (val_reg2 != TCG_REG_EDX));
+    /* mov val_reg, %edx */
+    tcg_out_mov(s, TCG_REG_EDX, val_reg);    
+    if (useReg2)
+        tcg_out_mov(s, TCG_REG_ECX, val_reg2);
 
+#endif
     /* call it */
     tcg_out_long_call(s, vbox_st_helpers[index]);
 
     /* clean stack after us */
-# ifdef RT_OS_DARWIN
-    tcg_out_addi(s, TCG_REG_ESP, 16);
-# else
+#if 0
     tcg_out_addi(s, TCG_REG_ESP, 8 + (useReg2 ? 8 : 4));
 # endif
 }

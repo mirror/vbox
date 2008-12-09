@@ -5453,6 +5453,55 @@ static float approx_rcp(float a)
 
 #endif
 
+#if defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB)
+/* This code assumes real physical address always fit into host CPU reg,
+   which is wrong in general, but true for our current use cases. */   
+RTCCUINTREG REGPARM __ldb_vbox_phys(RTCCUINTREG addr)
+{
+    return remR3PhysReadS8(addr);
+}
+RTCCUINTREG REGPARM __ldub_vbox_phys(RTCCUINTREG addr)
+{
+    return remR3PhysReadU8(addr);
+}
+void REGPARM __stb_vbox_phys(RTCCUINTREG addr, RTCCUINTREG val)
+{
+    remR3PhysWriteU8(addr, val);
+}
+RTCCUINTREG REGPARM __ldw_vbox_phys(RTCCUINTREG addr)
+{
+    return remR3PhysReadS16(addr);
+}
+RTCCUINTREG REGPARM __lduw_vbox_phys(RTCCUINTREG addr)
+{
+    return remR3PhysReadU16(addr);
+}
+void REGPARM __stw_vbox_phys(RTCCUINTREG addr, RTCCUINTREG val)
+{
+    remR3PhysWriteU16(addr, val);
+}
+RTCCUINTREG REGPARM __ldl_vbox_phys(RTCCUINTREG addr)
+{
+     return remR3PhysReadS32(addr);
+}
+RTCCUINTREG REGPARM __ldul_vbox_phys(RTCCUINTREG addr)
+{
+     return remR3PhysReadU32(addr);
+}
+void REGPARM __stl_vbox_phys(RTCCUINTREG addr, RTCCUINTREG val)
+{
+    remR3PhysWriteU32(addr, val);
+}
+uint64_t REGPARM __ldq_vbox_phys(RTCCUINTREG addr)
+{
+     return remR3PhysReadU64(addr);
+}
+void REGPARM __stq_vbox_phys(RTCCUINTREG addr, uint64_t val)
+{
+    remR3PhysWriteU64(addr, val);
+}
+#endif
+
 /* try to fill the TLB and return an exception if error. If retaddr is
    NULL, it means that the function was called in C code (i.e. not
    from generated code or from helper.c) */
