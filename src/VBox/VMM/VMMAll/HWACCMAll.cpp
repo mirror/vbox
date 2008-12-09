@@ -102,18 +102,8 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
 {
     Assert(HWACCMIsNestedPagingActive(pVM));
     if (pVM->hwaccm.s.svm.fSupported)
-    {
-        PGMMODE enmShwPagingMode;
+        return PGMMODE_NESTED;
 
-#if HC_ARCH_BITS == 32 
-        if (CPUMIsGuestInLongMode(pVM))
-            enmShwPagingMode = PGMMODE_AMD64_NX;
-        else
-#endif
-            enmShwPagingMode = PGMGetHostMode(pVM);
-
-        return enmShwPagingMode;
-    }
     Assert(pVM->hwaccm.s.vmx.fSupported);
     return PGMMODE_EPT;
 }
