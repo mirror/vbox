@@ -663,7 +663,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             PGMMODE enmShwPagingMode;
 
-#if HC_ARCH_BITS == 32 
+#if HC_ARCH_BITS == 32
             if (CPUMIsGuestInLongModeEx(pCtx))
                 enmShwPagingMode = PGMMODE_AMD64_NX;
             else
@@ -1058,7 +1058,7 @@ ResumeExecution:
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
 
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, x);
 
     /* Reason for the VM exit */
     exitCode = pVMCB->ctrl.u64ExitCode;
@@ -1330,7 +1330,7 @@ ResumeExecution:
 
                 SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
             }
             /* Return to ring 3 to deal with the debug exit code. */
@@ -1350,7 +1350,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowNM);
 
                 /* Continue execution. */
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
 
                 goto ResumeExecution;
@@ -1365,7 +1365,7 @@ ResumeExecution:
             Event.n.u8Vector = X86_XCPT_NM;
 
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 
@@ -1394,7 +1394,7 @@ ResumeExecution:
 
                 SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
             }
 #endif
@@ -1416,7 +1416,7 @@ ResumeExecution:
 
                 TRPMResetTrap(pVM);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
             }
             else
@@ -1443,7 +1443,7 @@ ResumeExecution:
 
                 SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
             }
 #ifdef VBOX_STRICT
@@ -1474,7 +1474,7 @@ ResumeExecution:
 
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 
@@ -1517,7 +1517,7 @@ ResumeExecution:
             Log(("Trap %x at %RGv esi=%x\n", vector, (RTGCPTR)pCtx->rip, pCtx->esi));
             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 #endif
@@ -1545,7 +1545,7 @@ ResumeExecution:
         TRPMSetFaultAddress(pVM, uFaultAddress);
 
         /* Handle the pagefault trap for the nested shadow table. */
-#if HC_ARCH_BITS == 32 
+#if HC_ARCH_BITS == 32
         if (CPUMIsGuestInLongModeEx(pCtx))
             enmShwPagingMode = PGMMODE_AMD64_NX;
         else
@@ -1561,7 +1561,7 @@ ResumeExecution:
 
             TRPMResetTrap(pVM);
 
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 
@@ -1596,7 +1596,7 @@ ResumeExecution:
         /* Skip instruction and continue directly. */
         pCtx->rip += 2;     /* Note! hardcoded opcode size! */
         /* Continue execution.*/
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
         goto ResumeExecution;
 
     case SVM_EXIT_CPUID:                /* Guest software attempted to execute CPUID. */
@@ -1608,7 +1608,7 @@ ResumeExecution:
         {
             /* Update EIP and continue execution. */
             pCtx->rip += 2;             /* Note! hardcoded opcode size! */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: cpuid failed with %Rrc\n", rc));
@@ -1625,7 +1625,7 @@ ResumeExecution:
         {
             /* Update EIP and continue execution. */
             pCtx->rip += 2;             /* Note! hardcoded opcode size! */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: rdtsc failed with %Rrc\n", rc));
@@ -1642,7 +1642,7 @@ ResumeExecution:
         {
             /* Update EIP and continue execution. */
             pCtx->rip += 3;             /* Note! hardcoded opcode size! */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         AssertMsgFailed(("EMU: rdtscp failed with %Rrc\n", rc));
@@ -1714,7 +1714,7 @@ ResumeExecution:
             /* EIP has been updated already. */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -1736,7 +1736,7 @@ ResumeExecution:
             /* EIP has been updated already. */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -1765,7 +1765,7 @@ ResumeExecution:
             rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
             AssertRC(rc);
 
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 
@@ -1776,7 +1776,7 @@ ResumeExecution:
             pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_DEBUG;
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -1805,7 +1805,7 @@ ResumeExecution:
             rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, false /* exclude DR6 */);
             AssertRC(rc);
 
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
 
@@ -1815,7 +1815,7 @@ ResumeExecution:
             /* EIP has been updated already. */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -1961,13 +1961,13 @@ ResumeExecution:
 
                             SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                             goto ResumeExecution;
                         }
                     }
                 }
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
                 goto ResumeExecution;
             }
             Log2(("EM status from IO at %RGv %x size %d: %Rrc\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize, rc));
@@ -2017,7 +2017,7 @@ ResumeExecution:
         Log(("Forced #UD trap at %RGv\n", (RTGCPTR)pCtx->rip));
         SVMR0InjectEvent(pVM, pVMCB, pCtx, &Event);
 
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
         goto ResumeExecution;
     }
 
@@ -2034,7 +2034,7 @@ ResumeExecution:
             /* EIP has been updated already. */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: %s failed with %Rrc\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr", rc));
@@ -2094,7 +2094,7 @@ end:
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
 
-    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
     return rc;
 }
 

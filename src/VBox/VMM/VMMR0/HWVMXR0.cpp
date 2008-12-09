@@ -1798,7 +1798,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
 #ifdef VBOX_WITH_STATISTICS
     bool fStatEntryStarted = true;
-    bool fStatExitStarted  = false;
+    bool fStatExit2Started = false;
 #endif
 
     Log2(("\nE"));
@@ -1865,7 +1865,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
 ResumeExecution:
     STAM_STATS({
-        if (fStatExitStarted)   { STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit,   y); fStatExitStarted  = false; }
+        if (fStatExit2Started)   { STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = false; }
         if (!fStatEntryStarted) { STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = true; }
     });
     AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == RTMpCpuId(),
@@ -2047,7 +2047,7 @@ ResumeExecution:
      */
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
-    STAM_STATS({ STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit, y); fStatExitStarted = true; });
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
 
     if (rc != VINF_SUCCESS)
     {
@@ -2133,6 +2133,10 @@ ResumeExecution:
         rc = PDMApicSetTPR(pVM, pVM->hwaccm.s.vmx.pAPIC[0x80] >> 4);
         AssertRC(rc);
     }
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, v);
+    STAM_STATS({ STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = true; });
+
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PGMDynMapStartAutoSet(pVCpu);
 #endif
@@ -3064,7 +3068,7 @@ end:
     }
 
     STAM_STATS({
-        if (fStatExitStarted)       STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit,  y);
+        if (fStatExit2Started)      STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y);
         else if (fStatEntryStarted) STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
     });
     Log2(("X"));

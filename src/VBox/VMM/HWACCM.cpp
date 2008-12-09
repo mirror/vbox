@@ -160,8 +160,11 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatEntry, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry",
                              "/PROF/HWACCM/CPU%d/SwitchToGC", i);
         AssertRC(rc);
-        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit",
-                             "/PROF/HWACCM/CPU%d/SwitchFromGC", i);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit part 1",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC_1", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit part 2",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC_2", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of vmlaunch",
                              "/PROF/HWACCM/CPU%d/InGC", i);
