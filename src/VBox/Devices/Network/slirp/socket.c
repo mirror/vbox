@@ -843,6 +843,9 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
         int len;
         int i;
+        struct ip *ip;
+        struct mbuf *m;
+        struct icmp *icp;
         ICMP_ECHO_REPLY *icr;
         u_char code = ~0;
         len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
@@ -869,11 +872,29 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                                 icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occurred!!!");
                         break;
                         case IP_SUCCESS: /* echo replied */
+                                m = m_get(pData);
+                                ip = mtod(m, struct ip *);
+                                ip->ip_src.s_addr = icr[i].Address;
+                                ip->ip_p = IPPROTO_ICMP;
+                                ip->ip_dst.s_addr = inet_addr("10.0.0.15"); /*XXX:hack here*/
+                                ip->ip_hl = sizeof(struct ip) >> 2;
+
+                                icp = (struct icmp *)&ip[1]; /* no options */
+                                icp->icmp_type = ICMP_ECHOREPLY;
+                                icp->icmp_code = 0;
+                                memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
+
+                                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize; 
+                                m->m_len = ip->ip_len;
+
+                                icmp_reflect(pData, m);
+                                m_free(pData, m);
                         case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
-                        __asm {int 3}
+                                LogRel(("ICMP: message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
+                                LogRel(("ICMP: IP(v %hd, l %hd )\n", ip->ip_v, ip->ip_hl));
                         break;
                         default:
-                                LogRel(("ICMP: message with Status: %x was received from %R[IP4]\n", icr[i].Status, icr[i].Address));
+                                LogRel(("ICMP(default): message with Status: %x was received from %s\n", icr[i].Status, icr[i].Address));
                         break;
                 }
         }

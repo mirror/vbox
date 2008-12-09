@@ -110,7 +110,7 @@ icmp_init(PNATState pData)
         FreeLibrary(pData->hmIcmpLibrary);
         return 1;
     } 
-    pData->icmp_socket.s = IcmpCreateFile();
+    pData->icmp_socket.sh = IcmpCreateFile();
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
     pData->pvIcmpBuffer = malloc(pData->szIcmpBuffer);
@@ -330,7 +330,7 @@ freeit:
 # else /* RT_OS_WINDOWS */
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
-                status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
+                status = IcmpSendEcho2(pData->icmp_socket.sh, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
                                        NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data, 
                                        icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
                                        pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);

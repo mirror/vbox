@@ -22,7 +22,14 @@ struct socket
     struct socket   *so_next;
     struct socket   *so_prev;    /* For a linked list of sockets */
 
+#ifndef RT_OS_WINDOWS
     int s;                       /* The actual socket */
+#else
+    union {
+            int s;
+            HANDLE sh;
+    };
+#endif
 
     /* XXX union these with not-yet-used sbuf params */
     struct mbuf     *so_m;       /* Pointer to the original SYN packet,
