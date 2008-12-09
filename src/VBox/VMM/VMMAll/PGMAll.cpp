@@ -365,7 +365,7 @@ DECLINLINE(int) pgmShwGetPAEPDPtr(PVM pVM, RTGCPTR GCPtr, PX86PDPT *ppPdpt, PX86
  */
 VMMDECL(int)     PGMTrap0eHandler(PVM pVM, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    Log(("PGMTrap0eHandler: uErr=%RGu pvFault=%RGv eip=%RGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
+    LogFlow(("PGMTrap0eHandler: uErr=%RGu pvFault=%RGv eip=%RGv\n", uErr, pvFault, (RTGCPTR)pRegFrame->rip));
     STAM_PROFILE_START(&pVM->pgm.s.StatRZTrap0e, a);
     STAM_STATS({ pVM->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = NULL; } );
 

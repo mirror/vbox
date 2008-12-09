@@ -1900,7 +1900,7 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     /* Note: operates the same in 64 and non-64 bits mode. */
     CPUMGetGuestCpuId(pVM, iLeaf, &pRegFrame->eax, &pRegFrame->ebx, &pRegFrame->ecx, &pRegFrame->edx);
-    LogFlow(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
+    Log(("Emulate: CPUID %x -> %08x %08x %08x %08x\n", iLeaf, pRegFrame->eax, pRegFrame->ebx, pRegFrame->ecx, pRegFrame->edx));
     return VINF_SUCCESS;
 }
 
