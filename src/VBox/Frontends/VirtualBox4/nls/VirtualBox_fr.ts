@@ -2513,7 +2513,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation>disque dur</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format)&amp;nbsp:&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
@@ -5467,7 +5467,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="418"/>
         <source>Hard Disks</source>
-        <translation>Disque dur</translation>
+        <translation>Disques dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="421"/>
