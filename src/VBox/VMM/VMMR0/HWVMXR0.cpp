@@ -833,6 +833,8 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         cs = ASMGetCS();
         ss = ASMGetSS();
 #endif
+        Assert(!(cs & X86_SEL_LDT)); Assert((cs & X86_SEL_RPL) == 0);
+        Assert(!(ss & X86_SEL_LDT)); Assert((ss & X86_SEL_RPL) == 0);
         rc  = VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_CS,          cs);
         /* Note: VMX is (again) very picky about the RPL of the selectors here; we'll restore them manually. */
         rc |= VMXWriteVMCS(VMX_VMCS16_HOST_FIELD_DS,          0);
@@ -853,7 +855,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_FIELD_ES 00000000 (%08x)\n", ASMGetES()));
         Log2(("VMX_VMCS_HOST_FIELD_FS 00000000 (%08x)\n", ASMGetFS()));
         Log2(("VMX_VMCS_HOST_FIELD_GS 00000000 (%08x)\n", ASMGetGS()));
-        Log2(("VMX_VMCS_HOST_FIELD_SS %08x (%08x)\n", cs, ASMGetSS()));
+        Log2(("VMX_VMCS_HOST_FIELD_SS %08x (%08x)\n", ss, ASMGetSS()));
         Log2(("VMX_VMCS_HOST_FIELD_TR %08x\n", ASMGetTR()));
 
         /* GDTR & IDTR */
@@ -3404,7 +3406,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
 
     default:
         /* impossible */
-        AssertFailed();
+        AssertMsgFailed(("%Rrc (%#x)\n", rc, rc));
         break;
     }
 }
