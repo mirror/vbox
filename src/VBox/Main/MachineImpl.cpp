@@ -2283,10 +2283,8 @@ STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
 
 STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
 {
-    if (!port)
-        return E_POINTER;
-    if (slot >= RT_ELEMENTS (mSerialPorts))
-        return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
+    CheckComArgOutPointerValid(port);
+    CheckComArgExpr(slot, slot < RT_ELEMENTS (mSerialPorts));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2300,10 +2298,8 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
 
 STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
 {
-    if (!port)
-        return E_POINTER;
-    if (slot >= RT_ELEMENTS (mParallelPorts))
-        return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
+    CheckComArgOutPointerValid(port);
+    CheckComArgExpr(slot, slot < RT_ELEMENTS (mParallelPorts));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2317,10 +2313,8 @@ STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
 
 STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
 {
-    if (!adapter)
-        return E_POINTER;
-    if (slot >= RT_ELEMENTS (mNetworkAdapters))
-        return setError (E_INVALIDARG, tr ("Invalid slot number: %d"), slot);
+    CheckComArgOutPointerValid(adapter);
+    CheckComArgExpr(slot, slot < RT_ELEMENTS (mNetworkAdapters));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2418,13 +2412,13 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
         }
 
         /* Here we are when a) there are no items at all or b) there are items
-         * but none of them equals to the requested non-NULL key. b) is an
+         * but none of them equals the requested non-NULL key. b) is an
          * error as well as a) if the key is non-NULL. When the key is NULL
          * (which is the case only when there are no items), we just fall
          * through to return NULLs and S_OK. */
 
         if (aKey != NULL)
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Could not find the extra data key '%ls'"), aKey);
     }
     catch (...)
@@ -2711,7 +2705,7 @@ STDMETHODIMP Machine::DeleteSettings()
     CheckComRCReturnRC (rc);
 
     if (mData->mRegistered)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Cannot delete settings of a registered machine"));
 
     /* delete the settings only when the file actually exists */
@@ -2720,7 +2714,7 @@ STDMETHODIMP Machine::DeleteSettings()
         unlockConfig();
         int vrc = RTFileDelete (Utf8Str (mData->mConfigFileFull));
         if (RT_FAILURE (vrc))
-            return setError (E_FAIL,
+            return setError (VBOX_E_IPRT_ERROR,
                 tr ("Could not delete the settings file '%ls' (%Rrc)"),
                 mData->mConfigFileFull.raw(), vrc);
 
@@ -2833,7 +2827,7 @@ Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     ComObjPtr <SharedFolder> sharedFolder;
     rc = findSharedFolder (aName, sharedFolder, false /* aSetError */);
     if (SUCCEEDED (rc))
-        return setError (E_FAIL,
+        return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Shared folder named '%ls' already exists"), aName);
 
     sharedFolder.createObject();
@@ -2845,7 +2839,7 @@ Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
     CheckComRCReturnRC (rc);
 
     if (!accessible)
-        return setWarning (E_FAIL,
+        return setWarning (VBOX_E_FILE_ERROR,
             tr ("Shared folder host path '%ls' is not accessible"), aHostPath);
 
     mHWData.backup();
@@ -2899,7 +2893,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
         AutoReadLock alock (this);
 
         if (mData->mSession.mState != SessionState_Open)
-            return setError (E_FAIL,
+            return setError (VBOX_E_INVALID_VM_STATE,
                 tr ("Machine session is not open (session state: %d)"),
                 mData->mSession.mState);
 
@@ -2946,14 +2940,10 @@ STDMETHODIMP Machine::GetGuestProperty (IN_BSTR aName, BSTR *aValue, ULONG64 *aT
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
 #else
-    if (!VALID_PTR (aName))
-        return E_INVALIDARG;
-    if (!VALID_PTR (aValue))
-        return E_POINTER;
-    if (!VALID_PTR (aTimestamp))
-        return E_POINTER;
-    if (!VALID_PTR (aFlags))
-        return E_POINTER;
+    CheckComArgNotNull(aName);
+    CheckComArgOutPointerValid(aValue);
+    CheckComArgOutPointerValid(aTimestamp);
+    CheckComArgOutPointerValid(aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -3018,8 +3008,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
 #else
     using namespace guestProp;
 
-    if (!VALID_PTR (aName))
-        return E_INVALIDARG;
+    CheckComArgNotNull(aName);
     if ((aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
@@ -3059,7 +3048,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
         HWData::GuestProperty property;
         property.mFlags = NILFLAG;
         if (fFlags & TRANSIENT)
-            rc = setError (E_INVALIDARG, tr ("Cannot set a transient property when the machine is not running"));
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE, tr ("Cannot set a transient property when the machine is not running"));
         if (SUCCEEDED (rc))
         {
             for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
@@ -3142,14 +3131,10 @@ STDMETHODIMP Machine::EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayO
 #else
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
-    if (ComSafeArrayOutIsNull (aNames))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aValues))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aTimestamps))
-        return E_POINTER;
-    if (ComSafeArrayOutIsNull (aFlags))
-        return E_POINTER;
+    CheckComArgSafeArrayNotNull(aNames);
+    CheckComArgSafeArrayNotNull(aValues);
+    CheckComArgSafeArrayNotNull(aTimestamps);
+    CheckComArgSafeArrayNotNull(aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -4302,7 +4287,7 @@ HRESULT Machine::checkStateDependency (StateDependency aDepType)
                 (mType != IsSessionMachine ||
                  mData->mMachineState > MachineState_Paused ||
                  mData->mMachineState == MachineState_Saved))
-                return setError (E_ACCESSDENIED,
+                return setError (VBOX_E_INVALID_VM_STATE,
                     tr ("The machine is not mutable (state is %d)"),
                     mData->mMachineState);
             break;
@@ -4312,7 +4297,7 @@ HRESULT Machine::checkStateDependency (StateDependency aDepType)
             if (mData->mRegistered &&
                 (mType != IsSessionMachine ||
                  mData->mMachineState > MachineState_Paused))
-                return setError (E_ACCESSDENIED,
+                return setError (VBOX_E_INVALID_VM_STATE,
                     tr ("The machine is not mutable (state is %d)"),
                     mData->mMachineState);
             break;
@@ -4620,7 +4605,7 @@ HRESULT Machine::setMachineState (MachineState_T aMachineState)
  *  @param aSetError        whether to set the error info if the folder is
  *                          not found
  *  @return
- *      S_OK when found or E_INVALIDARG when not found
+ *      S_OK when found or VBOX_E_OBJECT_NOT_FOUND when not found
  *
  *  @note
  *      must be called from under the object's lock!
@@ -4640,7 +4625,7 @@ HRESULT Machine::findSharedFolder (CBSTR aName,
             aSharedFolder = *it;
     }
 
-    HRESULT rc = found ? S_OK : E_INVALIDARG;
+    HRESULT rc = found ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
 
     if (aSetError && !found)
         setError (rc, tr ("Could not find a shared folder named '%ls'"), aName);
@@ -5517,9 +5502,9 @@ HRESULT Machine::findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
     if (!mData->mFirstSnapshot)
     {
         if (aSetError)
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("This machine does not have any snapshots"));
-        return E_FAIL;
+        return VBOX_E_OBJECT_NOT_FOUND;
     }
 
     aSnapshot = mData->mFirstSnapshot->findChildOrSelf (aName);
@@ -5527,9 +5512,9 @@ HRESULT Machine::findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
     if (!aSnapshot)
     {
         if (aSetError)
-            return setError (E_FAIL,
+            return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Could not find a snapshot named '%ls'"), aName);
-        return E_FAIL;
+        return VBOX_E_OBJECT_NOT_FOUND;
     }
 
     return S_OK;
