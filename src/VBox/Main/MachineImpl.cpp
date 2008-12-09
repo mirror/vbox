@@ -712,7 +712,7 @@ void Machine::uninit()
 
 STDMETHODIMP Machine::COMGETTER(Parent) (IVirtualBox **aParent)
 {
-    CheckComArgOutPointerValid(aParent);
+    CheckComArgOutPointerValid (aParent);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -725,7 +725,7 @@ STDMETHODIMP Machine::COMGETTER(Parent) (IVirtualBox **aParent)
 
 STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 {
-    CheckComArgOutPointerValid(aAccessible);
+    CheckComArgOutPointerValid (aAccessible);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -762,7 +762,7 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
 STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessError)
 {
-    CheckComArgOutPointerValid(aAccessError);
+    CheckComArgOutPointerValid (aAccessError);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -794,7 +794,7 @@ STDMETHODIMP Machine::COMGETTER(AccessError) (IVirtualBoxErrorInfo **aAccessErro
 
 STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
 {
-    CheckComArgOutPointerValid(aName);
+    CheckComArgOutPointerValid (aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -808,7 +808,7 @@ STDMETHODIMP Machine::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP Machine::COMSETTER(Name) (IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgNotNull (aName);
 
     if (!*aName)
         return setError (E_INVALIDARG,
@@ -830,7 +830,7 @@ STDMETHODIMP Machine::COMSETTER(Name) (IN_BSTR aName)
 
 STDMETHODIMP Machine::COMGETTER(Description) (BSTR *aDescription)
 {
-    CheckComArgOutPointerValid(aDescription);
+    CheckComArgOutPointerValid (aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -860,7 +860,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (IN_BSTR aDescription)
 
 STDMETHODIMP Machine::COMGETTER(Id) (OUT_GUID aId)
 {
-    CheckComArgOutPointerValid(aId);
+    CheckComArgOutPointerValid (aId);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -874,7 +874,7 @@ STDMETHODIMP Machine::COMGETTER(Id) (OUT_GUID aId)
 
 STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
-    CheckComArgOutPointerValid(aOSTypeId);
+    CheckComArgOutPointerValid (aOSTypeId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -888,7 +888,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 
 STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
 {
-    CheckComArgNotNull(aOSTypeId);
+    CheckComArgNotNull (aOSTypeId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1044,10 +1044,10 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize) (ULONG *memoryBalloonSize)
 STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
 {
     /* check limits */
-    if (memoryBalloonSize >= VMMDEV_MAX_MEMORY_BALLOON(mHWData->mMemorySize))
+    if (memoryBalloonSize >= VMMDEV_MAX_MEMORY_BALLOON (mHWData->mMemorySize))
         return setError (E_INVALIDARG,
             tr ("Invalid memory balloon size: %lu MB (must be in range [%lu, %lu] MB)"),
-                memoryBalloonSize, 0, VMMDEV_MAX_MEMORY_BALLOON(mHWData->mMemorySize));
+                memoryBalloonSize, 0, VMMDEV_MAX_MEMORY_BALLOON (mHWData->mMemorySize));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1316,7 +1316,7 @@ STDMETHODIMP Machine::COMSETTER(PAEEnabled)(BOOL enable)
 
 STDMETHODIMP Machine::COMGETTER(SnapshotFolder) (BSTR *aSnapshotFolder)
 {
-    CheckComArgOutPointerValid(aSnapshotFolder);
+    CheckComArgOutPointerValid (aSnapshotFolder);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1465,7 +1465,7 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
 STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgOutPointerValid(aUSBController);
+    CheckComArgOutPointerValid (aUSBController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1487,7 +1487,7 @@ STDMETHODIMP Machine::COMGETTER(USBController) (IUSBController **aUSBController)
 STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAController)
 {
 #ifdef VBOX_WITH_AHCI
-    CheckComArgOutPointerValid(aSATAController);
+    CheckComArgOutPointerValid (aSATAController);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1505,7 +1505,7 @@ STDMETHODIMP Machine::COMGETTER(SATAController) (ISATAController **aSATAControll
 
 STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 {
-    CheckComArgOutPointerValid(aFilePath);
+    CheckComArgOutPointerValid (aFilePath);
 
     AutoLimitedCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1519,7 +1519,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath) (BSTR *aFilePath)
 STDMETHODIMP Machine::
 COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 {
-    CheckComArgOutPointerValid(aSettingsFileVersion);
+    CheckComArgOutPointerValid (aSettingsFileVersion);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1532,7 +1532,7 @@ COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 
 STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 {
-    CheckComArgOutPointerValid(aModified);
+    CheckComArgOutPointerValid (aModified);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1560,7 +1560,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
 
 STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
 {
-    CheckComArgOutPointerValid(aSessionState);
+    CheckComArgOutPointerValid (aSessionState);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1574,7 +1574,7 @@ STDMETHODIMP Machine::COMGETTER(SessionState) (SessionState_T *aSessionState)
 
 STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
 {
-    CheckComArgOutPointerValid(aSessionType);
+    CheckComArgOutPointerValid (aSessionType);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1588,7 +1588,7 @@ STDMETHODIMP Machine::COMGETTER(SessionType) (BSTR *aSessionType)
 
 STDMETHODIMP Machine::COMGETTER(SessionPid) (ULONG *aSessionPid)
 {
-    CheckComArgOutPointerValid(aSessionPid);
+    CheckComArgOutPointerValid (aSessionPid);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1617,7 +1617,7 @@ STDMETHODIMP Machine::COMGETTER(State) (MachineState_T *machineState)
 
 STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
 {
-    CheckComArgOutPointerValid(aLastStateChange);
+    CheckComArgOutPointerValid (aLastStateChange);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1631,7 +1631,7 @@ STDMETHODIMP Machine::COMGETTER(LastStateChange) (LONG64 *aLastStateChange)
 
 STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
 {
-    CheckComArgOutPointerValid(aStateFilePath);
+    CheckComArgOutPointerValid (aStateFilePath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1645,7 +1645,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath) (BSTR *aStateFilePath)
 
 STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
 {
-    CheckComArgOutPointerValid(aLogFolder);
+    CheckComArgOutPointerValid (aLogFolder);
 
     AutoCaller autoCaller (this);
     AssertComRCReturnRC (autoCaller.rc());
@@ -1662,7 +1662,7 @@ STDMETHODIMP Machine::COMGETTER(LogFolder) (BSTR *aLogFolder)
 
 STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
 {
-    CheckComArgOutPointerValid(aCurrentSnapshot);
+    CheckComArgOutPointerValid (aCurrentSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1676,7 +1676,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
 
 STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
 {
-    CheckComArgOutPointerValid(aSnapshotCount);
+    CheckComArgOutPointerValid (aSnapshotCount);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1691,7 +1691,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
 
 STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModified)
 {
-    CheckComArgOutPointerValid(aCurrentStateModified);
+    CheckComArgOutPointerValid (aCurrentStateModified);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1711,7 +1711,7 @@ STDMETHODIMP Machine::COMGETTER(CurrentStateModified) (BOOL *aCurrentStateModifi
 STDMETHODIMP
 Machine::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 {
-    CheckComArgOutPointerValid(aSharedFolders);
+    CheckComArgOutPointerValid (aSharedFolders);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1729,7 +1729,7 @@ Machine::COMGETTER(SharedFolders) (ISharedFolderCollection **aSharedFolders)
 STDMETHODIMP
 Machine::COMGETTER(ClipboardMode) (ClipboardMode_T *aClipboardMode)
 {
-    CheckComArgOutPointerValid(aClipboardMode);
+    CheckComArgOutPointerValid (aClipboardMode);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1761,7 +1761,7 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
 STDMETHODIMP
 Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 {
-    CheckComArgOutPointerValid(aPatterns);
+    CheckComArgOutPointerValid (aPatterns);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1770,13 +1770,13 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 
     mHWData->mGuestPropertyNotificationPatterns.cloneTo (aPatterns);
 
-    return RT_LIKELY(aPatterns != NULL) ? S_OK : E_OUTOFMEMORY;
+    return RT_LIKELY (aPatterns != NULL) ? S_OK : E_OUTOFMEMORY;
 }
 
 STDMETHODIMP
 Machine::COMSETTER(GuestPropertyNotificationPatterns) (IN_BSTR aPatterns)
 {
-    AssertLogRelReturn (VALID_PTR(aPatterns), E_POINTER);
+    AssertLogRelReturn (VALID_PTR (aPatterns), E_POINTER);
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
@@ -1788,7 +1788,7 @@ Machine::COMSETTER(GuestPropertyNotificationPatterns) (IN_BSTR aPatterns)
     mHWData.backup();
     mHWData->mGuestPropertyNotificationPatterns = aPatterns;
 
-    return RT_LIKELY(!mHWData->mGuestPropertyNotificationPatterns.isNull())
+    return RT_LIKELY (!mHWData->mGuestPropertyNotificationPatterns.isNull())
                ? S_OK : E_OUTOFMEMORY;
 }
 
@@ -2184,8 +2184,8 @@ STDMETHODIMP Machine::AttachHardDisk2 (IN_GUID aId,
 STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
                                     LONG aDevice, IHardDisk2 **aHardDisk)
 {
-    CheckComArgExpr(aBus, aBus != StorageBus_Null);
-    CheckComArgOutPointerValid(aHardDisk);
+    CheckComArgExpr (aBus, aBus != StorageBus_Null);
+    CheckComArgOutPointerValid (aHardDisk);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2212,7 +2212,7 @@ STDMETHODIMP Machine::GetHardDisk2 (StorageBus_T aBus, LONG aChannel,
 STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
                                        LONG aDevice)
 {
-    CheckComArgExpr(aBus, aBus != StorageBus_Null);
+    CheckComArgExpr (aBus, aBus != StorageBus_Null);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2279,8 +2279,8 @@ STDMETHODIMP Machine::DetachHardDisk2 (StorageBus_T aBus, LONG aChannel,
 
 STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
 {
-    CheckComArgOutPointerValid(port);
-    CheckComArgExpr(slot, slot < RT_ELEMENTS (mSerialPorts));
+    CheckComArgOutPointerValid (port);
+    CheckComArgExpr (slot, slot < RT_ELEMENTS (mSerialPorts));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2294,8 +2294,8 @@ STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
 
 STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
 {
-    CheckComArgOutPointerValid(port);
-    CheckComArgExpr(slot, slot < RT_ELEMENTS (mParallelPorts));
+    CheckComArgOutPointerValid (port);
+    CheckComArgExpr (slot, slot < RT_ELEMENTS (mParallelPorts));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2309,8 +2309,8 @@ STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
 
 STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
 {
-    CheckComArgOutPointerValid(adapter);
-    CheckComArgExpr(slot, slot < RT_ELEMENTS (mNetworkAdapters));
+    CheckComArgOutPointerValid (adapter);
+    CheckComArgExpr (slot, slot < RT_ELEMENTS (mNetworkAdapters));
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2327,7 +2327,7 @@ STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
  */
 STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
-    CheckComArgOutPointerValid(aNextKey);
+    CheckComArgOutPointerValid (aNextKey);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2430,8 +2430,8 @@ STDMETHODIMP Machine::GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *a
  */
 STDMETHODIMP Machine::GetExtraData (IN_BSTR aKey, BSTR *aValue)
 {
-    CheckComArgNotNull(aKey);
-    CheckComArgOutPointerValid(aValue);
+    CheckComArgNotNull (aKey);
+    CheckComArgOutPointerValid (aValue);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2496,7 +2496,7 @@ STDMETHODIMP Machine::GetExtraData (IN_BSTR aKey, BSTR *aValue)
  */
 STDMETHODIMP Machine::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
 {
-    CheckComArgNotNull(aKey);
+    CheckComArgNotNull (aKey);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2635,7 +2635,7 @@ STDMETHODIMP Machine::SaveSettings()
 
 STDMETHODIMP Machine::SaveSettingsWithBackup (BSTR *aBakFileName)
 {
-    CheckComArgOutPointerValid(aBakFileName);
+    CheckComArgOutPointerValid (aBakFileName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2764,7 +2764,7 @@ STDMETHODIMP Machine::DeleteSettings()
 
 STDMETHODIMP Machine::GetSnapshot (IN_GUID aId, ISnapshot **aSnapshot)
 {
-    CheckComArgOutPointerValid(aSnapshot);
+    CheckComArgOutPointerValid (aSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2782,8 +2782,8 @@ STDMETHODIMP Machine::GetSnapshot (IN_GUID aId, ISnapshot **aSnapshot)
 
 STDMETHODIMP Machine::FindSnapshot (IN_BSTR aName, ISnapshot **aSnapshot)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgOutPointerValid(aSnapshot);
+    CheckComArgNotNull (aName);
+    CheckComArgOutPointerValid (aSnapshot);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2809,8 +2809,8 @@ STDMETHODIMP Machine::SetCurrentSnapshot (IN_GUID aId)
 STDMETHODIMP
 Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aHostPath);
+    CheckComArgNotNull (aName);
+    CheckComArgNotNull (aHostPath);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2850,7 +2850,7 @@ Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 
 STDMETHODIMP Machine::RemoveSharedFolder (IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgNotNull (aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2876,7 +2876,7 @@ STDMETHODIMP Machine::RemoveSharedFolder (IN_BSTR aName)
 
 STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 {
-    CheckComArgOutPointerValid(aCanShow);
+    CheckComArgOutPointerValid (aCanShow);
 
     /* start with No */
     *aCanShow = FALSE;
@@ -2906,7 +2906,7 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
 STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 {
-    CheckComArgOutPointerValid(aWinId);
+    CheckComArgOutPointerValid (aWinId);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -2936,10 +2936,10 @@ STDMETHODIMP Machine::GetGuestProperty (IN_BSTR aName, BSTR *aValue, ULONG64 *aT
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
 #else
-    CheckComArgNotNull(aName);
-    CheckComArgOutPointerValid(aValue);
-    CheckComArgOutPointerValid(aTimestamp);
-    CheckComArgOutPointerValid(aFlags);
+    CheckComArgNotNull (aName);
+    CheckComArgOutPointerValid (aValue);
+    CheckComArgOutPointerValid (aTimestamp);
+    CheckComArgOutPointerValid (aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -2958,10 +2958,10 @@ STDMETHODIMP Machine::GetGuestProperty (IN_BSTR aName, BSTR *aValue, ULONG64 *aT
             if (it->mName == aName)
             {
                 char szFlags[MAX_FLAGS_LEN + 1];
-                it->mValue.cloneTo(aValue);
+                it->mValue.cloneTo (aValue);
                 *aTimestamp = it->mTimestamp;
-                writeFlags(it->mFlags, szFlags);
-                Bstr(szFlags).cloneTo(aFlags);
+                writeFlags (it->mFlags, szFlags);
+                Bstr (szFlags).cloneTo (aFlags);
                 found = true;
             }
         }
@@ -2987,14 +2987,14 @@ STDMETHODIMP Machine::GetGuestPropertyValue (IN_BSTR aName, BSTR *aValue)
 {
     ULONG64 dummyTimestamp;
     BSTR dummyFlags;
-    return GetGuestProperty(aName, aValue, &dummyTimestamp, &dummyFlags);
+    return GetGuestProperty (aName, aValue, &dummyTimestamp, &dummyFlags);
 }
 
 STDMETHODIMP Machine::GetGuestPropertyTimestamp (IN_BSTR aName, ULONG64 *aTimestamp)
 {
     BSTR dummyValue;
     BSTR dummyFlags;
-    return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
+    return GetGuestProperty (aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
 STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
@@ -3004,15 +3004,15 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
 #else
     using namespace guestProp;
 
-    CheckComArgNotNull(aName);
+    CheckComArgNotNull (aName);
     if ((aValue != NULL) && !VALID_PTR (aValue))
         return E_INVALIDARG;
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
 
-    Utf8Str utf8Name(aName);
-    Utf8Str utf8Flags(aFlags);
-    Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+    Utf8Str utf8Name (aName);
+    Utf8Str utf8Flags (aFlags);
+    Utf8Str utf8Patterns (mHWData->mGuestPropertyNotificationPatterns);
     if (   utf8Name.isNull()
         || ((aFlags != NULL) && utf8Flags.isNull())
         || utf8Patterns.isNull()
@@ -3062,7 +3062,7 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
                         for (it = mHWData->mGuestProperties.begin();
                             it->mName != aName; ++it)
                             ;
-                        mHWData->mGuestProperties.erase(it);
+                        mHWData->mGuestProperties.erase (it);
                     }
                     found = true;
                 }
@@ -3073,10 +3073,10 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
             {
                 RTTIMESPEC time;
                 property.mValue = aValue;
-                property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+                property.mTimestamp = RTTimeSpecGetNano (RTTimeNow (&time));
                 if (aFlags != NULL)
                     property.mFlags = fFlags;
-                mHWData->mGuestProperties.push_back(property);
+                mHWData->mGuestProperties.push_back (property);
             }
         }
         else if (SUCCEEDED (rc) && (aValue != NULL))
@@ -3085,9 +3085,9 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
             mHWData.backup();
             property.mName = aName;
             property.mValue = aValue;
-            property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+            property.mTimestamp = RTTimeSpecGetNano (RTTimeNow (&time));
             property.mFlags = fFlags;
-            mHWData->mGuestProperties.push_back(property);
+            mHWData->mGuestProperties.push_back (property);
         }
         if (   SUCCEEDED (rc)
             && (   matchAll
@@ -3117,20 +3117,24 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
 
 STDMETHODIMP Machine::SetGuestPropertyValue (IN_BSTR aName, IN_BSTR aValue)
 {
-    return SetGuestProperty(aName, aValue, NULL);
+    return SetGuestProperty (aName, aValue, NULL);
 }
 
-STDMETHODIMP Machine::EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+STDMETHODIMP Machine::
+EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut (BSTR, aNames),
+                          ComSafeArrayOut (BSTR, aValues),
+                          ComSafeArrayOut (ULONG64, aTimestamps),
+                          ComSafeArrayOut (BSTR, aFlags))
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
 #else
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
-    CheckComArgSafeArrayNotNull(aNames);
-    CheckComArgSafeArrayNotNull(aValues);
-    CheckComArgSafeArrayNotNull(aTimestamps);
-    CheckComArgSafeArrayNotNull(aFlags);
+    CheckComArgSafeArrayNotNull (aNames);
+    CheckComArgSafeArrayNotNull (aValues);
+    CheckComArgSafeArrayNotNull (aTimestamps);
+    CheckComArgSafeArrayNotNull (aFlags);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -3153,37 +3157,37 @@ STDMETHODIMP Machine::EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayO
         for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
              it != mHWData->mGuestProperties.end(); ++it)
             if (   matchAll
-                || RTStrSimplePatternMultiMatch (Utf8Str(aPatterns).raw(),
+                || RTStrSimplePatternMultiMatch (Utf8Str (aPatterns).raw(),
                                                  RTSTR_MAX,
-                                                 Utf8Str(it->mName).raw(),
+                                                 Utf8Str (it->mName).raw(),
                                                  RTSTR_MAX, NULL)
                )
-                propList.push_back(*it);
+                propList.push_back (*it);
 
 /*
  * And build up the arrays for returning the property information.
  */
         size_t cEntries = propList.size();
-        SafeArray <BSTR> names(cEntries);
-        SafeArray <BSTR> values(cEntries);
-        SafeArray <ULONG64> timestamps(cEntries);
-        SafeArray <BSTR> flags(cEntries);
+        SafeArray <BSTR> names (cEntries);
+        SafeArray <BSTR> values (cEntries);
+        SafeArray <ULONG64> timestamps (cEntries);
+        SafeArray <BSTR> flags (cEntries);
         size_t iProp = 0;
         for (HWData::GuestPropertyList::iterator it = propList.begin();
              it != propList.end(); ++it)
         {
              char szFlags[MAX_FLAGS_LEN + 1];
-             it->mName.cloneTo(&names[iProp]);
-             it->mValue.cloneTo(&values[iProp]);
+             it->mName.cloneTo (&names[iProp]);
+             it->mValue.cloneTo (&values[iProp]);
              timestamps[iProp] = it->mTimestamp;
-             writeFlags(it->mFlags, szFlags);
-             Bstr(szFlags).cloneTo(&flags[iProp]);
+             writeFlags (it->mFlags, szFlags);
+             Bstr (szFlags).cloneTo (&flags[iProp]);
              ++iProp;
         }
-        names.detachTo(ComSafeArrayOutArg (aNames));
-        values.detachTo(ComSafeArrayOutArg (aValues));
-        timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
-        flags.detachTo(ComSafeArrayOutArg (aFlags));
+        names.detachTo (ComSafeArrayOutArg (aNames));
+        values.detachTo (ComSafeArrayOutArg (aValues));
+        timestamps.detachTo (ComSafeArrayOutArg (aTimestamps));
+        flags.detachTo (ComSafeArrayOutArg (aFlags));
         rc = S_OK;
     }
     else
@@ -3195,10 +3199,10 @@ STDMETHODIMP Machine::EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayO
         alock.unlock();
 
         rc = directControl->EnumerateGuestProperties(aPatterns,
-                                                     ComSafeArrayOutArg(aNames),
-                                                     ComSafeArrayOutArg(aValues),
-                                                     ComSafeArrayOutArg(aTimestamps),
-                                                     ComSafeArrayOutArg(aFlags));
+                                                     ComSafeArrayOutArg (aNames),
+                                                     ComSafeArrayOutArg (aValues),
+                                                     ComSafeArrayOutArg (aTimestamps),
+                                                     ComSafeArrayOutArg (aFlags));
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
@@ -3585,7 +3589,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
             int vrc2 = RTEnvClone (&env, RTENV_DEFAULT);
             AssertRCBreakStmt (vrc2, vrc = vrc2);
 
-            newEnvStr = RTStrDup(Utf8Str (aEnvironment));
+            newEnvStr = RTStrDup (Utf8Str (aEnvironment));
             AssertPtrBreakStmt (newEnvStr, vrc = vrc2);
 
             /* put new variables to the environment
@@ -3621,7 +3625,7 @@ HRESULT Machine::openRemoteSession (IInternalSessionControl *aControl,
         while (0);
 
         if (newEnvStr != NULL)
-            RTStrFree(newEnvStr);
+            RTStrFree (newEnvStr);
     }
 
     Bstr type (aType);
@@ -4741,7 +4745,7 @@ HRESULT Machine::loadSettings (bool aRegistered)
         /* snapshotFolder (optional) */
         {
             Bstr folder = machineNode.stringValue ("snapshotFolder");
-            rc = COMSETTER(SnapshotFolder) (folder);
+            rc = COMSETTER (SnapshotFolder) (folder);
             CheckComRCThrowRC (rc);
         }
 
@@ -5207,7 +5211,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                     return E_OUTOFMEMORY;
                 validateFlags (utf8Flags.raw(), &fFlags);
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
-                mHWData->mGuestProperties.push_back(property);
+                mHWData->mGuestProperties.push_back (property);
                 /* This is just sanity, as the push_back() will probably have thrown
                  * an exception if we are out of memory.  Note that if we run out
                  * allocating the Bstrs above, this will be caught here as well. */
@@ -6554,7 +6558,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
             propertyNode.setValue <Bstr> ("name", property.mName);
             propertyNode.setValue <Bstr> ("value", property.mValue);
             propertyNode.setValue <ULONG64> ("timestamp", property.mTimestamp);
-            writeFlags(property.mFlags, szFlags);
+            writeFlags (property.mFlags, szFlags);
             Bstr flags (szFlags);
             if (flags.isNull())
                 return E_OUTOFMEMORY;
@@ -7139,8 +7143,8 @@ HRESULT Machine::unlockConfig()
 
     if (isConfigLocked())
     {
-        RTFileFlush(mData->mHandleCfgFile);
-        RTFileClose(mData->mHandleCfgFile);
+        RTFileFlush (mData->mHandleCfgFile);
+        RTFileClose (mData->mHandleCfgFile);
         /** @todo flush the directory. */
         mData->mHandleCfgFile = NIL_RTFILE;
     }
@@ -7520,14 +7524,14 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
                                                            ramUsageUsed);
     aCollector->registerBaseMetric (ramUsage);
 
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
                                                 new pm::AggregateAvg()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
                                                 new pm::AggregateMin()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
                                                 new pm::AggregateMax()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel, 0));
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel, 0));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateAvg()));
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
@@ -7535,7 +7539,7 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
     aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed, 0));
+    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed, 0));
     aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
                                                new pm::AggregateAvg()));
     aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
@@ -8063,8 +8067,8 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters (IUSBDevice *aUSBDevice,
 {
     LogFlowThisFunc (("\n"));
 
-    CheckComArgNotNull(aUSBDevice);
-    CheckComArgOutPointerValid(aMatched);
+    CheckComArgNotNull (aUSBDevice);
+    CheckComArgOutPointerValid (aMatched);
 
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -8158,7 +8162,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
  *
  *  @note Locks what called methods lock.
  */
-STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
+STDMETHODIMP SessionMachine::DetachAllUSBDevices (BOOL aDone)
 {
     LogFlowThisFunc (("\n"));
 
@@ -8792,8 +8796,11 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     return S_OK;
 }
 
-STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
-              ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags))
+STDMETHODIMP SessionMachine::
+PullGuestProperties (ComSafeArrayOut (BSTR, aNames),
+                     ComSafeArrayOut (BSTR, aValues),
+                     ComSafeArrayOut (ULONG64, aTimestamps),
+                     ComSafeArrayOut (BSTR, aFlags))
 {
     LogFlowThisFunc (("\n"));
 
@@ -8805,32 +8812,32 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
 
     AutoReadLock alock (this);
 
-    AssertReturn(!ComSafeArrayOutIsNull (aNames), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull (aValues), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull (aTimestamps), E_POINTER);
-    AssertReturn(!ComSafeArrayOutIsNull (aFlags), E_POINTER);
+    AssertReturn (!ComSafeArrayOutIsNull (aNames), E_POINTER);
+    AssertReturn (!ComSafeArrayOutIsNull (aValues), E_POINTER);
+    AssertReturn (!ComSafeArrayOutIsNull (aTimestamps), E_POINTER);
+    AssertReturn (!ComSafeArrayOutIsNull (aFlags), E_POINTER);
 
     size_t cEntries = mHWData->mGuestProperties.size();
-    com::SafeArray <BSTR> names(cEntries);
-    com::SafeArray <BSTR> values(cEntries);
-    com::SafeArray <ULONG64> timestamps(cEntries);
-    com::SafeArray <BSTR> flags(cEntries);
+    com::SafeArray <BSTR> names (cEntries);
+    com::SafeArray <BSTR> values (cEntries);
+    com::SafeArray <ULONG64> timestamps (cEntries);
+    com::SafeArray <BSTR> flags (cEntries);
     unsigned i = 0;
     for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
          it != mHWData->mGuestProperties.end(); ++it)
     {
         char szFlags[MAX_FLAGS_LEN + 1];
-        it->mName.cloneTo(&names[i]);
-        it->mValue.cloneTo(&values[i]);
+        it->mName.cloneTo (&names[i]);
+        it->mValue.cloneTo (&values[i]);
         timestamps[i] = it->mTimestamp;
-        writeFlags(it->mFlags, szFlags);
-        Bstr(szFlags).cloneTo(&flags[i]);
+        writeFlags (it->mFlags, szFlags);
+        Bstr (szFlags).cloneTo (&flags[i]);
         ++i;
     }
-    names.detachTo(ComSafeArrayOutArg (aNames));
-    values.detachTo(ComSafeArrayOutArg (aValues));
-    timestamps.detachTo(ComSafeArrayOutArg (aTimestamps));
-    flags.detachTo(ComSafeArrayOutArg (aFlags));
+    names.detachTo (ComSafeArrayOutArg (aNames));
+    values.detachTo (ComSafeArrayOutArg (aValues));
+    timestamps.detachTo (ComSafeArrayOutArg (aTimestamps));
+    flags.detachTo (ComSafeArrayOutArg (aFlags));
     mHWData->mPropertyServiceActive = true;
     return S_OK;
 #else
@@ -8838,10 +8845,10 @@ STDMETHODIMP SessionMachine::PullGuestProperties (ComSafeArrayOut(BSTR, aNames),
 #endif
 }
 
-STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(IN_BSTR, aNames),
-                                                  ComSafeArrayIn(IN_BSTR, aValues),
-                                                  ComSafeArrayIn(ULONG64, aTimestamps),
-                                                  ComSafeArrayIn(IN_BSTR, aFlags))
+STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn (IN_BSTR, aNames),
+                                                  ComSafeArrayIn (IN_BSTR, aValues),
+                                                  ComSafeArrayIn (ULONG64, aTimestamps),
+                                                  ComSafeArrayIn (IN_BSTR, aFlags))
 {
     LogFlowThisFunc (("\n"));
 
@@ -8860,30 +8867,30 @@ STDMETHODIMP SessionMachine::PushGuestProperties (ComSafeArrayIn(IN_BSTR, aNames
      * the right way to handle this. */
     mData->mRegistered = FALSE;
     HRESULT rc = checkStateDependency (MutableStateDep);
-    LogRel(("checkStateDependency (MutableStateDep) returned 0x%x\n", rc));
+    LogRel (("checkStateDependency (MutableStateDep) returned 0x%x\n", rc));
     CheckComRCReturnRC (rc);
 
     // ComAssertRet (mData->mMachineState < MachineState_Running, E_FAIL);
 
-    AssertReturn(!ComSafeArrayInIsNull (aNames), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aValues), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aTimestamps), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull (aFlags), E_POINTER);
+    AssertReturn (!ComSafeArrayInIsNull (aNames), E_POINTER);
+    AssertReturn (!ComSafeArrayInIsNull (aValues), E_POINTER);
+    AssertReturn (!ComSafeArrayInIsNull (aTimestamps), E_POINTER);
+    AssertReturn (!ComSafeArrayInIsNull (aFlags), E_POINTER);
 
-    com::SafeArray <IN_BSTR> names(ComSafeArrayInArg(aNames));
-    com::SafeArray <IN_BSTR> values(ComSafeArrayInArg(aValues));
-    com::SafeArray <ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
-    com::SafeArray <IN_BSTR> flags(ComSafeArrayInArg(aFlags));
+    com::SafeArray <IN_BSTR> names (ComSafeArrayInArg (aNames));
+    com::SafeArray <IN_BSTR> values (ComSafeArrayInArg (aValues));
+    com::SafeArray <ULONG64> timestamps (ComSafeArrayInArg (aTimestamps));
+    com::SafeArray <IN_BSTR> flags (ComSafeArrayInArg (aFlags));
     DiscardSettings();
     mHWData.backup();
-    mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
+    mHWData->mGuestProperties.erase (mHWData->mGuestProperties.begin(),
                                     mHWData->mGuestProperties.end());
     for (unsigned i = 0; i < names.size(); ++i)
     {
         uint32_t fFlags = NILFLAG;
-        validateFlags (Utf8Str(flags[i]).raw(), &fFlags);
+        validateFlags (Utf8Str (flags[i]).raw(), &fFlags);
         HWData::GuestProperty property = { names[i], values[i], timestamps[i], fFlags };
-        mHWData->mGuestProperties.push_back(property);
+        mHWData->mGuestProperties.push_back (property);
     }
     mHWData->mPropertyServiceActive = false;
     alock.unlock();
@@ -8904,13 +8911,13 @@ STDMETHODIMP SessionMachine::PushGuestProperty (IN_BSTR aName, IN_BSTR aValue,
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgNotNull(aName);
-    if ((aValue != NULL) && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
+    CheckComArgNotNull (aName);
+    if ((aValue != NULL) && (!VALID_PTR (aValue) || !VALID_PTR (aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 
-    Utf8Str utf8Name(aName);
-    Utf8Str utf8Flags(aFlags);
-    Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+    Utf8Str utf8Name (aName);
+    Utf8Str utf8Flags (aFlags);
+    Utf8Str utf8Patterns (mHWData->mGuestPropertyNotificationPatterns);
     if (   utf8Name.isNull()
         || ((aFlags != NULL) && utf8Flags.isNull())
         || utf8Patterns.isNull()
@@ -8938,13 +8945,13 @@ STDMETHODIMP SessionMachine::PushGuestProperty (IN_BSTR aName, IN_BSTR aValue,
          iter != mHWData->mGuestProperties.end(); ++iter)
         if (aName == iter->mName)
         {
-            mHWData->mGuestProperties.erase(iter);
+            mHWData->mGuestProperties.erase (iter);
             break;
         }
     if (aValue != NULL)
     {
         HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
-        mHWData->mGuestProperties.push_back(property);
+        mHWData->mGuestProperties.push_back (property);
     }
 
     /* send a callback notification if appropriate */
@@ -9099,7 +9106,7 @@ HRESULT SessionMachine::onFloppyDriveChange()
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
+HRESULT SessionMachine::onNetworkAdapterChange (INetworkAdapter *networkAdapter)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9116,13 +9123,13 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnNetworkAdapterChange(networkAdapter);
+    return directControl->OnNetworkAdapterChange (networkAdapter);
 }
 
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
+HRESULT SessionMachine::onSerialPortChange (ISerialPort *serialPort)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9139,13 +9146,13 @@ HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnSerialPortChange(serialPort);
+    return directControl->OnSerialPortChange (serialPort);
 }
 
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onParallelPortChange(IParallelPort *parallelPort)
+HRESULT SessionMachine::onParallelPortChange (IParallelPort *parallelPort)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9162,7 +9169,7 @@ HRESULT SessionMachine::onParallelPortChange(IParallelPort *parallelPort)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnParallelPortChange(parallelPort);
+    return directControl->OnParallelPortChange (parallelPort);
 }
 
 /**
