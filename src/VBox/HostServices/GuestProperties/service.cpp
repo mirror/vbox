@@ -1096,6 +1096,9 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         RTStrFree(pszFlags);
     }
     LogFlowThisFunc (("returning\n"));
+    LogFlowThisFunc (("pszName=%p (%s)\n", pszName, pszName));
+    LogFlowThisFunc (("pszValue=%p (%s)\n", pszValue, pszValue));
+    LogFlowThisFunc (("pszFlags=%p (%s)\n", pszFlags, pszFlags));
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
 }
 
@@ -1113,7 +1116,11 @@ int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
                        char *pszName, char *pszValue, uint32_t u32TimeHigh,
                        uint32_t u32TimeLow, char *pszFlags)
 {
-    LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%s, pszValue=%s, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%s\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags));
+    LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%p, pszValue=%p, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%p\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags));
+    LogFlowFunc (("pszName=%s\n", pszName));
+    LogFlowFunc (("pszValue=%s\n", pszValue));
+    LogFlowFunc (("pszFlags=%s\n", pszFlags));
+    /* LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%s, pszValue=%s, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%s\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags)); */
     HOSTCALLBACKDATA HostCallbackData;
     HostCallbackData.u32Magic     = HOSTCALLBACKMAGIC;
     HostCallbackData.pcszName     = pszName;
