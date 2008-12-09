@@ -48,6 +48,83 @@
 #include <iprt/thread.h>
 
 /*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef VBOX_WITH_STATISTICS
+# define EXIT_REASON(def, val, str) #def " - " #val " - " str
+# define EXIT_REASON_NIL() NULL
+/** Exit reason descriptions for VT-x, used to describe statistics. */
+static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
+{
+    EXIT_REASON(VMX_EXIT_EXCEPTION          ,  0, "Exception or non-maskable interrupt (NMI)."),
+    EXIT_REASON(VMX_EXIT_EXTERNAL_IRQ       ,  1, "External interrupt."),
+    EXIT_REASON(VMX_EXIT_TRIPLE_FAULT       ,  2, "Triple fault."),
+    EXIT_REASON(VMX_EXIT_INIT_SIGNAL        ,  3, "INIT signal."),
+    EXIT_REASON(VMX_EXIT_SIPI               ,  4, "Start-up IPI (SIPI)."),
+    EXIT_REASON(VMX_EXIT_IO_SMI_IRQ         ,  5, "I/O system-management interrupt (SMI)."),
+    EXIT_REASON(VMX_EXIT_SMI_IRQ            ,  6, "Other SMI."),
+    EXIT_REASON(VMX_EXIT_IRQ_WINDOW         ,  7, "Interrupt window."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_TASK_SWITCH        ,  9, "Task switch."),
+    EXIT_REASON(VMX_EXIT_CPUID              , 10, "Guest software attempted to execute CPUID."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_HLT                , 12, "Guest software attempted to execute HLT."),
+    EXIT_REASON(VMX_EXIT_INVD               , 13, "Guest software attempted to execute INVD."),
+    EXIT_REASON(VMX_EXIT_INVPG              , 14, "Guest software attempted to execute INVPG."),
+    EXIT_REASON(VMX_EXIT_RDPMC              , 15, "Guest software attempted to execute RDPMC."),
+    EXIT_REASON(VMX_EXIT_RDTSC              , 16, "Guest software attempted to execute RDTSC."),
+    EXIT_REASON(VMX_EXIT_RSM                , 17, "Guest software attempted to execute RSM in SMM."),
+    EXIT_REASON(VMX_EXIT_VMCALL             , 18, "Guest software executed VMCALL."),
+    EXIT_REASON(VMX_EXIT_VMCLEAR            , 19, "Guest software executed VMCLEAR."),
+    EXIT_REASON(VMX_EXIT_VMLAUNCH           , 20, "Guest software executed VMLAUNCH."),
+    EXIT_REASON(VMX_EXIT_VMPTRLD            , 21, "Guest software executed VMPTRLD."),
+    EXIT_REASON(VMX_EXIT_VMPTRST            , 22, "Guest software executed VMPTRST."),
+    EXIT_REASON(VMX_EXIT_VMREAD             , 23, "Guest software executed VMREAD."),
+    EXIT_REASON(VMX_EXIT_VMRESUME           , 24, "Guest software executed VMRESUME."),
+    EXIT_REASON(VMX_EXIT_VMWRITE            , 25, "Guest software executed VMWRITE."),
+    EXIT_REASON(VMX_EXIT_VMXOFF             , 26, "Guest software executed VMXOFF."),
+    EXIT_REASON(VMX_EXIT_VMXON              , 27, "Guest software executed VMXON."),
+    EXIT_REASON(VMX_EXIT_CRX_MOVE           , 28, "Control-register accesses."),
+    EXIT_REASON(VMX_EXIT_DRX_MOVE           , 29, "Debug-register accesses."),
+    EXIT_REASON(VMX_EXIT_PORT_IO            , 30, "I/O instruction."),
+    EXIT_REASON(VMX_EXIT_RDMSR              , 31, "RDMSR. Guest software attempted to execute RDMSR."),
+    EXIT_REASON(VMX_EXIT_WRMSR              , 32, "WRMSR. Guest software attempted to execute WRMSR."),
+    EXIT_REASON(VMX_EXIT_ERR_INVALID_GUEST_STATE,  33, "VM-entry failure due to invalid guest state."),
+    EXIT_REASON(VMX_EXIT_ERR_MSR_LOAD       , 34, "VM-entry failure due to MSR loading."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_MWAIT              , 36, "Guest software executed MWAIT."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_MONITOR            , 39, "Guest software attempted to execute MONITOR."),
+    EXIT_REASON(VMX_EXIT_PAUSE              , 40, "Guest software attempted to execute PAUSE."),
+    EXIT_REASON(VMX_EXIT_ERR_MACHINE_CHECK  , 41, "VM-entry failure due to machine-check."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_TPR                , 43, "TPR below threshold. Guest software executed MOV to CR8."),
+    EXIT_REASON(VMX_EXIT_APIC_ACCESS        , 44, "APIC access. Guest software attempted to access memory at a physical address on the APIC-access page."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_XDTR_ACCESS        , 46, "Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT."),
+    EXIT_REASON(VMX_EXIT_TR_ACCESS          , 47, "Access to LDTR or TR. Guest software attempted to execute LLDT, LTR, SLDT, or STR."),
+    EXIT_REASON(VMX_EXIT_EPT_VIOLATION      , 48, "EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures."),
+    EXIT_REASON(VMX_EXIT_EPT_MISCONFIG      , 49, "EPT misconfiguration. An attempt to access memory with a guest-physical address encountered a misconfigured EPT paging-structure entry."),
+    EXIT_REASON(VMX_EXIT_INVEPT             , 50, "INVEPT. Guest software attempted to execute INVEPT."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_PREEMPTION_TIMER   , 52, "VMX-preemption timer expired. The preemption timer counted down to zero."),
+    EXIT_REASON(VMX_EXIT_INVVPID            , 53, "INVVPID. Guest software attempted to execute INVVPID."),
+    EXIT_REASON(VMX_EXIT_WBINVD             , 54, "WBINVD. Guest software attempted to execute WBINVD."),
+    EXIT_REASON(VMX_EXIT_XSETBV             , 55, "XSETBV. Guest software attempted to execute XSETBV."),
+    EXIT_REASON_NIL()
+};
+/** Exit reason descriptions for AMD-V, used to describe statistics. */
+static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
+{
+    /** @todo fill in these. */
+    EXIT_REASON_NIL()
+};
+# undef EXIT_REASON
+# undef EXIT_REASON_NIL
+#endif /* VBOX_WITH_STATISTICS */
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM);
@@ -242,13 +319,15 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
+            const char * const *papszDesc = ASMIsIntelCpu() ? &g_apszVTxExitReasons[0] : &g_apszAmdVExitReasons[0];
             for (int j=0;j<MAX_EXITREASON_STAT;j++)
             {
-                rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Exit reason",
-                                         "/HWACCM/CPU%d/Exit/Reason/%02x", i, j);
+                rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.paStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                                     papszDesc[j] ? papszDesc[j] : "Exit reason",
+                                     "/HWACCM/CPU%d/Exit/Reason/%02x", i, j);
                 AssertRC(rc);
             }
-            rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExitReasonNPF, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Exit reason", "/HWACCM/CPU%d/Exit/Reason/#NPF", i);
+            rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExitReasonNPF, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Nested page fault", "/HWACCM/CPU%d/Exit/Reason/#NPF", i);
             AssertRC(rc);
         }
         pVCpu->hwaccm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatExitReason);
