@@ -96,7 +96,7 @@ soread(PNATState pData, struct socket *so)
 {
     int n, nn, lss, total;
     struct sbuf *sb = &so->so_snd;
-    int len = sb->sb_datalen - sb->sb_cc;
+    size_t len = sb->sb_datalen - sb->sb_cc;
     struct iovec iov[2];
     int mss = so->so_tcpcb->t_maxseg;
 
@@ -127,7 +127,8 @@ soread(PNATState pData, struct socket *so)
     {
         iov[0].iov_len = (sb->sb_data + sb->sb_datalen) - sb->sb_wptr;
         /* Should never succeed, but... */
-        if (iov[0].iov_len > len) iov[0].iov_len = len;
+        if (iov[0].iov_len > len)
+            iov[0].iov_len = len;
         len -= iov[0].iov_len;
         if (len)
         {
@@ -327,7 +328,7 @@ sowrite(PNATState pData, struct socket *so)
 {
     int  n,nn;
     struct sbuf *sb = &so->so_rcv;
-    int len = sb->sb_cc;
+    size_t len = sb->sb_cc;
     struct iovec iov[2];
 
     DEBUG_CALL("sowrite");
@@ -354,13 +355,15 @@ sowrite(PNATState pData, struct socket *so)
     {
         iov[0].iov_len = sb->sb_wptr - sb->sb_rptr;
         /* Should never succeed, but... */
-        if (iov[0].iov_len > len) iov[0].iov_len = len;
+        if (iov[0].iov_len > len)
+            iov[0].iov_len = len;
         n = 1;
     }
     else
     {
         iov[0].iov_len = (sb->sb_data + sb->sb_datalen) - sb->sb_rptr;
-        if (iov[0].iov_len > len) iov[0].iov_len = len;
+        if (iov[0].iov_len > len)
+            iov[0].iov_len = len;
         len -= iov[0].iov_len;
         if (len)
         {
@@ -432,17 +435,23 @@ sorecvfrom(PNATState pData, struct socket *so)
     DEBUG_CALL("sorecvfrom");
     DEBUG_ARG("so = %lx", (long)so);
 
-    if (so->so_type == IPPROTO_ICMP) {   /* This is a "ping" reply */
+    if (so->so_type == IPPROTO_ICMP)
+    {
+        /* This is a "ping" reply */
 #if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)) 
-          sorecvfrom_icmp_unix(pData, so);
+        sorecvfrom_icmp_unix(pData, so);
 #endif
 #if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
-          sorecvfrom_icmp_win(pData, so);
+        sorecvfrom_icmp_win(pData, so);
 #endif
-          udp_detach(pData, so);
-    } else {                                /* A "normal" UDP packet */
-          struct mbuf *m;
-          int len, n;
+        udp_detach(pData, so);
+    }
+    else
+    {
+        /* A "normal" UDP packet */
+        struct mbuf *m;
+        size_t len;
+        u_long n;
 
         if (!(m = m_get(pData)))
             return;
@@ -773,151 +782,152 @@ sofwdrain(struct socket *so)
 static void 
 send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
 {
-        struct ip *ip;
-        uint32_t dst,src;
-        char ip_copy[256];
-        struct icmp *icp;
-        int old_ip_len;
-        struct mbuf *m;
-        struct icmp_msg *icm;
-        
-        ip = (struct ip *)buff;
-        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-        
-        Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
-        
-        if (icp->icmp_type == ICMP_TIMXCEED ) {
-            ip = &icp->icmp_ip;
-        }
-        
-        icm = icmp_find_original_mbuf(pData, ip);
-        
-        if (icm == NULL)
-        {
-            LogRel(("NAT: Can't find the corresponding packet for the received ICMP\n"));
-            return;
-        }
+    struct ip *ip;
+    uint32_t dst,src;
+    char ip_copy[256];
+    struct icmp *icp;
+    int old_ip_len;
+    struct mbuf *m;
+    struct icmp_msg *icm;
 
-        m = icm->im_m;
-        Assert(m != NULL);
-        
-        src = addr->sin_addr.s_addr;
-        
-        ip = mtod(m, struct ip *);
-        /* Now ip is pointing on header we've sent from guest */
-        if (icp->icmp_type == ICMP_TIMXCEED) {
-            old_ip_len = (ip->ip_hl << 2) + 64;
-            memcpy(ip_copy, ip, old_ip_len);
-        }
-        
-        /* source address from original IP packet*/
-        dst = ip->ip_src.s_addr;
-        
-        /* overide ther tail of old packet */
-        memcpy(m->m_data, buff, len);
-        m->m_len = len;
-        ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
-        
-        icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-        if (icp->icmp_type == ICMP_TIMXCEED) {
-            /* according RFC 793 error messages required copy of initial IP header + 64 bit */
-            memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
-            ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
-        }
-        
-        /* the low level expects fields to be in host format so let's convert them*/
-        NTOHS(ip->ip_len);
-        NTOHS(ip->ip_off);
-        NTOHS(ip->ip_id);
-        ip->ip_src.s_addr = src;
-        ip->ip_dst.s_addr = dst;
-        icmp_reflect(pData, m);
-        LIST_REMOVE(icm, im_list);
-        /* Don't call m_free here*/
-        free(icm);
+    ip = (struct ip *)buff;
+    icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+
+    Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
+
+    if (icp->icmp_type == ICMP_TIMXCEED)
+        ip = &icp->icmp_ip;
+
+    icm = icmp_find_original_mbuf(pData, ip);
+
+    if (icm == NULL)
+    {
+        LogRel(("NAT: Can't find the corresponding packet for the received ICMP\n"));
+        return;
+    }
+
+    m = icm->im_m;
+    Assert(m != NULL);
+
+    src = addr->sin_addr.s_addr;
+
+    ip = mtod(m, struct ip *);
+    /* Now ip is pointing on header we've sent from guest */
+    if (icp->icmp_type == ICMP_TIMXCEED)
+    {
+        old_ip_len = (ip->ip_hl << 2) + 64;
+        memcpy(ip_copy, ip, old_ip_len);
+    }
+
+    /* source address from original IP packet*/
+    dst = ip->ip_src.s_addr;
+
+    /* overide ther tail of old packet */
+    memcpy(m->m_data, buff, len);
+    m->m_len = len;
+    ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
+
+    icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+    if (icp->icmp_type == ICMP_TIMXCEED)
+    {
+        /* according RFC 793 error messages required copy of initial IP header + 64 bit */
+        memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
+        ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+    }
+
+    /* the low level expects fields to be in host format so let's convert them*/
+    NTOHS(ip->ip_len);
+    NTOHS(ip->ip_off);
+    NTOHS(ip->ip_id);
+    ip->ip_src.s_addr = src;
+    ip->ip_dst.s_addr = dst;
+    icmp_reflect(pData, m);
+    LIST_REMOVE(icm, im_list);
+    /* Don't call m_free here*/
+    free(icm);
 }
 
 # ifdef RT_OS_WINDOWS
 static void 
 sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
-        int len;
-        int i;
-        struct ip *ip;
-        struct mbuf *m;
-        struct icmp *icp;
-        struct icmp_msg *icm;
-        struct ip *ip_broken; /* ICMP returns header + 64 bit of packet */
-        uint32_t src;
-        ICMP_ECHO_REPLY *icr;
-        u_char code = ~0;
-        len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
-        if (len <= 0)
+    int len;
+    int i;
+    struct ip *ip;
+    struct mbuf *m;
+    struct icmp *icp;
+    struct icmp_msg *icm;
+    struct ip *ip_broken; /* ICMP returns header + 64 bit of packet */
+    uint32_t src;
+    ICMP_ECHO_REPLY *icr;
+    u_char code = ~0;
+    len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
+    if (len <= 0)
+    {
+        LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
+        return;
+    }
+    LogRel(("IcmpParseReplies returns %ld\n", len));
+    icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
+    for (i = 0; i < len; ++i)
+    {
+        switch(icr[i].Status) 
         {
-              LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
-              return;
-        }
-        LogRel(("IcmpParseReplies returns %ld\n", len));
-        icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
-        for (i = 0; i < len; ++i)
-        {
-                switch(icr[i].Status) 
-                {
-                        case IP_DEST_HOST_UNREACHABLE:
-                                code = (code != ~0 ? code :ICMP_UNREACH_HOST);
-                        case IP_DEST_NET_UNREACHABLE:
-                                code = (code != ~0 ? code : ICMP_UNREACH_NET);
-                        case IP_DEST_PROT_UNREACHABLE:
-                                code = (code != ~0 ? code : ICMP_UNREACH_PROTOCOL);
-                        /* UNREACH error inject here */
-                        case IP_DEST_PORT_UNREACHABLE:
-                                code = (code != ~0 ? code : ICMP_UNREACH_PORT);
-                                icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occurred!!!");
-                        break;
-                        case IP_SUCCESS: /* echo replied */
-                                m = m_get(pData);
-                                ip = mtod(m, struct ip *);
-                                ip->ip_src.s_addr = icr[i].Address;
-                                ip->ip_p = IPPROTO_ICMP;
-                                ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
-                                ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
-                                ip->ip_ttl = icr[i].Options.Ttl; 
+            case IP_DEST_HOST_UNREACHABLE:
+                code = (code != ~0 ? code : ICMP_UNREACH_HOST);
+            case IP_DEST_NET_UNREACHABLE:
+                code = (code != ~0 ? code : ICMP_UNREACH_NET);
+            case IP_DEST_PROT_UNREACHABLE:
+                code = (code != ~0 ? code : ICMP_UNREACH_PROTOCOL);
+                /* UNREACH error inject here */
+            case IP_DEST_PORT_UNREACHABLE:
+                code = (code != ~0 ? code : ICMP_UNREACH_PORT);
+                icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occurred!!!");
+                break;
+            case IP_SUCCESS: /* echo replied */
+                m = m_get(pData);
+                ip = mtod(m, struct ip *);
+                ip->ip_src.s_addr = icr[i].Address;
+                ip->ip_p = IPPROTO_ICMP;
+                ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
+                ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
+                ip->ip_ttl = icr[i].Options.Ttl; 
 
-                                icp = (struct icmp *)&ip[1]; /* no options */
-                                icp->icmp_type = ICMP_ECHOREPLY;
-                                icp->icmp_code = 0;
-                                icp->icmp_id = so->so_icmp_id;
-                                icp->icmp_seq = so->so_icmp_seq;
-                                memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
+                icp = (struct icmp *)&ip[1]; /* no options */
+                icp->icmp_type = ICMP_ECHOREPLY;
+                icp->icmp_code = 0;
+                icp->icmp_id = so->so_icmp_id;
+                icp->icmp_seq = so->so_icmp_seq;
+                memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
 
-                                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize; 
-                                m->m_len = ip->ip_len;
+                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize; 
+                m->m_len = ip->ip_len;
 
-                                icmp_reflect(pData, m);
-                        case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
+                icmp_reflect(pData, m);
+            case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
 
-                                ip_broken = icr[i].Data;
-                                icm = icmp_find_original_mbuf(pData, ip_broken);     
-                                if (icm == NULL) {
-                                    LogRel(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
-                                    return;
-                                }
-                                m = icm->im_m;
-                                ip = mtod(m, struct ip *);
-                                ip->ip_ttl = icr[i].Options.Ttl;
-                                src = ip->ip_src.s_addr;
-                                ip->ip_dst.s_addr = src;
-                                ip->ip_dst.s_addr = icr[i].Address; 
-                                icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-                                ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
-                                memcpy(icp->icmp_data, ip_broken, (ip_broken->ip_hl << 2) + 64);
-                                icmp_reflect(pData, m);
-                        break;
-                        default:
-                                LogRel(("ICMP(default): message with Status: %x was received from %s\n", icr[i].Status, icr[i].Address));
-                        break;
+                ip_broken = icr[i].Data;
+                icm = icmp_find_original_mbuf(pData, ip_broken);     
+                if (icm == NULL) {
+                    LogRel(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
+                    return;
                 }
+                m = icm->im_m;
+                ip = mtod(m, struct ip *);
+                ip->ip_ttl = icr[i].Options.Ttl;
+                src = ip->ip_src.s_addr;
+                ip->ip_dst.s_addr = src;
+                ip->ip_dst.s_addr = icr[i].Address; 
+                icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+                ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
+                memcpy(icp->icmp_data, ip_broken, (ip_broken->ip_hl << 2) + 64);
+                icmp_reflect(pData, m);
+                break;
+            default:
+                LogRel(("ICMP(default): message with Status: %x was received from %s\n", icr[i].Status, icr[i].Address));
+                break;
         }
+    }
 }
 # endif /* RT_OS_WINDOWS */
 #endif /* VBOX_WITH_SLIRP_ICMP */
@@ -932,7 +942,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
                    (struct sockaddr *)&addr, &addrlen);
     /* XXX Check if reply is "correct"? */
 
-    if(len == -1 || len == 0)
+    if (len == -1 || len == 0)
     {
         u_char code = ICMP_UNREACH_PORT;
 
@@ -940,7 +950,6 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
             code=ICMP_UNREACH_HOST;
         else if(errno == ENETUNREACH)
             code=ICMP_UNREACH_NET;
-
 
         DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
                     errno,strerror(errno)));

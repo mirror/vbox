@@ -288,7 +288,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
 
         if (*slirp_hostname)
         {
-            val = strlen(slirp_hostname);
+            val = (int)strlen(slirp_hostname);
             *q++ = RFC1533_HOSTNAME;
             *q++ = val;
             memcpy(q, slirp_hostname, val);
@@ -297,7 +297,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
 
         if (pData->pszDomain && pData->fPassDomain)
         {
-            val = strlen(pData->pszDomain);
+            val = (int)strlen(pData->pszDomain);
             *q++ = RFC1533_DOMAINNAME;
             *q++ = val;
             memcpy(q, pData->pszDomain, val);
