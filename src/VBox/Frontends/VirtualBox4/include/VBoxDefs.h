@@ -162,6 +162,7 @@ struct VBoxDefs
 #ifdef Q_WS_MAC
     static const char* GUI_RealtimeDockIconUpdateEnabled;
 #endif
+    static const char* GUI_PassCAD;
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
