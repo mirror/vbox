@@ -104,7 +104,6 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PSELMSELINFO pSelInfo, PGMMODE enmMode
     pState->pVM             = pVM;
     pState->fLocked         = false;
     pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->Raw.Gen.u1Long;
-    Assert((uintptr_t)GCPtr == GCPtr);
     uint32_t cbInstr;
     int rc = DISCoreOneEx(GCPtr,
                           pState->f64Bits
