@@ -1526,6 +1526,7 @@ ResumeExecution:
         /* EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault. */
         uint32_t    errCode        = pVMCB->ctrl.u64ExitInfo1;     /* EXITINFO1 = error code */
         RTGCPHYS    uFaultAddress  = pVMCB->ctrl.u64ExitInfo2;     /* EXITINFO2 = fault address */
+        PGMMODE     enmShwPagingMode;
 
         Assert(pVM->hwaccm.s.fNestedPaging);
         Log(("Nested page fault at %RGv cr2=%RGp error code %x\n", (RTGCPTR)pCtx->rip, uFaultAddress, errCode));
@@ -1535,7 +1536,14 @@ ResumeExecution:
         TRPMSetFaultAddress(pVM, uFaultAddress);
 
         /* Handle the pagefault trap for the nested shadow table. */
-        rc = PGMR0Trap0eHandlerNestedPaging(pVM, PGMGetHostMode(pVM), errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
+#if HC_ARCH_BITS == 32 
+        if (CPUMIsGuestInLongMode(pVM))
+            enmShwPagingMode = PGMMODE_AMD64_NX;
+        else
+#endif
+            enmShwPagingMode = PGMGetHostMode(pVM);
+
+        rc = PGMR0Trap0eHandlerNestedPaging(pVM, enmShwPagingMode, errCode, CPUMCTX2CORE(pCtx), uFaultAddress);
         Log2(("PGMR0Trap0eHandlerNestedPaging %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
         if (rc == VINF_SUCCESS)
         {   /* We've successfully synced our shadow pages, so let's just continue execution. */
