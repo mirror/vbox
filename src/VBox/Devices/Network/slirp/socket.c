@@ -836,6 +836,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         free(icm);
 }
 
+# ifdef RT_OS_WINDOWS
 static void 
 sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
@@ -874,7 +875,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 }
         }
 }
-#endif
+# endif /* RT_OS_WINDOWS */
+#endif /* VBOX_WITH_SLIRP_ICMP */
 
 static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
