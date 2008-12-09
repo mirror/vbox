@@ -274,8 +274,10 @@ public:
                                        VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturnVoid(VALID_PTR(pvService));
+        LogFlowFunc (("pvService=%p, callHandle=%p, u32ClientID=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, callHandle, u32ClientID, pvClient, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         pSelf->call(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
+        LogFlowFunc (("returning\n"));
     }
 
     /**
@@ -288,8 +290,11 @@ public:
                                           VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        LogFlowFunc (("pvService=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-        return pSelf->hostCall(u32Function, cParms, paParms);
+        int rc = pSelf->hostCall(u32Function, cParms, paParms);
+        LogFlowFunc (("rc=%Rrc\n", rc));
+        return rc;
     }
 
     /**
@@ -981,6 +986,7 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     int rc = VINF_SUCCESS;
 
     AssertPtrReturnVoid(pszProperty);
+    LogFlowThisFunc (("pszProperty=%s, u64Timestamp=%llu\n", pszProperty, u64Timestamp));
     /* Ensure that our timestamp is different to the last one. */
     if (   !mGuestNotifications.empty()
         && u64Timestamp == mGuestNotifications.back().mTimestamp)
@@ -1084,10 +1090,12 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     }
     if (RT_FAILURE(rc)) /* clean up if we failed somewhere */
     {
+        LogThisFunc (("Failed, freeing allocated strings.\n"));
         RTStrFree(pszName);
         RTStrFree(pszValue);
         RTStrFree(pszFlags);
     }
+    LogFlowThisFunc (("returning\n"));
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
 }
 
@@ -1100,10 +1108,12 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
  *
  * @thread  request thread
  */
+/* static */
 int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
                        char *pszName, char *pszValue, uint32_t u32TimeHigh,
                        uint32_t u32TimeLow, char *pszFlags)
 {
+    LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%s, pszValue=%s, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%s\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags));
     HOSTCALLBACKDATA HostCallbackData;
     HostCallbackData.u32Magic     = HOSTCALLBACKMAGIC;
     HostCallbackData.pcszName     = pszName;
@@ -1112,9 +1122,11 @@ int Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
     HostCallbackData.pcszFlags    = pszFlags;
     AssertRC(pfnCallback(pvData, 0, reinterpret_cast<void *>(&HostCallbackData),
                          sizeof(HostCallbackData)));
+    LogFlowFunc (("Freeing strings\n"));
     RTStrFree(pszName);
     RTStrFree(pszValue);
     RTStrFree(pszFlags);
+    LogFlowFunc (("returning success\n"));
     return VINF_SUCCESS;
 }
 
