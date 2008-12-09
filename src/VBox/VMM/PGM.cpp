@@ -3231,7 +3231,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
             {
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
-                    enmShadowMode = PGMMODE_PAE;
+                    enmShadowMode = PGMMODE_AMD64;
                     enmSwitcher = VMMSWITCHER_32_TO_AMD64;
                     break;
 
@@ -3239,7 +3239,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
                 case SUPPAGINGMODE_PAE_NX:
                 case SUPPAGINGMODE_PAE_GLOBAL:
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
-                    enmShadowMode = PGMMODE_PAE;
+                    enmShadowMode = PGMMODE_AMD64;
                     enmSwitcher = VMMSWITCHER_PAE_TO_AMD64;
                     break;
 
