@@ -370,6 +370,14 @@ void slirp_term(PNATState pData)
             pData->cpvHashUsed, pData->cpvHashCollisions, pData->cpvHashInserts, pData->cpvHashDone));
 #endif
 
+#ifdef VBOX_WITH_SLIRP_ICMP
+# ifdef RT_OS_WINDOWS
+    pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
+# else
+    closesocket(pData->icmp_socket.s);
+# endif
+#endif
+
     slirp_link_down(pData);
 #ifdef RT_OS_WINDOWS
     WSACleanup();
