@@ -325,12 +325,13 @@ freeit:
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
                 status = IcmpSendEcho2(pData->icmp_socket.s, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
-                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data, icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
-                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 10);
+                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data, 
+                                       icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
+                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
                     error = GetLastError(); 
-                    LogRel(("error(%d) occured while sending ICMP (", error()));
+                    LogRel(("error(%d) occured while sending ICMP (", error));
                     switch (error) 
                     {
                         case ERROR_INVALID_PARAMETER:
@@ -340,7 +341,7 @@ freeit:
                             LogRel(("operation is unsupported)\n"));
                             break;
                         case ERROR_NOT_ENOUGH_MEMORY:
-                            LogRel(("OOM!!!"));
+                            LogRel(("OOM!!!)\n"));
                             break;
                         case IP_BUF_TOO_SMALL:
                             LogRel(("Buffer too small)\n"));
