@@ -3198,11 +3198,11 @@ EnumerateGuestProperties (IN_BSTR aPatterns, ComSafeArrayOut (BSTR, aNames),
         /* just be on the safe side when calling another process */
         alock.unlock();
 
-        rc = directControl->EnumerateGuestProperties(aPatterns,
-                                                     ComSafeArrayOutArg (aNames),
-                                                     ComSafeArrayOutArg (aValues),
-                                                     ComSafeArrayOutArg (aTimestamps),
-                                                     ComSafeArrayOutArg (aFlags));
+        rc = directControl->EnumerateGuestProperties (aPatterns,
+                                                      ComSafeArrayOutArg (aNames),
+                                                      ComSafeArrayOutArg (aValues),
+                                                      ComSafeArrayOutArg (aTimestamps),
+                                                      ComSafeArrayOutArg (aFlags));
     }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
@@ -7518,27 +7518,27 @@ void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachi
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser, 0));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
                                                 new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
                                                 new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
                                                 new pm::AggregateMax()));
     aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel, 0));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
+    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
                                                 new pm::AggregateMax()));
 
     aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed, 0));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
+                                                new pm::AggregateAvg()));
+    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
+                                                new pm::AggregateMin()));
+    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
+                                                new pm::AggregateMax()));
 };
 
 void Machine::unregisterMetrics (PerformanceCollector *aCollector, Machine *aMachine)
@@ -7691,10 +7691,10 @@ HRESULT SessionMachine::init (Machine *aMachine)
     error = errno;
     if (mIPCSem < 0 && error == ENOSYS)
     {
-        setError(E_FAIL,
-                tr ("Cannot create IPC semaphore. Most likely your host kernel lacks "
-                     "support for SysV IPC. Check the host kernel configuration for "
-                     "CONFIG_SYSVIPC=y"));
+        setError (E_FAIL,
+                  tr ("Cannot create IPC semaphore. Most likely your host kernel lacks "
+                      "support for SysV IPC. Check the host kernel configuration for "
+                      "CONFIG_SYSVIPC=y"));
         return E_FAIL;
     }
     ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", error),
