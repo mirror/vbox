@@ -28,7 +28,10 @@
 
 # ifdef VBOX_WITH_SLIRP_ICMP
 #  define ICMP_ENGAGE_EVENT(so, fdset)               \
-    DO_ENGAGE_EVENT1((so), (fdset), ICMP)
+    do {                                             \
+        if (pData->icmp_socket.s != -1)              \
+            DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
+    } while (0)
 # else /* !VBOX_WITH_SLIRP_ICMP */
 #  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
     /* no ICMP socket */
@@ -603,8 +606,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             }
         }
 
-        if (pData->icmp_socket.s != -1)
-            ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
+        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
     }
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
