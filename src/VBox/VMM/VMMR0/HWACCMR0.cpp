@@ -403,8 +403,11 @@ VMMR0DECL(int) HWACCMR0Init(void)
         HWACCMR0Globals.pfnSetupVM          = SVMR0SetupVM;
     }
 
-    rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, 0);
-    Assert(RT_SUCCESS(rc));
+    if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
+    {
+        rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, 0);
+        AssertRC(rc);
+    }
 
     return VINF_SUCCESS;
 }
