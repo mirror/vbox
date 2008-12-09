@@ -846,6 +846,9 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         struct ip *ip;
         struct mbuf *m;
         struct icmp *icp;
+        struct icmp_msg *icm;
+        struct ip *ip_broken; /* ICMP returns header + 64 bit of packet */
+        uint32_t src;
         ICMP_ECHO_REPLY *icr;
         u_char code = ~0;
         len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
@@ -877,7 +880,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                                 ip->ip_src.s_addr = icr[i].Address;
                                 ip->ip_p = IPPROTO_ICMP;
                                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
-                                ip->ip_hl = sizeof(struct ip) >> 2;
+                                ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
+                                ip->ip_ttl = icr[i].Options.Ttl; 
 
                                 icp = (struct icmp *)&ip[1]; /* no options */
                                 icp->icmp_type = ICMP_ECHOREPLY;
@@ -890,10 +894,24 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                                 m->m_len = ip->ip_len;
 
                                 icmp_reflect(pData, m);
-                                m_free(pData, m);
                         case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
-                                LogRel(("ICMP: message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
-                                LogRel(("ICMP: IP(v %hd, l %hd )\n", ip->ip_v, ip->ip_hl));
+
+                                ip_broken = icr[i].Data;
+                                icm = icmp_find_original_mbuf(pData, ip_broken);     
+                                if (icm == NULL) {
+                                    LogRel(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
+                                    return;
+                                }
+                                m = icm->im_m;
+                                ip = mtod(m, struct ip *);
+                                ip->ip_ttl = icr[i].Options.Ttl;
+                                src = ip->ip_src.s_addr;
+                                ip->ip_dst.s_addr = src;
+                                ip->ip_dst.s_addr = icr[i].Address; 
+                                icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+                                ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
+                                memcpy(icp->icmp_data, ip_broken, (ip_broken->ip_hl << 2) + 64);
+                                icmp_reflect(pData, m);
                         break;
                         default:
                                 LogRel(("ICMP(default): message with Status: %x was received from %s\n", icr[i].Status, icr[i].Address));

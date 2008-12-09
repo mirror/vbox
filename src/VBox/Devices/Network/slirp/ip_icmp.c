@@ -128,7 +128,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     struct mbuf *m0;
     struct ip *ip0;
     struct icmp *icp, *icp0;
-    struct icmp_msg *icm;
+    struct icmp_msg *icm = NULL;
     int found = 0;
     struct socket *head_socket;
     struct in_addr laddr, faddr;
