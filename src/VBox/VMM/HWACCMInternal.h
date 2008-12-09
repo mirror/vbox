@@ -478,7 +478,8 @@ typedef struct HWACCMCPU
     RTCPUID                 idEnteredCpu;
 
     STAMPROFILEADV          StatEntry;
-    STAMPROFILEADV          StatExit;
+    STAMPROFILEADV          StatExit1;
+    STAMPROFILEADV          StatExit2;
     STAMPROFILEADV          StatInGC;
 
     STAMCOUNTER             StatIntInject;
