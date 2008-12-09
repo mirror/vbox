@@ -7271,32 +7271,40 @@
         same media for reading unless it is already locked for writing (see
         <link to="#lockWrite()"/>) in which case an error is returned.
 
-        When the medium is locked for reading, it cannot be modified from within
-        VirtualBox. This means that any method that changes the properties of
-        this medium or contents of the storage unit will return an error (unless
-        explicitly stated otherwise) and that an attempt to start a virtual
-        machine that wants to modify the medium will also fail.
+        When the medium is locked for reading, it cannot be modified
+        from within VirtualBox. This means that any method that changes
+        the properties of this medium or contents of the storage unit
+        will return an error (unless explicitly stated otherwise) and
+        that an attempt to start a virtual machine that wants to modify
+        the medium will also fail.
 
-        When the virtual machine is started up, it locks for reading all media
-        it uses in read-only mode. If some media cannot be locked for reading,
-        the startup procedure will fail.
+        When the virtual machine is started up, it locks for reading all
+        media it uses in read-only mode. If some media cannot be locked
+        for reading, the startup procedure will fail.
 
-        The medium locked for reading must be unlocked using the
-        <link to="#unlockRead()"/> method. Calls to <link to="#lockRead()"/> can
-        be nested and must be followed by the same number of paired
+        The medium locked for reading must be unlocked using the <link
+        to="#unlockRead()"/> method. Calls to <link to="#lockRead()"/>
+        can be nested and must be followed by the same number of paired
         <link to="#unlockRead()"/> calls.
 
-        This method sets the media state to <link to="MediaState::LockedRead"/>
-        on success. The state prior to this call must be
-        <link to="MediaState::Created"/>,
-        <link to="MediaState::Inaccessible"/> or
-        <link to="MediaState::LockedRead"/>. As you can see, inaccessible media
-        can be locked too. This is not an error; this method performs a logical
-        lock that prevents modifications of this media through the VirtualBox
-        API, not a physical lock of the underlying storage unit.
+        This method sets the media state to <link
+        to="MediaState::LockedRead"/> on success. The state prior to
+        this call must be <link to="MediaState::Created"/>, <link
+        to="MediaState::Inaccessible"/> or <link
+        to="MediaState::LockedRead"/>. As you can see, inaccessible
+        media can be locked too. This is not an error; this method
+        performs a logical lock that prevents modifications of this
+        media through the VirtualBox API, not a physical lock of the
+        underlying storage unit.
 
-        Either on success or on failure, this method returns the current state
-        of the medium <b>before</b> the operation.
+        This method returns the current state of the medium
+        <b>before</b> the operation.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid media state (e.g. not created, locked, inaccessible,
+          creating, deleting).
+        </result>
+
       </desc>
       <param name="state" type="MediaState" dir="return">
         <desc>
@@ -7313,6 +7321,11 @@
         of the medium <b>after</b> the operation.
 
         See <link to="#lockRead()"/> for more details.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Medium not locked for reading.
+        </result>
+
       </desc>
       <param name="state" type="MediaState" dir="return">
         <desc>
@@ -7325,36 +7338,44 @@
       <desc>
         Locks this medium for writing.
 
-        The write lock, as opposed to <link to="#lockRead()"/>, is exclusive:
-        there may be only one client that holds a write lock and there may be no
-        read locks while the write lock is held.
+        The write lock, as opposed to <link to="#lockRead()"/>, is
+        exclusive: there may be only one client that holds a write lock
+        and there may be no read locks while the write lock is held.
 
-        When the medium is locked for writing, it cannot be modified from within
-        VirtualBox and it is not guaranteed that the values of its properties
-        are up-to-date. Any method that changes the properties of this medium or
-        contents of the storage unit will return an error ((unless explicitly
-        stated otherwise) and an attempt to start a virtual machine that wants
-        to modify or to read the medium will also fail.
+        When the medium is locked for writing, it cannot be modified
+        from within VirtualBox and it is not guaranteed that the values
+        of its properties are up-to-date. Any method that changes the
+        properties of this medium or contents of the storage unit will
+        return an error ((unless explicitly stated otherwise) and an
+        attempt to start a virtual machine that wants to modify or to
+        read the medium will also fail.
 
-        When the virtual machine is started up, it locks for writing all media
-        it uses to write data to. If some media cannot be locked for writing,
-        the startup procedure will fail.
+        When the virtual machine is started up, it locks for writing all
+        media it uses to write data to. If some media cannot be locked
+        for writing, the startup procedure will fail.
 
-        The medium locked for writing must be unlocked using the
-        <link to="#unlockWrite()"/> method. Calls to <link to="#lockWrite()"/>
-        can <b>not</b> be nested and must be followed by a paired
-        <link to="#unlockWrite()"/> call.
+        The medium locked for writing must be unlocked using the <link
+        to="#unlockWrite()"/> method. Calls to <link to="#lockWrite()"/>
+        can <b>not</b> be nested and must be followed by a paired <link
+        to="#unlockWrite()"/> call.
 
-        This method sets the media state to <link to="MediaState::LockedWrite"/>
-        on success. The state prior to this call must be
-        <link to="MediaState::Created"/> or
-        <link to="MediaState::Inaccessible"/>. As you can see, inaccessible media
-        can be locked too. This is not an error; this method performs a logical
-        lock that prevents modifications of this media through the VirtualBox
-        API, not a physical lock of the underlying storage unit.
+        This method sets the media state to <link
+        to="MediaState::LockedWrite"/> on success. The state prior to
+        this call must be <link to="MediaState::Created"/> or <link
+        to="MediaState::Inaccessible"/>. As you can see, inaccessible
+        media can be locked too. This is not an error; this method
+        performs a logical lock that prevents modifications of this
+        media through the VirtualBox API, not a physical lock of the
+        underlying storage unit.
 
-        Either on success or on failure, this method returns the current state
-        of the medium <b>before</b> the operation.
+        Either on success or on failure, this method returns the current
+        state of the medium <b>before</b> the operation.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid media state (e.g. not created, locked, inaccessible,
+          creating, deleting).
+        </result>
+
       </desc>
       <param name="state" type="MediaState" dir="return">
         <desc>
@@ -7367,10 +7388,15 @@
       <desc>
         Cancels the write lock previously set by <link to="#lockWrite()"/>.
 
-        Either on success or on failure, this method returns the current state
-        of the medium <b>after</b> the operation.
+        Either on success or on failure, this method returns the current
+        state of the medium <b>after</b> the operation.
 
         See <link to="#lockWrite()"/> for more details.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Medium not locked for writing.
+        </result>
+
       </desc>
       <param name="state" type="MediaState" dir="return">
         <desc>
@@ -7381,20 +7407,37 @@
 
     <method name="close">
       <desc>
-        Closes this media.
+        Closes this medium.
 
-        The hard disk must not be attached to any known virtual machine and must
-        not have any known child hard disks, otherwise the operation will fail.
+        The hard disk must not be attached to any known virtual machine
+        and must not have any known child hard disks, otherwise the
+        operation will fail.
 
-        When the hard disk is successfully closed, it gets removed from the list
-        of remembered hard disks, but its storage unit is not deleted. In
-        particular, this means that this hard disk can be later opened again
-        using the <link to="IVirtualBox::openHardDisk2"/> call.
+        When the hard disk is successfully closed, it gets removed from
+        the list of remembered hard disks, but its storage unit is not
+        deleted. In particular, this means that this hard disk can be
+        later opened again using the <link
+        to="IVirtualBox::openHardDisk2"/> call.
 
-        Note that after this method successfully returns, the given hard disk
-        object becomes uninitialized. This means that any attempt to call any of
-        its methods or attributes will fail with the <tt>"Object not ready"
-        (E_ACCESSDENIED)</tt> error.
+        Note that after this method successfully returns, the given hard
+        disk object becomes uninitialized. This means that any attempt
+        to call any of its methods or attributes will fail with the
+        <tt>"Object not ready" (E_ACCESSDENIED)</tt> error.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid media state (other than not created, created or
+          inaccessible).
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Medium attached to virtual machine.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
     </method>
 
