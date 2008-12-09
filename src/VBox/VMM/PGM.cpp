@@ -2884,48 +2884,50 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
     switch(pVM->pgm.s.enmHostMode)
     {
+#ifdef HC_ARCH_BITS == 32
     case SUPPAGINGMODE_32_BIT:
     case SUPPAGINGMODE_32_BIT_GLOBAL:
-#ifdef VBOX_WITH_64_BITS_GUESTS
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
-#else
         for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
-#endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
+# ifdef VBOX_WITH_64_BITS_GUESTS
+        pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64)];
+        rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+# endif
         break;
 
     case SUPPAGINGMODE_PAE:
     case SUPPAGINGMODE_PAE_NX:
     case SUPPAGINGMODE_PAE_GLOBAL:
     case SUPPAGINGMODE_PAE_GLOBAL_NX:
-#ifdef VBOX_WITH_64_BITS_GUESTS
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
-#else
         for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
-#endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_PAE(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
+# ifdef VBOX_WITH_64_BITS_GUESTS
+        pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, PGM_TYPE_AMD64)];
+        rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
+# endif
         break;
-
+#else /* HC_ARCH_BITS != 32 */
     case SUPPAGINGMODE_AMD64:
     case SUPPAGINGMODE_AMD64_GLOBAL:
     case SUPPAGINGMODE_AMD64_NX:
     case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-#ifdef VBOX_WITH_64_BITS_GUESTS
+# ifdef VBOX_WITH_64_BITS_GUESTS
         for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
-#else
+# else
         for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
-#endif
+# endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
         break;
+#endif /* HC_ARCH_BITS != 32 */
     default:
         AssertFailed();
         break;
