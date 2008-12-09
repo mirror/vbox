@@ -22,13 +22,15 @@ struct socket
     struct socket   *so_next;
     struct socket   *so_prev;    /* For a linked list of sockets */
 
-#ifndef RT_OS_WINDOWS
+#if !defined(VBOX_WITH_SLIRP_ICMP) || !defined(RT_OS_WINDOWS)
     int s;                       /* The actual socket */
 #else
     union {
             int s;
             HANDLE sh;
     };
+    uint64_t so_icmp_id; /* XXX: hack */
+    uint64_t so_icmp_seq; /* XXX: hack */
 #endif
 
     /* XXX union these with not-yet-used sbuf params */

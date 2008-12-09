@@ -328,6 +328,9 @@ freeit:
                     m_free(pData, m);
                 }
 # else /* RT_OS_WINDOWS */
+                pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
+                pData->icmp_socket.so_icmp_id = icp->icmp_id;
+                pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
                 status = IcmpSendEcho2(pData->icmp_socket.sh, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
