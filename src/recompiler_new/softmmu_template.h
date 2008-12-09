@@ -32,27 +32,27 @@
 #define SUFFIX q
 #define USUFFIX q
 #define DATA_TYPE uint64_t
-#define DATA_TYPE_PROMOUTED uint64_t
+#define DATA_TYPE_PROMOTED uint64_t
 #elif DATA_SIZE == 4
 #define SUFFIX l
 #define USUFFIX l
 #define DATA_TYPE uint32_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOUTED RTCCUINTREG
+#define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #elif DATA_SIZE == 2
 #define SUFFIX w
 #define USUFFIX uw
 #define DATA_TYPE uint16_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOUTED RTCCUINTREG
+#define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #elif DATA_SIZE == 1
 #define SUFFIX b
 #define USUFFIX ub
 #define DATA_TYPE uint8_t
 #ifdef VBOX
-#define DATA_TYPE_PROMOUTED RTCCUINTREG
+#define DATA_TYPE_PROMOTED RTCCUINTREG
 #endif
 #else
 #error unsupported data size
@@ -114,7 +114,7 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 /* Load helpers invoked from generated code, and TCG makes an assumption
    that valid value takes the whole register, why gcc after 4.3 may
    use only lower part of register for smaller types. So force promoution. */
-DATA_TYPE_PROMOUTED REGPARM 
+DATA_TYPE_PROMOTED REGPARM 
 glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                     int mmu_idx)
 #endif
@@ -366,7 +366,7 @@ static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
 #endif /* !defined(SOFTMMU_CODE_ACCESS) */
 
 #ifdef VBOX
-#undef DATA_TYPE_PROMOUTED
+#undef DATA_TYPE_PROMOTED
 #endif
 #undef READ_ACCESS_TYPE
 #undef SHIFT
