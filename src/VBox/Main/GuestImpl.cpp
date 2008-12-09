@@ -276,12 +276,12 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
             u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
         vmmDev->getVMMDevPort()->pfnSetCredentials(vmmDev->getVMMDevPort(),
-                                                   Utf8Str(aUserName).raw(), Utf8Str(aPassword).raw(),
-                                                   Utf8Str(aDomain).raw(), u32Flags);
+            Utf8Str(aUserName).raw(), Utf8Str(aPassword).raw(),
+            Utf8Str(aDomain).raw(), u32Flags);
         return S_OK;
     }
 
-    return setError (E_FAIL,
+    return setError (VBOX_E_VM_ERROR,
         tr ("VMM device is not available (is the VM running?)"));
 }
 
