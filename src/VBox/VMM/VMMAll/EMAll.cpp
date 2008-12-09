@@ -54,9 +54,9 @@
 /** @def EM_ASSERT_FAULT_RETURN
  * Safety check.
  *
- * Could in theory it misfire on a cross page boundary access...
+ * Could in theory misfire on a cross page boundary access...
  *
- * Currently disabled because the CSAM (+ PATM) patch monitoring occationally
+ * Currently disabled because the CSAM (+ PATM) patch monitoring occasionally
  * turns up an alias page instead of the original faulting one and annoying the
  * heck out of anyone running a debug build. See @bugref{2609} and @bugref{1931}.
  */
@@ -168,7 +168,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE p
  *
  * @param   pVM             The VM handle.
  * @param   GCPtrInstr      The flat address of the instruction.
- * @param   pCtxCore        The context core (used to determin the cpu mode).
+ * @param   pCtxCore        The context core (used to determine the cpu mode).
  * @param   pCpu            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
@@ -2730,7 +2730,7 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
  */
 static int emInterpretRdmsr(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
+    /* Note: the Intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
     Assert(!(pCpu->prefix & PREFIX_REX));
     return EMInterpretRdmsr(pVM, pRegFrame);
 }
@@ -2816,7 +2816,7 @@ VMMDECL(int) EMInterpretWrmsr(PVM pVM, PCPUMCTXCORE pRegFrame)
         AssertMsg(!(val & ~(MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA /* ignored anyway */ |MSR_K6_EFER_SCE|MSR_K6_EFER_FFXSR)), ("Unexpected value %RX64\n", val));
         pCtx->msrEFER = (pCtx->msrEFER & ~uMask) | (val & uMask);
 
-        /* AMD64 Achitecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
+        /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB if MSR_K6_EFER_NXE, MSR_K6_EFER_LME or MSR_K6_EFER_LMA are changed. */
         if ((oldval & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)) != (pCtx->msrEFER & (MSR_K6_EFER_NXE|MSR_K6_EFER_LME|MSR_K6_EFER_LMA)))
             HWACCMFlushTLB(pVM);
 
