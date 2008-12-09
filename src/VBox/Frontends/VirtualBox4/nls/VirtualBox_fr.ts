@@ -741,7 +741,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1699"/>
         <source>Mount &amp;CD/DVD-ROM</source>
-        <translation>Insérer un &disque optique</translation>
+        <translation>Insérer un &amp;disque optique</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1701"/>
