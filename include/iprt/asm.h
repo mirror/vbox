@@ -955,8 +955,8 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 DECLINLINE(bool) ASMIsIntelCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
     return uEBX == 0x756e6547
-        || uECX == 0x6c65746e
-        || uEDX == 0x49656e69;
+        && uECX == 0x6c65746e
+        && uEDX == 0x49656e69;
 }
 
 
@@ -968,7 +968,7 @@ DECLINLINE(bool) ASMIsIntelCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 DECLINLINE(bool) ASMIsIntelCpu(void)
 {
     uint32_t uEAX, uEBX, uECX, uEDX;
-    ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
     return ASMIsIntelCpuEx(uEBX, uECX, uEDX);
 }
 
