@@ -2296,7 +2296,7 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
     aParam[2] = (uint32_t)(pVMCBPhys);                      /* Param 2: pVMCBPhys - Lo. */
     aParam[3] = (uint32_t)(pVMCBPhys >> 32);                /* Param 2: pVMCBPhys - Hi. */
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 4, &aParam[0]);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSVMGCVMRun64, 4, &aParam[0]);
 }
 
 /**
@@ -2317,6 +2317,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     /* @todo This code is not guest SMP safe (hyper context) */
     AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
+    Assert(pfnHandler);
 
     uFlags = ASMIntDisableFlags();
 
