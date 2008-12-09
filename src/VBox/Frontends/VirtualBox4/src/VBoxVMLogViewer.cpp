@@ -52,7 +52,7 @@ void VBoxVMLogViewer::createLogViewer (QWidget *aCenterWidget, CMachine &aMachin
 #endif /* Q_WS_MAC */
 
         lv->centerAccording (aCenterWidget);
-        connect (aCenterWidget, SIGNAL (closing()), lv, SLOT (close()));
+        connect (vboxGlobal().mainWindow(), SIGNAL (closing()), lv, SLOT (close()));
         lv->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [aMachine.GetName()] = lv;
     }

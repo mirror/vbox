@@ -1168,6 +1168,7 @@ void VBoxConsoleWnd::closeView()
     console = 0;
     csession.Close();
     csession.detach();
+    emit closing();
 
     LogFlowFuncLeave();
 }

@@ -733,7 +733,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
 void VBoxSelectorWnd::fileMediaMgr()
 {
-    VBoxMediaManagerDlg::showModeless();
+    VBoxMediaManagerDlg::showModeless (this);
 }
 
 void VBoxSelectorWnd::fileSettings()

@@ -557,8 +557,7 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */,
     {
         mModelessDialog = new VBoxMediaManagerDlg (0, Qt::Window);
         mModelessDialog->centerAccording (aCenterWidget);
-        if (aCenterWidget)
-            connect (aCenterWidget, SIGNAL (closing()), mModelessDialog, SLOT (close()));
+        connect (vboxGlobal().mainWindow(), SIGNAL (closing()), mModelessDialog, SLOT (close()));
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (VBoxDefs::MediaType_All,
                                 false /* aDoSelect */, aRefresh);

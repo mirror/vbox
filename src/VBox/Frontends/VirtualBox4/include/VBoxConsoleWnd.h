@@ -92,7 +92,12 @@ public:
 #endif
 
 public slots:
+
     void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &e);
+
+signals:
+
+    void closing();
 
 protected:
 
