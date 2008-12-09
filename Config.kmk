@@ -1422,24 +1422,24 @@ endif
 
 # The icons to use.
 ifdef VBOX_OSE
- VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_WINDOWS_GA_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_NSIS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
- VBOX_MACOSX_ICON_FILE  ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox.icns
+ VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
+ VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
+ VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox_win.ico
+ VBOX_MACOSX_ICON_FILE            ?= $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/VirtualBox.icns
 else
  ifeq ($(KBUILD_HOST),win)
-  VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
-  VBOX_WINDOWS_GA_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
-  VBOX_NSIS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
+  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
+  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
+  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
   TOOL_VCC80X86_RC   := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
   TOOL_VCC80AMD64_RC := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
   TOOL_VCC70_RC      := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
  else
-  VBOX_WINDOWS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
-  VBOX_WINDOWS_GA_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-winxp.ico
-  VBOX_NSIS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-nsis.ico
+  VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
+  VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-winxp.ico
+  VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-nsis.ico
  endif
- VBOX_MACOSX_ICON_FILE  ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox.icns
+ VBOX_MACOSX_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox.icns
 endif
 
 

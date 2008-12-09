@@ -65,9 +65,9 @@ VBoxService.rc_DEPS = $(PATH_VBoxService)/VBoxService-icon.rc
 VBoxService.rc_CLEAN = $(PATH_VBoxService)/VBoxService-icon.rc
 
 # Icon include file.
-$$(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_GA_ICON_FILE) $$(VBoxService_PATH)/Makefile.kmk | $$(dir $$@)
+$$(PATH_VBoxService)/VBoxService-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxService_PATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
-	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_GA_ICON_FILE))"'
+	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
