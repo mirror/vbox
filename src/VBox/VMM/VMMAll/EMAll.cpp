@@ -706,6 +706,7 @@ static int emInterpretOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFram
                                PFNEMULATEPARAM3 pfnEmulate)
 {
     OP_PARAMVAL param1, param2;
+
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
@@ -800,8 +801,12 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
                                    uint32_t *pcbSize, PFNEMULATELOCKPARAM3 pfnEmulate)
 {
     void *pvParam1;
-
     OP_PARAMVAL param1, param2;
+
+#ifdef HC_ARCH_BITS == 32
+    Assert(pCpu->param1.size <= 4);
+#endif
+
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_DEST);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
@@ -1409,6 +1414,10 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     OP_PARAMVAL param1, param2;
+
+#ifdef HC_ARCH_BITS == 32
+    Assert(pCpu->param1.size <= 4);
+#endif
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
@@ -2918,6 +2927,20 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedPrefix));
         return VERR_EM_INTERPRETER;
     }
+
+#ifdef HC_ARCH_BITS == 32
+    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    {
+        /* Unable to emulate in 32 bits mode. 
+         * Whitelisted instructions are safe.
+         */
+        if (    pCpu->param1.size > 4
+            &&  pCpu->pCurInstr->opcode != OP_STOSWD
+            &&  pCpu->pCurInstr->opcode != OP_MOV
+            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG8B)
+            return VERR_EM_INTERPRETER;
+    }
+#endif
 
     int rc;
 #if (defined(VBOX_STRICT) || defined(LOG_ENABLED))
