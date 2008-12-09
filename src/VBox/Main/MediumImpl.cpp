@@ -52,7 +52,7 @@ DEFINE_EMPTY_CTOR_DTOR (MediumBase)
 
 STDMETHODIMP MediumBase::COMGETTER(Id) (OUT_GUID aId)
 {
-    CheckComArgOutPointerValid(aId);
+    CheckComArgOutPointerValid (aId);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -66,7 +66,7 @@ STDMETHODIMP MediumBase::COMGETTER(Id) (OUT_GUID aId)
 
 STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
 {
-    CheckComArgOutPointerValid(aDescription);
+    CheckComArgOutPointerValid (aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -80,7 +80,7 @@ STDMETHODIMP MediumBase::COMGETTER(Description) (BSTR *aDescription)
 
 STDMETHODIMP MediumBase::COMSETTER(Description) (IN_BSTR aDescription)
 {
-    CheckComArgNotNull(aDescription);
+    CheckComArgNotNull (aDescription);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -141,7 +141,7 @@ STDMETHODIMP MediumBase::COMGETTER(Location) (BSTR *aLocation)
 
 STDMETHODIMP MediumBase::COMSETTER(Location) (IN_BSTR aLocation)
 {
-    CheckComArgNotNull(aLocation);
+    CheckComArgNotNull (aLocation);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -162,7 +162,7 @@ STDMETHODIMP MediumBase::COMSETTER(Location) (IN_BSTR aLocation)
 
 STDMETHODIMP MediumBase::COMGETTER(Name) (BSTR *aName)
 {
-    CheckComArgOutPointerValid(aName);
+    CheckComArgOutPointerValid (aName);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -176,7 +176,7 @@ STDMETHODIMP MediumBase::COMGETTER(Name) (BSTR *aName)
 
 STDMETHODIMP MediumBase::COMGETTER(Size) (ULONG64 *aSize)
 {
-    CheckComArgOutPointerValid(aSize);
+    CheckComArgOutPointerValid (aSize);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -190,7 +190,7 @@ STDMETHODIMP MediumBase::COMGETTER(Size) (ULONG64 *aSize)
 
 STDMETHODIMP MediumBase::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
 {
-    CheckComArgOutPointerValid(aLastAccessError);
+    CheckComArgOutPointerValid (aLastAccessError);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -237,8 +237,8 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
 STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
                                          ComSafeGUIDArrayOut (aSnapshotIds))
 {
-    CheckComArgExpr(aMachineId, Guid (aMachineId).isEmpty() == false);
-    CheckComArgSafeArrayNotNull(aSnapshotIds);
+    CheckComArgExpr (aMachineId, Guid (aMachineId).isEmpty() == false);
+    CheckComArgOutSafeArrayPointerValid (aSnapshotIds);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
