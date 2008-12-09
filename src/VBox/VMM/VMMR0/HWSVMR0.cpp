@@ -2291,10 +2291,10 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
 {
     uint32_t aParam[4];
 
-    aParam[0] = (uint32_t)(pVMCBHostPhys >> 32);            /* Param 1: pVMCBHostPhys - Hi. */
-    aParam[1] = (uint32_t)(pVMCBHostPhys);                  /* Param 1: pVMCBHostPhys - Lo. */
-    aParam[2] = (uint32_t)(pVMCBPhys >> 32);                /* Param 2: pVMCBPhys - Hi. */
-    aParam[3] = (uint32_t)(pVMCBPhys);                      /* Param 2: pVMCBPhys - Lo. */
+    aParam[0] = (uint32_t)(pVMCBHostPhys);                  /* Param 1: pVMCBHostPhys - Lo. */
+    aParam[1] = (uint32_t)(pVMCBHostPhys >> 32);            /* Param 1: pVMCBHostPhys - Hi. */
+    aParam[2] = (uint32_t)(pVMCBPhys);                      /* Param 2: pVMCBPhys - Lo. */
+    aParam[3] = (uint32_t)(pVMCBPhys >> 32);                /* Param 2: pVMCBPhys - Hi. */
 
     return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 4, &aParam[0]);
 }
