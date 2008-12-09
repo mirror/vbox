@@ -221,7 +221,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxContextSwitch,       "/HWACCM/CPU%d/Debug/ContextSwitch");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxIOCheck,             "/HWACCM/CPU%d/Debug/IOCheck");
 
-        for (int j=0;j<RT_ELEMENTS(pVCpu->hwaccm.s.StatExitCRxWrite);j++)
+        for (unsigned j=0;j<RT_ELEMENTS(pVCpu->hwaccm.s.StatExitCRxWrite);j++)
         {
             rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExitCRxWrite[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Profiling of CRx writes",
                                 "/HWACCM/CPU%d/Exit/Instr/CR/Write/%x", i, j);
@@ -249,7 +249,11 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
             AssertRC(rc);
         }
         pVCpu->hwaccm.s.paStatExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hwaccm.s.paStatExitReason);
-        Assert(pVCpu->hwaccm.s.paStatExitReasonR0);
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        Assert(pVCpu->hwaccm.s.paStatExitReasonR0 != NIL_RTR0PTR || !VMMIsHwVirtExtForced(pVM));
+# else
+        Assert(pVCpu->hwaccm.s.paStatExitReasonR0 != NIL_RTR0PTR);
+# endif
     }
 #endif /* VBOX_WITH_STATISTICS */
     return VINF_SUCCESS;
@@ -851,7 +855,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestFPU64",   &pVM->hwaccm.s.pfnSaveGuestFPU64);
         AssertMsgRCReturn(rc, ("HWACCMSetupFPU64 -> rc=%Rrc\n", rc), rc);
-        
+
         rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
         AssertMsgRCReturn(rc, ("HWACCMSetupDebug64 -> rc=%Rrc\n", rc), rc);
 
