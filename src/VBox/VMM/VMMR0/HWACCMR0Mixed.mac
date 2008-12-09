@@ -26,9 +26,10 @@
 ; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    vmlauch/vmresume
-; * @param   pCtx       Guest context
+; * @param   fResume    x86:[ebp+8],msc:ecx,gcc:edi     vmlauch/vmresume
+; * @param   pCtx       x86:[ebp+c],msc:edx,gcc:esi     Guest context
 ; */
+ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM32)
     push    xBP
     mov     xBP, xSP
@@ -37,16 +38,15 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     cli
 
     ;/* First we have to save some final CPU context registers. */
+    mov     eax, VMX_VMCS_HOST_RIP
 %ifdef RT_ARCH_AMD64
-    lea     rax, [.vmlaunch_done wrt rip]
-    push    rax
+    lea     r10, [.vmlaunch_done wrt rip]
+    vmwrite rax, r10
 %else
-    push    .vmlaunch_done
+    mov     ecx, .vmlaunch_done
+    vmwrite eax, ecx
 %endif
-    mov     eax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
-    vmwrite xAX, [xSP]
     ;/* Note: assumes success... */
-    add     xSP, xS
 
     ;/* Manual save and restore:
     ; * - General purpose registers except RIP, RSP
@@ -137,7 +137,7 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     vmlaunch
     jmp     .vmlaunch_done;      ;/* here if vmlaunch detected a failure. */
 
-ALIGNCODE(16)
+ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte off.
 .vmlaunch_done:
     jc      near .vmxstart_invalid_vmxon_ptr
     jz      near .vmxstart_start_failed
@@ -239,6 +239,7 @@ ENDPROC MY_NAME(VMXR0StartVM32)
 ; * @param   fResume    vmlauch/vmresume
 ; * @param   pCtx       Guest context
 ; */
+ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM64)
     push    xBP
     mov     xBP, xSP
@@ -494,6 +495,7 @@ ENDPROC MY_NAME(VMXR0StartVM64)
 ; * @param   HCPhysVMCB     Physical address of guest VMCB
 ; * @param   pCtx           Guest context
 ; */
+ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun)
 %ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
@@ -598,6 +600,7 @@ ENDPROC MY_NAME(SVMR0VMRun)
 ; * @param   HCPhysVMCB     Physical address of guest VMCB
 ; * @param   pCtx           Guest context
 ; */
+ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun64)
     ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
