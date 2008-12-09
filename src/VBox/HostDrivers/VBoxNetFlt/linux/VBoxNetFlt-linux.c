@@ -47,13 +47,11 @@
 #define VBOX_GET_PCOUNT(pDev) (pDev->promiscuity)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-# define VBOX_SKB_TRANSPORT_HDR(skb) skb->transport_header
-# define VBOX_SKB_NETWORK_HDR(skb) skb->network_header
-# define VBOX_SKB_MAC_HDR(skb) skb->mac_header
+# define VBOX_SKB_RESET_NETWORK_HDR(skb) skb_reset_network_header(skb)
+# define VBOX_SKB_RESET_MAC_HDR(skb) skb_reset_mac_header(skb)
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) */
-# define VBOX_SKB_TRANSPORT_HDR(skb) skb->h.raw
-# define VBOX_SKB_NETWORK_HDR(skb) skb->nh.raw
-# define VBOX_SKB_MAC_HDR(skb) skb->mac.raw
+# define VBOX_SKB_RESET_NETWORK_HDR(skb) skb->nh.raw = skb->data
+# define VBOX_SKB_RESET_MAC_HDR(skb) skb->mac.raw = skb->data
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
@@ -312,10 +310,11 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
         pPkt->ip_summed = CHECKSUM_NONE;
         if (fDstWire)
         {
-            VBOX_SKB_NETWORK_HDR(pPkt) = pPkt->data;
+            VBOX_SKB_RESET_NETWORK_HDR(pPkt);
             /* Restore ethernet header back. */
             skb_push(pPkt, ETH_HLEN);
         }
+        VBOX_SKB_RESET_MAC_HDR(pPkt);
         VBOXNETFLT_SKB_CB(pPkt) = VBOXNETFLT_CB_TAG;
 
         return pPkt;
@@ -713,7 +712,7 @@ static int vboxNetFltLinuxDeviceGoingDown(PVBOXNETFLTINS pThis, struct net_devic
 static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 
 {
-    int rc;
+    int rc = NOTIFY_OK;
 #ifdef DEBUG
     char *pszEvent = "<unknown>";
 #endif
@@ -883,7 +882,6 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pDev);
         if (fActive)
         {
-            int err = 0;
             Assert(!pThis->u.s.fPromiscuousSet);
 
 #if 0
@@ -894,7 +892,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             if ((fIf & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING))
             {
                 rtnl_lock();
-                err = dev_change_flags(pDev, fIf | IFF_UP);
+                int err = dev_change_flags(pDev, fIf | IFF_UP);
                 rtnl_unlock();
                 fIf = dev_get_flags(pDev);
             }
