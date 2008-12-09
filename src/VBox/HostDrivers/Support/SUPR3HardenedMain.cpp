@@ -56,6 +56,10 @@
 # include <sys/time.h>
 # include <stdio.h>
 # include <sys/types.h>
+# ifdef RT_OS_LINUX
+#  include <sys/capability.h>
+#  include <sys/prctl.h>
+# endif
 # include <pwd.h>
 # ifdef RT_OS_DARWIN
 #  include <mach-o/dyld.h>
@@ -583,6 +587,15 @@ static void supR3HardenedMainOpenDevice(void)
  */
 static void supR3HardenedMainDropPrivileges(void)
 {
+# if defined(RT_OS_LINUX)
+    /*
+     * We are about to drop all our privileges. Remove all capabilities but
+     * keep the cap_net_raw capability for ICMP sockets for the NAT stack.
+     */
+    if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
+        prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+# endif
+
     /*
      * Try use setre[ug]id since this will clear the save uid/gid and thus
      * leave fewer traces behind that libs like GTK+ may pick up.
@@ -630,6 +643,7 @@ static void supR3HardenedMainDropPrivileges(void)
     }
 # endif
 
+
     /* Check that it worked out all right. */
     if (    euid != g_uid
         ||  ruid != g_uid
@@ -640,6 +654,14 @@ static void supR3HardenedMainDropPrivileges(void)
         supR3HardenedFatal("SUPR3HardenedMain: failed to drop root privileges!"
                            " (euid=%d ruid=%d suid=%d  egid=%d rgid=%d sgid=%d; wanted uid=%d and gid=%d)\n",
                            euid, ruid, suid, egid, rgid, sgid, g_uid, g_gid);
+
+# if RT_OS_LINUX
+    /*
+     * Re-enable the cap_net_raw capability which was disabled during setresuid.
+     * XXX Warn if that does not work?
+     */
+    cap_set_proc(cap_from_text("cap_net_raw+ep"));
+# endif
 }
 #endif /* SUP_HARDENED_SUID */
 
