@@ -33,7 +33,7 @@
             DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
     } while (0)
 # else /* !VBOX_WITH_SLIRP_ICMP */
-#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      do {} while (0)
+#  define ICMP_ENGAGE_EVENT(so, fdset)               do {} while (0)
 # endif /* !VBOX_WITH_SLIRP_ICMP */
 
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
@@ -42,7 +42,7 @@
  * On Windows, we will be notified by IcmpSendEcho2() when the response arrives.
  * So no call to WSAEventSelect necessary.
  */
-# define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)       do {} while(0)
+# define ICMP_ENGAGE_EVENT(so, fdset)                do {} while(0)
 
 # define DO_ENGAGE_EVENT1(so, fdset1, label)         \
     do {                                             \
