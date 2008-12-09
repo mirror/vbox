@@ -672,6 +672,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDockIconEnabled (true)
 #endif
     , mDesktopGeo (DesktopGeo_Invalid)
+    , mPassCAD (false)
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
@@ -829,6 +830,12 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     }
     connect (QApplication::desktop(), SIGNAL (resized (int)),
              this, SLOT (doResizeDesktop (int)));
+
+    QString passCAD = mConsole.GetMachine().GetExtraData (VBoxDefs::GUI_PassCAD);
+    if (!passCAD.isEmpty() &&
+        ((passCAD != "false") || (passCAD != "no"))
+       )
+        mPassCAD = true;
 
 #if defined (Q_WS_WIN)
     gView = this;
@@ -2480,8 +2487,9 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 fixModifierState (codes, &count);
             }
 
-            /* Check if it's C-A-D */
-            if (aScan == 0x53 /* Del */ &&
+            /* Check if it's C-A-D and GUI/PassCAD is not true */
+            if (!mPassCAD &&
+                aScan == 0x53 /* Del */ &&
                 ((mPressedKeys [0x38] & IsKeyPressed) /* Alt */ ||
                  (mPressedKeys [0x38] & IsExtKeyPressed)) &&
                 ((mPressedKeys [0x1d] & IsKeyPressed) /* Ctrl */ ||

@@ -326,6 +326,7 @@ private:
     DesktopGeo mDesktopGeo;
     QRect mDesktopGeometry;
     QRect mLastSizeHint;
+    bool mPassCAD;
 };
 
 #endif // __VBoxConsoleView_h__
