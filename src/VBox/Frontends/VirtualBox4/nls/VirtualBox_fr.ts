@@ -1700,7 +1700,7 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="2003"/>
         <source>Hard Disks</source>
         <comment>details report</comment>
-        <translation>Disque dur</translation>
+        <translation>Disques dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2049"/>
