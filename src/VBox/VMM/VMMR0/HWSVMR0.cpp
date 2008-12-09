@@ -661,7 +661,16 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Save our shadow CR3 register. */
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            pVMCB->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVM, PGMGetHostMode(pVM));
+            PGMMODE enmShwPagingMode;
+
+#if HC_ARCH_BITS == 32 
+            if (CPUMIsGuestInLongModeEx(pCtx))
+                enmShwPagingMode = PGMMODE_AMD64_NX;
+            else
+#endif
+                enmShwPagingMode = PGMGetHostMode(pVM);
+
+            pVMCB->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVM, enmShwPagingMode);
             Assert(pVMCB->ctrl.u64NestedPagingCR3);
             pVMCB->guest.u64CR3             = pCtx->cr3;
         }
@@ -1537,7 +1546,7 @@ ResumeExecution:
 
         /* Handle the pagefault trap for the nested shadow table. */
 #if HC_ARCH_BITS == 32 
-        if (CPUMIsGuestInLongMode(pVM))
+        if (CPUMIsGuestInLongModeEx(pCtx))
             enmShwPagingMode = PGMMODE_AMD64_NX;
         else
 #endif
