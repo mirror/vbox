@@ -13,28 +13,37 @@
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
 
 # ifdef VBOX_WITH_SLIRP_ICMP
-#  define DO_ENGAGE_EVENT0(so, fdset, label) DO_ENGAGE_EVENT1((so), (fdset), label)
-# else /* VBOX_WITH_SLIRP_ICMP */
-#  define DO_ENGAGE_EVENT0(so, fdset, label) /* ignore */
+#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
+    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), ICMP)
+# else /* !VBOX_WITH_SLIRP_ICMP */
+#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
+    /* no ICMP socket */
 #endif /* !VBOX_WITH_SLIRP_ICMP */
 
-# define DO_ENGAGE_EVENT1(so, fdset, label)         \
-    do {                                            \
-        FD_SET((so)->s, (fdset));                   \
-        UPD_NFDS((so)->s);                          \
-    } while(0)
-
-
-# define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) \
+# define DO_ENGAGE_EVENT1(so, fdset, label)          \
     do {                                             \
-        FD_SET((so)->s, (fdset0));                   \
-        FD_SET((so)->s, (fdset1));                   \
+        FD_SET((so)->s, (fdset));                    \
         UPD_NFDS((so)->s);                           \
     } while(0)
-#else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
-# define DO_ENGAGE_EVENT0(so, fdset, label) /* ignore */
 
-# define DO_ENGAGE_EVENT1(so, fdset0, label)                                                    \
+
+# define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
+    do {                                             \
+        FD_SET((so)->s, (fdset1));                   \
+        FD_SET((so)->s, (fdset2));                   \
+        UPD_NFDS((so)->s);                           \
+    } while(0)
+
+#else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
+
+/*
+ * On Windows, we will be notified by IcmpSendEcho2() when the response arrives.
+ * So no call to WSAEventSelect necessary.
+ */
+# define ICMP_ENGAGE_EVENT(so, fdset1, fdset2) \
+    /* ignore */
+
+# define DO_ENGAGE_EVENT1(so, fdset1, label)                                                    \
     do {                                                                                        \
         rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
         if (rc == SOCKET_ERROR)                                                                 \
@@ -46,20 +55,19 @@
         }                                                                                       \
     } while(0)
 
-# define DO_ENGAGE_EVENT2(so, fdset0, fdset1, label) DO_ENGAGE_EVENT1((so), (fdset0), label)
+# define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
+    O_ENGAGE_EVENT1((so), (fdset1), label)
+
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
-# define TCP_ENGAGE_EVENT1(so, fdset0)                  \
-    DO_ENGAGE_EVENT1((so), (fdset0), TCP)
+#define TCP_ENGAGE_EVENT1(so, fdset) \
+    DO_ENGAGE_EVENT1((so), (fdset), TCP)
 
-# define TCP_ENGAGE_EVENT2(so, fdset0, fdset1)          \
-    DO_ENGAGE_EVENT2((so), (fdset0), (fdset1), TCP)
+#define TCP_ENGAGE_EVENT2(so, fdset1, fdset2) \
+    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), TCP)
 
-#define UDP_ENGAGE_EVENT(so, fdset)                     \
+#define UDP_ENGAGE_EVENT(so, fdset) \
     DO_ENGAGE_EVENT1((so), (fdset), UDP)
-
-#define ICMP_ENGAGE_EVENT(so, fdset)                    \
-    DO_ENGAGE_EVENT0((so), (fdset), UDP)
 
 static const uint8_t special_ethaddr[6] = {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
@@ -594,8 +602,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 UDP_ENGAGE_EVENT(so, readfds);
             }
         }
-        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
-        ICMP_ENGAGE_EVENT(&pData->icmp_socket, writefds);
+        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds, writefds);
     }
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
@@ -717,7 +724,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 {
                     tcp_connect(pData, so);
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-                    if (!NetworkEvents.lNetworkEvents & FD_CLOSE)
+                    if (!(NetworkEvents.lNetworkEvents & FD_CLOSE))
 #endif
                         continue;
                 }
@@ -880,6 +887,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 sorecvfrom(pData, so);
             }
         }
+
 #if defined(VBOX_WITH_SLIRP_ICMP)
 # if defined(RT_OS_WINDOWS)
         sorecvfrom(pData, &pData->icmp_socket);
