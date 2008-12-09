@@ -6514,6 +6514,11 @@
         to the session and the guest may also choose to erase them. Note
         that the caller cannot determine whether the guest operating system
         has queried or made use of the credentials.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
       </desc>
       <param name="userName" type="wstring" dir="in">
         <desc>User name string, can be empty</desc>
