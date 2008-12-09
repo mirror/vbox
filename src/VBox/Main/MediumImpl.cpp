@@ -237,10 +237,8 @@ STDMETHODIMP MediumBase::COMGETTER(MachineIds) (ComSafeGUIDArrayOut (aMachineIds
 STDMETHODIMP MediumBase::GetSnapshotIds (IN_GUID aMachineId,
                                          ComSafeGUIDArrayOut (aSnapshotIds))
 {
-    if (Guid (aMachineId).isEmpty())
-        return E_INVALIDARG;
-    if (ComSafeGUIDArrayOutIsNull (aSnapshotIds))
-        return E_POINTER;
+    CheckComArgExpr(aMachineId, Guid (aMachineId).isEmpty() == false);
+    CheckComArgSafeArrayNotNull(aSnapshotIds);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -371,7 +369,7 @@ STDMETHODIMP MediumBase::UnlockRead (MediaState_T *aState)
         }
         default:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Medium '%ls' is not locked for reading"),
                 m.locationFull.raw());
             break;
@@ -450,7 +448,7 @@ STDMETHODIMP MediumBase::UnlockWrite (MediaState_T *aState)
         }
         default:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Medium '%ls' is not locked for writing"),
                 m.locationFull.raw());
             break;
@@ -496,7 +494,7 @@ STDMETHODIMP MediumBase::Close()
     }
 
     if (m.backRefs.size() != 0)
-        return setError (E_FAIL,
+        return setError (VBOX_E_OBJECT_IN_USE,
             tr ("Medium '%ls' is attached to %d virtual machines"),
                 m.locationFull.raw(), m.backRefs.size());
 
@@ -854,28 +852,28 @@ HRESULT MediumBase::setStateError()
     {
         case MediaState_NotCreated:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Storage for the medium '%ls' is not created"),
                 m.locationFull.raw());
             break;
         }
         case MediaState_Created:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Storage for the medium '%ls' is already created"),
                 m.locationFull.raw());
             break;
         }
         case MediaState_LockedRead:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Medium '%ls' is locked for reading by another task"),
                 m.locationFull.raw());
             break;
         }
         case MediaState_LockedWrite:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Medium '%ls' is locked for writing by another task"),
                 m.locationFull.raw());
             break;
@@ -884,25 +882,25 @@ HRESULT MediumBase::setStateError()
         {
             /* be in sync with Console::powerUpThread() */
             if (!m.lastAccessError.isEmpty())
-                rc = setError (E_FAIL,
+                rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                     tr ("Medium '%ls' is not accessible. %ls"),
                     m.locationFull.raw(), m.lastAccessError.raw());
             else
-                rc = setError (E_FAIL,
+                rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                     tr ("Medium '%ls' is not accessible"),
                     m.locationFull.raw());
             break;
         }
         case MediaState_Creating:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Storage for the medium '%ls' is being created"),
                 m.locationFull.raw(), m.lastAccessError.raw());
             break;
         }
         case MediaState_Deleting:
         {
-            rc = setError (E_FAIL,
+            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Storage for the medium '%ls' is being deleted"),
                 m.locationFull.raw(), m.lastAccessError.raw());
             break;
