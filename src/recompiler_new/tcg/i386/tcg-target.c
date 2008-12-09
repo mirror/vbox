@@ -59,7 +59,7 @@ static const int tcg_target_call_oarg_regs[2] = { TCG_REG_EAX, TCG_REG_EDX };
 
 static uint8_t *tb_ret_addr;
 
-static void patch_reloc(uint8_t *code_ptr, int type, 
+static void patch_reloc(uint8_t *code_ptr, int type,
                         tcg_target_long value, tcg_target_long addend)
 {
     value += addend;
@@ -74,6 +74,22 @@ static void patch_reloc(uint8_t *code_ptr, int type,
         tcg_abort();
     }
 }
+
+#ifdef VBOX
+/* emits stack alignment checks for strict builds. */
+DECLINLINE(void) tcg_gen_stack_alignment_check(TCGContext *s)
+{
+# if defined(RT_STRICT) && defined(RT_OS_DARWIN) /** @todo all OSes? */
+    tcg_out8(s, 0xf7); tcg_out8(s, 0xc4);   /* test %esp, 1fh */
+    tcg_out32(s, TCG_TARGET_STACK_ALIGN - 1);
+    tcg_out8(s, 0x74);                      /* jz imm8 */
+    tcg_out8(s, 1);                         /* $+3 (over int3) */
+    tcg_out8(s, 0xcc);                      /* int3 */
+# else
+    NOREF(s);
+# endif
+}
+#endif /* VBOX */
 
 /* maximum number of register used for input function arguments */
 #ifndef VBOX
@@ -251,9 +267,9 @@ DECLINLINE(void) tcg_out_modrm(TCGContext *s, int opc, int r, int rm)
 
 /* rm == -1 means no register index */
 #ifndef VBOX
-static inline void tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm, 
+static inline void tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
 #else /* VBOX */
-DECLINLINE(void) tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm, 
+DECLINLINE(void) tcg_out_modrm_offset(TCGContext *s, int opc, int r, int rm,
 #endif /* VBOX */
                                         int32_t offset)
 {
@@ -378,7 +394,7 @@ static void tcg_out_jxx(TCGContext *s, int opc, int label_index)
 {
     int32_t val, val1;
     TCGLabel *l = &s->labels[label_index];
-    
+
     if (l->has_value) {
         val = l->u.value - (tcg_target_long)s->code_ptr;
         val1 = val - 2;
@@ -410,7 +426,7 @@ static void tcg_out_jxx(TCGContext *s, int opc, int label_index)
     }
 }
 
-static void tcg_out_brcond(TCGContext *s, int cond, 
+static void tcg_out_brcond(TCGContext *s, int cond,
                            TCGArg arg1, TCGArg arg2, int const_arg2,
                            int label_index)
 {
@@ -428,15 +444,19 @@ static void tcg_out_brcond(TCGContext *s, int cond,
 }
 
 #ifdef VBOX
-DECLINLINE(void) 
-tcg_out_long_call(TCGContext *s, void* dst) 
+DECLINLINE(void)
+tcg_out_long_call(TCGContext *s, void* dst)
 {
-    intptr_t disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
+    intptr_t disp;
+# ifdef VBOX
+    tcg_gen_stack_alignment_check(s);
+# endif
+    disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
     tcg_out8(s,  0xe8); /* call disp32 */
     tcg_out32(s, disp); /* disp32 */
 }
-DECLINLINE(void) 
-tcg_out_long_jmp(TCGContext *s, void* dst) 
+DECLINLINE(void)
+tcg_out_long_jmp(TCGContext *s, void* dst)
 {
     intptr_t disp = (uintptr_t)dst - (uintptr_t)s->code_ptr - 5;
     tcg_out8(s,  0xe9); /* jmp disp32 */
@@ -545,102 +565,19 @@ static void *vbox_st_helpers[] = {
     remR3PhysWriteU64
 };
 
-#ifdef RT_OS_DARWIN
-
-/* could be any register, not used for argument passing */
-#define BIAS_REG            TCG_REG_EDI
-/* Call out stack alignement, must be power of 2 for mask below to be right */
-#define CALLOUT_FRAME_ALIGN 16
-#define CALLOUT_FRAME_MASK  ~(CALLOUT_FRAME_ALIGN - 1)
-
-static void tcg_align_frame_pre(TCGContext* s, int args_size)
-{   
-    int8_t bias;
-
-    bias = CALLOUT_FRAME_ALIGN - args_size;
-    
-    while (bias <= 0)
-        bias += CALLOUT_FRAME_ALIGN;
-
-    tcg_out_push(s, BIAS_REG);
-    tcg_out_opc(s, 0x8d);  tcg_out8(s, 0x74 | (BIAS_REG <<3));  tcg_out8(s, 0x20 | TCG_REG_ESP);  tcg_out8(s, -args_size-4); 	/* lea -(args_size+4)(%esp),%bias */
-    tcg_out8(s, 0x83); tcg_out8(s, 0xe0 | BIAS_REG); tcg_out8(s, CALLOUT_FRAME_MASK); /* andl $CALLOUT_FRAME_MASK, %bias */
-    tcg_out_modrm(s, 0x01 | (ARITH_SUB << 3), TCG_REG_ESP, BIAS_REG); /* sub    %esp,%bias */
-    tcg_out8(s, 0x8d);  tcg_out8(s, 0x64);  tcg_out8(s, TCG_REG_ESP |(BIAS_REG << 3));  tcg_out8(s, args_size+4);/* lea    args_size+4(%esp,%bias),%esp */
-    tcg_out_push(s, BIAS_REG);
-    /* restore old bias_reg value, so nobody notices */
-    tcg_out8(s, 0xf7);  tcg_out8(s, 0xd8 | BIAS_REG);  /* neg bias_reg */
-    tcg_out8(s, 0x8b);  tcg_out8(s, 0x44 | (BIAS_REG << 3));  tcg_out8(s, TCG_REG_ESP |(BIAS_REG << 3));  tcg_out8(s, -args_size);/* mov    -args_size(%esp,%bias),%bias */
-
-    /* how stack is ready for args to be pushed */
-}
-
-static void tcg_align_frame_post(TCGContext* s, int args_size)
-{
-    tcg_out8(s, 0x8b);  tcg_out8(s, 0x44 | (BIAS_REG << 3));  tcg_out8(s, TCG_REG_ESP |(TCG_REG_ESP << 3));  tcg_out8(s, args_size);/* mov  args_size(%esp),%bias */
-    tcg_out_modrm(s, 0x01 | (ARITH_SUB << 3), BIAS_REG, TCG_REG_ESP); /* sub    %bias, %esp */    
-    tcg_out_pop(s, BIAS_REG);
-}
-
-static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
-                                   int addr_reg, 
-                                   int data_reg, int data_reg2) 
-{
-    int useReg2 = ((index & 3) == 3);
-
-    /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
-    /* out parameter (address), note that phys address is always 64-bit */
-    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));        
-    tcg_align_frame_pre(s, 8);
-    
-    /* push arguments */
-    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
-    tcg_out_push(s, addr_reg);
-
-    tcg_out_long_call(s, vbox_ld_helpers[index]);
-    tcg_align_frame_post(s, 8);
-
-    tcg_out_mov(s, data_reg, TCG_REG_EAX);
-    /* returned 64-bit value */
-    if (useReg2)
-      tcg_out_mov(s, data_reg2, TCG_REG_EDX);
-}
-static void tcg_out_vbox_phys_write(TCGContext *s, int index, 
-                                    int addr_reg, 
-                                    int val_reg, int val_reg2) {
-    int use_reg2 = ((index & 3) == 3);
-    int args_size = 8 + (use_reg2 ? 8 : 4);
-    int temp_val_reg = 0;
-
-    /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */ 
-    tcg_align_frame_pre(s, args_size);
-    /* out parameter (value2) */
-    if (use_reg2) 
-        tcg_out_push(s, val_reg2);
-    /* out parameter (value) */
-    tcg_out_push(s, val_reg);
-    /* out parameter (address), note that phys address is always 64-bit */
-    AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
-    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
-    tcg_out_push(s, addr_reg);
-
-    /* call it */
-    tcg_out_long_call(s, vbox_st_helpers[index]);
-  
-    tcg_align_frame_post(s, args_size);
-}
-
-#else
-static void tcg_out_vbox_phys_read(TCGContext *s, int index, 
-                                   int addr_reg, 
-                                   int data_reg, int data_reg2) 
+static void tcg_out_vbox_phys_read(TCGContext *s, int index,
+                                   int addr_reg,
+                                   int data_reg, int data_reg2)
 {
     int useReg2 = ((index & 3) == 3);
 
     /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
     /* out parameter (address), note that phys address is always 64-bit */
     AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
-    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
+# ifdef RT_OS_DARWIN
+    tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 8);
+# endif
+    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
     tcg_out_push(s, addr_reg);
 
     tcg_out_long_call(s, vbox_ld_helpers[index]);
@@ -651,36 +588,47 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
     /* returned 64-bit value */
     if (useReg2)
       tcg_out_mov(s, data_reg2, TCG_REG_EDX);
-    
+
     /* clean stack after us */
+# ifdef RT_OS_DARWIN
+    tcg_out_addi(s, TCG_REG_ESP, 16);
+# else
     tcg_out_addi(s, TCG_REG_ESP, 8);
+# endif
 }
 
-static void tcg_out_vbox_phys_write(TCGContext *s, int index, 
-                                    int addr_reg, 
+static void tcg_out_vbox_phys_write(TCGContext *s, int index,
+                                    int addr_reg,
                                     int val_reg, int val_reg2) {
     int useReg2 = ((index & 3) == 3);
 
     /** @todo:  should we make phys addess accessors fastcalls - probably not a big deal */
+# ifdef RT_OS_DARWIN
+    if (!useReg2)
+        tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 4);
+# endif
     /* out parameter (value2) */
-    if (useReg2) 
+    if (useReg2)
         tcg_out_push(s, val_reg2);
     /* out parameter (value) */
     tcg_out_push(s, val_reg);
     /* out parameter (address), note that phys address is always 64-bit */
     AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
-    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */ 
+    tcg_out8(s, 0x6a); tcg_out8(s, 0x00); /* push $0 */
     tcg_out_push(s, addr_reg);
 
     /* call it */
     tcg_out_long_call(s, vbox_st_helpers[index]);
-    
-    /* clean stack after us */
-    tcg_out_addi(s, TCG_REG_ESP, 8 + (useReg2 ? 8 : 4));
-}
-#endif
 
-#endif
+    /* clean stack after us */
+# ifdef RT_OS_DARWIN
+    tcg_out_addi(s, TCG_REG_ESP, 16);
+# else
+    tcg_out_addi(s, TCG_REG_ESP, 8 + (useReg2 ? 8 : 4));
+# endif
+}
+
+#endif /* defined(VBOX) && defined(REM_PHYS_ADDR_IN_TLB) */
 
 /* XXX: qemu_ld and qemu_st could be modified to clobber only EDX and
    EAX. It will be useful once fixed registers globals are less
@@ -715,16 +663,16 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     r1 = TCG_REG_EDX;
 
 #if defined(CONFIG_SOFTMMU)
-    tcg_out_mov(s, r1, addr_reg); 
+    tcg_out_mov(s, r1, addr_reg);
 
-    tcg_out_mov(s, r0, addr_reg); 
- 
+    tcg_out_mov(s, r0, addr_reg);
+
     tcg_out_modrm(s, 0xc1, 5, r1); /* shr $x, r1 */
-    tcg_out8(s, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS); 
-    
+    tcg_out8(s, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS);
+
     tcg_out_modrm(s, 0x81, 4, r0); /* andl $x, r0 */
     tcg_out32(s, TARGET_PAGE_MASK | ((1 << s_bits) - 1));
-    
+
     tcg_out_modrm(s, 0x81, 4, r1); /* andl $x, r1 */
     tcg_out32(s, (CPU_TLB_SIZE - 1) << CPU_TLB_ENTRY_BITS);
 
@@ -742,9 +690,9 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
 
     /* cmp 0(r1), r0 */
     tcg_out_modrm_offset(s, 0x3b, r0, r1, 0);
-    
+
     tcg_out_mov(s, r0, addr_reg);
-    
+
 #if TARGET_LONG_BITS == 32
     /* je label1 */
     tcg_out8(s, 0x70 + JCC_JE);
@@ -755,7 +703,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     tcg_out8(s, 0x70 + JCC_JNE);
     label3_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* cmp 4(r1), addr_reg2 */
     tcg_out_modrm_offset(s, 0x3b, addr_reg2, r1, 4);
 
@@ -763,7 +711,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     tcg_out8(s, 0x70 + JCC_JE);
     label1_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* label3: */
     *label3_ptr = s->code_ptr - label3_ptr - 1;
 #endif
@@ -775,8 +723,11 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     tcg_out_mov(s, TCG_REG_EDX, addr_reg2);
     tcg_out_movi(s, TCG_TYPE_I32, TCG_REG_ECX, mem_index);
 #endif
+#ifdef VBOX
+    tcg_gen_stack_alignment_check(s);
+#endif
     tcg_out8(s, 0xe8);
-    tcg_out32(s, (tcg_target_long)qemu_ld_helpers[s_bits] - 
+    tcg_out32(s, (tcg_target_long)qemu_ld_helpers[s_bits] -
               (tcg_target_long)s->code_ptr - 4);
 
     switch(opc) {
@@ -809,12 +760,12 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
     tcg_out8(s, 0xeb);
     label2_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* label1: */
     *label1_ptr = s->code_ptr - label1_ptr - 1;
 
     /* add x(r1), r0 */
-    tcg_out_modrm_offset(s, 0x03, r0, r1, offsetof(CPUTLBEntry, addend) - 
+    tcg_out_modrm_offset(s, 0x03, r0, r1, offsetof(CPUTLBEntry, addend) -
                          offsetof(CPUTLBEntry, addr_read));
 #else
     r0 = addr_reg;
@@ -840,7 +791,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
         tcg_out_modrm_offset(s, 0xb7 | P_EXT, data_reg, r0, 0);
         if (bswap) {
             /* rolw $8, data_reg */
-            tcg_out8(s, 0x66); 
+            tcg_out8(s, 0x66);
             tcg_out_modrm(s, 0xc1, 0, data_reg);
             tcg_out8(s, 8);
         }
@@ -850,7 +801,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
         tcg_out_modrm_offset(s, 0xbf | P_EXT, data_reg, r0, 0);
         if (bswap) {
             /* rolw $8, data_reg */
-            tcg_out8(s, 0x66); 
+            tcg_out8(s, 0x66);
             tcg_out_modrm(s, 0xc1, 0, data_reg);
             tcg_out8(s, 8);
 
@@ -898,6 +849,9 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args,
 #if defined(CONFIG_SOFTMMU)
     /* label2: */
     *label2_ptr = s->code_ptr - label2_ptr - 1;
+# ifdef VBOX
+    Assert((unsigned)(s->code_ptr - label2_ptr - 1) <= 127);
+# endif
 #endif
 }
 
@@ -933,16 +887,16 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     r1 = TCG_REG_EDX;
 
 #if defined(CONFIG_SOFTMMU)
-    tcg_out_mov(s, r1, addr_reg); 
+    tcg_out_mov(s, r1, addr_reg);
 
-    tcg_out_mov(s, r0, addr_reg); 
- 
+    tcg_out_mov(s, r0, addr_reg);
+
     tcg_out_modrm(s, 0xc1, 5, r1); /* shr $x, r1 */
-    tcg_out8(s, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS); 
-    
+    tcg_out8(s, TARGET_PAGE_BITS - CPU_TLB_ENTRY_BITS);
+
     tcg_out_modrm(s, 0x81, 4, r0); /* andl $x, r0 */
     tcg_out32(s, TARGET_PAGE_MASK | ((1 << s_bits) - 1));
-    
+
     tcg_out_modrm(s, 0x81, 4, r1); /* andl $x, r1 */
     tcg_out32(s, (CPU_TLB_SIZE - 1) << CPU_TLB_ENTRY_BITS);
 
@@ -960,9 +914,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 
     /* cmp 0(r1), r0 */
     tcg_out_modrm_offset(s, 0x3b, r0, r1, 0);
-    
+
     tcg_out_mov(s, r0, addr_reg);
-    
+
 #if TARGET_LONG_BITS == 32
     /* je label1 */
     tcg_out8(s, 0x70 + JCC_JE);
@@ -973,7 +927,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     tcg_out8(s, 0x70 + JCC_JNE);
     label3_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* cmp 4(r1), addr_reg2 */
     tcg_out_modrm_offset(s, 0x3b, addr_reg2, r1, 4);
 
@@ -981,7 +935,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     tcg_out8(s, 0x70 + JCC_JE);
     label1_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* label3: */
     *label3_ptr = s->code_ptr - label3_ptr - 1;
 #endif
@@ -993,8 +947,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out_mov(s, TCG_REG_ECX, data_reg2);
         tcg_out8(s, 0x6a); /* push Ib */
         tcg_out8(s, mem_index);
+# ifdef VBOX
+        tcg_gen_stack_alignment_check(s);
+# endif
         tcg_out8(s, 0xe8);
-        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] - 
+        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
         tcg_out_addi(s, TCG_REG_ESP, 4);
     } else {
@@ -1012,8 +969,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
             break;
         }
         tcg_out_movi(s, TCG_TYPE_I32, TCG_REG_ECX, mem_index);
+# ifdef VBOX
+        tcg_gen_stack_alignment_check(s);
+# endif
         tcg_out8(s, 0xe8);
-        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] - 
+        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
     }
 #else
@@ -1023,8 +983,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out8(s, mem_index);
         tcg_out_opc(s, 0x50 + data_reg2); /* push */
         tcg_out_opc(s, 0x50 + data_reg); /* push */
+# ifdef VBOX
+        tcg_gen_stack_alignment_check(s);
+# endif
         tcg_out8(s, 0xe8);
-        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] - 
+        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
         tcg_out_addi(s, TCG_REG_ESP, 12);
     } else {
@@ -1042,25 +1005,36 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
             tcg_out_mov(s, TCG_REG_ECX, data_reg);
             break;
         }
+# if defined(VBOX) && defined(RT_OS_DARWIN)
+        tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 12); /** @todo FIXME: This is not 100% correct (assumes a bunch of things), but it works around the current issue it seems... */
+# endif
         tcg_out8(s, 0x6a); /* push Ib */
         tcg_out8(s, mem_index);
+# ifdef VBOX
+        tcg_gen_stack_alignment_check(s);
+# endif
+
         tcg_out8(s, 0xe8);
-        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] - 
+        tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
+# if defined(VBOX) && defined(RT_OS_DARWIN)
+        tcg_out_addi(s, TCG_REG_ESP, 12+4);
+# else
         tcg_out_addi(s, TCG_REG_ESP, 4);
+# endif
     }
 #endif
-    
+
     /* jmp label2 */
     tcg_out8(s, 0xeb);
     label2_ptr = s->code_ptr;
     s->code_ptr++;
-    
+
     /* label1: */
     *label1_ptr = s->code_ptr - label1_ptr - 1;
 
     /* add x(r1), r0 */
-    tcg_out_modrm_offset(s, 0x03, r0, r1, offsetof(CPUTLBEntry, addend) - 
+    tcg_out_modrm_offset(s, 0x03, r0, r1, offsetof(CPUTLBEntry, addend) -
                          offsetof(CPUTLBEntry, addr_write));
 #else
     r0 = addr_reg;
@@ -1124,18 +1098,21 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 #if defined(CONFIG_SOFTMMU)
     /* label2: */
     *label2_ptr = s->code_ptr - label2_ptr - 1;
+# ifdef VBOX
+    Assert((unsigned)(s->code_ptr - label2_ptr - 1) <= 127);
+# endif
 #endif
 }
 
 #ifndef VBOX
-static inline void tcg_out_op(TCGContext *s, int opc, 
+static inline void tcg_out_op(TCGContext *s, int opc,
 #else /* VBOX */
-DECLINLINE(void) tcg_out_op(TCGContext *s, int opc, 
+DECLINLINE(void) tcg_out_op(TCGContext *s, int opc,
 #endif /* VBOX */
                               const TCGArg *args, const int *const_args)
 {
     int c;
-    
+
     switch(opc) {
     case INDEX_op_exit_tb:
         tcg_out_movi(s, TCG_TYPE_I32, TCG_REG_EAX, args[0]);
@@ -1151,12 +1128,15 @@ DECLINLINE(void) tcg_out_op(TCGContext *s, int opc,
         } else {
             /* indirect jump method */
             /* jmp Ev */
-            tcg_out_modrm_offset(s, 0xff, 4, -1, 
+            tcg_out_modrm_offset(s, 0xff, 4, -1,
                                  (tcg_target_long)(s->tb_next + args[0]));
         }
         s->tb_next_offset[args[0]] = s->code_ptr - s->code_buf;
         break;
     case INDEX_op_call:
+#ifdef VBOX
+        tcg_gen_stack_alignment_check(s);
+#endif
         if (const_args[0]) {
             tcg_out8(s, 0xe8);
             tcg_out32(s, args[0] - (tcg_target_long)s->code_ptr - 4);
@@ -1276,23 +1256,23 @@ DECLINLINE(void) tcg_out_op(TCGContext *s, int opc,
     case INDEX_op_sar_i32:
         c = SHIFT_SAR;
         goto gen_shift32;
-        
+
     case INDEX_op_add2_i32:
-        if (const_args[4]) 
+        if (const_args[4])
             tgen_arithi(s, ARITH_ADD, args[0], args[4]);
         else
             tcg_out_modrm(s, 0x01 | (ARITH_ADD << 3), args[4], args[0]);
-        if (const_args[5]) 
+        if (const_args[5])
             tgen_arithi(s, ARITH_ADC, args[1], args[5]);
         else
             tcg_out_modrm(s, 0x01 | (ARITH_ADC << 3), args[5], args[1]);
         break;
     case INDEX_op_sub2_i32:
-        if (const_args[4]) 
+        if (const_args[4])
             tgen_arithi(s, ARITH_SUB, args[0], args[4]);
         else
             tcg_out_modrm(s, 0x01 | (ARITH_SUB << 3), args[4], args[0]);
-        if (const_args[5]) 
+        if (const_args[5])
             tgen_arithi(s, ARITH_SBB, args[1], args[5]);
         else
             tcg_out_modrm(s, 0x01 | (ARITH_SBB << 3), args[5], args[1]);
@@ -1322,7 +1302,7 @@ DECLINLINE(void) tcg_out_op(TCGContext *s, int opc,
     case INDEX_op_qemu_ld64:
         tcg_out_qemu_ld(s, args, 3);
         break;
-        
+
     case INDEX_op_qemu_st8:
         tcg_out_qemu_st(s, args, 0);
         break;
@@ -1425,12 +1405,12 @@ static int tcg_target_callee_save_regs[] = {
     TCG_REG_EDI,
 #endif
 };
-            
+
 /* Generate global QEMU prologue and epilogue code */
 void tcg_target_qemu_prologue(TCGContext *s)
 {
     int i, frame_size, push_size, stack_addend;
-    
+
     /* TB prologue */
     /* save all callee saved registers */
     for(i = 0; i < ARRAY_SIZE(tcg_target_callee_save_regs); i++) {
@@ -1439,13 +1419,16 @@ void tcg_target_qemu_prologue(TCGContext *s)
     /* reserve some stack space */
     push_size = 4 + ARRAY_SIZE(tcg_target_callee_save_regs) * 4;
     frame_size = push_size + TCG_STATIC_CALL_ARGS_SIZE;
-    frame_size = (frame_size + TCG_TARGET_STACK_ALIGN - 1) & 
+    frame_size = (frame_size + TCG_TARGET_STACK_ALIGN - 1) &
         ~(TCG_TARGET_STACK_ALIGN - 1);
     stack_addend = frame_size - push_size;
     tcg_out_addi(s, TCG_REG_ESP, -stack_addend);
+# ifdef VBOX
+    tcg_gen_stack_alignment_check(s);
+# endif
 
     tcg_out_modrm(s, 0xff, 4, TCG_REG_EAX); /* jmp *%eax */
-    
+
     /* TB epilogue */
     tb_ret_addr = s->code_ptr;
     tcg_out_addi(s, TCG_REG_ESP, stack_addend);
@@ -1463,10 +1446,10 @@ void tcg_target_init(TCGContext *s)
 
     tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xff);
     tcg_regset_set32(tcg_target_call_clobber_regs, 0,
-                     (1 << TCG_REG_EAX) | 
-                     (1 << TCG_REG_EDX) | 
+                     (1 << TCG_REG_EAX) |
+                     (1 << TCG_REG_EDX) |
                      (1 << TCG_REG_ECX));
-    
+
     tcg_regset_clear(s->reserved_regs);
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_ESP);
 
