@@ -27,8 +27,8 @@
     } while(0)
 
 # ifdef VBOX_WITH_SLIRP_ICMP
-#  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
-    DO_ENGAGE_EVENT2((so), (fdset1), (fdset2), ICMP)
+#  define ICMP_ENGAGE_EVENT(so, fdset)               \
+    DO_ENGAGE_EVENT1((so), (fdset), ICMP)
 # else /* !VBOX_WITH_SLIRP_ICMP */
 #  define ICMP_ENGAGE_EVENT(so, fdset1, fdset2)      \
     /* no ICMP socket */
@@ -602,7 +602,9 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 UDP_ENGAGE_EVENT(so, readfds);
             }
         }
-        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds, writefds);
+
+        if (pData->icmp_socket.s != -1)
+            ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
     }
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
@@ -892,10 +894,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 # if defined(RT_OS_WINDOWS)
         sorecvfrom(pData, &pData->icmp_socket);
 # else
-        if (so->s != -1 && FD_ISSET(so->s, readfds))
-        {
+        if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
             sorecvfrom(pData, &pData->icmp_socket);
-        }
 # endif
 #endif
     }
