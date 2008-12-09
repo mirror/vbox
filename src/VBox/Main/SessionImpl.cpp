@@ -674,7 +674,7 @@ STDMETHODIMP Session::AccessGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BST
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     if (mState != SessionState_Open)
-        return setError (E_FAIL,
+        return setError (VBOX_E_INVALID_VM_STATE,
             tr ("Machine session is not open (session state: %d)."),
             mState);
     AssertReturn (mType == SessionType_Direct, E_UNEXPECTED);

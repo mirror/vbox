@@ -3774,9 +3774,14 @@
       <desc>
         Returns the network adapter associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
-        number of adapters per every machine is defined by the
+        number of adapters per machine is defined by the
         <link to="ISystemProperties::networkAdapterCount"/> property,
         so the maximum slot number is one less than that property's value.
+
+        <result name="E_INVALIDARG">
+          Invalid @a slot number.
+        </result>
+
       </desc>
       <param name="slot" type="unsigned long" dir="in"/>
       <param name="adapter" type="INetworkAdapter" dir="return"/>
@@ -3786,9 +3791,14 @@
       <desc>
         Returns the serial port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
-        number of serial ports per every machine is defined by the
+        number of serial ports per machine is defined by the
         <link to="ISystemProperties::serialPortCount"/> property,
         so the maximum slot number is one less than that property's value.
+
+        <result name="E_INVALIDARG">
+          Invalid @a slot number.
+        </result>
+
       </desc>
       <param name="slot" type="unsigned long" dir="in"/>
       <param name="port" type="ISerialPort" dir="return"/>
@@ -3798,9 +3808,14 @@
       <desc>
         Returns the parallel port associated with the given slot.
         Slots are numbered sequentially, starting with zero. The total
-        number of parallel ports per every machine is defined by the
+        number of parallel ports per machine is defined by the
         <link to="ISystemProperties::parallelPortCount"/> property,
         so the maximum slot number is one less than that property's value.
+
+        <result name="E_INVALIDARG">
+          Invalid @a slot number.
+        </result>
+
       </desc>
       <param name="slot" type="unsigned long" dir="in"/>
       <param name="port" type="IParallelPort" dir="return"/>
@@ -3816,6 +3831,11 @@
         supplying @c NULL for the @a key, the first key item is returned in @a
         nextKey (if there is any). @a nextValue is an optional parameter and
         if supplied, the next key's value is returned in it.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Extra data @a key not found.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to follow.</desc>
@@ -3834,6 +3854,14 @@
 
         If the requested data @a key does not exist, this function will
         succeed and return @c NULL in the @a value argument.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to get.</desc>
@@ -3868,6 +3896,14 @@
           it's a caller's responsibility to handle possible race conditions
           when several clients change the same key at the same time.
         </note>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
       </desc>
       <param name="key" type="wstring" dir="in">
         <desc>Name of the data key to set.</desc>
@@ -3897,6 +3933,17 @@
           yet registered, or on unregistered machines after calling
           <link to="IVirtualBox::unregisterMachine"/>.
         </note>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+        <result name="E_ACCESSDENIED">
+          Modification request refused.
+        </result>
+
       </desc>
     </method>
 
@@ -3940,6 +3987,20 @@
         </note>
 
         <see>settingsFileVersion</see>
+
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+        <result name="E_ACCESSDENIED">
+          Modification request refused.
+        </result>
+
       </desc>
       <param name="bakFileName" type="wstring" dir="return">
         <desc>Full path to the created backup copy.</desc>
@@ -3959,6 +4020,11 @@
           yet registered, or on unregistered machines after calling
           <link to="IVirtualBox::unregisterMachine"/>.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+
       </desc>
     </method>
 
@@ -3983,6 +4049,15 @@
           The deleted machine settings file can be restored (saved again)
           by calling <link to="#saveSettings()"/>.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Cannot delete settings of a registered machine or
+          machine not mutable.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not delete the settings file.
+        </result>
+
       </desc>
     </method>
 
@@ -3992,6 +4067,11 @@
         A <tt>null</tt> UUID can be used to obtain the first snapshot
         taken on this machine. This is useful if you want to traverse
         the whole tree of snapshots starting from the root.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Virtual machine has no snapshots or snapshot not found.
+        </result>
+
       </desc>
       <param name="id" type="uuid" dir="in">
         <desc>UUID of the snapshot to get</desc>
@@ -4004,6 +4084,11 @@
     <method name="findSnapshot">
       <desc>
         Returns a snapshot of this machine with the given name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Virtual machine has no snapshots or snapshot not found.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the snapshot to find</desc>
@@ -4032,6 +4117,14 @@
         name with the given host path, adds it to the collection of shared
         folders and starts sharing it. Refer to the description of
         <link to="ISharedFolder"/> to read more about logical names.
+
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Shared folder already exists.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Shared folder @a hostPath not accessible.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Unique logical name of the shared folder.</desc>
@@ -4049,6 +4142,14 @@
         Removes the permanent shared folder with the given name previously
         created by <link to="#createSharedFolder"/> from the collection of
         shared folders and stops sharing it.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Shared folder @a name does not exist.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Logical name of the shared folder to remove.</desc>
@@ -4064,6 +4165,11 @@
           This method will fail if a session for this machine is not
           currently open.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
       </desc>
       <param name="canShow" type="boolean" dir="return">
         <desc>
@@ -4090,6 +4196,11 @@
           This method will fail if a session for this machine is not
           currently open.
         </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
       </desc>
       <param name="winId" type="unsigned long long" dir="return">
         <desc>
@@ -4104,6 +4215,11 @@
     <method name="getGuestProperty">
       <desc>
         Reads an entry from the machine's guest property store.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -4133,6 +4249,11 @@
     <method name="getGuestPropertyValue">
       <desc>
         Reads a value from the machine's guest property store.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
       </desc>
       <param name="property" type="wstring" dir="in">
         <desc>
@@ -4150,6 +4271,11 @@
     <method name="getGuestPropertyTimestamp">
       <desc>
         Reads a property timestamp from the machine's guest property store.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
       </desc>
       <param name="property" type="wstring" dir="in">
         <desc>
@@ -4168,6 +4294,20 @@
       <desc>
         Sets, changes or deletes an entry in the machine's guest property
         store.
+
+        <result name="E_ACCESSDENIED">
+          Property cannot be changed.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid @a flags.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable or session not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Cannot set transient property when machine not running.
+        </result>
+
       </desc>
       <param name="property" type="wstring" dir="in">
         <desc>
@@ -4195,7 +4335,18 @@
         Sets, changes or deletes a value in the machine's guest property
         store.  The flags field will be left unchanged or created empty for a
         new property.
+
+        <result name="E_ACCESSDENIED">
+          Property cannot be changed.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is not mutable or session not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Cannot set transient property when machine not running.
+        </result>
       </desc>
+
       <param name="property" type="wstring" dir="in">
         <desc>
           The name of the property to set, change or delete.
