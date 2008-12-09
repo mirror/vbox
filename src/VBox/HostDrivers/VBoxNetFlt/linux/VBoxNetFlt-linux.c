@@ -879,7 +879,9 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
          * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
          */
         u_int16_t fIf;
+#ifdef LOG_ENABLED
         unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pDev);
+#endif
         if (fActive)
         {
             Assert(!pThis->u.s.fPromiscuousSet);
