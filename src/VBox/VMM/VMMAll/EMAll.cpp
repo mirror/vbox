@@ -803,7 +803,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pReg
     void *pvParam1;
     OP_PARAMVAL param1, param2;
 
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     Assert(pCpu->param1.size <= 4);
 #endif
 
@@ -1415,7 +1415,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 {
     OP_PARAMVAL param1, param2;
 
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     Assert(pCpu->param1.size <= 4);
 #endif
 
@@ -2928,7 +2928,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
         return VERR_EM_INTERPRETER;
     }
 
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
     {
         /* Unable to emulate in 32 bits mode. 
