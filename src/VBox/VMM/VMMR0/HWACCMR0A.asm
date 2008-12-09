@@ -245,6 +245,7 @@ BEGINCODE
 ; * @param   idxField   x86: [ebp + 08h]  msc: rcx  gcc: rdi   VMCS index
 ; * @param   u64Data    x86: [ebp + 0ch]  msc: rdx  gcc: rsi   VM field value
 ; */
+ALIGNCODE(16)
 BEGINPROC VMXWriteVMCS64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
@@ -311,6 +312,7 @@ ENDPROC VMXWriteVMCS64
 ; * @param   pData           Ptr to store VM field value
 ; */
 ;DECLASM(int) VMXReadVMCS64(uint32_t idxField, uint64_t *pData);
+ALIGNCODE(16)
 BEGINPROC VMXReadVMCS64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
@@ -377,6 +379,7 @@ ENDPROC VMXReadVMCS64
 ; * @param   pu32Data        Ptr to store VM field value
 ; */
 ;DECLASM(int) VMXReadVMCS32(uint32_t idxField, uint32_t *pu32Data);
+ALIGNCODE(16)
 BEGINPROC VMXReadVMCS32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
@@ -441,6 +444,7 @@ ENDPROC VMXReadVMCS32
 ; * @param   u32Data         Ptr to store VM field value
 ; */
 ;DECLASM(int) VMXWriteVMCS32(uint32_t idxField, uint32_t u32Data);
+ALIGNCODE(16)
 BEGINPROC VMXWriteVMCS32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
@@ -593,6 +597,7 @@ ENDPROC VMXDisable
 ; * @param   HCPhysVMCS     Physical address of VM control structure
 ; */
 ;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVMCS);
+ALIGNCODE(16)
 BEGINPROC VMXClearVMCS
 %ifdef RT_ARCH_AMD64
     xor     rax, rax
@@ -646,6 +651,7 @@ ENDPROC VMXClearVMCS
 ; * @param   HCPhysVMCS     Physical address of VMCS structure
 ; */
 ;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVMCS);
+ALIGNCODE(16)
 BEGINPROC VMXActivateVMCS
 %ifdef RT_ARCH_AMD64
     xor     rax, rax
@@ -934,6 +940,7 @@ ENDPROC SVMR0InvlpgA
 ; * @param  pIdtr        Where to store the 64-bit IDTR.
 ; */
 ;DECLASM(void) hwaccmR0Get64bitGDTRandIDTR(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+ALIGNCODE(16)
 BEGINPROC hwaccmR0Get64bitGDTRandIDTR
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
@@ -960,6 +967,7 @@ ENDPROC   hwaccmR0Get64bitGDTRandIDTR
 ; * @returns CR3
 ; */
 ;DECLASM(uint64_t) hwaccmR0Get64bitCR3(void);
+ALIGNCODE(16)
 BEGINPROC hwaccmR0Get64bitCR3
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
@@ -1014,6 +1022,7 @@ ENDPROC   hwaccmR0Get64bitCR3
  ;
 
 ; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx);
+ALIGNCODE(16)
 BEGINPROC VMXR0StartVM32
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     je near NAME(VMXR0StartVM32_32)
@@ -1051,6 +1060,7 @@ ALIGNCODE(16)
 ENDPROC   VMXR0StartVM32
 
 ; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx)
+ALIGNCODE(16)
 BEGINPROC VMXR0StartVM64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jne     .longmode
@@ -1105,6 +1115,7 @@ BITS 32
 ENDPROC   VMXR0StartVM64
 
 ;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     je near NAME(SVMR0VMRun_32)
@@ -1157,6 +1168,7 @@ BITS 32
 ENDPROC   SVMR0VMRun
 
 ; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+ALIGNCODE(16)
 BEGINPROC SVMR0VMRun64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jne     .longmode
