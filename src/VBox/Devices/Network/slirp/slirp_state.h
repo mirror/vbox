@@ -143,6 +143,7 @@ typedef struct NATState
      * function should be detected in runtime
      */
     long (WINAPI * pfIcmpParseReplies)(void *, long);
+    BOOL (WINAPI * pfIcmpCloseHandle)(HANDLE);
     HMODULE hmIcmpLibrary;
 #endif
 #endif

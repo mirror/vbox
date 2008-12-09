@@ -91,6 +91,8 @@ icmp_init(PNATState pData)
     {
         pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
+        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE)) 
+                                    GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
     }
     if (pData->pfIcmpParseReplies == NULL)
     {
@@ -103,6 +105,8 @@ icmp_init(PNATState pData)
         }
         pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
+        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE)) 
+                                    GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
     }
     if (pData->pfIcmpParseReplies == NULL)
     {
@@ -110,6 +114,12 @@ icmp_init(PNATState pData)
         FreeLibrary(pData->hmIcmpLibrary);
         return 1;
     } 
+    if (pData->pfIcmpCloseHandle == NULL)
+    {
+        LogRel(("NAT: Can't find IcmpCloseHandle symbol\n"));
+        FreeLibrary(pData->hmIcmpLibrary);
+        return 1;
+    }
     pData->icmp_socket.sh = IcmpCreateFile();
     pData->phEvents[VBOX_ICMP_EVENT_INDEX] = CreateEvent(NULL, FALSE, FALSE, NULL);
     pData->szIcmpBuffer = sizeof(ICMP_ECHO_REPLY) * 10;
