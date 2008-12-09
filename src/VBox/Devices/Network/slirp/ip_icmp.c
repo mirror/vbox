@@ -84,14 +84,13 @@ icmp_init(PNATState pData)
         LogRel(("NAT: ICMP/ping not available (could open ICMP socket, error %Rrc)\n", rc));
         return 1;
     }
-    insque(pData, &pData->icmp_socket, &udb);
 #else /* RT_OS_WINDOWS */
     pData->hmIcmpLibrary = LoadLibrary("Iphlpapi.dll");
     if (pData->hmIcmpLibrary != NULL)
     {
         pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
-        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE)) 
+        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
     }
     if (pData->pfIcmpParseReplies == NULL)
@@ -105,7 +104,7 @@ icmp_init(PNATState pData)
         }
         pData->pfIcmpParseReplies = (long (WINAPI *)(void *, long))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpParseReplies");
-        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE)) 
+        pData->pfIcmpCloseHandle = (BOOL (WINAPI *)(HANDLE))
                                     GetProcAddress(pData->hmIcmpLibrary, "IcmpCloseHandle");
     }
     if (pData->pfIcmpParseReplies == NULL)
@@ -113,7 +112,7 @@ icmp_init(PNATState pData)
         LogRel(("NAT: Can't find IcmpParseReplies symbol\n"));
         FreeLibrary(pData->hmIcmpLibrary);
         return 1;
-    } 
+    }
     if (pData->pfIcmpCloseHandle == NULL)
     {
         LogRel(("NAT: Can't find IcmpCloseHandle symbol\n"));
@@ -300,7 +299,7 @@ freeit:
                     udp_detach(pData, so);
                 }
 #else /* VBOX_WITH_SLIRP_ICMP */
-# ifdef RT_OS_WINDOWS      
+# ifdef RT_OS_WINDOWS
                 IP_OPTION_INFORMATION ipopt;
                 int error;
 # endif
@@ -344,14 +343,14 @@ freeit:
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
                 status = IcmpSendEcho2(pData->icmp_socket.sh, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
-                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data, 
+                                       NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data,
                                        icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
                                        pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
-                    error = GetLastError(); 
+                    error = GetLastError();
                     LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
-                    switch (error) 
+                    switch (error)
                     {
                         case ERROR_INVALID_PARAMETER:
                             LogRel(("icmp_socket:%lx is invalid)\n", pData->icmp_socket.s));

@@ -11,6 +11,13 @@
 #include <iprt/assert.h>
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
+
+# ifdef VBOX_WITH_SLIRP_ICMP
+#  define DO_ENGAGE_EVENT0(so, fdset, label) DO_ENGAGE_EVENT1((so), (fdset), label)
+# else /* VBOX_WITH_SLIRP_ICMP */
+#  define DO_ENGAGE_EVENT0(so, fdset, label) /* ignore */
+#endif /* !VBOX_WITH_SLIRP_ICMP */
+
 # define DO_ENGAGE_EVENT1(so, fdset, label)         \
     do {                                            \
         FD_SET((so)->s, (fdset));                   \
@@ -25,6 +32,8 @@
         UPD_NFDS((so)->s);                           \
     } while(0)
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
+# define DO_ENGAGE_EVENT0(so, fdset, label) /* ignore */
+
 # define DO_ENGAGE_EVENT1(so, fdset0, label)                                                    \
     do {                                                                                        \
         rc = WSAEventSelect((so)->s, VBOX_SOCKET_EVENT, FD_ALL_EVENTS);                         \
@@ -48,6 +57,9 @@
 
 #define UDP_ENGAGE_EVENT(so, fdset)                     \
     DO_ENGAGE_EVENT1((so), (fdset), UDP)
+
+#define ICMP_ENGAGE_EVENT(so, fdset)                    \
+    DO_ENGAGE_EVENT0((so), (fdset), UDP)
 
 static const uint8_t special_ethaddr[6] = {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
@@ -582,6 +594,8 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 UDP_ENGAGE_EVENT(so, readfds);
             }
         }
+        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
+        ICMP_ENGAGE_EVENT(&pData->icmp_socket, writefds);
     }
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
@@ -866,9 +880,16 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 sorecvfrom(pData, so);
             }
         }
-#if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
+#if defined(VBOX_WITH_SLIRP_ICMP)
+# if defined(RT_OS_WINDOWS)
         sorecvfrom(pData, &pData->icmp_socket);
-#endif 
+# else
+        if (so->s != -1 && FD_ISSET(so->s, readfds))
+        {
+            sorecvfrom(pData, &pData->icmp_socket);
+        }
+# endif
+#endif
     }
 
     /*
