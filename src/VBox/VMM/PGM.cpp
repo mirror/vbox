@@ -3262,7 +3262,7 @@ static PGMMODE pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
     }
     /* Override the shadow mode is nested paging is active. */
     if (HWACCMIsNestedPagingActive(pVM))
-        enmShadowMode = HWACCMGetPagingMode(pVM);
+        enmShadowMode = HWACCMGetShwPagingMode(pVM);
 
     *penmSwitcher = enmSwitcher;
     return enmShadowMode;

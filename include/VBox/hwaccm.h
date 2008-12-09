@@ -72,7 +72,7 @@ VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
 VMMDECL(int)     HWACCMFlushTLB(PVM pVM);
 VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
-VMMDECL(PGMMODE) HWACCMGetPagingMode(PVM pVM);
+VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
 VMMDECL(RTCPUID) HWACCMGetVMCPUId(PVM pVM);
 #else
 /* Nop in GC */
