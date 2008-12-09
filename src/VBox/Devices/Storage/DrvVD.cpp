@@ -551,6 +551,8 @@ static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
              pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
+    if (rc == VERR_VDI_GEOMETRY_NOT_SET)
+        rc = VERR_PDM_GEOMETRY_NOT_SET;
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
@@ -580,6 +582,8 @@ static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
              pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
+    if (rc == VERR_VDI_GEOMETRY_NOT_SET)
+        rc = VERR_PDM_GEOMETRY_NOT_SET;
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
