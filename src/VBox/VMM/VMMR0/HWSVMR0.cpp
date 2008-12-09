@@ -2322,7 +2322,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVM, pfnHandler);
-    for (int i=(int)cbParam-1;i>=0;i++)
+    for (int i=(int)cbParam-1;i>=0;i--)
         CPUMPushHyper(pVM, paParam[i]);
 
     /* Call switcher. */
