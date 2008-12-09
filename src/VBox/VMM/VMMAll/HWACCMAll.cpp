@@ -106,7 +106,7 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM)
         PGMMODE enmShwPagingMode;
 
 #if HC_ARCH_BITS == 32 
-        if (CPUMIsGuestInLongModeEx(pCtx))
+        if (CPUMIsGuestInLongMode(pVM))
             enmShwPagingMode = PGMMODE_AMD64_NX;
         else
 #endif
