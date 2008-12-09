@@ -2888,7 +2888,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     /* The shadow part of the nested callback mode depends on the host paging mode (AMD-V only). */
     switch(pVM->pgm.s.enmHostMode)
     {
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     case SUPPAGINGMODE_32_BIT:
     case SUPPAGINGMODE_32_BIT_GLOBAL:
         for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
