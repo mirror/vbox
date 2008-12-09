@@ -792,11 +792,12 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         
         icm = icmp_find_original_mbuf(pData, ip);
         
-        if (icm == NULL) {
-            LogRel(("Can't find the corresponding packet for the received ICMP\n"));
+        if (icm == NULL)
+        {
+            LogRel(("NAT: Can't find the corresponding packet for the received ICMP\n"));
             return;
         }
-        
+
         m = icm->im_m;
         Assert(m != NULL);
         
@@ -845,13 +846,15 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         ICMP_ECHO_REPLY *icr;
         u_char code = ~0;
         len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
-        if (len <= 0) {
-              LogRel(("Error (%d) occured on ICMP receiving \n", GetLastError()));  
+        if (len <= 0)
+        {
+              LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
               return;
         }
         LogRel(("IcmpParseReplies returns %ld\n", len));
         icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
-        for (i = 0; i < len; ++i) {
+        for (i = 0; i < len; ++i)
+        {
                 switch(icr[i].Status) 
                 {
                         case IP_DEST_HOST_UNREACHABLE:
@@ -863,7 +866,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                         /* UNREACH error inject here */
                         case IP_DEST_PORT_UNREACHABLE:
                                 code = (code != ~0 ? code : ICMP_UNREACH_PORT);
-                                icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occured!!!");
+                                icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, "Error occurred!!!");
                         break;
                         case IP_SUCCESS: /* echo replied */
                         case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */

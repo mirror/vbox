@@ -78,6 +78,12 @@ icmp_init(PNATState pData)
     pData->icmp_socket.so_state = SS_ISFCONNECTED;
 #ifndef RT_OS_WINDOWS
     pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    if (pData->icmp_socket.s == -1)
+    {
+        int rc = RTErrConvertFromErrno(errno);
+        LogRel(("NAT: ICMP/ping not available (could open ICMP socket, error %Rrc)\n", rc, rc));
+        return 1;
+    }
     insque(pData, &pData->icmp_socket, &udb);
 #else /* RT_OS_WINDOWS */
     pData->hmIcmpLibrary = LoadLibrary("Iphlpapi.dll");
@@ -311,7 +317,7 @@ freeit:
                 status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
                 if (status < 0)
                 {
-                    LogRel(("error(%s) occured while setting TTL attribute of IP packet\n", strerror(errno)));
+                    LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n", strerror(errno)));
                 }
                 if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
                             (struct sockaddr *)&addr, sizeof(addr)) == -1)
@@ -331,7 +337,7 @@ freeit:
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
                     error = GetLastError(); 
-                    LogRel(("error(%d) occured while sending ICMP (", error));
+                    LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
                     switch (error) 
                     {
                         case ERROR_INVALID_PARAMETER:
