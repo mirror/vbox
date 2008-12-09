@@ -2916,7 +2916,9 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
         rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
 # endif
         break;
-#else /* HC_ARCH_BITS != 32 */
+#endif /* HC_ARCH_BITS != 32 */
+
+#if HC_ARCH_BITS == 64 || RT_OS_DARWIN
     case SUPPAGINGMODE_AMD64:
     case SUPPAGINGMODE_AMD64_GLOBAL:
     case SUPPAGINGMODE_AMD64_NX:
@@ -2931,7 +2933,8 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
             rc = PGM_SHW_NAME_AMD64(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
         }
         break;
-#endif /* HC_ARCH_BITS != 32 */
+#endif /* HC_ARCH_BITS == 64 || RT_ARCH_DARWIN */
+
     default:
         AssertFailed();
         break;
