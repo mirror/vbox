@@ -258,6 +258,8 @@ GLOBALNAME ICEnterTarget
     mov     cr0, rax
     fxrstor [rdx + CPUMCPU.Guest.fpu]
     mov     cr0, rcx                    ; and restore old CR0 again
+    
+    and     [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
 
 gth_fpu_no:
     ; Check if we need to restore the guest debug state
@@ -274,6 +276,8 @@ gth_fpu_no:
     mov dr3, rax
     mov rax, qword [rdx + CPUMCPU.Guest.dr + 6*8]
     mov dr6, rax    ; not required for AMD-V
+
+    and     [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_STATE
 
 gth_debug_no:
 
