@@ -196,7 +196,7 @@ bool VBoxRegistrationDlg::hasToBeShown()
 }
 
 VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *aParent)
-    : QIWithRetranslateUI <QIAbstractWizard> (aParent)
+    : QIWithRetranslateUI <QIAbstractWizard> (0)
     , mSelf (aSelf)
     , mWvalReg (0)
     , mUrl ("http://registration.virtualbox.org/register762.php")
@@ -239,6 +239,7 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
              this, SLOT (enableNext (const QIWidgetValidator *)));
     connect (mWvalReg, SIGNAL (isValidRequested (QIWidgetValidator *)),
              this, SLOT (revalidate (QIWidgetValidator *)));
+    connect (vboxGlobal().mainWindow(), SIGNAL (closing()), this, SLOT (reject()));
 
     /* Setup initial dialog parameters. */
     VBoxRegistrationData regData (vboxGlobal().virtualBox().

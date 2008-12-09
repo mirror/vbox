@@ -39,7 +39,7 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
         VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole,
                                                              aSession, Qt::Window);
         id->centerAccording (aConsole);
-        connect (aConsole, SIGNAL (destroyed (QObject*)), id, SLOT (suicide()));
+        connect (vboxGlobal().mainWindow(), SIGNAL (closing()), id, SLOT (close()));
         id->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [machine.GetName()] = id;
     }
@@ -101,7 +101,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
              this, SLOT (onPageChanged (int)));
     connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
              this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (mediumChanged (VBoxDefs::MediaType)),
+    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)),
              this, SLOT (updateDetails()));
     connect (mConsole, SIGNAL (sharedFoldersChanged()),
              this, SLOT (updateDetails()));

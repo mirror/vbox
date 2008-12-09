@@ -5089,7 +5089,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
         {
             /* We've got the "mutex", create a new registration dialog */
             VBoxRegistrationDlg *dlg =
-                new VBoxRegistrationDlg (&mRegDlg, 0);
+                new VBoxRegistrationDlg (&mRegDlg, mMainWindow);
             dlg->setAttribute (Qt::WA_DeleteOnClose);
             Assert (dlg == mRegDlg);
             mRegDlg->show();
