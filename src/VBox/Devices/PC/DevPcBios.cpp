@@ -459,7 +459,12 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
         rc = pHardDisk->pfnSetLCHSGeometry(pHardDisk, &LCHSGeometry);
         if (rc == VERR_VDI_IMAGE_READ_ONLY)
         {
-            LogRel(("DevPcBios: ATA failed to update LCHS geometry\n"));
+            LogRel(("DevPcBios: ATA failed to update LCHS geometry, read only\n"));
+            rc = VINF_SUCCESS;
+        }
+        else if (rc == VERR_PDM_GEOMETRY_NOT_SET)
+        {
+            LogRel(("DevPcBios: ATA failed to update LCHS geometry, backend refused\n"));
             rc = VINF_SUCCESS;
         }
     }
