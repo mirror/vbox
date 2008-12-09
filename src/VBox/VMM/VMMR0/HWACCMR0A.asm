@@ -1019,48 +1019,34 @@ BEGINPROC VMXR0StartVM32
     je near NAME(VMXR0StartVM32_32)
 
     ; stack frame.
-    push    ebp
-    mov     ebp, esp
-    and     esp, 0fffffff0h
     push    esi
     push    edi
-    push    ebx
-    push    ds
-    push    es
     push    fs
     push    gs
-    push    ss
-
-    ; retf frame (64 -> 32).
-    push    0
-    push    cs
-    push    0
-    push    .thunk32
 
     ; jmp far .thunk64
     db      0xea
     dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+
+ALIGNCODE(16)
 BITS 64
 .thunk64:
-    and     esp, 0ffffffffh
-    and     ebp, 0ffffffffh
-    mov     edi, [rbp + 8]              ; fResume
-    mov     esi, [rbp + 12]             ; pCtx
-    sub     rsp, 20h
+    sub     esp, 20h
+    mov     edi, [rsp + 20h + 14h]      ; fResume
+    mov     esi, [rsp + 20h + 18h]      ; pCtx
     call    NAME(VMXR0StartVM32_64)
-    add     rsp, 20h
-    retf
+    add     esp, 20h
+    jmp far [.fpthunk32 wrt rip]
+.fpthunk32:                             ; 16:32 Pointer to .thunk32.
+    dd      .thunk32, NAME(SUPR0AbsKernelCS)
+
 BITS 32
+ALIGNCODE(16)
 .thunk32:
-    pop     ss
     pop     gs
     pop     fs
-    pop     es
-    pop     ds
-    pop     ebx
     pop     edi
     pop     esi
-    leave
     ret
 ENDPROC   VMXR0StartVM32
 
