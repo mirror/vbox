@@ -116,8 +116,6 @@ public:
     void commit();
     void copyFrom (USBController *aThat);
 
-    HRESULT onMachineRegistered (BOOL aRegistered);
-
 #ifdef VBOX_WITH_USB
     HRESULT onDeviceFilterChange (USBDeviceFilter *aFilter,
                                   BOOL aActiveChanged = FALSE);

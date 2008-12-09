@@ -587,10 +587,6 @@ HRESULT Machine::registeredInit()
 
         /* commit all changes made during loading the settings file */
         commit();
-
-        /* VirtualBox will not call trySetRegistered(), so
-         * inform the USB proxy about all attached USB filters */
-        mUSBController->onMachineRegistered (TRUE);
     }
     else
     {
@@ -4150,9 +4146,6 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
     mData->mRegistered = aRegistered;
 
-    /* inform the USB proxy about all attached/detached USB filters */
-    mUSBController->onMachineRegistered (aRegistered);
-
     return S_OK;
 }
 
@@ -7266,11 +7259,11 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
 }
 
 /**
- *  Discards all changes to machine settings.
+ * Discards all changes to machine settings.
  *
- *  @param  aNotify whether to notify the direct session about changes or not
+ * @param aNotify   Whether to notify the direct session about changes or not.
  *
- *  @note Locks objects!
+ * @note Locks objects for writing!
  */
 void Machine::rollback (bool aNotify)
 {
@@ -7452,18 +7445,24 @@ void Machine::commit()
 }
 
 /**
- *  Copies all the hardware data from the given machine.
+ * Copies all the hardware data from the given machine.
  *
- *  @note
- *      This method must be called from under this object's lock.
- *  @note
- *      This method doesn't call #commit(), so all data remains backed up
- *      and unsaved.
+ * Currently, only called when the VM is being restored from a snapshot. In
+ * particular, this implies that the VM is not running during this method's
+ * call.
+ *
+ * @note This method must be called from under this object's lock.
+ *
+ * @note This method doesn't call #commit(), so all data remains backed up and
+ *       unsaved.
  */
 void Machine::copyFrom (Machine *aThat)
 {
-    AssertReturn (mType == IsMachine || mType == IsSessionMachine, (void) 0);
-    AssertReturn (aThat->mType == IsSnapshotMachine, (void) 0);
+    AssertReturnVoid (mType == IsMachine || mType == IsSessionMachine);
+    AssertReturnVoid (aThat->mType == IsSnapshotMachine);
+
+    AssertReturnVoid (mData->mMachineState < MachineState_Running ||
+                      mData->mMachineState >= MachineState_Discarding);
 
     mHWData.assignCopy (aThat->mHWData);
 
@@ -10167,8 +10166,8 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
                  it = diffs.begin(); it != diffs.end(); ++ it)
             {
                 /// @todo for now, we ignore errors since we've already
-                /// and therefore cannot fail. Later, we may want to report a
-                /// warning through the Progress object
+                /// discarded and therefore cannot fail. Later, we may want to
+                /// report a warning through the Progress object
                 HRESULT rc2 = (*it)->deleteStorageAndWait();
                 if (SUCCEEDED (rc2))
                     (*it)->uninit();
