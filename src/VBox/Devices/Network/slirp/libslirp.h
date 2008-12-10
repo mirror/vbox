@@ -35,7 +35,11 @@ void slirp_link_down(PNATState);
 void slirp_select_fill(PNATState pData, int *pnfds,
                        fd_set *readfds, fd_set *writefds, fd_set *xfds);
 
+#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC)
+void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp);
+#else
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds);
+#endif
 
 void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
 void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr);
@@ -50,41 +54,40 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
                    int guest_port);
 
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+
+# ifdef VBOX_WITH_SLIRP_ICMP
+
+/*
+ * ICMP handle state change
+ */
+#define VBOX_ICMP_EVENT_INDEX           0
+
 /**
  * This event is for
  *  - slirp_input
  *  - slirp_link_up
  *  - slirp_link_down
  *  - wakeup
- *
- * The event index should be smaller than VBOX_SOCKET_EVENT_INDEX to ensure
- * that we can detect if that event was set (WSAWaitForMultipleEvents()
- * returns the index of the first active event).
  */
-#define VBOX_WAKEUP_EVENT_INDEX         0
+#  define VBOX_WAKEUP_EVENT_INDEX       1
 
 /*
  * UDP/TCP socket state change (socket ready to receive, to send, ...)
  */
-#define VBOX_SOCKET_EVENT_INDEX         1
-
-#ifdef VBOX_WITH_SLIRP_ICMP
-/*
- * ICMP handle state change
- */
-#define VBOX_ICMP_EVENT_INDEX         2
+#  define VBOX_SOCKET_EVENT_INDEX       2
 
 /*
  * The number of events for WSAWaitForMultipleEvents().
  */
-#define VBOX_EVENT_COUNT                3
-#else
-/*
- * The number of events for WSAWaitForMultipleEvents().
- */
-#define VBOX_EVENT_COUNT                2
+#  define VBOX_EVENT_COUNT              3
 
-#endif
+# else
+
+#  define VBOX_WAKEUP_EVENT_INDEX       0
+#  define VBOX_SOCKET_EVENT_INDEX       1
+#  define VBOX_EVENT_COUNT              2
+
+# endif
 
 HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
