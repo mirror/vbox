@@ -139,9 +139,18 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     struct icmp *icp, *icp0;
     struct icmp_msg *icm = NULL;
     int found = 0;
-    struct socket *head_socket;
+    struct udphdr *udp;
+    struct tcphdr *tcp;
+    struct socket *head_socket, *so;
     struct in_addr laddr, faddr;
     u_int lport, fport;
+
+    laddr.s_addr = ~0;
+    faddr.s_addr = ~0;
+
+    lport = ~0;
+    fport = ~0;
+
 
     switch (ip->ip_p)
     {
@@ -162,10 +171,42 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     break;
                 }
             }
+        /*
+         *  for TCP and UDP logic little bit reverted, we try to find the HOST socket
+         *  from which the IP package has been sent.
+         */
         case IPPROTO_UDP:
             head_socket = &udb;
+            udp = (struct udphdr *)((char *)ip + (ip->ip_hl >> 2));
+            faddr.s_addr = ip->ip_dst.s_addr;
+            fport = udp->uh_dport;
+            laddr.s_addr = ip->ip_src.s_addr;
+            lport = udp->uh_sport;
         case IPPROTO_TCP:
-            head_socket = (head_socket != NULL ? head_socket : &tcb); /* head_socket could be initialized with udb*/
+            if (head_socket == NULL)
+            {
+                tcp = (struct tcphdr *)((char *)ip + (ip->ip_hl >> 2));
+                head_socket = &tcb; /* head_socket could be initialized with udb*/
+                faddr.s_addr = ip->ip_dst.s_addr;
+                fport = tcp->th_dport;
+                laddr.s_addr = ip->ip_src.s_addr;
+                lport = tcp->th_sport;
+            }
+            for (so = head_socket; so != head_socket; so = so->so_next)
+            {
+                    /* Should be reaplaced by hash here */
+                    if (so->so_faddr.s_addr == faddr.s_addr
+                        && so->so_fport == fport
+                        && so->so_hladdr.s_addr == laddr.s_addr
+                        && so->so_hlport == lport) {
+                            icm = malloc(sizeof(struct icmp_msg));
+                            icm->im_m = so->so_m;
+                            found = 1;
+                        }
+            }
+            break;
+        default:
+            LogRel(("%s:ICMP: unsupported protocol(%d)\n", __FUNCTION__, ip->ip_p));
     }
     if (found == 1)
         return icm;
