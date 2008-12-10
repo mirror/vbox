@@ -127,11 +127,10 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 #
 LIBRARIES.win += WinNetConfig
 WinNetConfig_TEMPLATE = VBOXR3STATIC
-WinNetConfig_DEFS     = _WIN32_WINNT=0x0500 _UNICODE UNICODE
+WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 WinNetConfig_SDKS     = WINPSDK W2K3DDK
 WinNetConfig_SOURCES  = \
 	win/WinNetConfig.cpp
-
 
 #
 # NetFltInstall
