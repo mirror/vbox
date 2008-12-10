@@ -211,7 +211,7 @@ ALIGN(16)
 .cached_read:
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  xAX, xBX
-    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
+    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
     dec     ecx
     jnz     .cached_read
 .no_cached_reads:
@@ -493,7 +493,7 @@ ALIGN(16)
 .cached_read:
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  xAX, xBX
-    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
+    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
     dec     ecx
     jnz     .cached_read
 .no_cached_reads:
