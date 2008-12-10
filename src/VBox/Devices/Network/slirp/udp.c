@@ -356,6 +356,10 @@ udp_attach(PNATState pData, struct socket *so)
       /* enable broadcast for later use */
       setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
       insque(pData, so,&udb);
+#ifdef VBOX_WITH_SLIRP_ICMP
+      so->so_hlport = addr.sin_port;
+      so->so_hladdr.s_addr = addr.sin_addr.s_addr;
+#endif
     }
   }
   return(so->s);
