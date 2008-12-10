@@ -28,6 +28,8 @@
 
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
+#define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, (fdset)))
+
 # ifdef VBOX_WITH_SLIRP_ICMP
 #  define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
@@ -70,6 +72,19 @@
         continue;                                                           \
     }
 
+# define readfds_win FD_READ
+# define readfds_win_bit FD_READ_BIT
+
+# define writefds_win FD_WRITE
+# define writefds_win_bit FD_WRITE_BIT
+
+# define xfds_win FD_OOB
+# define xfds_win_bit FD_OOB_BIT
+
+# define DO_CHECK_FD_SET(so, events, fdset)  \
+    (((events).lNetworkEvents & fdset ## _win) && ((event).iErrorCode[fdset ## _win_bit] == 0))
+
+
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
@@ -86,6 +101,9 @@
 
 #define POLL_UDP_EVENTS(rc, error, so, events) \
     DO_POLL_EVENTS((rc), (error), (so), (events), UDP)
+
+#define CHECK_FD_SET(so, events, set)           \
+    (DO_CHECK_FD_SET((so), (events), set))
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -710,12 +728,9 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
              * This will soread as well, so no need to
              * test for readfds below if this succeeds
              */
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-            if (FD_ISSET(so->s, xfds))
-#else
+
             /* out-of-band data */
-            if ((NetworkEvents.lNetworkEvents & FD_OOB) && NetworkEvents.iErrorCode[FD_OOB_BIT] == 0)
-#endif
+            if (CHECK_FD_SET(so, NetworkEvents, xfds))
             {
                 sorecvoob(pData, so);
             }
@@ -723,11 +738,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             /*
              * Check sockets for reading
              */
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-            else if (FD_ISSET(so->s, readfds))
-#else
-            else if ((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0))
-#endif
+            else if (CHECK_FD_SET(so, NetworkEvents, readfds))
             {
                 /*
                  * Check for incoming connections
@@ -770,11 +781,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             /*
              * Check sockets for writing
              */
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-            if (FD_ISSET(so->s, writefds))
-#else
-            if ((NetworkEvents.lNetworkEvents & FD_WRITE) && (NetworkEvents.iErrorCode[FD_WRITE_BIT] == 0))
-#endif
+            if (CHECK_FD_SET(so, NetworkEvents, writefds))
             {
                 /*
                  * Check for non-blocking, still-connecting sockets
@@ -883,11 +890,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 
             POLL_UDP_EVENTS(rc, error, so, NetworkEvents);
 
-#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
-            if (so->s != -1 && FD_ISSET(so->s, readfds))
-#else
-            if (((NetworkEvents.lNetworkEvents & FD_READ) && (NetworkEvents.iErrorCode[FD_READ_BIT] == 0)))
-#endif
+            if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
             {
                 sorecvfrom(pData, so);
             }
