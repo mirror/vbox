@@ -2505,7 +2505,7 @@ ResumeExecution:
 
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-        rc = VMXReadCachedVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
+        rc = VMXReadVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
         Assert(((exitQualification >> 7) & 3) != 2);
 
@@ -2556,7 +2556,7 @@ ResumeExecution:
 
         Assert(pVM->hwaccm.s.fNestedPaging);
 
-        rc = VMXReadCachedVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
+        rc = VMXReadVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
 
         Log(("VMX_EXIT_EPT_MISCONFIG for %VGp\n", GCPhys));
