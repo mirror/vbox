@@ -96,7 +96,7 @@ ALIGN(16)
     dec     xCX
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    test    xCX, 0
+    cmp     xCX, 0
     jnz     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
@@ -213,7 +213,7 @@ ALIGN(16)
     dec     xCX
     mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    test    xCX, 0
+    cmp     xCX, 0
     jnz     .cached_read
 .no_cached_reads:
 %endif
@@ -346,7 +346,7 @@ ALIGN(16)
     dec     xCX
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    test    xCX, 0
+    cmp     xCX, 0
     jnz     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
@@ -496,7 +496,7 @@ ALIGN(16)
     dec     xCX
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    test    xCX, 0
+    cmp      xCX, 0
     jnz     .cached_read
 .no_cached_reads:
 %endif
