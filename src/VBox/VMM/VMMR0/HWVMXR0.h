@@ -272,14 +272,15 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
  * @param   idxField    VMCS field
  * @param   u64Val      Value
  */
-DECLINLINE(void) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
+DECLINLINE(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
     PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
 
     Assert(pCache->Write.cValidEntries < VMCSCACHE_MAX_ENTRY - 1);
-    pCache->Write.aField[pCache->cValidEntries]    = idxField;
-    pCache->Write.aFieldVal[pCache->cValidEntries] = u64Val;
+    pCache->Write.aField[pCache->Write.cValidEntries]    = idxField;
+    pCache->Write.aFieldVal[pCache->Write.cValidEntries] = u64Val;
     pCache->Write.cValidEntries++;
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -290,11 +291,11 @@ DECLINLINE(void) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t 
  * @param   val         Field value
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
-# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
-# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
+# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteCachedVMCSEx(pVCpu, idxField, (uVal))
+# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteCachedVMCSEx(pVCpu, idxField, (uVal))
 #else
-# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteVMCS(idxField, uVal)
-# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, uVal)
+# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteVMCS(idxField, (uVal))
+# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, (uVal))
 #endif
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -305,7 +306,7 @@ DECLINLINE(void) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t 
  * @param   idxField    VMCS cache index (not VMCS field index!)
  * @param   pVal        Value
  */
-DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, uint64_t *pVal)
+DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTCCUINTREG *pVal)
 {
     Assert(idxCache <= VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX);
     *pVal = pVCpu->hwaccm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
@@ -321,7 +322,7 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, uint64_t *p
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 # define VMXReadCachedVMCS(idxField, pVal)              VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
-# define VMXReadCachedVMCS(idxField, pVal)              VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
+# define VMXReadCachedVMCS64(idxField, pVal)            VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
 #else
 # define VMXReadCachedVMCS(idxField, pVal)              VMXReadVMCS(idxField, pVal)
 # define VMXReadCachedVMCS64(idxField, pVal)            VMXReadVMCS64(idxField, pVal)

@@ -27,6 +27,7 @@
 %include "VBox/hwacc_vmx.mac"
 %include "VBox/cpum.mac"
 %include "VBox/x86.mac"
+%include "../HWACCMInternal.mac"
 
 %ifdef RT_OS_OS2 ;; @todo fix OMF support in yasm and kick nasm out completely.
  %macro vmwrite 2,

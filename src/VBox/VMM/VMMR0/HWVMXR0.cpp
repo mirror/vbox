@@ -1018,9 +1018,10 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * Prefetch the 4 PDPT pointers (PAE and nested paging only)
  *
  * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
-static void vmxR0PrefetchPAEPdptrs(PVM pVM, PCPUMCTX pCtx)
+static void vmxR0PrefetchPAEPdptrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (CPUMIsGuestInPAEModeEx(pCtx))
     {
@@ -1428,7 +1429,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
                 val = pCtx->cr3;
                 /* Prefetch the four PDPT entries in PAE mode. */
-                vmxR0PrefetchPAEPdptrs(pVM, pCtx);
+                vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
             }
         }
         else
@@ -1637,7 +1638,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             PGMUpdateCR3(pVM, val);
         }
         /* Prefetch the four PDPT entries in PAE mode. */
-        vmxR0PrefetchPAEPdptrs(pVM, pCtx);
+        vmxR0PrefetchPAEPdptrs(pVM, pVCpu, pCtx);
     }
 
     /* Sync back DR7 here. */
