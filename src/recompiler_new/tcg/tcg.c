@@ -77,7 +77,6 @@
 #endif
 #endif
 
-
 static void patch_reloc(uint8_t *code_ptr, int type, 
                         tcg_target_long value, tcg_target_long addend);
 
