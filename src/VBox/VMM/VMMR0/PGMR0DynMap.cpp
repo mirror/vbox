@@ -1237,7 +1237,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     {
         X86PGUINT       uOld  = paPages[iFreePage].uPte.pLegacy->u;
         X86PGUINT       uOld2 = uOld; NOREF(uOld2);
-        X86PGUINT       uNew  = (uOld & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+        X86PGUINT       uNew  = (uOld & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                               | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                               | (HCPhys & X86_PTE_PG_MASK);
         while (!ASMAtomicCmpXchgExU32(&paPages[iFreePage].uPte.pLegacy->u, uNew, uOld, &uOld))
@@ -1248,7 +1248,7 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
     {
         X86PGPAEUINT    uOld  = paPages[iFreePage].uPte.pPae->u;
         X86PGPAEUINT    uOld2 = uOld; NOREF(uOld2);
-        X86PGPAEUINT    uNew  = (uOld & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+        X86PGPAEUINT    uNew  = (uOld & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                               | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                               | (HCPhys & X86_PTE_PAE_PG_MASK);
         while (!ASMAtomicCmpXchgExU64(&paPages[iFreePage].uPte.pPae->u, uNew, uOld, &uOld))
