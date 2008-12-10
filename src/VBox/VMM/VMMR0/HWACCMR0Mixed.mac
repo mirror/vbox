@@ -210,8 +210,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 ALIGN(16)    
 .cached_read:
     mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX*4]
-    vmread  xAX, xBX
-    mov     [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
+    vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
     dec     ecx
     jnz     .cached_read
 .no_cached_reads:
@@ -492,8 +491,7 @@ ALIGNCODE(16)
 ALIGN(16)
 .cached_read:
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
-    vmread  xAX, xBX
-    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
+    vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
     dec     ecx
     jnz     .cached_read
 .no_cached_reads:
