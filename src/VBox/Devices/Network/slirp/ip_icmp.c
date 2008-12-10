@@ -197,6 +197,10 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     register struct ip *ip=mtod(m, struct ip *);
     int icmplen=ip->ip_len;
     int status;
+#ifdef VBOX_WITH_SLIRP_ICMP
+    uint32_t dst;
+#endif
+
     /* int code; */
 
     DEBUG_CALL("icmp_input");
@@ -241,10 +245,13 @@ freeit:
 #endif /* !VBOX_WITH_SLIRP_ICMP */
 
             ip->ip_len += hlen;              /* since ip_input subtracts this */
-            if (ip->ip_dst.s_addr == alias_addr.s_addr)
+            dst = ip->ip_dst.s_addr;
+            if (dst == alias_addr.s_addr)
             {
 #ifdef VBOX_WITH_SLIRP_ICMP
                 icp->icmp_type = ICMP_ECHOREPLY;
+                ip->ip_dst.s_addr = ip->ip_src.s_addr;
+                ip->ip_src.s_addr = dst;
 #endif /* VBOX_WITH_SLIRP_ICMP */
                 icmp_reflect(pData, m);
             }
