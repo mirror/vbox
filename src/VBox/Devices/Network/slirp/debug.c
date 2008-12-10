@@ -232,6 +232,22 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
            (ip >> 24), (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
 }
 
+static DECLCALLBACK(size_t)
+print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+             const char *pszType, void const *pvValue,
+             int cchWidth, int cchPrecision, unsigned fFlags,
+             void *pvUser)
+{
+    struct socket *so = (struct socket*)pvValue;
+    uint32_t ip;
+
+    AssertReturn(strcmp(pszType, "natsock") == 0, 0);
+
+    ip = ntohl(so->so_faddr.s_addr);
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d: state=%04x ip=%u.%u.%u.%u",
+           so->s, so->so_state, (ip >> 24), (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+}
+
 int 
 debug_init() 
 {
@@ -245,6 +261,8 @@ debug_init()
          * XXX Move this to IPRT using RTNETADDRIPV4. Use the specifier %RNAipv4.
          */
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
+        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
         AssertRC(rc);
         g_fFormatRegistered = 1;
     }
