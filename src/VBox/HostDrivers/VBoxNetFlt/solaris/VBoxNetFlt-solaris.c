@@ -1067,6 +1067,21 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                     break;
                 }
 
+                case M_IOCNAK:
+                {
+                    /*
+                     * Swallow our fake raw/fast path mode request not acknowledged.
+                     */
+                    struct iocblk *pIOC = (struct iocblk *)pMsg->b_rptr;
+                    if (pIOC->ioc_id == pPromiscStream->ModeReqId)
+                    {
+                        pPromiscStream->fRawMode = false;
+                        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: WARNING! Mode not acknowledged. RawMode is %s\n",
+                                pPromiscStream->fRawMode ? "ON" : "OFF"));
+                    }
+                    break;
+                }
+
                 case M_FLUSH:
                 {
                     /*
