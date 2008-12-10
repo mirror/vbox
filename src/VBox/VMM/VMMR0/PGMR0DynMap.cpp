@@ -1422,7 +1422,7 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
             else if (paPages[iPage].HCPhys != NIL_RTHCPHYS)
             {
                 CHECK_RET(!(paPages[iPage].HCPhys & PAGE_OFFSET_MASK), ("#%u: %RHp\n", iPage, paPages[iPage].HCPhys));
-                X86PGUINT uPte = (paSavedPTEs[iPage] & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+                X86PGUINT uPte = (paSavedPTEs[iPage] & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                                | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                                | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
                 CHECK_RET(paPages[iPage].uPte.pLegacy->u == uPte,
@@ -1456,7 +1456,7 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
             else if (paPages[iPage].HCPhys != NIL_RTHCPHYS)
             {
                 CHECK_RET(!(paPages[iPage].HCPhys & PAGE_OFFSET_MASK), ("#%u: %RHp\n", iPage, paPages[iPage].HCPhys));
-                X86PGPAEUINT uPte = (paSavedPTEs[iPage] & X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT)
+                X86PGPAEUINT uPte = (paSavedPTEs[iPage] & (X86_PTE_G | X86_PTE_PAT | X86_PTE_PCD | X86_PTE_PWT))
                                   | X86_PTE_P | X86_PTE_RW | X86_PTE_A | X86_PTE_D
                                   | (paPages[iPage].HCPhys & X86_PTE_PAE_PG_MASK);
                 CHECK_RET(paPages[iPage].uPte.pPae->u == uPte,
