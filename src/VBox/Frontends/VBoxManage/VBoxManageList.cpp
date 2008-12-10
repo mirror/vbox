@@ -40,6 +40,18 @@
 #include "VBoxManage.h"
 using namespace com;
 
+#ifdef VBOX_WITH_HOSTNETIF_API
+static const char *getHostIfTypeText(HostNetworkInterfaceType_T enmType)
+{
+    switch (enmType)
+    {
+        case HostNetworkInterfaceType_Ethernet: return "Ethernet";
+        case HostNetworkInterfaceType_PPP: return "PPP";
+        case HostNetworkInterfaceType_SLIP: return "SLIP";
+    }
+    return "Unknown";
+}
+#endif
 
 int handleList(int argc, char *argv[],
                ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
@@ -197,6 +209,34 @@ int handleList(int argc, char *argv[],
                 Guid interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
                 RTPrintf("GUID:        %lS\n\n", Bstr(interfaceGuid.toString()).raw());
+#ifdef VBOX_WITH_HOSTNETIF_API
+            ULONG IPAddress;
+            networkInterface->COMGETTER(IPAddress)(&IPAddress);
+            RTPrintf("IPAddress:       %d.%d.%d.%d\n",
+                     ((uint8_t*)&IPAddress)[0],
+                     ((uint8_t*)&IPAddress)[1],
+                     ((uint8_t*)&IPAddress)[2],
+                     ((uint8_t*)&IPAddress)[3]);
+            ULONG NetworkMask;
+            networkInterface->COMGETTER(NetworkMask)(&NetworkMask);
+            RTPrintf("NetworkMask:     %d.%d.%d.%d\n",
+                     ((uint8_t*)&NetworkMask)[0],
+                     ((uint8_t*)&NetworkMask)[1],
+                     ((uint8_t*)&NetworkMask)[2],
+                     ((uint8_t*)&NetworkMask)[3]);
+            Bstr IPV6Address;
+            networkInterface->COMGETTER(IPV6Address)(IPV6Address.asOutParam());
+            RTPrintf("IPV6Address:     %lS\n", IPV6Address.raw());
+            Bstr HardwareAddress;
+            networkInterface->COMGETTER(HardwareAddress)(HardwareAddress.asOutParam());
+            RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
+            HostNetworkInterfaceType_T Type;
+            networkInterface->COMGETTER(Type)(&Type);
+            RTPrintf("Type:            %s\n", getHostIfTypeText(Type));
+            HostNetworkInterfaceStatus_T Status;
+            networkInterface->COMGETTER(Status)(&Status);
+            RTPrintf("Status:          %s\n\n", Status ? "Down":"Up");
+#endif
             }
         }
     }

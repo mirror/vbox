@@ -76,6 +76,9 @@ if1of ($(KBUILD_TARGET), linux freebsd solaris)
 #  VBOX_MAIN_DEFS += VBOX_MAIN_AUTOLOCK_TRAP
 # endif
 endif
+ifdef VBOX_WITH_HOSTNETIF_API
+ VBOX_MAIN_DEFS += VBOX_WITH_HOSTNETIF_API
+endif
 
 VBOX_IDL_FILE.MSCOM    = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
 VBOX_IDL_FILE.XPCOM    = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl

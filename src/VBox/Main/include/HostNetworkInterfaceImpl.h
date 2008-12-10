@@ -26,6 +26,9 @@
 
 #include "VirtualBoxBase.h"
 #include "Collection.h"
+#ifdef VBOX_WITH_HOSTNETIF_API
+#include "iprt/netif.h"
+#endif
 
 class ATL_NO_VTABLE HostNetworkInterface :
     public VirtualBoxBaseNEXT,
@@ -55,10 +58,19 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Bstr interfaceName, Guid guid);
+#ifdef VBOX_WITH_HOSTNETIF_API
+    HRESULT init (PRTNETIFINFO pIfs);
+#endif
 
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name)) (BSTR *aInterfaceName);
     STDMETHOD(COMGETTER(Id)) (OUT_GUID aGuid);
+    STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
+    STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
+    STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
+    STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
+    STDMETHOD(COMGETTER(Type)) (HostNetworkInterfaceType_T *aType);
+    STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"HostNetworkInterface"; }
@@ -66,6 +78,20 @@ public:
 private:
     const Bstr mInterfaceName;
     const Guid mGuid;
+    struct Data
+    {
+        Data() : IPAddress (0), networkMask (0),
+            type (HostNetworkInterfaceType_Unknown),
+            status(HostNetworkInterfaceStatus_Down) {}
+        
+        ULONG IPAddress;
+        ULONG networkMask;
+        Bstr IPV6Address;
+        Bstr hardwareAddress;
+        HostNetworkInterfaceType_T type;
+        HostNetworkInterfaceStatus_T status;
+    } m;
+
 };
 
 COM_DECL_READONLY_ENUM_AND_COLLECTION_BEGIN (HostNetworkInterface)

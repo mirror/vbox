@@ -115,6 +115,9 @@ extern "C" char *getfullrawname(char *);
 # include <iprt/path.h>
 # include <iprt/ctype.h>
 #endif
+#ifdef VBOX_WITH_HOSTNETIF_API
+#include <iprt/netif.h>
+#endif
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 # include <VBox/WinNetConfig.h>
@@ -757,6 +760,21 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
 
     std::list <ComObjPtr <HostNetworkInterface> > list;
 
+#ifdef VBOX_WITH_HOSTNETIF_API
+    PRTNETIFINFO pIfs = RTNetIfList();
+    while (pIfs)
+    {
+        ComObjPtr<HostNetworkInterface> IfObj;
+        IfObj.createObject();
+        if (SUCCEEDED(IfObj->init(pIfs)))
+            list.push_back(IfObj);
+
+        /* next, free current */
+        void *pvFree = pIfs;
+        pIfs = pIfs->pNext;
+        RTMemFree(pvFree);
+    }
+#else
 # if defined(RT_OS_DARWIN)
     PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
     while (pEtherNICs)
@@ -1044,7 +1062,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
         close(sock);
     }
 # endif /* RT_OS_LINUX */
-
+#endif
     ComObjPtr <HostNetworkInterfaceCollection> collection;
     collection.createObject();
     collection->init (list);
