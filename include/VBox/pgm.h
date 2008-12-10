@@ -36,6 +36,10 @@
 #include <VBox/vmapi.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
+# include <iprt/err.h>
+# include <VBox/param.h>
+#endif
 
 __BEGIN_DECLS
 
@@ -422,13 +426,13 @@ VMMDECL(RTR3PTR)    PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT c
 /** Default value of the flag, behaves the same way as PGMPhysGCPhys2R3Ptr. */
 #define PGMPHYS_TRANSLATION_FLAG_DEFAULT           0
 /** Indicates that for monitored pages with physical handlers
- * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned, 
- * so address translation routines must fallback to PGM functions for 
+ * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned,
+ * so address translation routines must fallback to PGM functions for
  * access memory. */
 #define PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED   RT_BIT_32(0)
 /** Indicates that for monitored pages with virtual handlers
- * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned, 
- * so address translation routines must fallback to PGM functions for 
+ * VERR_PGM_PHYS_PAGE_RESERVED error code should be returned,
+ * so address translation routines must fallback to PGM functions for
  * access memory. */
 #define PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED   RT_BIT_32(1)
 /** @} */
@@ -457,10 +461,29 @@ VMMDECL(unsigned)   PGMAssertCR3(PVM pVM, uint64_t cr3, uint64_t cr4);
 VMMDECL(int)        PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-VMMDECL(int)        PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
+
+/**
+ * Temporarily maps one host page specified by HC physical address, returning
+ * pointer within the page.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * @returns VBox status.
+ * @param   pVM         VM handle.
+ * @param   HCPhys      HC Physical address of the page.
+ * @param   ppv         Where to store the address corresponding to HCPhys.
+ */
+DECLINLINE(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
+{
+    int rc = PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
+    if (RT_SUCCESS(rc))
+        *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
+    return rc;
+}
 #endif
 
 
