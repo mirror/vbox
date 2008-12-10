@@ -705,6 +705,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
 VBoxConsoleWnd::~VBoxConsoleWnd()
 {
+    closeView();
+
 #ifdef Q_WS_MAC
     /* release the dock images */
     if (dockImgStatePaused)
@@ -1129,46 +1131,12 @@ void VBoxConsoleWnd::closeView()
         return;
     }
 
-    idle_timer->stop();
-    idle_timer->disconnect (SIGNAL (timeout()), this, SLOT (updateDeviceLights()));
-
-    hide();
-
-    /* save the position of the window and some options */
-    {
-        CMachine machine = csession.GetMachine();
-        QString winPos = QString ("%1,%2,%3,%4")
-            .arg (mNormalGeo.x()).arg (mNormalGeo.y())
-            .arg (mNormalGeo.width()).arg (mNormalGeo.height());
-        if (isMaximized() || (mIsFullscreen && was_max)
-                          || (mIsSeamless && was_max))
-            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
-
-        machine.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
-
-        machine.SetExtraData (VBoxDefs::GUI_Fullscreen,
-                              mVmFullscreenAction->isChecked() ? "on" : "off");
-        machine.SetExtraData (VBoxDefs::GUI_Seamless,
-                              mVmSeamlessAction->isChecked() ? "on" : "off");
-        machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
-                              mVmAutoresizeGuestAction->isChecked() ? "on" : "off");
-    }
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* close & destroy the debugger gui */
-    dbgDestroy();
-#endif
-    /* Make sure all events are delievered */
-    qApp->processEvents();
-
     console->detach();
-
     centralWidget()->layout()->removeWidget (console);
     delete console;
     console = 0;
     csession.Close();
     csession.detach();
-    emit closing();
 
     LogFlowFuncLeave();
 }
@@ -1569,7 +1537,42 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
 #ifndef VBOX_GUI_SEPARATE_VM_PROCESS
         vboxGlobal().selectorWnd().show();
 #endif
-        QTimer::singleShot (0, this, SLOT (closeView()));
+
+        /* Stop LED update timer */
+        idle_timer->stop();
+        idle_timer->disconnect (SIGNAL (timeout()), this, SLOT (updateDeviceLights()));
+
+        /* Hide console window */
+        hide();
+
+        /* Save the position of the window and some options */
+        CMachine machine = csession.GetMachine();
+        QString winPos = QString ("%1,%2,%3,%4")
+            .arg (mNormalGeo.x()).arg (mNormalGeo.y())
+            .arg (mNormalGeo.width()).arg (mNormalGeo.height());
+        if (isMaximized() || (mIsFullscreen && was_max)
+                          || (mIsSeamless && was_max))
+            winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
+
+        machine.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
+
+        machine.SetExtraData (VBoxDefs::GUI_Fullscreen,
+                              mVmFullscreenAction->isChecked() ? "on" : "off");
+        machine.SetExtraData (VBoxDefs::GUI_Seamless,
+                              mVmSeamlessAction->isChecked() ? "on" : "off");
+        machine.SetExtraData (VBoxDefs::GUI_AutoresizeGuest,
+                              mVmAutoresizeGuestAction->isChecked() ? "on" : "off");
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+        /* Close & destroy the debugger GUI */
+        dbgDestroy();
+#endif
+
+        /* Make sure all events are delievered */
+        qApp->processEvents();
+
+        /* Notify all the top-level dialogs about closing */
+        emit closing();
     }
 
     LogFlowFunc (("accepted=%d\n", e->isAccepted()));
