@@ -56,9 +56,11 @@
 # include <sys/time.h>
 # include <stdio.h>
 # include <sys/types.h>
-# ifdef RT_OS_LINUX
+# if defined(RT_OS_LINUX)
 #  include <sys/capability.h>
 #  include <sys/prctl.h>
+# elif defined(RT_OS_SOLARIS)
+#  include <priv.h>
 # endif
 # include <pwd.h>
 # ifdef RT_OS_DARWIN
@@ -594,6 +596,54 @@ static void supR3HardenedMainDropPrivileges(void)
      */
     if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
         prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+
+# elif defined(RT_OS_SOLARIS)
+
+    /*
+     * Add net_rawaccess privilege to permitted, effective and inheritable privileges
+     * before dropping root privileges.
+     */
+    int rc = 0;
+    priv_set_t *pPrivSetPermitted = priv_allocset();
+    if (pPrivSetPermitted)
+    {
+        priv_set_t *pPrivSetEffective = priv_allocset();
+        if (pPrivSetEffective)
+        {
+            priv_set_t *pPrivSetInherit   = priv_allocset();
+            if (pPrivSetInherit)
+            {
+                rc = getppriv(PRIV_PERMITTED, pPrivSetPermitted);
+                if (!rc)
+                {
+                    rc = getppriv(PRIV_EFFECTIVE, pPrivSetEffective);
+                    if (!rc)
+                    {
+                        rc = getppriv(PRIV_INHERITABLE, pPrivSetInherit);
+                        if (!rc)
+                        {
+                            priv_addset(pPrivSetPermitted, PRIV_NET_RAWACCESS);
+                            priv_addset(pPrivSetEffective, PRIV_NET_RAWACCESS);
+                            priv_addset(pPrivSetInherit, PRIV_NET_RAWACCESS);
+                        }
+                        else                
+                            supR3HardenedFatal("SUPR3HardenedMain: failed to get inheritable privilege set rc=%d.\n", rc);
+                    }
+                    else
+                        supR3HardenedFatal("SUPR3HardenedMain: failed to get effective privilege set rc=%d.\n", rc);
+                }
+                else
+                    supR3HardenedFatal("SUPR3HardenedMain: failed to get permitted privilege set rc=%d.\n", rc);                
+            }
+            else
+                supR3HardenedFatal("SUPR3HardenedMain: failed to allocate inheritable privilege set.\n");
+        }
+        else
+            supR3HardenedFatal("SUPR3HardenedMain: failed to allocate effective privilege set.\n");
+    }
+    else
+        supR3HardenedFatal("SUPR3HardenedMain: failed to allocate permitted privilege set.\n");
+    
 # endif
 
     /*
