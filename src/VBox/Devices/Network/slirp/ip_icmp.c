@@ -197,9 +197,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     register struct ip *ip=mtod(m, struct ip *);
     int icmplen=ip->ip_len;
     int status;
-#ifdef VBOX_WITH_SLIRP_ICMP
     uint32_t dst;
-#endif
 
     /* int code; */
 
