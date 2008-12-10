@@ -12,7 +12,7 @@
 #ifdef __sun__
 #include <sys/filio.h>
 #endif
-#if defined(VBOX_WITH_SLIRP_ICMP) && defined (RT_OS_WINDOWS) 
+#if defined(VBOX_WITH_SLIRP_ICMP) && defined (RT_OS_WINDOWS)
 #include <iphlpapi.h>
 #include <icmpapi.h>
 #endif
@@ -438,7 +438,7 @@ sorecvfrom(PNATState pData, struct socket *so)
     if (so->so_type == IPPROTO_ICMP)
     {
         /* This is a "ping" reply */
-#if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)) 
+#if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS))
         sorecvfrom_icmp_unix(pData, so);
 #endif
 #if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
@@ -779,7 +779,7 @@ sofwdrain(struct socket *so)
 }
 
 #ifdef VBOX_WITH_SLIRP_ICMP
-static void 
+static void
 send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
 {
     struct ip *ip;
@@ -793,7 +793,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = (struct ip *)buff;
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
 
-    Assert(icp->icmp_type == ICMP_ECHOREPLY || icp->icmp_type == ICMP_TIMXCEED);
+    if (icp->icmp_type != ICMP_ECHOREPLY && icp->icmp_type != ICMP_TIMXCEED)
+    {
+        LogRel(("received ICMP(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
+        return;
+    }
 
     if (icp->icmp_type == ICMP_TIMXCEED)
         ip = &icp->icmp_ip;
@@ -848,7 +852,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
 }
 
 # ifdef RT_OS_WINDOWS
-static void 
+static void
 sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
     int len;
@@ -871,7 +875,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
     for (i = 0; i < len; ++i)
     {
-        switch(icr[i].Status) 
+        switch(icr[i].Status)
         {
             case IP_DEST_HOST_UNREACHABLE:
                 code = (code != ~0 ? code : ICMP_UNREACH_HOST);
@@ -891,7 +895,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 ip->ip_p = IPPROTO_ICMP;
                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
                 ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
-                ip->ip_ttl = icr[i].Options.Ttl; 
+                ip->ip_ttl = icr[i].Options.Ttl;
 
                 icp = (struct icmp *)&ip[1]; /* no options */
                 icp->icmp_type = ICMP_ECHOREPLY;
@@ -900,14 +904,14 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icp->icmp_seq = so->so_icmp_seq;
                 memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
 
-                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize; 
+                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize;
                 m->m_len = ip->ip_len;
 
                 icmp_reflect(pData, m);
             case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
 
                 ip_broken = icr[i].Data;
-                icm = icmp_find_original_mbuf(pData, ip_broken);     
+                icm = icmp_find_original_mbuf(pData, ip_broken);
                 if (icm == NULL) {
                     LogRel(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
                     return;
@@ -917,7 +921,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 ip->ip_ttl = icr[i].Options.Ttl;
                 src = ip->ip_src.s_addr;
                 ip->ip_dst.s_addr = src;
-                ip->ip_dst.s_addr = icr[i].Address; 
+                ip->ip_dst.s_addr = icr[i].Address;
                 icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
                 ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
                 memcpy(icp->icmp_data, ip_broken, (ip_broken->ip_hl << 2) + 64);
