@@ -26,10 +26,10 @@ include $(KBUILD_PATH)/subheader.kmk
 # thing as C99, a lot of GCC extensions deployed by QEMU and calling convention
 # differences) to cross-compile code to Linux/ELF and dynamically generate invocation wrappers.
 if1of (win.amd64, $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
- REM_MOD              += VBoxREM2
+ REM_MOD              = VBoxREM2
  SYSMODS              += VBoxREM2
 else
- REM_MOD              += VBoxREM
+ REM_MOD              = VBoxREM
 endif
 
 TEMPLATE_DUMMY = dummy template (move to kBuild)
@@ -39,7 +39,7 @@ ifeq ($(KBUILD_TARGET), win)
  $(REM_MOD)_TEMPLATE        = DUMMY
  $(REM_MOD)_SDKS.win.x86    = W32API
  $(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
- $(REM_MOD)_CFLAGS          = -Wall -g
+ $(REM_MOD)_CFLAGS          = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasing
  $(REM_MOD)_CFLAGS.debug    = -O0
  $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
  $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
@@ -75,6 +75,19 @@ else
 
  IMPORT_LIBS          += VBoxREM
 endif
+
+# For 32-bit targets we build 2 REM DLLs: 
+#  with 64-bit support (slow and buggy at the moment) VBOXREM64
+#  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM
+# During the runtime, we load appropriate library, depending on guest settings.
+if1of (x86, $(KBUILD_TARGET_ARCH))
+ USE_VBOXREM64 := 1
+else
+ USE_VBOXREM64 :=
+endif
+
+# Disable for now, while debugged enough
+USE_VBOXREM64 = 
 
 OTHER_CLEAN          +=
 
@@ -177,6 +190,25 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 # Temporary hack, to allow running with oldish GCC
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
 
+ifdef USE_VBOXREM64
+ # Currently we never mix USE_VBOXREM64 and VBoxREM2, so can always use VBoxREM
+ # @todo: assert for that? use $(REM_MOD) instead? 
+ # But loading logic got to be updated too.
+ ifeq ($(KBUILD_TARGET), win)
+  DLL                  += VBoxREM64
+ else
+  IMPORT_LIBS          += VBoxREM64
+ endif
+ # Something fishy goes on within kmk's tool selection algorithm/variable evaluation
+ # as for now g++ is always selected to compile VBoxREM64, while VBoxREM compiled with gcc
+ VBoxREM64_TOOL = $(VBoxREM_TOOL)
+ VBoxREM64_TEMPLATE = $(VBoxREM_TEMPLATE)
+ VBoxREM64_CFLAGS += $(VBoxREM_CFLAGS)
+ VBoxREM64_DEFS += $(VBoxREM_DEFS) VBOX_ENABLE_VBOXREM64
+ VBoxREM64_INCS += $(VBoxREM_INCS)
+ VBoxREM64_LIBS += $(VBoxREM_LIBS)
+ VBoxREM64_SOURCES = $(VBoxREM_SOURCES)
+endif
 
 ifdef USE_REM_IMP
 #
@@ -202,7 +234,6 @@ VBoxREMImp_CLEAN            = $(PATH_VBoxREMImp)/VBoxREMImp.c
  ifneq ($(filter-out darwin os2 win,$(KBUILD_TARGET)),)
 VBoxREMImp_SONAME           = VBoxREM$(SUFF_DLL)
  endif
-VBoxREMImp_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)

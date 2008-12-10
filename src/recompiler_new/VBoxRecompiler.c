@@ -3492,7 +3492,7 @@ bool remR3DisasBlock(CPUState *env, int f32BitCode, int nrInstructions, char *ps
     /*
      * Disassemble.
      */
-    off = env->eip - (RTGCUINTPTR)pvPC;
+    off = env->eip - (RTGCUINTPTR)(uintptr_t)pvPC;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
     //Cpu.dwUserData[0] = (uintptr_t)pVM;
@@ -3593,7 +3593,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
     /*
      * Disassemble.
      */
-    off = env->eip - (RTGCUINTPTR)pvPC;
+    off = env->eip - (RTGCUINTPTR)(uintptr_t)pvPC;
     Cpu.mode = f32BitCode ? CPUMODE_32BIT : CPUMODE_16BIT;
     Cpu.pfnReadBytes = NULL;            /** @todo make cs:eip reader for the disassembler. */
     //Cpu.dwUserData[0] = (uintptr_t)pVM;
