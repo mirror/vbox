@@ -202,16 +202,16 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; saved pCache
     
-    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
     je      .no_cached_reads
     jmp     .cached_read
 
 ALIGN(16)    
 .cached_read:
-    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
+    mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  xAX, xBX
-    mov     [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
+    mov     [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xBX
     dec     ecx
     jnz     .cached_read
 .no_cached_reads:
