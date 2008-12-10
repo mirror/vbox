@@ -261,6 +261,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(DEPTH)/include/VBox/vm.mac \
 		$(VBOX_PATH_VMM_SRC)/CPUMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/TRPMInternal.mac \
+		$(VBOX_PATH_VMM_SRC)/HWACCMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
 		$(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG) \
