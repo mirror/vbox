@@ -83,6 +83,7 @@ BUILD_LIBXML2=
 BUILD_LIBXSLT=
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
+LIBCAP="-lcap"
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 INCX11="/usr/local/include"
 LIBXCURSOR="-lXcursor"
@@ -1568,6 +1569,31 @@ check_compiler_h()
   fi
 }
 
+#
+# Check for libcap.
+# Required to pass CAP_NET_RAW to our binaries to allow to open SOCK_RAW
+# sockets for doing ICMP requests.
+#
+check_libcap()
+{
+  test_header "libcap library"
+  cat > .tmp_src.cc << EOF
+#include <cstdio>
+#include <sys/capability.h>
+
+extern "C" int main(void)
+{
+  cap_t caps = cap_get_proc();
+  printf("Current caps are '%s'\n", cap_to_text(caps, NULL));
+  return 0;
+}
+EOF
+  if test_compile $LIBCAP libcap libcap; then
+    if test_execute; then
+      log_success "found"
+    fi
+  fi
+}
 
 #
 # Check if we are able to build 32-bit applications (needed for the guest additions)
@@ -2063,6 +2089,7 @@ if [ "$OS" = "linux" ]; then
   if [ $WITH_DBUS -eq 0 ]; then
     cnf_append "VBOX_WITH_DBUS" ""
   fi
+  check_libcap
   check_compiler_h
   [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
 fi
