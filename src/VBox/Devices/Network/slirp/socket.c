@@ -928,7 +928,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icmp_reflect(pData, m);
                 break;
             default:
-                LogRel(("ICMP(default): message with Status: %x was received from %s\n", icr[i].Status, icr[i].Address));
+                LogRel(("ICMP(default): message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
                 break;
         }
     }
