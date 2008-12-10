@@ -76,18 +76,19 @@ else
  IMPORT_LIBS          += VBoxREM
 endif
 
-# For 32-bit targets we build 2 REM DLLs: 
+VBOX_WITH_64_BITS_GUESTS = 1
+
+# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs: 
 #  with 64-bit support (slow and buggy at the moment) VBOXREM64
 #  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM
 # During the runtime, we load appropriate library, depending on guest settings.
 if1of (x86, $(KBUILD_TARGET_ARCH))
- USE_VBOXREM64 := 1
+ ifdef VBOX_WITH_64_BITS_GUESTS
+  USE_VBOXREM64 := 1
+ endif
 else
  USE_VBOXREM64 :=
 endif
-
-# Disable for now, while debugged enough
-USE_VBOXREM64 = 
 
 OTHER_CLEAN          +=
 
@@ -190,6 +191,7 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 # Temporary hack, to allow running with oldish GCC
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
 
+
 ifdef USE_VBOXREM64
  # Currently we never mix USE_VBOXREM64 and VBoxREM2, so can always use VBoxREM
  # @todo: assert for that? use $(REM_MOD) instead? 
@@ -199,15 +201,9 @@ ifdef USE_VBOXREM64
  else
   IMPORT_LIBS          += VBoxREM64
  endif
- # Something fishy goes on within kmk's tool selection algorithm/variable evaluation
- # as for now g++ is always selected to compile VBoxREM64, while VBoxREM compiled with gcc
- VBoxREM64_TOOL = $(VBoxREM_TOOL)
- VBoxREM64_TEMPLATE = $(VBoxREM_TEMPLATE)
- VBoxREM64_CFLAGS += $(VBoxREM_CFLAGS)
- VBoxREM64_DEFS += $(VBoxREM_DEFS) VBOX_ENABLE_VBOXREM64
- VBoxREM64_INCS += $(VBoxREM_INCS)
- VBoxREM64_LIBS += $(VBoxREM_LIBS)
- VBoxREM64_SOURCES = $(VBoxREM_SOURCES)
+ VBoxREM64_EXTENDS = $(REM_MOD)
+ VBoxREM64_EXTEND_BY = appending 
+ VBoxREM64_DEFS += $($(REM_MOD)_DEFS) VBOX_ENABLE_VBOXREM64
 endif
 
 ifdef USE_REM_IMP
