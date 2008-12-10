@@ -634,12 +634,18 @@ static void supR3HardenedMainDropPrivileges(void)
                 }
                 else
                     supR3HardenedFatal("SUPR3HardenedMain: failed to get permitted privilege set rc=%d.\n", rc);                
+            
+                priv_freeset(pPrivSetInherit);
             }
             else
                 supR3HardenedFatal("SUPR3HardenedMain: failed to allocate inheritable privilege set.\n");
+
+            priv_freeset(pPrivSetEffective);
         }
         else
             supR3HardenedFatal("SUPR3HardenedMain: failed to allocate effective privilege set.\n");
+
+        priv_freeset(pPrivSetPermitted);
     }
     else
         supR3HardenedFatal("SUPR3HardenedMain: failed to allocate permitted privilege set.\n");
