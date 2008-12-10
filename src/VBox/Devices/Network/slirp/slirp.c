@@ -82,7 +82,7 @@
 # define xfds_win_bit FD_OOB_BIT
 
 # define DO_CHECK_FD_SET(so, events, fdset)  \
-    (((events).lNetworkEvents & fdset ## _win) && ((event).iErrorCode[fdset ## _win_bit] == 0))
+    (((events).lNetworkEvents & fdset ## _win) && ((events).iErrorCode[fdset ## _win_bit] == 0))
 
 
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
@@ -721,7 +721,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             if (so->so_state & SS_NOFDREF || so->s == -1)
                 continue;
 
-            POLL_TCP_EVENTS(rc, error, so, NetworkEvents);
+            POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
 
             /*
              * Check for URG data
@@ -888,7 +888,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         {
             so_next = so->so_next;
 
-            POLL_UDP_EVENTS(rc, error, so, NetworkEvents);
+            POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
 
             if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
             {
