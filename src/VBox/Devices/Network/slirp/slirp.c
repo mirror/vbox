@@ -653,7 +653,11 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     STAM_REL_PROFILE_STOP(&pData->StatFill, a);
 }
 
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp)
+#else
 void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_set *xfds)
+#endif
 {
     struct socket *so, *so_next;
     int ret;
@@ -699,7 +703,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         }
     }
 #if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-    if (!readfds && !writefds && !xfds)
+    if (fTimeout)
         return; /* only timer update */
 #endif
 
@@ -907,7 +911,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
 
 #if defined(VBOX_WITH_SLIRP_ICMP)
 # if defined(RT_OS_WINDOWS)
-        sorecvfrom(pData, &pData->icmp_socket);
+        if (fIcmp)
+            sorecvfrom(pData, &pData->icmp_socket);
 # else
         if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
             sorecvfrom(pData, &pData->icmp_socket);

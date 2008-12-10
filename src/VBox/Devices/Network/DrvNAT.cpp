@@ -371,12 +371,12 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         if (event == WSA_WAIT_TIMEOUT)
         {
             /* only check for slow/fast timers */
-            slirp_select_poll(pThis->pNATState, NULL, NULL, NULL);
+            slirp_select_poll(pThis->pNATState, /* fTimeout=*/true, /*fIcmp=*/false);
             continue;
         }
 
         /* poll the sockets in any case */
-        slirp_select_poll(pThis->pNATState, &ReadFDs, &WriteFDs, &XcptFDs);
+        slirp_select_poll(pThis->pNATState, /* fTimeout=*/false, /* fIcmp=*/(event == WSA_WAIT_EVENT_0));
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pReqQueue, 0);
 # endif /* RT_OS_WINDOWS */
