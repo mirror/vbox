@@ -254,14 +254,15 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     int cchWidth, int cchPrecision, unsigned fFlags,
                     void *pvUser)
 {
+    size_t cb = 0;
+#ifdef RT_OS_WINDOWS
     WSANETWORKEVENTS *pNetworkEvents = (WSANETWORKEVENTS*)pvValue;
-    size_t cb;
     bool fDelim = false;
 
     AssertReturn(strcmp(pszType, "natwinnetevents") == 0, 0);
 
-    cb  = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (", pNetworkEvents->lNetworkEvents);
-#define DO_BIT(bit) \
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (", pNetworkEvents->lNetworkEvents);
+# define DO_BIT(bit) \
     if (pNetworkEvents->lNetworkEvents & FD_ ## bit) \
     { \
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s" #bit "(%d)", \
@@ -275,8 +276,9 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     DO_BIT(CONNECT);
     DO_BIT(CLOSE);
     DO_BIT(QOS);
-#undef DO_BIT
+# undef DO_BIT
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ")");
+#endif
     return cb;
 }
 
