@@ -92,7 +92,7 @@ sofree(PNATState pData, struct socket *so)
  * a read() of 0 (or less) means it's disconnected
  */
 int
-soread(PNATState pData, struct socket *so)
+soread(PNATState pData, struct socket *so, int fCloseIfNothingRead)
 {
     int n, nn, lss, total;
     struct sbuf *sb = &so->so_snd;
@@ -179,7 +179,7 @@ soread(PNATState pData, struct socket *so)
          * www.youtube.com I see this very often. Closing the socket too early
          * would be dangerous.
          */
-        if (nn == 0)
+        if (nn == 0 && !fCloseIfNothingRead)
             return 0;
 #endif
         if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
@@ -247,7 +247,7 @@ sorecvoob(PNATState pData, struct socket *so)
      * urgent data, or the read() doesn't return all the
      * urgent data.
      */
-    soread(pData, so);
+    soread(pData, so, /*fCloseIfNothingRead=*/false);
     tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
     tp->t_force = 1;
     tcp_output(pData, tp);
