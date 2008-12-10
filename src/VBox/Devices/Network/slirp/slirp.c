@@ -753,7 +753,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                         continue;
                 }
 
-                ret = soread(pData, so);
+                ret = soread(pData, so, /*fCloseIfNothingRead=*/false);
                 /* Output it if we read something */
                 if (ret > 0)
                     tcp_output(pData, sototcpcb(so));
@@ -770,7 +770,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                  */
                 for (;;)
                 {
-                    ret = soread(pData, so);
+                    ret = soread(pData, so, /*fCloseIfNothingRead=*/true);
                     if (ret > 0)
                         tcp_output(pData, sototcpcb(so));
                     else
