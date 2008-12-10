@@ -24,6 +24,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # temporary, we will remove this in some days
 VBOX_WITH_BSD_REASS = 1
+VBOX_WITH_SLIRP_ICMP = 1
 
 VBOX_PATH_DEVICES_SRC := $(PATH_SUB_CURRENT)
 
