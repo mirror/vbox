@@ -1275,7 +1275,7 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         {
             startProgressInfo("Restoring");
             rc = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, NULL);
+                             (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, (uintptr_t)NULL);
             endProgressInfo();
             if (RT_SUCCESS(rc))
             {
