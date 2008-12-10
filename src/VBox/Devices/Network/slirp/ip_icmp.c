@@ -77,7 +77,11 @@ icmp_init(PNATState pData)
     pData->icmp_socket.so_type = IPPROTO_ICMP;
     pData->icmp_socket.so_state = SS_ISFCONNECTED;
 #ifndef RT_OS_WINDOWS
+# ifndef RT_OS_DARWIN
     pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+# else /* !RT_OS_DARWIN */
+    pData->icmp_socket.s = socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+# endif /* RT_OS_DARWIN */
     if (pData->icmp_socket.s == -1)
     {
         int rc = RTErrConvertFromErrno(errno);
