@@ -93,9 +93,10 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     
 ALIGN(16)    
 .cached_write:
+    dec     xCX
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    dec     ecx
+    test    xCX, 0
     jnz     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
@@ -209,9 +210,10 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 
 ALIGN(16)    
 .cached_read:
+    dec     xCX
     mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    dec     ecx
+    test    xCX, 0
     jnz     .cached_read
 .no_cached_reads:
 %endif
@@ -341,9 +343,10 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     
 ALIGN(16)    
 .cached_write:
+    dec     xCX
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    dec     ecx
+    test    xCX, 0
     jnz     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
@@ -490,9 +493,10 @@ ALIGNCODE(16)
 
 ALIGN(16)
 .cached_read:
+    dec     xCX
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
     vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    dec     ecx
+    test    xCX, 0
     jnz     .cached_read
 .no_cached_reads:
 %endif
