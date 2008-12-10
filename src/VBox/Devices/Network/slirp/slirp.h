@@ -349,7 +349,12 @@ struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
 #ifdef RT_OS_WINDOWS
 # undef errno
-# define errno (WSAGetLastError())
+# if 0 /* debugging */
+int errno_func(const char *file, int line);
+#  define errno (errno_func(__FILE__, __LINE__))
+# else
+#  define errno (WSAGetLastError())
+# endif
 #endif
 
 #endif

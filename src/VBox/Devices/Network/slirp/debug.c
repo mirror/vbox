@@ -248,6 +248,50 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
            so->s, so->so_state, (ip >> 24), (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
 }
 
+static DECLCALLBACK(size_t)
+print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                    const char *pszType, void const *pvValue,
+                    int cchWidth, int cchPrecision, unsigned fFlags,
+                    void *pvUser)
+{
+    WSANETWORKEVENTS *pNetworkEvents = (WSANETWORKEVENTS*)pvValue;
+    size_t cb;
+    bool fDelim = false;
+
+    AssertReturn(strcmp(pszType, "natwinnetevents") == 0, 0);
+
+    cb  = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (", pNetworkEvents->lNetworkEvents);
+#define DO_BIT(bit) \
+    if (pNetworkEvents->lNetworkEvents & FD_ ## bit) \
+    { \
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s" #bit "(%d)", \
+                          fDelim ? "," : "", pNetworkEvents->iErrorCode[FD_ ## bit ## _BIT]); \
+        fDelim = true; \
+    }
+    DO_BIT(READ);
+    DO_BIT(WRITE);
+    DO_BIT(OOB);
+    DO_BIT(ACCEPT);
+    DO_BIT(CONNECT);
+    DO_BIT(CLOSE);
+    DO_BIT(QOS);
+#undef DO_BIT
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ")");
+    return cb;
+}
+
+#if 0
+/*
+ * Debugging
+ */
+int errno_func(const char *file, int line)
+{
+    int err = WSAGetLastError();
+    LogRel(("errno=%d (%s:%d)\n", err, file, line));
+    return err;
+}
+#endif
+
 int 
 debug_init() 
 {
@@ -263,6 +307,8 @@ debug_init()
         rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
+        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natwinnetevents", print_networkevents, NULL);
         AssertRC(rc);
         g_fFormatRegistered = 1;
     }

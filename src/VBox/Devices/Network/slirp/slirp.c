@@ -723,6 +723,14 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 continue;
 
             POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
+#if 0
+# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+            LogRel(("  %R[natsock] %R[natwinnetevents]\n", so, &NetworkEvents));
+# else
+            LogRel(("  %R[natsock] %s %s %s\n", so, FD_ISSET(so->s, readfds)?"READ":"",
+                     FD_ISSET(so->s, writefds)?"WRITE":"", FD_ISSET(so->s, xfds)?"OOB":""));
+# endif
+#endif
 
             /*
              * Check for URG data
