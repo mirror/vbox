@@ -65,6 +65,19 @@
 #include "elf.h"
 
 
+#ifdef VBOX
+/* 
+ * Liveness analysis doesn't work well with 32-bit hosts and 64-bit targets,
+ * second element of the register pair to store 64-bit value is consedered 
+ * dead, it seems. 
+ * @todo: fix it in compiler
+ */
+#if defined(TARGET_X86_64) && (TCG_TARGET_REG_BITS == 32)
+#undef USE_LIVENESS_ANALYSIS
+#endif
+#endif
+
+
 static void patch_reloc(uint8_t *code_ptr, int type, 
                         tcg_target_long value, tcg_target_long addend);
 
