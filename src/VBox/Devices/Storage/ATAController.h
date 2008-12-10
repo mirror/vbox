@@ -77,7 +77,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef struct ATADevState {
+typedef struct AHCIATADevState {
     /** Flag indicating whether the current command uses LBA48 mode. */
     bool fLBA48;
     /** Flag indicating whether this drive implements the ATAPI command set. */
@@ -164,10 +164,11 @@ typedef struct ATADevState {
     /** The same for GET_EVENT_STATUS for mechanism */
     volatile uint32_t MediaEventStatus;
 
-    uint32_t Alignment0;
-
     /** The status LED state for this drive. */
-    PDMLED Led;
+    R3PTRTYPE(PPDMLED)  pLed;
+#if HC_ARCH_BITS == 64
+    uint32_t            uAlignment3;
+#endif
 
     /** Size of I/O buffer. */
     uint32_t cbIOBuffer;
@@ -200,11 +201,17 @@ typedef struct ATADevState {
     /** Statistics: number of read operations and the time spent reading. */
     STAMPROFILEADV  StatReads;
     /** Statistics: number of bytes read. */
-    STAMCOUNTER     StatBytesRead;
+    R3PTRTYPE(PSTAMCOUNTER)     pStatBytesRead;
+#if HC_ARCH_BITS == 64
+    uint64_t            uAlignment4;
+#endif
     /** Statistics: number of write operations and the time spent writing. */
     STAMPROFILEADV  StatWrites;
     /** Statistics: number of bytes written. */
-    STAMCOUNTER     StatBytesWritten;
+    R3PTRTYPE(PSTAMCOUNTER)     pStatBytesWritten;
+#if HC_ARCH_BITS == 64
+    uint64_t            uAlignment5;
+#endif
     /** Statistics: number of flush operations and the time spend flushing. */
     STAMPROFILE     StatFlushes;
 
@@ -241,64 +248,64 @@ typedef struct ATADevState {
     /** Pointer to device instance. */
     PPDMDEVINSR3                        pDevInsR3;
     /** Pointer to controller instance. */
-    R3PTRTYPE(struct ATACONTROLLER *)   pControllerR3;
+    R3PTRTYPE(struct AHCIATACONTROLLER *)   pControllerR3;
     /** Pointer to device instance. */
     PPDMDEVINSR0                        pDevInsR0;
     /** Pointer to controller instance. */
-    R0PTRTYPE(struct ATACONTROLLER *)   pControllerR0;
+    R0PTRTYPE(struct AHCIATACONTROLLER *)   pControllerR0;
     /** Pointer to device instance. */
     PPDMDEVINSRC                        pDevInsRC;
     /** Pointer to controller instance. */
-    RCPTRTYPE(struct ATACONTROLLER *)   pControllerRC;
-} ATADevState;
+    RCPTRTYPE(struct AHCIATACONTROLLER *)   pControllerRC;
+} AHCIATADevState;
 
 
-typedef struct ATATransferRequest
+typedef struct AHCIATATransferRequest
 {
     uint8_t iIf;
     uint8_t iBeginTransfer;
     uint8_t iSourceSink;
     uint32_t cbTotalTransfer;
     uint8_t uTxDir;
-} ATATransferRequest;
+} AHCIATATransferRequest;
 
 
-typedef struct ATAAbortRequest
+typedef struct AHCIATAAbortRequest
 {
     uint8_t iIf;
     bool fResetDrive;
-} ATAAbortRequest;
+} AHCIATAAbortRequest;
 
 
 typedef enum
 {
     /** Begin a new transfer. */
-    ATA_AIO_NEW = 0,
+    AHCIATA_AIO_NEW = 0,
     /** Continue a DMA transfer. */
-    ATA_AIO_DMA,
+    AHCIATA_AIO_DMA,
     /** Continue a PIO transfer. */
-    ATA_AIO_PIO,
+    AHCIATA_AIO_PIO,
     /** Reset the drives on current controller, stop all transfer activity. */
-    ATA_AIO_RESET_ASSERTED,
+    AHCIATA_AIO_RESET_ASSERTED,
     /** Reset the drives on current controller, resume operation. */
-    ATA_AIO_RESET_CLEARED,
+    AHCIATA_AIO_RESET_CLEARED,
     /** Abort the current transfer of a particular drive. */
-    ATA_AIO_ABORT
-} ATAAIO;
+    AHCIATA_AIO_ABORT
+} AHCIATAAIO;
 
 
-typedef struct ATARequest
+typedef struct AHCIATARequest
 {
-    ATAAIO ReqType;
+    AHCIATAAIO ReqType;
     union
     {
-        ATATransferRequest t;
-        ATAAbortRequest a;
+        AHCIATATransferRequest t;
+        AHCIATAAbortRequest a;
     } u;
-} ATARequest;
+} AHCIATARequest;
 
 
-typedef struct ATACONTROLLER
+typedef struct AHCIATACONTROLLER
 {
     /** The base of the first I/O Port range. */
     RTIOPORT    IOPortBase1;
@@ -337,7 +344,7 @@ typedef struct ATACONTROLLER
     uint32_t    cbRedoDMABuffer;
 
     /** The ATA/ATAPI interfaces of this controller. */
-    ATADevState aIfs[2];
+    AHCIATADevState aIfs[2];
 
     /** Pointer to device instance. */
     PPDMDEVINSR3        pDevInsR3;
@@ -353,7 +360,7 @@ typedef struct ATACONTROLLER
     /** The event semaphore the thread is waiting on for requests. */
     RTSEMEVENT          AsyncIOSem;
     /** The request queue for the AIO thread. One element is always unused. */
-    ATARequest          aAsyncIORequests[4];
+    AHCIATARequest      aAsyncIORequests[4];
     /** The position at which to insert a new request for the AIO thread. */
     uint8_t             AsyncIOReqHead;
     /** The position at which to get a new request for the AIO thread. */
@@ -376,28 +383,28 @@ typedef struct ATACONTROLLER
     STAMCOUNTER     StatAsyncTimeUS;
     STAMPROFILEADV  StatAsyncTime;
     STAMPROFILE     StatLockWait;
-} ATACONTROLLER, *PATACONTROLLER;
+} AHCIATACONTROLLER, *PAHCIATACONTROLLER;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTX_SUFF(pController) )
 #define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTX_SUFF(pDevIns) )
 #define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTX_SUFF(pDevIns) )
-#define PDMIBASE_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IBase)) )
+#define PDMIBASE_2_ATASTATE(pInterface)        ( (AHCIATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIATADevState, IBase)) )
 
 
 /*******************************************************************************
  *  Internal Functions                                                         *
  ******************************************************************************/
 __BEGIN_DECLS
-int ataControllerIOPortWrite1(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
-int ataControllerIOPortRead1(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
-int ataControllerIOPortWriteStr1(PATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
-int ataControllerIOPortReadStr1(PATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
-int ataControllerIOPortWrite2(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
-int ataControllerIOPortRead2(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
-int ataControllerBMDMAIOPortRead(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-int ataControllerBMDMAIOPortWrite(PATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
+int ataControllerIOPortWrite1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
+int ataControllerIOPortRead1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
+int ataControllerIOPortWriteStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
+int ataControllerIOPortReadStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
+int ataControllerIOPortWrite2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
+int ataControllerIOPortRead2(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *u32, unsigned cb);
+int ataControllerBMDMAIOPortRead(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t *pu32, unsigned cb);
+int ataControllerBMDMAIOPortWrite(PAHCIATACONTROLLER pCtl, RTIOPORT Port, uint32_t u32, unsigned cb);
 __END_DECLS
 
 #ifdef IN_RING3
@@ -412,8 +419,8 @@ __END_DECLS
  * @param   pcbSSMState    Where to store the size of the device state for loading/saving.
  * @param   szName         Name of the controller (Used to initialize the critical section).
  */
-int ataControllerInit(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PPDMIBASE pDrvBaseMaster, PPDMIBASE pDrvBaseSlave,
-                      uint32_t *pcbSSMState, const char *szName);
+int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBaseMaster, PPDMIBASE pDrvBaseSlave,
+                      uint32_t *pcbSSMState, const char *szName, PPDMLED pLed, PSTAMCOUNTER pStatBytesRead, PSTAMCOUNTER pStatBytesWritten);
 
 /**
  * Free all allocated resources for one controller instance.
@@ -421,7 +428,7 @@ int ataControllerInit(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PPDMIBASE pDrvBas
  * @returns VBox status code.
  * @param   pCtl The controller instance.
  */
-int ataControllerDestroy(PATACONTROLLER pCtl);
+int ataControllerDestroy(PAHCIATACONTROLLER pCtl);
 
 /**
  * Power off a controller.
@@ -429,7 +436,7 @@ int ataControllerDestroy(PATACONTROLLER pCtl);
  * @returns nothing.
  * @param   pCtl the controller instance.
  */
-void ataControllerPowerOff(PATACONTROLLER pCtl);
+void ataControllerPowerOff(PAHCIATACONTROLLER pCtl);
 
 /**
  * Reset a controller instance to an initial state.
@@ -437,7 +444,7 @@ void ataControllerPowerOff(PATACONTROLLER pCtl);
  * @returns VBox status code.
  * @param   pCtl Pointer to the controller.
  */
-void ataControllerReset(PATACONTROLLER pCtl);
+void ataControllerReset(PAHCIATACONTROLLER pCtl);
 
 /**
  * Suspend operation of an controller.
@@ -445,7 +452,7 @@ void ataControllerReset(PATACONTROLLER pCtl);
  * @returns nothing
  * @param   pCtl The controller instance.
  */
-void ataControllerSuspend(PATACONTROLLER pCtl);
+void ataControllerSuspend(PAHCIATACONTROLLER pCtl);
 
 /**
  * Resume operation of an controller.
@@ -454,7 +461,7 @@ void ataControllerSuspend(PATACONTROLLER pCtl);
  * @param   pCtl The controller instance.
  */
 
-void ataControllerResume(PATACONTROLLER pCtl);
+void ataControllerResume(PAHCIATACONTROLLER pCtl);
 
 /**
  * Relocate neccessary pointers.
@@ -463,7 +470,7 @@ void ataControllerResume(PATACONTROLLER pCtl);
  * @param   pCtl     The controller instance.
  * @param   offDelta The relocation delta relative to the old location.
  */
-void ataControllerRelocate(PATACONTROLLER pCtl, RTGCINTPTR offDelta);
+void ataControllerRelocate(PAHCIATACONTROLLER pCtl, RTGCINTPTR offDelta);
 
 /**
  * Execute state save operation.
@@ -472,7 +479,7 @@ void ataControllerRelocate(PATACONTROLLER pCtl, RTGCINTPTR offDelta);
  * @param   pCtl    The controller instance.
  * @param   pSSM    SSM operation handle.
  */
-int ataControllerSaveExec(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
+int ataControllerSaveExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
 
 /**
  * Prepare state save operation.
@@ -481,7 +488,7 @@ int ataControllerSaveExec(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
  * @param   pCtl    The controller instance.
  * @param   pSSM    SSM operation handle.
  */
-int ataControllerSavePrep(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
+int ataControllerSavePrep(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
 
 /**
  * Excute state load operation.
@@ -490,7 +497,7 @@ int ataControllerSavePrep(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
  * @param   pCtl    The controller instance.
  * @param   pSSM    SSM operation handle.
  */
-int ataControllerLoadExec(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
+int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
 
 /**
  * Prepare state load operation.
@@ -499,7 +506,7 @@ int ataControllerLoadExec(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
  * @param   pCtl    The controller instance.
  * @param   pSSM    SSM operation handle.
  */
-int ataControllerLoadPrep(PATACONTROLLER pCtl, PSSMHANDLE pSSM);
+int ataControllerLoadPrep(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
 
 #endif /* IN_RING3 */
 
