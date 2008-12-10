@@ -26,6 +26,7 @@
 #include "CPUMInternal.h"
 #include <VBox/trpm.h>
 #include "TRPMInternal.h"
+#include "HWACCMInternal.h"
 #include "../VMMSwitcher/VMMSwitcher.h"
 #include "VMMInternal.h"
 #include <VBox/vm.h>
