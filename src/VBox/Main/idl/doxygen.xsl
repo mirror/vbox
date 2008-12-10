@@ -153,9 +153,11 @@
  *  note
 -->
 <xsl:template match="desc/note">
-  <xsl:text>&#x0A;@note </xsl:text>
-  <xsl:apply-templates/>
-  <xsl:text>&#x0A;</xsl:text>
+  <xsl:if test="not(@internal='yes')">
+    <xsl:text>&#x0A;@note </xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>&#x0A;</xsl:text>
+  </xsl:if>
 </xsl:template>
 
 <!--
@@ -588,6 +590,8 @@ owns the object will most likely fail or crash your application.
   <xsl:for-each select="const">
     <xsl:apply-templates select="desc"/>
     <xsl:text>    </xsl:text>
+    <xsl:value-of select="../@name"/>
+    <xsl:text>_</xsl:text>
     <xsl:value-of select="@name"/> = <xsl:value-of select="@value"/>
     <xsl:text>,&#x0A;</xsl:text>
   </xsl:for-each>
