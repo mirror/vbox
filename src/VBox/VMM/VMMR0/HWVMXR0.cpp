@@ -470,7 +470,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertRC(rc);
 
         /* Configure the VMCS read cache. */
-        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSReadCache;
+        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
 
         VMXSetupCachedReadVMCS(pCache, VMX_VMCS64_GUEST_RIP);
         VMXSetupCachedReadVMCS(pCache, VMX_VMCS64_GUEST_RSP);
@@ -512,10 +512,10 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         {
             VMXSetupCachedReadVMCS(pCache, VMX_VMCS64_GUEST_CR3);
             VMXSetupCachedReadVMCS(pCache, VMX_VMCS_EXIT_PHYS_ADDR_FULL);
-            pCache->cValidEntries = VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX;
+            pCache->Read.cValidEntries = VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX;
         }
         else
-            pCache->cValidEntries = VMX_VMCS_MAX_CACHE_IDX;
+            pCache->Read.cValidEntries = VMX_VMCS_MAX_CACHE_IDX;
     } /* for each VMCPU */
 
     /* Choose the right TLB setup function. */
@@ -2085,10 +2085,10 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVM);
-    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, pVM, pVCpu);
+    rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
     TMNotifyEndOfExecution(pVM);
 
-    AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSWriteCache.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSWriteCache.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSWriteCache.cValidEntries));
+    AssertMsg(!pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries, ("pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries=%d\n", pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries));
 
     /* In case we execute a goto ResumeExecution later on. */
     pVCpu->hwaccm.s.fResumeVM  = true;
@@ -3493,10 +3493,11 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  * @returns VBox status code
  * @param   fResume     vmlauch/vmresume
  * @param   pCtx        Guest context
+ * @param   pCache      VMCS cache
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  */
-DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
     uint32_t        aParam[4];
     PHWACCM_CPUINFO pCpu;

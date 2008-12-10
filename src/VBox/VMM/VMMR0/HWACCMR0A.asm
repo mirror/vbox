@@ -1043,6 +1043,7 @@ BITS 64
     sub     esp, 20h
     mov     edi, [rsp + 20h + 14h]      ; fResume
     mov     esi, [rsp + 20h + 18h]      ; pCtx
+    mov     edx, [rsp + 20h + 1Ch]      ; pCache
     call    NAME(VMXR0StartVM32_64)
     add     esp, 20h
     jmp far [.fpthunk32 wrt rip]
@@ -1096,6 +1097,7 @@ BITS 64
     and     ebp, 0ffffffffh
     mov     edi, [rbp + 8]              ; fResume
     mov     esi, [rbp + 12]             ; pCtx
+    mov     edx, [rbp + 16]             ; pCache
     sub     rsp, 20h
     call    NAME(VMXR0StartVM64_64)
     add     rsp, 20h

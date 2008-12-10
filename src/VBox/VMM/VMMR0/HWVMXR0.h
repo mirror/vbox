@@ -274,12 +274,12 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
  */
 DECLINLINE(void) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
-    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSWriteCache;
+    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
 
-    Assert(pCache->cValidEntries < VMCSCACHE_MAX_ENTRY - 1);
-    pCache->aField[pCache->cValidEntries]    = idxField;
-    pCache->aFieldVal[pCache->cValidEntries] = u64Val;
-    pCache->cValidEntries++;
+    Assert(pCache->Write.cValidEntries < VMCSCACHE_MAX_ENTRY - 1);
+    pCache->Write.aField[pCache->cValidEntries]    = idxField;
+    pCache->Write.aFieldVal[pCache->cValidEntries] = u64Val;
+    pCache->Write.cValidEntries++;
 }
 #endif
 
@@ -308,7 +308,7 @@ DECLINLINE(void) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t 
 DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, uint64_t *pVal)
 {
     Assert(idxCache <= VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX);
-    *pVal = pVCpu->hwaccm.s.vmx.VMCSReadCache.aFieldVal[idxCache];
+    *pVal = pVCpu->hwaccm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
     return VINF_SUCCESS;
 }
 #endif
@@ -333,11 +333,11 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, uint64_t *p
  * @param   pVCpu       The VMCPU to operate on.
  * @param   idxField    VMCS field
  */
-#define VMXSetupCachedReadVMCS(pCache, idxField)                    \
-{                                                                   \
-    Assert(pCache->aField[idxField##_CACHE_IDX] == 0);              \
-    pCache->aField[idxField##_CACHE_IDX] = idxField;                \
-    pCache->aFieldVal[idxField##_CACHE_IDX] = 0;                    \
+#define VMXSetupCachedReadVMCS(pCache, idxField)                        \
+{                                                                       \
+    Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);             \
+    pCache->Read.aField[idxField##_CACHE_IDX] = idxField;               \
+    pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;                   \
 }
 
 #define VMX_SETUP_SELREG(REG, pCache)                                               \
@@ -354,10 +354,11 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, uint64_t *p
  * @returns VBox status code
  * @param   fResume     vmlauch/vmresume
  * @param   pCtx        Guest context
+ * @param   pCache      VMCS cache
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  */
-DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 /**
  * Prepares for and executes VMLAUNCH (64 bits guest mode)
@@ -365,10 +366,11 @@ DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVC
  * @returns VBox status code
  * @param   fResume     vmlauch/vmresume
  * @param   pCtx        Guest context
+ * @param   pCache      VMCS cache
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  */
-DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 /**
  * Prepares for and executes VMLAUNCH (64 bits guest mode)
@@ -376,10 +378,11 @@ DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVC
  * @returns VBox status code
  * @param   fResume     vmlauch/vmresume
  * @param   pCtx        Guest context
+ * @param   pCache      VMCS cache
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  */
-DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
 #endif /* IN_RING0 */
 

@@ -379,10 +379,20 @@ typedef HWACCM *PHWACCM;
 /* Structure for storing read and write VMCS actions. */
 typedef struct VMCSCACHE
 {
-    uint32_t    cValidEntries;
-    uint32_t    uAlignment[3];
-    uint32_t    aField[VMCSCACHE_MAX_ENTRY];
-    uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
+    struct
+    {
+        uint32_t    cValidEntries;
+        uint32_t    uAlignment[3];
+        uint32_t    aField[VMCSCACHE_MAX_ENTRY];
+        uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
+    } Write;
+    struct
+    {
+        uint32_t    cValidEntries;
+        uint32_t    uAlignment[3];
+        uint32_t    aField[VMCSCACHE_MAX_ENTRY];
+        uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
+    } Read;
 } VMCSCACHE;
 /** Pointer to VMCSCACHE. */
 typedef VMCSCACHE *PVMCSCACHE;
@@ -427,7 +437,7 @@ typedef struct HWACCMCPU
         R0PTRTYPE(void *)           pVMCS;
 
         /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu));
+        DECLR0CALLBACKMEMBER(int,  pfnStartVM,(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu));
 
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
@@ -440,10 +450,8 @@ typedef struct HWACCMCPU
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
 
-        /** VMXWriteVMCS cache. */
-        VMCSCACHE                   VMCSWriteCache;
-        /** VMXReadVMCS cache. */
-        VMCSCACHE                   VMCSReadCache;
+        /** VMCS cache. */
+        VMCSCACHE                   VMCSCache;
 
         /** Real-mode emulation state. */
         struct
