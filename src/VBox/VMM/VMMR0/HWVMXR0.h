@@ -93,12 +93,13 @@ __BEGIN_DECLS
 #define VMX_VMCS32_RO_EXIT_INSTR_LENGTH_CACHE_IDX                           50
 #define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE_CACHE_IDX                   51
 #define VMX_VMCS32_RO_EXIT_INSTR_INFO_CACHE_IDX                             52
-#define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                            53
-#define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    54
-#define VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX                                 55
+#define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO_CACHE_IDX                      53
+#define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                            54
+#define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    55
+#define VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX                                 56
 #define VMX_VMCS_MAX_CACHE_IDX                                              VMX_VMCS32_RO_IDT_ERRCODE_CACHE_IDX
-#define VMX_VMCS64_GUEST_CR3_CACHE_IDX                                      56
-#define VMX_VMCS_EXIT_PHYS_ADDR_FULL_CACHE_IDX                              57
+#define VMX_VMCS64_GUEST_CR3_CACHE_IDX                                      57
+#define VMX_VMCS_EXIT_PHYS_ADDR_FULL_CACHE_IDX                              58
 #define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                VMX_VMCS_EXIT_PHYS_ADDR_FULL_CACHE_IDX
 
 
@@ -291,8 +292,15 @@ DECLINLINE(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u
  * @param   val         Field value
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
-# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteCachedVMCSEx(pVCpu, idxField, (uVal))
-# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteCachedVMCSEx(pVCpu, idxField, (uVal))
+# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
+# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, (uVal))
+# if 0
+#  if HC_ARCH_BITS == 64 || defined(RT_OS_DARWIN)
+#   define VMXWriteCachedVMCS64(idxField, uVal)           VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
+#  else
+#   define VMXWriteCachedVMCS64(idxField, uVal)           (CPUMIsGuestInLongModeEx(pCtx)) ? VMXWriteCachedVMCSEx(pVCpu, idxField, uVal) : (VMXWriteCachedVMCSEx(pVCpu, idxField, uVal) | VMXWriteCachedVMCSEx(pVCpu, idxField + 1, (uVal >> 32ULL)))
+#  endif
+# endif
 #else
 # define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteVMCS(idxField, (uVal))
 # define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, (uVal))
@@ -322,10 +330,8 @@ DECLINLINE(int) VMXReadCachedVMCSEx(PVMCPU pVCpu, uint32_t idxCache, RTCCUINTREG
  */
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 # define VMXReadCachedVMCS(idxField, pVal)              VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
-# define VMXReadCachedVMCS64(idxField, pVal)            VMXReadCachedVMCSEx(pVCpu, idxField##_CACHE_IDX, pVal)
 #else
 # define VMXReadCachedVMCS(idxField, pVal)              VMXReadVMCS(idxField, pVal)
-# define VMXReadCachedVMCS64(idxField, pVal)            VMXReadVMCS64(idxField, pVal)
 #endif
 
 /**
