@@ -1630,7 +1630,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
         size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
         rcVBox = VMR3ReqCall(pVM, VMREQDEST_ANY, &pReq, RT_INDEFINITE_WAIT,
                              (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
-                             address, cbData, NULL, NULL, NULL);
+                             address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
         if (RT_SUCCESS(rcVBox))
         {
             rcVBox = pReq->iStatus;
