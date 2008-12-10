@@ -480,6 +480,11 @@ typedef struct HWACCMCPU
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit1;
     STAMPROFILEADV          StatExit2;
+#if 1 /* temporary for tracking down darwin issues. */
+    STAMPROFILEADV          StatExit2Sub1;
+    STAMPROFILEADV          StatExit2Sub2;
+    STAMPROFILEADV          StatExit2Sub3;
+#endif
     STAMPROFILEADV          StatInGC;
 
     STAMCOUNTER             StatIntInject;

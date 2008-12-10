@@ -243,11 +243,22 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode exit part 2",
                              "/PROF/HWACCM/CPU%d/SwitchFromGC_2", i);
         AssertRC(rc);
+# if 1 /* temporary for tracking down darwin holdup. */
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit2Sub1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Temporary - I/O",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC_2/Sub1", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit2Sub2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Temporary - CRx RWs",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC_2/Sub2", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatExit2Sub3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Temporary - Exceptions",
+                             "/PROF/HWACCM/CPU%d/SwitchFromGC_2/Sub3", i);
+        AssertRC(rc);
+# endif
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of vmlaunch",
                              "/PROF/HWACCM/CPU%d/InGC", i);
         AssertRC(rc);
 
-#define HWACCM_REG_COUNTER(a, b) \
+# define HWACCM_REG_COUNTER(a, b) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling of vmlaunch", b, i); \
         AssertRC(rc);
 
