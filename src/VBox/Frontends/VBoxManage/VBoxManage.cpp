@@ -451,8 +451,12 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
                  "                            dvdattach none|<uuid>|<filename>|host:<drive> |\n"
-                 "                            floppyattach none|<uuid>|<filename>|host:<drive> |\n"
-                 "                            setvideomodehint <xres> <yres> <bpp> [display]|\n"
+                 "                            floppyattach none|<uuid>|<filename>|host:<drive> |\n");
+        if (fVRDP)
+        {
+            RTPrintf("                            vrdp on|off] |\n");
+        }
+        RTPrintf("                            setvideomodehint <xres> <yres> <bpp> [display]|\n"
                  "                            setcredentials <username> <password> <domain>\n"
                  "                                           [-allowlocallogon <yes|no>]\n"
                  "\n");
@@ -3512,6 +3516,38 @@ static int handleControlVM(int argc, char *argv[],
                 }
             }
         }
+#ifdef VBOX_WITH_VRDP
+        else if (strcmp(argv[1], "vrdp") == 0)
+        {
+            if (argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'", argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            /* get the corresponding VRDP server */
+            ComPtr<IVRDPServer> vrdpServer;
+            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+            ASSERT(vrdpServer);
+            if (vrdpServer)
+            {
+                if (strcmp(argv[2], "on") == 0)
+                {
+                    CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(TRUE));
+                }
+                else if (strcmp(argv[2], "off") == 0)
+                {
+                    CHECK_ERROR_BREAK (vrdpServer, COMSETTER(Enabled)(FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid vrdp server state '%s'", Utf8Str(argv[2]).raw());
+                    rc = E_FAIL;
+                    break;
+                }
+            }
+        }
+#endif /* VBOX_WITH_VRDP */
         else if (strcmp (argv[1], "usbattach") == 0 ||
                  strcmp (argv[1], "usbdetach") == 0)
         {
