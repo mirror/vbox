@@ -5757,9 +5757,61 @@
     </method>
   </collection>
 
+  <enum
+    name="HostNetworkInterfaceType"
+    uuid="763754FA-3246-4539-9590-9E603EDBF706"
+  >
+    <desc>
+      Type of encapsulation.
+      <see>IHostNetworkInterface</see>
+    </desc>
+
+    <const name="Unknown" value="0">
+      <desc>
+        The type of interface cannot be determined.
+      </desc>
+    </const>
+    <const name="Ethernet" value="1">
+      <desc>
+        TBD.
+      </desc>
+    </const>
+    <const name="PPP" value="2">
+      <desc>
+        Point-to-point protocol encapsulation.
+      </desc>
+    </const>
+    <const name="SLIP" value="3">
+      <desc>
+        Serial line IP encapsulation.
+      </desc>
+    </const>
+  </enum>
+
+  <enum
+    name="HostNetworkInterfaceStatus"
+    uuid="CC474A69-2710-434B-8D99-C38E5D5A6F41"
+  >
+    <desc>
+      Current status of the interface.
+      <see>IHostNetworkInterface</see>
+    </desc>
+
+    <const name="Up" value="0">
+      <desc>
+        The interface is fully operational.
+      </desc>
+    </const>
+    <const name="Down" value="1">
+      <desc>
+        The interface is not functioning.
+      </desc>
+    </const>
+  </enum>
+
   <interface
      name="IHostNetworkInterface" extends="$unknown"
-     uuid="F4512D7C-B074-4e97-99B8-6D2BD27C3F5A"
+     uuid="4A89BA1D-E2AD-4D1B-98BB-F04FF2D923F6"
      wsmap="managed"
      >
     <attribute name="name" type="wstring" readonly="yes">
@@ -5768,6 +5820,30 @@
 
     <attribute name="id" type="uuid" readonly="yes">
       <desc>Returns the interface UUID.</desc>
+    </attribute>
+
+    <attribute name="IPAddress" type="unsigned long" readonly="yes">
+      <desc>Returns the IP address of the interface.</desc>
+    </attribute>
+
+    <attribute name="networkMask" type="unsigned long" readonly="yes">
+      <desc>Returns the network mask of the interface.</desc>
+    </attribute>
+
+    <attribute name="IPV6Address" type="wstring" readonly="yes">
+      <desc>Returns the IP V6 address of the interface.</desc>
+    </attribute>
+
+    <attribute name="hardwareAddress" type="wstring" readonly="yes">
+      <desc>Returns the hardware address. For Ethernet it is MAC address.</desc>
+    </attribute>
+
+    <attribute name="type" type="HostNetworkInterfaceType" readonly="yes">
+      <desc>Type of protocol encapsulation used.</desc>
+    </attribute>
+
+    <attribute name="status" type="HostNetworkInterfaceStatus" readonly="yes">
+      <desc>Status of the interface.</desc>
     </attribute>
   </interface>
 
