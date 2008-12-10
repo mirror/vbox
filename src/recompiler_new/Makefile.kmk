@@ -76,7 +76,7 @@ else
  IMPORT_LIBS          += VBoxREM
 endif
 
-VBOX_WITH_64_BITS_GUESTS = 1
+# VBOX_WITH_64_BITS_GUESTS = 1
 
 # For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs: 
 #  with 64-bit support (slow and buggy at the moment) VBOXREM64
@@ -203,7 +203,7 @@ ifdef USE_VBOXREM64
  endif
  VBoxREM64_EXTENDS = $(REM_MOD)
  VBoxREM64_EXTEND_BY = appending 
- VBoxREM64_DEFS += $($(REM_MOD)_DEFS) VBOX_ENABLE_VBOXREM64
+ VBoxREM64_DEFS := $($(REM_MOD)_DEFS) VBOX_ENABLE_VBOXREM64
 endif
 
 ifdef USE_REM_IMP
