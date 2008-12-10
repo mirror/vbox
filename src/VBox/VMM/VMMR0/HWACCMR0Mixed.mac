@@ -26,8 +26,9 @@
 ; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    x86:[ebp+8],msc:ecx,gcc:edi     vmlauch/vmresume
-; * @param   pCtx       x86:[ebp+c],msc:edx,gcc:esi     Guest context
+; * @param   fResume    x86:[ebp+8], msc:rcx,gcc:rdi     vmlauch/vmresume
+; * @param   pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Guest context
+; * @param   pCache     x86:[esp+10],msc:r8, gcc:rdx     VMCS cache
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM32)
@@ -36,6 +37,9 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
 
     pushf
     cli
+
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
 
     ;/* First we have to save some final CPU context registers. */
     mov     eax, VMX_VMCS_HOST_RIP
@@ -60,26 +64,46 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     ; *
     ; */
 
-    ;/* Save all general purpose host registers. */
-    MYPUSHAD
-
     ;/* Save the Guest CPU context pointer. */
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
+    mov     rbx, rdx        ; pCache
  %else
     mov     rdi, rcx        ; fResume
     mov     rsi, rdx        ; pCtx
+    mov     rbx, r8         ; pCache
  %endif
 %else
     mov     edi, [ebp + 8]  ; fResume
     mov     esi, [ebp + 12] ; pCtx
+    mov     ebx, [ebp + 16] ; pCache
 %endif
 
     ;/* Save segment registers */
     ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
     MYPUSHSEGS xAX, ax
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
+    cmp     ecx, 0
+    je      .no_cached_writes
+    jmp     .cached_write
+    
+ALIGN(16)    
+.cached_write:
+    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
+    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    dec     ecx
+    jnz     .cached_write
+
+    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
+.no_cached_writes:
+
+    ; Save the pCache pointer
+    push    xBX
+%endif
 
     ; Save the pCtx pointer
     push    xSI
@@ -149,7 +173,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     add     xSP, xS*2
 
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx
+    mov     xDI, [xSP + xS * 2]         ; pCtx (*2 to skip the saved LDTR)
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -175,6 +199,23 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 
     add     xSP, xS      ; pCtx
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    pop     xDX         ; saved pCache
+    
+    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    cmp     ecx, 0  ; can't happen
+    je      .no_cached_reads
+    jmp     .cached_read
+
+ALIGN(16)    
+.cached_read:
+    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
+    vmread  xAX, [xDX + VMCSCACHE.Read.aFieldVal + xCX*8]
+    dec     ecx
+    jnz     .cached_read
+.no_cached_reads:
+%endif
+
     ; Restore segment registers
     MYPOPSEGS xAX, ax
 
@@ -199,7 +240,11 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     pop     xAX         ; saved LDTR
     lldt    ax
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS*2   ; pCtx + pCache
+%else
     add     xSP, xS     ; pCtx
+%endif
 
     ; Restore segment registers
     MYPOPSEGS xAX, ax
@@ -219,7 +264,11 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     pop     xAX         ; saved LDTR
     lldt    ax
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS*2   ; pCtx + pCache
+%else
     add     xSP, xS     ; pCtx
+%endif
 
     ; Restore segment registers
     MYPOPSEGS xAX, ax
@@ -236,8 +285,9 @@ ENDPROC MY_NAME(VMXR0StartVM32)
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    vmlauch/vmresume
-; * @param   pCtx       Guest context
+; * @param   fResume    msc:rcx, gcc:rdi     vmlauch/vmresume
+; * @param   pCtx       msc:rdx, gcc:rsi     Guest context
+; * @param   pCache     msc:r8,  gcc:rdx     VMCS cache
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM64)
@@ -247,13 +297,14 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     pushf
     cli
 
+    ;/* Save all general purpose host registers. */
+    MYPUSHAD
+
     ;/* First we have to save some final CPU context registers. */
-    lea     rax, [.vmlaunch64_done wrt rip]
-    push    rax
+    lea     r10, [.vmlaunch64_done wrt rip]
     mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
-    vmwrite rax, [xSP]
+    vmwrite rax, r10
     ;/* Note: assumes success... */
-    add     xSP, xS
 
     ;/* Manual save and restore:
     ; * - General purpose registers except RIP, RSP
@@ -267,21 +318,40 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     ; *
     ; */
 
-    ;/* Save all general purpose host registers. */
-    MYPUSHAD
-
     ;/* Save the Guest CPU context pointer. */
 %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
+    mov     rbx, rdx        ; pCache
 %else
     mov     rdi, rcx        ; fResume
     mov     rsi, rdx        ; pCtx
+    mov     rbx, r8         ; pCache
 %endif
 
     ;/* Save segment registers */
     ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case)
     MYPUSHSEGS xAX, ax
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
+    cmp     ecx, 0
+    je      .no_cached_writes
+    jmp     .cached_write
+    
+ALIGN(16)    
+.cached_write:
+    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
+    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    dec     ecx
+    jnz     .cached_write
+
+    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
+.no_cached_writes:
+
+    ; Save the pCache pointer
+    push    xBX
+%endif
 
     ; Save the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs and restore the guest MSRs
     ;; @todo use the automatic load feature for MSRs
@@ -410,6 +480,23 @@ ALIGNCODE(16)
 %endif
     LOADHOSTMSR MSR_K8_LSTAR
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    pop     xDX         ; saved pCache
+    
+    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    cmp     ecx, 0  ; can't happen
+    je      .no_cached_reads
+    jmp     .cached_read
+
+ALIGN(16)
+.cached_read:
+    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
+    vmread  xAX, [xDX + VMCSCACHE.Read.aFieldVal + xCX*8]
+    dec     ecx
+    jnz     .cached_read
+.no_cached_reads:
+%endif
+
     ; Restore segment registers
     MYPOPSEGS xAX, ax
 
@@ -446,6 +533,10 @@ ALIGNCODE(16)
 %endif
     LOADHOSTMSR MSR_K8_LSTAR
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS     ; pCache
+%endif
+
     ; Restore segment registers
     MYPOPSEGS xAX, ax
 
@@ -475,6 +566,10 @@ ALIGNCODE(16)
     LOADHOSTMSR MSR_K8_CSTAR
 %endif
     LOADHOSTMSR MSR_K8_LSTAR
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS     ; pCache
+%endif
 
     ; Restore segment registers
     MYPOPSEGS xAX, ax
