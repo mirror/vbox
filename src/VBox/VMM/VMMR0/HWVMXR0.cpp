@@ -2158,6 +2158,7 @@ ResumeExecution:
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
+        STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
         switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo))
         {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:   /* Non-maskable interrupt. */
@@ -2193,6 +2194,7 @@ ResumeExecution:
                     /* Continue execution. */
                     pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_CR0;
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
 
@@ -2200,6 +2202,7 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNM);
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, 0);
                 AssertRC(rc);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                 goto ResumeExecution;
             }
 
@@ -2221,6 +2224,7 @@ ResumeExecution:
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
 #endif
@@ -2242,6 +2246,7 @@ ResumeExecution:
 
                     TRPMResetTrap(pVM);
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
                 else
@@ -2262,6 +2267,7 @@ ResumeExecution:
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
 #ifdef VBOX_STRICT
@@ -2287,6 +2293,7 @@ ResumeExecution:
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                 goto ResumeExecution;
             }
 
@@ -2334,6 +2341,7 @@ ResumeExecution:
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
                 /* Return to ring 3 to deal with the debug exit code. */
@@ -2351,6 +2359,7 @@ ResumeExecution:
                     Log(("Trap %x at %04X:%RGv errorCode=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, errCode));
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
 #endif
@@ -2366,6 +2375,7 @@ ResumeExecution:
                     pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
 
                     /* Only resume if successful. */
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
                 AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_EM_HALT, ("Unexpected rc=%Rrc\n", rc));
@@ -2398,6 +2408,7 @@ ResumeExecution:
                 rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                 AssertRC(rc);
 
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                 goto ResumeExecution;
             }
 #endif
@@ -2414,6 +2425,7 @@ ResumeExecution:
                         &&  rc == VINF_EM_RESET)
                         break;
 
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
 #endif
@@ -2430,6 +2442,7 @@ ResumeExecution:
             break;
         }
 
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
         break;
     }
 
@@ -2586,6 +2599,8 @@ ResumeExecution:
 
     case VMX_EXIT_CRX_MOVE:             /* 28 Control-register accesses. */
     {
+        STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2Sub2, y2);
+
         switch (VMX_EXIT_QUALIFICATION_CRX_ACCESS(exitQualification))
         {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:
@@ -2663,9 +2678,11 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Only resume if successful. */
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub2, y2);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub2, y2);
         break;
     }
 
@@ -2728,6 +2745,7 @@ ResumeExecution:
     /* Note: We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
     case VMX_EXIT_PORT_IO:              /* 30 I/O instruction. */
     {
+        STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         uint32_t uIOWidth = VMX_EXIT_QUALIFICATION_IO_WIDTH(exitQualification);
         uint32_t uPort;
         bool     fIOWrite = (VMX_EXIT_QUALIFICATION_IO_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
@@ -2744,6 +2762,7 @@ ResumeExecution:
         if (RT_UNLIKELY(uIOWidth == 2 || uIOWidth >= 4))
         {
             rc = fIOWrite ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
             break;
         }
 
@@ -2860,13 +2879,16 @@ ResumeExecution:
                             rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), 0, 0);
                             AssertRC(rc);
 
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
                             goto ResumeExecution;
                         }
                     }
                 }
 
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
                 goto ResumeExecution;
             }
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
             break;
         }
 
@@ -2878,6 +2900,7 @@ ResumeExecution:
         else
             AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
 #endif
+        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         break;
     }
 
