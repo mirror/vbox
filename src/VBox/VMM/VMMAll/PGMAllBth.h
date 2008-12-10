@@ -3053,7 +3053,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVM pVM, RTGCPTR GCPtrPage, unsigned fPa
  */
 DECLINLINE(PGMPOOLKIND) PGM_BTH_NAME(CalcPageKind)(const GSTPDE *pPdeSrc, uint32_t cr4)
 {
-#  if PMG_GST_TYPE == PGM_TYPE_AMD64
+#  if PGM_GST_TYPE == PGM_TYPE_AMD64
     if (!pPdeSrc->n.u1Size)
 #  else
     if (!pPdeSrc->n.u1Size || !(cr4 & X86_CR4_PSE))
@@ -3121,7 +3121,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
 
 #ifdef PGMPOOL_WITH_MONITORING
     int rc = pgmPoolSyncCR3(pVM);
-    if (rc != VINF_SUCCESS)
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 #endif
 
@@ -3158,6 +3158,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     PX86PDE     pPDEDst = pgmShwGet32BitPDEPtr(&pVM->pgm.s, 0);
 #  else /* PGM_SHW_TYPE == PGM_TYPE_PAE */
 #   if PGM_GST_TYPE == PGM_TYPE_32BIT
+    PX86PDEPAE  paPDEDst[4];
+    paPDEDst[0] = pgmShwGetPaePDEPtr(&pVM->pgm.s, UINT32_C(0x00000000));
+    paPDEDst[1] = pgmShwGetPaePDEPtr(&pVM->pgm.s, UINT32_C(0x40000000));
+    paPDEDst[2] = pgmShwGetPaePDEPtr(&pVM->pgm.s, UINT32_C(0x80000000));
+    paPDEDst[3] = pgmShwGetPaePDEPtr(&pVM->pgm.s, UINT32_C(0xc0000000));
     PX86PDEPAE  pPDEDst = NULL;
 #   endif
 #  endif
@@ -3173,12 +3178,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
     /*
      * Iterate the the CR3 page.
      */
-    PPGMMAPPING pMapping;
-    unsigned    iPdNoMapping;
     const bool  fRawR0Enabled = EMIsRawRing0Enabled(pVM);
     PPGMPOOL    pPool         = pVM->pgm.s.CTX_SUFF(pPool);
 
     /* Only check mappings if they are supposed to be put into the shadow page table. */
+#  ifndef PGM_WITHOUT_MAPPINGS
+    PPGMMAPPING pMapping;
+    unsigned    iPdNoMapping;
     if (pgmMapAreMappingsEnabled(&pVM->pgm.s))
     {
         pMapping      = pVM->pgm.s.CTX_SUFF(pMappings);
@@ -3189,10 +3195,15 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
         pMapping      = 0;
         iPdNoMapping  = ~0U;
     }
+#  else  /* PGM_WITHOUT_MAPPINGS */
+    Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
+#  endif /* PGM_WITHOUT_MAPPINGS */
 
 #  if PGM_GST_TYPE == PGM_TYPE_PAE
     for (uint64_t iPdpt = 0; iPdpt < GST_PDPE_ENTRIES; iPdpt++)
+#  endif /* PGM_GST_TYPE == PGM_TYPE_PAE */
     {
+#  if PGM_GST_TYPE == PGM_TYPE_PAE
         unsigned        iPDSrc;
         X86PDPE         PdpeSrc;
         PGSTPD          pPDSrc    = pgmGstGetPaePDPtr(&pVM->pgm.s, iPdpt << X86_PDPT_SHIFT, &iPDSrc, &PdpeSrc);
@@ -3220,19 +3231,18 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 pPdptDst->a[iPdpt].n.u1Present = 0;
             continue;
         }
-#  else  /* PGM_GST_TYPE != PGM_TYPE_PAE */
-    {
-#  endif /* PGM_GST_TYPE != PGM_TYPE_PAE */
+#  endif /* PGM_GST_TYPE == PGM_TYPE_PAE */
+
         for (unsigned iPD = 0; iPD < RT_ELEMENTS(pPDSrc->a); iPD++)
         {
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-            if ((iPD & 255) == 0) /* Start of new PD. */
-                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)iPD << GST_PD_SHIFT);
+            if (RT_UNLIKELY((iPD & 255) == 0)) /* Start of new PD. */
+                pPDEDst = paPDEDst[iPD >> 8];
 #  endif
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
             Assert(pgmShwGet32BitPDEPtr(&pVM->pgm.s, (uint32_t)iPD << SHW_PD_SHIFT) == pPDEDst);
 #  elif PGM_SHW_TYPE == PGM_TYPE_PAE
-#   if defined(VBOX_STRICT) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* Unfortuantely not reliable with PGMR0DynMap and multiple VMs. */
+#   if defined(VBOX_STRICT) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) /* Unfortunately not reliable with PGMR0DynMap and multiple VMs. */
             RTGCPTR GCPtrStrict = (uint32_t)iPD << GST_PD_SHIFT;
 #    if PGM_GST_TYPE == PGM_TYPE_PAE
             GCPtrStrict |= iPdpt << X86_PDPT_SHIFT;
@@ -3244,17 +3254,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
             if (    PdeSrc.n.u1Present
                 &&  (PdeSrc.n.u1User || fRawR0Enabled))
             {
-#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
-          || PGM_GST_TYPE == PGM_TYPE_PAE) \
-      && !defined(PGM_WITHOUT_MAPPINGS)
-
+#  ifndef PGM_WITHOUT_MAPPINGS
                 /*
                  * Check for conflicts with GC mappings.
                  */
 #   if PGM_GST_TYPE == PGM_TYPE_PAE
                 if (iPD + iPdpt * X86_PG_PAE_ENTRIES == iPdNoMapping)
 #   else
-                if (iPD == iPdNoMapping)
+                if (RT_UNLIKELY(iPD == iPdNoMapping))
 #   endif
                 {
                     if (pVM->pgm.s.fMappingsFixed)
@@ -3264,7 +3271,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                         Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
                         iPD += cPTs - 1;
 #   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
-                        pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
+                        pPDEDst = paPDEDst[(iPD + 1) >> 8];
 #   else
                         pPDEDst += cPTs;
 #   endif
@@ -3293,9 +3300,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     return VINF_PGM_SYNC_CR3;
 #   endif /* !IN_RING3 */
                 }
-#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
+#  endif /* !PGM_WITHOUT_MAPPINGS */
 
                 /*
                  * Sync page directory entry.
@@ -3386,7 +3391,9 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                     pPDEDst++;
                 } /* foreach 2MB PAE PDE in 4MB guest PDE */
             }
-#  if PGM_GST_TYPE == PGM_TYPE_PAE
+#  ifdef PGM_WITHOUT_MAPPINGS
+            else
+#  elif PGM_GST_TYPE == PGM_TYPE_PAE
             else if (iPD + iPdpt * X86_PG_PAE_ENTRIES != iPdNoMapping)
 #  else
             else if (iPD != iPdNoMapping)
@@ -3396,28 +3403,40 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                  * Check if there is any page directory to mark not present here.
                  */
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
-                for (unsigned i = 0, iPdShw = iPD * 2; i < 2; i++, iPdShw++) /* pray that the compiler unrolls this */
-#  elif PGM_GST_TYPE == PGM_TYPE_PAE
-                const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES;
-#  else
-                const unsigned iPdShw = iPD;
-#  endif
+                /* first half */
+                if (pPDEDst->n.u1Present)
                 {
-                    if (pPDEDst->n.u1Present)
-                    {
-                        pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdShw);
-                        pPDEDst->u = 0;
-                        MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
-                    }
-                    pPDEDst++;
+                    pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPD * 2);
+                    pPDEDst->u = 0;
+                    MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
                 }
+                pPDEDst++;
+                /* second half */
+                if (pPDEDst->n.u1Present)
+                {
+                    pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPD * 2 + 1);
+                    pPDEDst->u = 0;
+                    MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
+                }
+                pPDEDst++;
+#  else  /* 1:1 */
+                if (pPDEDst->n.u1Present)
+                {
+#   if PGM_GST_TYPE == PGM_TYPE_PAE
+                    const unsigned iPdShw = iPD + iPdpt * X86_PG_PAE_ENTRIES;
+#   else
+                    const unsigned iPdShw = iPD;
+#   endif
+                    pgmPoolFree(pVM, pPDEDst->u & SHW_PDE_PG_MASK, SHW_POOL_ROOT_IDX, iPdShw);
+                    pPDEDst->u = 0;
+                    MY_STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3DstFreedSrcNP));
+                }
+                pPDEDst++;
+#  endif /* 1:1 */
             }
+#  ifndef PGM_WITHOUT_MAPPINGS
             else
             {
-#  if    (   PGM_GST_TYPE == PGM_TYPE_32BIT \
-          || PGM_GST_TYPE == PGM_TYPE_PAE)  \
-      && !defined(PGM_WITHOUT_MAPPINGS)
-
                 const unsigned cPTs = pMapping->cb >> GST_PD_SHIFT;
 
                 Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
@@ -3457,10 +3476,10 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                                 pMapping = pMapping->CTX_SUFF(pNext);
                             iPdNoMapping = pMapping ? pMapping->GCPtr >> GST_PD_SHIFT : ~0U;
                             break;
-#   else
+#   else  /* !IN_RING3 */
                             LogFlow(("SyncCR3: detected conflict -> VINF_PGM_SYNC_CR3\n"));
                             return VINF_PGM_SYNC_CR3;
-#   endif
+#   endif /* !IN_RING3 */
                         }
                     }
                     if (iPdNoMapping == ~0U && pMapping)
@@ -3475,17 +3494,15 @@ PGM_BTH_DECL(int, SyncCR3)(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bo
                 Assert(PGM_GST_TYPE == PGM_TYPE_32BIT || (iPD + cPTs - 1) / X86_PG_PAE_ENTRIES == iPD / X86_PG_PAE_ENTRIES);
                 iPD += cPTs - 1;
 #   if PGM_SHW_TYPE != PGM_GST_TYPE /* SHW==PAE && GST==32BIT */
-                pPDEDst = pgmShwGetPaePDEPtr(&pVM->pgm.s, (uint32_t)(iPD + 1) << GST_PD_SHIFT);
+                pPDEDst = paPDEDst[(iPD + 1) >> 8];
 #   else
                 pPDEDst += cPTs;
 #   endif
 #   if PGM_GST_TYPE != PGM_SHW_TYPE
                 AssertCompile(PGM_GST_TYPE == PGM_TYPE_32BIT && PGM_SHW_TYPE == PGM_TYPE_PAE);
 #   endif
-#  else  /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
-                Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
-#  endif /* (PGM_GST_TYPE != PGM_TYPE_32BIT && PGM_GST_TYPE != PGM_TYPE_PAE) || PGM_WITHOUT_MAPPINGS */
             }
+#  endif /* !PGM_WITHOUT_MAPPINGS */
 
         } /* for iPD */
     } /* for each PDPTE (PAE) */
