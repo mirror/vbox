@@ -866,11 +866,13 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     ICMP_ECHO_REPLY *icr;
     u_char code = ~0;
     len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
-    if (len <= 0)
+    if (len < 0)
     {
         LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
         return;
     }
+    if (len == 0)
+        return; /* no error */
     LogRel(("IcmpParseReplies returns %ld\n", len));
     icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
     for (i = 0; i < len; ++i)
