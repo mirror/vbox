@@ -26,6 +26,8 @@
         UPD_NFDS((so)->s);                           \
     } while(0)
 
+# define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
+
 # ifdef VBOX_WITH_SLIRP_ICMP
 #  define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
@@ -59,6 +61,15 @@
 # define DO_ENGAGE_EVENT2(so, fdset1, fdset2, label) \
     DO_ENGAGE_EVENT1((so), (fdset1), label)
 
+# define DO_POLL_EVENTS(rc, error, so, events, label)                       \
+    (rc) = WSAEnumNetworkEvents((so)->s, VBOX_SOCKET_EVENT, (events));      \
+    if ((rc) == SOCKET_ERROR)                                               \
+    {                                                                       \
+        (error) = WSAGetLastError();                                        \
+        LogRel(("WSAEnumNetworkEvents " #label " error %d\n", (error)));    \
+        continue;                                                           \
+    }
+
 #endif /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
 #define TCP_ENGAGE_EVENT1(so, fdset) \
@@ -69,6 +80,12 @@
 
 #define UDP_ENGAGE_EVENT(so, fdset) \
     DO_ENGAGE_EVENT1((so), (fdset), UDP)
+
+#define POLL_TCP_EVENTS(rc, error, so, events) \
+    DO_POLL_EVENTS((rc), (error), (so), (events), TCP)
+
+#define POLL_UDP_EVENTS(rc, error, so, events) \
+    DO_POLL_EVENTS((rc), (error), (so), (events), UDP)
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -686,15 +703,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             if (so->so_state & SS_NOFDREF || so->s == -1)
                 continue;
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-            rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
-            if (rc == SOCKET_ERROR)
-            {
-                error = WSAGetLastError();
-                LogRel(("WSAEnumNetworkEvents TCP error %d\n", error));
-                continue;
-            }
-#endif
+            POLL_TCP_EVENTS(rc, error, so, NetworkEvents);
 
             /*
              * Check for URG data
@@ -872,15 +881,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         {
             so_next = so->so_next;
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-            rc = WSAEnumNetworkEvents(so->s, VBOX_SOCKET_EVENT, &NetworkEvents);
-            if (rc == SOCKET_ERROR)
-            {
-                error = WSAGetLastError();
-                LogRel(("WSAEnumNetworkEvents TCP error %d\n", error));
-                continue;
-            }
-#endif
+            POLL_UDP_EVENTS(rc, error, so, NetworkEvents);
+
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
             if (so->s != -1 && FD_ISSET(so->s, readfds))
 #else
