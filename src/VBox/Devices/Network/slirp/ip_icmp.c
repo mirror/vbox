@@ -395,7 +395,7 @@ freeit:
                 status = IcmpSendEcho2(pData->icmp_socket.sh, pData->phEvents[VBOX_ICMP_EVENT_INDEX],
                                        NULL, NULL, addr.sin_addr.s_addr, icp->icmp_data,
                                        icmplen - offsetof(struct icmp, icmp_data) , &ipopt,
-                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 0);
+                                       pData->pvIcmpBuffer, pData->szIcmpBuffer, 1);
                 if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
                 {
                     error = GetLastError();
