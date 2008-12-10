@@ -1066,11 +1066,16 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         if (RT_SUCCESS(rc))
             rc = RTStrDupEx(&pszFlags, szFlags);
         if (RT_SUCCESS(rc))
+        {
+            LogFlowThisFunc (("pszName=%p (%s)\n", pszName, pszName));
+            LogFlowThisFunc (("pszValue=%p (%s)\n", pszValue, pszValue));
+            LogFlowThisFunc (("pszFlags=%p (%s)\n", pszFlags, pszFlags));
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
                              mpvHostData, pszName, pszValue,
                              (uint32_t) RT_HIDWORD(u64Timestamp),
                              (uint32_t) RT_LODWORD(u64Timestamp), pszFlags);
+        }
     }
 
     /*
@@ -1082,11 +1087,15 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         /* Send out a host notification */
         rc = RTStrDupEx(&pszName, pszProperty);
         if (RT_SUCCESS(rc))
+        {
+            LogFlowThisFunc (("pszName=%p (%s)\n", pszName, pszName));
             rc = RTReqCallEx(mReqQueue, NULL, 0, RTREQFLAGS_NO_WAIT,
                              (PFNRT)Service::reqNotify, 7, mpfnHostCallback,
-                             mpvHostData, pszName, NULL,
+                             mpvHostData, pszName, (uintptr_t) NULL,
                              (uint32_t) RT_HIDWORD(u64Timestamp),
-                             (uint32_t) RT_LODWORD(u64Timestamp), NULL);
+                             (uint32_t) RT_LODWORD(u64Timestamp),
+                             (uintptr_t) NULL);
+       }
     }
     if (RT_FAILURE(rc)) /* clean up if we failed somewhere */
     {
@@ -1096,9 +1105,6 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         RTStrFree(pszFlags);
     }
     LogFlowThisFunc (("returning\n"));
-    LogFlowThisFunc (("pszName=%p (%s)\n", pszName, pszName));
-    LogFlowThisFunc (("pszValue=%p (%s)\n", pszValue, pszValue));
-    LogFlowThisFunc (("pszFlags=%p (%s)\n", pszFlags, pszFlags));
 #endif /* VBOX_GUEST_PROP_TEST_NOTHREAD not defined */
 }
 
