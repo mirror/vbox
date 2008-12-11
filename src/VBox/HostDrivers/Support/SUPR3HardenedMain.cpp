@@ -584,10 +584,15 @@ static void supR3HardenedMainOpenDevice(void)
 
 
 #ifdef SUP_HARDENED_SUID
+
 /**
- * Drop any root privileges we might be holding.
+ * Grabs extra non-root capabilities / privileges that we might require.
+ *
+ * This is currently only used for being able to do ICMP from the NAT engine.
+ *
+ * @note We still have root privileges at the time of this call.
  */
-static void supR3HardenedMainDropPrivileges(void)
+static void supR3HardenedMainGrabCapabilites(void)
 {
 # if defined(RT_OS_LINUX)
     /*
@@ -620,7 +625,7 @@ static void supR3HardenedMainDropPrivileges(void)
                 supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");
         }
         else
-            supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set inheritable privilege set.\n");                
+            supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set inheritable privilege set.\n");
 
         priv_freeset(pPrivSet);
     }
@@ -628,7 +633,13 @@ static void supR3HardenedMainDropPrivileges(void)
         supR3HardenedError(-1, false, "SUPR3HardenedMain: failed to get basic privilege set.\n");
 
 # endif
+}
 
+/**
+ * Drop any root privileges we might be holding.
+ */
+static void supR3HardenedMainDropPrivileges(void)
+{
     /*
      * Try use setre[ug]id since this will clear the save uid/gid and thus
      * leave fewer traces behind that libs like GTK+ may pick up.
@@ -691,14 +702,13 @@ static void supR3HardenedMainDropPrivileges(void)
 # if RT_OS_LINUX
     /*
      * Re-enable the cap_net_raw capability which was disabled during setresuid.
-     * XXX Warn if that does not work?
      */
+    /** @todo Warn if that does not work? */
     cap_set_proc(cap_from_text("cap_net_raw+ep"));
-#endif
-    
+# endif
 }
-#endif /* SUP_HARDENED_SUID */
 
+#endif /* SUP_HARDENED_SUID */
 
 /**
  * Loads the VBoxRT DLL/SO/DYLIB, hands it the open driver,
@@ -942,6 +952,11 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
         //supR3HardenedMainOpenService(&g_SupPreInitData, true /* fFatal */);
 
 #ifdef SUP_HARDENED_SUID
+    /*
+     * Grab additional capabilities / privileges.
+     */
+    supR3HardenedMainGrabCapabilites();
+
     /*
      * Drop any root privileges we might be holding (won't return on failure)
      */
