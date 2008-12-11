@@ -1860,18 +1860,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x);
 
 #ifdef VBOX_STRICT
-
-# ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    {
-        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
-        /* Flush the queued writes first. */
-        for (unsigned i=0;i<pCache->Write.cValidEntries;i++)
-        {
-            VMXWriteVMCS(pCache->Write.aField[i], pCache->Write.aFieldVal[i]);
-        }
-        pCache->Write.cValidEntries = 0;
-    }
-# endif
+    VMXFlushWriteCache(pVCpu);
 
     rc = VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
     AssertRC(rc);
@@ -3225,6 +3214,9 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     else
         Assert(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
 
+    /* Flush all pending VMCS writes. */
+    VMXFlushWriteCache(pVCpu);
+
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
     int rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
     AssertRC(rc);
@@ -3592,3 +3584,19 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 
+#ifdef VMX_USE_CACHED_VMCS_ACCESSES
+/**
+ * Flush the write cache in order not to overflow it with frequent ring switches.
+ *
+ * @param   pVCpu       The VMCPU to operate on.
+ */
+VMMR0DECL(void) VMXFlushWriteCache(PVMCPU pVCpu)
+{
+    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+    /* Flush the queued writes first. */
+    for (unsigned i=0;i<pCache->Write.cValidEntries;i++)
+        VMXWriteVMCS(pCache->Write.aField[i], pCache->Write.aFieldVal[i]);
+
+    pCache->Write.cValidEntries = 0;
+}
+#endif
