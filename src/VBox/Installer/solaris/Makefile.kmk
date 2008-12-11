@@ -93,7 +93,9 @@ SOLARIS_STRIP_BINS = \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxManage \
-	$(notdir $(wildcard $(PATH_BIN)/VBoxREM*.so)) \
+	VBoxREM.so \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	VBoxSVC \
