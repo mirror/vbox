@@ -175,6 +175,8 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     break;
                 }
             }
+            /* fall through */
+
         /*
          *  for TCP and UDP logic little bit reverted, we try to find the HOST socket
          *  from which the IP package has been sent.
@@ -186,6 +188,8 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             fport = udp->uh_dport;
             laddr.s_addr = ip->ip_src.s_addr;
             lport = udp->uh_sport;
+            /* fall through */
+
         case IPPROTO_TCP:
             if (head_socket == NULL)
             {
@@ -198,17 +202,19 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             }
             for (so = head_socket; so != head_socket; so = so->so_next)
             {
-                    /* Should be reaplaced by hash here */
-                    if (so->so_faddr.s_addr == faddr.s_addr
-                        && so->so_fport == fport
-                        && so->so_hladdr.s_addr == laddr.s_addr
-                        && so->so_hlport == lport) {
-                            icm = malloc(sizeof(struct icmp_msg));
-                            icm->im_m = so->so_m;
-                            found = 1;
-                        }
+                /* Should be reaplaced by hash here */
+                if (   so->so_faddr.s_addr == faddr.s_addr
+                    && so->so_fport == fport
+                    && so->so_hladdr.s_addr == laddr.s_addr
+                    && so->so_hlport == lport)
+                {
+                    icm = malloc(sizeof(struct icmp_msg));
+                    icm->im_m = so->so_m;
+                    found = 1;
+                }
             }
             break;
+
         default:
             LogRel(("%s:ICMP: unsupported protocol(%d)\n", __FUNCTION__, ip->ip_p));
     }
@@ -228,7 +234,7 @@ icmp_attach(PNATState pData, struct mbuf *m)
     icm = malloc(sizeof(struct icmp_msg));
     icm->im_m = m;
     LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
-    return (0);
+    return 0;
 }
 #endif /* VBOX_WITH_SLIRP_ICMP */
 
@@ -239,8 +245,8 @@ void
 icmp_input(PNATState pData, struct mbuf *m, int hlen)
 {
     register struct icmp *icp;
-    register struct ip *ip=mtod(m, struct ip *);
-    int icmplen=ip->ip_len;
+    register struct ip *ip = mtod(m, struct ip *);
+    int icmplen = ip->ip_len;
     int status;
     uint32_t dst;
 
@@ -465,7 +471,7 @@ end_error:
  */
 
 #define ICMP_MAXDATALEN (IP_MSS-28)
-void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, char *message)
+void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, int minsize, const char *message)
 {
     unsigned hlen, shlen, s_ip_len;
     register struct ip *ip;
@@ -495,8 +501,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     if (ip->ip_off & IP_OFFMASK)
         goto end_error;    /* Only reply to fragment 0 */
 
-    shlen=ip->ip_hl << 2;
-    s_ip_len=ip->ip_len;
+    shlen = ip->ip_hl << 2;
+    s_ip_len = ip->ip_len;
     if (ip->ip_p == IPPROTO_ICMP)
     {
         icp = (struct icmp *)((char *)ip + shlen);
@@ -509,8 +515,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     }
 
     /* make a copy */
-    if (!(m=m_get(pData)))
-        goto end_error;               /* get mbuf */
+    if (!(m = m_get(pData)))
+        goto end_error;                    /* get mbuf */
     {
         int new_m_size;
         new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
@@ -518,11 +524,11 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
             m_inc(m, new_m_size);
     }
     memcpy(m->m_data, msrc->m_data, msrc->m_len);
-    m->m_len = msrc->m_len;                        /* copy msrc to m */
+    m->m_len = msrc->m_len;                /* copy msrc to m */
 
     /* make the header of the reply packet */
     ip   = mtod(m, struct ip *);
-    hlen = sizeof(struct ip );     /* no options in reply */
+    hlen = sizeof(struct ip );             /* no options in reply */
 
     /* fill in icmp */
     m->m_data += hlen;
@@ -531,11 +537,11 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     icp = mtod(m, struct icmp *);
 
     if (minsize)
-        s_ip_len=shlen+ICMP_MINLEN;   /* return header+8b only */
-    else if (s_ip_len>ICMP_MAXDATALEN)         /* maximum size */
-        s_ip_len=ICMP_MAXDATALEN;
+        s_ip_len = shlen+ICMP_MINLEN;      /* return header+8b only */
+    else if (s_ip_len > ICMP_MAXDATALEN)   /* maximum size */
+        s_ip_len = ICMP_MAXDATALEN;
 
-    m->m_len=ICMP_MINLEN+s_ip_len;        /* 8 bytes ICMP header */
+    m->m_len = ICMP_MINLEN + s_ip_len;     /* 8 bytes ICMP header */
 
     /* min. size = 8+sizeof(struct ip)+8 */
 
@@ -555,11 +561,12 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         /* DEBUG : append message to ICMP packet */
         int message_len;
         char *cpnt;
-        message_len=strlen(message);
-        if (message_len>ICMP_MAXDATALEN) message_len=ICMP_MAXDATALEN;
-        cpnt=(char *)m->m_data+m->m_len;
+        message_len = strlen(message);
+        if (message_len > ICMP_MAXDATALEN)
+            message_len = ICMP_MAXDATALEN;
+        cpnt = (char *)m->m_data+m->m_len;
         memcpy(cpnt, message, message_len);
-        m->m_len+=message_len;
+        m->m_len += message_len;
     }
 #endif
 
@@ -573,7 +580,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     ip->ip_hl = hlen >> 2;
     ip->ip_len = m->m_len;
 
-    ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+    ip->ip_tos = ((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
 
     ip->ip_ttl = MAXTTL;
     ip->ip_p = IPPROTO_ICMP;

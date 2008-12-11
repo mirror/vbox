@@ -290,7 +290,8 @@ sosendoob(struct socket *so)
          * send it all
          */
         len = (sb->sb_data + sb->sb_datalen) - sb->sb_rptr;
-        if (len > so->so_urgc) len = so->so_urgc;
+        if (len > so->so_urgc)
+            len = so->so_urgc;
         memcpy(buff, sb->sb_rptr, len);
         so->so_urgc -= len;
         if (so->so_urgc)
@@ -480,12 +481,12 @@ sorecvfrom(PNATState pData, struct socket *so)
                     m->m_len, errno,strerror(errno)));
         if(m->m_len < 0)
         {
-            u_char code=ICMP_UNREACH_PORT;
+            u_char code = ICMP_UNREACH_PORT;
 
             if (errno == EHOSTUNREACH)
-                code=ICMP_UNREACH_HOST;
+                code = ICMP_UNREACH_HOST;
             else if(errno == ENETUNREACH)
-                code=ICMP_UNREACH_NET;
+                code = ICMP_UNREACH_NET;
 
             DEBUG_MISC((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
             icmp_error(pData, so->so_m, ICMP_UNREACH,code, 0,strerror(errno));
@@ -836,7 +837,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     {
         /* according RFC 793 error messages required copy of initial IP header + 64 bit */
         memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
-        ip->ip_tos=((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
+        ip->ip_tos = ((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
     }
 
     /* the low level expects fields to be in host format so let's convert them*/
@@ -953,9 +954,9 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
         u_char code = ICMP_UNREACH_PORT;
 
         if (errno == EHOSTUNREACH)
-            code=ICMP_UNREACH_HOST;
+            code = ICMP_UNREACH_HOST;
         else if(errno == ENETUNREACH)
-            code=ICMP_UNREACH_NET;
+            code = ICMP_UNREACH_NET;
 
         DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
                     errno,strerror(errno)));
