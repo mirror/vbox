@@ -170,6 +170,8 @@ endif
 ifdef VBOX_USE_REM2
 $(REM_MOD)_LIBS            = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
+$(REM_MOD)_LIBS.win       += \
+	$(LIB_VMM)
 else
 $(REM_MOD)_LIBS            = \
 	$(LIB_VMM) \
