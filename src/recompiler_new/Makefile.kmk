@@ -202,19 +202,22 @@ ifdef VBOX_USE_REM64
  VBoxREM32_EXTENDS_BY := appending 
  VBoxREM32_TEMPLATE := $(VBoxREM_TEMPLATE)
  VBoxREM32_DEFS := $(VBoxREM_DEFS)
+ VBoxREM32_LIBS := $(LIB_VMM)
 
  VBoxREM64_EXTENDS = VBoxREM
  VBoxREM64_EXTENDS_BY = appending 
  VBoxREM64_TEMPLATE := $(VBoxREM_TEMPLATE)
  VBoxREM64_DEFS := $(VBoxREM_DEFS) VBOX_ENABLE_VBOXREM64
+ VBoxREM64_LIBS := $(LIB_VMM)
 
  VBoxREMSel_TEMPLATE    = VBOXR3
  VBoxREMSel_NAME        = VBoxREM
+ VBoxREMImp_INST        = $(INST_LIB)
  VBoxREMSel_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)    \
                           VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
  VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp
  VBoxREMSel_LDFLAGS.darwin = -undefined dynamic_lookup
- VBoxREMSel_LIBS := $(LIB_VMM)
+ VBoxREMSel_LIBS :=
 
  ifeq ($(KBUILD_TARGET), win)
   DLL                  += VBoxREM32 VBoxREM64 VBoxREMSel
