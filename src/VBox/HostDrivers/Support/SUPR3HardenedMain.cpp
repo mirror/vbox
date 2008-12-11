@@ -614,18 +614,18 @@ static void supR3HardenedMainDropPrivileges(void)
             {
                 rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivSet);
                 if (rc)
-                    supR3HardenedFatal("SUPR3HardenedMain: failed to set effectives privilege set.\n");
+                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effectives privilege set.\n");
             }
             else
-                supR3HardenedFatal("SUPR3HardenedMain: failed to set permitted privilege set.\n");
+                supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");
         }
         else
-            supR3HardenedFatal("SUPR3HardenedMain: failed to set inheritable privilege set.\n");                
+            supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set inheritable privilege set.\n");                
 
         priv_freeset(pPrivSet);
     }
     else
-        supR3HardenedFatal("SUPR3HardenedMain: failed to get basic privilege set.\n");
+        supR3HardenedError(-1, false, "SUPR3HardenedMain: failed to get basic privilege set.\n");
 
 # endif
 
