@@ -76,7 +76,7 @@ endif
 #
 # Target lists (some of them anyways).
 #
-ifeq ($(REM_MOD),VBoxREM2)
+ifdef VBOX_USE_REM2
  SYSMODS += VBoxREM2
 else
  ifndef VBOX_USE_REM64
@@ -151,10 +151,10 @@ endif
 $(REM_MOD)_SOURCES.debug  += \
 	Sun/testmath.c
 $(REM_MOD)_SOURCES.win.x86 = $(REM_MOD).def
-ifneq ($(REM_MOD),VBoxREM2)
+ifndef VBOX_USE_REM2
  $(REM_MOD)_POST_CMDS      = $(VBOX_SIGN_IMAGE_CMDS)
 endif
-ifeq ($(REM_MOD),VBoxREM2)
+ifdef VBOX_USE_REM2
 ## @todo spread out where it belongs.
 $(REM_MOD)_TEMPLATE        = VBOXNOCRTGAS
 $(REM_MOD)_DEFS           += LOG_USE_C99 $(ARCH_BITS_DEFS)
@@ -179,7 +179,7 @@ $(REM_MOD)_LIBS.darwin     = \
 endif
 
 ## @todo clean up this, there are some duplicates with the template here I think.
-$(REM_MOD)_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib -undefined dynamic_lookup
+$(REM_MOD)_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib
 $(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
 $(REM_MOD)_LDFLAGS.linux   = $(VBOX_LD_as_needed)
 $(REM_MOD)_LDFLAGS.os2     = -Zomf
@@ -187,46 +187,43 @@ $(REM_MOD)_LDFLAGS.debug   = -g
 $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 
-ifdef VBOX_USE_REM2
+if defined(VBOX_USE_REM2) || defined(VBOX_USE_REM64)
 #
 # The VBoxREM2 wrapper.
 #
-## @todo Note to self: Merge with VBoxREMSel.
 DLLS += VBoxREMWrapper
 VBoxREMWrapper_TEMPLATE    = VBOXR3
 VBoxREMWrapper_NAME        = VBoxREM
 VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 VBoxREMWrapper_DEFS       += VBOX_WITH_NEW_RECOMPILER
+ ifdef VBOX_USE_REM64
+VBoxREMWrapper_DEFS       += VBOX_USE_BITNESS_SELECTOR
+ endif
 VBoxREMWrapper_SOURCES     = \
 	VBoxREMWrapper.cpp \
-	VBoxREMWrapperA.asm
+	$(if $(VBOX_USE_REM2),VBoxREMWrapperA.asm)
 VBoxREMWrapper_LIBS        = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
+VBoxREMWrapper_LIBS.darwin += \
+	$(TARGET_VBoxREMImp)
+#VBoxREMWrapper_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 endif
 
 
 ifdef VBOX_USE_REM64
 ## @todo Note to self: One should be the default config (VBoxREM) with a NAME, the 64 bit varian should be done like here.
- DLL                   += VBoxREM32 VBoxREM64 VBoxREMSel
+ DLL                  += VBoxREM32 VBoxREM64
  VBoxREM32_EXTENDS    = VBoxREM
  VBoxREM32_EXTENDS_BY = appending
  VBoxREM32_TEMPLATE   = $(VBoxREM_TEMPLATE)
- VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib -undefined dynamic_lookup
+ VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib
 
  VBoxREM64_EXTENDS    = VBoxREM
  VBoxREM64_EXTENDS_BY = appending
  VBoxREM64_TEMPLATE   = $(VBoxREM_TEMPLATE)
  VBoxREM64_DEFS       = VBOX_ENABLE_VBOXREM64
- VBoxREM64_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib -undefined dynamic_lookup
-
- VBoxREMSel_TEMPLATE    = VBOXR3
- VBoxREMSel_NAME        = VBoxREM
- VBoxREMSel_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)    \
-                          VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
- VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp
- VBoxREMSel_LIBS        = $(LIB_RUNTIME)
- VBoxREMSel_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib -undefined dynamic_lookup
+ VBoxREM64_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib
 
 endif # USE_VBOXREM64
 
@@ -240,12 +237,10 @@ endif # USE_VBOXREM64
 #
 IMPORT_LIBS += VBoxREMImp
 VBoxREMImp_TEMPLATE        = VBOXR3
- if1of ($(KBUILD_TARGET), os2 win)
-VBoxREMImp_INST            = $(INST_LIB)
- else
+ ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_NAME            = VBoxREM
-VBoxREMImp_INST            = $(INST_LIB)
  endif
+VBoxREMImp_INST            = $(INST_LIB)
 VBoxREMImp_SOURCES.win     = VBoxREM.def
 VBoxREMImp_SOURCES.os2     = $(PATH_VBoxREMImp)/VBoxREMOS2.def
  ifn1of ($(KBUILD_TARGET), os2 win)
