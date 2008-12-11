@@ -1250,24 +1250,6 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , mMediaEnumThread (NULL)
     , verString ("1.0")
-    , vm_state_color (KMachineState_COUNT)
-    , machineStates (KMachineState_COUNT)
-    , sessionStates (KSessionState_COUNT)
-    , deviceTypes (KDeviceType_COUNT)
-    , storageBuses (KStorageBus_COUNT)
-    , storageBusDevices (2)
-    , storageBusChannels (3)
-    , diskTypes (KHardDiskType_COUNT)
-    , vrdpAuthTypes (KVRDPAuthType_COUNT)
-    , portModeTypes (KPortMode_COUNT)
-    , usbFilterActionTypes (KUSBDeviceFilterAction_COUNT)
-    , audioDriverTypes (KAudioDriverType_COUNT)
-    , audioControllerTypes (KAudioControllerType_COUNT)
-    , networkAdapterTypes (KNetworkAdapterType_COUNT)
-    , networkAttachmentTypes (KNetworkAttachmentType_COUNT)
-    , clipboardTypes (KClipboardMode_COUNT)
-    , ideControllerTypes (KIDEControllerType_COUNT)
-    , USBDeviceStates (KUSBDeviceState_COUNT)
     , detailReportTemplatesReady (false)
 {
 }
@@ -1483,7 +1465,6 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aId) const
  */
 QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
 {
-    Assert (storageBusChannels.count() == 3);
     QString channel;
 
     switch (aBus)
@@ -1507,6 +1488,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
             AssertFailedBreak();
     }
 
+    Assert (!channel.isNull());
     return channel;
 }
 
@@ -1522,12 +1504,12 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
     {
         case KStorageBus_IDE:
         {
-            QStringVector::const_iterator it =
+            QLongStringMap::const_iterator it =
                 qFind (storageBusChannels.begin(), storageBusChannels.end(),
                        aChannel);
             AssertMsgBreak (it != storageBusChannels.end(),
                             ("No value for {%s}\n", aChannel.latin1()));
-            channel = (LONG) (it - storageBusChannels.begin());
+            channel = it.key();
             break;
         }
         case KStorageBus_SATA:
@@ -1559,7 +1541,6 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
 {
     NOREF (aChannel);
 
-    Assert (storageBusDevices.count() == 2);
     QString device;
 
     switch (aBus)
@@ -1584,6 +1565,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
             AssertFailedBreak();
     }
 
+    Assert (!device.isNull());
     return device;
 }
 
@@ -1603,12 +1585,12 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
     {
         case KStorageBus_IDE:
         {
-            QStringVector::const_iterator it =
+            QLongStringMap::const_iterator it =
                 qFind (storageBusDevices.begin(), storageBusDevices.end(),
                        aDevice);
             AssertMsg (it != storageBusDevices.end(),
                        ("No value for {%s}", aDevice.latin1()));
-            device = (LONG) (it - storageBusDevices.begin());
+            device = it.key();
             break;
         }
         case KStorageBus_SATA:
@@ -1666,8 +1648,9 @@ QStringList VBoxGlobal::deviceTypeStrings() const
 {
     static QStringList list;
     if (list.empty())
-        for (uint i = 0; i < deviceTypes.count() - 1 /* usb=n/a */; i++)
-            list += deviceTypes [i];
+        for (QULongStringMap::const_iterator it = deviceTypes.begin();
+             it != deviceTypes.end(); ++ it)
+            list += it.data();
     return list;
 }
 
@@ -3010,7 +2993,6 @@ void VBoxGlobal::languageChange()
     storageBuses [KStorageBus_SATA] =
         tr ("SATA", "StorageBus");
 
-    Assert (storageBusChannels.count() == 3);
     storageBusChannels [0] =
         tr ("Primary", "StorageBusChannel");
     storageBusChannels [1] =
@@ -3018,7 +3000,6 @@ void VBoxGlobal::languageChange()
     storageBusChannels [2] =
         tr ("Port %1", "StorageBusChannel");
 
-    Assert (storageBusDevices.count() == 2);
     storageBusDevices [0] = tr ("Master", "StorageBusDevice");
     storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
 
@@ -4705,41 +4686,65 @@ void VBoxGlobal::init()
     /* fill in OS type icon dictionary */
     static const char *kOSTypeIcons [][2] =
     {
-        {"unknown",     "os_unknown.png"},
-        {"dos",         "os_dos.png"},
-        {"win31",       "os_win31.png"},
-        {"win95",       "os_win95.png"},
-        {"win98",       "os_win98.png"},
-        {"winme",       "os_winme.png"},
-        {"winnt4",      "os_winnt4.png"},
-        {"win2k",       "os_win2k.png"},
-        {"winxp",       "os_winxp.png"},
-        {"win2k3",      "os_win2k3.png"},
-        {"winvista",    "os_winvista.png"},
-        {"win2k8",      "os_win2k8.png"},
-        {"os2warp3",    "os_os2warp3.png"},
-        {"os2warp4",    "os_os2warp4.png"},
-        {"os2warp45",   "os_os2warp45.png"},
-        {"ecs",         "os_ecs.png"},
-        {"linux22",     "os_linux22.png"},
-        {"linux24",     "os_linux24.png"},
-        {"linux26",     "os_linux26.png"},
-        {"archlinux",   "os_archlinux.png"},
-        {"debian",      "os_debian.png"},
-        {"opensolaris", "os_opensolaris.png"},
-        {"opensuse",    "os_opensuse.png"},
-        {"fedoracore"  ,"os_fedoracore.png"},
-        {"gentoo",      "os_gentoo.png"},
-        {"mandriva",    "os_mandriva.png"},
-        {"redhat",      "os_redhat.png"},
-        {"ubuntu",      "os_ubuntu.png"},
-        {"xandros",     "os_xandros.png"},
-        {"freebsd",     "os_freebsd.png"},
-        {"openbsd",     "os_openbsd.png"},
-        {"netbsd",      "os_netbsd.png"},
-        {"netware",     "os_netware.png"},
-        {"solaris",     "os_solaris.png"},
-        {"l4",          "os_l4.png"},
+        {"Other",           "os_other.png"},
+        {"DOS",             "os_dos.png"},
+        {"Netware",         "os_netware.png"},
+        {"L4",              "os_l4.png"},
+        {"Windows31",       "os_win31.png"},
+        {"Windows95",       "os_win95.png"},
+        {"Windows98",       "os_win98.png"},
+        {"WindowsMe",       "os_winme.png"},
+        {"WindowsNT4",      "os_winnt4.png"},
+        {"Windows2000",     "os_win2k.png"},
+        {"WindowsXP",       "os_winxp.png"},
+        {"WindowsXP_64",    "os_winxp_64.png"},
+        {"Windows2003",     "os_win2k3.png"},
+        {"Windows2003_64",  "os_win2k3_64.png"},
+        {"WindowsVista",    "os_winvista.png"},
+        {"WindowsVista_64", "os_winvista_64.png"},
+        {"Windows2008",     "os_win2k8.png"},
+        {"Windows2008_64",  "os_win2k8_64.png"},
+        {"WindowsNT",       "os_win_other.png"},
+        {"OS2Warp3",        "os_os2warp3.png"},
+        {"OS2Warp4",        "os_os2warp4.png"},
+        {"OS2Warp45",       "os_os2warp45.png"},
+        {"OS2eCS",          "os_os2ecs.png"},
+        {"OS2",             "os_os2_other.png"},
+        {"Linux22",         "os_linux22.png"},
+        {"Linux24",         "os_linux24.png"},
+        {"Linux24_64",      "os_linux24_64.png"},
+        {"Linux26",         "os_linux26.png"},
+        {"Linux26_64",      "os_linux26_64.png"},
+        {"ArchLinux",       "os_archlinux.png"},
+        {"ArchLinux_64",    "os_archlinux_64.png"},
+        {"Debian",          "os_debian.png"},
+        {"Debian_64",       "os_debian_64.png"},
+        {"OpenSUSE",        "os_opensuse.png"},
+        {"OpenSUSE_64",     "os_opensuse_64.png"},
+        {"Fedora",          "os_fedora.png"},
+        {"Fedora_64",       "os_fedora_64.png"},
+        {"Gentoo",          "os_gentoo.png"},
+        {"Gentoo_64",       "os_gentoo_64.png"},
+        {"Mandriva",        "os_mandriva.png"},
+        {"Mandriva_64",     "os_mandriva_64.png"},
+        {"RedHat",          "os_redhat.png"},
+        {"RedHat_64",       "os_redhat_64.png"},
+        {"Ubuntu",          "os_ubuntu.png"},
+        {"Ubuntu_64",       "os_ubuntu_64.png"},
+        {"Xandros",         "os_xandros.png"},
+        {"Xandros_64",      "os_xandros_64.png"},
+        {"Linux",           "os_linux_other.png"},
+        {"FreeBSD",         "os_freebsd.png"},
+        {"FreeBSD_64",      "os_freebsd_64.png"},
+        {"OpenBSD",         "os_openbsd.png"},
+        {"OpenBSD_64",      "os_openbsd_64.png"},
+        {"NetBSD",          "os_netbsd.png"},
+        {"NetBSD_64",       "os_netbsd_64.png"},
+        {"Solaris",         "os_solaris.png"},
+        {"Solaris_64",      "os_solaris_64.png"},
+        {"OpenSolaris",     "os_opensolaris.png"},
+        {"OpenSolaris_64",  "os_opensolaris_64.png"},
+        {"QNX",             "os_other.png"},
     };
     vm_os_type_icons.setAutoDelete (true); /* takes ownership of elements */
     for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); n ++)
