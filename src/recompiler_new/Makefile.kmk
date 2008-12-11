@@ -78,10 +78,10 @@ endif
 #
 ifeq ($(REM_MOD),VBoxREM2)
  SYSMODS += VBoxREM2
-endif
-
-ifndef VBOX_USE_REM64
- DLLS    += VBoxREM
+else
+ ifndef VBOX_USE_REM64
+  DLLS    += VBoxREM
+ endif
 endif
 
 
@@ -170,8 +170,6 @@ endif
 ifdef VBOX_USE_REM2
 $(REM_MOD)_LIBS            = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
-$(REM_MOD)_LIBS.win       += \
-	$(LIB_VMM)
 else
 $(REM_MOD)_LIBS            = \
 	$(LIB_VMM) \
@@ -189,17 +187,22 @@ $(REM_MOD)_LDFLAGS.debug   = -g
 $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 
-ifeq ($(REM_MOD),VBoxREM2)
+ifdef VBOX_USE_REM2
 #
 # The VBoxREM2 wrapper.
 #
-## @todo Note to self: Merge with VBoxREMSel, call it VBoxREMWrapper and use name.
-VBoxREM_TEMPLATE           = VBOXR3
-VBoxREM_DEFS               = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
-VBoxREM_DEFS              += VBOX_WITH_NEW_RECOMPILER
-VBoxREM_SOURCES            = \
+## @todo Note to self: Merge with VBoxREMSel.
+DLLS += VBoxREMWrapper
+VBoxREMWrapper_TEMPLATE    = VBOXR3
+VBoxREMWrapper_NAME        = VBoxREM
+VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+VBoxREMWrapper_DEFS       += VBOX_WITH_NEW_RECOMPILER
+VBoxREMWrapper_SOURCES     = \
 	VBoxREMWrapper.cpp \
 	VBoxREMWrapperA.asm
+VBoxREMWrapper_LIBS        = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
 endif
 
 
