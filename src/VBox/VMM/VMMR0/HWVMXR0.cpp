@@ -3506,19 +3506,21 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
-    uint32_t        aParam[4];
+    uint32_t        aParam[6];
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
-    pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
+    pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
     aParam[0] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
     aParam[1] = (uint32_t)(pPageCpuPhys >> 32);                             /* Param 1: VMXON physical address - Hi. */
     aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys);                  /* Param 2: VMCS physical address - Lo. */
     aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32);            /* Param 2: VMCS physical address - Hi. */
+    aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
+    aParam[5] = 0;
 
-    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 4, &aParam[0]);
+    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
 }
 
 /**
@@ -3543,7 +3545,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);
     AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
 
-    pCpu = HWACCMR0GetCurrentCpuEx(pVCpu->idCpu);
+    pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
