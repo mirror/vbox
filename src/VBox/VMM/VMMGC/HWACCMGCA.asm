@@ -85,18 +85,6 @@
     mov     es, %1
  %endmacro
 
-; trashes rax & rdx
- %macro VMCSWRITE 2
-    mov     eax, %1
-    vmwrite rax, %2
- %endmacro
-
-; trashes rax & rdx
- %macro VMCSREAD 2
-    mov     eax, %1
-    vmread  %2, rax
- %endmacro
-
 BEGINCODE
 BITS 64
 
@@ -133,27 +121,41 @@ BEGINPROC VMXGCStartVM64
     jmp     .vmstart64_vmoff_end
     
 .vmptrld_success:
+
+    ; Save the VMCS pointer on the stack
+    push    qword [rbp + 16 + 8];
+
     ; Signal that we're in 64 bits mode now!
-    VMCSREAD VMX_VMCS_CTRL_EXIT_CONTROLS,       rdx
+    mov     eax, VMX_VMCS_CTRL_EXIT_CONTROLS
+    vmread  rdx, rax
     or      rdx, VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
-    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx  
+    vmwrite rax, rdx
     
     ; Save the host state that's relevant in the temporary 64 bits mode
-    mov     rax, cr0
-    VMCSWRITE VMX_VMCS_HOST_CR0,                rax
-    mov     rax, cr3
-    VMCSWRITE VMX_VMCS_HOST_CR3,                rax
-    mov     rax, cr4
-    VMCSWRITE VMX_VMCS_HOST_CR4,                rax
-    mov     rax, cs
-    VMCSWRITE VMX_VMCS_HOST_FIELD_CS,           rax
-    mov     rax, ss
-    VMCSWRITE VMX_VMCS_HOST_FIELD_SS,           rax
+    mov     rdx, cr0
+    mov     eax, VMX_VMCS_HOST_CR0
+    vmwrite rax, rdx
+
+    mov     rdx, cr3
+    mov     eax, VMX_VMCS_HOST_CR3
+    vmwrite rax, rdx
+
+    mov     rdx, cr4
+    mov     eax, VMX_VMCS_HOST_CR4
+    vmwrite rax, rdx
+
+    mov     rdx, cs
+    mov     eax, VMX_VMCS_HOST_FIELD_CS
+    vmwrite rax, rdx
+
+    mov     rdx, ss
+    mov     eax, VMX_VMCS_HOST_FIELD_SS
+    vmwrite rax, rdx
 
     sub     rsp, 8*2
     sgdt    [rsp]
-    mov     rax, [rsp+2]
-    VMCSWRITE VMX_VMCS_HOST_GDTR_BASE,          rax
+    mov     eax, VMX_VMCS_HOST_GDTR_BASE
+    vmwrite rax, [rsp+2]
     add     rsp, 8*2
     
     ; hopefully we can ignore TR (we restore it anyway on the way back to 32 bits mode)
@@ -244,6 +246,8 @@ ALIGN(16)
     mov     rdi, qword [rsi + CPUMCTX.edi]
     mov     rsi, qword [rsi + CPUMCTX.esi]
 
+    jmp     near .vmstart64_invalid_vmxon_ptr
+
     vmlaunch
     jmp     .vmlaunch64_done;      ;/* here if vmlaunch detected a failure. */
 
@@ -303,12 +307,14 @@ ALIGN(16)
 
 .vmstart64_end:
     ; Signal that we're going back to 32 bits mode!
-    VMCSREAD VMX_VMCS_CTRL_EXIT_CONTROLS,       rdx
+    mov      eax, VMX_VMCS_CTRL_EXIT_CONTROLS
+    vmread   rdx, rax
     and      rdx, ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
-    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx
+    vmwrite  rax, rdx
 
     ; Write back the data and disable the VMCS
-    vmclear [rbp + 16 + 8]  ;pVMCS
+    vmclear qword [rsp]  ;Pushed pVMCS
+    add     rsp, 8
 
 .vmstart64_vmoff_end:
     ; Disable VMX root mode
@@ -320,10 +326,6 @@ ALIGN(16)
 
 .vmstart64_invalid_vmxon_ptr:
     pop     rsi         ; pCtx (needed in rsi by the macros below)
-
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
-    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xS     ; pCache
@@ -338,10 +340,6 @@ ALIGN(16)
 
 .vmstart64_start_failed:
     pop     rsi         ; pCtx (needed in rsi by the macros below)
-
-    ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
-    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xS     ; pCache
