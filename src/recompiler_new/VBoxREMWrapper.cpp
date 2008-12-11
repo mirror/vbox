@@ -1954,7 +1954,7 @@ static void remUnloadLinuxObj(void)
 static bool remIs64bitEnabled(PVM pVM)
 {
     bool f;
-    int rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "Rem64Enabled", &f, false);
+    int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "REM"), "64bitEnabled", &f, false);
     AssertRCReturn(rc, false);
     return f;
 }

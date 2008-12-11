@@ -177,7 +177,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     Assert(pRoot);
 
     /*
-     * Set the root level values.
+     * Set the root (and VMM) level values.
      */
     hrc = pMachine->COMGETTER(Name)(&str);                                          H();
     STR_CONV();
@@ -234,7 +234,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if (fSupportsLongMode && fIs64BitGuest)
         {
-            rc = CFGMR3InsertInteger(pRoot, "Rem64Enabled", 1);                     RC_CHECK();
+            PCFGMNODE pREM;
+            rc = CFGMR3InsertNode(pRoot, "REM", &pREM);                             RC_CHECK();
+            rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                      RC_CHECK();
         }
     }
 
