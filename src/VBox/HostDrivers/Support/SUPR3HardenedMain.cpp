@@ -596,60 +596,36 @@ static void supR3HardenedMainDropPrivileges(void)
      */
     if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
         prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
-
 # elif defined(RT_OS_SOLARIS)
-
     /*
-     * Add net_rawaccess privilege to permitted, effective and inheritable privileges
+     * Add net_icmpaccess privilege to permitted, effective and inheritable privileges
      * before dropping root privileges.
      */
-    int rc = 0;
-    priv_set_t *pPrivSetPermitted = priv_allocset();
-    if (pPrivSetPermitted)
+    priv_set_t *pPrivSet = priv_str_to_set("basic", ",", NULL);
+    if (pPrivSet)
     {
-        priv_set_t *pPrivSetEffective = priv_allocset();
-        if (pPrivSetEffective)
+        priv_addset(pPrivSet, PRIV_NET_ICMPACCESS);
+        int rc = setppriv(PRIV_SET, PRIV_INHERITABLE, pPrivSet);
+        if (!rc)
         {
-            priv_set_t *pPrivSetInherit   = priv_allocset();
-            if (pPrivSetInherit)
+            rc = setppriv(PRIV_SET, PRIV_PERMITTED, pPrivSet);
+            if (!rc)
             {
-                rc = getppriv(PRIV_PERMITTED, pPrivSetPermitted);
-                if (!rc)
-                {
-                    rc = getppriv(PRIV_EFFECTIVE, pPrivSetEffective);
-                    if (!rc)
-                    {
-                        rc = getppriv(PRIV_INHERITABLE, pPrivSetInherit);
-                        if (!rc)
-                        {
-                            priv_addset(pPrivSetPermitted, PRIV_NET_RAWACCESS);
-                            priv_addset(pPrivSetEffective, PRIV_NET_RAWACCESS);
-                            priv_addset(pPrivSetInherit, PRIV_NET_RAWACCESS);
-                        }
-                        else                
-                            supR3HardenedFatal("SUPR3HardenedMain: failed to get inheritable privilege set rc=%d.\n", rc);
-                    }
-                    else
-                        supR3HardenedFatal("SUPR3HardenedMain: failed to get effective privilege set rc=%d.\n", rc);
-                }
-                else
-                    supR3HardenedFatal("SUPR3HardenedMain: failed to get permitted privilege set rc=%d.\n", rc);                
-            
-                priv_freeset(pPrivSetInherit);
+                rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivSet);
+                if (rc)
+                    supR3HardenedFatal("SUPR3HardenedMain: failed to set effectives privilege set.\n");
             }
             else
-                supR3HardenedFatal("SUPR3HardenedMain: failed to allocate inheritable privilege set.\n");
-
-            priv_freeset(pPrivSetEffective);
+                supR3HardenedFatal("SUPR3HardenedMain: failed to set permitted privilege set.\n");
         }
         else
-            supR3HardenedFatal("SUPR3HardenedMain: failed to allocate effective privilege set.\n");
+            supR3HardenedFatal("SUPR3HardenedMain: failed to set inheritable privilege set.\n");                
 
-        priv_freeset(pPrivSetPermitted);
+        priv_freeset(pPrivSet);
     }
     else
-        supR3HardenedFatal("SUPR3HardenedMain: failed to allocate permitted privilege set.\n");
-    
+        supR3HardenedFatal("SUPR3HardenedMain: failed to get basic privilege set.\n");
+
 # endif
 
     /*
@@ -717,7 +693,8 @@ static void supR3HardenedMainDropPrivileges(void)
      * XXX Warn if that does not work?
      */
     cap_set_proc(cap_from_text("cap_net_raw+ep"));
-# endif
+#endif
+    
 }
 #endif /* SUP_HARDENED_SUID */
 
