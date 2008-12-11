@@ -2423,3 +2423,77 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     return rc;
 }
 
+
+/**
+ * Converts a GC physical address to a HC ring-3 pointer, with some
+ * additional checks.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_PHYS_TLB_CATCH_WRITE and *pvPtr set if the page has a write
+ *          access handler of some kind.
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
+ *          accesses or is odd in any way.
+ * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The GC physical address to convert.
+ * @param   fWritable   Whether write access is required.
+ * @param   pR3Ptr      Where to store the R3 pointer on success.
+ */
+VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **pvPtr)
+{
+    pgmLock(pVM);
+
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(&pVM->pgm.s, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+    {
+#if 0 /** @todo ifndef PGM_IGNORE_RAM_FLAGS_RESERVED */
+        if (RT_UNLIKELY(PGM_PAGE_IS_RESERVED(pPage)))
+            rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+#endif
+        {
+#if 0 /** @todo looks like the system ROM is registered incorrectly, 0xfe000 claims to be a zero page. */
+            if (fWritable && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                rc = VERR_PGM_PHYS_TLB_UNASSIGNED; /** @todo VBOX_WITH_NEW_PHYS_CODE: remap it to a writeable page. */
+#else
+            if (0)
+                /* nothing */;
+#endif
+            else if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            else if (fWritable && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
+            else
+                rc = VINF_SUCCESS;
+            if (RT_SUCCESS(rc))
+            {
+                if (pRam->fFlags & MM_RAM_FLAGS_DYNAMIC_ALLOC)
+                {
+                    Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+                    RTGCPHYS off = GCPhys - pRam->GCPhys;
+                    unsigned iChunk = (off >> PGM_DYNAMIC_CHUNK_SHIFT);
+                    *pvPtr = (void *)(pRam->paChunkR3Ptrs[iChunk] + (off & PGM_DYNAMIC_CHUNK_OFFSET_MASK));
+                }
+                else if (RT_LIKELY(pRam->pvR3))
+                {
+                    Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
+                    RTGCPHYS off = GCPhys - pRam->GCPhys;
+                    *pvPtr = (uint8_t *)pRam->pvR3 + off;
+                }
+                else
+                    rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+            }
+        }
+    }
+    else
+        rc = VERR_PGM_PHYS_TLB_UNASSIGNED;
+
+    pgmUnlock(pVM);
+    return rc;
+}
+
+
+

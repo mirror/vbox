@@ -263,15 +263,15 @@ RTCCUINTREG remR3PhysReadU32(RTGCPHYS SrcGCPhys);
 RTCCINTREG  remR3PhysReadS32(RTGCPHYS SrcGCPhys);
 uint64_t    remR3PhysReadU64(RTGCPHYS SrcGCPhys);
 int64_t     remR3PhysReadS64(RTGCPHYS SrcGCPhys);
-void     remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
-void     remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
-void     remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
-void     remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
-void     remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
+void        remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb);
+void        remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val);
+void        remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
+void        remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
+void        remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
 #ifndef REM_PHYS_ADDR_IN_TLB
+void       *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable);
 target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr);
-void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr, target_ulong virtAddr);
 #endif
 
 #endif /* VBOX */

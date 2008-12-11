@@ -1031,6 +1031,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageReset(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  * @returns boolean
  * @param   pVM         VM Handle.
  * @param   GCPhys      Start physical address earlier passed to PGMR3HandlerPhysicalRegister().
+ * @remarks Caller must take the PGM lock...
+ * @threads EMT.
  */
 VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
 {
@@ -1053,12 +1055,15 @@ VMMDECL(bool) PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys)
     return false;
 }
 
+
 /**
  * Check if particular guest's VA is being monitored.
  *
  * @returns true or false
  * @param   pVM             VM handle.
  * @param   GCPtr           Virtual address.
+ * @remarks Will acquire the PGM lock.
+ * @threads Any.
  */
 VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
 {
@@ -1066,8 +1071,9 @@ VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtr);
     pgmUnlock(pVM);
 
-    return pCur != 0;
+    return pCur != NULL;
 }
+
 
 /**
  * Search for virtual handler with matching physical address

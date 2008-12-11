@@ -242,21 +242,21 @@ static void map_exec(void *addr, long size)
     DWORD old_protect;
     VirtualProtect(addr, size,
                    PAGE_EXECUTE_READWRITE, &old_protect);
-    
+
 }
 #else
 static void map_exec(void *addr, long size)
 {
     unsigned long start, end, page_size;
-    
+
     page_size = getpagesize();
     start = (unsigned long)addr;
     start &= ~(page_size - 1);
-    
+
     end = (unsigned long)addr + size;
     end += page_size - 1;
     end &= ~(page_size - 1);
-    
+
     mprotect((void *)start, end - start,
              PROT_READ | PROT_WRITE | PROT_EXEC);
 }
@@ -307,7 +307,7 @@ static void page_init(void)
     memset(l1_phys_map, 0, L1_SIZE * sizeof(void *));
 #ifdef VBOX
     /* We use other means to set reserved bit on our pages */
-#else 
+#else
 #if !defined(_WIN32) && defined(CONFIG_USER_ONLY)
     {
         long long startaddr, endaddr;
@@ -327,7 +327,7 @@ static void page_init(void)
                                     (1ULL << TARGET_PHYS_ADDR_SPACE_BITS) - 1);
                     page_set_flags(startaddr & TARGET_PAGE_MASK,
                                    TARGET_PAGE_ALIGN(endaddr),
-                                   PAGE_RESERVED); 
+                                   PAGE_RESERVED);
                 }
             } while (!feof(f));
             fclose(f);
@@ -378,7 +378,7 @@ DECLINLINE(PageDesc *) page_find_alloc(target_ulong index)
         if (addr == (target_ulong)addr) {
             page_set_flags(addr & TARGET_PAGE_MASK,
                            TARGET_PAGE_ALIGN(addr + len),
-                           PAGE_RESERVED); 
+                           PAGE_RESERVED);
         }
 #else
         p = qemu_mallocz(sizeof(PageDesc) * L2_SIZE);
@@ -477,7 +477,7 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
 #define USE_STATIC_CODE_GEN_BUFFER
 #endif
 
-/* VBox allocates codegen buffer dynamically */ 
+/* VBox allocates codegen buffer dynamically */
 #ifndef VBOX
 #ifdef USE_STATIC_CODE_GEN_BUFFER
 static uint8_t static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE];
@@ -507,14 +507,14 @@ static void code_gen_alloc(unsigned long tb_size)
        the host cpu and OS */
 #ifdef VBOX
     code_gen_buffer = RTMemExecAlloc(code_gen_buffer_size);
-    
+
     if (!code_gen_buffer) {
-        LogRel(("REM: failed allocate codegen buffer %lld\n", 
+        LogRel(("REM: failed allocate codegen buffer %lld\n",
                 code_gen_buffer_size));
         return;
     }
 #else //!VBOX
-#if defined(__linux__) 
+#if defined(__linux__)
     {
         int flags;
         void *start = NULL;
@@ -555,7 +555,7 @@ static void code_gen_alloc(unsigned long tb_size)
             code_gen_buffer_size = (800 * 1024 * 1024);
 #endif
         code_gen_buffer = mmap(addr, code_gen_buffer_size,
-                               PROT_WRITE | PROT_READ | PROT_EXEC, 
+                               PROT_WRITE | PROT_READ | PROT_EXEC,
                                flags, -1, 0);
         if (code_gen_buffer == MAP_FAILED) {
             fprintf(stderr, "Could not allocate dynamic translator buffer\n");
@@ -579,7 +579,7 @@ static void code_gen_alloc(unsigned long tb_size)
     map_exec(code_gen_prologue, _1K);
 #endif
 
-    code_gen_buffer_max_size = code_gen_buffer_size - 
+    code_gen_buffer_max_size = code_gen_buffer_size -
         code_gen_max_block_size();
     code_gen_max_blocks = code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE;
     tbs = qemu_malloc(code_gen_max_blocks * sizeof(TranslationBlock));
@@ -1281,7 +1281,7 @@ static inline void tb_alloc_page(TranslationBlock *tb,
                                  unsigned int n, target_ulong page_addr)
 #else
 DECLINLINE(void) tb_alloc_page(TranslationBlock *tb,
-                                 unsigned int n, target_ulong page_addr)                   
+                                 unsigned int n, target_ulong page_addr)
 #endif
 {
     PageDesc *p;
@@ -1345,7 +1345,7 @@ TranslationBlock *tb_alloc(target_ulong pc)
 #ifndef VBOX
         (code_gen_ptr - code_gen_buffer) >= code_gen_buffer_max_size)
 #else
-        (code_gen_ptr - code_gen_buffer) >= (int)code_gen_buffer_max_size)     
+        (code_gen_ptr - code_gen_buffer) >= (int)code_gen_buffer_max_size)
 #endif
         return NULL;
     tb = &tbs[nb_tbs++];
@@ -1830,11 +1830,11 @@ DECLINLINE(void) tlb_flush_jmp_cache(CPUState *env, target_ulong addr)
     /* Discard jump cache entries for any tb which might potentially
        overlap the flushed page.  */
     i = tb_jmp_cache_hash_page(addr - TARGET_PAGE_SIZE);
-    memset (&env->tb_jmp_cache[i], 0, 
+    memset (&env->tb_jmp_cache[i], 0,
 	    TB_JMP_PAGE_SIZE * sizeof(TranslationBlock *));
 
     i = tb_jmp_cache_hash_page(addr);
-    memset (&env->tb_jmp_cache[i], 0, 
+    memset (&env->tb_jmp_cache[i], 0,
 	    TB_JMP_PAGE_SIZE * sizeof(TranslationBlock *));
 
 #ifdef VBOX
@@ -1928,7 +1928,7 @@ void tlb_flush_page(CPUState *env, target_ulong addr)
     tlb_flush_entry(&env->tlb_table[3][i], addr);
 #endif
 #endif
-    
+
     tlb_flush_jmp_cache(env, addr);
 
 #ifdef USE_KQEMU
@@ -1973,7 +1973,7 @@ DECLINLINE(void) tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
     unsigned long addr;
 
 #ifdef VBOX
-    if (start & 1)
+    if (start & 3)
         return;
 #endif
     if ((tlb_entry->addr_write & ~TARGET_PAGE_MASK) == IO_MEM_RAM) {
@@ -2026,7 +2026,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
 #elif !defined(VBOX)
     start1 = start + (unsigned long)phys_ram_base;
 #else
-    start1 = (unsigned long)remR3GCPhys2HCVirt(first_cpu, start, -1);
+    start1 = (unsigned long)remR3TlbGCPhys2Ptr(first_cpu, start, 1 /*fWritable*/); /** @todo this can be harmful with VBOX_WITH_NEW_PHYS_CODE, fix interface/whatever. */
 #endif
     for(env = first_cpu; env != NULL; env = env->next_cpu) {
         for(i = 0; i < CPU_TLB_SIZE; i++)
@@ -2175,9 +2175,11 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 #elif !defined(VBOX)
     addend = (unsigned long)phys_ram_base + (pd & TARGET_PAGE_MASK);
 #else
-    addend = (unsigned long)remR3GCPhys2HCVirt(env, 
+    /** @todo this is racing the phys_page_find call above since it may register
+     *        a new chunk of memory...  */
+    addend = (unsigned long)remR3TlbGCPhys2Ptr(env,
 					       pd & TARGET_PAGE_MASK,
-					       vaddr & TARGET_PAGE_MASK);
+					       !!(prot & PAGE_WRITE));
 #endif
     if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM) {
         /* Normal RAM.  */
@@ -2200,13 +2202,26 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 
 #ifdef VBOX
 #  if !defined(REM_PHYS_ADDR_IN_TLB)
-    if (addend & 0x1)
+    if (addend & 0x2)
     {
-        addend &= ~(target_ulong)0x1;
-        if ((pd & ~TARGET_PAGE_MASK) == IO_MEM_RAM)
+        /* catch write */
+        addend &= ~(target_ulong)0x3;
+        if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
+        {
+/** @todo improve this, it's only avoid code reads right now! */
+            address |= TLB_MMIO;
+            iotlb = env->pVM->rem.s.iHandlerMemType + paddr;
+        }
+    }
+    else if (addend & 0x1)
+    {
+        /* catch all */
+        addend &= ~(target_ulong)0x3;
+        if ((pd & ~TARGET_PAGE_MASK) <= IO_MEM_ROM)
         {
             address |= TLB_MMIO;
-            iotlb = (pd & ~TARGET_PAGE_MASK) + paddr +env->pVM->rem.s.iHandlerMemType;
+            code_address |= TLB_MMIO;
+            iotlb = env->pVM->rem.s.iHandlerMemType + paddr;
         }
     }
 #  endif
@@ -2722,7 +2737,7 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) 
+#if defined(VBOX)
     ram_addr = addr;
 #elif
     ram_addr = addr - (unsigned long)phys_ram_base;
@@ -2769,7 +2784,7 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) 
+#if defined(VBOX)
     ram_addr = addr;
 #else
     ram_addr = addr - (unsigned long)phys_ram_base;
@@ -2817,7 +2832,7 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t 
 {
     unsigned long ram_addr;
     int dirty_flags;
-#if defined(VBOX) 
+#if defined(VBOX)
     ram_addr = addr;
 #else
     ram_addr = addr - (unsigned long)phys_ram_base;
@@ -3103,10 +3118,10 @@ static void io_mem_init(void)
 #else
     io_mem_nb = 5;
 #endif
-    
+
     io_mem_watch = cpu_register_io_memory(0, watch_mem_read,
                                           watch_mem_write, NULL);
-    
+
 #ifndef VBOX /* VBOX: we do this later when the RAM is allocated. */
     /* alloc dirty bits array */
     phys_ram_dirty = qemu_vmalloc(phys_ram_size >> TARGET_PAGE_BITS);
@@ -3636,7 +3651,7 @@ void cpu_io_recompile(CPUState *env, void *retaddr)
 
     tb = tb_find_pc((unsigned long)retaddr);
     if (!tb) {
-        cpu_abort(env, "cpu_io_recompile: could not find TB for pc=%p", 
+        cpu_abort(env, "cpu_io_recompile: could not find TB for pc=%p",
                   retaddr);
     }
     n = env->icount_decr.u16.low + tb->icount;
@@ -3715,7 +3730,7 @@ void dump_exec_info(FILE *f,
     cpu_fprintf(f, "Translation buffer state:\n");
     cpu_fprintf(f, "gen code size       %ld/%ld\n",
                 code_gen_ptr - code_gen_buffer, code_gen_buffer_max_size);
-    cpu_fprintf(f, "TB count            %d/%d\n", 
+    cpu_fprintf(f, "TB count            %d/%d\n",
                 nb_tbs, code_gen_max_blocks);
     cpu_fprintf(f, "TB avg target size  %d max=%d bytes\n",
                 nb_tbs ? target_code_size / nb_tbs : 0,

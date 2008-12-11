@@ -422,6 +422,12 @@
 #define VERR_PGM_DYNMAP_SETUP_ERROR             (-1631)
 /** The expanding of the dynamic mapping cache failed. */
 #define VERR_PGM_DYNMAP_EXPAND_ERROR            (-1632)
+/** The page is unassigned (akin to VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS). */
+#define VERR_PGM_PHYS_TLB_UNASSIGNED            (-1633)
+/** Catch any access and route it thru PGM. */
+#define VERR_PGM_PHYS_TLB_CATCH_ALL             (-1634)
+/** Catch write access and route it thru PGM. */
+#define VINF_PGM_PHYS_TLB_CATCH_WRITE           1635
 
 /** @} */
 

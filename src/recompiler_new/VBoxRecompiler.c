@@ -636,7 +636,7 @@ REMR3DECL(int) REMR3Step(PVM pVM)
         rc = VINF_EM_DBG_STEPPED;
     }
     else
-    {        
+    {
         switch (rc)
         {
             case EXCP_INTERRUPT:    rc = VINF_SUCCESS; break;
@@ -1282,26 +1282,19 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 
 
 #ifndef REM_PHYS_ADDR_IN_TLB
-void* remR3GCPhys2HCVirt(CPUState *env1, target_ulong physAddr, target_ulong virtAddr)
+void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
 {
-    void* rv = NULL;
-    int rc;
-    uint32_t flags = PGMPHYS_TRANSLATION_FLAG_CHECK_PHYS_MONITORED;
-    
-    if (virtAddr != (target_ulong)-1)
-      flags |= PGMPHYS_TRANSLATION_FLAG_CHECK_VIRT_MONITORED;
-
-    rc = PGMPhysGCPhys2R3PtrEx(env1->pVM, (RTGCPHYS)physAddr, (RTGCPTR)virtAddr,
-			       flags, &rv);
-
-    if (rc == VERR_PGM_PHYS_PAGE_RESERVED)
-    {
-        rv = (void*)((uintptr_t)rv | 1);
-        rc = 0;
-    }
-    Assert (RT_SUCCESS(rc));
-
-    return rv;
+    void *pv;
+    int rc = PGMR3PhysTlbGCPhys2Ptr(env1->pVM, physAddr, true /*fWritable*/, &pv);
+    Assert(   rc == VINF_SUCCESS
+           || rc == VINF_PGM_PHYS_TLB_CATCH_WRITE
+           || rc == VERR_PGM_PHYS_TLB_CATCH_ALL
+           || rc == VERR_PGM_PHYS_TLB_UNASSIGNED);
+    if (RT_FAILURE(rc))
+        return (void *)1;
+    if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
+        return (void *)((uintptr_t)pv | 2);
+    return pv;
 }
 
 target_ulong remR3HCVirt2GCPhys(CPUState *env1, void *addr)
