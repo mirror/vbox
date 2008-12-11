@@ -307,10 +307,10 @@ ALIGN(16)
 
 .vmstart64_end:
     ; Signal that we're going back to 32 bits mode!
-    mov      eax, VMX_VMCS_CTRL_EXIT_CONTROLS
-    vmread   rdx, rax
+    mov      ebx, VMX_VMCS_CTRL_EXIT_CONTROLS
+    vmread   rdx, rbx
     and      rdx, ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
-    vmwrite  rax, rdx
+    vmwrite  rbx, rdx
 
     ; Write back the data and disable the VMCS
     vmclear qword [rsp]  ;Pushed pVMCS
