@@ -95,10 +95,10 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     
 ALIGN(16)    
 .cached_write:
-    mov     eax, [xBX + VMCSCACHE.Write.aField + xDX*4]
-    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xDX*8]
-    inc     xDX
-    cmp     xDX, xCX
+    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
+    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    inc     xCX
+    cmp     xCX, xDX
     jl     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
@@ -204,7 +204,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; saved pCache
-    
+
     mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
     je      .no_cached_reads
