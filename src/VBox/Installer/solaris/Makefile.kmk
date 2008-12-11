@@ -357,6 +357,10 @@ endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxDDU.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxManage,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxREM.so,)
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxREM32.so,)
+	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxREM64.so,)
+endif
 	$(QUIET)$(if $(VBOX_DO_STRIP),$(if $(NEED_REL),strip $(SOLARIS_INST_DIR)/VBoxREM2.rel,),)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxVMM.so,)
 	$(QUIET)$(if $(VBOX_DO_STRIP),strip $(SOLARIS_INST_DIR)/VBoxXPCOM.so,)
@@ -513,6 +517,10 @@ endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxDD2.so                                                         $(SOLARIS_DBG_DIR)/VBoxDD2.so
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxManage                                                         $(SOLARIS_DBG_DIR)/VBoxManage
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxREM.so                                                         $(SOLARIS_DBG_DIR)/VBoxREM.so
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxREM32.so                                                       $(SOLARIS_DBG_DIR)/VBoxREM32.so
+	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxREM64.so                                                       $(SOLARIS_DBG_DIR)/VBoxREM64.so
+endif
 	$(QUIET)$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxRT.so                                                          $(SOLARIS_DBG_DIR)/VBoxRT.so
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(SOL_DBG_OBJCOPY) $(PATH_BIN)/VBoxSDL                                  $(SOLARIS_DBG_DIR)/VBoxSDL,)
 ifdef VBOX_WITH_HARDENING
