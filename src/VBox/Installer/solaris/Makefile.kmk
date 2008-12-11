@@ -291,7 +291,7 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDD2.so                                                       $(SOLARIS_INST_DIR)/VBoxDD2.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxDDU.so                                                       $(SOLARIS_INST_DIR)/VBoxDDU.so
 	$(QUIET)$(INSTALL) -m 0755 $(PATH_BIN)/VBoxManage                                                       $(SOLARIS_INST_DIR)/VBoxManage
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxREM.so                                                       $(SOLARIS_INST_DIR)/VBoxREM.so
+	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxREM*.so                                                       $(SOLARIS_INST_DIR)/
 	$(QUIET)$(if $(NEED_REL),$(INSTALL) -m 0755 $(PATH_BIN)/VBoxREM2.rel                                    $(SOLARIS_INST_DIR)/VBoxREM2.rel,)
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxVMM.so                                                       $(SOLARIS_INST_DIR)/VBoxVMM.so
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_BIN)/VBoxXPCOM.so                                                     $(SOLARIS_INST_DIR)/VBoxXPCOM.so
