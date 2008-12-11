@@ -1154,11 +1154,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
-ifdef VBOX_WITH_NEW_RECOMPILER
- LIB_REM         = $(PATH_BIN)/VBoxREM.dylib
-else
  LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
-endif
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.dylib
@@ -1180,11 +1176,7 @@ if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
  LIB_VMM         = $(PATH_BIN)/VBoxVMM.so
  LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- ifdef VBOX_WITH_NEW_RECOMPILER # bird: Not acceptable - it won't work because of build order (try a clean, recursive, build).
-  LIB_REM        = $(PATH_BIN)/VBoxREM.so
- else
-  LIB_REM        = $(PATH_LIB)/VBoxREM.so
- endif
+ LIB_REM         = $(PATH_LIB)/VBoxREM.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.so
  LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.so
