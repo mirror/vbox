@@ -216,6 +216,27 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
     }
 
+    /* Check REM flavour we wish to use with this VM. Now we assume 64-bit guests 
+       can be only enabled if hardware acceleration is used. */
+    if (fHWVirtExEnabled)
+    {
+        PRBool fSupportsLongMode = false, fIs64BitGuest = false; 
+        ComPtr<IGuest> guest;
+        ComPtr <IGuestOSType> guestOSType;
+        Bstr osTypeId;
+        rc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                  RC_CHECK();
+        rc = virtualBox->COMGETTER(GuestOSType) (osTypeId, 
+                                                 guestOSType.asOutParam());         RC_CHECK();
+        rc = host->COMGETTER(ProcessorFeature) (ProcessorFeature_LongMode, 
+                                                &fSupportsLongMode);                RC_CHECK();
+        rc = guestOSType->COMGETTER(Is64Bit) (&fIs64BitGuest);                      RC_CHECK();
+        
+        if (fSupportsLongMode && fIs64BitGuest)
+        {
+            rc = CFGMR3InsertInteger(pRoot, "Rem64Enabled",     1);                 RC_CHECK();
+        }
+    }
+
     /* Nested paging (VT-x/AMD-V) */
     BOOL fEnableNestedPaging = false;
     hrc = pMachine->COMGETTER(HWVirtExNestedPagingEnabled)(&fEnableNestedPaging);   H();
