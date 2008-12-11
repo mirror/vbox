@@ -1952,7 +1952,7 @@ static int remLoadProperObj(PVM pVM)
 {
     size_t  offFilename;
     char    szPath[RTPATH_MAX];
-    bool use64 = true;
+    bool use64 = (VMR3GetGuestBitness(pVM) == 64);
     int rc = RTPathAppPrivateArch(szPath, sizeof(szPath) - 32);
     AssertRCReturn(rc, rc);
     offFilename = strlen(szPath);
