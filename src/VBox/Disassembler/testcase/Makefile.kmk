@@ -217,10 +217,6 @@ OTHER_CLEAN += $(VBOX_DISAS_TEST_CLEAN)
 #
 TESTING += $(addprefix $(VBOX_DISAS_TEST_OUT_DIR)/,$(VBOX_DISAS_TESTS))
 
-# Aliases for use till kBuild gets updated.
-.PHONY: check test
-check test:: $$(TESTING)
-
 
 #
 # The test aliases
