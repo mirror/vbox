@@ -27,7 +27,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
 
-# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs: 
+# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs:
 #  with 64-bit support (slow and buggy at the moment) VBOXREM64
 #  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM32
 # During the runtime, we load appropriate library from VBOXREM, depending on guest settings.
@@ -198,26 +198,27 @@ endif
 
 
 ifdef VBOX_USE_REM64
- VBoxREM32_EXTENDS := VBoxREM
- VBoxREM32_EXTENDS_BY := appending 
- VBoxREM32_TEMPLATE := $(VBoxREM_TEMPLATE)
- VBoxREM32_DEFS := $(VBoxREM_DEFS)
- VBoxREM32_LIBS := $(LIB_VMM)
+ VBoxREM32_EXTENDS    = VBoxREM
+ VBoxREM32_EXTENDS_BY = appending
+ VBoxREM32_TEMPLATE   = $(VBoxREM_TEMPLATE)
+ VBoxREM32_LIBS       = $(LIB_RUNTIME)
+ VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib -undefined dynamic_lookup
 
- VBoxREM64_EXTENDS = VBoxREM
- VBoxREM64_EXTENDS_BY = appending 
- VBoxREM64_TEMPLATE := $(VBoxREM_TEMPLATE)
- VBoxREM64_DEFS := $(VBoxREM_DEFS) VBOX_ENABLE_VBOXREM64
- VBoxREM64_LIBS := $(LIB_VMM)
+ VBoxREM64_EXTENDS    = VBoxREM
+ VBoxREM64_EXTENDS_BY = appending
+ VBoxREM64_TEMPLATE   = $(VBoxREM_TEMPLATE)
+ VBoxREM64_DEFS       = VBOX_ENABLE_VBOXREM64
+ VBoxREM64_LIBS       = $(LIB_RUNTIME)
+ VBoxREM64_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib -undefined dynamic_lookup
 
  VBoxREMSel_TEMPLATE    = VBOXR3
  VBoxREMSel_NAME        = VBoxREM
- VBoxREMImp_INST        = $(INST_LIB)
+ VBoxREMImp_INST        = $(INST_LIB)# what's this about?
  VBoxREMSel_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)    \
                           VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
  VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp
- VBoxREMSel_LDFLAGS.darwin = -undefined dynamic_lookup
- VBoxREMSel_LIBS :=
+ VBoxREMSel_LIBS        = $(LIB_RUNTIME)
+ VBoxREMSel_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib -undefined dynamic_lookup
 
  ifeq ($(KBUILD_TARGET), win)
   DLL                  += VBoxREM32 VBoxREM64 VBoxREMSel
