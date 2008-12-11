@@ -96,9 +96,9 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxManage \
-	$(PATH_BIN)/VBoxREM.so \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),$(PATH_BIN)/VBoxREM32.so,) \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),$(PATH_BIN)/VBoxREM64.so,) \
+	VBoxREM.so \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	VBoxSettings.so \
