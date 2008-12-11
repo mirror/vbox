@@ -150,7 +150,7 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
 
         m->m_len = sizeof (struct tcpiphdr);
         tlen = 0;
-#define xchg(a,b,type) { type t; t=a; a=b; b=t; }
+#define xchg(a,b,type) { type t; t = a; a = b; b = t; }
         xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_int32_t);
         xchg(ti->ti_dport, ti->ti_sport, u_int16_t);
 #undef xchg
@@ -408,14 +408,14 @@ tcp_sockclosed(PNATState pData, struct tcpcb *tp)
  */
 int tcp_fconnect(PNATState pData, struct socket *so)
 {
-    int ret=0;
+    int ret = 0;
 
     DEBUG_CALL("tcp_fconnect");
     DEBUG_ARG("so = %lx", (long )so);
 
-    if ((ret = so->s=socket(AF_INET,SOCK_STREAM,0)) >= 0)
+    if ((ret = so->s = socket(AF_INET,SOCK_STREAM,0)) >= 0)
     {
-        int opt, s=so->s;
+        int opt, s = so->s;
         struct sockaddr_in addr;
 
         fd_nonblock(s);

@@ -306,8 +306,9 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
     }
     *q++ = RFC1533_END;
 
-    m->m_len = sizeof(struct bootp_t) -
-        sizeof(struct ip) - sizeof(struct udphdr);
+    m->m_len = sizeof(struct bootp_t)
+             - sizeof(struct ip)
+             - sizeof(struct udphdr);
     /* Reply to the broadcast address, as some clients perform paranoid checks. */
     daddr.sin_addr.s_addr = INADDR_BROADCAST;
     udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);

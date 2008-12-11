@@ -145,14 +145,16 @@ sbappendsb(struct sbuf *sb, struct mbuf *m)
     if (sb->sb_wptr < sb->sb_rptr)
     {
         n = sb->sb_rptr - sb->sb_wptr;
-        if (n > len) n = len;
+        if (n > len)
+            n = len;
         memcpy(sb->sb_wptr, m->m_data, n);
     }
     else
     {
         /* Do the right edge first */
         n = sb->sb_data + sb->sb_datalen - sb->sb_wptr;
-        if (n > len) n = len;
+        if (n > len)
+            n = len;
         memcpy(sb->sb_wptr, m->m_data, n);
         len -= n;
         if (len)
@@ -188,14 +190,16 @@ sbcopy(struct sbuf *sb, int off, int len, char *to)
 
     if (from < sb->sb_wptr)
     {
-        if (len > sb->sb_cc) len = sb->sb_cc;
+        if (len > sb->sb_cc)
+            len = sb->sb_cc;
         memcpy(to,from,len);
     }
     else
     {
         /* re-use off */
         off = (sb->sb_data + sb->sb_datalen) - from;
-        if (off > len) off = len;
+        if (off > len)
+            off = len;
         memcpy(to,from,off);
         len -= off;
         if (len)
