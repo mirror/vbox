@@ -175,7 +175,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     break;
                 }
             }
-            /* fall through */
+            break;
 
         /*
          *  for TCP and UDP logic little bit reverted, we try to find the HOST socket
@@ -211,6 +211,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     icm = malloc(sizeof(struct icmp_msg));
                     icm->im_m = so->so_m;
                     found = 1;
+		    break;
                 }
             }
             break;
