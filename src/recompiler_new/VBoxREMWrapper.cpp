@@ -179,6 +179,7 @@
 # define USE_REM_IMPORT_JUMP_GLUE
 #endif
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -1940,18 +1941,24 @@ static void remUnloadLinuxObj(void)
     }
 # endif
 }
-#endif
 
+#endif /* USE_REM_STUBS */
 #ifdef VBOX_USE_BITNESS_SELECTOR
-static bool isRem64Needed(PVM pVM)
+
+/**
+ * Checks if 64-bit support is enabled.
+ *
+ * @returns true / false.
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+static bool remIs64bitEnabled(PVM pVM)
 {
-    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-    uint64_t u64Value = 0;
-
-    CFGMR3QueryIntegerDef(pRoot, "Rem64Enabled", &u64Value, 0);
-
-    return u64Value == 1;
+    bool f;
+    int rc = CFGMR3QueryBoolDef(CFGMR3GetRoot(pVM), "Rem64Enabled", &f, false);
+    AssertRCReturn(rc, false);
+    return f;
 }
+
 
 /**
  * Loads real REM object, resolves all exports (imports are done by native loader).
@@ -1960,59 +1967,47 @@ static bool isRem64Needed(PVM pVM)
  */
 static int remLoadProperObj(PVM pVM)
 {
-    size_t  offFilename;
-    char    szPath[RTPATH_MAX];
-    int     rc = RTPathAppPrivateArch(szPath, sizeof(szPath) - 32);
-    AssertRCReturn(rc, rc);
-    offFilename = strlen(szPath);
-
     /*
      * Load the VBoxREM32/64 object/DLL.
      */
-    strcpy(&szPath[offFilename], isRem64Needed(pVM) ? "/VBoxREM64" : "/VBoxREM32");
-    rc = RTLdrLoad(szPath, &g_ModREM2);
+    int rc = SUPR3HardenedLdrLoadAppPriv(remIs64bitEnabled(pVM) ? "VBoxREM64" : "VBoxREM32", &g_ModREM2);
     if (RT_SUCCESS(rc))
     {
-        if (RT_SUCCESS(rc))
+        /*
+         * Resolve exports.
+         */
+        unsigned i;
+        for (i = 0; i < RT_ELEMENTS(g_aExports); i++)
         {
-            /*
-             * Resolve exports.
-             */
-            unsigned i;
-            for (i = 0; i < RT_ELEMENTS(g_aExports); i++)
-            {
-                void* Value;
-                rc = RTLdrGetSymbol(g_ModREM2, g_aExports[i].pszName, &Value);
-                AssertMsgRC(rc, ("%s rc=%Rrc\n", g_aExports[i].pszName, rc));
-                if (RT_FAILURE(rc))
-                    break;
-                *(void **)g_aExports[i].pv = Value;
-            }
+            void *pvValue;
+            rc = RTLdrGetSymbol(g_ModREM2, g_aExports[i].pszName, &pvValue);
+            AssertLogRelMsgRCBreak(rc, ("%s rc=%Rrc\n", g_aExports[i].pszName, rc));
+            *(void **)g_aExports[i].pv = pvValue;
         }
     }
-    
+
     return rc;
 }
+
 
 /**
  * Unloads the real REM object.
  */
 static void remUnloadProperObj(void)
 {
-    unsigned i;
-
     /* close module. */
     RTLdrClose(g_ModREM2);
     g_ModREM2 = NIL_RTLDRMOD;
 }
-#endif
 
+#endif /* VBOX_USE_BITNESS_SELECTOR */
 
 REMR3DECL(int) REMR3Init(PVM pVM)
 {
 #ifdef USE_REM_STUBS
     return VINF_SUCCESS;
-#elif VBOX_USE_BITNESS_SELECTOR
+
+#elif defined(VBOX_USE_BITNESS_SELECTOR)
     if (!pfnREMR3Init)
     {
         int rc = remLoadProperObj(pVM);
@@ -2020,6 +2015,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
             return rc;
     }
     return pfnREMR3Init(pVM);
+
 #else
     if (!pfnREMR3Init)
     {
@@ -2035,12 +2031,14 @@ REMR3DECL(int) REMR3Term(PVM pVM)
 {
 #ifdef USE_REM_STUBS
     return VINF_SUCCESS;
-#elif VBOX_USE_BITNESS_SELECTOR
+
+#elif defined(VBOX_USE_BITNESS_SELECTOR)
     int rc;
     Assert(VALID_PTR(pfnREMR3Term));
     rc = pfnREMR3Term(pVM);
     remUnloadProperObj();
     return rc;
+
 #else
     int rc;
     Assert(VALID_PTR(pfnREMR3Term));
