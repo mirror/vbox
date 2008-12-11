@@ -96,7 +96,7 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
 	VBoxManage \
-	VBoxREM.so \
+	$(notdir $(wildcard $(PATH_BIN)/VBoxREM*.so)) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	VBoxSettings.so \
