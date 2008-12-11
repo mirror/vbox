@@ -93,7 +93,7 @@
 ; trashes rax & rdx
  %macro VMCSREAD 2
     mov     eax, %1
-    vmwrite rax, %2
+    vmread  %2, rax
  %endmacro
 
 BEGINCODE
