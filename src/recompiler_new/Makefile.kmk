@@ -200,19 +200,15 @@ endif
 ifdef VBOX_USE_REM64
  # kmk doesn't work the way it should wrt EXTENDS and variable value evaluation
  VBoxREM32_EXTENDS := $(REM_MOD)
- VBoxREM32_EXTEND_BY := appending 
+ VBoxREM32_EXTENDS_BY := appending 
  VBoxREM32_TEMPLATE := $(VBoxREM_TEMPLATE)
  VBoxREM32_DEFS := $($(REM_MOD)_DEFS)
- VBoxREM32_INCS := $($(REM_MOD)_INCS)
- VBoxREM32_SOURCES := $($(REM_MOD)_SOURCES)
  VBoxREM32_LIBS := $($(REM_MOD)_LIBS)
 
  VBoxREM64_EXTENDS = $(REM_MOD)
- VBoxREM64_EXTEND_BY = appending 
+ VBoxREM64_EXTENDS_BY = appending 
  VBoxREM64_TEMPLATE := $(VBoxREM_TEMPLATE)
  VBoxREM64_DEFS := $($(REM_MOD)_DEFS) VBOX_ENABLE_VBOXREM64
- VBoxREM64_INCS := $($(REM_MOD)_INCS)
- VBoxREM64_SOURCES := $($(REM_MOD)_SOURCES)
  VBoxREM64_LIBS := $($(REM_MOD)_LIBS)
 
  VBoxREMSel_TEMPLATE    = VBOXR3
@@ -221,6 +217,7 @@ ifdef VBOX_USE_REM64
                           VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
  VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp
  VBoxREMSel_LDFLAGS.darwin = -undefined dynamic_lookup
+ VBoxREMSel_LIBS := $(LIB_VMM)
 
  ifeq ($(KBUILD_TARGET), win)
   DLL                  += VBoxREM32 VBoxREM64 VBoxREMSel
