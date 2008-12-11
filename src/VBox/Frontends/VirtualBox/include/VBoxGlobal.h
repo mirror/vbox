@@ -385,6 +385,9 @@ class VBoxGlobal : public QObject
 
 public:
 
+    typedef QMap <ulong, QString> QULongStringMap;
+    typedef QMap <long, QString> QLongStringMap;
+
     static VBoxGlobal &instance();
 
     bool isValid() { return mValid; }
@@ -428,8 +431,8 @@ public:
     const QColor &toColor (KMachineState s) const
     {
         static const QColor none;
-        AssertMsg (vm_state_color [s], ("No color for %d", s));
-        return vm_state_color [s] ? *vm_state_color [s] : none;
+        AssertMsg (vm_state_color.find (s), ("No color for %d", s));
+        return vm_state_color.find (s) ? *vm_state_color [s] : none;
     }
 
     QString toString (KMachineState s) const
@@ -460,10 +463,10 @@ public:
      */
     KStorageBus toStorageBusType (const QString &aBus) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (storageBuses.begin(), storageBuses.end(), aBus);
         AssertMsg (it != storageBuses.end(), ("No value for {%s}", aBus.latin1()));
-        return KStorageBus (it - storageBuses.begin());
+        return KStorageBus (it.key());
     }
 
     QString toString (KStorageBus aBus, LONG aChannel) const;
@@ -520,10 +523,10 @@ public:
 
     KClipboardMode toClipboardModeType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (clipboardTypes.begin(), clipboardTypes.end(), s);
         AssertMsg (it != clipboardTypes.end(), ("No value for {%s}", s.latin1()));
-        return KClipboardMode (it - clipboardTypes.begin());
+        return KClipboardMode (it.key());
     }
 
     QString toString (KIDEControllerType t) const
@@ -534,34 +537,34 @@ public:
 
     KIDEControllerType toIDEControllerType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (ideControllerTypes.begin(), ideControllerTypes.end(), s);
         AssertMsg (it != ideControllerTypes.end(), ("No value for {%s}", s.latin1()));
-        return KIDEControllerType (it - ideControllerTypes.begin());
+        return KIDEControllerType (it.key());
     }
 
     KVRDPAuthType toVRDPAuthType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (vrdpAuthTypes.begin(), vrdpAuthTypes.end(), s);
         AssertMsg (it != vrdpAuthTypes.end(), ("No value for {%s}", s.latin1()));
-        return KVRDPAuthType (it - vrdpAuthTypes.begin());
+        return KVRDPAuthType (it.key());
     }
 
     KPortMode toPortMode (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (portModeTypes.begin(), portModeTypes.end(), s);
         AssertMsg (it != portModeTypes.end(), ("No value for {%s}", s.latin1()));
-        return KPortMode (it - portModeTypes.begin());
+        return KPortMode (it.key());
     }
 
     KUSBDeviceFilterAction toUSBDevFilterAction (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (usbFilterActionTypes.begin(), usbFilterActionTypes.end(), s);
         AssertMsg (it != usbFilterActionTypes.end(), ("No value for {%s}", s.latin1()));
-        return KUSBDeviceFilterAction (it - usbFilterActionTypes.begin());
+        return KUSBDeviceFilterAction (it.key());
     }
 
     QString toString (KDeviceType t) const
@@ -572,10 +575,10 @@ public:
 
     KDeviceType toDeviceType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (deviceTypes.begin(), deviceTypes.end(), s);
         AssertMsg (it != deviceTypes.end(), ("No value for {%s}", s.latin1()));
-        return KDeviceType (it - deviceTypes.begin());
+        return KDeviceType (it.key());
     }
 
     QStringList deviceTypeStrings() const;
@@ -588,10 +591,10 @@ public:
 
     KAudioDriverType toAudioDriverType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (audioDriverTypes.begin(), audioDriverTypes.end(), s);
         AssertMsg (it != audioDriverTypes.end(), ("No value for {%s}", s.latin1()));
-        return KAudioDriverType (it - audioDriverTypes.begin());
+        return KAudioDriverType (it.key());
     }
 
     QString toString (KAudioControllerType t) const
@@ -602,10 +605,10 @@ public:
 
     KAudioControllerType toAudioControllerType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (audioControllerTypes.begin(), audioControllerTypes.end(), s);
         AssertMsg (it != audioControllerTypes.end(), ("No value for {%s}", s.latin1()));
-        return KAudioControllerType (it - audioControllerTypes.begin());
+        return KAudioControllerType (it.key());
     }
 
     QString toString (KNetworkAdapterType t) const
@@ -616,10 +619,10 @@ public:
 
     KNetworkAdapterType toNetworkAdapterType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (networkAdapterTypes.begin(), networkAdapterTypes.end(), s);
         AssertMsg (it != networkAdapterTypes.end(), ("No value for {%s}", s.latin1()));
-        return KNetworkAdapterType (it - networkAdapterTypes.begin());
+        return KNetworkAdapterType (it.key());
     }
 
     QString toString (KNetworkAttachmentType t) const
@@ -630,10 +633,10 @@ public:
 
     KNetworkAttachmentType toNetworkAttachmentType (const QString &s) const
     {
-        QStringVector::const_iterator it =
+        QULongStringMap::const_iterator it =
             qFind (networkAttachmentTypes.begin(), networkAttachmentTypes.end(), s);
         AssertMsg (it != networkAttachmentTypes.end(), ("No value for {%s}", s.latin1()));
-        return KNetworkAttachmentType (it - networkAttachmentTypes.begin());
+        return KNetworkAttachmentType (it.key());
     }
 
     QString toString (KUSBDeviceState aState) const
@@ -878,38 +881,36 @@ private:
 
     CVirtualBoxCallback callback;
 
-    typedef QValueVector <QString> QStringVector;
-
     QString verString;
 
     QValueVector <CGuestOSType> vm_os_types;
     QDict <QPixmap> vm_os_type_icons;
-    QPtrVector <QColor> vm_state_color;
+    QIntDict <QColor> vm_state_color;
 
     QIntDict <QPixmap> mStateIcons;
     QPixmap mOfflineSnapshotIcon, mOnlineSnapshotIcon;
 
-    QStringVector machineStates;
-    QStringVector sessionStates;
-    QStringVector deviceTypes;
+    QULongStringMap machineStates;
+    QULongStringMap sessionStates;
+    QULongStringMap deviceTypes;
 
-    QStringVector storageBuses;
-    QStringVector storageBusDevices;
-    QStringVector storageBusChannels;
+    QULongStringMap storageBuses;
+    QLongStringMap storageBusDevices;
+    QLongStringMap storageBusChannels;
 
-    QStringVector diskTypes;
+    QULongStringMap diskTypes;
     QString diskTypes_Differencing;
 
-    QStringVector vrdpAuthTypes;
-    QStringVector portModeTypes;
-    QStringVector usbFilterActionTypes;
-    QStringVector audioDriverTypes;
-    QStringVector audioControllerTypes;
-    QStringVector networkAdapterTypes;
-    QStringVector networkAttachmentTypes;
-    QStringVector clipboardTypes;
-    QStringVector ideControllerTypes;
-    QStringVector USBDeviceStates;
+    QULongStringMap vrdpAuthTypes;
+    QULongStringMap portModeTypes;
+    QULongStringMap usbFilterActionTypes;
+    QULongStringMap audioDriverTypes;
+    QULongStringMap audioControllerTypes;
+    QULongStringMap networkAdapterTypes;
+    QULongStringMap networkAttachmentTypes;
+    QULongStringMap clipboardTypes;
+    QULongStringMap ideControllerTypes;
+    QULongStringMap USBDeviceStates;
 
     QString mUserDefinedPortName;
 

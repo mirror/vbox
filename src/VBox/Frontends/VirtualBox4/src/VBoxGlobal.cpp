@@ -1252,26 +1252,8 @@ VBoxGlobal::VBoxGlobal()
     , mIsTrayMenu (false)
 #endif
     , mMediaEnumThread (NULL)
-    , verString ("1.0")
-    , vm_state_color (KMachineState_COUNT)
-    , machineStates (KMachineState_COUNT)
-    , sessionStates (KSessionState_COUNT)
-    , deviceTypes (KDeviceType_COUNT)
-    , storageBuses (KStorageBus_COUNT)
-    , storageBusDevices (2)
-    , storageBusChannels (3)
-    , diskTypes (KHardDiskType_COUNT)
-    , vrdpAuthTypes (KVRDPAuthType_COUNT)
-    , portModeTypes (KPortMode_COUNT)
-    , usbFilterActionTypes (KUSBDeviceFilterAction_COUNT)
-    , audioDriverTypes (KAudioDriverType_COUNT)
-    , audioControllerTypes (KAudioControllerType_COUNT)
-    , networkAdapterTypes (KNetworkAdapterType_COUNT)
-    , networkAttachmentTypes (KNetworkAttachmentType_COUNT)
-    , clipboardTypes (KClipboardMode_COUNT)
-    , ideControllerTypes (KIDEControllerType_COUNT)
-    , USBDeviceStates (KUSBDeviceState_COUNT)
-    , detailReportTemplatesReady (false)
+    , mVerString ("1.0")
+    , mDetailReportTemplatesReady (false)
 {
 }
 
@@ -1330,8 +1312,8 @@ VBoxGlobal &VBoxGlobal::instance()
 VBoxGlobal::~VBoxGlobal()
 {
     qDeleteAll (mOsTypeIcons);
-    qDeleteAll (mStateIcons);
-    qDeleteAll (vm_state_color);
+    qDeleteAll (mVMStateIcons);
+    qDeleteAll (mVMStateColors);
 }
 
 /**
@@ -1619,7 +1601,6 @@ QString VBoxGlobal::vmGuestOSTypeDescription (const QString &aTypeId) const
  */
 QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
 {
-    Assert (storageBusChannels.count() == 3);
     QString channel;
 
     switch (aBus)
@@ -1628,7 +1609,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
         {
             if (aChannel == 0 || aChannel == 1)
             {
-                channel = storageBusChannels [aChannel];
+                channel = mStorageBusChannels [aChannel];
                 break;
             }
 
@@ -1636,13 +1617,14 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel) const
         }
         case KStorageBus_SATA:
         {
-            channel = storageBusChannels [2].arg (aChannel);
+            channel = mStorageBusChannels [2].arg (aChannel);
             break;
         }
         default:
             AssertFailedBreak();
     }
 
+    Assert (!channel.isNull());
     return channel;
 }
 
@@ -1658,18 +1640,18 @@ LONG VBoxGlobal::toStorageChannel (KStorageBus aBus, const QString &aChannel) co
     {
         case KStorageBus_IDE:
         {
-            QStringVector::const_iterator it =
-                qFind (storageBusChannels.begin(), storageBusChannels.end(),
+            QLongStringHash::const_iterator it =
+                qFind (mStorageBusChannels.begin(), mStorageBusChannels.end(),
                        aChannel);
-            AssertMsgBreak (it != storageBusChannels.end(),
+            AssertMsgBreak (it != mStorageBusChannels.end(),
                             ("No value for {%s}\n", aChannel.toLatin1().constData()));
-            channel = (LONG) (it - storageBusChannels.begin());
+            channel = it.key();
             break;
         }
         case KStorageBus_SATA:
         {
             /// @todo use regexp to properly extract the %1 text
-            QString tpl = storageBusChannels [2].arg ("");
+            QString tpl = mStorageBusChannels [2].arg ("");
             if (aChannel.startsWith (tpl))
             {
                 channel = aChannel.right (aChannel.length() - tpl.length()).toLong();
@@ -1695,7 +1677,6 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
 {
     NOREF (aChannel);
 
-    Assert (storageBusDevices.count() == 2);
     QString device;
 
     switch (aBus)
@@ -1704,7 +1685,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
         {
             if (aDevice == 0 || aDevice == 1)
             {
-                device = storageBusDevices [aDevice];
+                device = mStorageBusDevices [aDevice];
                 break;
             }
 
@@ -1720,6 +1701,7 @@ QString VBoxGlobal::toString (KStorageBus aBus, LONG aChannel, LONG aDevice) con
             AssertFailedBreak();
     }
 
+    Assert (!device.isNull());
     return device;
 }
 
@@ -1739,12 +1721,12 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel,
     {
         case KStorageBus_IDE:
         {
-            QStringVector::const_iterator it =
-                qFind (storageBusDevices.begin(), storageBusDevices.end(),
+            QLongStringHash::const_iterator it =
+                qFind (mStorageBusDevices.begin(), mStorageBusDevices.end(),
                        aDevice);
-            AssertMsg (it != storageBusDevices.end(),
+            AssertMsg (it != mStorageBusDevices.end(),
                        ("No value for {%s}", aDevice.toLatin1().constData()));
-            device = (LONG) (it - storageBusDevices.begin());
+            device = it.key();
             break;
         }
         case KStorageBus_SATA:
@@ -1796,14 +1778,15 @@ QString VBoxGlobal::toFullString (KStorageBus aBus, LONG aChannel,
 }
 
 /**
- *  Returns the list of all device types (VirtualBox::DeviceType COM enum).
+ * Returns the list of all device types (VirtualBox::DeviceType COM enum).
  */
 QStringList VBoxGlobal::deviceTypeStrings() const
 {
     static QStringList list;
     if (list.empty())
-        for (int i = 0; i < deviceTypes.count() - 1 /* usb=n/a */; i++)
-            list += deviceTypes [i];
+        for (QULongStringHash::const_iterator it = mDeviceTypes.begin();
+             it != mDeviceTypes.end(); ++ it)
+            list += it.value();
     return list;
 }
 
@@ -1814,7 +1797,7 @@ struct PortConfig
     const ulong IOBase;
 };
 
-static const PortConfig comKnownPorts[] =
+static const PortConfig kComKnownPorts[] =
 {
     { "COM1", 4, 0x3F8 },
     { "COM2", 3, 0x2F8 },
@@ -1824,7 +1807,7 @@ static const PortConfig comKnownPorts[] =
      * toCOMPortName() to return the "User-defined" string for these values. */
 };
 
-static const PortConfig lptKnownPorts[] =
+static const PortConfig kLptKnownPorts[] =
 {
     { "LPT1", 7, 0x3BC },
     { "LPT2", 5, 0x378 },
@@ -1839,8 +1822,8 @@ static const PortConfig lptKnownPorts[] =
 QStringList VBoxGlobal::COMPortNames() const
 {
     QStringList list;
-    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
-        list << comKnownPorts [i].name;
+    for (size_t i = 0; i < RT_ELEMENTS (kComKnownPorts); ++ i)
+        list << kComKnownPorts [i].name;
 
     return list;
 }
@@ -1851,8 +1834,8 @@ QStringList VBoxGlobal::COMPortNames() const
 QStringList VBoxGlobal::LPTPortNames() const
 {
     QStringList list;
-    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
-        list << lptKnownPorts [i].name;
+    for (size_t i = 0; i < RT_ELEMENTS (kLptKnownPorts); ++ i)
+        list << kLptKnownPorts [i].name;
 
     return list;
 }
@@ -1864,10 +1847,10 @@ QStringList VBoxGlobal::LPTPortNames() const
  */
 QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
 {
-    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
-        if (comKnownPorts [i].IRQ == aIRQ &&
-            comKnownPorts [i].IOBase == aIOBase)
-            return comKnownPorts [i].name;
+    for (size_t i = 0; i < RT_ELEMENTS (kComKnownPorts); ++ i)
+        if (kComKnownPorts [i].IRQ == aIRQ &&
+            kComKnownPorts [i].IOBase == aIOBase)
+            return kComKnownPorts [i].name;
 
     return mUserDefinedPortName;
 }
@@ -1879,10 +1862,10 @@ QString VBoxGlobal::toCOMPortName (ulong aIRQ, ulong aIOBase) const
  */
 QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
 {
-    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
-        if (lptKnownPorts [i].IRQ == aIRQ &&
-            lptKnownPorts [i].IOBase == aIOBase)
-            return lptKnownPorts [i].name;
+    for (size_t i = 0; i < RT_ELEMENTS (kLptKnownPorts); ++ i)
+        if (kLptKnownPorts [i].IRQ == aIRQ &&
+            kLptKnownPorts [i].IOBase == aIOBase)
+            return kLptKnownPorts [i].name;
 
     return mUserDefinedPortName;
 }
@@ -1895,11 +1878,11 @@ QString VBoxGlobal::toLPTPortName (ulong aIRQ, ulong aIOBase) const
 bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
-    for (size_t i = 0; i < RT_ELEMENTS (comKnownPorts); ++ i)
-        if (strcmp (comKnownPorts [i].name, aName.toUtf8().data()) == 0)
+    for (size_t i = 0; i < RT_ELEMENTS (kComKnownPorts); ++ i)
+        if (strcmp (kComKnownPorts [i].name, aName.toUtf8().data()) == 0)
         {
-            aIRQ = comKnownPorts [i].IRQ;
-            aIOBase = comKnownPorts [i].IOBase;
+            aIRQ = kComKnownPorts [i].IRQ;
+            aIOBase = kComKnownPorts [i].IOBase;
             return true;
         }
 
@@ -1914,11 +1897,11 @@ bool VBoxGlobal::toCOMPortNumbers (const QString &aName, ulong &aIRQ,
 bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
                                    ulong &aIOBase) const
 {
-    for (size_t i = 0; i < RT_ELEMENTS (lptKnownPorts); ++ i)
-        if (strcmp (lptKnownPorts [i].name, aName.toUtf8().data()) == 0)
+    for (size_t i = 0; i < RT_ELEMENTS (kLptKnownPorts); ++ i)
+        if (strcmp (kLptKnownPorts [i].name, aName.toUtf8().data()) == 0)
         {
-            aIRQ = lptKnownPorts [i].IRQ;
-            aIOBase = lptKnownPorts [i].IOBase;
+            aIRQ = kLptKnownPorts [i].IRQ;
+            aIOBase = kLptKnownPorts [i].IOBase;
             return true;
         }
 
@@ -2104,9 +2087,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
 
     /* generate templates after every language change */
 
-    if (!detailReportTemplatesReady)
+    if (!mDetailReportTemplatesReady)
     {
-        detailReportTemplatesReady = true;
+        mDetailReportTemplatesReady = true;
 
         QString generalItems
             = QString (sSectionItemTpl).arg (tr ("Name", "details report"), "%1")
@@ -3304,142 +3287,125 @@ QString VBoxGlobal::languageTranslators() const
  */
 void VBoxGlobal::retranslateUi()
 {
-    machineStates [KMachineState_PoweredOff] =  tr ("Powered Off", "MachineState");
-    machineStates [KMachineState_Saved] =       tr ("Saved", "MachineState");
-    machineStates [KMachineState_Aborted] =     tr ("Aborted", "MachineState");
-    machineStates [KMachineState_Running] =     tr ("Running", "MachineState");
-    machineStates [KMachineState_Paused] =      tr ("Paused", "MachineState");
-    machineStates [KMachineState_Stuck] =       tr ("Stuck", "MachineState");
-    machineStates [KMachineState_Starting] =    tr ("Starting", "MachineState");
-    machineStates [KMachineState_Stopping] =    tr ("Stopping", "MachineState");
-    machineStates [KMachineState_Saving] =      tr ("Saving", "MachineState");
-    machineStates [KMachineState_Restoring] =   tr ("Restoring", "MachineState");
-    machineStates [KMachineState_Discarding] =  tr ("Discarding", "MachineState");
-    machineStates [KMachineState_SettingUp] =   tr ("Setting Up", "MachineState");
+    mMachineStates [KMachineState_PoweredOff] = tr ("Powered Off", "MachineState");
+    mMachineStates [KMachineState_Saved] =      tr ("Saved", "MachineState");
+    mMachineStates [KMachineState_Aborted] =    tr ("Aborted", "MachineState");
+    mMachineStates [KMachineState_Running] =    tr ("Running", "MachineState");
+    mMachineStates [KMachineState_Paused] =     tr ("Paused", "MachineState");
+    mMachineStates [KMachineState_Stuck] =      tr ("Stuck", "MachineState");
+    mMachineStates [KMachineState_Starting] =   tr ("Starting", "MachineState");
+    mMachineStates [KMachineState_Stopping] =   tr ("Stopping", "MachineState");
+    mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");
+    mMachineStates [KMachineState_Restoring] =  tr ("Restoring", "MachineState");
+    mMachineStates [KMachineState_Discarding] = tr ("Discarding", "MachineState");
+    mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
 
-    sessionStates [KSessionState_Closed] =      tr ("Closed", "SessionState");
-    sessionStates [KSessionState_Open] =        tr ("Open", "SessionState");
-    sessionStates [KSessionState_Spawning] =    tr ("Spawning", "SessionState");
-    sessionStates [KSessionState_Closing] =     tr ("Closing", "SessionState");
+    mSessionStates [KSessionState_Closed] =     tr ("Closed", "SessionState");
+    mSessionStates [KSessionState_Open] =       tr ("Open", "SessionState");
+    mSessionStates [KSessionState_Spawning] =   tr ("Spawning", "SessionState");
+    mSessionStates [KSessionState_Closing] =    tr ("Closing", "SessionState");
 
-    deviceTypes [KDeviceType_Null] =            tr ("None", "DeviceType");
-    deviceTypes [KDeviceType_Floppy] =          tr ("Floppy", "DeviceType");
-    deviceTypes [KDeviceType_DVD] =             tr ("CD/DVD-ROM", "DeviceType");
-    deviceTypes [KDeviceType_HardDisk] =        tr ("Hard Disk", "DeviceType");
-    deviceTypes [KDeviceType_Network] =         tr ("Network", "DeviceType");
-    deviceTypes [KDeviceType_USB] =             tr ("USB", "DeviceType");
-    deviceTypes [KDeviceType_SharedFolder] =    tr ("Shared Folder", "DeviceType");
+    mDeviceTypes [KDeviceType_Null] =           tr ("None", "DeviceType");
+    mDeviceTypes [KDeviceType_Floppy] =         tr ("Floppy", "DeviceType");
+    mDeviceTypes [KDeviceType_DVD] =            tr ("CD/DVD-ROM", "DeviceType");
+    mDeviceTypes [KDeviceType_HardDisk] =       tr ("Hard Disk", "DeviceType");
+    mDeviceTypes [KDeviceType_Network] =        tr ("Network", "DeviceType");
+    mDeviceTypes [KDeviceType_USB] =            tr ("USB", "DeviceType");
+    mDeviceTypes [KDeviceType_SharedFolder] =   tr ("Shared Folder", "DeviceType");
 
-    storageBuses [KStorageBus_IDE] =
-        tr ("IDE", "StorageBus");
-    storageBuses [KStorageBus_SATA] =
-        tr ("SATA", "StorageBus");
+    mStorageBuses [KStorageBus_IDE] =   tr ("IDE", "StorageBus");
+    mStorageBuses [KStorageBus_SATA] =  tr ("SATA", "StorageBus");
 
-    Assert (storageBusChannels.count() == 3);
-    storageBusChannels [0] =
-        tr ("Primary", "StorageBusChannel");
-    storageBusChannels [1] =
-        tr ("Secondary", "StorageBusChannel");
-    storageBusChannels [2] =
-        tr ("Port %1", "StorageBusChannel");
+    mStorageBusChannels [0] =   tr ("Primary", "StorageBusChannel");
+    mStorageBusChannels [1] =   tr ("Secondary", "StorageBusChannel");
+    mStorageBusChannels [2] =   tr ("Port %1", "StorageBusChannel");
 
-    Assert (storageBusDevices.count() == 2);
-    storageBusDevices [0] = tr ("Master", "StorageBusDevice");
-    storageBusDevices [1] = tr ("Slave", "StorageBusDevice");
+    mStorageBusDevices [0] =    tr ("Master", "StorageBusDevice");
+    mStorageBusDevices [1] =    tr ("Slave", "StorageBusDevice");
 
-    diskTypes [KHardDiskType_Normal] =
-        tr ("Normal", "DiskType");
-    diskTypes [KHardDiskType_Immutable] =
-        tr ("Immutable", "DiskType");
-    diskTypes [KHardDiskType_Writethrough] =
-        tr ("Writethrough", "DiskType");
-    diskTypes_Differencing =
-        tr ("Differencing", "DiskType");
+    mDiskTypes [KHardDiskType_Normal] =         tr ("Normal", "DiskType");
+    mDiskTypes [KHardDiskType_Immutable] =      tr ("Immutable", "DiskType");
+    mDiskTypes [KHardDiskType_Writethrough] =   tr ("Writethrough", "DiskType");
+    mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
 
-    vrdpAuthTypes [KVRDPAuthType_Null] =
-        tr ("Null", "VRDPAuthType");
-    vrdpAuthTypes [KVRDPAuthType_External] =
-        tr ("External", "VRDPAuthType");
-    vrdpAuthTypes [KVRDPAuthType_Guest] =
-        tr ("Guest", "VRDPAuthType");
+    mVRDPAuthTypes [KVRDPAuthType_Null] =       tr ("Null", "VRDPAuthType");
+    mVRDPAuthTypes [KVRDPAuthType_External] =   tr ("External", "VRDPAuthType");
+    mVRDPAuthTypes [KVRDPAuthType_Guest] =      tr ("Guest", "VRDPAuthType");
 
-    portModeTypes [KPortMode_Disconnected] =
-        tr ("Disconnected", "PortMode");
-    portModeTypes [KPortMode_HostPipe] =
-        tr ("Host Pipe", "PortMode");
-    portModeTypes [KPortMode_HostDevice] =
-        tr ("Host Device", "PortMode");
+    mPortModeTypes [KPortMode_Disconnected] =   tr ("Disconnected", "PortMode");
+    mPortModeTypes [KPortMode_HostPipe] =       tr ("Host Pipe", "PortMode");
+    mPortModeTypes [KPortMode_HostDevice] =     tr ("Host Device", "PortMode");
 
-    usbFilterActionTypes [KUSBDeviceFilterAction_Ignore] =
+    mUSBFilterActionTypes [KUSBDeviceFilterAction_Ignore] =
         tr ("Ignore", "USBFilterActionType");
-    usbFilterActionTypes [KUSBDeviceFilterAction_Hold] =
+    mUSBFilterActionTypes [KUSBDeviceFilterAction_Hold] =
         tr ("Hold", "USBFilterActionType");
 
-    audioDriverTypes [KAudioDriverType_Null] =
+    mAudioDriverTypes [KAudioDriverType_Null] =
         tr ("Null Audio Driver", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_WinMM] =
+    mAudioDriverTypes [KAudioDriverType_WinMM] =
         tr ("Windows Multimedia", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_SolAudio] =
+    mAudioDriverTypes [KAudioDriverType_SolAudio] =
         tr ("Solaris Audio", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_OSS] =
+    mAudioDriverTypes [KAudioDriverType_OSS] =
         tr ("OSS Audio Driver", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_ALSA] =
+    mAudioDriverTypes [KAudioDriverType_ALSA] =
         tr ("ALSA Audio Driver", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_DirectSound] =
+    mAudioDriverTypes [KAudioDriverType_DirectSound] =
         tr ("Windows DirectSound", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_CoreAudio] =
+    mAudioDriverTypes [KAudioDriverType_CoreAudio] =
         tr ("CoreAudio", "AudioDriverType");
-    audioDriverTypes [KAudioDriverType_Pulse] =
+    mAudioDriverTypes [KAudioDriverType_Pulse] =
         tr ("PulseAudio", "AudioDriverType");
 
-    audioControllerTypes [KAudioControllerType_AC97] =
+    mAudioControllerTypes [KAudioControllerType_AC97] =
         tr ("ICH AC97", "AudioControllerType");
-    audioControllerTypes [KAudioControllerType_SB16] =
+    mAudioControllerTypes [KAudioControllerType_SB16] =
         tr ("SoundBlaster 16", "AudioControllerType");
 
-    networkAdapterTypes [KNetworkAdapterType_Am79C970A] =
+    mNetworkAdapterTypes [KNetworkAdapterType_Am79C970A] =
         tr ("PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
-    networkAdapterTypes [KNetworkAdapterType_Am79C973] =
+    mNetworkAdapterTypes [KNetworkAdapterType_Am79C973] =
         tr ("PCnet-FAST III (Am79C973)", "NetworkAdapterType");
-    networkAdapterTypes [KNetworkAdapterType_I82540EM] =
+    mNetworkAdapterTypes [KNetworkAdapterType_I82540EM] =
         tr ("Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
-    networkAdapterTypes [KNetworkAdapterType_I82543GC] =
+    mNetworkAdapterTypes [KNetworkAdapterType_I82543GC] =
         tr ("Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
 
-    networkAttachmentTypes [KNetworkAttachmentType_Null] =
+    mNetworkAttachmentTypes [KNetworkAttachmentType_Null] =
         tr ("Not attached", "NetworkAttachmentType");
-    networkAttachmentTypes [KNetworkAttachmentType_NAT] =
+    mNetworkAttachmentTypes [KNetworkAttachmentType_NAT] =
         tr ("NAT", "NetworkAttachmentType");
-    networkAttachmentTypes [KNetworkAttachmentType_HostInterface] =
+    mNetworkAttachmentTypes [KNetworkAttachmentType_HostInterface] =
         tr ("Host Interface", "NetworkAttachmentType");
-    networkAttachmentTypes [KNetworkAttachmentType_Internal] =
+    mNetworkAttachmentTypes [KNetworkAttachmentType_Internal] =
         tr ("Internal Network", "NetworkAttachmentType");
 
-    clipboardTypes [KClipboardMode_Disabled] =
+    mClipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");
-    clipboardTypes [KClipboardMode_HostToGuest] =
+    mClipboardTypes [KClipboardMode_HostToGuest] =
         tr ("Host To Guest", "ClipboardType");
-    clipboardTypes [KClipboardMode_GuestToHost] =
+    mClipboardTypes [KClipboardMode_GuestToHost] =
         tr ("Guest To Host", "ClipboardType");
-    clipboardTypes [KClipboardMode_Bidirectional] =
+    mClipboardTypes [KClipboardMode_Bidirectional] =
         tr ("Bidirectional", "ClipboardType");
 
-    ideControllerTypes [KIDEControllerType_PIIX3] =
+    mIDEControllerTypes [KIDEControllerType_PIIX3] =
         tr ("PIIX3", "IDEControllerType");
-    ideControllerTypes [KIDEControllerType_PIIX4] =
+    mIDEControllerTypes [KIDEControllerType_PIIX4] =
         tr ("PIIX4", "IDEControllerType");
 
-    USBDeviceStates [KUSBDeviceState_NotSupported] =
+    mUSBDeviceStates [KUSBDeviceState_NotSupported] =
         tr ("Not supported", "USBDeviceState");
-    USBDeviceStates [KUSBDeviceState_Unavailable] =
+    mUSBDeviceStates [KUSBDeviceState_Unavailable] =
         tr ("Unavailable", "USBDeviceState");
-    USBDeviceStates [KUSBDeviceState_Busy] =
+    mUSBDeviceStates [KUSBDeviceState_Busy] =
         tr ("Busy", "USBDeviceState");
-    USBDeviceStates [KUSBDeviceState_Available] =
+    mUSBDeviceStates [KUSBDeviceState_Available] =
         tr ("Available", "USBDeviceState");
-    USBDeviceStates [KUSBDeviceState_Held] =
+    mUSBDeviceStates [KUSBDeviceState_Held] =
         tr ("Held", "USBDeviceState");
-    USBDeviceStates [KUSBDeviceState_Captured] =
+    mUSBDeviceStates [KUSBDeviceState_Captured] =
         tr ("Captured", "USBDeviceState");
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
@@ -3450,7 +3416,7 @@ void VBoxGlobal::retranslateUi()
     mErrorIcon = standardIcon (QStyle::SP_MessageBoxCritical, 0).pixmap (16, 16);
     Assert (!mErrorIcon.isNull());
 
-    detailReportTemplatesReady = false;
+    mDetailReportTemplatesReady = false;
 
 #if defined (Q_WS_PM) || defined (Q_WS_X11)
     /* As PM and X11 do not (to my knowledge) have functionality for providing
@@ -5307,7 +5273,7 @@ bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
 void VBoxGlobal::init()
 {
 #ifdef DEBUG
-    verString += " [DEBUG]";
+    mVerString += " [DEBUG]";
 #endif
 
 #ifdef Q_WS_WIN
@@ -5441,13 +5407,13 @@ void VBoxGlobal::init()
             new QPixmap (kOSTypeIcons [n][1]));
     }
 
-    /* fill in VM state icon dictionary */
-    static struct
+    /* fill in VM state icon map */
+    static const struct
     {
         KMachineState state;
         const char *name;
     }
-    vmStateIcons[] =
+    kVMStateIcons[] =
     {
         {KMachineState_Null, NULL},
         {KMachineState_PoweredOff, ":/state_powered_off_16px.png"},
@@ -5463,30 +5429,30 @@ void VBoxGlobal::init()
         {KMachineState_Discarding, ":/state_discarding_16px.png"},
         {KMachineState_SettingUp, ":/settings_16px.png"},
     };
-    for (uint n = 0; n < SIZEOF_ARRAY (vmStateIcons); n ++)
+    for (uint n = 0; n < SIZEOF_ARRAY (kVMStateIcons); n ++)
     {
-        mStateIcons.insert (vmStateIcons [n].state,
-            new QPixmap (vmStateIcons [n].name));
+        mVMStateIcons.insert (kVMStateIcons [n].state,
+            new QPixmap (kVMStateIcons [n].name));
     }
+
+    /* initialize state colors map */
+    mVMStateColors.insert (KMachineState_Null,          new QColor (Qt::red));
+    mVMStateColors.insert (KMachineState_PoweredOff,    new QColor (Qt::gray));
+    mVMStateColors.insert (KMachineState_Saved,         new QColor (Qt::yellow));
+    mVMStateColors.insert (KMachineState_Aborted,       new QColor (Qt::darkRed));
+    mVMStateColors.insert (KMachineState_Running,       new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_Paused,        new QColor (Qt::darkGreen));
+    mVMStateColors.insert (KMachineState_Stuck,         new QColor (Qt::darkMagenta));
+    mVMStateColors.insert (KMachineState_Starting,      new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_Stopping,      new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_Saving,        new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_Restoring,     new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_Discarding,    new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
 
     /* online/offline snapshot icons */
     mOfflineSnapshotIcon = QPixmap (":/offline_snapshot_16px.png");
     mOnlineSnapshotIcon = QPixmap (":/online_snapshot_16px.png");
-
-    /* initialize state colors vector */
-    vm_state_color.insert (KMachineState_Null,           new QColor(Qt::red));
-    vm_state_color.insert (KMachineState_PoweredOff,     new QColor(Qt::gray));
-    vm_state_color.insert (KMachineState_Saved,          new QColor(Qt::yellow));
-    vm_state_color.insert (KMachineState_Aborted,        new QColor(Qt::darkRed));
-    vm_state_color.insert (KMachineState_Running,        new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_Paused,         new QColor(Qt::darkGreen));
-    vm_state_color.insert (KMachineState_Stuck,          new QColor(Qt::darkMagenta));
-    vm_state_color.insert (KMachineState_Starting,       new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_Stopping,       new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_Saving,         new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_Restoring,      new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_Discarding,     new QColor(Qt::green));
-    vm_state_color.insert (KMachineState_SettingUp,      new QColor(Qt::green));
 
     qApp->installEventFilter (this);
 
