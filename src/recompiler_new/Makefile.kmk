@@ -61,10 +61,13 @@ if 0
  #Usage: target-i386/op_helper.c_TOOL = MYGCC
 endif
 
+## @todo Note to self (bird): Convert this mess to use NAME (that property didn't exist when the REM_MOD hack was first made I think).
+
 # For 64-bit Windows we currently use gcc (due to MSVC unaware of such a novel
 # thing as C99, a lot of GCC extensions deployed by QEMU and calling convention
 # differences) to cross-compile code to Linux/ELF and dynamically generate invocation wrappers.
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
+ VBOX_USE_REM2 = 1
  REM_MOD := VBoxREM2
 else
  REM_MOD := VBoxREM
@@ -74,16 +77,11 @@ endif
 # Target lists (some of them anyways).
 #
 ifeq ($(REM_MOD),VBoxREM2)
- SYSMODS     += VBoxREM2
+ SYSMODS += VBoxREM2
 endif
 
 ifndef VBOX_USE_REM64
- ifeq ($(KBUILD_TARGET),win)
-  DLLS        += VBoxREM
- else
-  ## @todo this is wrong, proper DLLS are DLLS not IMPORT_LIBS. nice try ;-)
-  IMPORT_LIBS += VBoxREM
- endif
+ DLLS    += VBoxREM
 endif
 
 
@@ -100,9 +98,6 @@ $(REM_MOD)_CFLAGS          = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasi
 $(REM_MOD)_CFLAGS.debug    = -O0
 $(REM_MOD)_CFLAGS.release += -fno-gcse -O2
 $(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
-VBoxREM_LIBS               = \
-	$(LIB_VMM) \
-	$(LIB_RUNTIME)
 $(REM_MOD)_DEFS           += IN_RING3 $(ARCH_BITS_DEFS)
 # Temporary hack, to allow running with oldish GCC
 $(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
@@ -170,9 +165,17 @@ $(REM_MOD)_SOURCES        += \
 
 $(REM_MOD)_INCS           += \
         Sun/crt
+$(REM_MOD)_SYSSUFF         = .rel
+endif
+ifdef VBOX_USE_REM2
 $(REM_MOD)_LIBS            = \
 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
-$(REM_MOD)_SYSSUFF         = .rel
+else
+$(REM_MOD)_LIBS            = \
+	$(LIB_VMM) \
+	$(LIB_RUNTIME)
+$(REM_MOD)_LIBS.darwin     = \
+	$(TARGET_VBoxREMImp)
 endif
 
 ## @todo clean up this, there are some duplicates with the template here I think.
@@ -188,6 +191,7 @@ ifeq ($(REM_MOD),VBoxREM2)
 #
 # The VBoxREM2 wrapper.
 #
+## @todo Note to self: Merge with VBoxREMSel, call it VBoxREMWrapper and use name.
 VBoxREM_TEMPLATE           = VBOXR3
 VBoxREM_DEFS               = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
 VBoxREM_DEFS              += VBOX_WITH_NEW_RECOMPILER
@@ -198,38 +202,30 @@ endif
 
 
 ifdef VBOX_USE_REM64
+## @todo Note to self: One should be the default config (VBoxREM) with a NAME, the 64 bit varian should be done like here.
+ DLL                   += VBoxREM32 VBoxREM64 VBoxREMSel
  VBoxREM32_EXTENDS    = VBoxREM
  VBoxREM32_EXTENDS_BY = appending
  VBoxREM32_TEMPLATE   = $(VBoxREM_TEMPLATE)
- VBoxREM32_LIBS       = $(LIB_RUNTIME)
  VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib -undefined dynamic_lookup
 
  VBoxREM64_EXTENDS    = VBoxREM
  VBoxREM64_EXTENDS_BY = appending
  VBoxREM64_TEMPLATE   = $(VBoxREM_TEMPLATE)
  VBoxREM64_DEFS       = VBOX_ENABLE_VBOXREM64
- VBoxREM64_LIBS       = $(LIB_RUNTIME)
  VBoxREM64_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib -undefined dynamic_lookup
 
  VBoxREMSel_TEMPLATE    = VBOXR3
  VBoxREMSel_NAME        = VBoxREM
- VBoxREMImp_INST        = $(INST_LIB)# what's this about?
  VBoxREMSel_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)    \
                           VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
  VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp
  VBoxREMSel_LIBS        = $(LIB_RUNTIME)
  VBoxREMSel_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib -undefined dynamic_lookup
 
- ifeq ($(KBUILD_TARGET), win)
-  DLL                  += VBoxREM32 VBoxREM64 VBoxREMSel
- else
-  IMPORT_LIBS          += VBoxREM32 VBoxREM64 VBoxREMSel
- endif
-
 endif # USE_VBOXREM64
 
 
-if1of ($(KBUILD_TARGET), os2 win)
 #
 # The VBoxREM import library.
 #
@@ -247,14 +243,15 @@ VBoxREMImp_INST            = $(INST_LIB)
  endif
 VBoxREMImp_SOURCES.win     = VBoxREM.def
 VBoxREMImp_SOURCES.os2     = $(PATH_VBoxREMImp)/VBoxREMOS2.def
- ifeq ($(filter win os2,$(KBUILD_TARGET)),)
+ ifn1of ($(KBUILD_TARGET), os2 win)
 VBoxREMImp_SOURCES         = $(PATH_VBoxREMImp)/VBoxREMImp.c
 VBoxREMImp_CLEAN           = $(PATH_VBoxREMImp)/VBoxREMImp.c
  endif
- ifneq ($(filter-out darwin os2 win,$(KBUILD_TARGET)),)
+ ifn1of ($(KBUILD_TARGET), darwin os2 win)
 VBoxREMImp_SONAME          = VBoxREM$(SUFF_DLL)
  endif
-VBoxREMImp_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
+VBoxREMImp_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
@@ -273,7 +270,6 @@ $$(PATH_VBoxREMImp)/VBoxREMOS2.def: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(MA
 		-e 's/^LIBRARY .*/LIBRARY VBoxREM INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
 		--output $@ \
 		$<
-endif # USE_REM_IMP
 
 
 #
