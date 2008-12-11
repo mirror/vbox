@@ -27,6 +27,18 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
 
+# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs: 
+#  with 64-bit support (slow and buggy at the moment) VBOXREM64
+#  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM32
+# During the runtime, we load appropriate library from VBOXREM, depending on guest settings.
+# 64-bit targets have 64-bit enabled REM by default, so is not part of this mess
+if1of (x86, $(KBUILD_TARGET_ARCH))
+ ifdef VBOX_WITH_64_BITS_GUESTS
+   VBOX_USE_REM64 := 1
+ endif
+endif
+
+
 TEMPLATE_DUMMY = dummy template (move to kBuild) ## @todo Will be there in the next update, remove this.
 
 if 0
@@ -58,33 +70,20 @@ else
  REM_MOD := VBoxREM
 endif
 
-
-# VBOX_WITH_64_BITS_GUESTS = 1
-
-# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs:
-#  with 64-bit support (slow and buggy at the moment) VBOXREM64
-#  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM
-# During the runtime, we load appropriate library, depending on guest settings.
-if1of (x86, $(KBUILD_TARGET_ARCH))
- ifdef VBOX_WITH_64_BITS_GUESTS
-  USE_VBOXREM64 := 1
- endif
-else
- USE_VBOXREM64 :=
-endif
-
-
 #
 # Target lists (some of them anyways).
 #
 ifeq ($(REM_MOD),VBoxREM2)
  SYSMODS     += VBoxREM2
 endif
-ifeq ($(KBUILD_TARGET),win)
- DLLS        += VBoxREM
-else
- ## @todo this is wrong, proper DLLS are DLLS not IMPORT_LIBS. nice try ;-)
- IMPORT_LIBS += VBoxREM
+
+ifndef VBOX_USE_REM64
+ ifeq ($(KBUILD_TARGET),win)
+  DLLS        += VBoxREM
+ else
+  ## @todo this is wrong, proper DLLS are DLLS not IMPORT_LIBS. nice try ;-)
+  IMPORT_LIBS += VBoxREM
+ endif
 endif
 
 
@@ -198,22 +197,36 @@ VBoxREM_SOURCES            = \
 endif
 
 
-ifdef USE_VBOXREM64
-#
-# The VBoxREM64 module, for targeting 64-bit guests on 32-bit systems.
-#
-# Currently we never mix USE_VBOXREM64 and VBoxREM2, so can always use VBoxREM
-## @todo: assert for that? use $(REM_MOD) instead?
-# But loading logic got to be updated too.
-ifeq ($(KBUILD_TARGET), win)
- DLL                      += VBoxREM64
-else
- ## @todo see comment above.
- IMPORT_LIBS              += VBoxREM64
-endif
-VBoxREM64_EXTENDS          = $(REM_MOD)
-VBoxREM64_EXTENDS_BY       = appending
-VBoxREM64_DEFS             = VBOX_ENABLE_VBOXREM64
+ifdef VBOX_USE_REM64
+ # kmk doesn't work the way it should wrt EXTENDS and variable value evaluation
+ VBoxREM32_EXTENDS := $(REM_MOD)
+ VBoxREM32_EXTEND_BY := appending 
+ VBoxREM32_TEMPLATE := $(VBoxREM_TEMPLATE)
+ VBoxREM32_DEFS := $($(REM_MOD)_DEFS)
+ VBoxREM32_INCS := $($(REM_MOD)_INCS)
+ VBoxREM32_SOURCES := $($(REM_MOD)_SOURCES)
+ VBoxREM32_LIBS := $($(REM_MOD)_LIBS) $(LIB_VMM) $(LIB_RUNTIME)
+
+ VBoxREM64_EXTENDS = $(REM_MOD)
+ VBoxREM64_EXTEND_BY = appending 
+ VBoxREM64_TEMPLATE := $(VBoxREM_TEMPLATE)
+ VBoxREM64_DEFS := $($(REM_MOD)_DEFS) VBOX_ENABLE_VBOXREM64
+ VBoxREM64_INCS := $($(REM_MOD)_INCS)
+ VBoxREM64_SOURCES := $($(REM_MOD)_SOURCES)
+ VBoxREM64_LIBS := $($(REM_MOD)_LIBS) $(LIB_VMM) $(LIB_RUNTIME)
+
+ VBoxREMSel_TEMPLATE    = VBOXR3
+ VBoxREMSel_NAME        = VBoxREM
+ VBoxREMSel_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)    \
+                          VBOX_WITH_NEW_RECOMPILER VBOX_USE_BITNESS_SELECTOR
+ VBoxREMSel_SOURCES     = VBoxREMWrapper.cpp 
+
+ ifeq ($(KBUILD_TARGET), win)
+  DLL                  += VBoxREM32 VBoxREM64 VBoxREMSel
+ else
+  IMPORT_LIBS          += VBoxREM32 VBoxREM64 VBoxREMSel
+ endif
+
 endif # USE_VBOXREM64
 
 
