@@ -422,10 +422,10 @@
       will result in the <link to="VBOX_E_INVALID_VM_STATE"/> error.
 
       All online states except Running, Paused and Stuck are transitional: they
-      represent a temporary condition of the virtual machine that will not last
-      too long.
+      represent temporary conditions of the virtual machine that will last as
+      long as the operation that initiated such a condition.
 
-      The Stuck state is a special one. It means that execution of the machine
+      The Stuck state is a special case. It means that execution of the machine
       has reached the "Guru Meditation" condition. This condition indicates an
       internal VMM (virtual machine manager) failure which may happen as a
       result of either an unhandled low-level virtual hardware exception or one
@@ -442,7 +442,7 @@
       shown on these diagrams are called <i>offline VM states</i> (this includes
       PoweredOff, Aborted and Saved too).
 
-      The first diagram shows what happens whan a lengthy setup operation is
+      The first diagram shows what happens when a lengthy setup operation is
       being executed (such as <link to="IMachine::attachHardDisk2()"/>).
 
       <pre>
@@ -563,7 +563,7 @@
       </desc>
     </const>
 
-    <const name="FirstOnline"           value="4"> <!-- Running -->
+    <const name="FirstOnline" value="4" wsmap="suppress"> <!-- Running -->
       <desc>
         Pseudo-state: first online state (for use in relational expressions).
         <note internal="yes">
@@ -576,7 +576,7 @@
         </note>
       </desc>
     </const>
-    <const name="LastOnline"            value="10"> <!-- Restoring -->
+    <const name="LastOnline"  value="10" wsmap="suppress"> <!-- Restoring -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
         <note internal="yes">
