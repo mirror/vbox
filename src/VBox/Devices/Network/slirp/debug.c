@@ -14,6 +14,8 @@
 void dump_packet(void *, int);
 #endif
 
+#define IP4_ADDR_PRINTF_DECOMP(ip) ((ip) >> 24), ((ip) >> 16) & 0xff, ((ip) >> 8) & 0xff, (ip) & 0xff
+#define IP4_ADDR_PRINTF_FORMAT "%u.%u.%u.%u"
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -228,8 +230,8 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     AssertReturn(strcmp(pszType, "IP4") == 0, 0);
 
     ip = ntohl(*(uint32_t*)pvValue);
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%u.%u.%u.%u",
-           (ip >> 24), (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, IP4_ADDR_PRINTF_FORMAT,
+           IP4_ADDR_PRINTF_DECOMP(ip));
 }
 
 static DECLCALLBACK(size_t)
@@ -240,12 +242,22 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     struct socket *so = (struct socket*)pvValue;
     uint32_t ip;
+    struct sockaddr addr;
+    socklen_t socklen = sizeof(struct sockaddr);
+    int status = 0;
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
 
+    status = getsockname(so->s, &addr, &socklen);
+
+    Assert(status == 0 && addr.sa_family == AF_INET);
+
     ip = ntohl(so->so_faddr.s_addr);
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d: state=%04x ip=%u.%u.%u.%u",
-           so->s, so->so_state, (ip >> 24), (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
+            "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d name=" IP4_ADDR_PRINTF_FORMAT ":%d",
+            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip), so->so_fport,
+            IP4_ADDR_PRINTF_DECOMP(((struct sockaddr_in *)&addr)->sin_addr.s_addr),
+            ((struct sockaddr_in *)&addr)->sin_port);
 }
 
 static DECLCALLBACK(size_t)
@@ -294,8 +306,8 @@ int errno_func(const char *file, int line)
 }
 #endif
 
-int 
-debug_init() 
+int
+debug_init()
 {
     int rc = VINF_SUCCESS;
 

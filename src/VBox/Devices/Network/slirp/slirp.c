@@ -106,6 +106,28 @@
 #define CHECK_FD_SET(so, events, set)           \
     (DO_CHECK_FD_SET((so), (events), set))
 
+/*
+ * Loging macros
+ */
+#if VBOX_WITH_DEBUG_NAT_SOCKETS
+# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)              \
+    do {                                                                                \
+        LogRel(("  " #proto "%R[natsock] %R[natwinnetevents]\n", (so), (winevent)));    \
+    } while (0)
+# else
+#  define  DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset)                              \
+    do {                                                                                                \
+            LogRel(("  " #proto " %R[natsock] %s %s %s\n", (so), FD_ISSET((so)->s, (r_fdset))?"READ":"",\
+                     FD_ISSET((so)->s, (w_fdset))?"WRITE":"", FD_ISSET((so)->s, (x_fdset))?"OOB":""));  \
+    } while (0)
+# endif /* VBOX_WITH_DEBUG_NAT_SOCKETS */
+#else
+# define DO_LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) do {} while (0)
+#endif /* !VBOX_WITH_DEBUG_NAT_SOCKETS */
+
+#define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), (r_fdset), (w_fdset), (x_fdset))
+
 static const uint8_t special_ethaddr[6] =
 {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
@@ -729,14 +751,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
                 continue;
 
             POLL_TCP_EVENTS(rc, error, so, &NetworkEvents);
-#if 0
-# if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
-            LogRel(("  %R[natsock] %R[natwinnetevents]\n", so, &NetworkEvents));
-# else
-            LogRel(("  %R[natsock] %s %s %s\n", so, FD_ISSET(so->s, readfds)?"READ":"",
-                     FD_ISSET(so->s, writefds)?"WRITE":"", FD_ISSET(so->s, xfds)?"OOB":""));
-# endif
-#endif
+
+            LOG_NAT_SOCK(so, TCP, &NetworkEvents, readfds, writefds, xfds);
 
             /*
              * Check for URG data
@@ -904,6 +920,8 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             so_next = so->so_next;
 
             POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
+
+            LOG_NAT_SOCK(so, UDP, &NetworkEvents, readfds, writefds, xfds);
 
             if (so->s != -1 && CHECK_FD_SET(so, NetworkEvents, readfds))
             {
