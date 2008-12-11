@@ -596,6 +596,7 @@ static void supR3HardenedMainDropPrivileges(void)
      */
     if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
         prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+
 # elif defined(RT_OS_SOLARIS)
     /*
      * Add net_icmpaccess privilege to permitted, effective and inheritable privileges
