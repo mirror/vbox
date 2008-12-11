@@ -32,7 +32,7 @@ VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
 #  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM32
 # During the runtime, we load appropriate library from VBOXREM, depending on guest settings.
 # 64-bit targets have 64-bit enabled REM by default, so is not part of this mess
-if1of (x86, $(KBUILD_TARGET_ARCH))
+ifeq ($(KBUILD_TARGET_ARCH),x86)
  ifdef VBOX_WITH_64_BITS_GUESTS
    VBOX_USE_REM64 := 1
  endif
@@ -213,12 +213,14 @@ endif
 
 ifdef VBOX_USE_REM64
 ## @todo Note to self: One should be the default config (VBoxREM) with a NAME, the 64 bit varian should be done like here.
- DLL                  += VBoxREM32 VBoxREM64
+ DLLS += VBoxREM32
  VBoxREM32_EXTENDS    = VBoxREM
  VBoxREM32_EXTENDS_BY = appending
  VBoxREM32_TEMPLATE   = $(VBoxREM_TEMPLATE)
+ VBoxREM32_NAME
  VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib
 
+ DLLS += VBoxREM64
  VBoxREM64_EXTENDS    = VBoxREM
  VBoxREM64_EXTENDS_BY = appending
  VBoxREM64_TEMPLATE   = $(VBoxREM_TEMPLATE)
