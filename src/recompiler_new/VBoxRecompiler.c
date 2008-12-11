@@ -245,6 +245,10 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     uint32_t u32Dummy;
     int rc;
 
+#ifdef VBOX_ENABLE_VBOXREM64
+    LogRel(("Using 64-bit aware REM\n"));
+#endif
+
     /*
      * Assert sanity.
      */
