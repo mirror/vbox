@@ -29,6 +29,7 @@
 %include "VBox/hwacc_vmx.mac"
 %include "VBox/cpum.mac"
 %include "VBox/x86.mac"
+%include "../HWACCMInternal.mac"
 
 %ifdef RT_OS_OS2 ;; @todo fix OMF support in yasm and kick nasm out completely.
  %macro vmwrite 2,
@@ -106,6 +107,7 @@ BITS 64
 ; * @returns VBox status code
 ; * @param   pPageCpuPhys   VMXON physical address  [rsp+8]
 ; * @param   pVMCSPhys      VMCS physical address   [rsp+16]
+; * @param   pCache         VMCS cache              [rsp+24]
 ; * @param   pCtx           Guest context (rsi)
 ; */
 BEGINPROC VMXGCStartVM64
@@ -134,25 +136,7 @@ BEGINPROC VMXGCStartVM64
     ; Signal that we're in 64 bits mode now!
     VMCSREAD VMX_VMCS_CTRL_EXIT_CONTROLS,       rdx
     or      rdx, VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
-    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx
-    
-    ; Have to sync half the guest state as we can't access most of the 64 bits state in 32 bits mode. Sigh.
-    VMCSWRITE VMX_VMCS64_GUEST_CS_BASE,         [rsi + CPUMCTX.csHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_DS_BASE,         [rsi + CPUMCTX.dsHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_ES_BASE,         [rsi + CPUMCTX.esHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_FS_BASE,         [rsi + CPUMCTX.fsHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_GS_BASE,         [rsi + CPUMCTX.gsHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_SS_BASE,         [rsi + CPUMCTX.ssHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_GDTR_BASE,       [rsi + CPUMCTX.gdtr.pGdt]
-    VMCSWRITE VMX_VMCS64_GUEST_IDTR_BASE,       [rsi + CPUMCTX.idtr.pIdt]
-    VMCSWRITE VMX_VMCS64_GUEST_LDTR_BASE,       [rsi + CPUMCTX.ldtrHid.u64Base]
-    VMCSWRITE VMX_VMCS64_GUEST_TR_BASE,         [rsi + CPUMCTX.trHid.u64Base]
-    
-    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_EIP,    [rsi + CPUMCTX.SysEnter.eip]
-    VMCSWRITE VMX_VMCS64_GUEST_SYSENTER_ESP,    [rsi + CPUMCTX.SysEnter.esp]
-    
-    VMCSWRITE VMX_VMCS64_GUEST_RIP,             [rsi + CPUMCTX.eip]
-    VMCSWRITE VMX_VMCS64_GUEST_RSP,             [rsi + CPUMCTX.esp]
+    VMCSWRITE VMX_VMCS_CTRL_EXIT_CONTROLS,      rdx  
     
     ; Save the host state that's relevant in the temporary 64 bits mode
     mov     rax, cr0
@@ -167,7 +151,7 @@ BEGINPROC VMXGCStartVM64
     VMCSWRITE VMX_VMCS_HOST_FIELD_SS,           rax
 
     sub     rsp, 8*2
-    sgdt    [rsp]          
+    sgdt    [rsp]
     mov     rax, [rsp+2]
     VMCSWRITE VMX_VMCS_HOST_GDTR_BASE,          rax
     add     rsp, 8*2
@@ -194,6 +178,30 @@ BEGINPROC VMXGCStartVM64
 
     ;/* Save segment registers */
     MYPUSHSEGS rax
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    mov     rbx, [rbp + 24 + 8]                             ; pCache
+    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
+    cmp     ecx, 0
+    je      .no_cached_writes
+    mov     edx, ecx
+    mov     ecx, 0
+    jmp     .cached_write
+    
+ALIGN(16)    
+.cached_write:
+    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
+    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    inc     xCX
+    cmp     xCX, xDX
+    jl     .cached_write
+
+    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
+.no_cached_writes:
+
+    ; Save the pCache pointer
+    push    xBX
+%endif
 
     ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
@@ -270,6 +278,24 @@ ALIGNCODE(16)
     ;; @todo use the automatic load feature for MSRs
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    pop     xDX         ; saved pCache
+    
+    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    cmp     ecx, 0  ; can't happen
+    je      .no_cached_reads
+    jmp     .cached_read
+
+ALIGN(16)
+.cached_read:
+    dec     xCX
+    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
+    vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
+    cmp      xCX, 0
+    jnz     .cached_read
+.no_cached_reads:
+%endif
+
     ; Restore segment registers
     MYPOPSEGS rax
 
@@ -299,6 +325,10 @@ ALIGNCODE(16)
     ;; @todo use the automatic load feature for MSRs
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS     ; pCache
+%endif
+
     ; Restore segment registers
     MYPOPSEGS rax
 
@@ -312,6 +342,10 @@ ALIGNCODE(16)
     ; Restore the host LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    add     xSP, xS     ; pCache
+%endif
 
     ; Restore segment registers
     MYPOPSEGS rax
