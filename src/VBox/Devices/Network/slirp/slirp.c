@@ -431,6 +431,7 @@ void slirp_term(PNATState pData)
 #ifdef VBOX_WITH_SLIRP_ICMP
 # ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
+    FreeLibrary(pData->hmIcmpLibrary);
 # else
     closesocket(pData->icmp_socket.s);
 # endif
