@@ -370,121 +370,12 @@
     uuid="73bf04d0-7c4f-4684-9abf-d65a9ad74343"
   >
     <desc>
-      Virtual machine execution state.
-
-      This enumeration represents possible values of the <link
-      to="IMachine::state"/> attribute.
-
-      Below is the basic virtual machine state diagram. It shows how the state
-      changes during virtual machine execution. The text in square braces shows
-      a method of the IConsole interface that performs the given state
-      transition.
-
-      <pre>
-            +---------[powerDown()] &lt;- Stuck &lt;--[failure]-+
-            V                                             |
-    +-&gt; PoweredOff --+--&gt;[powerUp()]--&gt; Starting --+      | +-----[resume()]-----+
-    |                |                             |      | V                    |
-    |   Aborted -----+                             +--&gt; Running --[pause()]--&gt; Paused
-    |                                              |      ^ |                   ^ |
-    |   Saved -----------[powerUp()]--&gt; Restoring -+      | |                   | |
-    |     ^                                               | |                   | |
-    |     |     +-----------------------------------------+-|-------------------+ +
-    |     |     |                                           |                     |
-    |     |     +-- Saving &lt;--------[takeSnapshot()]&lt;-------+---------------------+
-    |     |                                                 |                     |
-    |     +-------- Saving &lt;--------[saveState()]&lt;----------+---------------------+
-    |                                                       |                     |
-    +-------------- Stopping -------[powerDown()]&lt;----------+---------------------+
-      </pre>
-
-      Note that states to the left from PoweredOff, Aborted and Saved in the
-      above diagram are called <i>online VM states</i>. These states
-      represent the virtual machine which is being executed in a dedicated
-      process (usually with a GUI window attached to it where you can see the
-      activity of the virtual machine and interact with it). There are two
-      special pseudo-states, FirstOnline and LastOnline, that can be used in
-      relational expressions to detect if the given machine state is online or
-      not:
-
-      <pre>
-        if (machine.GetState() &gt;= MachineState_FirstOnline &amp;&amp;
-            machine.GetState() &lt;= MachineState_LastOnline)
-        {
-            ...the machine is being executed...
-        }
-      </pre>
-
-      When the virtual machine is on one of the online VM states (that is, being
-      executed), only a few machine settings can be modified. Methods working
-      with such settings contain an explicit note about that. An attempt to
-      change any oter setting or perform a modifying operation during this time
-      will result in the <link to="VBOX_E_INVALID_VM_STATE"/> error.
-
-      All online states except Running, Paused and Stuck are transitional: they
-      represent temporary conditions of the virtual machine that will last as
-      long as the operation that initiated such a condition.
-
-      The Stuck state is a special case. It means that execution of the machine
-      has reached the "Guru Meditation" condition. This condition indicates an
-      internal VMM (virtual machine manager) failure which may happen as a
-      result of either an unhandled low-level virtual hardware exception or one
-      of the recompiler exceptions (such as the <i>too-many-traps</i>
-      condition).
-
-      Note also that any online VM state may transit to the Aborted state. This
-      happens if the process that is executing the virtual machine terminates
-      unexpectedly (for example, crashes). Other than that, the Aborted state is
-      equivalent to PoweredOff.
-
-      There are also a few additional state diagrams that do not deal with
-      virtual machine execution and therefore are shown separately. The states
-      shown on these diagrams are called <i>offline VM states</i> (this includes
-      PoweredOff, Aborted and Saved too).
-
-      The first diagram shows what happens when a lengthy setup operation is
-      being executed (such as <link to="IMachine::attachHardDisk2()"/>).
-
-      <pre>
-    +-----------------------------------(same sate as before the call)------+
-    |                                                                       |
-    +-&gt; PoweredOff --+                                                      |
-    |                |                                                      |
-    |-&gt; Aborted -----+--&gt;[lengthy VM configuration call] --&gt; SettingUp -----+
-    |                |
-    +-&gt; Saved -------+
-      </pre>
-
-      The next two diagrams demonstrate the process of taking a snapshot of a
-      powered off virtual machine and performing one of the "discard..."
-      operations, respectively.
-
-      <pre>
-    +-----------------------------------(same sate as before the call)------+
-    |                                                                       |
-    +-&gt; PoweredOff --+                                                      |
-    |                +--&gt;[takeSnapshot()] -------------------&gt; Saving ------+
-    +-&gt; Aborted -----+
-
-    +-&gt; PoweredOff --+
-    |                |
-    |   Aborted -----+--&gt;[discardSnapshot()    ]-------------&gt; Discarding --+
-    |                |   [discardCurrentState()]                            |
-    +-&gt; Saved -------+   [discardCurrentSnapshotAndState()]                 |
-    |                                                                       |
-    +---(Saved if restored from an online snapshot, PoweredOff otherwise)---+
-      </pre>
-
-      Note that the Saving state is present in both the offline state group and
-      online state group. Currently, the only way to determine what group is
-      assumed in a particular case is to remember the previous machine state: if
-      it was Running or Paused, then Saving is an online state, otherwise it is
-      an offline state. This inconsistency may be removed in one of the future
-      versions of VirtualBox by adding a new state.
+      Virtual machine execution state. This enumeration represents possible
+      values of the <link to="IMachine::state"/> attribute.
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value (nver used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="PoweredOff"            value="1">
       <desc>
@@ -493,21 +384,33 @@
     </const>
     <const name="Saved"                 value="2">
       <desc>
-        The machine is not currently running, but the execution state of the machine
-        has been saved to an external file when it was running.
+        The machine is not currently running, but the execution state
+        of the machine has been saved to an external file when it
+        was running.
+        <note>
+          Only a few machine settings can be altered when the machine
+          is in this state.
+        </note>
       </desc>
     </const>
     <const name="Aborted"               value="3">
       <desc>
-        The process running the machine has terminated abnormally.
+        A process running the machine has terminated abnormally.
+        Other than that, this value is equivalent to #PoweredOff.
       </desc>
     </const>
     <const name="Running"               value="4">
       <desc>
         The machine is currently being executed.
+        <note>
+          This value can be used in relational expressions:
+          all state values less than Running describe a virtual machine that is
+          not currently being executed (i.e., it is completely out of
+          action).
+        </note>
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
-          comparisons in the source code valid, this state must immediately
+          aforementioned comparisons valid, this state must immediately
           precede the Paused state.
         </note>
       </desc>
@@ -515,9 +418,15 @@
     <const name="Paused"                value="5">
       <desc>
         Execution of the machine has been paused.
+        <note>
+          This value can be used in relational expressions: all state values
+          greater than Paused represent unstable states of the running virtual
+          machine. Unless explicitly stated otherwise, no machine settings can
+          be altered when it is in one of the unstable states.
+        </note>
         <note internal="yes">
           For whoever decides to touch this enum: In order to keep the
-          comparisons in the source code valid, this state must immediately
+          aforementioned comparisons valid, this state must immediately
           follow the Running state.
         </note>
       </desc>
@@ -525,71 +434,54 @@
     <const name="Stuck"                 value="6">
       <desc>
         Execution of the machine has reached the "Guru Meditation"
-        condition.
+        condition. This condition indicates an internal VMM failure which may
+        happen as a result of either an unhandled low-level virtual hardware
+        exception or one of the recompiler exceptions (such as
+        the <i>too-many-traps</i> condition).
       </desc>
     </const>
     <const name="Starting"              value="7">
       <desc>
-        Machine is being started after powering it on from a
+        Machine is being started after
+        <link to="IConsole::powerUp">powering it on</link> from a
         zero execution state.
       </desc>
     </const>
     <const name="Stopping"              value="8">
       <desc>
-        Machine is being normally stopped powering it off, or after the guest OS
-        has initiated a shutdown sequence.
+        Machine is being normally stopped
+        (after explicitly <link to="IConsole::powerDown">powering it off</link>,
+        or after the guest OS has initiated a shutdown sequence).
       </desc>
     </const>
     <const name="Saving"                value="9">
       <desc>
-        Machine is saving its execution state to a file or an online
-        snapshot of the machine is being taken.
+        Machine is saving its execution state to a file as a
+        result of calling <link to="IConsole::saveState"/> or an online
+        snapshot of the machine is being taken using
+        <link to="IConsole::takeSnapshot"/>.
       </desc>
     </const>
     <const name="Restoring"             value="10">
       <desc>
         Execution state of the machine is being restored from a file
-        after powering it on from the saved execution state.
+        after <link to="IConsole::powerUp">powering it on</link> from
+        a saved execution state.
       </desc>
     </const>
     <const name="Discarding"            value="11">
       <desc>
-        Snapshot of the machine is being discarded.
+        Snapshot of the machine is being discarded after calling
+        <link to="IConsole::discardSnapshot"/> or its current state is
+        being discarded after <link to="IConsole::discardCurrentState"/>.
       </desc>
     </const>
     <const name="SettingUp"             value="12">
       <desc>
-        Lengthy setup operation is in progress.
+        Lengthy setup operation is in progress (e.g.
+        <link to="IMachine::attachHardDisk2"/>).
       </desc>
     </const>
-
-    <const name="FirstOnline" value="4" wsmap="suppress"> <!-- Running -->
-      <desc>
-        Pseudo-state: first online state (for use in relational expressions).
-        <note internal="yes">
-          For whoever decides to touch this enum: In order to keep the
-          comparisons involving FirstOnline and LastOnline pseudo-states valid,
-          the numeric values of these states must be correspondingly updated if
-          needed: for any online VM state, the condition
-          <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-          <tt>true</tt>.
-        </note>
-      </desc>
-    </const>
-    <const name="LastOnline"  value="10" wsmap="suppress"> <!-- Restoring -->
-      <desc>
-        Pseudo-state: last online state (for use in relational expressions).
-        <note internal="yes">
-          For whoever decides to touch this enum: In order to keep the
-          comparisons involving FirstOnline and LastOnline pseudo-states valid,
-          the numeric values of these states must be correspondingly updated if
-          needed: for any online VM state, the condition
-          <tt>FirstOnline &lt;= state &lt;= LastOnline</tt> must be
-          <tt>true</tt>.
-        </note>
-      </desc>
-    </const>
-
   </enum>
 
   <enum
@@ -599,12 +491,12 @@
     <desc>
       Session state. This enumeration represents possible values of
       <link to="IMachine::sessionState"/> and <link to="ISession::state"/>
-      attributes. See individual enumerator descriptions for the meaning for
-      every value.
+      attributes. Individual value descriptions contain the appropriate
+      meaning for every case.
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="Closed"                value="1">
       <desc>
@@ -646,7 +538,7 @@
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="Direct"                value="1">
       <desc>
@@ -677,8 +569,11 @@
     </desc>
     <const name="Null"              value="0">
       <desc>
-        Null value, may also mean "no device" (not allowed for
-        <link to="IConsole::getDeviceActivity"/>).
+        <tt>null</tt> value which may also mean "no device".
+        <note>
+          This value is not allowed for
+          <link to="IConsole::getDeviceActivity"/>
+        </note>
       </desc>
     </const>
     <const name="Floppy"            value="1">
@@ -722,7 +617,7 @@
     <desc>Interface bus type for storage devices.</desc>
 
     <const name="Null"              value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
 
     <const name="IDE"      value="1"/>
@@ -877,7 +772,7 @@
     </desc>
 
     <const name="Null"            value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="PIIX3"           value="1"/>
     <const name="PIIX4"           value="2"/>
@@ -888,7 +783,7 @@
     uuid="cb7233b7-c519-42a5-8310-1830953cacbc"
   >
     <const name="Null"              value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="NotMounted"        value="1"/>
     <const name="ImageMounted"      value="2"/>
@@ -1109,13 +1004,13 @@
         values are:
 
         <ul>
-        <li><link to="DeviceType_HardDisk"/>: the media is a hard disk
+        <li><link to="DeviceType::HardDisk"/>: the media is a hard disk
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getHardDisk2()"/> call.</li>
-        <li><link to="DeviceType_DVD"/>: the media is a CD/DVD image
+        <li><link to="DeviceType::DVD"/>: the media is a CD/DVD image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getDVDImage()"/> call.</li>
-        <li><link to="DeviceType_Floppy"/>: the media is a Floppy image
+        <li><link to="DeviceType::Floppy"/>: the media is a Floppy image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getFloppyImage()"/> call.</li>
         </ul>
@@ -1739,9 +1634,9 @@
           <li><link to="IHardDisk2::createDiffStorage()"/></li>
         </ul>
 
-        Some hard disk attributes, such as <link to="IHardDisk2::id"/>, may
-        remain uninitialized until the hard disk storage unit is successfully
-        created by one of the above methods.
+        Some hard disk attributes, such as <link to="#id"/>, may remain
+        uninitialized until the hard disk storage unit is successfully created
+        by one of the above methods.
 
         After the storage unit is successfully created, the hard disk gets
         remembered by this VirtualBox installation and will be accessible
@@ -3566,7 +3461,8 @@
     <attribute name="stateFilePath" type="wstring" readonly="yes">
       <desc>
         Full path to the file that stores the execution state of
-        the machine when it is in the <link to="MachineState_Saved"/> state.
+        the machine when it is in the <link to="MachineState::Saved"/>
+        state.
         <note>
           When the machine is not in the Saved state, this attribute
           <tt>null</tt>.
@@ -3670,7 +3566,7 @@
         the boot order.
 
         To indicate that no device is associated with the given position,
-        <link to="DeviceType_Null"/> should be used.
+        <link to="DeviceType::Null"/> should be used.
 
         @todo setHardDiskBootOrder(), setNetworkBootOrder()
 
@@ -3707,7 +3603,7 @@
         retrieve the individual device that occupies the given position.
 
         If here are no devices at the given position, then
-        <link to="DeviceType_Null"/> is returned.
+        <link to="DeviceType::Null"/> is returned.
 
         @todo getHardDiskBootOrder(), getNetworkBootOrder()
 
@@ -4732,11 +4628,11 @@
         Notification when a shared folder is added or removed.
         The @a scope argument defines one of three scopes:
         <link to="IVirtualBox::sharedFolders">global shared folders</link>
-        (<link to="Scope_Global">Global</link>),
+        (<link to="Scope::Global">Global</link>),
         <link to="IMachine::sharedFolders">permanent shared folders</link> of
-        the machine (<link to="Scope_Machine">Machine</link>) or <link
+        the machine (<link to="Scope::Machine">Machine</link>) or <link
         to="IConsole::sharedFolders">transient shared folders</link> of the
-        machine (<link to="Scope_Session">Session</link>). Interested callees
+        machine (<link to="Scope::Session">Session</link>). Interested callees
         should use query the corresponding collections to find out what has
         changed.
       </desc>
@@ -5127,7 +5023,7 @@
         start from the beginning (as if the real hardware were just
         powered on).
 
-        If the machine is in the <link to="MachineState_Saved"/> state,
+        If the machine is in the <link to="MachineState::Saved"/> state,
         it will continue its execution the point where the state has
         been saved.
 
@@ -5162,8 +5058,8 @@
     <method name="powerUpPaused">
       <desc>
         Identical to powerUp except that the VM will enter the
-        <link to="MachineState_Paused"/> state, instead of
-        <link to="MachineState_Running"/>.
+        <link to="MachineState::Paused"/> state, instead of
+        <link to="MachineState::Running"/>.
 
         <see>#powerUp</see>
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -5401,13 +5297,13 @@
         USB controller of the virtual machine.
 
         The device needs to be in one of the following states:
-        <link to="USBDeviceState_Busy"/>,
-        <link to="USBDeviceState_Available"/> or
-        <link to="USBDeviceState_Held"/>,
+        <link to="USBDeviceState::Busy">Busy</link>,
+        <link to="USBDeviceState::Available">Available</link> or
+        <link to="USBDeviceState::Held">Held</link>,
         otherwise an error is immediately returned.
 
         When the device state is
-        <link to="USBDeviceState_Busy">Busy</link>, an error may also
+        <link to="USBDeviceState::Busy">Busy</link>, an error may also
         be returned if the host computer refuses to release it for some reason.
 
         <see>IUSBController::deviceFilters, USBDeviceState</see>
@@ -5559,7 +5455,7 @@
         snapshot cannot be discarded.
 
         You cannot discard the snapshot if it
-        stores <link to="HardDiskType_Normal">normal</link> (non-differencing)
+        stores <link to="HardDiskType::Normal">normal</link> (non-differencing)
         hard disks that have differencing hard disks based on them. Snapshots of
         such kind can be discarded only when every normal hard disk has either
         no children at all or exactly one child. In the former case, the normal
@@ -5584,7 +5480,7 @@
         you want.
 
         The virtual machine is put to
-        the <link to="MachineState_Discarding">Discarding</link> state until
+        the <link to="MachineState::Discarding">Discarding</link> state until
         the discard operation is completed.
 
         <note>
@@ -5635,7 +5531,7 @@
         hard disks are created for all normal hard disks of the machine.
 
         If the current snapshot of the machine is an online snapshot, the
-        machine will go to the <link to="MachineState_Saved"> saved
+        machine will go to the <link to="MachineState::Saved"> saved
         state</link>, so that the next time it is powered on, the execution
         state will be restored from the current snapshot.
 
@@ -5644,7 +5540,7 @@
         </note>
 
         <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
+          If the machine state is <link to="MachineState::Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
           discarded (as if <link to="IConsole::discardSavedState()"/> were
           called).
@@ -5690,7 +5586,7 @@
         </note>
 
         <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
+          If the machine state is <link to="MachineState::Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
           discarded (as if <link to="#discardSavedState()"/> were
           called).
@@ -6460,9 +6356,9 @@
         format specified by this argument will be used.
 
         The list of supported hard disk formats may be obtained by the
-        <link  to="#hardDiskFormats"/> call. Note that the default hard disk
-        format must have a capability to create differencing hard disks;
-        otherwise opeartions that create hard disks implicitly may fail
+        <link  to="#defaultHardDiskFormats"/> call. Note that the default
+        hard disk format must have a capability to create differencing hard
+        disks; otherwise opeartions that create hard disks implicitly may fail
         unexpectedly.
 
         The initial value of this property is <tt>VDI</tt> in the current
@@ -6475,7 +6371,7 @@
 
         <see>
           <link to="#hardDiskFormats"/>,
-          <link to="IHardDiskFormat::id"/>,
+          <link to="IHardDiskFormat:id"/>,
           <link to="IVirtualBox::createHardDisk2()"/>
         </see>
       </desc>
@@ -6992,11 +6888,11 @@
 
       The current machine state also includes the current execution state.
       If the machine is being currently executed
-      (<link to="IMachine::state"/> is <link to="MachineState_Running"/>
+      (<link to="IMachine::state"/> is <link to="MachineState::Running"/>
       and above), its execution state is just what's happening now.
-      If it is powered off (<link to="MachineState_PoweredOff"/> or
-      <link to="MachineState_Aborted"/>), it has a zero execution state.
-      If the machine is saved (<link to="MachineState_Saved"/>), its
+      If it is powered off (<link to="MachineState::PoweredOff"/> or
+      <link to="MachineState::Aborted"/>), it has a zero execution state.
+      If the machine is saved (<link to="MachineState::Saved"/>), its
       execution state is what saved in the execution state file
       (<link to="IMachine::stateFilePath"/>).
 
@@ -7242,12 +7138,12 @@
 
       The given medium (with the created storage unit) is considered to be
       <i>accessible</i> when its storage unit can be successfully read from.
-      Accessible media are indicated by the <link to="MediaState_Created"/>
+      Accessible media are indicated by the <link to="MediaState::Created"/>
       value of the <link to="#state"/> attribute. When the storage unit cannot
       be read (for example, because it is located on a disconnected network
       resource, or was accidentally deleted outside VirtualBox), the medium is
       considered to be <i>inaccessible</i> which is indicated by the
-      <link to="MediaState_Inaccessible"/> state. The details about the reason
+      <link to="MediaState::Inaccessible"/> state. The details about the reason
       of being inaccessible can be obtained using the
       <link to="#lastAccessError"/> attribute.
 
@@ -7260,7 +7156,7 @@
 
       Note that when VirtualBox starts up (e.g. the VirtualBox object gets
       created for the first time), all known media are in the
-      <link to="MediaState_Inaccessible"/> state but the value of the <link
+      <link to="MediaState::Inaccessible"/> state but the value of the <link
       to="#lastAccessError"/> attribute is <tt>null</tt> because no actual
       accessibility check is made on startup. This is done to make the
       VirtualBox object ready for serving requests as
@@ -7274,8 +7170,8 @@
         generated UUID.
 
         <note>
-          For media in one of MediaState_NotCreated, MediaState_Creating or
-          MediaState_Deleting states, the value of this property is undefined
+          For media in one of MediaState::NotCreated, MediaState::Creating or
+          MediaState::Deleting states, the value of this property is undefined
           and will most likely be an empty UUID.
         </note>
       </desc>
@@ -7292,11 +7188,11 @@
         <note>
           For some storage types, reading this attribute may return an outdated
           (last known) value when <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/> or <link
-          to="MediaState_LockedWrite"/> because the value of this attribute is
+          to="MediaState::Inaccessible"/> or <link
+          to="MediaState::LockedWrite"/> because the value of this attribute is
           stored within the storage unit itself. Also note that changing the
           attribute value is not possible in such case, as well as when the
-          medium is the <link to="MediaState_LockedRead"/> state.
+          medium is the <link to="MediaState::LockedRead"/> state.
         </note>
       </desc>
     </attribute>
@@ -7313,19 +7209,19 @@
         not return until a timeout interval defined by the host OS for this
         operation expires.
 
-        If the last known state of the medium is <link to="MediaState_Created"/>
+        If the last known state of the medium is <link to="MediaState::Created"/>
         and the accessibility check fails then the state would be set to
-        <link to="MediaState_Inaccessible"/> and <link to="#lastAccessError"/>
+        <link to="MediaState::Inaccessible"/> and <link to="#lastAccessError"/>
         may be used to get more details about the failure. If the state of the
-        medium is <link to="MediaState_LockedRead"/> or
-        <link to="MediaState_LockedWrite"/> then it remains the same, and a
+        medium is <link to="MediaState::LockedRead"/> or
+        <link to="MediaState::LockedWrite"/> then it remains the same, and a
         non-null value of <link to="#lastAccessError"/> will indicate a failed
         accessibility check in this case.
 
         Note that not all media states are applicable to certain media types.
-        For example, states <link to="MediaState_NotCreated"/>,
-        <link to="MediaState_LockedWrite"/>, <link to="MediaState_Creating"/>,
-        <link to="MediaState_Deleting"/> are meaningless for IDVDImage2 and
+        For example, states <link to="MediaState::NotCreated"/>,
+        <link to="MediaState::LockedWrite"/>, <link to="MediaState::Creating"/>,
+        <link to="MediaState::Deleting"/> are meaningless for IDVDImage2 and
         IFloppyImage2 media.
       </desc>
     </attribute>
@@ -7378,8 +7274,8 @@
 
         <note>
           For media whose <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/>, the value of this property is the
-          last known size. For <link to="MediaState_NotCreated"/> media,
+          to="MediaState::Inaccessible"/>, the value of this property is the
+          last known size. For <link to="MediaState::NotCreated"/> media,
           the returned value is zero.
         </note>
       </desc>
@@ -7468,10 +7364,10 @@
         <link to="#unlockRead()"/> calls.
 
         This method sets the media state to <link
-        to="MediaState_LockedRead"/> on success. The state prior to
-        this call must be <link to="MediaState_Created"/>, <link
-        to="MediaState_Inaccessible"/> or <link
-        to="MediaState_LockedRead"/>. As you can see, inaccessible
+        to="MediaState::LockedRead"/> on success. The state prior to
+        this call must be <link to="MediaState::Created"/>, <link
+        to="MediaState::Inaccessible"/> or <link
+        to="MediaState::LockedRead"/>. As you can see, inaccessible
         media can be locked too. This is not an error; this method
         performs a logical lock that prevents modifications of this
         media through the VirtualBox API, not a physical lock of the
@@ -7540,9 +7436,9 @@
         to="#unlockWrite()"/> call.
 
         This method sets the media state to <link
-        to="MediaState_LockedWrite"/> on success. The state prior to
-        this call must be <link to="MediaState_Created"/> or <link
-        to="MediaState_Inaccessible"/>. As you can see, inaccessible
+        to="MediaState::LockedWrite"/> on success. The state prior to
+        this call must be <link to="MediaState::Created"/> or <link
+        to="MediaState::Inaccessible"/>. As you can see, inaccessible
         media can be locked too. This is not an error; this method
         performs a logical lock that prevents modifications of this
         media through the VirtualBox API, not a physical lock of the
@@ -7712,9 +7608,9 @@
       <h3>Hard Disk Types</h3>
 
       There are three types of hard disks:
-      <link to="HardDiskType_Normal">Normal</link>,
-      <link to="HardDiskType_Immutable">Immutable</link> and
-      <link to="HardDiskType_Writethrough">Writethrough</link>. The type of the
+      <link to="HardDiskType::Normal">Normal</link>,
+      <link to="HardDiskType::Immutable">Immutable</link> and
+      <link to="HardDiskType::Writethrough">Writethrough</link>. The type of the
       hard disk defines how the hard disk is attached to a virtual machine and
       what happens when a <link to="ISnapshot">snapshot</link> of the virtual
       machine with the attached hard disk is taken. The type of the hard disk is
@@ -7744,7 +7640,7 @@
       attribute.
 
       Note that the type of all differencing hard disks is
-      <link to="HardDiskType_Normal">Normal</link>; all other values are
+      <link to="HardDiskType::Normal">Normal</link>; all other values are
       meaningless for them. Base hard disks may be of any type.
 
       <h3>Creating Hard Disks</h3>
@@ -7781,7 +7677,7 @@
       Another extension to the <link to="IMedium::location"/> attribute is that
       there is a possibility to cause VirtualBox to compose a unique value for
       the file name part of the location using the UUID of the hard disk. This
-      applies only to hard disks in <link to="MediaState_NotCreated"/> state,
+      applies only to hard disks in <link to="MediaState::NotCreated"/> state,
       e.g. before the storage unit is created, and works as follows. You set the
       value of the <link to="IMedium::location"/> attribute to a location
       specification which only contains the path specification but not the file
@@ -8002,15 +7898,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
               changed.
           </li>
           <li>As long as the hard disk has children, its type cannot be set
-              to <link to="HardDiskType_Writethrough"/>.
+              to <link to="HardDiskType::Writethrough"/>.
           </li>
           <li>The type of all differencing hard disks is
-              <link to="HardDiskType_Normal"/> and cannot be changed.
+              <link to="HardDiskType::Normal"/> and cannot be changed.
           </li>
         </ul>
 
         The type of a newly created or opened hard disk is set to
-        <link to="HardDiskType_Normal"/>.
+        <link to="HardDiskType::Normal"/>.
       </desc>
     </attribute>
 
@@ -8062,9 +7958,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         will be attached indirectly by creating a new differencing child hard
         disk for that. See the interface description for more information.
 
-        Note that all <link to="HardDiskType_Immutable">Immutable</link> hard
+        Note that all <link to="HardDiskType::Immutable">Immutable</link> hard
         disks are always read-only while all
-        <link to="HardDiskType_Writethrough">Writethrough</link> hard disks are
+        <link to="HardDiskType::Writethrough">Writethrough</link> hard disks are
         always not.
 
         <note>
@@ -8089,8 +7985,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
         <note>
           For hard disks whose state is <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/>, the value of this property is the
-          last known logical size. For <link to="MediaState_NotCreated"/> hard
+          to="MediaState::Inaccessible"/>, the value of this property is the
+          last known logical size. For <link to="MediaState::NotCreated"/> hard
           disks, the returned value is zero.
         </note>
       </desc>
@@ -8225,13 +8121,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the operation will fail.
 
         Before the operation starts, the hard disk is placed in
-        <link to="MediaState_Creating"/> state. If the create operation
-        fails, the media will be placed back in <link to="MediaState_NotCreated"/>
+        <link to="MediaState::Creating"/> state. If the create operation
+        fails, the media will be placed back in <link to="MediaState::NotCreated"/>
         state.
 
         After the returned progress object reports that the operation has
         successfully completed, the media state will be set to <link
-        to="MediaState_Created"/>, the hard disk will be remembered by this
+        to="MediaState::Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
@@ -8255,13 +8151,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the operation will fail.
 
         Before the operation starts, the hard disk is placed to
-        <link to="MediaState_Creating"/> state. If the create operation
-        fails, the media will placed back to <link to="MediaState_NotCreated"/>
+        <link to="MediaState::Creating"/> state. If the create operation
+        fails, the media will placed back to <link to="MediaState::NotCreated"/>
         state.
 
         After the returned progress object reports that the operation is
         successfully complete, the media state will be set to <link
-        to="MediaState_Created"/>, the hard disk will be remembered by this
+        to="MediaState::Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
@@ -8286,17 +8182,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         It will also fail if there is no storage unit to delete or if deletion
         is already in progress, or if the hard disk is being in use (locked for
         read or for write) or inaccessible. Therefore, the only valid state for
-        this operation to succeed is <link to="MediaState_Created"/>.
+        this operation to succeed is <link to="MediaState::Created"/>.
 
         Before the operation starts, the hard disk is placed to
-        <link to="MediaState_Deleting"/> state and gets removed from the list
+        <link to="MediaState::Deleting"/> state and gets removed from the list
         of remembered hard disks (media registry). If the delete operation
         fails, the media will be remembered again and placed back to
-        <link to="MediaState_Created"/> state.
+        <link to="MediaState::Created"/> state.
 
         After the returned progress object reports that the operation is
         complete, the media state will be set to
-        <link to="MediaState_NotCreated"/> and you will be able to use one of
+        <link to="MediaState::NotCreated"/> and you will be able to use one of
         the storage creation methods to create it again.
 
         <see>#close()</see>
@@ -8329,10 +8225,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         disk in the format and at the location defined by the @a target
         argument.
 
-        The target hard disk must be in <link to="MediaState_NotCreated"/>
+        The target hard disk must be in <link to="MediaState::NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
         completion, this operation will set the type of the target hard disk to
-        <link to="HardDiskType_Normal"/> and create a storage unit necessary to
+        <link to="HardDiskType::Normal"/> and create a storage unit necessary to
         represent the differencing hard disk data in the given format (according
         to the storage format of the target object).
 
@@ -8341,7 +8237,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          The hard disk will be set to <link to="MediaState_LockedRead"/>
+          The hard disk will be set to <link to="MediaState::LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="VBOX_E_OBJECT_IN_USE">
@@ -8403,7 +8299,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             Neither the source hard disk nor the target hard disk is an
-            <link to="HardDiskType_Immutable"/> hard disk.
+            <link to="HardDiskType::Immutable"/> hard disk.
           </li>
           <li>
             The part of the hard disk tree from the source hard disk to the
@@ -8416,15 +8312,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             None of the involved hard disks are in
-            <link to="MediaState_LockedRead"/> or
-            <link to="MediaState_LockedWrite"/> state.
+            <link to="MediaState::LockedRead"/> or
+            <link to="MediaState::LockedWrite"/> state.
           </li>
         </ul>
 
         <note>
           This (source) hard disk and all intermediates will be placed to <link
-          to="MediaState_Deleting"/> state and the target hard disk will be
-          placed to <link to="MediaState_LockedWrite"/> state and for the
+          to="MediaState::Deleting"/> state and the target hard disk will be
+          placed to <link to="MediaState::LockedWrite"/> state and for the
           duration of this operation.
         </note>
       </desc>
@@ -8443,7 +8339,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Starts creating a clone of this hard disk in the format and at the
         location defined by the @a target argument.
 
-        The target hard disk must be in <link to="MediaState_NotCreated"/>
+        The target hard disk must be in <link to="MediaState::NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
         completion, the cloned hard disk will contain exactly the same sector
         data as the hard disk being cloned, except that a new UUID for the clone
@@ -8458,7 +8354,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           parent dependency of the original hard disk.
         </note>
         <note>
-          This hard disk will be placed to <link to="MediaState_LockedRead"/>
+          This hard disk will be placed to <link to="MediaState::LockedRead"/>
           state for the duration of this operation.
         </note>
       </desc>
@@ -8491,7 +8387,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </note>
         <note>
           This hard disk and all its parent hard disks will be placed to <link
-          to="MediaState_LockedRead"/> state for the duration of this
+          to="MediaState::LockedRead"/> state for the duration of this
           operation.
         </note>
       </desc>
@@ -8579,19 +8475,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="File" value="0x40">
       <desc>
-        The format backend operates on files (the <link to="IMedium::location"/>
+        The format backend operates on files. The <link to="IMedium::location"/>
         attribute of the hard disk specifies a file used to store hard disk
-        data; for a list of supported file extensions see
-        <link to="IHardDiskFormat::fileExtensions"/>).
+        data. For a list of supported file extensions see
+        <link to="IHardDiskFormat::fileExtensions"/>.
       </desc>
     </const>
 
     <const name="Properties" value="0x80">
       <desc>
         The format backend uses the property interface to configure the storage
-        location and properties (the <link to="IHardDiskFormat::describeProperties"/>
+        location and properties. The <link to="IHardDiskFormat::describeProperties"/>
         method is used to get access to properties supported by the given hard
-        disk format).
+        disk format.
       </desc>
     </const>
 
@@ -8673,7 +8569,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         same and corresponds to the number of supported properties.
 
         The returned arrays are not empty only if the
-        <link to="HardDiskFormatCapabilities_Properties"/> flag is set.
+        <link to="HardDiskFormatCapabilities::Properties"/> flag is set.
 
         <see>DataType</see>
         <see>DataFlags</see>
@@ -9050,14 +8946,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="Opaque"                  value="0xFFFFFFFF">
       <desc>
-        Unknown buffer format (the user may not assume any particular format of
-        the buffer).
+        Unknown buffer format. The user may not assume any particular
+        format of the buffer.
       </desc>
     </const>
     <const name="FOURCC_RGB"              value="0x32424752">
       <desc>
-        Basic RGB format (<link to="IFramebuffer::bitsPerPixel"/> determines the
-        bit layout).
+        Basic RGB format. <link to="IFramebuffer::bitsPerPixel"/> determines
+        the bit layout.
       </desc>
     </const>
   </enum>
@@ -9082,7 +8978,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
       <desc>
         Color depth, in bits per pixel. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, valid values
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, valid values
         are: 8, 15, 16, 24 and 32.
       </desc>
     </attribute>
@@ -9090,7 +8986,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="bytesPerLine" type="unsigned long" readonly="yes">
       <desc>
         Scan line size, in bytes. When <link to="#pixelFormat"/> is <link
-        to="FramebufferPixelFormat_FOURCC_RGB">FOURCC_RGB</link>, the
+        to="FramebufferPixelFormat::FOURCC_RGB">FOURCC_RGB</link>, the
         size of the scan line must be aligned to 32 bits.
       </desc>
     </attribute>
@@ -9101,7 +8997,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         to="FramebufferPixelFormat"/> or a raw FOURCC code.
         <note>
           This attribute must never return <link
-          to="FramebufferPixelFormat_Opaque"/> -- the format of the buffer
+          to="PixelFormat::Opaque"/> -- the format of the buffer
           <link to="#address"/> points to must be always known.
         </note>
       </desc>
@@ -9208,7 +9104,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The @a pixelFormat parameter defines whether the direct mode is
         available or not. If @a pixelFormat is <link
-        to="FramebufferPixelFormat_Opaque"/> then direct access to the guest
+        to="PixelFormat::Opaque"/> then direct access to the guest
         VRAM buffer is not available -- the @a VRAM, @a bitsPerPixel and @a
         bytesPerLine parameters must be ignored and the implementation must use
         the indirect mode (where it provides its own buffer in one of the
@@ -9249,7 +9145,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         to="#address"/> points to. Note also that the <link to="#bitsPerPixel"/>
         value must always correlate with <link to="#pixelFormat"/>. Note that
         the <link to="#pixelFormat"/> attribute must never return <link
-        to="FramebufferPixelFormat_Opaque"/> regardless of the selected mode.
+        to="PixelFormat::Opaque"/> regardless of the selected mode.
 
         <note>
           This method is called by the IDisplay object under the
@@ -9628,7 +9524,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value, also means "not attached".</desc>
+      <desc><tt>null</tt> value. Also means "not attached".</desc>
     </const>
     <const name="NAT"                   value="1"/>
     <const name="HostInterface"         value="2"/>
@@ -9644,7 +9540,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"                  value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="Am79C970A"             value="1"/>
     <const name="Am79C973"              value="2"/>
@@ -9887,15 +9783,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Flag whether this serial port acts as a server (creates a new pipe on
         the host) or as a client (uses the existing pipe). This attribute is
-        used only when <link to="#hostMode"/> is PortMode_HostPipe.
+        used only when <link to="#hostMode"/> is PortMode::HostPipe.
       </desc>
     </attribute>
 
     <attribute name="path" type="wstring">
       <desc>
         Path to the serial port's pipe on the host when <link to="#hostMode"/> is
-        PortMode_HostPipe, or the host serial device name when
-        <link to="#hostMode"/> is PortMode_HostDevice. In either of the above
+        PortMode::HostPipe, or the host serial device name when
+        <link to="#hostMode"/> is PortMode::HostDevice. In either of the above
         cases, setting a @c  null or an empty string as the attribute's value
         will result into an error. Otherwise, the value of this property is
         ignored.
@@ -10131,9 +10027,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         These filters are also activated when the machine is powered up.
         They are run against a list of all currently available USB
         devices (in states
-        <link to="USBDeviceState_Available"/>,
-        <link to="USBDeviceState_Busy"/>,
-        <link to="USBDeviceState_Held"/>) that were not previously
+        <link to="USBDeviceState::Available">Available</link>,
+        <link to="USBDeviceState::Busy">Busy</link>,
+        <link to="USBDeviceState::Held">Held</link>) that were not previously
         ignored by global filters.
 
         If at least one filter matches the USB device in question, this
@@ -10552,28 +10448,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Once a supported USB device is attached to the host, global USB
       filters (<link to="IHost::USBDeviceFilters"/>) are activated. They can
-      either ignore the device, or put it to USBDeviceState_Held state, or do
-      nothing. Unless the device is ignored by global filters, filters of all
-      currently running guests (<link to="IUSBController::deviceFilters"/>) are
-      activated that can put it to USBDeviceState_Captured state.
+      either ignore the device, or put it to #Held state, or do nothing. Unless
+      the device is ignored by global filters, filters of all currently running
+      guests (<link to="IUSBController::deviceFilters"/>) are activated that can
+      put it to #Captured state.
 
       If the device was ignored by global filters, or didn't match
       any filters at all (including guest ones), it is handled by the host
       in a normal way. In this case, the device state is determined by
-      the host and can be one of USBDeviceState_Unavailable, USBDeviceState_Busy
-      or USBDeviceState_Available, depending on the current device usage.
+      the host and can be one of #Unavailable, #Busy or #Available, depending on
+      the current device usage.
 
       Besides auto-capturing based on filters, the device can be manually
       captured by guests (<link to="IConsole::attachUSBDevice()"/>) if its
-      state is USBDeviceState_Busy, USBDeviceState_Available or
-      USBDeviceState_Held.
+      state is #Busy, #Available or #Held.
 
       <note>
         Due to differences in USB stack implementations in Linux and Win32,
-        states USBDeviceState_Busy and USBDeviceState_vailable are applicable
-        only to the Linux version of the product. This also means that (<link
-        to="IConsole::attachUSBDevice()"/>) can only succeed on Win32 if the
-        device state is USBDeviceState_Held.
+        states #Busy and #Available are applicable only to the Linux version of
+        the product. This also means that (<link
+        to="IConsole::attachUSBDevice()"/>) can only succeed on Win32 if
+        the device state is #Held.
       </note>
 
       <see>IHostUSBDevice, IHostUSBDeviceFilter</see>
@@ -10597,8 +10492,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="Available"             value="3">
       <desc>
-        Not used by the host computer, available to guests (the host computer
-        can also start using the device at any time).
+        Not used by the host computer, available to guests.
+        The host computer can also start using the device at any time.
       </desc>
     </const>
     <const name="Held"                  value="4">
@@ -10708,7 +10603,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"          value="0">
-      <desc>Null value (never used by the API).</desc>
+      <desc><tt>null</tt> value. Never used by the API.</desc>
     </const>
     <const name="Ignore"        value="1">
       <desc>Ignore the matched USB device.</desc>
@@ -10776,7 +10671,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"          value="0">
-      <desc>Null value, also means "dummy audio driver".</desc>
+      <desc><tt>null</tt> value. Also means "dummy audio driver".</desc>
     </const>
     <const name="WinMM"         value="1"/>
     <const name="OSS"           value="2"/>
@@ -10844,7 +10739,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <const name="Null"            value="0">
-      <desc>Null value, also means "no authentication".</desc>
+      <desc><tt>null</tt> value. Also means "no authentication".</desc>
     </const>
     <const name="External"        value="1"/>
     <const name="Guest"           value="2"/>
@@ -11319,8 +11214,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="type" type="SessionType" readonly="yes">
       <desc>
         Type of this session. The value of this attribute is valid only
-        if the session is currently open (i.e. its #state is
-        SessionType_SessionOpen), otherwise an error will be returned.
+        if the session is currently open (i.e. its #state is SessionType::SessionOpen),
+        otherwise an error will be returned.
       </desc>
     </attribute>
 
@@ -11348,7 +11243,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Otherwise, if a direct session for a machine opened with
         <link to="IVirtualBox::openSession()"/> is not explicitly closed
         when the application terminates, the state of the machine will
-        be set to <link to="MachineState_Aborted" /> on the server.
+        be set to <link to="MachineState::Aborted" /> on the server.
 
         Generally, it is recommended to close all open sessions explicitly
         before terminating the application (no matter what is the reason of
