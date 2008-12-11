@@ -107,6 +107,8 @@ public:
     void commit();
     void copyFrom (FloppyDrive *aThat);
 
+    HRESULT unmount();
+
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
@@ -116,8 +118,6 @@ public:
     static const wchar_t *getComponentName() { return L"FloppyDrive"; }
 
 private:
-
-    HRESULT unmount();
 
     const ComObjPtr <Machine, ComWeakRef> mParent;
     const ComObjPtr <FloppyDrive> mPeer;
