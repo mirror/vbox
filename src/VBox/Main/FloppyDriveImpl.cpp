@@ -281,17 +281,18 @@ STDMETHODIMP FloppyDrive::MountImage (IN_GUID aImageId)
             rc = image->attachTo (mParent->id(), mParent->snapshotId());
             if (SUCCEEDED (rc))
             {
-                mData.backup();
+                /* umount() will backup data */
+                rc = unmount();
+                if (SUCCEEDED (rc))
+                {
+                    mData->mImage = image;
+                    mData->mState = DriveState_ImageMounted;
 
-                unmount();
+                    /* leave the lock before informing callbacks */
+                    alock.unlock();
 
-                mData->mImage = image;
-                mData->mState = DriveState_ImageMounted;
-
-                /* leave the lock before informing callbacks */
-                alock.unlock();
-
-                mParent->onFloppyDriveChange();
+                    mParent->onFloppyDriveChange();
+                }
             }
         }
     }
@@ -315,17 +316,18 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
     if (mData->mState != DriveState_HostDriveCaptured ||
         !mData->mHostDrive.equalsTo (aHostFloppyDrive))
     {
-        mData.backup();
+        /* umount() will backup data */
+        HRESULT rc = unmount();
+        if (SUCCEEDED (rc))
+        {
+            mData->mHostDrive = aHostFloppyDrive;
+            mData->mState = DriveState_HostDriveCaptured;
 
-        unmount();
+            /* leave the lock before informing callbacks */
+            alock.unlock();
 
-        mData->mHostDrive = aHostFloppyDrive;
-        mData->mState = DriveState_HostDriveCaptured;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onFloppyDriveChange();
+            mParent->onFloppyDriveChange();
+        }
     }
 
     return S_OK;
@@ -344,16 +346,17 @@ STDMETHODIMP FloppyDrive::Unmount()
 
     if (mData->mState != DriveState_NotMounted)
     {
-        mData.backup();
+        /* umount() will backup data */
+        HRESULT rc = unmount();
+        if (SUCCEEDED (rc))
+        {
+            mData->mState = DriveState_NotMounted;
 
-        unmount();
+            /* leave the lock before informing callbacks */
+            alock.unlock();
 
-        mData->mState = DriveState_NotMounted;
-
-        /* leave the lock before informing callbacks */
-        alock.unlock();
-
-        mParent->onFloppyDriveChange();
+            mParent->onFloppyDriveChange();
+        }
     }
 
     return S_OK;
@@ -391,12 +394,12 @@ STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Loads settings from the given machine node.
- *  May be called once right after this object creation.
+ * Loads settings from the given machine node. May be called once right after
+ * this object creation.
  *
- *  @param aMachineNode <Machine> node.
+ * @param aMachineNode  <Machine> node.
  *
- *  @note Locks this object for writing.
+ * @note Locks this object for writing.
  */
 HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
 {
@@ -475,11 +478,11 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
 }
 
 /**
- *  Saves settings to the given machine node.
+ * Saves settings to the given machine node.
  *
- *  @param aMachineNode <Machine> node.
+ * @param aMachineNode  <Machine> node.
  *
- *  @note Locks this object for reading.
+ * @note Locks this object for reading.
  */
 HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
 {
@@ -536,7 +539,7 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
 }
 
 /**
- *  @note Locks this object for writing.
+ * @note Locks this object for writing.
  */
 bool FloppyDrive::rollback()
 {
@@ -573,8 +576,8 @@ bool FloppyDrive::rollback()
 }
 
 /**
- *  @note Locks this object for writing, together with the peer object (also
- *  for writing) if there is one.
+ * @note Locks this object for writing, together with the peer object (also for
+ *       writing) if there is one.
  */
 void FloppyDrive::commit()
 {
@@ -611,8 +614,8 @@ void FloppyDrive::commit()
 }
 
 /**
- *  @note Locks this object for writing, together with the peer object (locked
- *  for reading) if there is one.
+ * @note Locks this object for writing, together with the peer object (locked
+ *       for reading) if there is one.
  */
 void FloppyDrive::copyFrom (FloppyDrive *aThat)
 {
@@ -632,23 +635,28 @@ void FloppyDrive::copyFrom (FloppyDrive *aThat)
     mData.assignCopy (aThat->mData);
 }
 
-// private methods
-/////////////////////////////////////////////////////////////////////////////
-
 /**
- *  Helper to unmount a drive.
+ * Helper to unmount a drive.
  *
- *  @return COM status code
+ * @note Must be called from under this object's write lock.
  */
 HRESULT FloppyDrive::unmount()
 {
     AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
+
+    mData.backup();
 
     if (mData->mImage)
         mData->mImage.setNull();
     if (mData->mHostDrive)
         mData->mHostDrive.setNull();
 
+    mData->mState = DriveState_NotMounted;
+
     return S_OK;
 }
+
+// private methods
+/////////////////////////////////////////////////////////////////////////////
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

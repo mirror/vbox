@@ -4101,6 +4101,11 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
     AssertReturn (autoCaller.state() == Ready, E_FAIL);
 
+    /* we will probably modify these and want to prevent concurrent
+     * modifications until we finish */
+    AutoWriteLock dvdLock (mDVDDrive);
+    AutoWriteLock floppyLock (mFloppyDrive);
+
     if (aRegistered)
     {
         if (mData->mRegistered)
@@ -4137,20 +4142,43 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
                 tr ("Cannot unregister the machine '%ls' because it "
                     "has %d hard disks attached"),
                 mUserData->mName.raw(), mHDData->mAttachments.size());
+
+        /* Note that we do not prevent unregistration of a DVD or Floppy image
+         * is attached: as opposed to hard disks detaching such an image
+         * implicitly in this method (which we will do below) won't have any
+         * side effects (like detached orphan base and diff hard disks etc).*/
     }
+
+    HRESULT rc = S_OK;
 
     /* Ensure the settings are saved. If we are going to be registered and
      * isConfigLocked() is FALSE then it means that no config file exists yet,
-     * so create it. */
+     * so create it by calling saveSettings() too. */
     if (isModified() || (aRegistered && !isConfigLocked()))
     {
-        HRESULT rc = saveSettings();
+        rc = saveSettings();
         CheckComRCReturnRC (rc);
     }
 
-    mData->mRegistered = aRegistered;
+    /* Implicitly detach DVD/Floppy */
+    rc = mDVDDrive->unmount();
+    if (SUCCEEDED (rc))
+        rc = mFloppyDrive->unmount();
 
-    return S_OK;
+    if (SUCCEEDED (rc))
+    {
+        /* we may have had implicit modifications we want to fix on success */
+        commit();
+
+        mData->mRegistered = aRegistered;
+    }
+    else
+    {
+        /* we may have had implicit modifications we want to cancel on failure*/
+        rollback (false /* aNotify */);
+    }
+
+    return rc;
 }
 
 /**
