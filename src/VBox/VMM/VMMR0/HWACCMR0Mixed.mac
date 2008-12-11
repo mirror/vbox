@@ -341,15 +341,17 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
+    mov     edx, ecx
+    mov     ecx, 0
     jmp     .cached_write
     
 ALIGN(16)    
 .cached_write:
-    dec     xCX
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
     vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    cmp     xCX, 0
-    jnz     .cached_write
+    inc     xCX
+    cmp     xCX, xDX
+    jl     .cached_write
 
     mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
 .no_cached_writes:
