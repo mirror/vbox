@@ -931,17 +931,17 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
     rc = aMachine->COMGETTER(Name) (name.asOutParam());
     CheckComRCReturnRC (rc);
 
-    /*
-     *  we can safely cast child to Machine * here because only Machine
-     *  implementations of IMachine can be among our children
-     */
+    /* We need the children map lock here to keep the getDependentChild() result
+     * valid until we finish */
+    AutoReadLock chLock (childrenLock());
+
+    /* We can safely cast child to Machine * here because only Machine
+     * implementations of IMachine can be among our children. */
     Machine *machine = static_cast <Machine *> (getDependentChild (aMachine));
-    if (!machine)
+    if (machine == NULL)
     {
-        /*
-         *  this machine was not created by CreateMachine()
-         *  or opened by OpenMachine() or loaded during startup
-         */
+        /* this machine was not created by CreateMachine() or opened by
+         * OpenMachine() or loaded during startup */
         return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The machine named '%ls' is not created within this "
                 "VirtualBox instance"), name.raw());
@@ -3588,7 +3588,7 @@ HRESULT VirtualBox::unregisterFloppyImage (FloppyImage2 *aImage,
  * @param aFrom     Interface pointer to cast from.
  * @param aTo       Where to store a reference to the underlying object.
  *
- * @note Locks this object for reading.
+ * @note Locks #childrenLock() for reading.
  */
 HRESULT VirtualBox::cast (IHardDisk2 *aFrom, ComObjPtr <HardDisk2> &aTo)
 {
@@ -3597,7 +3597,9 @@ HRESULT VirtualBox::cast (IHardDisk2 *aFrom, ComObjPtr <HardDisk2> &aTo)
     AutoCaller autoCaller (this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoReadLock alock (this);
+    /* We need the children map lock here to keep the getDependentChild() result
+     * valid until we finish */
+    AutoReadLock chLock (childrenLock());
 
     VirtualBoxBase *child = getDependentChild (aFrom);
     if (!child)

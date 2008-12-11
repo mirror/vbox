@@ -223,7 +223,7 @@ protected:
      *    with the exception that it must be requested *after* the VirtualBox
      *    object lock.
      */
-    RWLockHandle *treeLock() { return mVirtualBox->hardDiskTreeHandle(); }
+    RWLockHandle *treeLock() { return mVirtualBox->hardDiskTreeLockHandle(); }
 
     /** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
      *  treeLock(). */
