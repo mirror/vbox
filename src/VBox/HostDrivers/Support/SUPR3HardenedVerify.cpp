@@ -83,7 +83,7 @@
  * The files that gets verified.
  *
  * @todo This needs reviewing against the linux packages.
- * @todo The excessive use of kSupID_SharedLib needs to be reviewed at some point. For 
+ * @todo The excessive use of kSupID_SharedLib needs to be reviewed at some point. For
  *       the time being we're building the linux packages with SharedLib pointing to
  *       AppPrivArch (lazy bird).
  */
@@ -102,6 +102,10 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxRT"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxVMM"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxREM"  SUPLIB_DLL_SUFF },
+#if RT_ARCH_BITS == 32
+    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM32"  SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM64"  SUPLIB_DLL_SUFF },
+#endif
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDD2"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxDDU"  SUPLIB_DLL_SUFF },
