@@ -18,6 +18,8 @@
 ; additional information or have any questions.
 ;
 
+%define VMX_USE_CACHED_VMCS_ACCESSES
+
 ;Maximum number of cached entries. 
 %define VMCSCACHE_MAX_ENTRY                             256
 
