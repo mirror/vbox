@@ -216,23 +216,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
     }
 
-    /* Check REM flavour we wish to use with this VM. Now we assume 64-bit guests 
+    /* Check REM flavour we wish to use with this VM. Now we assume 64-bit guests
        can be only enabled if hardware acceleration is used. */
     if (fHWVirtExEnabled)
     {
-        BOOL fSupportsLongMode = false, fIs64BitGuest = false; 
-        ComPtr<IGuest> guest;
-        ComPtr <IGuestOSType> guestOSType;
         Bstr osTypeId;
-        rc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                  RC_CHECK();
-        rc = virtualBox->GetGuestOSType (osTypeId, guestOSType.asOutParam());       RC_CHECK();
-        rc = host->GetProcessorFeature(ProcessorFeature_LongMode, 
-                                                &fSupportsLongMode);                RC_CHECK();
-        rc = guestOSType->COMGETTER(Is64Bit) (&fIs64BitGuest);                      RC_CHECK();
-        
+        hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                 H();
+
+        ComPtr <IGuestOSType> guestOSType;
+        hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());       H();
+
+        BOOL fSupportsLongMode = false;
+        hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
+                                        &fSupportsLongMode);                        H();
+        BOOL fIs64BitGuest = false;
+        hrc = guestOSType->COMGETTER(Is64Bit)(&fIs64BitGuest);                      H();
+
         if (fSupportsLongMode && fIs64BitGuest)
         {
-            rc = CFGMR3InsertInteger(pRoot, "Rem64Enabled",     1);                 RC_CHECK();
+            rc = CFGMR3InsertInteger(pRoot, "Rem64Enabled", 1);                     RC_CHECK();
         }
     }
 
