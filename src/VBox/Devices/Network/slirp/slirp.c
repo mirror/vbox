@@ -690,20 +690,11 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
     int rc;
     int error;
 #endif
-    static uint32_t stat_time;
 
     STAM_REL_PROFILE_START(&pData->StatPoll, a);
 
     /* Update time */
     updtime(pData);
-
-#ifdef LOG_ENABLED
-    if (curtime - stat_time > 10000)
-    {
-        stat_time = curtime;
-        sockstats(pData);
-    }
-#endif
 
     /*
      * See if anything has timed out
