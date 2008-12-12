@@ -1089,6 +1089,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
     /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
+    /* Required for the EFER write below, not supported on all CPUs. */ /** @todo Sander, check this. */
+    val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR;
 
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
@@ -1572,9 +1574,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
 
-    /* Unconditionally update the guest EFER. */
-    rc = VMXWriteVMCS64(VMX_VMCS_GUEST_EFER_FULL, pCtx->msrEFER);
-    AssertRC(rc);
+    /* Unconditionally update the guest EFER - on CPUs that supports it. */
+    if (pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1 & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR)
+    {
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_EFER_FULL, pCtx->msrEFER);
+        AssertRC(rc);
+    }
 
     vmxR0UpdateExceptionBitmap(pVM, pVCpu, pCtx);
 
@@ -3618,7 +3623,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
 
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /**
  * Executes VMWRITE
  *
@@ -3716,4 +3721,4 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
     return VINF_SUCCESS;
 }
 
-#endif
+#endif /* HC_ARCH_BITS == 32 && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
