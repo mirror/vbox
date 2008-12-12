@@ -2039,7 +2039,7 @@ ResumeExecution:
     }
 #endif
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapReleaseAutoSet(pVCpu);
+    PGMDynMapFlushAutoSet(pVCpu);
 #endif
 
     /*
@@ -2194,10 +2194,6 @@ ResumeExecution:
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, v);
     STAM_STATS({ STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = true; });
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    PGMDynMapStartAutoSet(pVCpu);
-#endif
 
     /* Some cases don't need a complete resync of the guest CPU state; handle them here. */
     switch (exitReason)

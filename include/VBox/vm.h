@@ -129,7 +129,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        char                padding[192];        /* multiple of 64 */
+        char                padding[1024];       /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
