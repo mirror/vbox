@@ -51,6 +51,16 @@ static const char *getHostIfTypeText(HostNetworkInterfaceType_T enmType)
     }
     return "Unknown";
 }
+
+static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
+{
+    switch (enmStatus)
+    {
+        case HostNetworkInterfaceStatus_Up: return "Up";
+        case HostNetworkInterfaceStatus_Down: return "Down";
+    }
+    return "Unknown";
+}
 #endif
 
 int handleList(int argc, char *argv[],
@@ -203,39 +213,49 @@ int handleList(int argc, char *argv[],
             {
                 ComPtr<IHostNetworkInterface> networkInterface;
                 CHECK_RC_BREAK(enumerator->GetNext(networkInterface.asOutParam()));
+#ifndef VBOX_WITH_HOSTNETIF_API
                 Bstr interfaceName;
                 networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
                 RTPrintf("Name:        %lS\n", interfaceName.raw());
                 Guid interfaceGuid;
                 networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
                 RTPrintf("GUID:        %lS\n\n", Bstr(interfaceGuid.toString()).raw());
-#ifdef VBOX_WITH_HOSTNETIF_API
-            ULONG IPAddress;
-            networkInterface->COMGETTER(IPAddress)(&IPAddress);
-            RTPrintf("IPAddress:       %d.%d.%d.%d\n",
-                     ((uint8_t*)&IPAddress)[0],
-                     ((uint8_t*)&IPAddress)[1],
-                     ((uint8_t*)&IPAddress)[2],
-                     ((uint8_t*)&IPAddress)[3]);
-            ULONG NetworkMask;
-            networkInterface->COMGETTER(NetworkMask)(&NetworkMask);
-            RTPrintf("NetworkMask:     %d.%d.%d.%d\n",
-                     ((uint8_t*)&NetworkMask)[0],
-                     ((uint8_t*)&NetworkMask)[1],
-                     ((uint8_t*)&NetworkMask)[2],
-                     ((uint8_t*)&NetworkMask)[3]);
-            Bstr IPV6Address;
-            networkInterface->COMGETTER(IPV6Address)(IPV6Address.asOutParam());
-            RTPrintf("IPV6Address:     %lS\n", IPV6Address.raw());
-            Bstr HardwareAddress;
-            networkInterface->COMGETTER(HardwareAddress)(HardwareAddress.asOutParam());
-            RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
-            HostNetworkInterfaceType_T Type;
-            networkInterface->COMGETTER(Type)(&Type);
-            RTPrintf("Type:            %s\n", getHostIfTypeText(Type));
-            HostNetworkInterfaceStatus_T Status;
-            networkInterface->COMGETTER(Status)(&Status);
-            RTPrintf("Status:          %s\n\n", Status ? "Down":"Up");
+#else /* VBOX_WITH_HOSTNETIF_API */
+                Bstr interfaceName;
+                networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
+                RTPrintf("Name:            %lS\n", interfaceName.raw());
+                Guid interfaceGuid;
+                networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
+                RTPrintf("GUID:            %lS\n", Bstr(interfaceGuid.toString()).raw());
+                ULONG IPAddress;
+                networkInterface->COMGETTER(IPAddress)(&IPAddress);
+                RTPrintf("IPAddress:       %d.%d.%d.%d\n",
+                         ((uint8_t*)&IPAddress)[0],
+                         ((uint8_t*)&IPAddress)[1],
+                         ((uint8_t*)&IPAddress)[2],
+                         ((uint8_t*)&IPAddress)[3]);
+                ULONG NetworkMask;
+                networkInterface->COMGETTER(NetworkMask)(&NetworkMask);
+                RTPrintf("NetworkMask:     %d.%d.%d.%d\n",
+                         ((uint8_t*)&NetworkMask)[0],
+                         ((uint8_t*)&NetworkMask)[1],
+                         ((uint8_t*)&NetworkMask)[2],
+                         ((uint8_t*)&NetworkMask)[3]);
+                Bstr IPV6Address;
+                networkInterface->COMGETTER(IPV6Address)(IPV6Address.asOutParam());
+                RTPrintf("IPV6Address:     %lS\n", IPV6Address.raw());
+                Bstr IPV6NetworkMask;
+                networkInterface->COMGETTER(IPV6NetworkMask)(IPV6NetworkMask.asOutParam());
+                RTPrintf("IPV6NetworkMask: %lS\n", IPV6NetworkMask.raw());
+                Bstr HardwareAddress;
+                networkInterface->COMGETTER(HardwareAddress)(HardwareAddress.asOutParam());
+                RTPrintf("HardwareAddress: %lS\n", HardwareAddress.raw());
+                HostNetworkInterfaceType_T Type;
+                networkInterface->COMGETTER(Type)(&Type);
+                RTPrintf("Type:            %s\n", getHostIfTypeText(Type));
+                HostNetworkInterfaceStatus_T Status;
+                networkInterface->COMGETTER(Status)(&Status);
+                RTPrintf("Status:          %s\n\n", getHostIfStatusText(Status));
 #endif
             }
         }

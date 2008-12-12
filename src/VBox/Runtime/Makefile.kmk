@@ -286,12 +286,6 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/tcp.cpp
 
-ifdef VBOX_WITH_HOSTNETIF_API
- RuntimeR3_SOURCES     += \
-	generic/RTNetIfList-generic.cpp
- RuntimeR3_DEFS        += VBOX_WITH_HOSTNETIF_API
-endif
-
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
 #else

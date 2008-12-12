@@ -71,6 +71,36 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
 }
 
 #ifdef VBOX_WITH_HOSTNETIF_API
+static Bstr composeIPv6Address(PRTNETADDRIPV6 aAddrPtr)
+{
+    char szTmp[8*5];
+
+    RTStrPrintf(szTmp, sizeof(szTmp),
+                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:"
+                "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                aAddrPtr->au8[0], aAddrPtr->au8[1],
+                aAddrPtr->au8[2], aAddrPtr->au8[3],
+                aAddrPtr->au8[4], aAddrPtr->au8[5],
+                aAddrPtr->au8[6], aAddrPtr->au8[7],
+                aAddrPtr->au8[8], aAddrPtr->au8[9],
+                aAddrPtr->au8[10], aAddrPtr->au8[11],
+                aAddrPtr->au8[12], aAddrPtr->au8[13],
+                aAddrPtr->au8[14], aAddrPtr->au8[15]);
+    return Bstr(szTmp);
+}
+
+static Bstr composeHardwareAddress(PRTMAC aMacPtr)
+{
+    char szTmp[6*3];
+
+    RTStrPrintf(szTmp, sizeof(szTmp),
+                "%02x:%02x:%02x:%02x:%02x:%02x",
+                aMacPtr->au8[0], aMacPtr->au8[1],
+                aMacPtr->au8[2], aMacPtr->au8[3],
+                aMacPtr->au8[4], aMacPtr->au8[5]);
+    return Bstr(szTmp);
+}
+
 /**
  * Initializes the host object.
  *
@@ -78,14 +108,14 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid)
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (PRTNETIFINFO pIf)
+HRESULT HostNetworkInterface::init (PNETIFINFO pIf)
 {
 //    LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
 
 //    ComAssertRet (aInterfaceName, E_INVALIDARG);
 //    ComAssertRet (!aGuid.isEmpty(), E_INVALIDARG);
-    ComAssertRet (!pIf, E_INVALIDARG);
+    ComAssertRet (pIf, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -93,9 +123,13 @@ HRESULT HostNetworkInterface::init (PRTNETIFINFO pIf)
 
     unconst (mInterfaceName) = Bstr(pIf->szName);
     unconst (mGuid) = pIf->Uuid;
-//    m.IPAddress = pIf->IPAddress;
-//    m.networkMask = pIf->IPNetMask;
-//    m.IPv6Address = composeIPv6Address(pIf->IPv6Address, pIf->IPv6NetMask);
+    m.IPAddress = pIf->IPAddress.u;
+    m.networkMask = pIf->IPNetMask.u;
+    m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
+    m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
+    m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
+    m.type = pIf->enmType;
+    m.status = pIf->enmStatus;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -194,6 +228,24 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6Address) (BSTR *aIPV6Address)
     CheckComRCReturnRC (autoCaller.rc());
 
     m.IPV6Address.cloneTo (aIPV6Address);
+
+    return S_OK;
+}
+
+/**
+ * Returns the IP V6 network mask of the host network interface.
+ *
+ * @returns COM status code
+ * @param   aIPV6Mask address of result pointer
+ */
+STDMETHODIMP HostNetworkInterface::COMGETTER(IPV6NetworkMask) (BSTR *aIPV6Mask)
+{
+    CheckComArgOutPointerValid(aIPV6Mask);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    m.IPV6NetworkMask.cloneTo (aIPV6Mask);
 
     return S_OK;
 }
