@@ -33,5 +33,14 @@ struc VMCSCACHE
     .Read.uAlignment          resd    3
     .Read.aField              resd    VMCSCACHE_MAX_ENTRY
     .Read.aFieldVal           resq    VMCSCACHE_MAX_ENTRY
+%ifdef DEBUG
+    .TestIn.pPageCpuPhys      resq    1
+    .TestIn.pVMCSPhys         resq    1
+    .TestIn.pCache            resq    1
+    .TestIn.pCtx              resq    1
+    .TestOut.pVMCSPhys         resq    1
+    .TestOut.pCache            resq    1
+    .TestOut.pCtx              resq    1
+%endif
 endstruc
 
