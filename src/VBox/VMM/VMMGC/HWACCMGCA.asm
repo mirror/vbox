@@ -257,7 +257,7 @@ ALIGNCODE(16)
     jz      near .vmstart64_start_failed
 
     push    rdi
-    mov     rdi, [rsp + 8 * 2]         ; pCtx
+    mov     rdi, [rsp + 8]         ; pCtx
 
     mov     qword [rdi + CPUMCTX.eax], rax
     mov     qword [rdi + CPUMCTX.ebx], rbx
