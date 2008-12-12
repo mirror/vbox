@@ -3576,6 +3576,9 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     }
 
     VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+
+    /* Resync the whole guest state. (test) */
+    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL;
     return rc;
 }
 
