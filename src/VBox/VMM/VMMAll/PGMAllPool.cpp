@@ -2070,7 +2070,7 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifdef IN_RING3
+# ifndef IN_RC //def IN_RING3 - fixing properly in a bit...
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else  /* !IN_RING3 */
