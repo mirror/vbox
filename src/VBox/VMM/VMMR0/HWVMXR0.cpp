@@ -3662,8 +3662,12 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
     case VMX_VMCS64_GUEST_DR7:
     case VMX_VMCS64_GUEST_RIP:
     case VMX_VMCS64_GUEST_RSP:
+    case VMX_VMCS64_GUEST_CS_BASE:
+    case VMX_VMCS64_GUEST_DS_BASE:
+    case VMX_VMCS64_GUEST_ES_BASE:
     case VMX_VMCS64_GUEST_FS_BASE:
     case VMX_VMCS64_GUEST_GS_BASE:
+    case VMX_VMCS64_GUEST_SS_BASE:
         /* Queue a 64 bits value as we can't set it in 32 bits host mode. */
         if (u64Val >> 32ULL)
             rc = VMXWriteCachedVMCSEx(pVCpu, idxField, u64Val);
@@ -3673,7 +3677,7 @@ VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         return rc;
 
     default:
-        AssertFailed();
+        AssertMsgFailed(("Unexpected field %x\n", idxField));
         return VERR_INVALID_PARAMETER;
     }
 }
