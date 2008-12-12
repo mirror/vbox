@@ -2330,7 +2330,7 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PC
 VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc;
-    RTCCUINTREG     uFlags;
+    RTHCUINTREG     uFlags;
 
     /* @todo This code is not guest SMP safe (hyper context) */
     AssertReturn(pVM->cCPUs == 1, VERR_ACCESS_DENIED);

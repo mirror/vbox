@@ -1585,7 +1585,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    RTCCUINTREG val, valShadow;
+    RTGCUINTREG val, valShadow;
     RTGCUINTPTR uInterruptState;
     int         rc;
 
@@ -1839,8 +1839,8 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
-    RTCCUINTREG val;
-    RTCCUINTREG exitReason, instrError, cbInstr;
+    RTGCUINTREG val;
+    RTGCUINTREG exitReason, instrError, cbInstr;
     RTGCUINTPTR exitQualification;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */
     RTGCUINTPTR errCode, instrInfo;
@@ -1860,61 +1860,64 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x);
 
 #ifdef VBOX_STRICT
-    VMXFlushWriteCache(pVCpu);
+    {
+        RTCCUINTREG val;
+        VMXFlushWriteCache(pVCpu);
 
-    rc = VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
-    AssertRC(rc);
-    Log2(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS = %08x\n", val));
+        rc = VMXReadVMCS(VMX_VMCS_CTRL_PIN_EXEC_CONTROLS, &val);
+        AssertRC(rc);
+        Log2(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS = %08x\n", val));
 
-    /* allowed zero */
-    if ((val & pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0)
-        Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: zero\n"));
+        /* allowed zero */
+        if ((val & pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0)
+            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: zero\n"));
 
-    /* allowed one */
-    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1) != 0)
-        Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: one\n"));
+        /* allowed one */
+        if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.allowed1) != 0)
+            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: one\n"));
 
-    rc = VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
-    AssertRC(rc);
-    Log2(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS = %08x\n", val));
+        rc = VMXReadVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, &val);
+        AssertRC(rc);
+        Log2(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS = %08x\n", val));
 
-    /* Must be set according to the MSR, but can be cleared in case of EPT. */
-    if (pVM->hwaccm.s.fNestedPaging)
-        val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+        /* Must be set according to the MSR, but can be cleared in case of EPT. */
+        if (pVM->hwaccm.s.fNestedPaging)
+            val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
+                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
+                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
 
-    /* allowed zero */
-    if ((val & pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0)
-        Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
+        /* allowed zero */
+        if ((val & pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0)
+            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
 
-    /* allowed one */
-    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1) != 0)
-        Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: one\n"));
+        /* allowed one */
+        if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1) != 0)
+            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: one\n"));
 
-    rc = VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
-    AssertRC(rc);
-    Log2(("VMX_VMCS_CTRL_ENTRY_CONTROLS = %08x\n", val));
+        rc = VMXReadVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, &val);
+        AssertRC(rc);
+        Log2(("VMX_VMCS_CTRL_ENTRY_CONTROLS = %08x\n", val));
 
-    /* allowed zero */
-    if ((val & pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0)
-        Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: zero\n"));
+        /* allowed zero */
+        if ((val & pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0)
+            Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: zero\n"));
 
-    /* allowed one */
-    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1) != 0)
-        Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: one\n"));
+        /* allowed one */
+        if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1) != 0)
+            Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: one\n"));
 
-    rc = VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
-    AssertRC(rc);
-    Log2(("VMX_VMCS_CTRL_EXIT_CONTROLS = %08x\n", val));
+        rc = VMXReadVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, &val);
+        AssertRC(rc);
+        Log2(("VMX_VMCS_CTRL_EXIT_CONTROLS = %08x\n", val));
 
-    /* allowed zero */
-    if ((val & pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0)
-        Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: zero\n"));
+        /* allowed zero */
+        if ((val & pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0) != pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0)
+            Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: zero\n"));
 
-    /* allowed one */
-    if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1) != 0)
-        Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
+        /* allowed one */
+        if ((val & ~pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1) != 0)
+            Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
+    }
 #endif
 
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
@@ -3067,6 +3070,8 @@ ResumeExecution:
     case VMX_EXIT_ERR_INVALID_GUEST_STATE:  /* 33 VM-entry failure due to invalid guest state. */
     {
 #ifdef VBOX_STRICT
+        RTCCUINTREG val;
+
         Log(("VMX_EXIT_ERR_INVALID_GUEST_STATE\n"));
 
         VMXReadVMCS(VMX_VMCS64_GUEST_RIP, &val);
@@ -3533,7 +3538,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc, rc2;
-    RTCCUINTREG     uFlags;
+    RTHCUINTREG     uFlags;
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
