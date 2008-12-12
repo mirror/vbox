@@ -5901,12 +5901,17 @@
       <see>IHostNetworkInterface</see>
     </desc>
 
-    <const name="Up" value="0">
+    <const name="Unknown" value="0">
+      <desc>
+        The state of interface cannot be determined.
+      </desc>
+    </const>
+    <const name="Up" value="1">
       <desc>
         The interface is fully operational.
       </desc>
     </const>
-    <const name="Down" value="1">
+    <const name="Down" value="2">
       <desc>
         The interface is not functioning.
       </desc>
@@ -5936,6 +5941,10 @@
 
     <attribute name="IPV6Address" type="wstring" readonly="yes">
       <desc>Returns the IP V6 address of the interface.</desc>
+    </attribute>
+
+    <attribute name="IPV6NetworkMask" type="wstring" readonly="yes">
+      <desc>Returns the IP V6 network mask of the interface.</desc>
     </attribute>
 
     <attribute name="hardwareAddress" type="wstring" readonly="yes">

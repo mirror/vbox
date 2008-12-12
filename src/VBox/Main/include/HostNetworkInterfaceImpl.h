@@ -27,7 +27,7 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 #ifdef VBOX_WITH_HOSTNETIF_API
-#include "iprt/netif.h"
+#include "netif.h"
 #endif
 
 class ATL_NO_VTABLE HostNetworkInterface :
@@ -59,7 +59,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Bstr interfaceName, Guid guid);
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT init (PRTNETIFINFO pIfs);
+    HRESULT init (PNETIFINFO pIfs);
 #endif
 
     // IHostNetworkInterface properties
@@ -68,6 +68,7 @@ public:
     STDMETHOD(COMGETTER(IPAddress)) (ULONG *aIPAddress);
     STDMETHOD(COMGETTER(NetworkMask)) (ULONG *aNetworkMask);
     STDMETHOD(COMGETTER(IPV6Address)) (BSTR *aIPV6Address);
+    STDMETHOD(COMGETTER(IPV6NetworkMask)) (BSTR *aIPV6Mask);
     STDMETHOD(COMGETTER(HardwareAddress)) (BSTR *aHardwareAddress);
     STDMETHOD(COMGETTER(Type)) (HostNetworkInterfaceType_T *aType);
     STDMETHOD(COMGETTER(Status)) (HostNetworkInterfaceStatus_T *aStatus);
@@ -87,6 +88,7 @@ private:
         ULONG IPAddress;
         ULONG networkMask;
         Bstr IPV6Address;
+        Bstr IPV6NetworkMask;
         Bstr hardwareAddress;
         HostNetworkInterfaceType_T type;
         HostNetworkInterfaceStatus_T status;
