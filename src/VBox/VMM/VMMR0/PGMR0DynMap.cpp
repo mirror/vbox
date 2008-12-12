@@ -1689,6 +1689,8 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  * @param   pSet        The set.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the address of the mapping on success.
+ *
+ * @remarks This is a very hot path.
  */
 int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
 {
@@ -1803,8 +1805,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
 }
 
 
-/* documented elsewhere - a bit of a mess.
-   This is a VERY hot path. */
+/* documented elsewhere - a bit of a mess. */
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
     /*
@@ -1908,6 +1909,7 @@ static int pgmR0DynMapTest(PVM pVM)
          */
         LogRel(("Test #2\n"));
         ASMIntDisable();
+        PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
         for (i = 0 ; i < UINT16_MAX*2 - 1 && RT_SUCCESS(rc) && pv2 == pv; i++)
         {
             pv2 = (void *)(intptr_t)-4;
@@ -1945,6 +1947,7 @@ static int pgmR0DynMapTest(PVM pVM)
              */
             LogRel(("Test #3\n"));
             ASMIntDisable();
+            PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
             pv2 = NULL;
             for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) - 5 && RT_SUCCESS(rc) && pv2 != pv; i++)
             {
@@ -1972,6 +1975,7 @@ static int pgmR0DynMapTest(PVM pVM)
                  */
                 LogRel(("Test #4\n"));
                 ASMIntDisable();
+                PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
                 for (i = 0 ; i < RT_ELEMENTS(pSet->aEntries) + 2; i++)
                 {
                     rc = PGMDynMapHCPage(pVM, cr3 - PAGE_SIZE * (i + 5), &pv2);
@@ -2016,6 +2020,7 @@ static int pgmR0DynMapTest(PVM pVM)
     {
         LogRel(("Test #5\n"));
         ASMIntDisable();
+        PGMDynMapMigrateAutoSet(&pVM->aCpus[0]);
         RTHCPHYS  HCPhysPT = RTR0MemObjGetPagePhysAddr(pThis->pSegHead->ahMemObjPTs[0], 0);
         rc  = PGMDynMapHCPage(pVM, HCPhysPT, &pv);
         if (RT_SUCCESS(rc))
