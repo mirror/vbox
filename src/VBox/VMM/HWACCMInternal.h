@@ -394,6 +394,21 @@ typedef struct VMCSCACHE
         uint32_t    aField[VMCSCACHE_MAX_ENTRY];
         uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
     } Read;
+#ifdef DEBUG
+    struct
+    {
+        RTHCPHYS    pPageCpuPhys;
+        RTHCPHYS    pVMCSPhys;
+        RTGCPTR     pCache;
+        RTGCPTR     pCtx;
+    } TestIn;
+    struct
+    {
+        RTHCPHYS    pVMCSPhys;
+        RTGCPTR     pCache;
+        RTGCPTR     pCtx;
+    } TestOut;
+#endif
 } VMCSCACHE;
 /** Pointer to VMCSCACHE. */
 typedef VMCSCACHE *PVMCSCACHE;

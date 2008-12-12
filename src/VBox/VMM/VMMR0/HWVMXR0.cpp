@@ -3507,9 +3507,20 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     uint32_t        aParam[6];
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
+    int             rc;
 
     pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+
+#ifdef DEBUG
+    pCache->TestIn.pPageCpuPhys = 0;
+    pCache->TestIn.pVMCSPhys    = 0;
+    pCache->TestIn.pCache       = 0;
+    pCache->TestOut.pVMCSPhys   = 0;
+    pCache->TestOut.pCache      = 0;
+    pCache->TestOut.pCtx        = 0;
+#endif
 
     aParam[0] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
     aParam[1] = (uint32_t)(pPageCpuPhys >> 32);                             /* Param 1: VMXON physical address - Hi. */
@@ -3518,7 +3529,18 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
     aParam[5] = 0;
 
-    return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
+    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
+
+#ifdef DEBUG
+    AssertMsg(pCache->TestIn.pPageCpuPhys == pPageCpuPhys, ("%RHp vs %RHp\n", pCache->TestIn.pPageCpuPhys, pPageCpuPhys));
+    AssertMsg(pCache->TestIn.pVMCSPhys    == pVCpu->hwaccm.s.vmx.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pVCpu->hwaccm.s.vmx.pVMCSPhys));
+    AssertMsg(pCache->TestIn.pVMCSPhys    == pCache->TestOut.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pCache->TestOut.pVMCSPhys));
+    AssertMsg(pCache->TestIn.pCache       == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache, pCache->TestOut.pCache));
+    AssertMsg(pCache->TestIn.pCache       == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache), ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache)));
+    AssertMsg(pCache->TestIn.pCtx         == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx, pCache->TestOut.pCtx));
+#endif
+
+    return rc;
 }
 
 /**
@@ -3585,6 +3607,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
     Assert(!(uFlagsTest & X86_EFL_IF));
+
     return rc;
 }
 

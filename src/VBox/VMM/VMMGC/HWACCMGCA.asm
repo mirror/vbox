@@ -132,6 +132,16 @@ BEGINPROC VMXGCStartVM64
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     ; Flush the VMCS write cache first (before any other vmreads/vmwrites!)
     mov     rbx, [rbp + 24 + 8]                             ; pCache
+
+%ifdef DEBUG
+    mov     rax, [rbp + 8 + 8]                              ; pPageCpuPhys
+    mov     [rbx + VMCSCACHE.TestIn.pPageCpuPhys], rax
+    mov     rax, [rbp + 16 + 8]                             ; pVMCSPhys
+    mov     [rbx + VMCSCACHE.TestIn.pVMCSPhys], rax
+    mov     [rbx + VMCSCACHE.TestIn.pCache], rbx
+    mov     [rbx + VMCSCACHE.TestIn.pCtx], rsi
+%endif
+
     mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
@@ -142,7 +152,7 @@ BEGINPROC VMXGCStartVM64
 ALIGN(16)    
 .cached_write:
     mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
-    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    vmwrite xAX, qword [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
     inc     xCX
     cmp     xCX, xDX
     jl     .cached_write
@@ -283,9 +293,14 @@ ALIGNCODE(16)
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     xDX         ; saved pCache
+    pop     rdi         ; saved pCache
+
+%ifdef DEBUG
+    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+%endif
     
-    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    mov     ecx, [rdi + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
     je      .no_cached_reads
     jmp     .cached_read
@@ -293,17 +308,15 @@ ALIGNCODE(16)
 ALIGN(16)
 .cached_read:
     dec     xCX
-    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX*4]
-    vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    cmp      xCX, 0
+    mov     eax, [rdi + VMCSCACHE.Read.aField + xCX*4]
+    vmread  qword [rdi + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
+    cmp     xCX, 0
     jnz     .cached_read
 .no_cached_reads:
 %endif
 
     ; Restore segment registers
     MYPOPSEGS rax
-
-    mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
     ; Signal that we're going back to 32 bits mode!
@@ -312,9 +325,16 @@ ALIGN(16)
     and      rdx, ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64
     vmwrite  rbx, rdx
 
+%ifdef DEBUG
+    mov     rax, [rsp]                             ; pVMCSPhys
+    mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rax
+%endif
+
     ; Write back the data and disable the VMCS
     vmclear qword [rsp]  ;Pushed pVMCS
     add     rsp, 8
+
+    mov     eax, VINF_SUCCESS
 
 .vmstart64_vmoff_end:
     ; Disable VMX root mode
