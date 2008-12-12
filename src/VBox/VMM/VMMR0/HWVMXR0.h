@@ -218,9 +218,9 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
 # define VMX_WRITE_SELREG(REG, reg) \
 {                                                                                               \
-        rc  = VMXWriteCachedVMCS(VMX_VMCS16_GUEST_FIELD_##REG,      pCtx->reg);                 \
-        rc |= VMXWriteCachedVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);   \
-        rc |= VMXWriteCachedVMCS(VMX_VMCS64_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);    \
+        rc  = VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_##REG,      pCtx->reg);                       \
+        rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,    pCtx->reg##Hid.u32Limit);         \
+        rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_##REG##_BASE,     pCtx->reg##Hid.u64Base);        \
         if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
             val = pCtx->reg##Hid.Attr.u;                                                        \
         else                                                                                    \
@@ -237,7 +237,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         else                                                                                    \
             val = 0x10000;  /* Invalid guest state error otherwise. (BIT(16) = Unusable) */     \
                                                                                                 \
-        rc |= VMXWriteCachedVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, val);                  \
+        rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, val);                        \
 }
 
 # define VMX_READ_SELREG(REG, reg) \
@@ -265,7 +265,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         Log(("%s Attributes   %x\n", szSelReg, val));                \
 }
 
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
 /**
  * Cache VMCS writes for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
  *
@@ -273,48 +272,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
  * @param   idxField    VMCS field
  * @param   u64Val      Value
  */
-DECLINLINE(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
-{
-    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
-
-    AssertMsgReturn(pCache->Write.cValidEntries < VMCSCACHE_MAX_ENTRY - 1, ("entries=%x\n", pCache->Write.cValidEntries), VERR_ACCESS_DENIED);
-    pCache->Write.aField[pCache->Write.cValidEntries]    = idxField;
-    pCache->Write.aFieldVal[pCache->Write.cValidEntries] = u64Val;
-    pCache->Write.cValidEntries++;
-    return VINF_SUCCESS;
-}
-
-/**
- * Flush the write cache in order not to overflow it with frequent ring switches.
- *
- * @param   pVCpu       The VMCPU to operate on.
- */
-VMMR0DECL(void) VMXFlushWriteCache(PVMCPU pVCpu);
-
-#else
-# define VMXFlushWriteCache(a)     do { } while (0)
-#endif
-
-/**
- * Cache VMCS writes for performance reasons (Darwin) and for running 64 bits guests on 32 bits hosts.
- *
- * @param   idxField    VMCS field
- * @param   val         Field value
- */
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
-# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, (uVal))
-# if 0
-#  if HC_ARCH_BITS == 64 || defined(RT_OS_DARWIN)
-#   define VMXWriteCachedVMCS64(idxField, uVal)           VMXWriteCachedVMCSEx(pVCpu, idxField, uVal)
-#  else
-#   define VMXWriteCachedVMCS64(idxField, uVal)           (CPUMIsGuestInLongModeEx(pCtx)) ? VMXWriteCachedVMCSEx(pVCpu, idxField, uVal) : (VMXWriteCachedVMCSEx(pVCpu, idxField, uVal) | VMXWriteCachedVMCSEx(pVCpu, idxField + 1, (uVal >> 32ULL)))
-#  endif
-# endif
-#else
-# define VMXWriteCachedVMCS(idxField, uVal)              VMXWriteVMCS(idxField, (uVal))
-# define VMXWriteCachedVMCS64(idxField, uVal)            VMXWriteVMCS64(idxField, (uVal))
-#endif
+VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 /**
