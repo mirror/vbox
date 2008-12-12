@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,9 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
+#ifndef ____H_HOSTHARDWARELINUX
+# define ____H_HOSTHARDWARELINUX
 
 #include <iprt/err.h>
 #include <string>
@@ -109,4 +112,88 @@ private:
 
 typedef VBoxMainDriveInfo::DriveInfoList DriveInfoList;
 typedef VBoxMainDriveInfo::DriveInfo DriveInfo;
+
+/**
+ * Class for probing and returning information about host USB devices
+ */
+class VBoxMainUSBDeviceInfo
+{
+public:
+    /** Structure describing a host USB device */
+    struct USBDeviceInfo
+    {
+        /** The device node of the device. */
+        std::string mDevice;
+        /** The sysfs path of the device. */
+        std::string mSysfsPath;
+        /** Type for the list of interfaces. */
+        typedef std::vector <std::string> InterfaceList;
+        /** The sysfs paths of the device's interfaces. */
+        InterfaceList mInterfaces;
+
+        /** Constructors */
+        USBDeviceInfo (std::string aDevice, std::string aSysfsPath)
+            : mDevice (aDevice), mSysfsPath (aSysfsPath) {}
+        USBDeviceInfo () {}
+    };
+    
+    /** List (resp vector) holding drive information */
+    typedef std::vector <USBDeviceInfo> DeviceInfoList;
+
+    /**
+     * Search for host USB devices and rebuild the list, which remains empty
+     * until the first time it is called.
+     * @returns iprt status code
+     */
+    int UpdateDevices ();
+
+    /** Get the first element in the list of USB devices. */
+    DeviceInfoList::const_iterator DevicesBegin()
+    {
+        return mDeviceList.begin();
+    }
+
+    /** Get the last element in the list of USB devices. */
+    DeviceInfoList::const_iterator DevicesEnd()
+    {
+        return mDeviceList.end();
+    }
+
+private:
+    /** The list of currently available USB devices */
+    DeviceInfoList mDeviceList;
+};
+
+typedef VBoxMainUSBDeviceInfo::DeviceInfoList USBDeviceInfoList;
+typedef VBoxMainUSBDeviceInfo::USBDeviceInfo USBDeviceInfo;
+typedef VBoxMainUSBDeviceInfo::USBDeviceInfo::InterfaceList USBInterfaceList;
+
+class VBoxMainHotplugWaiter
+{
+    /** Opaque context struct. */
+    struct Context;
+
+    /** Opaque waiter context. */
+    Context *mContext;
+public:
+    /** Constructor */
+    VBoxMainHotplugWaiter (void);
+    /** Destructor. */
+    ~VBoxMainHotplugWaiter (void);
+    /**
+     * Wait for a hotplug event.
+     *
+     * @returns  VINF_SUCCESS if an event occurred or if Interrupt() was called.
+     * @returns  VERR_TRY_AGAIN if the wait failed but this might (!) be a
+     *           temporary failure.
+     * @returns  VERR_NOT_SUPPORTED if the wait failed and will definitely not
+     *           succeed if retried.
+     * @returns  Possibly other iprt status codes otherwise.
+     */
+    int Wait (void);
+    /** Interrupts an active wait. */
+    void Interrupt (void);
+};
+
+#endif /* ____H_HOSTHARDWARELINUX */
 

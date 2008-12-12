@@ -28,8 +28,8 @@
 #define LIB_DBUS_1_2 "libdbus-1.so.2"  /* This should be compatible */
 #define LIB_DBUS_1_3 "libdbus-1.so.3"
 
-/** Types from the dbus header files which we need.  These are taken more or less
-    verbatim from the DBus public interface header files. */
+/** Types and defines from the dbus header files which we need.  These are
+ * taken more or less verbatim from the DBus public interface header files. */
 struct DBusError
 {
     const char *name;
@@ -67,12 +67,25 @@ struct DBusMessageIter
 };
 typedef struct DBusMessageIter DBusMessageIter;
 
-/** Defines from the dbus header files which we need.  These are taken more or less
-    verbatim from the DBus public interface header files. */
 #define DBUS_ERROR_NO_MEMORY                  "org.freedesktop.DBus.Error.NoMemory"
 #define DBUS_TYPE_STRING        ((int) 's')
 #define DBUS_TYPE_ARRAY         ((int) 'a')
 #define DBUS_TYPE_DICT_ENTRY    ((int) 'e')
+
+typedef enum
+{
+  DBUS_HANDLER_RESULT_HANDLED,         /**< Message has had its effect - no need
+ to run more handlers. */ 
+  DBUS_HANDLER_RESULT_NOT_YET_HANDLED, /**< Message has not had any effect - see
+ if other handlers want it. */
+  DBUS_HANDLER_RESULT_NEED_MEMORY      /**< Need more memory in order to return 
+#DBUS_HANDLER_RESULT_HANDLED or #DBUS_HANDLER_RESULT_NOT_YET_HANDLED. Please try
+ again later with more memory. */
+} DBusHandlerResult;
+
+typedef DBusHandlerResult (*DBusHandleMessageFunction) (DBusConnection *,
+                                                        DBusMessage *, void *);
+typedef void (*DBusFreeFunction) (void *);
 
 /** The following are the symbols which we need from libdbus-1. */
 extern void (*dbus_error_init)(DBusError *);
@@ -99,6 +112,12 @@ extern int (*dbus_message_iter_get_element_type) (DBusMessageIter *);
 extern void (*dbus_message_iter_recurse) (DBusMessageIter *, DBusMessageIter *);
 extern void (*dbus_message_iter_get_basic) (DBusMessageIter *, void *);
 extern dbus_bool_t (*dbus_message_iter_next) (DBusMessageIter *);
+extern dbus_bool_t (*dbus_connection_add_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                                  void *, DBusFreeFunction);
+extern void (*dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                              void *);
+extern dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int);
+extern dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
 
 extern bool VBoxDBusCheckPresence(void);
 extern void VBoxDBusConnectionUnref(DBusConnection *pConnection);

@@ -63,6 +63,12 @@ int (*dbus_message_iter_get_element_type) (DBusMessageIter *);
 void (*dbus_message_iter_recurse) (DBusMessageIter *, DBusMessageIter *);
 void (*dbus_message_iter_get_basic) (DBusMessageIter *, void *);
 dbus_bool_t (*dbus_message_iter_next) (DBusMessageIter *);
+dbus_bool_t (*dbus_connection_add_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                           void *, DBusFreeFunction);
+void (*dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessageFunction,
+                                       void *);
+dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int);
+dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
 
 bool VBoxDBusCheckPresence(void)
 {
@@ -115,6 +121,14 @@ bool VBoxDBusCheckPresence(void)
                                      (void **) &dbus_message_iter_get_basic))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_message_iter_next",
                                      (void **) &dbus_message_iter_next))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_add_filter",
+                                     (void **) &dbus_connection_add_filter))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_remove_filter",
+                                     (void **) &dbus_connection_remove_filter))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_read_write_dispatch",
+                                     (void **) &dbus_connection_read_write_dispatch))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_message_is_signal",
+                                     (void **) &dbus_message_is_signal))
        )
     {
         ghLibDBus = hLibDBus;
