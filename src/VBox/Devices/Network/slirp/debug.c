@@ -229,7 +229,7 @@ print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
     AssertReturn(strcmp(pszType, "IP4") == 0, 0);
 
-    ip = ntohl((uint32_t)(uintptr_t)pvValue);
+    ip = ntohl(*(uint32_t*)pvValue);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, IP4_ADDR_PRINTF_FORMAT,
            IP4_ADDR_PRINTF_DECOMP(ip));
 }
