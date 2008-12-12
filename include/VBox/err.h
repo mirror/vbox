@@ -1029,49 +1029,65 @@
 /** @} */
 
 
-/** @name VBox HDD Container (VDI) Status Codes
+/** @name VBox HDD Container (VD) Status Codes
  * @{
  */
-/** Invalid image file header. */
-#define VERR_VDI_INVALID_HEADER                     (-3200)
-/** Invalid image file header: invalid signature. */
-#define VERR_VDI_INVALID_SIGNATURE                  (-3201)
-/** Invalid image file header: invalid version. */
-#define VERR_VDI_UNSUPPORTED_VERSION                (-3202)
 /** Invalid image type. */
-#define VERR_VDI_INVALID_TYPE                       (-3203)
-/** Invalid image flags. */
-#define VERR_VDI_INVALID_FLAGS                      (-3204)
+#define VERR_VD_INVALID_TYPE                        (-3200)
 /** Operation can't be done in current HDD container state. */
-#define VERR_VDI_INVALID_STATE                      (-3205)
-/** Differencing image can't be used with current base image. */
-#define VERR_VDI_WRONG_DIFF_IMAGE                   (-3206)
-/** Two or more images of one HDD has different versions. */
-#define VERR_VDI_IMAGES_VERSION_MISMATCH            (-3207)
-/** Differencing and parent images can't be used together due to UUID. */
-#define VERR_VDI_IMAGES_UUID_MISMATCH               (-3208)
-/** No differencing images to commit. */
-#define VERR_VDI_NO_DIFF_IMAGES                     (-3209)
-/** Virtual HDD is not opened. */
-#define VERR_VDI_NOT_OPENED                         (-3210)
-/** Requested image is not opened. */
-#define VERR_VDI_IMAGE_NOT_FOUND                    (-3211)
-/** Image is read-only. */
-#define VERR_VDI_IMAGE_READ_ONLY                    (-3212)
-/** Comment string is too long. */
-#define VERR_VDI_COMMENT_TOO_LONG                   (-3213)
-/** Geometry hasn't been set. */
-#define VERR_VDI_GEOMETRY_NOT_SET                   (-3214)
-/** No data for this block in image. */
-#define VERR_VDI_BLOCK_FREE                         (-3215)
+#define VERR_VD_INVALID_STATE                       (-3201)
 /** Configuration value not found. */
-#define VERR_VDI_VALUE_NOT_FOUND                    (-3216)
-/** Configuration value is unknown. This indicates misconfiguration. */
-#define VERR_VDI_UNKNOWN_CFG_VALUES                 (-3217)
+#define VERR_VD_VALUE_NOT_FOUND                     (-3202)
+/** Virtual HDD is not opened. */
+#define VERR_VD_NOT_OPENED                          (-3203)
+/** Requested image is not opened. */
+#define VERR_VD_IMAGE_NOT_FOUND                     (-3204)
+/** Image is read-only. */
+#define VERR_VD_IMAGE_READ_ONLY                     (-3205)
+/** Geometry hasn't been set. */
+#define VERR_VD_GEOMETRY_NOT_SET                    (-3206)
+/** No data for this block in image. */
+#define VERR_VD_BLOCK_FREE                          (-3207)
+/** Differencing and parent images can't be used together due to UUID. */
+#define VERR_VD_UUID_MISMATCH                       (-3208)
 /** Asynchronous I/O request finished. */
-#define VINF_VDI_ASYNC_IO_FINISHED                  3218
+#define VINF_VD_ASYNC_IO_FINISHED                   3209
 /** Asynchronous I/O is not finished yet. */
-#define VERR_VDI_ASYNC_IO_IN_PROGRESS               (-3219)
+#define VERR_VD_ASYNC_IO_IN_PROGRESS                (-3210)
+/** Generic: Invalid image file header. Use this for plugins. */
+#define VERR_VD_GEN_INVALID_HEADER                  (-3220)
+/** VDI: Invalid image file header. */
+#define VERR_VD_VDI_INVALID_HEADER                  (-3230)
+/** VDI: Invalid image file header: invalid signature. */
+#define VERR_VD_VDI_INVALID_SIGNATURE               (-3231)
+/** VDI: Invalid image file header: invalid version. */
+#define VERR_VD_VDI_UNSUPPORTED_VERSION             (-3232)
+/** Comment string is too long. */
+#define VERR_VD_VDI_COMMENT_TOO_LONG                (-3233)
+/** VMDK: Invalid image file header. */
+#define VERR_VD_VMDK_INVALID_HEADER                 (-3240)
+/** VMDK: Invalid image file header: invalid version. */
+#define VERR_VD_VMDK_UNSUPPORTED_VERSION            (-3241)
+/** VMDK: Image property not found. */
+#define VERR_VD_VMDK_VALUE_NOT_FOUND                (-3242)
+/** VMDK: Operation can't be done in current image state. */
+#define VERR_VD_VMDK_INVALID_STATE                  (-3243)
+/** iSCSI: Invalid header, i.e. dummy for validity check. */
+#define VERR_VD_ISCSI_INVALID_HEADER                (-3250)
+/** iSCSI: Configuration value is unknown. This indicates misconfiguration. */
+#define VERR_VD_ISCSI_UNKNOWN_CFG_VALUES            (-3251)
+/** iSCSI: Interface is unknown. This indicates misconfiguration. */
+#define VERR_VD_ISCSI_UNKNOWN_INTERFACE             (-3252)
+/** iSCSI: Operation can't be done in current image state. */
+#define VERR_VD_ISCSI_INVALID_STATE                 (-3253)
+/** iSCSI: Invalid device type (not a disk). */
+#define VERR_VD_ISCSI_INVALID_TYPE                  (-3254)
+/** VHD: Invalid image file header. */
+#define VERR_VD_VHD_INVALID_HEADER                  (-3260)
+/** Raw: Invalid image file header. */
+#define VERR_VD_RAW_INVALID_HEADER                  (-3270)
+/** Raw: Invalid image file type. */
+#define VERR_VD_RAW_INVALID_TYPE                    (-3271)
 /** @} */
 
 

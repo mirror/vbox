@@ -343,20 +343,20 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     int rc, i;
 
     if (!pImage)
-        return VERR_VDI_NOT_OPENED;
+        return VERR_VD_NOT_OPENED;
 
     rc = RTFileReadAt(pImage->File, pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
     if (RT_FAILURE(rc))
         return rc;
     if (memcmp(ddh.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE) != 0)
     {
-        return VERR_VDI_INVALID_HEADER;
+        return VERR_VD_VHD_INVALID_HEADER;
     }
     uint32_t u32Checksum = RT_BE2H_U32(ddh.Checksum);
     ddh.Checksum = 0;
     if (u32Checksum != vhdChecksum(&ddh, sizeof(ddh)))
     {
-        return VERR_VDI_INVALID_HEADER;
+        return VERR_VD_VHD_INVALID_HEADER;
     }
     /* Update parent's timestamp. */
     ddh.ParentTimeStamp = RT_H2BE_U32(pImage->u32ParentTimeStamp);
@@ -422,7 +422,7 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
 
     rc = RTFileReadAt(File, pImage->uCurrentEndOfFile, &vhdFooter, sizeof(VHDFooter), NULL);
     if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0) {
-        return VERR_VDI_INVALID_HEADER;
+        return VERR_VD_VHD_INVALID_HEADER;
     }
 
     switch (RT_BE2H_U32(vhdFooter.DiskType))
@@ -587,18 +587,18 @@ static int vhdCheckIfValid(const char *pszFilename)
 
     rc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN);
     if (RT_FAILURE(rc))
-        return VERR_VDI_INVALID_HEADER;
+        return VERR_VD_VHD_INVALID_HEADER;
 
     rc = RTFileGetSize(File, &cbFile);
     if (RT_FAILURE(rc))
     {
         RTFileClose(File);
-        return VERR_VDI_INVALID_HEADER;
+        return VERR_VD_VHD_INVALID_HEADER;
     }
 
     rc = RTFileReadAt(File, cbFile - sizeof(VHDFooter), &vhdFooter, sizeof(VHDFooter), NULL);
     if (RT_FAILURE(rc) || (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0))
-        rc = VERR_VDI_INVALID_HEADER;
+        rc = VERR_VD_VHD_INVALID_HEADER;
     else
         rc = VINF_SUCCESS;
 
@@ -630,7 +630,7 @@ static int vhdGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     if (pImage)
         *penmImageType = pImage->enmImageType;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     return rc;
 }
@@ -650,10 +650,10 @@ static int vhdGetPCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pPCHSGeometr
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returned %Rrc (CHS=%u/%u/%u)\n", rc, pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors));
     return rc;
@@ -670,7 +670,7 @@ static int vhdSetPCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pPCHSGeomet
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -678,7 +678,7 @@ static int vhdSetPCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pPCHSGeomet
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returned %Rrc\n", rc));
@@ -700,10 +700,10 @@ static int vhdGetLCHSGeometry(void *pBackendData, PPDMMEDIAGEOMETRY pLCHSGeometr
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returned %Rrc (CHS=%u/%u/%u)\n", rc, pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors));
     return rc;
@@ -720,7 +720,7 @@ static int vhdSetLCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pLCHSGeomet
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -728,7 +728,7 @@ static int vhdSetLCHSGeometry(void *pBackendData, PCPDMMEDIAGEOMETRY pLCHSGeomet
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returned %Rrc\n", rc));
@@ -890,7 +890,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
         {
             /* Return block size as read. */
             *pcbActuallyRead = RT_MIN(cbRead, pImage->cSectorsPerDataBlock * VHD_SECTOR_SIZE);
-            return VERR_VDI_BLOCK_FREE;
+            return VERR_VD_BLOCK_FREE;
         }
 
         uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * 512;
@@ -975,7 +975,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf, size_t cbR
 
                 cbRead = cSectors * VHD_SECTOR_SIZE;
                 Log(("%s: Sectors free: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
-                rc = VERR_VDI_BLOCK_FREE;
+                rc = VERR_VD_BLOCK_FREE;
             }
         }
         else
@@ -1186,7 +1186,7 @@ static int vhdGetUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
@@ -1206,7 +1206,7 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1220,10 +1220,10 @@ static int vhdGetComment(void *pBackendData, char *pszComment, size_t cbComment)
 
     if (pImage)
     {
-        rc = VERR_VDI_VALUE_NOT_FOUND;
+        rc = VERR_NOT_SUPPORTED;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returned %Rrc comment='%s'\n", rc, pszComment));
     return rc;
@@ -1243,7 +1243,7 @@ static int vhdSetComment(void *pBackendData, const char *pszComment)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
@@ -1258,10 +1258,10 @@ static int vhdGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 
     if (pImage)
     {
-        rc = VERR_VDI_VALUE_NOT_FOUND;
+        rc = VERR_NOT_SUPPORTED;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
@@ -1279,7 +1279,7 @@ static int vhdSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1297,7 +1297,7 @@ static int vhdGetParentUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
@@ -1321,7 +1321,7 @@ static int vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
             rc = VERR_NOT_SUPPORTED;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1335,10 +1335,10 @@ static int vhdGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 
     if (pImage)
     {
-        rc = VERR_VDI_VALUE_NOT_FOUND;
+        rc = VERR_NOT_SUPPORTED;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
 }
@@ -1356,7 +1356,7 @@ static int vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1758,7 +1758,7 @@ static int vhdGetTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
         *pTimeStamp = info.ModificationTime;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1772,7 +1772,7 @@ static int vhdGetParentTimeStamp(void *pvBackendData, PRTTIMESPEC pTimeStamp)
     if (pImage)
         vhdTime2RtTime(pTimeStamp, pImage->u32ParentTimeStamp);
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1786,7 +1786,7 @@ static int vhdSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
     if (pImage)
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
         else
         {
             pImage->u32ParentTimeStamp = vhdRtTime2VhdTime(pTimeStamp);
@@ -1794,7 +1794,7 @@ static int vhdSetParentTimeStamp(void *pvBackendData, PCRTTIMESPEC pTimeStamp)
         }
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1808,7 +1808,7 @@ static int vhdGetParentFilename(void *pvBackendData, char **ppszParentFilename)
     if (pImage)
         *ppszParentFilename = RTStrDup(pImage->pszParentFilename);
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }
@@ -1822,7 +1822,7 @@ static int vhdSetParentFilename(void *pvBackendData, const char *pszParentFilena
     if (pImage)
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
         else
         {
             if (pImage->pszParentFilename)
@@ -1835,7 +1835,7 @@ static int vhdSetParentFilename(void *pvBackendData, const char *pszParentFilena
         }
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
     LogFlowFunc(("returned %Rrc\n", rc));
     return rc;
 }

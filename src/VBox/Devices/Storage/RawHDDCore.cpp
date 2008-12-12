@@ -142,7 +142,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
         goto out;
     if (pImage->cbSize % 512)
     {
-        rc = VERR_VDI_INVALID_HEADER;
+        rc = VERR_VD_RAW_INVALID_HEADER;
         goto out;
     }
     pImage->enmImageType = VD_IMAGE_TYPE_FIXED;
@@ -173,7 +173,7 @@ static int rawCreateImage(PRAWIMAGE pImage, VDIMAGETYPE enmType,
 
     if (enmType != VD_IMAGE_TYPE_FIXED)
     {
-        rc = rawError(pImage, VERR_VDI_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
+        rc = rawError(pImage, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -321,7 +321,7 @@ static int rawCheckIfValid(const char *pszFilename)
     }
 
     /* Always return failure, to avoid opening everything as a raw image. */
-    rc = VERR_VDI_INVALID_HEADER;
+    rc = VERR_VD_RAW_INVALID_HEADER;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -518,7 +518,7 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
-        rc = VERR_VDI_IMAGE_READ_ONLY;
+        rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
     }
 
@@ -577,7 +577,7 @@ static int rawGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     if (pImage)
         *penmImageType = pImage->enmImageType;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
     return rc;
@@ -639,10 +639,10 @@ static int rawGetPCHSGeometry(void *pBackendData,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
@@ -662,7 +662,7 @@ static int rawSetPCHSGeometry(void *pBackendData,
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -670,7 +670,7 @@ static int rawSetPCHSGeometry(void *pBackendData,
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -695,10 +695,10 @@ static int rawGetLCHSGeometry(void *pBackendData,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
@@ -718,7 +718,7 @@ static int rawSetLCHSGeometry(void *pBackendData,
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -726,7 +726,7 @@ static int rawSetLCHSGeometry(void *pBackendData,
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -810,7 +810,7 @@ static int rawGetComment(void *pBackendData, char *pszComment,
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
     return rc;
@@ -827,14 +827,14 @@ static int rawSetComment(void *pBackendData, const char *pszComment)
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
-        rc = VERR_VDI_IMAGE_READ_ONLY;
+        rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
     }
 
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -853,7 +853,7 @@ static int rawGetUuid(void *pBackendData, PRTUUID pUuid)
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -874,10 +874,10 @@ static int rawSetUuid(void *pBackendData, PCRTUUID pUuid)
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -895,7 +895,7 @@ static int rawGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -915,10 +915,10 @@ static int rawSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -936,7 +936,7 @@ static int rawGetParentUuid(void *pBackendData, PRTUUID pUuid)
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -956,10 +956,10 @@ static int rawSetParentUuid(void *pBackendData, PCRTUUID pUuid)
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -977,7 +977,7 @@ static int rawGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     if (pImage)
         rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -997,10 +997,10 @@ static int rawSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rc = VERR_NOT_SUPPORTED;
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

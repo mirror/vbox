@@ -53,7 +53,7 @@
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <VBox/version.h>
-#include <VBox/VBoxHDD.h>
+#include <VBox/VBoxHDD-new.h>
 #include <VBox/log.h>
 
 #include "VBoxManage.h"
@@ -511,6 +511,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
         /// @todo NEWMEDIA add -format to specify the hard disk backend
         RTPrintf("VBoxManage createhd         -filename <filename>\n"
                  "                            -size <megabytes>\n"
+                 "                            [-format VDI|VMDK]\n"
                  "                            [-static]\n"
                  "                            [-comment <comment>]\n"
                  "                            [-register]\n"
@@ -532,10 +533,20 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
+    if (u64Cmd & USAGE_CONVERTHD)
+    {
+        RTPrintf("VBoxManage converthd        [-srcformat VDI|VMDK|RAW]\n"
+                 "                            [-dstformat VDI|VMDK|RAW]\n"
+                 "                            <inputfile> <outputfile>\n"
+                 "\n");
+    }
+
     if (u64Cmd & USAGE_CONVERTDD)
     {
-        RTPrintf("VBoxManage convertdd        [-static] <filename> <outputfile>\n"
-                 "VBoxManage convertdd        [-static] stdin <outputfile> <bytes>\n"
+        RTPrintf("VBoxManage convertdd        [-static] [-format VDI|VMDK]"
+                 "                            <filename> <outputfile>\n"
+                 "VBoxManage convertdd        [-static] [-format VDI|VMDK]"
+                 "                            stdin <outputfile> <bytes>\n"
                  "\n");
     }
 
@@ -549,6 +560,7 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "                            [-username <username>]\n"
                  "                            [-password <password>]\n"
                  "                            [-comment <comment>]\n"
+                 "                            [-intnet]\n"
                  "\n");
     }
 
@@ -815,12 +827,23 @@ static int handleUnregisterVM(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+
+static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    RTPrintf("ERROR: ");
+    RTPrintfV(pszFormat, va);
+    RTPrintf("\n");
+    RTPrintf("Error code %Rrc at %s(%u) in function %s\n", rc, RT_SRC_POS_ARGS);
+}
+
+
 static int handleCreateHardDisk(int argc, char *argv[],
                                 ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
     HRESULT rc;
     Bstr filename;
     uint64_t sizeMB = 0;
+    Bstr format = "VDI";
     bool fStatic = false;
     Bstr comment;
     bool fRegister = false;
@@ -842,6 +865,13 @@ static int handleCreateHardDisk(int argc, char *argv[],
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
             sizeMB = RTStrToUInt64(argv[i]);
+        }
+        else if (strcmp(argv[i], "-format") == 0)
+        {
+            if (argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            i++;
+            format = argv[i];
         }
         else if (strcmp(argv[i], "-static") == 0)
         {
@@ -876,7 +906,7 @@ static int handleCreateHardDisk(int argc, char *argv[],
         return errorArgument("Invalid hard disk type '%s' specified", Utf8Str(type).raw());
 
     ComPtr<IHardDisk2> hardDisk;
-    CHECK_ERROR(virtualBox, CreateHardDisk2(Bstr("VDI"), filename, hardDisk.asOutParam()));
+    CHECK_ERROR(virtualBox, CreateHardDisk2(format, filename, hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
         /* we will close the hard disk after the storage has been successfully
@@ -938,6 +968,7 @@ static int handleCreateHardDisk(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+#if 0 /* disabled until disk shrinking is implemented based on VBoxHDD-new */
 static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
     unsigned *pPercent = (unsigned *)pvUser;
@@ -953,6 +984,7 @@ static DECLCALLBACK(int) hardDiskProgressCallback(PVM pVM, unsigned uPercent, vo
 
     return VINF_SUCCESS;
 }
+#endif
 
 
 static int handleModifyHardDisk(int argc, char *argv[],
@@ -1019,6 +1051,10 @@ static int handleModifyHardDisk(int argc, char *argv[],
     }
     else if (strcmp(argv[1], "compact") == 0)
     {
+#if 1
+        RTPrintf("Error: Shrink hard disk operation is temporarily unavailable!\n");
+        return 1;
+#else
         /* the hard disk image might not be registered */
         if (!hardDisk)
         {
@@ -1047,6 +1083,7 @@ static int handleModifyHardDisk(int argc, char *argv[],
             RTPrintf("Error while shrinking hard disk image: %Rrc\n", vrc);
             rc = E_FAIL;
         }
+#endif
     }
     else
         return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", Utf8Str(argv[1]).raw());
@@ -1103,103 +1140,291 @@ static int handleCloneHardDisk(int argc, char *argv[],
 #endif
 }
 
-static int handleConvertDDImage(int argc, char *argv[])
+static int handleConvertHardDisk(int argc, char **argv)
 {
-    int arg = 0;
-    VDIIMAGETYPE enmImgType = VDI_IMAGE_TYPE_NORMAL;
-    if (argc >= 1 && !strcmp(argv[arg], "-static"))
+    Bstr srcformat;
+    Bstr dstformat;
+    Bstr src;
+    Bstr dst;
+    int vrc;
+    PVBOXHDD pSrcDisk = NULL;
+    PVBOXHDD pDstDisk = NULL;
+
+    /* Parse the arguments. */
+    for (int i = 0; i < argc; i++)
     {
-        arg++;
-        enmImgType = VDI_IMAGE_TYPE_FIXED;
+        if (strcmp(argv[i], "-srcformat") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            srcformat = argv[i];
+        }
+        else if (strcmp(argv[i], "-dstformat") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            dstformat = argv[i];
+        }
+        else if (src.isEmpty())
+        {
+            src = argv[i];
+        }
+        else if (dst.isEmpty())
+        {
+            dst = argv[i];
+        }
+        else
+        {
+            return errorSyntax(USAGE_CONVERTHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+        }
     }
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
-    const bool fReadFromStdIn = (argc >= arg + 1) && !strcmp(argv[arg], "stdin");
-#else
-    const bool fReadFromStdIn = false;
-#endif
+    if (src.isEmpty())
+        return errorSyntax(USAGE_CONVERTHD, "Mandatory input image parameter missing");
+    if (dst.isEmpty())
+        return errorSyntax(USAGE_CONVERTHD, "Mandatory output image parameter missing");
 
-    if ((!fReadFromStdIn && argc != arg + 2) || (fReadFromStdIn && argc != arg + 3))
-        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
+
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
+    AssertRC(vrc);
+
+    do
+    {
+        /* Try to determine input image format */
+        if (srcformat.isEmpty())
+        {
+            char *pszFormat = NULL;
+            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+            if (RT_FAILURE(vrc))
+            {
+                RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
+                break;
+            }
+            srcformat = pszFormat;
+            RTStrFree(pszFormat);
+        }
+
+        vrc = VDCreate(pVDIfs, &pSrcDisk);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while creating the source virtual disk container: %Rrc\n", vrc);
+            break;
+        }
+
+        /* Open the input image */
+        vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
+            break;
+        }
+
+        /* Output format defaults to VDI */
+        if (dstformat.isEmpty())
+            dstformat = "VDI";
+
+        vrc = VDCreate(pVDIfs, &pDstDisk);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while creating the destination virtual disk container: %Rrc\n", vrc);
+            break;
+        }
+
+        uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
+        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
+
+        /* Create the output image */
+        vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
+                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while copying the image: %Rrc\n", vrc);
+            break;
+        }
+    }
+    while (0);
+    if (pDstDisk)
+        VDCloseAll(pDstDisk);
+    if (pSrcDisk)
+        VDCloseAll(pSrcDisk);
+
+    return RT_SUCCESS(vrc) ? 0 : 1;
+}
+
+
+static int handleConvertDDImage(int argc, char *argv[])
+{
+    VDIMAGETYPE enmImgType = VD_IMAGE_TYPE_NORMAL;
+    bool fReadFromStdIn = false;
+    const char *format = NULL;
+    const char *srcfilename = NULL;
+    const char *dstfilename = NULL;
+    const char *filesize = NULL;
+    unsigned uImageFlags = 0; /**< @todo allow creation of non-default image variants */
+
+    for (int i = 0; i < argc; i++)
+    {
+        if (!strcmp(argv[i], "-static"))
+        {
+            enmImgType = VD_IMAGE_TYPE_FIXED;
+        }
+        else if (strcmp(argv[i], "-format") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            format = argv[i];
+        }
+        else
+        {
+            if (srcfilename)
+            {
+                if (dstfilename)
+                {
+                    if (fReadFromStdIn && !filesize)
+                        filesize = argv[i];
+                    else
+                        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
+                }
+                else
+                    dstfilename = argv[i];
+            }
+            else
+            {
+                srcfilename = argv[i];
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+                fReadFromStdIn = !strcmp(srcfilename, "stdin");
+#endif
+            }
+        }
+    }
 
     RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
-             argv[arg], argv[arg + 1]);
+             srcfilename, dstfilename);
+
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    rc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                        &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
+    AssertRC(rc);
 
     /* open raw image file. */
     RTFILE File;
-    int rc = VINF_SUCCESS;
     if (fReadFromStdIn)
         File = 0;
     else
-        rc = RTFileOpen(&File, argv[arg], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&File, srcfilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("File=\"%s\" open error: %Rrf\n", argv[arg], rc);
-        return rc;
+        RTPrintf("File=\"%s\" open error: %Rrf\n", srcfilename, rc);
+        goto out;
     }
 
     uint64_t cbFile;
     /* get image size. */
     if (fReadFromStdIn)
-        cbFile = RTStrToUInt64(argv[arg + 2]);
+        cbFile = RTStrToUInt64(filesize);
     else
         rc = RTFileGetSize(File, &cbFile);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
-        RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (enmImgType == VDI_IMAGE_TYPE_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
-        char pszComment[256];
-        RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", argv[arg]);
-        rc = VDICreateBaseImage(argv[arg + 1],
-                                enmImgType,
-                                cbFile,
-                                pszComment, NULL, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            PVDIDISK pVdi = VDIDiskCreate();
-            rc = VDIDiskOpenImage(pVdi, argv[arg + 1], VDI_OPEN_FLAGS_NORMAL);
-            if (RT_SUCCESS(rc))
-            {
-                /* alloc work buffer. */
-                size_t cbBuffer = VDIDiskGetBufferSize(pVdi);
-                void   *pvBuf = RTMemAlloc(cbBuffer);
-                if (pvBuf)
-                {
-                    uint64_t offFile = 0;
-                    while (offFile < cbFile)
-                    {
-                        size_t cbRead = 0;
-                        size_t cbToRead = cbFile - offFile >= (uint64_t) cbBuffer ?
-                            cbBuffer : (size_t) (cbFile - offFile);
-                        rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
-                        if (RT_FAILURE(rc) || !cbRead)
-                            break;
-                        rc = VDIDiskWrite(pVdi, offFile, pvBuf, cbRead);
-                        if (RT_FAILURE(rc))
-                            break;
-                        offFile += cbRead;
-                    }
-
-                    RTMemFree(pvBuf);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-
-                VDIDiskCloseImage(pVdi);
-            }
-
-            if (RT_FAILURE(rc))
-            {
-                /* delete image on error */
-                RTPrintf("Failed (%Rrc)!\n", rc);
-                VDIDeleteImage(argv[arg + 1]);
-            }
-        }
-        else
-            RTPrintf("Failed to create output file (%Rrc)!\n", rc);
+        RTPrintf("Error getting image size for file \"%s\": %Rrc\n", srcfilename, rc);
+        goto out;
     }
-    RTFileClose(File);
 
-    return rc;
+    RTPrintf("Creating %s image with size %RU64 bytes (%RU64MB)...\n", (enmImgType == VD_IMAGE_TYPE_FIXED) ? "fixed" : "dynamic", cbFile, (cbFile + _1M - 1) / _1M);
+    char pszComment[256];
+    RTStrPrintf(pszComment, sizeof(pszComment), "Converted image from %s", srcfilename);
+    rc = VDCreate(pVDIfs, &pDisk);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Error while creating the virtual disk container: %Rrc\n", rc);
+        goto out;
+    }
+
+    Assert(RT_MIN(cbFile / 512 / 16 / 63, 16383) -
+           (unsigned int)RT_MIN(cbFile / 512 / 16 / 63, 16383) == 0);
+    PDMMEDIAGEOMETRY PCHS, LCHS;
+    PCHS.cCylinders = (unsigned int)RT_MIN(cbFile / 512 / 16 / 63, 16383);
+    PCHS.cHeads = 16;
+    PCHS.cSectors = 63;
+    LCHS.cCylinders = 0;
+    LCHS.cHeads = 0;
+    LCHS.cSectors = 0;
+    rc = VDCreateBase(pDisk, format, dstfilename, enmImgType, cbFile,
+                      uImageFlags, pszComment, &PCHS, &LCHS, NULL,
+                      VD_OPEN_FLAGS_NORMAL, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Error while creating the disk image \"%s\": %Rrc\n", dstfilename, rc);
+        goto out;
+    }
+
+    size_t cbBuffer;
+    cbBuffer = _1M;
+    void *pvBuf;
+    pvBuf = RTMemAlloc(cbBuffer);
+    if (!pvBuf)
+    {
+        rc = VERR_NO_MEMORY;
+        RTPrintf("Not enough memory allocating buffers for image \"%s\": %Rrc\n", dstfilename, rc);
+        goto out;
+    }
+
+    uint64_t offFile;
+    offFile = 0;
+    while (offFile < cbFile)
+    {
+        size_t cbRead;
+        size_t cbToRead;
+        cbRead = 0;
+        cbToRead = cbFile - offFile >= (uint64_t)cbBuffer ?
+                            cbBuffer : (size_t) (cbFile - offFile);
+        rc = RTFileRead(File, pvBuf, cbToRead, &cbRead);
+        if (RT_FAILURE(rc) || !cbRead)
+            break;
+        rc = VDWrite(pDisk, offFile, pvBuf, cbRead);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("Failed to write to disk image \"%s\": %Rrc\n", dstfilename, rc);
+            goto out;
+        }
+        offFile += cbRead;
+    }
+
+out:
+    if (pvBuf)
+        RTMemFree(pvBuf);
+    if (pDisk)
+        VDClose(pDisk, RT_FAILURE(rc));
+    if (File != NIL_RTFILE)
+        RTFileClose(File);
+
+    return RT_FAILURE(rc);
 }
 
 static int handleAddiSCSIDisk(int argc, char *argv[],
@@ -1213,6 +1438,7 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
     Bstr username;
     Bstr password;
     Bstr comment;
+    bool fIntNet = false;
 
     /* at least server and target */
     if (argc < 4)
@@ -1298,6 +1524,11 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
             i++;
             comment = argv[i];
         }
+        else if (strcmp(argv[i], "-intnet") == 0)
+        {
+            i++;
+            fIntNet = true;
+        }
         else
             return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
     }
@@ -1350,6 +1581,12 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         Bstr ("iqn.2008-04.com.sun.virtualbox.initiator").detachTo (values.appendedRaw());
 
         /// @todo add -targetName and -targetPassword options
+
+        if (fIntNet)
+        {
+            Bstr ("HostIPStack").detachTo (names.appendedRaw());
+            Bstr ("0").detachTo (values.appendedRaw());
+        }
 
         CHECK_ERROR_BREAK (hardDisk,
             SetProperties (ComSafeArrayAsInParam (names),
@@ -5566,7 +5803,14 @@ int main(int argc, char *argv[])
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    /* convertdd: does not need a VirtualBox instantiation) */
+    /* converthd: does not need a VirtualBox instantiation. */
+    if (argc >= iCmdArg && (strcmp(argv[iCmd], "converthd") == 0))
+    {
+        rc = handleConvertHardDisk(argc - iCmdArg, argv + iCmdArg);
+        break;
+    }
+
+    /* convertdd: does not need a VirtualBox instantiation. */
     if (argc >= iCmdArg && (strcmp(argv[iCmd], "convertdd") == 0))
     {
         rc = handleConvertDDImage(argc - iCmdArg, argv + iCmdArg);
@@ -5622,11 +5866,11 @@ int main(int argc, char *argv[])
         { "createvdi",        handleCreateHardDisk }, /* backward compatiblity */
         { "modifyhd",         handleModifyHardDisk },
         { "modifyvdi",        handleModifyHardDisk }, /* backward compatiblity */
+        { "clonehd",          handleCloneHardDisk },
+        { "clonevdi",         handleCloneHardDisk }, /* backward compatiblity */
         { "addiscsidisk",     handleAddiSCSIDisk },
         { "createvm",         handleCreateVM },
         { "modifyvm",         handleModifyVM },
-        { "clonehd",          handleCloneHardDisk },
-        { "clonevdi",         handleCloneHardDisk }, /* backward compatiblity */
         { "startvm",          handleStartVM },
         { "controlvm",        handleControlVM },
         { "discardstate",     handleDiscardState },

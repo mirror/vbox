@@ -81,7 +81,6 @@ else
 endif
 VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD-new.cpp \
-	Storage/VDICore.cpp \
 	Storage/VDIHDDCore.cpp \
 	Storage/VHDHDDCore.cpp \
 	Storage/VmdkHDDCore.cpp \
@@ -578,7 +577,6 @@ Drivers_SOURCES    = \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
 	Storage/DrvVD.cpp \
-	Storage/VBoxHDD.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 
@@ -643,7 +641,6 @@ ifeq ($(KBUILD_TARGET),l4)
 Drivers_SOURCES       = \
 	Input/DrvMouseQueue.cpp \
 	Input/DrvKeyboardQueue.cpp \
-	Storage/VBoxHDD.cpp \
 	Storage/DrvBlock.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
@@ -711,14 +708,6 @@ endif
 # -- features --
 
 ifdef VBOX_WITH_ISCSI
- Drivers_SOURCES      += \
-	Storage/DrvISCSI.cpp \
-	Storage/DrvISCSITransportTCP.cpp
- Drivers_DEFS         += VBOX_WITH_ISCSI
- Storage/DrvISCSITransportTCP.cpp_INCS = \
-	Network/lwip/src/include \
-	Network/lwip/src/include/ipv4 \
-	Network/lwip/vbox/include
  VBoxDDU_SOURCES      += \
     Storage/ISCSIHDDCore.cpp
  VBoxDDU_DEFS         += VBOX_WITH_ISCSI

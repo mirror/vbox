@@ -551,7 +551,7 @@ static DECLCALLBACK(int) drvvdBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
              pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetPCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pPCHSGeometry);
-    if (rc == VERR_VDI_GEOMETRY_NOT_SET)
+    if (rc == VERR_VD_GEOMETRY_NOT_SET)
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
@@ -582,7 +582,7 @@ static DECLCALLBACK(int) drvvdBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
              pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
     int rc = VDSetLCHSGeometry(pThis->pDisk, VD_LAST_IMAGE, pLCHSGeometry);
-    if (rc == VERR_VDI_GEOMETRY_NOT_SET)
+    if (rc == VERR_VD_GEOMETRY_NOT_SET)
         rc = VERR_PDM_GEOMETRY_NOT_SET;
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
@@ -634,18 +634,18 @@ static DECLCALLBACK(int) drvvdTasksCompleteNotify(PPDMITRANSPORTASYNCPORT pInter
 {
     PVBOXDISK pThis = PDMITRANSPORTASYNCPORT_2_VBOXDISK(pInterface);
     PDRVVDASYNCTASK pDrvVDAsyncTask = (PDRVVDASYNCTASK)pvUser;
-    int rc = VINF_VDI_ASYNC_IO_FINISHED;
+    int rc = VINF_VD_ASYNC_IO_FINISHED;
 
     /* Having a completion callback for a task is not mandatory. */
     if (pDrvVDAsyncTask->pfnCompleted)
         rc = pDrvVDAsyncTask->pfnCompleted(pDrvVDAsyncTask->pvUser);
 
     /* Check if the request is finished. */
-    if (rc == VINF_VDI_ASYNC_IO_FINISHED)
+    if (rc == VINF_VD_ASYNC_IO_FINISHED)
     {
         rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pDrvVDAsyncTask->pvUserCaller);
     }
-    else if (rc == VERR_VDI_ASYNC_IO_IN_PROGRESS)
+    else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         rc = VINF_SUCCESS;
 
     rc = RTCacheInsert(pThis->pCache, pDrvVDAsyncTask);

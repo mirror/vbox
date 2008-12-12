@@ -35,7 +35,6 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <VBox/VBoxHDD.h>
 #include <VBox/VBoxHDD-new.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
@@ -139,10 +138,10 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                 "      should be loaded during DBF initialization.\n"
                 "\n"
                 : "",
-            (u64Cmd & USAGE_SETVDIUUID) ?
-                "  setvdiuuid <filepath>\n"
-                "       Assigns a new UUID to the given VDI file. This way, multiple copies\n"
-                "       of VDI containers can be registered.\n"
+            (u64Cmd & USAGE_SETHDUUID) ?
+                "  sethduuid <filepath>\n"
+                "       Assigns a new UUID to the given image file. This way, multiple copies\n"
+                "       of a container can be registered.\n"
                 "\n"
                 : "",
             (u64Cmd & USAGE_LISTPARTITIONS) ?
@@ -184,12 +183,6 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                  " or stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
                  ".\n"
-                 "\n"
-                 : "",
-             (u64Cmd & USAGE_CONVERTDISK) ?
-                 "  convertdisk [-srcformat <fmt>] [-dstformat <fmt>] <inputfile> <outputfile>"
-                 "\n"
-                 "       Convert image to another image format.\n"
                  "\n"
                  : "",
 #ifdef RT_OS_WINDOWS
@@ -468,32 +461,6 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
     return FAILED(hrc);
 }
 
-static int handleSetVDIUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
-{
-    /* we need exactly one parameter: the vdi file */
-    if (argc != 1)
-    {
-        return errorSyntax(USAGE_SETVDIUUID, "Not enough parameters");
-    }
-
-    /* generate a new UUID */
-    Guid uuid;
-    uuid.create();
-
-    /* just try it */
-    int rc = VDISetImageUUIDs(argv[0], uuid.raw(), NULL, NULL, NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("Error while setting a new UUID: %Rrc (%d)\n", rc, rc);
-    }
-    else
-    {
-        RTPrintf("UUID changed to: %s\n", uuid.toString().raw());
-    }
-
-    return 0;
-}
-
 
 static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
@@ -501,6 +468,66 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
     RTPrintfV(pszFormat, va);
     RTPrintf("\n");
     RTPrintf("Error code %Rrc at %s(%u) in function %s\n", rc, RT_SRC_POS_ARGS);
+}
+
+static int handleSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    /* we need exactly one parameter: the image file */
+    if (argc != 1)
+    {
+        return errorSyntax(USAGE_SETHDUUID, "Not enough parameters");
+    }
+
+    /* generate a new UUID */
+    Guid uuid;
+    uuid.create();
+
+    /* just try it */
+    char *pszFormat = NULL;
+    int rc = VDGetFormat(argv[0], &pszFormat);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Format autodetect failed: %Rrc\n", rc);
+        return 1;
+    }
+
+    PVBOXHDD pDisk = NULL;
+
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    rc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                        &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
+    AssertRC(rc);
+
+    rc = VDCreate(pVDIfs, &pDisk);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Error while creating the virtual disk container: %Rrc\n", rc);
+        return 1;
+    }
+
+    /* Open the image */
+    rc = VDOpen(pDisk, pszFormat, argv[0], VD_OPEN_FLAGS_NORMAL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Error while opening the image: %Rrc\n", rc);
+        return 1;
+    }
+
+    rc = VDSetUuid(pDisk, VD_LAST_IMAGE, uuid.raw());
+    if (RT_FAILURE(rc))
+        RTPrintf("Error while setting a new UUID: %Rrc\n", rc);
+    else
+        RTPrintf("UUID changed to: %s\n", uuid.toString().raw());
+
+    VDCloseAll(pDisk);
+
+    return RT_FAILURE(rc);
 }
 
 static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
@@ -1163,7 +1190,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                          &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(&vdInterfaceError, &pDisk);
+    vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
@@ -1272,7 +1299,7 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
                              &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(&vdInterfaceError, &pDisk);
+    vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
@@ -1353,7 +1380,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                              &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(&vdInterfaceError, &pDisk);
+    vrc = VDCreate(pVDIfs, &pDisk);
     if (RT_FAILURE(vrc))
     {
         RTPrintf("Error while creating the virtual disk container: %Rrc\n", vrc);
@@ -1455,132 +1482,6 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     return 0;
 }
 
-static int CmdConvertDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
-{
-    Bstr srcformat;
-    Bstr dstformat;
-    Bstr src;
-    Bstr dst;
-    int vrc;
-    PVBOXHDD pSrcDisk = NULL;
-    PVBOXHDD pDstDisk = NULL;
-
-    /* Parse the arguments. */
-    for (int i = 0; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-srcformat") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            srcformat = argv[i];
-        }
-        else if (strcmp(argv[i], "-dstformat") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            dstformat = argv[i];
-        }
-        else if (src.isEmpty())
-        {
-            src = argv[i];
-        }
-        else if (dst.isEmpty())
-        {
-            dst = argv[i];
-        }
-        else
-        {
-            return errorSyntax(USAGE_CONVERTDISK, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
-    }
-
-    if (src.isEmpty())
-        return errorSyntax(USAGE_CONVERTDISK, "Mandatory input image parameter missing");
-    if (dst.isEmpty())
-        return errorSyntax(USAGE_CONVERTDISK, "Mandatory output image parameter missing");
-
-
-    PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      vdInterfaceError;
-    VDINTERFACEERROR vdInterfaceErrorCallbacks;
-    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
-    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
-
-    vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                             &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
-    AssertRC(vrc);
-
-    do
-    {
-        /* Try to determine input image format */
-        if (srcformat.isEmpty())
-        {
-            char *pszFormat = NULL;
-            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
-            if (RT_FAILURE(vrc))
-            {
-                RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
-                break;
-            }
-            srcformat = pszFormat;
-            RTStrFree(pszFormat);
-        }
-
-        vrc = VDCreate(&vdInterfaceError, &pSrcDisk);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while creating the source virtual disk container: %Rrc\n", vrc);
-            break;
-        }
-
-        /* Open the input image */
-        vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
-            break;
-        }
-
-        /* Output format defaults to VDI */
-        if (dstformat.isEmpty())
-            dstformat = "VDI";
-
-        vrc = VDCreate(&vdInterfaceError, &pDstDisk);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while creating the destination virtual disk container: %Rrc\n", vrc);
-            break;
-        }
-
-        uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
-        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
-
-        /* Create the output image */
-        vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
-                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while copying the image: %Rrc\n", vrc);
-            break;
-        }
-    }
-    while (0);
-
-    if (pDstDisk)
-        VDCloseAll(pDstDisk);
-    if (pSrcDisk)
-        VDCloseAll(pSrcDisk);
-
-    return RT_SUCCESS(vrc) ? 0 : 1;
-}
-
 /**
  * Unloads the neccessary driver.
  *
@@ -1635,8 +1536,8 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdLoadSyms(argc - 1, &argv[1], aVirtualBox, aSession);
     //if (!strcmp(pszCmd, "unloadsyms"))
     //    return CmdUnloadSyms(argc - 1 , &argv[1]);
-    if (!strcmp(pszCmd, "setvdiuuid"))
-        return handleSetVDIUUID(argc - 1, &argv[1], aVirtualBox, aSession);
+    if (!strcmp(pszCmd, "sethduuid") || !strcmp(pszCmd, "setvdiuuid"))
+        return handleSetHDUUID(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "listpartitions"))
         return CmdListPartitions(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "createrawvmdk"))
@@ -1645,8 +1546,6 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdRenameVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "converttoraw"))
         return CmdConvertToRaw(argc - 1, &argv[1], aVirtualBox, aSession);
-    if (!strcmp(pszCmd, "convertdisk"))
-        return CmdConvertDisk(argc - 1, &argv[1], aVirtualBox, aSession);
 
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
