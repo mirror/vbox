@@ -302,8 +302,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             goto vmx_end;
 
         /* VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
-        * Set required bits to one and zero according to the MSR capabilities.
-        */
+         * Set required bits to one and zero according to the MSR capabilities.
+         */
         val  = pVM->hwaccm.s.vmx.msr.vmx_pin_ctls.n.disallowed0;
         /* External and non-maskable interrupts cause VM-exits. */
         val  = val | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT;
@@ -313,8 +313,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertRC(rc);
 
         /* VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
-        * Set required bits to one and zero according to the MSR capabilities.
-        */
+         * Set required bits to one and zero according to the MSR capabilities.
+         */
         val = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
         /* Program which event cause VM-exits and which features we want to use. */
         val = val | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT
@@ -362,8 +362,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
         {
             /* VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
-            * Set required bits to one and zero according to the MSR capabilities.
-            */
+             * Set required bits to one and zero according to the MSR capabilities.
+             */
             val  = pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
             val |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;
 
@@ -386,40 +386,23 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         }
 
         /* VMX_VMCS_CTRL_CR3_TARGET_COUNT
-        * Set required bits to one and zero according to the MSR capabilities.
-        */
+         * Set required bits to one and zero according to the MSR capabilities.
+         */
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_CR3_TARGET_COUNT, 0);
         AssertRC(rc);
 
-        /* VMX_VMCS_CTRL_EXIT_CONTROLS
-        * Set required bits to one and zero according to the MSR capabilities.
-        */
-        val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
-
-        /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
-        if (VMX_IS_64BIT_HOST_MODE())
-            val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
-        /* else: Must be zero when AMD64 is not available. */
-#endif
-        val &= pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1;
-        /* Don't acknowledge external interrupts on VM-exit. */
-        rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, val);
-        AssertRC(rc);
-
         /* Forward all exception except #NM & #PF to the guest.
-        * We always need to check pagefaults since our shadow page table can be out of sync.
-        * And we always lazily sync the FPU & XMM state.
-        */
+         * We always need to check pagefaults since our shadow page table can be out of sync.
+         * And we always lazily sync the FPU & XMM state.
+         */
 
         /** @todo Possible optimization:
-        * Keep the FPU and XMM state current in the EM thread. That way there's no need to
-        * lazily sync anything, but the downside is that we can't use the FPU stack or XMM
-        * registers ourselves of course.
-        *
-        * Note: only possible if the current state is actually ours (X86_CR0_TS flag)
-        */
+         * Keep the FPU and XMM state current in the EM thread. That way there's no need to
+         * lazily sync anything, but the downside is that we can't use the FPU stack or XMM
+         * registers ourselves of course.
+         *
+         * Note: only possible if the current state is actually ours (X86_CR0_TS flag)
+         */
 
         /* Don't filter page faults; all of them should cause a switch. */
         rc  = VMXWriteVMCS(VMX_VMCS_CTRL_PAGEFAULT_ERROR_MASK, 0);
@@ -1100,6 +1083,45 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     RTGCUINTPTR val;
     X86EFLAGS   eflags;
 
+    /* VMX_VMCS_CTRL_ENTRY_CONTROLS
+     * Set required bits to one and zero according to the MSR capabilities.
+     */
+    val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
+    /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+    val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
+
+    /* 64 bits guest mode? */
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
+    /* else Must be zero when AMD64 is not available. */
+
+    /* Mask away the bits that the CPU doesn't support */
+    val &= pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1;
+    rc = VMXWriteCachedVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
+    AssertRC(rc);
+
+    /* VMX_VMCS_CTRL_EXIT_CONTROLS
+     * Set required bits to one and zero according to the MSR capabilities.
+     */
+    val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
+
+    /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+    val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+    if (VMX_IS_64BIT_HOST_MODE())
+        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
+    /* else: Must be zero when AMD64 is not available. */
+#elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
+    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
+        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;      /* our switcher goes to long mode */
+    else
+        val &= ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
+#endif
+    val &= pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1;
+    /* Don't acknowledge external interrupts on VM-exit. */
+    rc = VMXWriteCachedVMCS(VMX_VMCS_CTRL_EXIT_CONTROLS, val);
+    AssertRC(rc);
+
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
@@ -1528,23 +1550,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCIntercept);
     }
-
-    /* VMX_VMCS_CTRL_ENTRY_CONTROLS
-     * Set required bits to one and zero according to the MSR capabilities.
-     */
-    val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
-    /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-    val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
-
-    /* 64 bits guest mode? */
-    if (pCtx->msrEFER & MSR_K6_EFER_LMA)
-        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
-    /* else Must be zero when AMD64 is not available. */
-
-    /* Mask away the bits that the CPU doesn't support */
-    val &= pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1;
-    rc = VMXWriteCachedVMCS(VMX_VMCS_CTRL_ENTRY_CONTROLS, val);
-    AssertRC(rc);
 
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
@@ -3511,7 +3516,6 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
     pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
-
 
 #ifdef DEBUG
     pCache->TestIn.pPageCpuPhys = 0;
