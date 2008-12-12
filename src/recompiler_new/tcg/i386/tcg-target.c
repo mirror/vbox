@@ -388,6 +388,14 @@ void tcg_out_addi(TCGContext *s, int reg, tcg_target_long val)
         tgen_arithi(s, ARITH_ADD, reg, val);
 }
 
+#ifdef VBOX
+void tcg_out_subi(TCGContext *s, int reg, tcg_target_long val)
+{
+    if (val != 0)
+        tgen_arithi(s, ARITH_SUB, reg, val);
+}
+#endif
+
 static void tcg_out_jxx(TCGContext *s, int opc, int label_index)
 {
     int32_t val, val1;
@@ -867,6 +875,13 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 #endif
     int addr_reg2;
 #endif
+#ifdef VBOX
+# ifdef RT_OS_DARWIN
+    int bias1 = 12, bias2 = 8, bias3 = 4;
+# else
+    int bias1 = bias2 = bias3 = 0;
+# endif
+#endif
 
     data_reg = *args++;
     if (opc == 3)
@@ -943,6 +958,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     if (opc == 3) {
         tcg_out_mov(s, TCG_REG_EDX, data_reg);
         tcg_out_mov(s, TCG_REG_ECX, data_reg2);
+#ifdef VBOX
+        tcg_out_subi(s, TCG_REG_ESP, bias1);
+#endif
         tcg_out8(s, 0x6a); /* push Ib */
         tcg_out8(s, mem_index);
 # ifdef VBOX
@@ -951,7 +969,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out8(s, 0xe8);
         tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
+#ifdef VBOX
+        tcg_out_addi(s, TCG_REG_ESP, 4+bias1);
+#else
         tcg_out_addi(s, TCG_REG_ESP, 4);
+#endif
     } else {
         switch(opc) {
         case 0:
@@ -977,6 +999,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 #else
     if (opc == 3) {
         tcg_out_mov(s, TCG_REG_EDX, addr_reg2);
+# ifdef VBOX
+        tcg_out_subi(s, TCG_REG_ESP, bias3);
+# endif
         tcg_out8(s, 0x6a); /* push Ib */
         tcg_out8(s, mem_index);
         tcg_out_opc(s, 0x50 + data_reg2); /* push */
@@ -987,7 +1012,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out8(s, 0xe8);
         tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
+#ifdef VBOX
+        tcg_out_addi(s, TCG_REG_ESP, 12+bias3);
+#else
         tcg_out_addi(s, TCG_REG_ESP, 12);
+#endif
     } else {
         tcg_out_mov(s, TCG_REG_EDX, addr_reg2);
         switch(opc) {
@@ -1003,8 +1032,8 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
             tcg_out_mov(s, TCG_REG_ECX, data_reg);
             break;
         }
-# if defined(VBOX) && defined(RT_OS_DARWIN)
-        tgen_arithi(s, ARITH_SUB, TCG_REG_ESP, 12); /** @todo FIXME: This is not 100% correct (assumes a bunch of things), but it works around the current issue it seems... */
+# ifdef VBOX
+        tcg_out_subi(s, TCG_REG_ESP, bias1);
 # endif
         tcg_out8(s, 0x6a); /* push Ib */
         tcg_out8(s, mem_index);
@@ -1015,8 +1044,8 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out8(s, 0xe8);
         tcg_out32(s, (tcg_target_long)qemu_st_helpers[s_bits] -
                   (tcg_target_long)s->code_ptr - 4);
-# if defined(VBOX) && defined(RT_OS_DARWIN)
-        tcg_out_addi(s, TCG_REG_ESP, 12+4);
+# if defined(VBOX)
+        tcg_out_addi(s, TCG_REG_ESP, 4 + bias1);
 # else
         tcg_out_addi(s, TCG_REG_ESP, 4);
 # endif
