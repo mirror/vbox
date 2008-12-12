@@ -126,6 +126,34 @@ BEGINPROC VMXGCStartVM64
     ; Save the VMCS pointer on the stack
     push    qword [rbp + 16 + 8];
 
+    ;/* Save segment registers */
+    MYPUSHSEGS rax
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    ; Flush the VMCS write cache first (before any other vmreads/vmwrites!)
+    mov     rbx, [rbp + 24 + 8]                             ; pCache
+    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
+    cmp     ecx, 0
+    je      .no_cached_writes
+    mov     edx, ecx
+    mov     ecx, 0
+    jmp     .cached_write
+    
+ALIGN(16)    
+.cached_write:
+    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
+    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
+    inc     xCX
+    cmp     xCX, xDX
+    jl     .cached_write
+
+    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
+.no_cached_writes:
+
+    ; Save the pCache pointer
+    push    xBX
+%endif
+
     ; Signal that we're in 64 bits mode now!
     mov     eax, VMX_VMCS_CTRL_EXIT_CONTROLS
     vmread  rdx, rax
@@ -178,34 +206,6 @@ BEGINPROC VMXGCStartVM64
     ; * - EFLAGS (reset to RT_BIT(1); not relevant)
     ; *
     ; */
-
-    ;/* Save segment registers */
-    MYPUSHSEGS rax
-
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    mov     rbx, [rbp + 24 + 8]                             ; pCache
-    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
-    cmp     ecx, 0
-    je      .no_cached_writes
-    mov     edx, ecx
-    mov     ecx, 0
-    jmp     .cached_write
-    
-ALIGN(16)    
-.cached_write:
-    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
-    vmwrite xAX, [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    inc     xCX
-    cmp     xCX, xDX
-    jl     .cached_write
-
-    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
-.no_cached_writes:
-
-    ; Save the pCache pointer
-    push    xBX
-%endif
 
     ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
     ;; @todo use the automatic load feature for MSRs
