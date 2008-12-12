@@ -176,6 +176,7 @@ void icmp_reflect _P((PNATState, struct mbuf *));
 struct icmp_msg{
     LIST_ENTRY(icmp_msg) im_list;
     struct mbuf *im_m;
+    struct socket *im_so;
 };
 
 LIST_HEAD(icmp_storage, icmp_msg);
