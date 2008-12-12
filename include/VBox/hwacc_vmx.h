@@ -1442,15 +1442,9 @@ the_end:
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 DECLASM(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val);
 #else
-DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
-{
-    int rc;
+VMMR0DECL(int) VMXWriteVMCS64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
-    rc  = VMXWriteVMCS32(idxField, u64Val);
-    rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL));
-    AssertRC(rc);
-    return rc;
-}
+#define VMXWriteVMCS64(idxField, u64Val)    VMXWriteVMCS64Ex(pVCpu, idxField, u64Val)
 #endif
 
 #if HC_ARCH_BITS == 64
