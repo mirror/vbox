@@ -2124,14 +2124,11 @@ ResumeExecution:
     exitReason &= 0xffff;   /* bit 0-15 contain the exit code. */
     rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
     rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INSTR_LENGTH, &cbInstr);
-    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &val);
-    intInfo   = val;
-    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE, &val);
-    errCode   = val;    /* might not be valid; depends on VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID. */
-    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INSTR_INFO, &val);
-    instrInfo = val;
-    rc |= VMXReadCachedVMCS(VMX_VMCS_RO_EXIT_QUALIFICATION, &val);
-    exitQualification = val;
+    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &intInfo);
+    /* might not be valid; depends on VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID. */
+    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE, &errCode);
+    rc |= VMXReadCachedVMCS(VMX_VMCS32_RO_EXIT_INSTR_INFO, &instrInfo);
+    rc |= VMXReadCachedVMCS(VMX_VMCS_RO_EXIT_QUALIFICATION, &exitQualification);
     AssertRC(rc);
 
     /* Sync back the guest state */
@@ -2183,10 +2180,10 @@ ResumeExecution:
 #endif
 
     Log2(("E%d", exitReason));
-    Log2(("Exit reason %d, exitQualification %RGv\n", exitReason, exitQualification));
-    Log2(("instrInfo=%d instrError=%d instr length=%d\n", instrInfo, instrError, cbInstr));
-    Log2(("Interruption error code %d\n", errCode));
-    Log2(("IntInfo = %08x\n", intInfo));
+    Log2(("Exit reason %d, exitQualification %RGv\n", (uint32_t)exitReason, exitQualification));
+    Log2(("instrInfo=%d instrError=%d instr length=%d\n", (uint32_t)instrInfo, (uint32_t)instrError, (uint32_t)cbInstr));
+    Log2(("Interruption error code %d\n", (uint32_t)errCode));
+    Log2(("IntInfo = %08x\n", (uint32_t)intInfo));
     Log2(("New EIP=%RGv\n", (RTGCPTR)pCtx->rip));
 
     if (fSyncTPR)
@@ -3565,6 +3562,10 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     /* Call switcher. */
     rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
 
+#ifdef VBOX_STRICT
+    RTHCUINTREG  uFlagsTest = ASMGetFlags();
+#endif
+
     ASMSetFlags(uFlags);
 
     /* Make sure the VMX instructions don't cause #UD faults. */
@@ -3581,6 +3582,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     }
 
     VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    Assert(!(uFlagsTest & X86_EFL_IF));
     return rc;
 }
 
