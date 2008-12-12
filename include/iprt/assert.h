@@ -625,6 +625,55 @@ __END_DECLS
 #endif
 
 
+/**
+ * @def AssertFailedReturnStmt
+ * An assertion failed, hit breakpoint (RT_STRICT mode only), execute a
+ * statement and return a value.
+ *
+ * @param stmt The statement to execute.
+ * @param rc   The value to return.
+ */
+#ifdef RT_STRICT
+# define AssertFailedReturnStmt(stmt, rc)  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        stmt; \
+        RTAssertPanic(); \
+        return (rc); \
+    } while (0)
+#else
+# define AssertFailedReturnStmt(stmt, rc)  \
+    do { \
+        stmt; \
+        return (rc); \
+    } while (0)
+#endif
+
+/**
+ * @def AssertFailedReturnVoidStmt
+ * An assertion failed, hit breakpoint (RT_STRICT mode only), execute a
+ * statement and return.
+ *
+ * @param stmt The statement to execute.
+ */
+#ifdef RT_STRICT
+# define AssertFailedReturnVoidStmt(stmt)  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        stmt; \
+        RTAssertPanic(); \
+        return; \
+    } while (0)
+#else
+# define AssertFailedReturnVoidStmt(stmt)  \
+    do { \
+        stmt; \
+        return; \
+    } while (0)
+#endif
+
+
+
 /** @def AssertFailedBreak
  * An assertion failed, hit breakpoint (RT_STRICT mode only) and break.
  */
