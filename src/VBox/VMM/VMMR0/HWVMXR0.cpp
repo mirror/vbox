@@ -1928,7 +1928,7 @@ ResumeExecution:
         if (!fStatEntryStarted) { STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = true; }
     });
     AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == RTMpCpuId(),
-              ("Expected %d, I'm %d; cResume=%d exitReason=%RTreg exitQualification=%RTreg\n",
+              ("Expected %d, I'm %d; cResume=%d exitReason=%RGv exitQualification=%RGv\n",
                (int)pVCpu->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
     Assert(!HWACCMR0SuspendPending());
 
@@ -2161,11 +2161,11 @@ ResumeExecution:
             rc = VMXReadCachedVMCS(VMX_VMCS32_RO_IDT_ERRCODE, &val);
             AssertRC(rc);
             pVCpu->hwaccm.s.Event.errCode  = val;
-            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x pending error=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv pending error=%RX64\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification, val));
         }
         else
         {
-            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+            Log(("Pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
             pVCpu->hwaccm.s.Event.errCode  = 0;
         }
     }
@@ -2175,7 +2175,7 @@ ResumeExecution:
         /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
         &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hwaccm.s.Event.intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SWEXCPT)
     {
-        Log(("Ignore pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%08x\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
+        Log(("Ignore pending inject %RX64 at %RGv exit=%08x intInfo=%08x exitQualification=%RGv\n", pVCpu->hwaccm.s.Event.intInfo, (RTGCPTR)pCtx->rip, exitReason, intInfo, exitQualification));
     }
 
     if (exitReason == VMX_EXIT_ERR_INVALID_GUEST_STATE)
@@ -2183,7 +2183,7 @@ ResumeExecution:
 #endif
 
     Log2(("E%d", exitReason));
-    Log2(("Exit reason %d, exitQualification %08x\n", exitReason, exitQualification));
+    Log2(("Exit reason %d, exitQualification %RGv\n", exitReason, exitQualification));
     Log2(("instrInfo=%d instrError=%d instr length=%d\n", instrInfo, instrError, cbInstr));
     Log2(("Interruption error code %d\n", errCode));
     Log2(("IntInfo = %08x\n", intInfo));
