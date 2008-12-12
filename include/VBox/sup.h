@@ -61,6 +61,8 @@ typedef const SUPPAGE *PCSUPPAGE;
 
 /**
  * The paging mode.
+ *
+ * @remarks Users are making assumptions about the order here!
  */
 typedef enum SUPPAGINGMODE
 {
