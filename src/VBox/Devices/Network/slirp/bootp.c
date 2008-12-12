@@ -152,7 +152,7 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
         rc = release_addr(pData, &bp->bp_ciaddr);
         LogRel(("NAT: %s %R[IP4]\n",
                 rc ? "DHCP released IP address" : "Ignored DHCP release for IP address",
-                bp->bp_ciaddr.s_addr));
+                &bp->bp_ciaddr));
         /* This message is not to be answered in any way. */
         return;
     }
@@ -244,10 +244,10 @@ static void bootp_reply(PNATState pData, struct bootp_t *bp)
 
     if (send_nak)
         LogRel(("NAT: Client requested IP address %R[IP4] -- sending NAK\n",
-                requested_ip.s_addr));
+                &requested_ip));
     else
         LogRel(("NAT: DHCP offered IP address %R[IP4]\n",
-                daddr.sin_addr.s_addr));
+                &daddr.sin_addr));
 
     if (   dhcp_msg_type == DHCPDISCOVER
         || dhcp_msg_type == DHCPREQUEST)
