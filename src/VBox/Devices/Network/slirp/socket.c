@@ -793,6 +793,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     int old_ip_len;
     struct mbuf *m;
     struct icmp_msg *icm;
+    uint8_t proto;
 
     ip = (struct ip *)buff;
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
@@ -820,6 +821,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     src = addr->sin_addr.s_addr;
 
     ip = mtod(m, struct ip *);
+    proto = ip->ip_p;
     /* Now ip is pointing on header we've sent from guest */
     if (icp->icmp_type == ICMP_TIMXCEED)
     {
@@ -852,6 +854,32 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     icmp_reflect(pData, m);
     LIST_REMOVE(icm, im_list);
     /* Don't call m_free here*/
+#if 0
+    if (icp->icmp_type == ICMP_TIMXCEED)
+    {
+        switch (proto)
+        {
+            case  IPPROTO_UDP:
+                /*XXX: so->so_m already freed so we shouldn't call sofree */
+                if (so == udp_last_so)
+                    udp_last_so = &udb;
+                closesocket(icm->im_so->s);
+                icm->im_so->s = 1;
+                icm->im_so->so_state = SS_NOFDREF;
+                if(so->so_next && so->so_prev) {
+                    remque(pData, so);
+                    free(icm->im_so);
+                }
+            break;
+            case  IPPROTO_TCP:
+                /*close tcp should be here */
+            break;
+            default:
+            /* do nothing */
+            break;
+        }
+    }
+#endif
     free(icm);
 }
 

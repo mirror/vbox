@@ -145,7 +145,9 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     int found = 0;
     struct udphdr *udp;
     struct tcphdr *tcp;
-    struct socket *head_socket, *so;
+    struct socket *head_socket;
+    struct socket *last_socket;
+    struct socket *so;
     struct in_addr laddr, faddr;
     u_int lport, fport;
 
@@ -190,6 +192,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             fport = udp->uh_dport;
             laddr.s_addr = ip->ip_src.s_addr;
             lport = udp->uh_sport;
+            last_socket = udp_last_so;
             /* fall through */
 
         case IPPROTO_TCP:
@@ -201,26 +204,25 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                 fport = tcp->th_dport;
                 laddr.s_addr = ip->ip_src.s_addr;
                 lport = tcp->th_sport;
+                last_socket = tcp_last_so;
             }
-            for (so = head_socket->so_next; so != head_socket; so = so->so_next)
+            /* check last socket first */
+            if (   last_socket->so_faddr.s_addr == faddr.s_addr
+                && last_socket->so_fport == fport
+                && last_socket->so_hlport == lport)
+            {
+                found = 1;
+                goto sofound;
+            }
+            for (so = head_socket->so_prev; so != head_socket; so = so->so_prev)
             {
                 /* Should be reaplaced by hash here */
                 LogRel(("trying:%R[natsock] against %R[IP4]:%d lport=%d hlport=%d\n", so, &faddr, fport, lport, so->so_hlport));
                 if (   so->so_faddr.s_addr == faddr.s_addr
                     && so->so_fport == fport
-#if 0
-                    && so->so_hladdr.s_addr == laddr.s_addr
-#endif
                     && so->so_hlport == lport)
                 {
-                    icm = malloc(sizeof(struct icmp_msg));
-                    icm->im_m = so->so_m;
                     found = 1;
-                    LogRel(("hit:%R[natsock]\n", so));
-                    /*XXX: this storage not very long,
-                     * better add flag if it should removed from lis
-                     */
-                    LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
                     break;
                 }
             }
@@ -228,6 +230,20 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
 
         default:
             LogRel(("%s:ICMP: unsupported protocol(%d)\n", __FUNCTION__, ip->ip_p));
+    }
+    sofound:
+    if (found == 1 && icm == NULL)
+    {
+        icm = malloc(sizeof(struct icmp_msg));
+        icm->im_m = so->so_m;
+        icm->im_so = so;
+        found = 1;
+        LogRel(("hit:%R[natsock]\n", so));
+        /*XXX: this storage not very long,
+         * better add flag if it should removed from lis
+         */
+        LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
+        return (icm);
     }
     if (found == 1)
         return icm;
