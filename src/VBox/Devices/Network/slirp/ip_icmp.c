@@ -80,7 +80,7 @@ icmp_init(PNATState pData)
 # ifndef RT_OS_DARWIN
     pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 # else /* !RT_OS_DARWIN */
-    pData->icmp_socket.s = socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+    pData->icmp_socket.s = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
 # endif /* RT_OS_DARWIN */
     if (pData->icmp_socket.s == -1)
     {
@@ -156,6 +156,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     fport = ~0;
 
 
+    LogRel(("%s: processing (proto:%d)\n", __FUNCTION__, ip->ip_p));
     switch (ip->ip_p)
     {
         case IPPROTO_ICMP:
@@ -174,6 +175,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     found = 1;
                     break;
                 }
+                LogRel(("Have found nothing\n"));
             }
             break;
 
@@ -183,7 +185,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
          */
         case IPPROTO_UDP:
             head_socket = &udb;
-            udp = (struct udphdr *)((char *)ip + (ip->ip_hl >> 2));
+            udp = (struct udphdr *)((char *)ip + (ip->ip_hl << 2));
             faddr.s_addr = ip->ip_dst.s_addr;
             fport = udp->uh_dport;
             laddr.s_addr = ip->ip_src.s_addr;
@@ -193,25 +195,33 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
         case IPPROTO_TCP:
             if (head_socket == NULL)
             {
-                tcp = (struct tcphdr *)((char *)ip + (ip->ip_hl >> 2));
+                tcp = (struct tcphdr *)((char *)ip + (ip->ip_hl << 2));
                 head_socket = &tcb; /* head_socket could be initialized with udb*/
                 faddr.s_addr = ip->ip_dst.s_addr;
                 fport = tcp->th_dport;
                 laddr.s_addr = ip->ip_src.s_addr;
                 lport = tcp->th_sport;
             }
-            for (so = head_socket; so != head_socket; so = so->so_next)
+            for (so = head_socket->so_next; so != head_socket; so = so->so_next)
             {
                 /* Should be reaplaced by hash here */
+                LogRel(("trying:%R[natsock] against %R[IP4]:%d lport=%d hlport=%d\n", so, &faddr, fport, lport, so->so_hlport));
                 if (   so->so_faddr.s_addr == faddr.s_addr
                     && so->so_fport == fport
+#if 0
                     && so->so_hladdr.s_addr == laddr.s_addr
+#endif
                     && so->so_hlport == lport)
                 {
                     icm = malloc(sizeof(struct icmp_msg));
                     icm->im_m = so->so_m;
                     found = 1;
-		    break;
+                    LogRel(("hit:%R[natsock]\n", so));
+                    /*XXX: this storage not very long,
+                     * better add flag if it should removed from lis
+                     */
+                    LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
+                    break;
                 }
             }
             break;
@@ -380,6 +390,7 @@ freeit:
                 icmp_attach(pData, m);
                 /* Send the packet */
 # ifndef RT_OS_WINDOWS
+                LogRel(("NAT/ICMP: try to set TTL(%d)\n", ip->ip_ttl));
                 status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
                 if (status < 0)
                 {

@@ -559,6 +559,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             }
         }
 #endif /* VBOX_WITH_BSD_REASS */
+        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
 
         STAM_REL_COUNTER_RESET(&pData->StatTCP);
         STAM_REL_COUNTER_RESET(&pData->StatTCPHot);
@@ -665,7 +666,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
             }
         }
 
-        ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
     }
 
 #if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) || !defined(RT_OS_WINDOWS)
@@ -736,6 +736,15 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
      */
     if (link_up)
     {
+#if defined(VBOX_WITH_SLIRP_ICMP)
+# if defined(RT_OS_WINDOWS)
+        if (fIcmp)
+            sorecvfrom(pData, &pData->icmp_socket);
+# else
+        if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
+            sorecvfrom(pData, &pData->icmp_socket);
+# endif
+#endif
         /*
          * Check TCP sockets
          */
@@ -929,6 +938,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             }
         }
 
+#if 0
 #if defined(VBOX_WITH_SLIRP_ICMP)
 # if defined(RT_OS_WINDOWS)
         if (fIcmp)
@@ -937,6 +947,7 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
         if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
             sorecvfrom(pData, &pData->icmp_socket);
 # endif
+#endif
 #endif
     }
 

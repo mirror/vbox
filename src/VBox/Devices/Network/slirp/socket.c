@@ -590,7 +590,10 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     ret = sendto(so->s, m->m_data, m->m_len, 0,
                  (struct sockaddr *)&addr, sizeof (struct sockaddr));
     if (ret < 0)
+    {
+        LogRel(("UDP: sendto fails (%s)\n", strerror(errno)));
         return -1;
+    }
 
     /*
      * Kill the socket if there's no reply in 4 minutes,
@@ -794,9 +797,9 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = (struct ip *)buff;
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
 
+    LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
     if (icp->icmp_type != ICMP_ECHOREPLY && icp->icmp_type != ICMP_TIMXCEED)
     {
-        LogRel(("received ICMP(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
         return;
     }
 
