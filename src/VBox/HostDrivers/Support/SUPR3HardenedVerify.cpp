@@ -102,7 +102,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxRT"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxVMM"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,         false, "VBoxREM"  SUPLIB_DLL_SUFF },
-#if RT_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM32"  SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxREM64"  SUPLIB_DLL_SUFF },
 #endif
