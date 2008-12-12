@@ -447,6 +447,7 @@ VMMDECL(int)        PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv);
 VMMDECL(int)        PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv);
 VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
 
 /**

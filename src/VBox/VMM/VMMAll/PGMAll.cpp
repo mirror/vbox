@@ -1849,7 +1849,11 @@ VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
     //Log(("PGMDynMapGCPage: GCPhys=%RGp HCPhys=%RHp\n", GCPhys, HCPhys));
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    return pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
+#else
     return PGMDynMapHCPage(pVM, HCPhys, ppv);
+#endif
 }
 
 
@@ -1886,7 +1890,11 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
      * Pass it on to PGMDynMapHCPage.
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    int rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
+#else
     int rc = PGMDynMapHCPage(pVM, HCPhys, ppv);
+#endif
     if (RT_SUCCESS(rc))
         *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));
     return rc;

@@ -225,12 +225,35 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef IN_RC
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
      PGMDynMapHCPage(pVM, HCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
+     pgmR0DynMapHCPageInlined(&(pVM)->pgm.s, HCPhys, (void **)(ppv))
 #else
 # define PGM_HCPHYS_2_PTR(pVM, HCPhys, ppv) \
      MMPagePhys2PageEx(pVM, HCPhys, (void **)(ppv))
+#endif
+
+/** @def PGM_HCPHYS_2_PTR_BY_PGM
+ * Maps a HC physical page pool address to a virtual address.
+ *
+ * @returns VBox status code.
+ * @param   pPGM    The PGM instance data.
+ * @param   HCPhys  The HC physical address to map to a virtual one.
+ * @param   ppv     Where to store the virtual address. No need to cast this.
+ *
+ * @remark  In GC this uses PGMGCDynMapHCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# define PGM_HCPHYS_2_PTR_BY_PGM(pPGM, HCPhys, ppv) \
+     pgmR0DynMapHCPageInlined(pPGM, HCPhys, (void **)(ppv))
+#else
+# define PGM_HCPHYS_2_PTR_BY_PGM(pPGM, HCPhys, ppv) \
+     PGM_HCPHYS_2_PTR(PGM2VM(pPGM), HCPhys, (void **)(ppv))
 #endif
 
 /** @def PGM_GCPHYS_2_PTR
@@ -245,12 +268,35 @@
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef IN_RC
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
      PGMDynMapGCPage(pVM, GCPhys, (void **)(ppv))
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
+     pgmR0DynMapGCPageInlined(&(pVM)->pgm.s, GCPhys, (void **)(ppv))
 #else
 # define PGM_GCPHYS_2_PTR(pVM, GCPhys, ppv) \
      PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+#endif
+
+/** @def PGM_GCPHYS_2_PTR_BY_PGM
+ * Maps a GC physical page address to a virtual address.
+ *
+ * @returns VBox status code.
+ * @param   pPGM    Pointer to the PGM instance data.
+ * @param   GCPhys  The GC physical address to map to a virtual one.
+ * @param   ppv     Where to store the virtual address. No need to cast this.
+ *
+ * @remark  In GC this uses PGMGCDynMapGCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# define PGM_GCPHYS_2_PTR_BY_PGM(pPGM, GCPhys, ppv) \
+     pgmR0DynMapGCPageInlined(pPGM, GCPhys, (void **)(ppv))
+#else
+# define PGM_GCPHYS_2_PTR_BY_PGM(pPGM, GCPhys, ppv) \
+     PGM_GCPHYS_2_PTR(PGM2VM(pPGM), GCPhys, ppv)
 #endif
 
 /** @def PGM_GCPHYS_2_PTR_EX
@@ -1252,6 +1298,10 @@ typedef struct PGMMAPSETENTRY
     /** The number of references.
      * The max is UINT16_MAX - 1. */
     uint16_t                    cRefs;
+    /** Pointer to the page. */
+    RTR0PTR                     pvPage;
+    /** The physical address for this entry. */
+    RTHCPHYS                    HCPhys;
 } PGMMAPSETENTRY;
 /** Pointer to a mapping cache usage set entry. */
 typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
@@ -1270,12 +1320,19 @@ typedef struct PGMMAPSET
     uint32_t                    cEntries;
     /** The entries. */
     PGMMAPSETENTRY              aEntries[32];
+    /** HCPhys -> iEntry fast lookup table.
+     * Use PGMMAPSET_HASH for hashing.
+     * The entries may or may not be valid, check against cEntries. */
+    uint8_t                     aiHashTable[64];
 } PGMMAPSET;
 /** Pointer to the mapping cache set. */
 typedef PGMMAPSET *PPGMMAPSET;
 
 /** PGMMAPSET::cEntries value for a closed set. */
-#define PGMMAPSET_CLOSED        UINT32_C(0xdeadc0fe)
+#define PGMMAPSET_CLOSED            UINT32_C(0xdeadc0fe)
+
+/** Hash function for aiHashTable. */
+#define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 63)
 
 
 /** @name Context neutrual page mapper TLB.
@@ -2041,6 +2098,10 @@ typedef struct PGM
 {
     /** Offset to the VM structure. */
     RTINT                           offVM;
+    /** Offset of the PGMCPU structure relative to VMCPU. */
+    int32_t                         offVCpu;
+    /** Alignment padding. */
+    int32_t                         i32Alignment;
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2560,15 +2621,23 @@ typedef struct PGM
     STAMCOUNTER StatR3DynRamGrow;                   /**< R3: Nr of pgmr3PhysGrowRange calls. */
 
     /* R0 only: */
-    STAMPROFILE StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
-    STAMCOUNTER StatR0DynMapHCPageSetOptimize;      /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
-    STAMCOUNTER StatR0DynMapHCPageSetSearchHits;    /**< R0: Set search hits. */
-    STAMCOUNTER StatR0DynMapHCPageSetSearchMisses;  /**< R0: Set search misses. */
     STAMCOUNTER StatR0DynMapMigrateInvlPg;          /**< R0: invlpg in PGMDynMapMigrateAutoSet. */
+    STAMPROFILE StatR0DynMapGCPageInl;              /**< R0: Calls to pgmR0DynMapGCPageInlined. */
+    STAMCOUNTER StatR0DynMapGCPageInlHits;          /**< R0: Hash table lookup hits. */
+    STAMCOUNTER StatR0DynMapGCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
+    STAMCOUNTER StatR0DynMapGCPageInlRamHits;       /**< R0: 1st ram range hits. */
+    STAMCOUNTER StatR0DynMapGCPageInlRamMisses;     /**< R0: 1st ram range misses, takes slow path. */
+    STAMPROFILE StatR0DynMapHCPageInl;              /**< R0: Calls to pgmR0DynMapHCPageInlined. */
+    STAMCOUNTER StatR0DynMapHCPageInlHits;          /**< R0: Hash table lookup hits. */
+    STAMCOUNTER StatR0DynMapHCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
+    STAMPROFILE StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
+    STAMCOUNTER StatR0DynMapSetOptimize;            /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
+    STAMCOUNTER StatR0DynMapSetSearchHits;          /**< R0: Set search hits. */
+    STAMCOUNTER StatR0DynMapSetSearchMisses;        /**< R0: Set search misses. */
     STAMCOUNTER StatR0DynMapPage;                   /**< R0: Calls to pgmR0DynMapPage. */
-    STAMCOUNTER StatR0DynMapPageHit0;               /**< R0: Hit at iPage+0. */
-    STAMCOUNTER StatR0DynMapPageHit1;               /**< R0: Hit at iPage+1. */
-    STAMCOUNTER StatR0DynMapPageHit2;               /**< R0: Hit at iPage+2. */
+    STAMCOUNTER StatR0DynMapPageHits0;              /**< R0: Hits at iPage+0. */
+    STAMCOUNTER StatR0DynMapPageHits1;              /**< R0: Hits at iPage+1. */
+    STAMCOUNTER StatR0DynMapPageHits2;              /**< R0: Hits at iPage+2. */
     STAMCOUNTER StatR0DynMapPageInvlPg;             /**< R0: invlpg. */
     STAMCOUNTER StatR0DynMapPageSlow;               /**< R0: Calls to pgmR0DynMapPageSlow. */
     STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
@@ -2812,15 +2881,18 @@ int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPA
 int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk);
 int             pgmR3PhysRamReset(PVM pVM);
 int             pgmR3PhysRomReset(PVM pVM);
-#ifndef VBOX_WITH_NEW_PHYS_CODE
+# ifndef VBOX_WITH_NEW_PHYS_CODE
 int             pgmr3PhysGrowRange(PVM pVM, RTGCPHYS GCPhys);
-#endif
+# endif
 
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
 
 #endif /* IN_RING3 */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
+#endif
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 void           *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
@@ -3156,6 +3228,103 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+
+/**
+ * Inlined version of the ring-0 version of PGMDynMapHCPage that
+ * optimizes access to pages already in the set.
+ *
+ * @returns See pgmR0DynMapHCPageCommon.
+ * @param   pPGM        Pointer to the PVM instance data.
+ * @param   HCPhys      The physical address of the page.
+ * @param   ppv         Where to store the mapping address.
+ */
+DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
+{
+    STAM_PROFILE_START(&pPGM->StatR0DynMapHCPageInl, a);
+    PPGMMAPSET  pSet    = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpu))->AutoSet; /* very pretty ;-) */
+    Assert(!(HCPhys & PAGE_OFFSET_MASK));
+    Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
+    int         rc;
+
+    unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
+    unsigned    iEntry  = pSet->aiHashTable[iHash];
+    if (    iEntry < pSet->cEntries
+        &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
+    {
+        *ppv = pSet->aEntries[iEntry].pvPage;
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlHits);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlMisses);
+        rc = pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+    }
+
+    STAM_PROFILE_STOP(&pPGM->StatR0DynMapHCPageInl, a);
+    return rc;
+}
+
+
+/**
+ * Inlined version of the ring-0 version of PGMDynMapGCPage that optimizes
+ * access to pages already in the set.
+ *
+ * @returns See pgmR0DynMapHCPageCommon.
+ * @param   pPGM        Pointer to the PVM instance data.
+ * @param   HCPhys      The physical address of the page.
+ * @param   ppv         Where to store the mapping address.
+ */
+DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
+{
+    STAM_PROFILE_START(&pPGM->StatR0DynMapGCPageInl, a);
+    Assert(!(GCPhys & PAGE_OFFSET_MASK));
+
+    /*
+     * Get the ram range.
+     */
+    PPGMRAMRANGE    pRam = pPGM->CTX_SUFF(pRamRanges);
+    RTGCPHYS        off = GCPhys - pRam->GCPhys;
+    if (RT_UNLIKELY(off >= pRam->cb
+        /** @todo   || page state stuff */))
+    {
+        /* This case is not counted into StatR0DynMapGCPageInl. */
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlRamMisses);
+        return PGMDynMapGCPage(PGM2VM(pPGM), GCPhys, ppv);
+    }
+
+    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[off >> PAGE_SHIFT]);
+    STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlRamHits);
+
+    /*
+     * pgmR0DynMapHCPageInlined with out stats.
+     */
+    PPGMMAPSET  pSet    = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpu))->AutoSet; /* very pretty ;-) */
+    Assert(!(HCPhys & PAGE_OFFSET_MASK));
+    Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
+    int         rc;
+
+    unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
+    unsigned    iEntry  = pSet->aiHashTable[iHash];
+    if (    iEntry < pSet->cEntries
+        &&  pSet->aEntries[iEntry].HCPhys == HCPhys)
+    {
+        *ppv = pSet->aEntries[iEntry].pvPage;
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlHits);
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlMisses);
+        rc = pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+    }
+
+    STAM_PROFILE_STOP(&pPGM->StatR0DynMapGCPageInl, a);
+    return rc;
+}
+
+#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 #ifndef IN_RC
 /**
@@ -3392,7 +3561,7 @@ DECLINLINE(X86PDE) pgmGstGet32bitPDE(PPGM pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PCX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPD);
     if (RT_FAILURE(rc))
     {
         X86PDE ZeroPde = {0};
@@ -3416,7 +3585,7 @@ DECLINLINE(PX86PDE) pgmGstGet32bitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPD);
     AssertRCReturn(rc, 0);
     return &pGuestPD->a[GCPtr >> X86_PD_SHIFT];
 #else
@@ -3435,7 +3604,7 @@ DECLINLINE(PX86PD) pgmGstGet32bitPDPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD pGuestPD = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPD);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPD);
     AssertRCReturn(rc, 0);
     return pGuestPD;
 #else
@@ -3455,7 +3624,7 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPDPT);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPDPT);
     AssertRCReturn(rc, 0);
     return pGuestPDPT;
 #else
@@ -3478,7 +3647,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PPGM pPGM, RTGCPTR GCPtr)
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pGuestPDPT = 0;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPDPT);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPDPT);
     AssertRCReturn(rc, 0);
     return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
 #else
@@ -3515,7 +3684,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePD(PPGM pPGM, RTGCPTR GCPtr)
 
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return pPD;
         AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt].u));
@@ -3554,7 +3723,7 @@ DECLINLINE(PX86PDEPAE) pgmGstGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 
         /* The cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
             return &pPD->a[iPD];
         AssertMsgFailed(("Impossible! rc=%Rrc PDPE=%RX64\n", rc, pGuestPDPT->a[iPdPt].u));
@@ -3594,7 +3763,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PPGM pPGM, RTGCPTR GCPtr)
 
             /* cache is out-of-sync. */
             PX86PDPAE pPD;
-            int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             if (RT_SUCCESS(rc))
                 return pPD->a[iPD];
             AssertMsgFailed(("Impossible! rc=%d PDPE=%#llx\n", rc, pGuestPDPT->a[iPdPt]));
@@ -3642,7 +3811,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr, unsigned *piPD
 
         /* cache is out-of-sync. */
         PX86PDPAE pPD;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPDPT->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
         if (RT_SUCCESS(rc))
         {
             *piPD = iPD;
@@ -3666,7 +3835,7 @@ DECLINLINE(PX86PML4) pgmGstGetLongModePML4Ptr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPml4);
     AssertRCReturn(rc, NULL);
     return pGuestPml4;
 #else
@@ -3687,7 +3856,7 @@ DECLINLINE(PX86PML4E) pgmGstGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPml4);
     AssertRCReturn(rc, NULL);
     return &pGuestPml4->a[iPml4];
 #else
@@ -3708,7 +3877,7 @@ DECLINLINE(X86PML4E) pgmGstGetLongModePML4E(PPGM pPGM, unsigned int iPml4)
 {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pGuestPml4;
-    int rc = PGMDynMapGCPage(PGM2VM(pPGM), pPGM->GCPhysCR3, (void **)&pGuestPml4);
+    int rc = pgmR0DynMapGCPageInlined(pPGM, pPGM->GCPhysCR3, (void **)&pGuestPml4);
     if (RT_FAILURE(rc))
     {
         X86PML4E ZeroPml4e = {0};
@@ -3739,7 +3908,7 @@ DECLINLINE(PX86PDPE) pgmGstGetLongModePDPTPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PM
     if (pPml4e->n.u1Present)
     {
         PX86PDPT pPdpt;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdpt);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdpt);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3768,7 +3937,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3776,7 +3945,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDEEx(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PCX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3804,14 +3973,14 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PPGM pPGM, RTGCPTR64 GCPtr)
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, ZeroPde);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PCX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, ZeroPde);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3837,14 +4006,14 @@ DECLINLINE(PX86PDEPAE) pgmGstGetLongModePDEPtr(PPGM pPGM, RTGCPTR64 GCPtr)
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             const unsigned iPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3874,7 +4043,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
     if (pPml4e->n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPml4e->u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -3882,7 +4051,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
@@ -3909,7 +4078,7 @@ DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD          pShwPd;
     Assert(pPGM->HCPhysShw32BitPD != 0 && pPGM->HCPhysShw32BitPD != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShw32BitPD, &pShwPd);
+    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShw32BitPD, &pShwPd);
     AssertRCReturn(rc, NULL);
     return pShwPd;
 # else
@@ -3972,7 +4141,7 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pShwPdpt;
     Assert(pPGM->HCPhysShwPaePdpt != 0 && pPGM->HCPhysShwPaePdpt != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePdpt, &pShwPdpt);
+    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShwPaePdpt, &pShwPdpt);
     AssertRCReturn(rc, 0);
     return pShwPdpt;
 # else
@@ -4004,7 +4173,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPAE       pPD;
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->aHCPhysPaePDs[iPdpt], &pPD);
+    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->aHCPhysPaePDs[iPdpt], &pPD);
     AssertRCReturn(rc, 0);
     return pPD;
 # else
@@ -4069,7 +4238,7 @@ DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pShwPml4;
     Assert(pPGM->HCPhysShwPaePml4 != 0 && pPGM->HCPhysShwPaePml4 != NIL_RTHCPHYS);
-    int rc = PGM_HCPHYS_2_PTR(PGM2VM(pPGM), pPGM->HCPhysShwPaePml4, &pShwPml4);
+    int rc = PGM_HCPHYS_2_PTR_BY_PGM(pPGM, pPGM->HCPhysShwPaePml4, &pShwPml4);
     AssertRCReturn(rc, 0);
     return pShwPml4;
 # else
@@ -4135,14 +4304,14 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, unsigne
     if (pGuestPml4->a[iPml4].n.u1Present)
     {
         PCX86PDPT   pPdptTemp;
-        int rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
+        int rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pGuestPml4->a[iPml4].u & X86_PML4E_PG_MASK, &pPdptTemp);
         AssertRCReturn(rc, NULL);
 
         const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
         if (pPdptTemp->a[iPdPt].n.u1Present)
         {
             PX86PDPAE pPD;
-            rc = PGM_GCPHYS_2_PTR(PGM2VM(pPGM), pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
+            rc = PGM_GCPHYS_2_PTR_BY_PGM(pPGM, pPdptTemp->a[iPdPt].u & X86_PDPE_PG_MASK, &pPD);
             AssertRCReturn(rc, NULL);
 
             *piPD = (GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
