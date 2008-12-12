@@ -1570,6 +1570,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
 VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
 {
     PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
+    AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
 
     /*
      * Only flush it if it's 50% full.
@@ -1582,8 +1583,8 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
         pSet->cEntries = 0;
 
         pgmDynMapFlushAutoSetWorker(pSet, cEntries);
+        AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
     }
-    Assert(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()));
 }
 
 
@@ -1603,17 +1604,17 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
  */
 VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
 {
-    PPGMMAPSET  pSet = &pVCpu->pgm.s.AutoSet;
-    uint32_t    i = pSet->cEntries;
-    if (i != PGMMAPSET_CLOSED)
+    PPGMMAPSET      pSet     = &pVCpu->pgm.s.AutoSet;
+    int32_t         iRealCpu = RTMpCpuIdToSetIndex(RTMpCpuId());
+    if (pSet->iCpu != iRealCpu)
     {
-        AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
-        if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
+        uint32_t    i        = pSet->cEntries;
+        if (i != PGMMAPSET_CLOSED)
         {
-            PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-            int32_t         iRealCpu = RTMpCpuIdToSetIndex(RTMpCpuId());
-            if (pSet->iCpu != iRealCpu)
+            AssertMsg(i <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", i, i));
+            if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
             {
+                PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
                 while (i-- > 0)
                 {
                     Assert(pSet->aEntries[i].cRefs > 0);
@@ -1627,9 +1628,9 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                     }
                 }
 
-                pSet->iCpu = iRealCpu;
             }
         }
+        pSet->iCpu = iRealCpu;
     }
 }
 
@@ -1694,7 +1695,7 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  */
 int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
 {
-    Assert(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()));
+    AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
 
     /*
      * Map it.
