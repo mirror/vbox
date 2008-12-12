@@ -366,6 +366,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
             pSet->aEntries[j].HCPhys = NIL_RTHCPHYS;
         }
         pSet->cEntries = PGMMAPSET_CLOSED;
+        pSet->iCpu = -1;
         memset(&pSet->aiHashTable[0], 0xff, sizeof(pSet->aiHashTable));
     }
 
@@ -464,6 +465,7 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
                     pSet->aEntries[j].HCPhys = NIL_RTHCPHYS;
                 }
                 pSet->cEntries = PGMMAPSET_CLOSED;
+                pSet->iCpu = -1;
             }
             else
                 AssertMsg(j == PGMMAPSET_CLOSED, ("cEntries=%#x\n", j));
@@ -1271,10 +1273,11 @@ static uint32_t pgmR0DynMapPageSlow(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, uint32_
  * @returns Page index on success, UINT32_MAX on failure.
  * @param   pThis       The dynamic mapping cache instance.
  * @param   HCPhys      The address of the page to be mapped.
+ * @param   iRealCpu    The real cpu set index. (optimization)
  * @param   pVM         The shared VM structure, for statistics only.
  * @param   ppvPage     Where to the page address.
  */
-DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pVM, void **ppvPage)
+DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_t iRealCpu, PVM pVM, void **ppvPage)
 {
     RTSPINLOCKTMP   Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
@@ -1344,10 +1347,9 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, PVM pV
     /*
      * Invalidate the entry?
      */
-    RTCPUID idRealCpu = RTMpCpuId();
-    bool fInvalidateIt = RTCpuSetIsMember(&paPages[iPage].PendingSet, idRealCpu);
+    bool fInvalidateIt = RTCpuSetIsMemberByIndex(&paPages[iPage].PendingSet, iRealCpu);
     if (RT_UNLIKELY(fInvalidateIt))
-        RTCpuSetDel(&paPages[iPage].PendingSet, idRealCpu);
+        RTCpuSetDelByIndex(&paPages[iPage].PendingSet, iRealCpu);
 
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
@@ -1496,6 +1498,7 @@ VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 {
     Assert(pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED);
     pVCpu->pgm.s.AutoSet.cEntries = 0;
+    pVCpu->pgm.s.AutoSet.iCpu = RTMpCpuIdToSetIndex(RTMpCpuId());
 }
 
 
@@ -1553,6 +1556,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertMsg(cEntries <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", cEntries, cEntries));
     pSet->cEntries = PGMMAPSET_CLOSED;
+    pSet->iCpu = -1;
 
     pgmDynMapFlushAutoSetWorker(pSet, cEntries);
 }
@@ -1579,6 +1583,7 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
 
         pgmDynMapFlushAutoSetWorker(pSet, cEntries);
     }
+    Assert(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()));
 }
 
 
@@ -1606,19 +1611,23 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
         if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
         {
             PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
-            RTCPUID         idRealCpu = RTMpCpuId();
-
-            while (i-- > 0)
+            int32_t         iRealCpu = RTMpCpuIdToSetIndex(RTMpCpuId());
+            if (pSet->iCpu != iRealCpu)
             {
-                Assert(pSet->aEntries[i].cRefs > 0);
-                uint32_t iPage = pSet->aEntries[i].iPage;
-                Assert(iPage < pThis->cPages);
-                if (RTCpuSetIsMember(&pThis->paPages[iPage].PendingSet, idRealCpu))
+                while (i-- > 0)
                 {
-                    RTCpuSetDel(&pThis->paPages[iPage].PendingSet, idRealCpu);
-                    ASMInvalidatePage(pThis->paPages[iPage].pvPage);
-                    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapMigrateInvlPg);
+                    Assert(pSet->aEntries[i].cRefs > 0);
+                    uint32_t iPage = pSet->aEntries[i].iPage;
+                    Assert(iPage < pThis->cPages);
+                    if (RTCpuSetIsMemberByIndex(&pThis->paPages[iPage].PendingSet, iRealCpu))
+                    {
+                        RTCpuSetDelByIndex(&pThis->paPages[iPage].PendingSet, iRealCpu);
+                        ASMInvalidatePage(pThis->paPages[iPage].pvPage);
+                        STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapMigrateInvlPg);
+                    }
                 }
+
+                pSet->iCpu = iRealCpu;
             }
         }
     }
@@ -1683,11 +1692,13 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  */
 int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv)
 {
+    Assert(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()));
+
     /*
      * Map it.
      */
     void *pvPage;
-    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pVM, &pvPage);
+    uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, pVM, &pvPage);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
         static uint32_t s_cBitched = 0;

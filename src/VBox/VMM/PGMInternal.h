@@ -1314,6 +1314,8 @@ typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
  */
 typedef struct PGMMAPSET
 {
+    /** The index of the current CPU, only valid if the set is open. */
+    int32_t                     iCpu;
     /** The number of occupied.
      * This is PGMMAPSET_CLOSED if the set is closed and we're not supposed to do
      * dynamic mappings. */
