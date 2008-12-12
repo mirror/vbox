@@ -212,6 +212,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                 && last_socket->so_hlport == lport)
             {
                 found = 1;
+                so = last_socket;
                 goto sofound;
             }
             for (so = head_socket->so_prev; so != head_socket; so = so->so_prev)
