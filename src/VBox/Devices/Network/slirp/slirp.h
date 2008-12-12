@@ -4,8 +4,8 @@
 #include <VBox/stam.h>
 
 #ifdef RT_OS_WINDOWS
-# include <ws2tcpip.h>
 # include <winsock2.h>
+# include <ws2tcpip.h>
 typedef int socklen_t;
 #endif
 #ifdef RT_OS_OS2 /* temporary workaround, see ticket #127 */
