@@ -6111,7 +6111,7 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
             break;
 
         /* quick path: recreate the whole tree of the snapshots */
-        if (op == SaveSS_UpdateAllOp && !aSnapshot)
+        if (op == SaveSS_UpdateAllOp && aSnapshot == NULL)
         {
             /* first, delete the entire root snapshot node if it exists */
             Key snapshotNode = aMachineNode.findKey ("Snapshot");
@@ -9595,6 +9595,36 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask &aTask)
 }
 
 /**
+ * Helper struct for SessionMachine::discardSnapshotHandler().
+ */
+struct HardDiskDiscardRec
+{
+    HardDiskDiscardRec() : chain (NULL) {}
+
+    HardDiskDiscardRec (const ComObjPtr <HardDisk2> &aHd,
+                HardDisk2::MergeChain *aChain = NULL)
+        : hd (aHd), chain (aChain) {}
+
+    HardDiskDiscardRec (const ComObjPtr <HardDisk2> &aHd,
+                        HardDisk2::MergeChain *aChain,
+                        const ComObjPtr <HardDisk2> &aReplaceHd,
+                        const ComObjPtr <HardDisk2Attachment> &aReplaceHda,
+                        const Guid &aSnapshotId)
+        : hd (aHd), chain (aChain)
+        , replaceHd (aReplaceHd), replaceHda (aReplaceHda)
+        , snapshotId (aSnapshotId) {}
+
+    ComObjPtr <HardDisk2> hd;
+    HardDisk2::MergeChain *chain;
+    /* these are for the replace hard disk case: */
+    ComObjPtr <HardDisk2> replaceHd;
+    ComObjPtr <HardDisk2Attachment> replaceHda;
+    Guid snapshotId;
+};
+
+typedef std::list <HardDiskDiscardRec> HardDiskDiscardRecList;
+
+/**
  * Discard snapshot task handler. Must be called only by
  * DiscardSnapshotTask::handler()!
  *
@@ -9644,9 +9674,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
     /* save the snapshot ID (for callbacks) */
     Guid snapshotId = aTask.snapshot->data().mId;
 
-    typedef std::list <std::pair <ComObjPtr <HardDisk2>,
-                       HardDisk2::MergeChain *> > ToDiscard;
-    ToDiscard toDiscard;
+    HardDiskDiscardRecList toDiscard;
 
     bool settingsChanged = false;
 
@@ -9687,7 +9715,74 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             rc = hd->prepareDiscard (chain);
             CheckComRCThrowRC (rc);
 
-            toDiscard.push_back (std::make_pair (hd, chain));
+            if (hd->parent().isNull() && chain != NULL)
+            {
+                /* it's a base hard disk so it will be a backward merge of its
+                 * only child to it (prepareDiscard() does necessary checks). We
+                 * need then to update the attachment that refers to the child
+                 * to refer to the parent insead. Don't forget to detach the
+                 * child (otherwise mergeTo() called by discard() will assert
+                 * because it will be going to delete the child) */
+
+                /* The below assert would be nice but I don't want to move
+                 * HardDisk2::MergeChain to the header just for that
+                /* Assert (!chain->isForward()); */
+
+                Assert (hd->children().size() == 1);
+
+                ComObjPtr <HardDisk2> replaceHd = hd->children().front();
+
+                Assert (replaceHd->backRefs().front().machineId == mData->mUuid);
+                Assert (replaceHd->backRefs().front().snapshotIds.size() <= 1);
+
+                Guid snapshotId;
+                if (replaceHd->backRefs().front().snapshotIds.size() == 1)
+                    snapshotId = replaceHd->backRefs().front().snapshotIds.front();
+
+                HRESULT rc2 = S_OK;
+
+                /* adjust back references */
+                rc2 = replaceHd->detachFrom (mData->mUuid, snapshotId);
+                AssertComRC (rc2);
+
+                rc2 = hd->attachTo (mData->mUuid, snapshotId);
+                AssertComRC (rc2);
+
+                /* replace the hard disk in the attachment object */
+                HDData::AttachmentList::iterator it;
+                if (snapshotId.isEmpty())
+                {
+                    /* in current state */
+                    it = std::find_if (mHDData->mAttachments.begin(),
+                                       mHDData->mAttachments.end(),
+                                       HardDisk2Attachment::RefersTo (replaceHd));
+                    AssertBreak (it != mHDData->mAttachments.end());
+                }
+                else
+                {
+                    /* in snapshot */
+                    ComObjPtr <Snapshot> snapshot;
+                    rc2 = findSnapshot (snapshotId, snapshot);
+                    AssertComRC (rc2);
+
+                    /* don't lock the snapshot; cannot be modified outside */
+                    HDData::AttachmentList &snapAtts =
+                        snapshot->data().mMachine->mHDData->mAttachments;
+                    it = std::find_if (snapAtts.begin(),
+                                       snapAtts.end(),
+                                       HardDisk2Attachment::RefersTo (replaceHd));
+                    AssertBreak (it != snapAtts.end());
+                }
+
+                AutoWriteLock attLock (*it);
+                (*it)->updateHardDisk (hd, false /* aImplicit */);
+
+                toDiscard.push_back (HardDiskDiscardRec (hd, chain, replaceHd,
+                                                         *it, snapshotId));
+                continue;
+            }
+
+            toDiscard.push_back (HardDiskDiscardRec (hd, chain));
         }
 
         /* Now we checked that we can successfully merge all normal hard disks
@@ -9733,7 +9828,8 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             {
                 if (aTask.snapshot->children().size() == 1)
                 {
-                    ComObjPtr <Snapshot> childSnapshot = aTask.snapshot->children().front();
+                    ComObjPtr <Snapshot> childSnapshot =
+                        aTask.snapshot->children().front();
                     ComAssertThrow (
                         childSnapshot->data().mMachine->mData->mUuid == mData->mUuid,
                         E_FAIL);
@@ -9790,83 +9886,11 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         /// snapshot itself has been already deleted (and interpret these
         /// warnings properly on the GUI side)
 
-        for (ToDiscard::iterator it = toDiscard.begin();
+        for (HardDiskDiscardRecList::iterator it = toDiscard.begin();
              it != toDiscard.end();)
         {
-            ComObjPtr <HardDisk2> replaceHd;
-            Guid snapshotId;
-
-            if (it->first->parent().isNull() && it->second != NULL)
-            {
-                /* it's a base hard disk so it will be a backward merge of its
-                 * only child to it. We need then to update the attachment that
-                 * refers to the child so get it and detach the child
-                 * (otherwise mergeTo() called by discard() will assert because
-                 * it will be going to delete the child) */
-
-                Assert (it->first->children().size() == 1);
-                replaceHd = it->first->children().front();
-
-                Assert (replaceHd->backRefs().front().machineId == mData->mUuid);
-                Assert (replaceHd->backRefs().front().snapshotIds.size() <= 1);
-                if (replaceHd->backRefs().front().snapshotIds.size() == 1)
-                    snapshotId = replaceHd->backRefs().front().snapshotIds.front();
-
-                HRESULT rc2 = replaceHd->detachFrom (mData->mUuid, snapshotId);
-                AssertComRC (rc2);
-            }
-
-            rc = it->first->discard (aTask.progress, it->second);
-
-            if (FAILED (rc))
-            {
-                /* attach the detached child again */
-                if (!replaceHd.isNull())
-                    replaceHd->attachTo (mData->mUuid, snapshotId);
-                break;
-            }
-
-            if (SUCCEEDED (rc) && !replaceHd.isNull())
-            {
-                /* replace the attachment on success */
-                alock.enter();
-
-                HDData::AttachmentList::iterator jt;
-                if (snapshotId.isEmpty())
-                {
-                    /* in current state */
-                        jt = std::find_if (mHDData->mAttachments.begin(),
-                                           mHDData->mAttachments.end(),
-                                           HardDisk2Attachment::RefersTo (replaceHd));
-                        AssertBreakStmt (jt != mHDData->mAttachments.end(),
-                                         rc = E_FAIL);
-                }
-                else
-                {
-                    /* in snapshot */
-                    ComObjPtr <Snapshot> snapshot;
-                    findSnapshot (snapshotId, snapshot);
-                    AssertBreakStmt (!snapshot.isNull(), rc = E_FAIL);
-
-                    /* don't lock the snapshot; cannot be modified outside */
-                    HDData::AttachmentList &snapAtts =
-                        snapshot->data().mMachine->mHDData->mAttachments;
-                    jt = std::find_if (snapAtts.begin(),
-                                       snapAtts.end(),
-                                       HardDisk2Attachment::RefersTo (replaceHd));
-                    AssertBreakStmt (jt != snapAtts.end(), rc = E_FAIL);
-                }
-
-                {
-                    AutoWriteLock attLock (*jt);
-                    (*jt)->updateHardDisk (it->first, false /* aImplicit */);
-                }
-
-                HRESULT rc2 = it->first->attachTo (mData->mUuid, snapshotId);
-                AssertComRC (rc2);
-
-                alock.leave();
-            }
+            rc = it->hd->discard (aTask.progress, it->chain);
+            CheckComRCBreakRC (rc);
 
             /* prevent from calling cancelDiscard() */
             it = toDiscard.erase (it);
@@ -9880,10 +9904,28 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
 
     if FAILED (rc)
     {
+        HRESULT rc2 = S_OK;
+
         /* un-prepare the remaining hard disks */
-        for (ToDiscard::const_iterator it = toDiscard.begin();
+        for (HardDiskDiscardRecList::const_iterator it = toDiscard.begin();
              it != toDiscard.end(); ++ it)
-            it->first->cancelDiscard (it->second);
+        {
+            it->hd->cancelDiscard (it->chain);
+
+            if (!it->replaceHd.isNull())
+            {
+                /* undo hard disk replacement */
+
+                rc2 = it->replaceHd->attachTo (mData->mUuid, it->snapshotId);
+                AssertComRC (rc2);
+
+                rc2 = it->hd->detachFrom (mData->mUuid, it->snapshotId);
+                AssertComRC (rc2);
+
+                AutoWriteLock attLock (it->replaceHda);
+                it->replaceHda->updateHardDisk (it->replaceHd, false /* aImplicit */);
+            }
+        }
     }
 
     if (!aTask.subTask || FAILED (rc))
