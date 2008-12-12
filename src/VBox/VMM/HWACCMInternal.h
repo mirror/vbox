@@ -408,6 +408,13 @@ typedef struct VMCSCACHE
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
     } TestOut;
+   struct 
+   {
+        uint64_t    param1;
+        uint64_t    param2;
+        uint64_t    param3;
+        uint64_t    param4;
+   } ScratchPad;
 #endif
 } VMCSCACHE;
 /** Pointer to VMCSCACHE. */
