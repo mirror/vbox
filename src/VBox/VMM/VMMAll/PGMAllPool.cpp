@@ -91,42 +91,33 @@ DECLINLINE(bool) pgmPoolIsBigPage(PGMPOOLKIND enmKind)
  * Maps a pool page into the current context.
  *
  * @returns Pointer to the mapping.
- * @param   pVM     The VM handle.
+ * @param   pPGM    Pointer to the PGM instance data.
  * @param   pPage   The page to map.
  */
-void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
+void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
 {
-    /* general pages. */
-    if (pPage->idx >= PGMPOOL_IDX_FIRST)
-    {
-        Assert(pPage->idx < pVM->pgm.s.CTX_SUFF(pPool)->cCurPages);
-        void *pv;
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        int rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, pPage->Core.Key, &pv);
-# else
-        int rc = PGMDynMapHCPage(pVM, pPage->Core.Key, &pv);
-# endif
-        AssertReleaseRC(rc);
-        return pv;
-    }
+    /* general pages are take care of by the inlined part, it
+       only ends up here in case of failure. */
+    AssertReleaseReturn(pPage->idx < PGMPOOL_IDX_FIRST, NULL);
 
+/** @todo make sure HCPhys is valid for *all* indexes. */
     /* special pages. */
 # ifdef IN_RC
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
-            return pVM->pgm.s.pShw32BitPdRC;
+            return pPGM->pShw32BitPdRC;
         case PGMPOOL_IDX_PAE_PD:
         case PGMPOOL_IDX_PAE_PD_0:
-            return pVM->pgm.s.apShwPaePDsRC[0];
+            return pPGM->apShwPaePDsRC[0];
         case PGMPOOL_IDX_PAE_PD_1:
-            return pVM->pgm.s.apShwPaePDsRC[1];
+            return pPGM->apShwPaePDsRC[1];
         case PGMPOOL_IDX_PAE_PD_2:
-            return pVM->pgm.s.apShwPaePDsRC[2];
+            return pPGM->apShwPaePDsRC[2];
         case PGMPOOL_IDX_PAE_PD_3:
-            return pVM->pgm.s.apShwPaePDsRC[3];
+            return pPGM->apShwPaePDsRC[3];
         case PGMPOOL_IDX_PDPT:
-            return pVM->pgm.s.pShwPaePdptRC;
+            return pPGM->pShwPaePdptRC;
         default:
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
@@ -137,22 +128,22 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
     switch (pPage->idx)
     {
         case PGMPOOL_IDX_PD:
-            HCPhys = pVM->pgm.s.HCPhysShw32BitPD;
+            HCPhys = pPGM->HCPhysShw32BitPD;
             break;
         case PGMPOOL_IDX_PAE_PD_0:
-            HCPhys = pVM->pgm.s.aHCPhysPaePDs[0];
+            HCPhys = pPGM->aHCPhysPaePDs[0];
             break;
         case PGMPOOL_IDX_PAE_PD_1:
-            HCPhys = pVM->pgm.s.aHCPhysPaePDs[1];
+            HCPhys = pPGM->aHCPhysPaePDs[1];
             break;
         case PGMPOOL_IDX_PAE_PD_2:
-            HCPhys = pVM->pgm.s.aHCPhysPaePDs[2];
+            HCPhys = pPGM->aHCPhysPaePDs[2];
             break;
         case PGMPOOL_IDX_PAE_PD_3:
-            HCPhys = pVM->pgm.s.aHCPhysPaePDs[3];
+            HCPhys = pPGM->aHCPhysPaePDs[3];
             break;
         case PGMPOOL_IDX_PDPT:
-            HCPhys = pVM->pgm.s.HCPhysShwPaePdpt;
+            HCPhys = pPGM->HCPhysShwPaePdpt;
             break;
         case PGMPOOL_IDX_PAE_PD:
             AssertReleaseMsgFailed(("PGMPOOL_IDX_PAE_PD is not usable in VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 context\n"));
@@ -162,8 +153,8 @@ void *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage)
             return NULL;
     }
     void *pv;
-    int rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, &pv);
-    AssertReleaseRC(rc);
+    int rc = pgmR0DynMapHCPageInlined(pPGM, HCPhys, &pv);
+    AssertReleaseRCReturn(rc, NULL);
     return pv;
 # endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }

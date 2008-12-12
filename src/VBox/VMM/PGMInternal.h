@@ -1816,6 +1816,10 @@ typedef struct PGMPOOL
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
 
 
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage);
+#endif
+
 /** @def PGMPOOL_PAGE_2_PTR
  * Maps a pool page pool into the current context.
  *
@@ -1823,19 +1827,40 @@ typedef struct PGMPOOL
  * @param   pVM     The VM handle.
  * @param   pPage   The pool page.
  *
- * @remark  In HC this uses PGMGCDynMapHCPage(), so it will consume of the
+ * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)    pgmPoolMapPage((pVM), (pPage))
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
+#elif defined(VBOX_STRICT)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageStrict(pPage)
+DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
+{
+    Assert(pPage->pvPageR3);
+    return pPage->pvPageR3;
+}
 #else
- DECLINLINE(R3R0PTRTYPE(void *)) PGMPOOL_PAGE_2_PTR(PVM pVM, PPGMPOOLPAGE pPage)
- {
-     Assert(pPage->pvPageR3);
-     return pPage->pvPageR3;
- }
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  ((pPage)->pvPageR3)
 #endif
+
+/** @def PGMPOOL_PAGE_2_PTR_BY_PGM
+ * Maps a pool page pool into the current context.
+ *
+ * @returns VBox status code.
+ * @param   pPGM    Pointer to the PGM instance data.
+ * @param   pPage   The pool page.
+ *
+ * @remark  In RC this uses PGMGCDynMapHCPage(), so it will consume of the
+ *          small page window employeed by that function. Be careful.
+ * @remark  There is no need to assert on the result.
+ */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
+#else
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
+#endif
+
 
 
 /**
@@ -2896,7 +2921,7 @@ void            pgmR3PoolReset(PVM pVM);
 int             pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv);
 #endif
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-void           *pgmPoolMapPage(PVM pVM, PPGMPOOLPAGE pPage);
+void           *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage);
 #endif
 int             pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage);
 PPGMPOOLPAGE    pgmPoolGetPageByHCPhys(PVM pVM, RTHCPHYS HCPhys);
@@ -4075,7 +4100,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PPGM pPGM, RTGCPTR64 GCPtr, PX86PML
 DECLINLINE(PX86PD) pgmShwGet32BitPDPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return (PX86PD)PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PD)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 #else
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PD          pShwPd;
@@ -4138,7 +4163,7 @@ DECLINLINE(PX86PDE) pgmShwGet32BitPDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return (PX86PDPT)PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PDPT)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 #else
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PDPT pShwPdpt;
@@ -4170,7 +4195,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PPGM pPGM, RTGCPTR GCPtr)
     PPGMPOOLPAGE    pShwPde = pgmPoolGetPageByHCPhys(PGM2VM(pPGM), pPdpt->a[iPdpt].u & X86_PDPE_PG_MASK);
     AssertReturn(pShwPde, NULL);
 
-    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pShwPde);
+    return (PX86PDPAE)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pShwPde);
 #else
     const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
@@ -4235,7 +4260,7 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PPGM pPGM, RTGCPTR GCPtr)
 DECLINLINE(PX86PML4) pgmShwGetLongModePML4Ptr(PPGM pPGM)
 {
 #ifdef VBOX_WITH_PGMPOOL_PAGING_ONLY
-    return (PX86PML4)PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPGM->CTX_SUFF(pShwPageCR3));
+    return (PX86PML4)PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPGM->CTX_SUFF(pShwPageCR3));
 #else
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     PX86PML4 pShwPml4;
@@ -4585,6 +4610,34 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     }
 }
 #endif /* PGMPOOL_WITH_CACHE */
+
+
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+/**
+ * Maps the page into current context (RC and maybe R0).
+ *
+ * @returns pointer to the mapping.
+ * @param   pVM         Pointer to the PGM instance data.
+ * @param   pPage       The page.
+ */
+DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
+{
+    if (pPage->idx >= PGMPOOL_IDX_FIRST)
+    {
+        Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
+        void *pv;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        int rc = pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
+# else
+        int rc = PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
+# endif
+        if (RT_SUCCESS(rc))
+            return pv;
+    }
+    return pgmPoolMapPageFallback(pPGM, pPage);
+}
+#endif
+
 
 /**
  * Tells if mappings are to be put into the shadow page table or not
