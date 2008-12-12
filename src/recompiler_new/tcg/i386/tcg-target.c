@@ -879,7 +879,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 # ifdef RT_OS_DARWIN
     int bias1 = 12, bias2 = 8, bias3 = 4;
 # else
-    int bias1 = bias2 = bias3 = 0;
+    int bias1 = 0, bias2 = 0, bias3 = 0;
 # endif
 #endif
 
