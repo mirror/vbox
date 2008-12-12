@@ -709,7 +709,15 @@ IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32
  */
 int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 {
-#ifdef VBOX_WITH_HOST_VMX
+/* Zarking amateurish Apple engineering!
+   host_vmxon is actually buggy and may panic multicore machines. Reason, it
+   uses a simple lock which will disable preemption of the cpu/thread trying
+   to acquire it.  Then it allocate wired memory in the kernel map for each
+   of the cpus in the system. If anyone else tries to mess around in the
+   kernel map on another CPU while this is going on, there is a fair chance
+   that it might cause the host_vmxon thread to block and hence panic since
+   preemption is disabled. Arrrg! */
+#if 0 /*def VBOX_WITH_HOST_VMX*/
     int rc;
     if (fEnable)
     {
