@@ -267,10 +267,15 @@ typedef enum PGMMODE
 } PGMMODE;
 
 /** Macro for checking if the guest is using paging.
- * @param uType     PGMMODE_*
+ * @param enmMode   PGMMODE_*.
  * @remark  ASSUMES certain order of the PGMMODE_* values.
  */
 #define PGMMODE_WITH_PAGING(enmMode) ((enmMode) >= PGMMODE_32_BIT)
+
+/** Macro for checking if it's one of the long mode modes.
+ * @param enmMode   PGMMODE_*.
+ */
+#define PGMMODE_IS_LONG_MODE(enmMode) ((enmMode) == PGMMODE_AMD64_NX || (enmMode) == PGMMODE_AMD64)
 
 /**
  * The current ROM page protection.
