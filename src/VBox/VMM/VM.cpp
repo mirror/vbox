@@ -2124,11 +2124,11 @@ static int vmr3AtResetRegisterU(PUVM pUVM, void *pvUser, const char *pszDesc, PV
     if (pNew)
     {
         /* fill data. */
-        pNew->pNext     = NULL;
         pNew->pszDesc   = pszDesc;
         pNew->pvUser    = pvUser;
 
         /* insert */
+        pNew->pNext     = *pUVM->vm.s.ppAtResetNext;
         *pUVM->vm.s.ppAtResetNext = pNew;
         pUVM->vm.s.ppAtResetNext = &pNew->pNext;
 
@@ -2537,9 +2537,9 @@ static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState
     /* fill */
     pNew->pfnAtState = pfnAtState;
     pNew->pvUser     = pvUser;
-    pNew->pNext      = NULL;
 
     /* insert */
+    pNew->pNext      = *pUVM->vm.s.ppAtStateNext;
     *pUVM->vm.s.ppAtStateNext = pNew;
     pUVM->vm.s.ppAtStateNext = &pNew->pNext;
 
@@ -2708,9 +2708,9 @@ static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError
     /* fill */
     pNew->pfnAtError = pfnAtError;
     pNew->pvUser     = pvUser;
-    pNew->pNext      = NULL;
 
     /* insert */
+    pNew->pNext      = *pUVM->vm.s.ppAtErrorNext;
     *pUVM->vm.s.ppAtErrorNext = pNew;
     pUVM->vm.s.ppAtErrorNext = &pNew->pNext;
 
@@ -2993,9 +2993,9 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIM
     /* fill */
     pNew->pfnAtRuntimeError = pfnAtRuntimeError;
     pNew->pvUser            = pvUser;
-    pNew->pNext             = NULL;
 
     /* insert */
+    pNew->pNext             = *pUVM->vm.s.ppAtRuntimeErrorNext;
     *pUVM->vm.s.ppAtRuntimeErrorNext = pNew;
     pUVM->vm.s.ppAtRuntimeErrorNext = &pNew->pNext;
 
