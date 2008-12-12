@@ -1923,6 +1923,7 @@ void pgmPoolMonitorModifiedClearAll(PVM pVM)
 }
 
 
+#ifdef IN_RING3
 /**
  * Clear all shadow pages and clear all modification counters.
  *
@@ -2044,6 +2045,7 @@ void pgmPoolClearAll(PVM pVM)
     pPool->cPresent = 0;
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
 }
+#endif /* IN_RING3 */
 
 
 /**
@@ -2068,14 +2070,14 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifndef IN_RC
+# ifdef IN_RING3
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
-# else
+# else  /* !IN_RING3 */
         LogFlow(("SyncCR3: PGM_SYNC_CLEAR_PGM_POOL is set -> VINF_PGM_SYNC_CR3\n"));
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
         return VINF_PGM_SYNC_CR3;
-# endif
+# endif /* !IN_RING3 */
     }
     return VINF_SUCCESS;
 }
