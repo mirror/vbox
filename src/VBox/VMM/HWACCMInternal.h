@@ -34,7 +34,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
-#if HC_ARCH_BITS == 64 // || defined (VBOX_WITH_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) // || defined (VBOX_WITH_64_BITS_GUESTS)
 /* Enable 64 bits guest support. */
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
@@ -200,9 +200,18 @@ typedef struct HWACCM
     /** Set if we're supposed to inject an NMI. */
     bool                        fInjectNMI;
 
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    /** Set if we can support 64-bit guests or not. */
+    bool                        fAllow64BitGuests;
+#endif
+
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
+#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+    bool                        padding[1];
+#else
     bool                        padding[2];
+#endif
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
@@ -210,7 +219,7 @@ typedef struct HWACCM
     /** Maximum ASID allowed. */
     RTUINT                      uMaxASID;
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
     R0PTRTYPE(PFNHWACCMSWITCHERHC) pfnHost32ToGuest64R0;
 
@@ -232,6 +241,8 @@ typedef struct HWACCM
 
     RTRCPTR                     uAlignment[1];
 # endif
+#elif defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+    uint32_t                    u32Alignment[1];
 #endif
 
     struct
@@ -408,7 +419,7 @@ typedef struct VMCSCACHE
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
     } TestOut;
-   struct 
+   struct
    {
         uint64_t    param1;
         uint64_t    param2;

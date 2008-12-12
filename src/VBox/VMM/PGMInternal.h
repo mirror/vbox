@@ -4307,10 +4307,8 @@ DECLINLINE(X86PML4E) pgmShwGetLongModePML4E(PPGM pPGM, RTGCPTR GCPtr)
 DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PPGM pPGM, unsigned int iPml4)
 {
     PX86PML4 pShwPml4 = pgmShwGetLongModePML4Ptr(pPGM);
-
     if (!pShwPml4)
         return NULL;
-
     return &pShwPml4->a[iPml4];
 }
 
