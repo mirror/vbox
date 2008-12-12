@@ -112,6 +112,23 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
 
 
 /**
+ * Removes a CPU given by its index from the set.
+ *
+ * @returns 0 on success, -1 if idCpu isn't valid.
+ * @param   pSet    Pointer to the set.
+ * @param   iCpu    The index of the CPU to delete.
+ * @remarks The modification is atomic.
+ */
+DECLINLINE(int) RTCpuSetDelByIndex(PRTCPUSET pSet, int iCpu)
+{
+    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
+        return -1;
+    ASMAtomicBitClear(pSet, iCpu);
+    return 0;
+}
+
+
+/**
  * Checks if a CPU given by its identifier is a member of the set.
  *
  * @returns true / false accordingly.
