@@ -362,6 +362,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/mp-linux.cpp \
 	r3/linux/rtProcInitExePath-linux.cpp \
 	r3/linux/sched-linux.cpp \
+	r3/linux/sysfs.cpp \
 	r3/linux/time-linux.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/alloc-posix.cpp \
