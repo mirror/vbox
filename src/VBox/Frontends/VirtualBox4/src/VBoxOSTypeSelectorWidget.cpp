@@ -116,12 +116,12 @@ CGuestOSType VBoxOSTypeSelectorWidget::type() const
 void VBoxOSTypeSelectorWidget::retranslateUi()
 {
     mTxFamilyName->setText (tr ("Operating &System:"));
-    mTxFamilyName->setWhatsThis (tr ("Displays the operating system family that "
-                                     "you plan to install into this virtual machine."));
+    mCbFamily->setWhatsThis (tr ("Displays the operating system family that "
+                                 "you plan to install into this virtual machine."));
     mTxTypeName->setText (tr ("V&ersion:"));
-    mTxTypeName->setWhatsThis (tr ("Displays the operating system type that "
-                                   "you plan to install into this virtual "
-                                   "machine (called a guest operating system)."));
+    mCbType->setWhatsThis (tr ("Displays the operating system type that "
+                               "you plan to install into this virtual "
+                               "machine (called a guest operating system)."));
 }
 
 bool VBoxOSTypeSelectorWidget::event (QEvent *aEvent)
