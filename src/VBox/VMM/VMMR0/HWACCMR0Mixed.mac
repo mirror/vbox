@@ -446,7 +446,7 @@ ALIGNCODE(16)
     add     xSP, xS*2
 
     push    xDI
-    mov     xDI, [xSP + xS * 2]         ; pCtx
+    mov     xDI, [xSP + xS * 2]         ; pCtx (*2 to skip the saved LDTR)
 
     mov     qword [xDI + CPUMCTX.eax], rax
     mov     qword [xDI + CPUMCTX.ebx], rbx
