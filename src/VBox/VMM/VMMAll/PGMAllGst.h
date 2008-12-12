@@ -538,7 +538,8 @@ l_try_again:
 #  else
                 pVM->pgm.s.pShwAmd64CR3R0 = MMHyperCCToR0(pVM, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
 #  endif
-                pVM->pgm.s.pShwPaePml4R3 = (R3PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
+                pVM->pgm.s.pShwPaePml4R3 = (R3PTRTYPE(PX86PML4))pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->pvPageR3;
+                Assert(pVM->pgm.s.pShwPaePml4R3);
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                 pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
 #  endif

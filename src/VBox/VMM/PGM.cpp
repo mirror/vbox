@@ -2900,7 +2900,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
 #if HC_ARCH_BITS == 32
     case SUPPAGINGMODE_32_BIT:
     case SUPPAGINGMODE_32_BIT_GLOBAL:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+        for (unsigned i = PGM_TYPE_REAL; i <= PGM_TYPE_PAE; i++)
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_32BIT(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2915,7 +2915,7 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_PAE_NX:
     case SUPPAGINGMODE_PAE_GLOBAL:
     case SUPPAGINGMODE_PAE_GLOBAL_NX:
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+        for (unsigned i = PGM_TYPE_REAL; i <= PGM_TYPE_PAE; i++)
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
             rc = PGM_SHW_NAME_PAE(InitData)(      pVM, pModeData, fResolveGCAndR0); AssertRCReturn(rc, rc);
@@ -2933,9 +2933,9 @@ static int pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0)
     case SUPPAGINGMODE_AMD64_NX:
     case SUPPAGINGMODE_AMD64_GLOBAL_NX:
 # ifdef VBOX_WITH_64_BITS_GUESTS
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_AMD64;i++)
+        for (unsigned i = PGM_TYPE_REAL; i <= PGM_TYPE_AMD64; i++)
 # else
-        for (unsigned i=PGM_TYPE_REAL;i<=PGM_TYPE_PAE;i++)
+        for (unsigned i = PGM_TYPE_REAL; i <= PGM_TYPE_PAE; i++)
 # endif
         {
             pModeData = &pVM->pgm.s.paModeData[pgmModeDataIndex(PGM_TYPE_NESTED, i)];
@@ -3538,7 +3538,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PGMMODE enmGuestMode)
 #ifdef VBOX_WITH_64_BITS_GUESTS
         case PGMMODE_AMD64_NX:
         case PGMMODE_AMD64:
-            GCPhysCR3 = CPUMGetGuestCR3(pVM) & 0xfffffffffffff000ULL; /** @todo define this mask! */
+            GCPhysCR3 = CPUMGetGuestCR3(pVM) & UINT64_C(0xfffffffffffff000); /** @todo define this mask! */
             rc = PGM_GST_NAME_AMD64(Enter)(pVM, GCPhysCR3);
             switch (pVM->pgm.s.enmShadowMode)
             {

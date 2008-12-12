@@ -924,7 +924,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMMR0OPERATION enmOperation, PSUPVMMR0REQ
             return VINF_SUCCESS;
 
 
-#if defined(DEBUG) && HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+#if defined(DEBUG) && HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
         case VMMR0_DO_TEST_SWITCHER3264:
             return HWACCMR0TestSwitcher3264(pVM);
 #endif

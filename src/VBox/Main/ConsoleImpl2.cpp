@@ -209,17 +209,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      0);                     RC_CHECK();
 #endif
-    if (fHWVirtExEnabled)
-    {
-        PCFGMNODE pHWVirtExt;
-        rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                     RC_CHECK();
-        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
-    }
 
-    /* Check REM flavour we wish to use with this VM. Now we assume 64-bit guests
-       can be only enabled if hardware acceleration is used. */
+    PCFGMNODE pHWVirtExt;
+    rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                         RC_CHECK();
     if (fHWVirtExEnabled)
     {
+        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
+
+        /* Indicate whether 64-bit guests are supported or not. */
+        /** @todo This is currently only forced off on 32-bit hosts only because it
+         *        makes a lof of differnese there (REM and Solaris performance). This
+         *        will later be done on all platforms, see @bugref{3383}. */
+
         Bstr osTypeId;
         hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                 H();
 
@@ -234,10 +235,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         if (fSupportsLongMode && fIs64BitGuest)
         {
+            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 1);                RC_CHECK();
+#if ARCH_BITS == 32 /* The recompiler must use load VBoxREM64 (32-bit host only). */
             PCFGMNODE pREM;
             rc = CFGMR3InsertNode(pRoot, "REM", &pREM);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                      RC_CHECK();
+#endif
         }
+#if ARCH_BITS == 32 /* Until we've got a check box on/off thing, 32-bit only. */
+        else
+        {
+            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 0);                RC_CHECK();
+        }
+#endif
     }
 
     /* Nested paging (VT-x/AMD-V) */

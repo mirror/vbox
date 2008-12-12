@@ -1558,9 +1558,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #if !defined(VBOX_ENABLE_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#elif HC_ARCH_BITS == 32 && !defined(RT_OS_DARWIN)
+#elif HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0SwitcherStartVM64;
 #else
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+        if (!pVM->hwaccm.s.fAllow64BitGuests)
+            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+# endif
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM64;
 #endif
         /* Unconditionally update these as wrmsr might have changed them. */
@@ -3267,7 +3271,8 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
 {
 #if HC_ARCH_BITS == 32
     /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invvpid probably takes only 32 bits addresses. (@todo) */
-    if (CPUMIsGuestInLongMode(pVM))
+    if (   CPUMIsGuestInLongMode(pVM)
+        && !VMX_IS_64BIT_HOST_MODE())
     {
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
@@ -3501,7 +3506,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
     }
 }
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
 /**
  * Prepares for and executes VMLAUNCH (64 bits guest mode)
  *
@@ -3620,7 +3625,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     return rc;
 }
 
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) */
 
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)

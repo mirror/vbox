@@ -768,9 +768,13 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #if !defined(VBOX_ENABLE_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#elif HC_ARCH_BITS == 32
+#elif HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
         pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMSwitcherRun64;
 #else
+# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+        if (!pVM->hwaccm.s.fAllow64BitGuests)
+            return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+# endif
         pVCpu->hwaccm.s.svm.pfnVMRun = SVMR0VMRun64;
 #endif
         /* Unconditionally update these as wrmsr might have changed them. (HWACCM_CHANGED_GUEST_SEGMENT_REGS will not be set) */
@@ -2293,7 +2297,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     return VINF_SUCCESS;
 }
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
 /**
  * Prepares for and executes VMRUN (64 bits guests from a 32 bits hosts).
  *
