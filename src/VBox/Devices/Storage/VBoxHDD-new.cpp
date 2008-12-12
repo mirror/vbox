@@ -189,7 +189,7 @@ static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend)
 
     for (unsigned i = 0; i < g_cBackends; i++)
     {
-        if (!strcmp(pszBackend, g_apBackends[i]->pszBackendName))
+        if (!RTStrICmp(pszBackend, g_apBackends[i]->pszBackendName))
         {
             pBackend = g_apBackends[i];
             break;
@@ -280,9 +280,9 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
          * than the previous reads marked as valid. Otherwise this would return
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
-        rc = VERR_VDI_BLOCK_FREE;
+        rc = VERR_VD_BLOCK_FREE;
         for (PVDIMAGE pCurrImage = pImage;
-             pCurrImage != NULL && rc == VERR_VDI_BLOCK_FREE;
+             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
              pCurrImage = pCurrImage->pPrev)
         {
             rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
@@ -291,7 +291,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         }
 
         /* No image in the chain contains the data for the block. */
-        if (rc == VERR_VDI_BLOCK_FREE)
+        if (rc == VERR_VD_BLOCK_FREE)
         {
             memset(pvBuf, '\0', cbThisRead);
             rc = VINF_SUCCESS;
@@ -414,7 +414,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
                                    uOffset - cbPreRead, pvTmp,
                                    cbPreRead + cbThisWrite + cbPostRead,
                                    NULL, &cbPreRead, &cbPostRead, 0);
-    Assert(rc != VERR_VDI_BLOCK_FREE);
+    Assert(rc != VERR_VD_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
 
@@ -493,7 +493,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
                                    uOffset - cbPreRead, pvTmp,
                                    cbPreRead + cbThisWrite + cbPostRead,
                                    NULL, &cbPreRead, &cbPostRead, 0);
-    Assert(rc != VERR_VDI_BLOCK_FREE);
+    Assert(rc != VERR_VD_BLOCK_FREE);
     Assert(cbPreRead == 0);
     Assert(cbPostRead == 0);
 
@@ -527,7 +527,7 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
         rc = pImage->Backend->pfnWrite(pImage->pvBackendData, uOffset, pvBuf,
                                        cbThisWrite, &cbThisWrite, &cbPreRead,
                                        &cbPostRead, fWrite);
-        if (rc == VERR_VDI_BLOCK_FREE)
+        if (rc == VERR_VD_BLOCK_FREE)
         {
             void *pvTmp = RTMemTmpAlloc(cbPreRead + cbThisWrite + cbPostRead);
             AssertBreakStmt(VALID_PTR(pvTmp), rc = VERR_NO_MEMORY);
@@ -799,7 +799,7 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
     /* Go through loaded backends. */
     for (unsigned i = 0; i < g_cBackends; i++)
     {
-        if (!strcmp(pszBackend, g_apBackends[i]->pszBackendName))
+        if (!RTStrICmp(pszBackend, g_apBackends[i]->pszBackendName))
         {
             pEntry->pszBackend = g_apBackends[i]->pszBackendName;
             pEntry->uBackendCaps = g_apBackends[i]->uBackendCaps;
@@ -920,7 +920,17 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
         if (g_apBackends[i]->pfnCheckIfValid)
         {
             rc = g_apBackends[i]->pfnCheckIfValid(pszFilename);
-            if (RT_SUCCESS(rc))
+            if (    RT_SUCCESS(rc)
+                /* The correct backend has been found, but there is a small
+                 * incompatibility so that the file cannot be used. Stop here
+                 * and signal success - the actual open will of course fail,
+                 * but that will create a really sensible error message. */
+                ||  (   rc != VERR_VD_GEN_INVALID_HEADER
+                     && rc != VERR_VD_VDI_INVALID_HEADER
+                     && rc != VERR_VD_VMDK_INVALID_HEADER
+                     && rc != VERR_VD_ISCSI_INVALID_HEADER
+                     && rc != VERR_VD_VHD_INVALID_HEADER
+                     && rc != VERR_VD_RAW_INVALID_HEADER))
             {
                 /* Copy the name into the new string. */
                 char *pszFormat = RTStrDup(g_apBackends[i]->pszBackendName);
@@ -933,6 +943,7 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
                 rc = VINF_SUCCESS;
                 break;
             }
+            rc = VERR_NOT_SUPPORTED;
         }
     }
 
@@ -1057,7 +1068,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                 &&  enmImageType != VD_IMAGE_TYPE_FIXED
                 &&  enmImageType != VD_IMAGE_TYPE_NORMAL)
             {
-                rc = VERR_VDI_INVALID_TYPE;
+                rc = VERR_VD_INVALID_TYPE;
                 break;
             }
             else if (pDisk->cImages != 0)
@@ -1065,7 +1076,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                 if (    enmImageType != VD_IMAGE_TYPE_NORMAL
                     &&  enmImageType != VD_IMAGE_TYPE_DIFF)
                 {
-                    rc = VERR_VDI_INVALID_TYPE;
+                    rc = VERR_VD_INVALID_TYPE;
                     break;
                 }
                 else
@@ -1259,7 +1270,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         /* Check state. */
         AssertMsgBreakStmt(pDisk->cImages == 0,
                            ("Create base image cannot be done with other images open\n"),
-                           rc = VERR_VDI_INVALID_STATE);
+                           rc = VERR_VD_INVALID_STATE);
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1459,7 +1470,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         /* Check state. */
         AssertMsgBreakStmt(pDisk->cImages != 0,
                            ("Create diff image cannot be done without other images open\n"),
-                           rc = VERR_VDI_INVALID_STATE);
+                           rc = VERR_VD_INVALID_STATE);
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1596,7 +1607,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
  * images in the HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImageFrom      Name of the image file to merge from.
  * @param   nImageTo        Name of the image file to merge to.
@@ -1627,7 +1638,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         PVDIMAGE pImageTo = vdGetImageByNumber(pDisk, nImageTo);
         if (!pImageFrom || !pImageTo)
         {
-            rc = VERR_VDI_IMAGE_NOT_FOUND;
+            rc = VERR_VD_IMAGE_NOT_FOUND;
             break;
         }
         AssertBreakStmt(pImageFrom != pImageTo, rc = VERR_INVALID_PARAMETER);
@@ -1673,14 +1684,14 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 rc = pImageTo->Backend->pfnRead(pImageTo->pvBackendData,
                                                 uOffset, pvBuf, cbThisRead,
                                                 &cbThisRead);
-                if (rc == VERR_VDI_BLOCK_FREE)
+                if (rc == VERR_VD_BLOCK_FREE)
                 {
                     /* Search for image with allocated block. Do not attempt to
                      * read more than the previous reads marked as valid.
                      * Otherwise this would return stale data when different
                      * block sizes are used for the images. */
                     for (PVDIMAGE pCurrImage = pImageTo->pPrev;
-                         pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VERR_VDI_BLOCK_FREE;
+                         pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VERR_VD_BLOCK_FREE;
                          pCurrImage = pCurrImage->pPrev)
                     {
                         rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
@@ -1689,7 +1700,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                                                           &cbThisRead);
                     }
 
-                    if (rc != VERR_VDI_BLOCK_FREE)
+                    if (rc != VERR_VD_BLOCK_FREE)
                     {
                         if (RT_FAILURE(rc))
                             break;
@@ -1727,13 +1738,13 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             do
             {
                 size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
-                rc = VERR_VDI_BLOCK_FREE;
+                rc = VERR_VD_BLOCK_FREE;
                 /* Search for image with allocated block. Do not attempt to
                  * read more than the previous reads marked as valid. Otherwise
                  * this would return stale data when different block sizes are
                  * used for the images. */
                 for (PVDIMAGE pCurrImage = pImageFrom;
-                     pCurrImage != NULL && pCurrImage != pImageTo && rc == VERR_VDI_BLOCK_FREE;
+                     pCurrImage != NULL && pCurrImage != pImageTo && rc == VERR_VD_BLOCK_FREE;
                      pCurrImage = pCurrImage->pPrev)
                 {
                     rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
@@ -1741,7 +1752,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                                                       cbThisRead, &cbThisRead);
                 }
 
-                if (rc != VERR_VDI_BLOCK_FREE)
+                if (rc != VERR_VD_BLOCK_FREE)
                 {
                     if (RT_FAILURE(rc))
                         break;
@@ -1845,7 +1856,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * the image at the new location is opened in the same way as the old one was.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDiskFrom       Pointer to source HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
@@ -1893,7 +1904,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                   ("u32Signature=%08x\n", pDiskFrom->u32Signature));
 
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
-        AssertPtrBreakStmt(pImageFrom, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImageFrom, rc = VERR_VD_IMAGE_NOT_FOUND);
         AssertMsgBreakStmt(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
                            rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
@@ -1901,7 +1912,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
         /* If the containers are equal and the backend is the same, rename the image. */
         if (   (pDiskFrom == pDiskTo)
-            && (!strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+            && (!RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
         {
             /* Rename the image. */
             rc = pImageFrom->Backend->pfnRename(pImageFrom->pvBackendData, pszFilename ? pszFilename : pImageFrom->pszFilename);
@@ -1910,7 +1921,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
         /* If the fMoveByRename flag is set and the backend is the same, rename the image. */
         if (   (fMoveByRename == true)
-            && (!strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+            && (!RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
         {
             /* Close the source image. */
             rc = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, false);
@@ -1961,7 +1972,7 @@ movefail:
         cbSizeFrom = pImageFrom->Backend->pfnGetSize(pImageFrom->pvBackendData);
         if (cbSizeFrom == 0)
         {
-            rc = VERR_VDI_VALUE_NOT_FOUND;
+            rc = VERR_VD_VALUE_NOT_FOUND;
             break;
         }
 
@@ -1997,7 +2008,7 @@ movefail:
             break;
 
         pImageTo = pDiskTo->pLast;
-        AssertPtrBreakStmt(pImageTo, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImageTo, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
@@ -2048,7 +2059,7 @@ movefail:
 
         /* If fMoveByRename is set but the backend is different, close and delete pImageFrom. */
         if (   (fMoveByRename == true)
-            && (strcmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+            && (RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
         {
             vdRemoveImageFromList(pDiskFrom, pImageFrom);
 
@@ -2106,7 +2117,7 @@ movefail:
  * will be reopened in read/write mode.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   fDelete         If true, delete the image from the host disk.
  */
@@ -2122,7 +2133,7 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
         unsigned uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
         /* Remove image from list of opened images. */
         vdRemoveImageFromList(pDisk, pImage);
@@ -2233,7 +2244,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
  * Read data from virtual HDD.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of first reading byte from start of disk.
  * @param   pvBuf           Pointer to buffer for reading data.
@@ -2265,7 +2276,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         rc = vdReadHelper(pDisk, pImage, uOffset, pvBuf, cbRead);
     } while (0);
@@ -2278,7 +2289,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
  * Write data to virtual HDD.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   uOffset         Offset of the first byte being
  *                          written from start of disk.
@@ -2311,7 +2322,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
         rc = vdWriteHelper(pDisk, pImage, uOffset, pvBuf, cbWrite);
@@ -2325,7 +2336,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
  * Make sure the on disk representation of a virtual HDD is up to date.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_NOT_OPENED if no image is opened in HDD container.
+ * @returns VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
@@ -2340,7 +2351,7 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pvBackendData);
@@ -2464,8 +2475,8 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
  * Get virtual disk PCHS geometry stored in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to store PCHS geometry. Not NULL.
@@ -2489,7 +2500,7 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (pImage == pDisk->pLast)
         {
@@ -2497,7 +2508,7 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             if (pDisk->PCHSGeometry.cCylinders != 0)
                 *pPCHSGeometry = pDisk->PCHSGeometry;
             else
-                rc = VERR_VDI_GEOMETRY_NOT_SET;
+                rc = VERR_VD_GEOMETRY_NOT_SET;
         }
         else
             rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
@@ -2516,8 +2527,8 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * Note that in case of unrecoverable error all images in HDD container will be closed.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pPCHSGeometry   Where to load PCHS geometry from. Not NULL.
@@ -2547,7 +2558,7 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (pImage == pDisk->pLast)
         {
@@ -2610,8 +2621,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * Get virtual disk LCHS geometry stored in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to store LCHS geometry. Not NULL.
@@ -2635,7 +2646,7 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (pImage == pDisk->pLast)
         {
@@ -2643,7 +2654,7 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             if (pDisk->LCHSGeometry.cCylinders != 0)
                 *pLCHSGeometry = pDisk->LCHSGeometry;
             else
-                rc = VERR_VDI_GEOMETRY_NOT_SET;
+                rc = VERR_VD_GEOMETRY_NOT_SET;
         }
         else
             rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
@@ -2662,8 +2673,8 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * Note that in case of unrecoverable error all images in HDD container will be closed.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the HDD container.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the HDD container.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pLCHSGeometry   Where to load LCHS geometry from. Not NULL.
@@ -2693,7 +2704,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (pImage == pDisk->pLast)
         {
@@ -2756,7 +2767,7 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
  * Get version of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puVersion       Where to store the image version.
@@ -2780,7 +2791,7 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puVersion = pImage->Backend->pfnGetVersion(pImage->pvBackendData);
     } while (0);
@@ -2793,7 +2804,7 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
  * Get type of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   penmType        Where to store the image type.
@@ -2817,7 +2828,7 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (    pImage->enmImageType >= VD_IMAGE_TYPE_FIRST
             &&  pImage->enmImageType <= VD_IMAGE_TYPE_DIFF)
@@ -2826,7 +2837,7 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_INVALID_TYPE;
+            rc = VERR_VD_INVALID_TYPE;
     } while (0);
 
     LogFlowFunc(("returns %Rrc uenmType=%u\n", rc, *penmType));
@@ -2838,7 +2849,7 @@ VBOXDDU_DECL(int) VDGetImageType(PVBOXHDD pDisk, unsigned nImage,
  * List the capabilities of image backend in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to the HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pbackendInfo    Where to store the backend information.
@@ -2862,7 +2873,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (    pImage->enmImageType >= VD_IMAGE_TYPE_FIRST
             &&  pImage->enmImageType <= VD_IMAGE_TYPE_DIFF)
@@ -2874,7 +2885,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_INVALID_TYPE;
+            rc = VERR_VD_INVALID_TYPE;
     } while (0);
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2885,7 +2896,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
  * Get flags of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puImageFlags    Where to store the image flags.
@@ -2909,7 +2920,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
     } while (0);
@@ -2922,7 +2933,7 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
  * Get open flags of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   puOpenFlags     Where to store the image open flags.
@@ -2946,7 +2957,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
     } while (0);
@@ -2961,7 +2972,7 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * Note that in case of unrecoverable error all images in HDD container will be closed.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
@@ -2984,7 +2995,7 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnSetOpenFlags(pImage->pvBackendData,
                                               uOpenFlags);
@@ -3000,7 +3011,7 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
  * purposes.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_BUFFER_OVERFLOW if pszFilename buffer too small to hold filename.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
@@ -3029,7 +3040,7 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         size_t cb = strlen(pImage->pszFilename);
         if (cb <= cbFilename)
@@ -3053,7 +3064,7 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
  * Get the comment line of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @returns VERR_BUFFER_OVERFLOW if pszComment buffer too small to hold comment text.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
@@ -3082,7 +3093,7 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetComment(pImage->pvBackendData, pszComment,
                                             cbComment);
@@ -3096,7 +3107,7 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
  * Changes the comment line of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pszComment      New comment string (UTF-8). NULL is allowed to reset the comment.
@@ -3120,7 +3131,7 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
     } while (0);
@@ -3134,7 +3145,7 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
  * Get UUID of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image creation UUID.
@@ -3156,7 +3167,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     } while (0);
@@ -3169,7 +3180,7 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
  * Set the image's UUID. Should not be used by normal applications.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
@@ -3191,7 +3202,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         RTUUID Uuid;
         if (!pUuid)
@@ -3210,7 +3221,7 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
  * Get last modification UUID of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the image modification UUID.
@@ -3232,7 +3243,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetModificationUuid(pImage->pvBackendData,
                                                      pUuid);
@@ -3246,7 +3257,7 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
  * Set the image's last modification UUID. Should not be used by normal applications.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           New modification UUID of the image. If NULL, a new UUID is created.
@@ -3269,7 +3280,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         RTUUID Uuid;
         if (!pUuid)
@@ -3289,7 +3300,7 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
  * Get parent UUID of image in HDD container.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pUuid           Where to store the parent image UUID.
@@ -3312,7 +3323,7 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
@@ -3348,7 +3359,7 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         RTUUID Uuid;
         if (!pUuid)
@@ -3391,7 +3402,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
  * Query if asynchronous operations are supported for this disk.
  *
  * @returns VBox status code.
- * @returns VERR_VDI_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDisk           Pointer to the HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pfAIOSupported  Where to store if async IO is supported.
@@ -3413,7 +3424,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
                            rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_IMAGE_NOT_FOUND);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         if (pImage->Backend->uBackendCaps & VD_CAP_ASYNC)
             *pfAIOSupported = pImage->Backend->pfnIsAsyncIOSupported(pImage->pvBackendData);
@@ -3440,7 +3451,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                               PPDMDATASEG paSeg, unsigned cSeg,
                               void *pvUser)
 {
-    int rc = VERR_VDI_BLOCK_FREE;
+    int rc = VERR_VD_BLOCK_FREE;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbRead=%zu\n",
                  pDisk, uOffset, paSeg, cSeg, cbRead));
@@ -3467,11 +3478,11 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         /* @todo: This does not work for images which do not have all meta data in memory. */
         for (PVDIMAGE pCurrImage = pImage;
-             pCurrImage != NULL && rc == VERR_VDI_BLOCK_FREE;
+             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
              pCurrImage = pCurrImage->pPrev)
         {
             rc = pCurrImage->Backend->pfnAsyncRead(pCurrImage->pvBackendData,
@@ -3480,7 +3491,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         }
 
         /* No image in the chain contains the data for the block. */
-        if (rc == VERR_VDI_BLOCK_FREE)
+        if (rc == VERR_VD_BLOCK_FREE)
         {
             for (unsigned i = 0; i < cSeg && (cbRead > 0); i++)
             {
@@ -3488,7 +3499,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                 cbRead -= paSeg[i].cbSeg;
             }
             /* Request finished without the need to enqueue a async I/O request. Tell caller. */
-            rc = VINF_VDI_ASYNC_IO_FINISHED;
+            rc = VINF_VD_ASYNC_IO_FINISHED;
         }
 
     } while (0);
@@ -3540,7 +3551,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 
 
         PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VDI_NOT_OPENED);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnAsyncWrite(pImage->pvBackendData,

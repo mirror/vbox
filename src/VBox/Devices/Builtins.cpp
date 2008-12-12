@@ -180,9 +180,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvBlock);
     if (RT_FAILURE(rc))
         return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVBoxHDD);
-    if (RT_FAILURE(rc))
-        return rc;
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVD);
     if (RT_FAILURE(rc))
         return rc;
@@ -202,14 +199,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_WITH_ISCSI
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvISCSI);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvISCSITransportTcp);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
 #ifndef RT_OS_L4
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNAT);
     if (RT_FAILURE(rc))

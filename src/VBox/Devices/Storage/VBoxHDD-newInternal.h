@@ -160,8 +160,8 @@ typedef struct VBOXHDDBACKEND
      * boundary.
      *
      * @returns VBox status code.
-     * @returns VINF_VDI_BLOCK_FREE if this image contains no data for this block.
-     * @returns VINF_VDI_BLOCK_ZERO if this image contains a zero data block.
+     * @returns VINF_VD_BLOCK_FREE if this image contains no data for this block.
+     * @returns VINF_VD_BLOCK_ZERO if this image contains a zero data block.
      * @param   pvBackendData   Opaque state data for this image.
      * @param   off             Offset to start reading from.
      * @param   pvBuf           Where to store the read bits.
@@ -176,7 +176,7 @@ typedef struct VBOXHDDBACKEND
      * boundary.
      *
      * @returns VBox status code.
-     * @returns VINF_VDI_BLOCK_FREE if this image contains no data for this block and
+     * @returns VINF_VD_BLOCK_FREE if this image contains no data for this block and
      *          this is not a full-block write. The write must be repeated with
      *          the correct amount of prefix/postfix data read from the images below
      *          in the image stack. This might not be the most convenient interface,
@@ -188,7 +188,7 @@ typedef struct VBOXHDDBACKEND
      * @param   cbWrite         Number of bytes to write.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
      *                          be processed. In case the function returned
-     *                          VINF_VDI_BLOCK_FREE this is the number of bytes
+     *                          VINF_VD_BLOCK_FREE this is the number of bytes
      *                          that could be written in a full block write,
      *                          when prefixed/postfixed by the appropriate
      *                          amount of (previously read) padding data.
@@ -249,7 +249,7 @@ typedef struct VBOXHDDBACKEND
      * Get virtual disk PCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
-     * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the image.
+     * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the image.
      * @param   pvBackendData   Opaque state data for this image.
      * @param   pPCHSGeometry   Where to store the geometry. Not NULL.
      */
@@ -269,7 +269,7 @@ typedef struct VBOXHDDBACKEND
      * Get virtual disk LCHS geometry stored in a disk image.
      *
      * @returns VBox status code.
-     * @returns VERR_VDI_GEOMETRY_NOT_SET if no geometry present in the image.
+     * @returns VERR_VD_GEOMETRY_NOT_SET if no geometry present in the image.
      * @param   pvBackendData   Opaque state data for this image.
      * @param   pLCHSGeometry   Where to store the geometry. Not NULL.
      */

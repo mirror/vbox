@@ -116,11 +116,11 @@ static void vdiInitPreHeader(PVDIPREHEADER pPreHdr)
 static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
 {
     if (pPreHdr->u32Signature != VDI_IMAGE_SIGNATURE)
-        return VERR_VDI_INVALID_SIGNATURE;
+        return VERR_VD_VDI_INVALID_SIGNATURE;
 
     if (    VDI_GET_VERSION_MAJOR(pPreHdr->u32Version) != VDI_IMAGE_VERSION_MAJOR
         &&  pPreHdr->u32Version != 0x00000002)    /* old version. */
-        return VERR_VDI_UNSUPPORTED_VERSION;
+        return VERR_VD_VDI_UNSUPPORTED_VERSION;
 
     return VINF_SUCCESS;
 }
@@ -245,28 +245,28 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
             {
                 LogRel(("VDI: v1 header size wrong (%d < %d)\n",
                        pHeader->u.v1.cbHeader, sizeof(VDIHEADER1)));
-                return VERR_VDI_INVALID_HEADER;
+                return VERR_VD_VDI_INVALID_HEADER;
             }
 
             if (getImageBlocksOffset(pHeader) < (sizeof(VDIPREHEADER) + sizeof(VDIHEADER1)))
             {
                 LogRel(("VDI: v1 blocks offset wrong (%d < %d)\n",
                        getImageBlocksOffset(pHeader), sizeof(VDIPREHEADER) + sizeof(VDIHEADER1)));
-                return VERR_VDI_INVALID_HEADER;
+                return VERR_VD_VDI_INVALID_HEADER;
             }
 
             if (getImageDataOffset(pHeader) < (getImageBlocksOffset(pHeader) + getImageBlocks(pHeader) * sizeof(VDIIMAGEBLOCKPOINTER)))
             {
                 LogRel(("VDI: v1 image data offset wrong (%d < %d)\n",
                        getImageDataOffset(pHeader), getImageBlocksOffset(pHeader) + getImageBlocks(pHeader) * sizeof(VDIIMAGEBLOCKPOINTER)));
-                return VERR_VDI_INVALID_HEADER;
+                return VERR_VD_VDI_INVALID_HEADER;
             }
 
             break;
         }
         default:
             /* Unsupported. */
-            return VERR_VDI_UNSUPPORTED_VERSION;
+            return VERR_VD_VDI_UNSUPPORTED_VERSION;
     }
 
     /* Check common header parameters. */
@@ -341,7 +341,7 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
         fFailed = true;
     }
 
-    return fFailed ? VERR_VDI_INVALID_HEADER : VINF_SUCCESS;
+    return fFailed ? VERR_VD_VDI_INVALID_HEADER : VINF_SUCCESS;
 }
 
 /**
@@ -380,7 +380,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, VDIMAGETYPE enmType,
     if (   VALID_PTR(pszComment)
         && strlen(pszComment) >= VDI_IMAGE_COMMENT_SIZE)
     {
-        rc = vdiError(pImage, VERR_VDI_COMMENT_TOO_LONG, RT_SRC_POS, N_("VDI: comment is too long for '%s'"), pImage->pszFilename);
+        rc = vdiError(pImage, VERR_VD_VDI_COMMENT_TOO_LONG, RT_SRC_POS, N_("VDI: comment is too long for '%s'"), pImage->pszFilename);
         goto out;
     }
     AssertPtr(pPCHSGeometry);
@@ -655,14 +655,14 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
             }
             break;
         default:
-            rc = vdiError(pImage, VERR_VDI_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VDI: unsupported major version %u in '%s'"), GET_MAJOR_HEADER_VERSION(&pImage->Header), pImage->pszFilename);
+            rc = vdiError(pImage, VERR_VD_VDI_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VDI: unsupported major version %u in '%s'"), GET_MAJOR_HEADER_VERSION(&pImage->Header), pImage->pszFilename);
             goto out;
     }
 
     rc = vdiValidateHeader(&pImage->Header);
     if (RT_FAILURE(rc))
     {
-        rc = vdiError(pImage, VERR_VDI_UNSUPPORTED_VERSION, RT_SRC_POS, N_("VDI: invalid header in '%s'"), pImage->pszFilename);
+        rc = vdiError(pImage, VERR_VD_VDI_INVALID_HEADER, RT_SRC_POS, N_("VDI: invalid header in '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -706,7 +706,7 @@ static int vdiUpdateHeader(PVDIIMAGEDESC pImage)
                 rc = RTFileWriteAt(pImage->File, sizeof(VDIPREHEADER), &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus), NULL);
             break;
         default:
-            rc = VERR_VDI_UNSUPPORTED_VERSION;
+            rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             break;
     }
     AssertMsgRC(rc, ("vdiUpdateHeader failed, filename=\"%s\" rc=%Rrc\n", pImage->pszFilename, rc));
@@ -1029,7 +1029,7 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     Assert(!(cbToRead % 512));
 
     if (pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_FREE)
-        rc = VERR_VDI_BLOCK_FREE;
+        rc = VERR_VD_BLOCK_FREE;
     else if (pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO)
     {
         memset(pvBuf, 0, cbToRead);
@@ -1068,7 +1068,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
-        rc = VERR_VDI_IMAGE_READ_ONLY;
+        rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
     }
 
@@ -1137,7 +1137,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
              * anything except letting the upper layer know what to do. */
             *pcbPreRead = offWrite % getImageBlockSize(&pImage->Header);
             *pcbPostRead = getImageBlockSize(&pImage->Header) - cbToWrite - *pcbPreRead;
-            rc = VERR_VDI_BLOCK_FREE;
+            rc = VERR_VD_BLOCK_FREE;
         }
     }
     else
@@ -1200,7 +1200,7 @@ static int vdiGetImageType(void *pBackendData, PVDIMAGETYPE penmImageType)
     if (pImage)
         *penmImageType = vdiTranslateTypeVDI2VD(getImageType(&pImage->Header));
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc enmImageType=%u\n", rc, *penmImageType));
     return rc;
@@ -1266,10 +1266,10 @@ static int vdiGetPCHSGeometry(void *pBackendData,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
@@ -1289,7 +1289,7 @@ static int vdiSetPCHSGeometry(void *pBackendData,
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -1297,7 +1297,7 @@ static int vdiSetPCHSGeometry(void *pBackendData,
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1331,10 +1331,10 @@ static int vdiGetLCHSGeometry(void *pBackendData,
             rc = VINF_SUCCESS;
         }
         else
-            rc = VERR_VDI_GEOMETRY_NOT_SET;
+            rc = VERR_VD_GEOMETRY_NOT_SET;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
@@ -1355,7 +1355,7 @@ static int vdiSetLCHSGeometry(void *pBackendData,
     {
         if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
         {
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
             goto out;
         }
 
@@ -1373,7 +1373,7 @@ static int vdiSetLCHSGeometry(void *pBackendData,
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1465,7 +1465,7 @@ static int vdiGetComment(void *pBackendData, char *pszComment,
             rc = VERR_BUFFER_OVERFLOW;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc comment=\"%s\"\n", rc, pszComment));
     return rc;
@@ -1482,7 +1482,7 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
 
     if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
     {
-        rc = VERR_VDI_IMAGE_READ_ONLY;
+        rc = VERR_VD_IMAGE_READ_ONLY;
         goto out;
     }
 
@@ -1492,7 +1492,7 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
         if (cchComment >= VDI_IMAGE_COMMENT_SIZE)
         {
             LogFunc(("pszComment is too long, %d bytes!\n", cchComment));
-            rc = VERR_VDI_COMMENT_TOO_LONG;
+            rc = VERR_VD_VDI_COMMENT_TOO_LONG;
             goto out;
         }
 
@@ -1509,10 +1509,10 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
             rc = vdiUpdateHeader(pImage);
         }
         else
-            rc = VERR_VDI_UNSUPPORTED_VERSION;
+            rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1534,7 +1534,7 @@ static int vdiGetUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -1561,14 +1561,14 @@ static int vdiSetUuid(void *pBackendData, PCRTUUID pUuid)
             else
             {
                 LogFunc(("Version is not supported!\n"));
-                rc = VERR_VDI_UNSUPPORTED_VERSION;
+                rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             }
         }
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1589,7 +1589,7 @@ static int vdiGetModificationUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -1616,14 +1616,14 @@ static int vdiSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
             else
             {
                 LogFunc(("Version is not supported!\n"));
-                rc = VERR_VDI_UNSUPPORTED_VERSION;
+                rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             }
         }
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1644,7 +1644,7 @@ static int vdiGetParentUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -1671,14 +1671,14 @@ static int vdiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
             else
             {
                 LogFunc(("Version is not supported!\n"));
-                rc = VERR_VDI_UNSUPPORTED_VERSION;
+                rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             }
         }
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1699,7 +1699,7 @@ static int vdiGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
         rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -1723,14 +1723,14 @@ static int vdiSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
             else
             {
                 LogFunc(("Version is not supported!\n"));
-                rc = VERR_VDI_UNSUPPORTED_VERSION;
+                rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             }
         }
         else
-            rc = VERR_VDI_IMAGE_READ_ONLY;
+            rc = VERR_VD_IMAGE_READ_ONLY;
     }
     else
-        rc = VERR_VDI_NOT_OPENED;
+        rc = VERR_VD_NOT_OPENED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

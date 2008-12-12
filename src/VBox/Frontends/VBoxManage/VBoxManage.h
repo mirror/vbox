@@ -69,7 +69,7 @@
 #define USAGE_SHAREDFOLDER_REMOVE   RT_BIT_64(26)
 #define USAGE_LOADSYMS              RT_BIT_64(29)
 #define USAGE_UNLOADSYMS            RT_BIT_64(30)
-#define USAGE_SETVDIUUID            RT_BIT_64(31)
+#define USAGE_SETHDUUID             RT_BIT_64(31)
 #define USAGE_CONVERTDD             RT_BIT_64(32)
 #define USAGE_LISTPARTITIONS        RT_BIT_64(33)
 #define USAGE_CREATERAWVMDK         RT_BIT_64(34)
@@ -83,7 +83,7 @@
 #endif  /* VBOX_WITH_GUEST_PROPS defined */
 #define USAGE_CONVERTTORAW          RT_BIT_64(41)
 #define USAGE_METRICS               RT_BIT_64(42)
-#define USAGE_CONVERTDISK           RT_BIT_64(43)
+#define USAGE_CONVERTHD             RT_BIT_64(43)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 

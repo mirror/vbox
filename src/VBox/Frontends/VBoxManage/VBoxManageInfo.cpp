@@ -32,7 +32,6 @@
 
 #include <VBox/com/VirtualBox.h>
 
-#include <VBox/VBoxHDD.h>
 #include <VBox/log.h>
 #include <iprt/stream.h>
 #include <iprt/time.h>

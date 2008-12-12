@@ -26,34 +26,34 @@ include	$(KBUILD_PATH)/subheader.kmk
 # vditool - useful too for manipulating VDIs, but now pretty obsolete and
 # probably will go away soon. Testcase only now.
 #
-ifdef VBOX_WITH_TESTCASES
- PROGRAMS += vditool
- ifeq ($(KBUILD_TARGET),l4)
-  vditool_TEMPLATE = VBOXLNXHOSTR3EXE
-  vditool_LIBS     = \
-	$(PATH_LIB)/VBoxDDULnxHostR3.a \
-	$(PATH_LIB)/RuntimeLnxHostR3.a
- else
-  vditool_TEMPLATE = VBOXR3TSTEXE
-  vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
- endif
- vditool_SOURCES   = vditool.cpp
-endif
+#ifdef VBOX_WITH_TESTCASES
+# PROGRAMS += vditool
+# ifeq ($(KBUILD_TARGET),l4)
+#  vditool_TEMPLATE = VBOXLNXHOSTR3EXE
+#  vditool_LIBS     = \
+#	$(PATH_LIB)/VBoxDDULnxHostR3.a \
+#	$(PATH_LIB)/RuntimeLnxHostR3.a
+# else
+#  vditool_TEMPLATE = VBOXR3TSTEXE
+#  vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
+# endif
+# vditool_SOURCES   = vditool.cpp
+#endif
 
 
 #
 # Basic testcase for the VDI code.
 #
-ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVDI
- ifeq ($(KBUILD_TARGET),l4)
-  tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
- else
-  tstVDI_TEMPLATE = VBOXR3TSTEXE
- endif
- tstVDI_LIBS     = $(vditool_LIBS)
- tstVDI_SOURCES  = tstVDI.cpp
-endif
+#ifdef VBOX_WITH_TESTCASES
+# PROGRAMS += tstVDI
+# ifeq ($(KBUILD_TARGET),l4)
+#  tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
+# else
+#  tstVDI_TEMPLATE = VBOXR3TSTEXE
+# endif
+# tstVDI_LIBS     = $(vditool_LIBS)
+# tstVDI_SOURCES  = tstVDI.cpp
+#endif
 
 #
 # Basic testcases for the VD code.
@@ -67,8 +67,8 @@ ifdef VBOX_WITH_TESTCASES
   tstVD_TEMPLATE = VBOXR3TSTEXE
   tstVD-2_TEMPLATE = VBOXR3TSTEXE
  endif
- tstVD_LIBS     = $(vditool_LIBS)
- tstVD-2_LIBS     = $(vditool_LIBS)
+ tstVD_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
+ tstVD-2_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp
 endif
