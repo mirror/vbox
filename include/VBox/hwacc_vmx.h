@@ -1447,9 +1447,9 @@ DECLINLINE(int) VMXWriteVMCS64(uint32_t idxField, uint64_t u64Val)
     int rc;
 
     rc  = VMXWriteVMCS32(idxField, u64Val);
- 	rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL));
- 	AssertRC(rc);
- 	return rc;
+    rc |= VMXWriteVMCS32(idxField + 1, (uint32_t)(u64Val >> 32ULL));
+    AssertRC(rc);
+    return rc;
 }
 #endif
 
