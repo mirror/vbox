@@ -794,9 +794,14 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     struct mbuf *m;
     struct icmp_msg *icm;
     uint8_t proto;
+    int hlen;
 
+#ifndef RT_OS_DARWIN
     ip = (struct ip *)buff;
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+#else
+    icp = (struct icmp *)buff;
+#endif
 
     LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
     if (icp->icmp_type != ICMP_ECHOREPLY && icp->icmp_type != ICMP_TIMXCEED)
@@ -823,9 +828,10 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
     /* Now ip is pointing on header we've sent from guest */
+    hlen = ip->ip_hl << 2;
     if (icp->icmp_type == ICMP_TIMXCEED)
     {
-        old_ip_len = (ip->ip_hl << 2) + 64;
+        old_ip_len = hlen + 64;
         memcpy(ip_copy, ip, old_ip_len);
     }
 
@@ -833,8 +839,18 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     dst = ip->ip_src.s_addr;
 
     /* overide ther tail of old packet */
+#ifdef RT_OS_DARWIN
+    /* on Darwin don't have IP header in the buffer */
+    m->m_data += hlen;
+    m->m_len -= hlen;
+#endif
     memcpy(m->m_data, buff, len);
     m->m_len = len;
+#ifdef RT_OS_DARWIN
+    /* on Darwin don't have IP header in the buffer */
+    m->m_data -= hlen;
+    m->m_len += hlen;
+#endif
     ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
