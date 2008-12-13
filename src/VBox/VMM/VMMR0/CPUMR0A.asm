@@ -434,7 +434,6 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-
 ENDPROC     CPUMSaveXMM
 
 
@@ -503,3 +502,120 @@ BEGINPROC cpumR0GetMXCSR
     mov     eax, dword [xSP - 8]
     ret
 ENDPROC   cpumR0GetMXCSR
+
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+;;
+; DECLASM(void)     cpumR0SaveDRx(uint64_t *pa4Regs);
+;
+ALIGNCODE(16)
+BEGINPROC cpumR0SaveDRx
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    mov     xCX, rdi
+ %endif
+%else
+    mov     xCX, dword [esp + 4]
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+%endif
+
+    ;
+    ; Do the job.
+    ;
+    mov     xAX, dr0
+    mov     xDX, dr1
+    mov     [xCX],         xAX
+    mov     [xCX + 8 * 1], xDX
+    mov     xAX, dr2
+    mov     xDX, dr3
+    mov     [xCX + 8 * 2], xAX
+    mov     [xCX + 8 * 3], xDX
+
+.done:
+    ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     ecx, 0ffffffffh
+
+    mov     rax, dr0
+    mov     rdx, dr1
+    mov     r8,  dr2
+    mov     r9,  dr3
+    mov     [rcx],         rax
+    mov     [rcx + 8 * 1], rdx
+    mov     [rcx + 8 * 2], r8
+    mov     [rcx + 8 * 3], r9
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+ENDPROC   cpumR0SaveDRx
+
+
+;;
+; DECLASM(void)     cpumR0LoadDRx(uint64_t const *pa4Regs);
+;
+ALIGNCODE(16)
+BEGINPROC cpumR0LoadDRx
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+    mov     xCX, rdi
+ %endif
+%else
+    mov     xCX, dword [esp + 4]
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+%endif
+
+    ;
+    ; Do the job.
+    ;
+    mov     xAX, [xCX]
+    mov     xDX, [xCX + 8 * 1]
+    mov     dr0, xAX
+    mov     dr1, xDX
+    mov     xAX, [xCX + 8 * 2]
+    mov     xDX, [xCX + 8 * 3]
+    mov     dr2, xAX
+    mov     dr3, xDX
+
+.done:
+    ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     ecx, 0ffffffffh
+
+    mov     rax, [rcx]
+    mov     rdx, [rcx + 8 * 1]
+    mov     r8,  [rcx + 8 * 2]
+    mov     r9,  [rcx + 8 * 3]
+    mov     dr0, rax
+    mov     dr1, rdx
+    mov     dr2, r8
+    mov     dr3, r9
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+ENDPROC   cpumR0LoadDRx
+
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0

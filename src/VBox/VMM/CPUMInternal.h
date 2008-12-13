@@ -389,6 +389,8 @@ DECLASM(void)     cpumR0SetFCW(uint16_t u16FCW);
 DECLASM(uint16_t) cpumR0GetFCW(void);
 DECLASM(void)     cpumR0SetMXCSR(uint32_t u32MXCSR);
 DECLASM(uint32_t) cpumR0GetMXCSR(void);
+DECLASM(void)     cpumR0LoadDRx(uint64_t const *pa4Regs);
+DECLASM(void)     cpumR0SaveDRx(uint64_t *pa4Regs);
 #endif
 
 __END_DECLS
