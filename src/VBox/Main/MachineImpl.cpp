@@ -5884,7 +5884,17 @@ HRESULT Machine::saveSettings (int aFlags /*= 0*/)
         machineNode.setValue <Bstr> ("OSType", mUserData->mOSTypeId);
 
         /* stateFile (optional) */
-        if (mData->mMachineState == MachineState_Saved)
+        /// @todo The reason for MachineState_Restoring below:
+        /// PushGuestProperties() is always called from Console::powerDown()
+        /// (including the case when restoring from the saved state fails) and
+        /// calls SaveSettings() to save guest properties. Since the saved state
+        /// file is still present there (and should be kept), we must save it
+        /// while in Restoring state too. However, calling SaveSettings() from
+        /// PushGuestProperties() is wrong in the first place. A proper way is
+        /// to only save guest properties node and not involve the whole save
+        /// process.
+        if (mData->mMachineState == MachineState_Saved ||
+            mData->mMachineState == MachineState_Restoring)
         {
             Assert (!mSSData->mStateFilePath.isEmpty());
             /* try to make the file name relative to the settings file dir */
