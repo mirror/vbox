@@ -149,7 +149,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     struct socket *last_socket = NULL;
     struct socket *so = NULL;
     struct in_addr laddr, faddr;
-    u_int lport, fport;
+    u_short lport, fport;
 
     laddr.s_addr = ~0;
     faddr.s_addr = ~0;
