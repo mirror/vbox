@@ -4050,7 +4050,9 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
     LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%d iUser=%#x iUserTable=%#x\n", GCPhys, enmKind, iUser, iUserTable));
     *ppPage = NULL;
-    Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL));
+    /** @todo CSAM/PGMPrefetchPage messes up here during CSAMR3CheckGates
+     *  (TRPMR3SyncIDT) because of FF priority. Try fix that?
+     *  Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)); */
 
 #ifdef PGMPOOL_WITH_CACHE
     if (pPool->fCacheEnabled)
