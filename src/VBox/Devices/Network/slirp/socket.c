@@ -17,6 +17,7 @@
 #include <icmpapi.h>
 #endif
 
+
 #ifdef VBOX_WITH_SLIRP_ICMP
 static void send_icmp_to_guest(PNATState, char *, size_t, struct socket *, const struct sockaddr_in *);
 static void sorecvfrom_icmp_win(PNATState, struct socket *);

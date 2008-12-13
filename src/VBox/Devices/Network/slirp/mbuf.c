@@ -57,8 +57,8 @@ m_get(PNATState pData)
     if (m_freelist.m_next == &m_freelist)
     {
         m = (struct mbuf *)malloc(msize);
-        if (m == NULL) goto
-            end_error;
+        if (m == NULL)
+            goto end_error;
         mbuf_alloced++;
         if (mbuf_alloced > mbuf_thresh)
             flags = M_DOFREE;
@@ -149,13 +149,13 @@ m_inc(struct mbuf *m, int size)
     int datasize;
 
     /* some compiles throw up on gotos.  This one we can fake. */
-    if (m->m_size>size)
+    if (m->m_size > size)
         return;
 
     if (m->m_flags & M_EXT)
     {
         datasize = m->m_data - m->m_ext;
-        m->m_ext = (char *)realloc(m->m_ext,size);
+        m->m_ext = (char *)realloc(m->m_ext, size);
 #if 0
         if (m->m_ext == NULL)
             return (struct mbuf *)NULL;
