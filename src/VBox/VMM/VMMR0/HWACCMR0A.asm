@@ -51,7 +51,7 @@
 %ifdef RT_ARCH_AMD64
  %define MAYBE_64_BIT
 %endif
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
  %define MAYBE_64_BIT
 %endif
 
@@ -213,7 +213,7 @@
 ;*******************************************************************************
 ;* External Symbols                                                            *
 ;*******************************************************************************
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 extern NAME(SUPR0AbsIs64bit)
 extern NAME(SUPR0Abs64bitKernelCS)
 extern NAME(SUPR0Abs64bitKernelSS)
@@ -225,7 +225,7 @@ extern NAME(SUPR0AbsKernelCS)
 ;*******************************************************************************
 ;*  Global Variables                                                           *
 ;*******************************************************************************
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 BEGINDATA
 ;;
 ; Store the SUPR0AbsIs64bit absolute value here so we can cmp/test without
@@ -261,13 +261,13 @@ BEGINPROC VMXWriteVMCS64
 %else  ; RT_ARCH_X86
     mov         ecx, [esp + 4]          ; idxField
     lea         edx, [esp + 8]          ; &u64Data
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp         byte [NAME(g_fVMXIs64bitHost)], 0
     jz          .legacy_mode
     db          0xea                    ; jmp far .sixtyfourbit_mode
     dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmwrite     ecx, [edx]              ; low dword
     jz          .done
     jc          .done
@@ -285,7 +285,7 @@ BEGINPROC VMXWriteVMCS64
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -301,7 +301,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXWriteVMCS64
 
 
@@ -328,13 +328,13 @@ BEGINPROC VMXReadVMCS64
 %else  ; RT_ARCH_X86
     mov         ecx, [esp + 4]          ; idxField
     mov         edx, [esp + 8]          ; pData
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp         byte [NAME(g_fVMXIs64bitHost)], 0
     jz          .legacy_mode
     db          0xea                    ; jmp far .sixtyfourbit_mode
     dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmread      [edx], ecx              ; low dword
     jz          .done
     jc          .done
@@ -352,7 +352,7 @@ BEGINPROC VMXReadVMCS64
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -368,7 +368,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXReadVMCS64
 
 
@@ -397,13 +397,13 @@ BEGINPROC VMXReadVMCS32
 %else  ; RT_ARCH_X86
     mov     ecx, [esp + 4]              ; idxField
     mov     edx, [esp + 8]              ; pu32Data
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmread  [edx], ecx
 %endif ; RT_ARCH_X86
@@ -416,7 +416,7 @@ BEGINPROC VMXReadVMCS32
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -433,7 +433,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXReadVMCS32
 
 
@@ -462,13 +462,13 @@ BEGINPROC VMXWriteVMCS32
 %else  ; RT_ARCH_X86
     mov     ecx, [esp + 4]              ; idxField
     mov     edx, [esp + 8]              ; u32Data
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmwrite ecx, edx
 %endif ; RT_ARCH_X86
@@ -481,7 +481,7 @@ BEGINPROC VMXWriteVMCS32
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -497,7 +497,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXWriteVMCS32
 
 
@@ -518,13 +518,13 @@ BEGINPROC VMXEnable
  %endif
     vmxon   [rsp]
 %else  ; RT_ARCH_X86
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmxon   [esp + 4]
 %endif ; RT_ARCH_X86
@@ -542,7 +542,7 @@ BEGINPROC VMXEnable
 %endif
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -558,7 +558,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXEnable
 
 
@@ -567,18 +567,18 @@ ENDPROC VMXEnable
 ; */
 ;DECLASM(void) VMXDisable(void);
 BEGINPROC VMXDisable
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmxoff
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -587,7 +587,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXDisable
 
 
@@ -609,13 +609,13 @@ BEGINPROC VMXClearVMCS
  %endif
     vmclear [rsp]
 %else  ; RT_ARCH_X86
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmclear [esp + 4]
 %endif ; RT_ARCH_X86
@@ -627,7 +627,7 @@ BEGINPROC VMXClearVMCS
 %endif
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -663,13 +663,13 @@ BEGINPROC VMXActivateVMCS
  %endif
     vmptrld [rsp]
 %else
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     xor     eax, eax
     vmptrld [esp + 4]
 %endif
@@ -681,7 +681,7 @@ BEGINPROC VMXActivateVMCS
 %endif
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -695,7 +695,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXActivateVMCS
 
 
@@ -718,20 +718,20 @@ BEGINPROC VMXGetActivateVMCS
     vmptrst qword [rcx]
   %endif
  %else
-  %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+  %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
-  %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     vmptrst qword [esp+04h]
  %endif
     xor     eax, eax
 .the_end:
     ret
 
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -743,7 +743,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 %endif
 ENDPROC VMXGetActivateVMCS
 
@@ -767,13 +767,13 @@ BEGINPROC VMXR0InvEPT
     DB          0x66, 0x0F, 0x38, 0x80, 0xA
  %endif
 %else
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp         byte [NAME(g_fVMXIs64bitHost)], 0
     jz          .legacy_mode
     db          0xea                        ; jmp far .sixtyfourbit_mode
     dd          .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
 ;    invept      eax, qword [ecx]
@@ -788,7 +788,7 @@ BEGINPROC VMXR0InvEPT
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -806,7 +806,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXR0InvEPT
 
 
@@ -830,13 +830,13 @@ BEGINPROC VMXR0InvVPID
     DB          0x66, 0x0F, 0x38, 0x81, 0xA
  %endif
 %else
- %ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     jz      .legacy_mode
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .legacy_mode:
- %endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+ %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     mov         eax, [esp + 4]
     mov         ecx, [esp + 8]
 ;    invept      eax, qword [ecx]
@@ -851,7 +851,7 @@ BEGINPROC VMXR0InvVPID
 .the_end:
     ret
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
@@ -869,7 +869,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 ENDPROC VMXR0InvVPID
 
 
@@ -933,7 +933,7 @@ ENDPROC SVMR0InvlpgA
 
 %endif ; GC_ARCH_BITS != 64
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 
 ;/**
 ; * Gets 64-bit GDTR and IDTR on darwin.
@@ -987,14 +987,14 @@ BITS 64
 BITS 32
 ENDPROC   hwaccmR0Get64bitCR3
 
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
 
 
 ;
 ; The default setup of the StartVM routines.
 ;
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
  %define MY_NAME(name)   name %+ _32
 %else
  %define MY_NAME(name)   name
@@ -1014,7 +1014,7 @@ ENDPROC   hwaccmR0Get64bitCR3
 %include "HWACCMR0Mixed.mac"
 
 
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
  ;
  ; Write the wrapper procedures.
  ;
@@ -1253,4 +1253,4 @@ ENDPROC   SVMR0VMRun64
  %define MYPOPSEGS      MYPOPSEGS64
 
  %include "HWACCMR0Mixed.mac"
-%endif ; VBOX_WITH_HYBIRD_32BIT_KERNEL
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL

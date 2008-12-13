@@ -214,7 +214,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     if (VMMIsHwVirtExtForced(pVM))
         pVM->fHWACCMEnabled = true;
 
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /* 64-bit mode is configurable and it depends on both the kernel mode and VT-x.
      * (To use the default, don't set 64bitEnabled in CFGM.) */
     rc = CFGMR3QueryBoolDef(pHWVirtExt, "64bitEnabled", &pVM->hwaccm.s.fAllow64BitGuests,
@@ -819,7 +819,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL /* remove */
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL /* remove */
                 if (pVM->hwaccm.s.fAllow64BitGuests)
 # endif
                 {
@@ -831,7 +831,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 }
 #endif
                 LogRel(("HWACCM: VMX enabled!\n"));
-#if defined(VBOX_ENABLE_64_BITS_GUESTS) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if defined(VBOX_ENABLE_64_BITS_GUESTS) && defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM: 32-bit and 64-bit guest supported.\n"
                         : "HWACCM: 32-bit guest supported.\n"));
@@ -934,7 +934,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
                 if (pVM->hwaccm.s.fAllow64BitGuests)
 # endif
                 {
@@ -952,7 +952,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         }
     }
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (pVM->fHWACCMEnabled)
     {
         switch(PGMGetHostMode(pVM))

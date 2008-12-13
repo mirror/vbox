@@ -967,7 +967,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
             AssertMsgFailed(("Unexpected number of VMCPUs (%d)\n", pVM->cCPUs));
             return VERR_SSM_UNEXPECTED_DATA;
         }
-        
+
         for (unsigned i=0;i<pVM->cCPUs;i++)
         {
             SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
@@ -1411,7 +1411,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
      * Format the registers.
      */
 #if HC_ARCH_BITS == 32
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (!(pCtx->efer & MSR_K6_EFER_LMA))
 # endif
     {
@@ -1431,11 +1431,11 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
             (uint32_t)pCtx->gdtr.uAddr, pCtx->gdtr.cb, (RTSEL)pCtx->ldtr,
             pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
     }
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     else
 # endif
 #endif
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     {
         pHlp->pfnPrintf(pHlp,
             "rax=xxxxxxxxxxxxxxxx rbx=%016RX64 rcx=xxxxxxxxxxxxxxxx\n"
