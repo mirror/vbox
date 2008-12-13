@@ -27,7 +27,9 @@
 #include "VirtualBoxBase.h"
 #include "Collection.h"
 #ifdef VBOX_WITH_HOSTNETIF_API
-#include "netif.h"
+/* class HostNetworkInterface; */
+/* #include "netif.h" */
+struct NETIFINFO;
 #endif
 
 class ATL_NO_VTABLE HostNetworkInterface :
@@ -59,7 +61,7 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init (Bstr interfaceName, Guid guid);
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT init (PNETIFINFO pIfs);
+    HRESULT init (Bstr aInterfaceName, struct NETIFINFO *pIfs);
 #endif
 
     // IHostNetworkInterface properties

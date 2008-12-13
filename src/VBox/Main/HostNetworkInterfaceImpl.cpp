@@ -23,6 +23,7 @@
 
 #include "HostNetworkInterfaceImpl.h"
 #include "Logging.h"
+#include "netif.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -108,7 +109,7 @@ static Bstr composeHardwareAddress(PRTMAC aMacPtr)
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (PNETIFINFO pIf)
+HRESULT HostNetworkInterface::init (Bstr aInterfaceName, PNETIFINFO pIf)
 {
 //    LogFlowThisFunc (("aInterfaceName={%ls}, aGuid={%s}\n",
 //                      aInterfaceName.raw(), aGuid.toString().raw()));
@@ -121,7 +122,7 @@ HRESULT HostNetworkInterface::init (PNETIFINFO pIf)
     AutoInitSpan autoInitSpan (this);
     AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mInterfaceName) = Bstr(pIf->szName);
+    unconst (mInterfaceName) = aInterfaceName;
     unconst (mGuid) = pIf->Uuid;
     m.IPAddress = pIf->IPAddress.u;
     m.networkMask = pIf->IPNetMask.u;
