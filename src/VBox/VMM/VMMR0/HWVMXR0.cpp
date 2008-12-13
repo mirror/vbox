@@ -1425,7 +1425,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         if (pVM->hwaccm.s.fNestedPaging)
         {
-            AssertMsg(PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM), ("%RHp vs %RHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
+            AssertMsg(   PGMGetEPTCR3(pVM) == PGMGetHyperCR3(pVM)
+                      || VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL),
+                      ("%RHp vs %RHp\n", PGMGetEPTCR3(pVM), PGMGetHyperCR3(pVM)));
             pVCpu->hwaccm.s.vmx.GCPhysEPTP = PGMGetEPTCR3(pVM);
 
             Assert(!(pVCpu->hwaccm.s.vmx.GCPhysEPTP & 0xfff));
@@ -1460,7 +1462,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
         {
             val = PGMGetHyperCR3(pVM);
-            Assert(val);
+            Assert(val || VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL));
         }
 
         /* Save our shadow CR3 register. */

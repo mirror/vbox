@@ -1465,6 +1465,7 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
     /*
      * Always flag the necessary updates; necessary for hardware acceleration
      */
+    /** @todo optimize this, it shouldn't always be necessary. */
     VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
         VM_FF_SET(pVM, VM_FF_PGM_SYNC_CR3);
@@ -1484,13 +1485,27 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
         GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
     if (pVM->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
-        pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+        RTGCPHYS GCPhysOldCR3 = pVM->pgm.s.GCPhysCR3;
+        pVM->pgm.s.GCPhysCR3  = GCPhysCR3;
         rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
-        if (RT_SUCCESS(rc) && !pVM->pgm.s.fMappingsFixed)
+        if (RT_LIKELY(rc == VINF_SUCCESS))
         {
-            pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
+            if (!pVM->pgm.s.fMappingsFixed)
+            {
+                pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
+                rc = PGM_GST_PFN(MonitorCR3, pVM)(pVM, GCPhysCR3);
+            }
         }
+        else
+        {
+            AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
+            Assert(VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL | VM_FF_PGM_SYNC_CR3));
+            pVM->pgm.s.GCPhysCR3 = GCPhysOldCR3;
+            pVM->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
+            if (!pVM->pgm.s.fMappingsFixed)
+                pVM->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
+        }
+
         if (fGlobal)
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,FlushTLBNewCR3Global));
         else
@@ -1528,8 +1543,10 @@ VMMDECL(int) PGMFlushTLB(PVM pVM, uint64_t cr3, bool fGlobal)
  * This will normally involve mapping the guest PD or nPDPT
  *
  * @returns VBox status code.
- * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync. This can
- *          safely be ignored and overridden since the FF will be set too then.
+ * @retval  VINF_SUCCESS.
+ * @retval  (If applied when not in nested mode: VINF_PGM_SYNC_CR3 if monitoring
+ *          requires a CR3 sync. This can safely be ignored and overridden since
+ *          the FF will be set too then.)
  * @param   pVM         VM handle.
  * @param   cr3         The new cr3.
  */
@@ -1558,8 +1575,8 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
     {
         pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
         rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+        AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */
     }
-    AssertRC(rc);
     return rc;
 }
 
@@ -1580,6 +1597,8 @@ VMMDECL(int) PGMUpdateCR3(PVM pVM, uint64_t cr3)
  */
 VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
+    int rc;
+
     /*
      * We might be called when we shouldn't.
      *
@@ -1596,17 +1615,60 @@ VMMDECL(int) PGMSyncCR3(PVM pVM, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool 
         return VINF_SUCCESS;
     }
 
-    /* If global pages are not supported, then all flushes are global */
+    /* If global pages are not supported, then all flushes are global. */
     if (!(cr4 & X86_CR4_PGE))
         fGlobal = true;
     LogFlow(("PGMSyncCR3: cr0=%RX64 cr3=%RX64 cr4=%RX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
              VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3), VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3_NON_GLOBAL)));
 
+#ifdef PGMPOOL_WITH_MONITORING
+    /*
+     * The pool may have pending stuff and even require a return to ring-3 to
+     * clear the whole thing.
+     */
+    rc = pgmPoolSyncCR3(pVM);
+    if (rc != VINF_SUCCESS)
+        return rc;
+#endif
+
+    /*
+     * Check if we need to finish an aborted MapCR3 call (see PGMFlushTLB).
+     * This should be done before SyncCR3.
+     */
+    if (pVM->pgm.s.fSyncFlags & PGM_SYNC_MAP_CR3)
+    {
+        pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_MAP_CR3;
+
+        RTGCPHYS GCPhysCR3Old = pVM->pgm.s.GCPhysCR3;
+        RTGCPHYS GCPhysCR3;
+        if (    pVM->pgm.s.enmGuestMode == PGMMODE_PAE
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_PAE_NX
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64
+            ||  pVM->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAE_PAGE_MASK);
+        else
+            GCPhysCR3 = (RTGCPHYS)(cr3 & X86_CR3_PAGE_MASK);
+        pVM->pgm.s.GCPhysCR3 = GCPhysCR3;
+        rc = PGM_GST_PFN(MapCR3, pVM)(pVM, GCPhysCR3);
+#ifdef IN_RING3
+        if (rc == VINF_PGM_SYNC_CR3)
+            rc = pgmPoolSyncCR3(pVM);
+#else
+        if (rc == VINF_PGM_SYNC_CR3)
+        {
+            pVM->pgm.s.GCPhysCR3 = GCPhysCR3Old;
+            return rc;
+        }
+#endif
+        AssertRCReturn(rc, rc);
+        AssertRCSuccessReturn(rc, VERR_INTERNAL_ERROR);
+    }
+
     /*
      * Let the 'Bth' function do the work and we'll just keep track of the flags.
      */
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
-    int rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, cr0, cr3, cr4, fGlobal);
+    rc = PGM_BTH_PFN(SyncCR3, pVM)(pVM, cr0, cr3, cr4, fGlobal);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3), a);
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)

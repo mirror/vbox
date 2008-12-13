@@ -145,6 +145,9 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
         case PGMPOOL_IDX_PDPT:
             HCPhys = pPGM->HCPhysShwPaePdpt;
             break;
+        case PGMPOOL_IDX_NESTED_ROOT:
+            HCPhys = pPGM->HCPhysShwNestedRoot;
+            break;
         case PGMPOOL_IDX_PAE_PD:
             AssertReleaseMsgFailed(("PGMPOOL_IDX_PAE_PD is not usable in VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 context\n"));
             return NULL;
@@ -152,6 +155,8 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
             AssertReleaseMsgFailed(("Invalid index %d\n", pPage->idx));
             return NULL;
     }
+    AssertMsg(HCPhys && HCPhys != NIL_RTHCPHYS && !(PAGE_OFFSET_MASK & HCPhys), ("%RHp\n", HCPhys));
+
     void *pv;
     int rc = pgmR0DynMapHCPageInlined(pPGM, HCPhys, &pv);
     AssertReleaseRCReturn(rc, NULL);
@@ -2070,7 +2075,7 @@ int pgmPoolSyncCR3(PVM pVM)
         pgmPoolMonitorModifiedClearAll(pVM);
     else
     {
-# ifndef IN_RC //def IN_RING3 - fixing properly in a bit...
+# ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
         pVM->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
         pgmPoolClearAll(pVM);
 # else  /* !IN_RING3 */
@@ -3809,6 +3814,11 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
     }
 
+    /*
+     * Finally, assert the FF.
+     */
+    VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+
     STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
 }
 
@@ -3966,6 +3976,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, uint16_t iUser)
 #else
     /*
      * Flush the pool.
+     *
      * If we have tracking enabled, it should be possible to come up with
      * a cheap replacement strategy...
      */
@@ -4002,6 +4013,7 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint16_t iUser, 
     STAM_PROFILE_ADV_START(&pPool->StatAlloc, a);
     LogFlow(("pgmPoolAlloc: GCPhys=%RGp enmKind=%d iUser=%#x iUserTable=%#x\n", GCPhys, enmKind, iUser, iUserTable));
     *ppPage = NULL;
+    Assert(!(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL));
 
 #ifdef PGMPOOL_WITH_CACHE
     if (pPool->fCacheEnabled)
