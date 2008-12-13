@@ -2929,16 +2929,72 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     }
 
 #if HC_ARCH_BITS == 32
-    if (CPUMIsGuestIn64BitCode(pVM, pRegFrame))
+    /*
+     * Unable to emulate most >4 bytes accesses in 32 bits mode.
+     * Whitelisted instructions are safe.
+     */
+    if (    pCpu->param1.size > 4
+        &&  CPUMIsGuestIn64BitCode(pVM, pRegFrame))
     {
-        /* Unable to emulate in 32 bits mode. 
-         * Whitelisted instructions are safe.
-         */
-        if (    pCpu->param1.size > 4
-            &&  pCpu->pCurInstr->opcode != OP_STOSWD
+        if (    pCpu->pCurInstr->opcode != OP_STOSWD
             &&  pCpu->pCurInstr->opcode != OP_MOV
-            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG8B)
+            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG8B
+            &&  pCpu->pCurInstr->opcode != OP_XCHG
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            /** @todo */
+# endif
+            )
+        {
+# ifdef VBOX_WITH_STATISTICS
+            switch (pCpu->pCurInstr->opcode)
+            {
+#  define INTERPRET_FAILED_CASE(opcode, Instr) \
+                case opcode: STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Failed##Instr)); break;
+                INTERPRET_FAILED_CASE(OP_XCHG,Xchg);
+                INTERPRET_FAILED_CASE(OP_DEC,Dec);
+                INTERPRET_FAILED_CASE(OP_INC,Inc);
+                INTERPRET_FAILED_CASE(OP_POP,Pop);
+                INTERPRET_FAILED_CASE(OP_OR, Or);
+                INTERPRET_FAILED_CASE(OP_XOR,Xor);
+                INTERPRET_FAILED_CASE(OP_AND,And);
+                INTERPRET_FAILED_CASE(OP_MOV,Mov);
+                INTERPRET_FAILED_CASE(OP_STOSWD,StosWD);
+                INTERPRET_FAILED_CASE(OP_INVLPG,InvlPg);
+                INTERPRET_FAILED_CASE(OP_CPUID,CpuId);
+                INTERPRET_FAILED_CASE(OP_MOV_CR,MovCRx);
+                INTERPRET_FAILED_CASE(OP_MOV_DR,MovDRx);
+                INTERPRET_FAILED_CASE(OP_LLDT,LLdt);
+                INTERPRET_FAILED_CASE(OP_LIDT,LIdt);
+                INTERPRET_FAILED_CASE(OP_LGDT,LGdt);
+                INTERPRET_FAILED_CASE(OP_LMSW,Lmsw);
+                INTERPRET_FAILED_CASE(OP_CLTS,Clts);
+                INTERPRET_FAILED_CASE(OP_MONITOR,Monitor);
+                INTERPRET_FAILED_CASE(OP_MWAIT,MWait);
+                INTERPRET_FAILED_CASE(OP_RDMSR,Rdmsr);
+                INTERPRET_FAILED_CASE(OP_WRMSR,Wrmsr);
+                INTERPRET_FAILED_CASE(OP_ADD,Add);
+                INTERPRET_FAILED_CASE(OP_SUB,Sub);
+                INTERPRET_FAILED_CASE(OP_ADC,Adc);
+                INTERPRET_FAILED_CASE(OP_BTR,Btr);
+                INTERPRET_FAILED_CASE(OP_BTS,Bts);
+                INTERPRET_FAILED_CASE(OP_BTC,Btc);
+                INTERPRET_FAILED_CASE(OP_RDTSC,Rdtsc);
+                INTERPRET_FAILED_CASE(OP_CMPXCHG, CmpXchg);
+                INTERPRET_FAILED_CASE(OP_STI, Sti);
+                INTERPRET_FAILED_CASE(OP_XADD,XAdd);
+                INTERPRET_FAILED_CASE(OP_CMPXCHG8B,CmpXchg8b);
+                INTERPRET_FAILED_CASE(OP_HLT, Hlt);
+                INTERPRET_FAILED_CASE(OP_IRET,Iret);
+                INTERPRET_FAILED_CASE(OP_WBINVD,WbInvd);
+                INTERPRET_FAILED_CASE(OP_MOVNTPS,MovNTPS);
+#  undef INTERPRET_FAILED_CASE
+                default:
+                    STAM_COUNTER_INC(&pVM->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedMisc));
+                    break;
+            }
+# endif /* VBOX_WITH_STATISTICS */
             return VERR_EM_INTERPRETER;
+        }
     }
 #endif
 
