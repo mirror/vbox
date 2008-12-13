@@ -45,7 +45,7 @@
 *******************************************************************************/
 #if defined(RT_ARCH_AMD64)
 # define VMX_IS_64BIT_HOST_MODE()   (true)
-#elif defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 # define VMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
 #else
 # define VMX_IS_64BIT_HOST_MODE()   (false)
@@ -58,7 +58,7 @@
 static uint32_t const g_aIOSize[4]  = {1, 2, 0, 4};
 static uint32_t const g_aIOOpAnd[4] = {0xff, 0xffff, 0, 0xffffffff};
 
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 /** See HWACCMR0A.asm. */
 extern "C" uint32_t g_fVMXIs64bitHost;
 #endif
@@ -832,7 +832,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
         /* Control registers */
         rc  = VMXWriteVMCS(VMX_VMCS_HOST_CR0,               ASMGetCR0());
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
             cr3 = hwaccmR0Get64bitCR3();
@@ -851,7 +851,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_CR4 %08x\n", ASMGetCR4()));
 
         /* Selector registers. */
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
             cs = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelCS;
@@ -893,7 +893,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         Log2(("VMX_VMCS_HOST_FIELD_TR %08x\n", ASMGetTR()));
 
         /* GDTR & IDTR */
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
             X86XDTR64 gdtr64, idtr64;
@@ -926,7 +926,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             return VERR_VMX_INVALID_HOST_STATE;
         }
 
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
             pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC]; /// ????
@@ -950,7 +950,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         }
 
         /* FS and GS base. */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (VMX_IS_64BIT_HOST_MODE())
         {
             Log2(("MSR_K8_FS_BASE = %RX64\n", ASMRdMsr(MSR_K8_FS_BASE)));
@@ -965,7 +965,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         /** @todo expensive!! */
         rc  = VMXWriteVMCS(VMX_VMCS32_HOST_SYSENTER_CS,       ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
         Log2(("VMX_VMCS_HOST_SYSENTER_CS  %08x\n", ASMRdMsr_Low(MSR_IA32_SYSENTER_CS)));
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
             Log2(("VMX_VMCS_HOST_SYSENTER_EIP %RX64\n",         ASMRdMsr(MSR_IA32_SYSENTER_EIP)));
@@ -1109,7 +1109,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (VMX_IS_64BIT_HOST_MODE())
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
     /* else: Must be zero when AMD64 is not available. */
@@ -1560,10 +1560,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #if !defined(VBOX_ENABLE_64_BITS_GUESTS)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#elif HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#elif HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0SwitcherStartVM64;
 #else
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (!pVM->hwaccm.s.fAllow64BitGuests)
             return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 # endif
@@ -3486,7 +3486,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             VMXReadVMCS(VMX_VMCS_HOST_RIP, &val);
             Log(("VMX_VMCS_HOST_RIP %RHv\n", val));
 
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (VMX_IS_64BIT_HOST_MODE())
             {
                 Log(("MSR_K6_EFER       = %RX64\n", ASMRdMsr(MSR_K6_EFER)));
@@ -3508,7 +3508,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
     }
 }
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /**
  * Prepares for and executes VMLAUNCH (64 bits guest mode)
  *
@@ -3627,7 +3627,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     return rc;
 }
 
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) */
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
 
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)

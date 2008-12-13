@@ -45,7 +45,7 @@ VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
     pVM->trpm.s.uActiveVector = ~0;
     AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));
 
-#ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /*
      * Check if we're in long mode or not.
      */

@@ -59,7 +59,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherPAEToPAE_Def,
     &vmmR3SwitcherPAEToAMD64_Def,
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
 # else
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
@@ -607,14 +607,14 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 break;
             }
 
-#if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             /*
              * 64-bit HC Code Selector (no argument).
              */
             case FIX_HC_64BIT_CS:
             {
                 Assert(offSrc < pSwitcher->cbCode);
-# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                 *uSrc.pu16 = 0x80; /* KERNEL64_CS from i386/seg.h */
 # else
                 AssertFatalMsgFailed(("FIX_HC_64BIT_CS not implemented for this host\n"));

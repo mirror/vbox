@@ -78,15 +78,15 @@
 /** @} */
 
 /* Sanity check. */
-#if defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) && (HC_ARCH_BITS != 32 || R0_ARCH_BITS != 32)
-# error "VBOX_WITH_HYBIRD_32BIT_KERNEL is only for 32 bit builds."
+#if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) && (HC_ARCH_BITS != 32 || R0_ARCH_BITS != 32)
+# error "VBOX_WITH_HYBRID_32BIT_KERNEL is only for 32 bit builds."
 #endif
 
 
 /**
  * The saved host CPU state.
  *
- * @remark  The special VBOX_WITH_HYBIRD_32BIT_KERNEL checks here are for the 10.4.x series
+ * @remark  The special VBOX_WITH_HYBRID_32BIT_KERNEL checks here are for the 10.4.x series
  *          of Mac OS X where the OS is essentially 32-bit but the cpu mode can be 64-bit.
  */
 typedef struct CPUMHOSTCTX
@@ -97,7 +97,7 @@ typedef struct CPUMHOSTCTX
 
     /** General purpose register, selectors, flags and more
      * @{ */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** General purpose register ++
      * { */
     //uint64_t        rax; - scratch
@@ -151,7 +151,7 @@ typedef struct CPUMHOSTCTX
     RTSEL           csPadding;
     /** @} */
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** Control registers.
      * @{ */
     uint32_t        cr0;
@@ -191,7 +191,7 @@ typedef struct CPUMHOSTCTX
     /* padding to get 64byte aligned size */
     uint8_t         auPadding[24+32];
 
-#elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL)
+#elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 
     /** Control registers.
      * @{ */
@@ -234,7 +234,7 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 32byte aligned size */
-# ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     uint8_t         auPadding[16];
 # else
     uint8_t         auPadding[8+32];
@@ -343,7 +343,7 @@ typedef struct CPUMCPU
      */
     CPUMCTX                 Guest;
 
-    /** 
+    /**
      * Guest context - misc MSRs
      * Aligned on a 64-byte boundrary.
      */

@@ -42,12 +42,12 @@
 
 %define FPUSTATE_SIZE                   512
 
-;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBIRD_32BIT_KERNEL) in
+;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) in
 ; nasm please tell / fix this hack.
-%ifdef VBOX_WITH_HYBIRD_32BIT_KERNEL
- %define fVBOX_WITH_HYBIRD_32BIT_KERNEL 1
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+ %define fVBOX_WITH_HYBRID_32BIT_KERNEL 1
 %else
- %define fVBOX_WITH_HYBIRD_32BIT_KERNEL 0
+ %define fVBOX_WITH_HYBRID_32BIT_KERNEL 0
 %endif
 
 struc CPUM
@@ -199,7 +199,7 @@ struc CPUMCPU
     ;
     .Host.fpu            resb    FPUSTATE_SIZE
 
-%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBIRD_32BIT_KERNEL
+%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
     ;.Host.rax            resq    1 - scratch
     .Host.rbx            resq    1
     ;.Host.rcx            resq    1 - scratch
@@ -245,7 +245,7 @@ struc CPUMCPU
     .Host.cs             resw    1
     .Host.csPadding      resw    1
 
-%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBIRD_32BIT_KERNEL == 0
+%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBRID_32BIT_KERNEL == 0
     .Host.cr0            resd    1
     ;.Host.cr2            resd    1 - scratch
     .Host.cr3            resd    1
@@ -410,7 +410,7 @@ struc CPUMCPU
     .fUseFlags            resd    1
     .fChanged             resd    1
     .ulOffCPUM            resd    1
-    .u32RetCode           resd    1    
+    .u32RetCode           resd    1
 endstruc
 
 
