@@ -277,6 +277,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     int icmplen = ip->ip_len;
     int status;
     uint32_t dst;
+    int ttl;
 
     /* int code; */
 
@@ -407,8 +408,9 @@ freeit:
                 icmp_attach(pData, m);
                 /* Send the packet */
 # ifndef RT_OS_WINDOWS
-                LogRel(("NAT/ICMP: try to set TTL(%d)\n", ip->ip_ttl));
-                status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
+                ttl = ip->ip_ttl;
+                LogRel(("NAT/ICMP: try to set TTL(%d)\n", ttl));
+                status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ttl, sizeof(ttl));
                 if (status < 0)
                 {
                     LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n", strerror(errno)));
