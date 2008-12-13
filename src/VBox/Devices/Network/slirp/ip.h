@@ -37,9 +37,7 @@
 #ifndef _IP_H_
 #define _IP_H_
 
-#ifdef VBOX_WITH_BSD_REASS
-# include "queue.h"
-#endif
+#include "queue.h"
 
 #ifdef WORDS_BIGENDIAN
 # ifndef NTOHL
@@ -172,15 +170,7 @@ AssertCompileSize(struct ip_timestamp, 12);
 #ifdef HAVE_SYS_TYPES32_H  /* Overcome some Solaris 2.x junk */
 # include <sys/types32.h>
 #else
-# if SIZEOF_CHAR_P == 4
 typedef caddr_t caddr32_t;
-# else
-#  if !defined(VBOX_WITH_BSD_REASS)
-typedef u_int32_t caddr32_t;
-#  else /* VBOX_WITH_BSD_REASS */
-typedef caddr_t caddr32_t;
-#  endif /* VBOX_WITH_BSD_REASS */
-# endif
 #endif
 
 #if SIZEOF_CHAR_P == 4
@@ -196,13 +186,7 @@ typedef caddr32_t ipasfragp_32;
  */
 struct ipovly
 {
-#if !defined(VBOX_WITH_BSD_REASS)
-    caddr32_t       ih_next;
-    caddr32_t       ih_prev;          /* for protocol sequence q's */
-    u_int8_t        ih_x1;            /* (unused) */
-#else /* VBOX_WITH_BSD_REASS */
     u_int8_t        ih_x1[9];         /* (unused) */
-#endif /* VBOX_WITH_BSD_REASS */
     u_int8_t        ih_pr;            /* protocol */
     u_int16_t       ih_len;           /* protocol length */
     struct  in_addr ih_src;           /* source internet address */
@@ -218,27 +202,16 @@ AssertCompileSize(struct ipovly, 20);
  */
 struct ipq_t
 {
-#ifndef VBOX_WITH_BSD_REASS
-    ipqp_32         next;
-    ipqp_32         prev;            /* to other reass headers */
-#else  /* VBOX_WITH_BSD_REASS */
     TAILQ_ENTRY(ipq_t) ipq_list;
-#endif /* VBOX_WITH_BSD_REASS */
     u_int8_t        ipq_ttl;         /* time for reass q to live */
     u_int8_t        ipq_p;           /* protocol of this fragment */
     u_int16_t       ipq_id;          /* sequence id for reassembly */
-#ifndef VBOX_WITH_BSD_REASS
-    ipasfragp_32    ipq_next;
-    ipasfragp_32    ipq_prev;        /* to ip headers of fragments */
-#else  /* VBOX_WITH_BSD_REASS */
     struct mbuf     *ipq_frags;      /* to ip headers of fragments */
     uint8_t         ipq_nfrags;      /* # of fragments in this packet */
-#endif /* VBOX_WITH_BSD_REASS */
     struct in_addr  ipq_src;
     struct in_addr  ipq_dst;
 };
 
-#ifdef VBOX_WITH_BSD_REASS
 
 /*
 * IP datagram reassembly.
@@ -249,48 +222,6 @@ struct ipq_t
 #define IPREASS_HASH(x,y) \
 (((((x) & 0xF) | ((((x) >> 8) & 0xF) << 4)) ^ (y)) & IPREASS_HMASK)
 TAILQ_HEAD(ipqhead,ipq_t);
-
-#else /* !VBOX_WITH_BSD_REASS */
-
-/*
- * Ip header, when holding a fragment.
- *
- * Note: ipf_next must be at same offset as ipq_next above
- */
-struct  ipasfrag
-{
-#ifdef WORDS_BIGENDIAN
-# ifdef _MSC_VER
-    uint8_t      ip_v:4;
-    uint8_t      ip_hl:4;
-# else
-    unsigned     ip_v:4;
-    unsigned     ip_hl:4;
-# endif
-#else
-# ifdef _MSC_VER
-    uint8_t      ip_hl:4;
-    uint8_t      ip_v:4;
-# else
-    unsigned     ip_hl:4;
-    unsigned     ip_v:4;
-# endif
-#endif
-    u_int8_t     ipf_mff;           /* XXX overlays ip_tos: use low bit
-                                     * to avoid destroying tos (PPPDTRuu);
-                                     * copied from (ip_off & IP_MF) */
-    u_int16_t    ip_len;
-    u_int16_t    ip_id;
-    u_int16_t    ip_off;
-    u_int8_t     ip_ttl;
-    u_int8_t     ip_p;
-    u_int16_t    ip_sum;
-    ipasfragp_32 ipf_next;          /* next fragment */
-    ipasfragp_32 ipf_prev;          /* previous fragment */
-};
-AssertCompileSize(struct ipasfrag, 20);
-
-#endif /* !VBOX_WITH_BSD_REASS */
 
 /*
  * Structure attached to inpcb.ip_moptions and

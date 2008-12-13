@@ -109,7 +109,6 @@ m_free(PNATState pData, struct mbuf *m)
          */
         if (m->m_flags & M_DOFREE)
         {
-            u32ptr_done(pData, ptr_to_u32(pData, m), m);
             free(m);
             mbuf_alloced--;
         }

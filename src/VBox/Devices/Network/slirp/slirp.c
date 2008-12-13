@@ -341,9 +341,6 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     memset(pData, '\0', sizeof(NATState));
     pData->fPassDomain = fPassDomain;
     pData->pvUser = pvUser;
-#if ARCH_BITS == 64 && !defined(VBOX_WITH_BSD_REASS)
-    pData->cpvHashUsed = 1;
-#endif
     tftp_prefix = pszTFTPPrefix;
     bootp_filename = pszBootFile;
     pData->netmask = u32Netmask;
@@ -445,11 +442,6 @@ void slirp_term(PNATState pData)
     if (pData->pszDomain)
         RTStrFree((char *)(void *)pData->pszDomain);
 
-#if ARCH_BITS == 64 && !defined(VBOX_WITH_BSD_REASS)
-    LogRel(("NAT: cpvHashUsed=%RU32 cpvHashCollisions=%RU32 cpvHashInserts=%RU64 cpvHashDone=%RU64\n",
-            pData->cpvHashUsed, pData->cpvHashCollisions, pData->cpvHashInserts, pData->cpvHashDone));
-#endif
-
 #ifdef VBOX_WITH_SLIRP_ICMP
 # ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
@@ -521,9 +513,7 @@ void slirp_select_fill(PNATState pData, int *pnfds,
     int rc;
     int error;
 #endif
-#ifdef VBOX_WITH_BSD_REASS
     int i;
-#endif /* VBOX_WITH_BSD_REASS */
 
     STAM_REL_PROFILE_START(&pData->StatFill, a);
 
@@ -539,10 +529,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
          * *_slowtimo needs calling if there are IP fragments
          * in the fragment queue, or there are TCP connections active
          */
-#ifndef VBOX_WITH_BSD_REASS
-        do_slowtimo =    ((tcb.so_next != &tcb)
-                      || ((struct ipasfrag *)&ipq != u32_to_ptr(pData, ipq.next, struct ipasfrag *)));
-#else /* !VBOX_WITH_BSD_REASS */
         /* XXX:
          * triggering of fragment expiration should be the same but use new macroses
          */
@@ -558,7 +544,6 @@ void slirp_select_fill(PNATState pData, int *pnfds,
                 }
             }
         }
-#endif /* VBOX_WITH_BSD_REASS */
         ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
 
         STAM_REL_COUNTER_RESET(&pData->StatTCP);
