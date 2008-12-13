@@ -78,7 +78,9 @@ sofree(PNATState pData, struct socket *so)
     else if (so == udp_last_so)
         udp_last_so = &udb;
 
-    m_free(pData, so->so_m);
+    /* check if mbuf haven't been already freed  */
+    if (so->so_m != NULL)
+        m_free(pData, so->so_m);
 
     if(so->so_next && so->so_prev)
         remque(pData, so);  /* crashes if so is not in a queue */
@@ -801,12 +803,15 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     icp = (struct icmp *)((char *)ip + hlen);
 
     LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
-    if (icp->icmp_type != ICMP_ECHOREPLY && icp->icmp_type != ICMP_TIMXCEED)
+    if (icp->icmp_type != ICMP_ECHOREPLY 
+        && icp->icmp_type != ICMP_TIMXCEED 
+        && icp->icmp_type != ICMP_UNREACH)
     {
         return;
     }
 
-    if (icp->icmp_type == ICMP_TIMXCEED)
+    if (icp->icmp_type == ICMP_TIMXCEED 
+        || icp->icmp_type == ICMP_UNREACH )
         ip = &icp->icmp_ip;
 
     icm = icmp_find_original_mbuf(pData, ip);
@@ -825,7 +830,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
     /* Now ip is pointing on header we've sent from guest */
-    if (icp->icmp_type == ICMP_TIMXCEED)
+    if (icp->icmp_type == ICMP_TIMXCEED 
+        ||  icp->icmp_type == ICMP_UNREACH)
     {
         old_ip_len = (ip->ip_hl << 2) + 64;
         memcpy(ip_copy, ip, old_ip_len);
@@ -844,7 +850,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip->ip_p = IPPROTO_ICMP; /* the original package could ba whatever, but we're response via ICMP*/
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-    if (icp->icmp_type == ICMP_TIMXCEED)
+    if (icp->icmp_type == ICMP_TIMXCEED
+        || icp->icmp_type == ICMP_UNREACH)
     {
         /* according RFC 793 error messages required copy of initial IP header + 64 bit */
         memcpy(&icp->icmp_ip, ip_copy, old_ip_len);
@@ -856,22 +863,16 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     icmp_reflect(pData, m);
     LIST_REMOVE(icm, im_list);
     /* Don't call m_free here*/
-#if 0
-    if (icp->icmp_type == ICMP_TIMXCEED)
+
+    if (icp->icmp_type == ICMP_TIMXCEED
+        || icp->icmp_type == ICMP_UNREACH)
     {
+        icm->im_so->so_m = NULL;
         switch (proto)
         {
             case  IPPROTO_UDP:
                 /*XXX: so->so_m already freed so we shouldn't call sofree */
-                if (so == udp_last_so)
-                    udp_last_so = &udb;
-                closesocket(icm->im_so->s);
-                icm->im_so->s = 1;
-                icm->im_so->so_state = SS_NOFDREF;
-                if(so->so_next && so->so_prev) {
-                    remque(pData, so);
-                    free(icm->im_so);
-                }
+                udp_detach(pData, icm->im_so);
             break;
             case  IPPROTO_TCP:
                 /*close tcp should be here */
@@ -881,7 +882,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             break;
         }
     }
-#endif
     free(icm);
 }
 
