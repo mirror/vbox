@@ -291,13 +291,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
         remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
         m_freem(pData, m);
     }
-    /* It's static */
-#if 0
-    if (tp->t_template)
-        (void) m_free(dtom(tp->t_template));
-
-    free(tp, M_PCB);  
-#endif
     u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
 #else  /* VBOX_WITH_BSD_REASS */
     struct tseg_qent *te;

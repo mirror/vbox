@@ -121,35 +121,6 @@ AssertCompileSize(struct ip, 20);
 #define IPTOS_THROUGHPUT        0x08
 #define IPTOS_RELIABILITY       0x04
 
-/*
- * Definitions for options.
- */
-#define IPOPT_COPIED(o)         ((o)&0x80)
-#define IPOPT_CLASS(o)          ((o)&0x60)
-#define IPOPT_NUMBER(o)         ((o)&0x1f)
-
-#define IPOPT_CONTROL           0x00
-#define IPOPT_RESERVED1         0x20
-#define IPOPT_DEBMEAS           0x40
-#define IPOPT_RESERVED2         0x60
-
-#define IPOPT_EOL               0     /* end of option list */
-#define IPOPT_NOP               1     /* no operation */
-
-#define IPOPT_RR                7     /* record packet route */
-#define IPOPT_TS                68    /* timestamp */
-#define IPOPT_SECURITY          130   /* provide s,c,h,tcc */
-#define IPOPT_LSRR              131   /* loose source route */
-#define IPOPT_SATID             136   /* satnet id */
-#define IPOPT_SSRR              137   /* strict source route */
-
-/*
- * Offsets to fields in options other than EOL and NOP.
- */
-#define IPOPT_OPTVAL            0     /* option ID */
-#define IPOPT_OLEN              1     /* option length */
-#define IPOPT_OFFSET            2     /* offset within option */
-#define IPOPT_MINOFF            4     /* min value of above */
 
 /*
  * Time stamp option structure.
@@ -187,20 +158,6 @@ struct  ip_timestamp
     } ipt_timestamp;
 };
 AssertCompileSize(struct ip_timestamp, 12);
-
-/* flag bits for ipt_flg */
-#define IPOPT_TS_TSONLY         0     /* timestamps only */
-#define IPOPT_TS_TSANDADDR      1     /* timestamps and addresses */
-#define IPOPT_TS_PRESPEC        3     /* specified modules only */
-
-/* bits for security (not byte swapped) */
-#define IPOPT_SECUR_UNCLASS     0x0000
-#define IPOPT_SECUR_CONFID      0xf135
-#define IPOPT_SECUR_EFTO        0x789a
-#define IPOPT_SECUR_MMMM        0xbc4d
-#define IPOPT_SECUR_RESTR       0xaf13
-#define IPOPT_SECUR_SECRET      0xd788
-#define IPOPT_SECUR_TOPSECRET   0x6bc5
 
 /*
  * Internet implementation parameters.
@@ -334,20 +291,6 @@ struct  ipasfrag
 AssertCompileSize(struct ipasfrag, 20);
 
 #endif /* !VBOX_WITH_BSD_REASS */
-
-/*
- * Structure stored in mbuf in inpcb.ip_options
- * and passed to ip_output when ip options are in use.
- * The actual length of the options (including ipopt_dst)
- * is in m_len.
- */
-#define MAX_IPOPTLEN    40
-
-struct ipoption
-{
-    struct in_addr ipopt_dst;      /* first-hop dst if source routed */
-    int8_t         ipopt_list[MAX_IPOPTLEN]; /* options proper */
-};
 
 /*
  * Structure attached to inpcb.ip_moptions and
