@@ -2938,15 +2938,20 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
     if (    pCpu->param1.size > 4
         &&  CPUMIsGuestIn64BitCode(pVM, pRegFrame))
     {
-        if (    pCpu->pCurInstr->opcode != OP_STOSWD
-            &&  pCpu->pCurInstr->opcode != OP_MOV
-            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG8B
-            &&  pCpu->pCurInstr->opcode != OP_XCHG
+        uint32_t uOpCode = pCpu->pCurInstr->opcode;
+        if (    uOpCode != OP_STOSWD
+            &&  uOpCode != OP_MOV
+            &&  uOpCode != OP_CMPXCHG8B
+            &&  uOpCode != OP_XCHG
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG /* solaris */
-            &&  pCpu->pCurInstr->opcode != OP_AND     /* windows */
-            &&  pCpu->pCurInstr->opcode != OP_OR      /* windows */
-            &&  pCpu->pCurInstr->opcode != OP_XOR
+            &&  uOpCode != OP_CMPXCHG /* solaris */
+            &&  uOpCode != OP_AND     /* windows */
+            &&  uOpCode != OP_OR      /* windows */
+            &&  uOpCode != OP_XOR     /* because we can */
+            &&  uOpCode != OP_ADD     /* windows (dripple) */
+            &&  uOpCode != OP_ADC     /* because we can */
+            &&  uOpCode != OP_SUB     /* because we can */
+            /** @todo OP_BTS or is that a different kind of failure? */
 # endif
             )
         {
