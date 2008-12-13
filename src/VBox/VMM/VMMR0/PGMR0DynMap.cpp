@@ -230,6 +230,8 @@ typedef PGMR0DYNMAPPGLVL *PPGMR0DYNMAPPGLVL;
 *******************************************************************************/
 /** Pointer to the ring-0 dynamic mapping cache. */
 static PPGMR0DYNMAP g_pPGMR0DynMap;
+/** For overflow testing. */
+static bool         g_fPGMR0DynMapTestRunning = false;
 
 
 /*******************************************************************************
@@ -1321,6 +1323,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
                 if (RT_UNLIKELY(iPage == UINT32_MAX))
                 {
                     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                    *ppvPage = NULL;
                     return iPage;
                 }
             }
@@ -1342,6 +1345,7 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMR0DYNMAP pThis, RTHCPHYS HCPhys, int32_
     {
         ASMAtomicDecS32(&paPages[iPage].cRefs);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        *ppvPage = NULL;
         AssertLogRelMsgFailedReturn(("cRefs=%d iPage=%p HCPhys=%RHp\n", cRefs, iPage, HCPhys), UINT32_MAX);
     }
     void *pvPage = paPages[iPage].pvPage;
@@ -1804,10 +1808,10 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
     uint32_t const  iPage = pgmR0DynMapPage(g_pPGMR0DynMap, HCPhys, pSet->iCpu, pVM, &pvPage);
     if (RT_UNLIKELY(iPage == UINT32_MAX))
     {
-        static uint32_t s_cBitched = 0;
-        if (++s_cBitched < 10)
-            LogRel(("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
-                    g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages));
+        AssertMsg2("PGMDynMapHCPage: cLoad=%u/%u cPages=%u cGuardPages=%u\n",
+                   g_pPGMR0DynMap->cLoad, g_pPGMR0DynMap->cMaxLoad, g_pPGMR0DynMap->cPages, g_pPGMR0DynMap->cGuardPages);
+        if (!g_fPGMR0DynMapTestRunning)
+            VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
         *ppv = NULL;
         return VERR_PGM_DYNMAP_FAILED;
     }
@@ -1899,9 +1903,9 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
                 /* We're screwed. */
                 pgmR0DynMapReleasePage(g_pPGMR0DynMap, iPage, 1);
 
-                static uint32_t s_cBitched = 0;
-                if (++s_cBitched < 10)
-                    LogRel(("PGMDynMapHCPage: set is full!\n"));
+                AssertMsg2("PGMDynMapHCPage: set is full!\n");
+                if (!g_fPGMR0DynMapTestRunning)
+                    VMMR0CallHost(pVM, VMMCALLHOST_VM_R0_ASSERTION, 0);
                 *ppv = NULL;
                 return VERR_PGM_DYNMAP_FULL_SET;
             }
@@ -1989,6 +1993,7 @@ static int pgmR0DynMapTest(PVM pVM)
 
     void           *pvR0DynMapUsedSaved = pVM->pgm.s.pvR0DynMapUsed;
     pVM->pgm.s.pvR0DynMapUsed = pThis;
+    g_fPGMR0DynMapTestRunning = true;
 
     /*
      * Simple test, map CR3 twice and check that we're getting the
@@ -2175,6 +2180,7 @@ static int pgmR0DynMapTest(PVM pVM)
     else
         PGMR0DynMapAssertIntegrity();
 
+    g_fPGMR0DynMapTestRunning = false;
     LogRel(("Result: rc=%Rrc Load=%u/%u/%u Set=%#x/%u\n", rc,
             pThis->cLoad, pThis->cMaxLoad, pThis->cPages - pThis->cPages, pSet->cEntries, RT_ELEMENTS(pSet->aEntries)));
     pVM->pgm.s.pvR0DynMapUsed = pvR0DynMapUsedSaved;
