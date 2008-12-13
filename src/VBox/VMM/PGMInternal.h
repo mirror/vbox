@@ -3361,6 +3361,32 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
 
 #endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+/**
+ * Temporarily maps one host page specified by HC physical address, returning
+ * pointer within the page.
+ *
+ * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
+ * reused after 8 mappings (or perhaps a few more if you score with the cache).
+ *
+ * @returns The address corresponding to HCPhys.
+ * @param   pPGM        Pointer to the PVM instance data.
+ * @param   HCPhys      HC Physical address of the page.
+ */
+DECLINLINE(void *) pgmDynMapHCPageOff(PPGM pPGM, RTHCPHYS HCPhys)
+{
+    void *pv;
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    pgmR0DynMapHCPageInlined(pPGM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, &pv);
+# else
+    PGMDynMapHCPage(PGM2VM(pPGM), HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, &pv);
+# endif
+    pv = (void *)((uintptr_t)pv | (HCPhys & PAGE_OFFSET_MASK));
+    return pv;
+}
+#endif /*  VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 || IN_RC */
+
+
 #ifndef IN_RC
 /**
  * Queries the Physical TLB entry for a physical guest page,

@@ -36,10 +36,6 @@
 #include <VBox/vmapi.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-# include <iprt/err.h>
-# include <VBox/param.h>
-#endif
 
 __BEGIN_DECLS
 
@@ -456,25 +452,6 @@ VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
 VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
-
-/**
- * Temporarily maps one host page specified by HC physical address, returning
- * pointer within the page.
- *
- * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
- * reused after 8 mappings (or perhaps a few more if you score with the cache).
- *
- * @returns VINF_SUCCESS - will bail out to ring-3 on failure.
- * @param   pVM         VM handle.
- * @param   HCPhys      HC Physical address of the page.
- * @param   ppv         Where to store the address corresponding to HCPhys.
- */
-DECLINLINE(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
-{
-    PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
-    *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
-    return VINF_SUCCESS;
-}
 #endif
 
 
