@@ -52,176 +52,6 @@
 #define TSTMP_LT(a,b)   ((int)((a)-(b)) < 0)
 #define TSTMP_GEQ(a,b)  ((int)((a)-(b)) >= 0)
 
-#ifndef VBOX_WITH_BSD_REASS
-/*
- * Insert segment ti into reassembly queue of tcp with
- * control block tp.  Return TH_FIN if reassembly now includes
- * a segment with FIN.  The macro form does the common case inline
- * (segment is the next to be received on an established connection,
- * and the queue is empty), avoiding linkage into and removal
- * from the queue and repetition of various conversions.
- * Set DELACK for segments received in order, but ack immediately
- * when segments are out of order (so fast retransmit can work).
- */
-#ifdef TCP_ACK_HACK
-#define TCP_REASS(pData, tp, ti, m, so, flags) {\
-       if ((ti)->ti_seq == (tp)->rcv_nxt && \
-           u32_to_ptr((pData), (tp)->seg_next, struct tcpcb *) == (tp) && \
-           (tp)->t_state == TCPS_ESTABLISHED) {\
-               if (ti->ti_flags & TH_PUSH) \
-                       tp->t_flags |= TF_ACKNOW; \
-               else \
-                       tp->t_flags |= TF_DELACK; \
-               (tp)->rcv_nxt += (ti)->ti_len; \
-               flags = (ti)->ti_flags & TH_FIN; \
-               tcpstat.tcps_rcvpack++;\
-               tcpstat.tcps_rcvbyte += (ti)->ti_len;\
-               if (so->so_emu) { \
-                       if (tcp_emu((pData), (so),(m))) sbappend((pData), (so), (m)); \
-               } else \
-                       sbappend((pData), (so), (m)); \
-/*               sorwakeup(so); */ \
-        } else {\
-               (flags) = tcp_reass((pData), (tp), (ti), (m)); \
-               tp->t_flags |= TF_ACKNOW; \
-       } \
-}
-#else
-#define TCP_REASS(pData, tp, ti, m, so, flags) { \
-        if ((ti)->ti_seq == (tp)->rcv_nxt && \
-            u32_to_ptr((pData), (tp)->seg_next, struct tcpcb *) == (tp) && \
-            (tp)->t_state == TCPS_ESTABLISHED) { \
-                tp->t_flags |= TF_DELACK; \
-                (tp)->rcv_nxt += (ti)->ti_len; \
-                flags = (ti)->ti_flags & TH_FIN; \
-                tcpstat.tcps_rcvpack++;\
-                tcpstat.tcps_rcvbyte += (ti)->ti_len;\
-                if (so->so_emu) { \
-                        if (tcp_emu((pData), (so),(m))) sbappend((pData), (so), (m)); \
-                } else \
-                        sbappend((pData), (so), (m)); \
-/*              sorwakeup(so); */ \
-        } else { \
-                (flags) = tcp_reass((pData), (tp), (ti), (m)); \
-                tp->t_flags |= TF_ACKNOW; \
-        } \
-}
-#endif
-
-int
-tcp_reass(PNATState pData, register struct tcpcb *tp, register struct tcpiphdr *ti, struct mbuf *m)
-{
-        register struct tcpiphdr *q;
-        struct socket *so = tp->t_socket;
-        int flags;
-
-        /*
-         * Call with ti==0 after become established to
-         * force pre-ESTABLISHED data up to user socket.
-         */
-        if (ti == 0)
-                goto present;
-
-        /*
-         * Find a segment which begins after this one does.
-         */
-        for (q = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *); q != (struct tcpiphdr *)tp;
-            q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *))
-                if (SEQ_GT(q->ti_seq, ti->ti_seq))
-                        break;
-
-        /*
-         * If there is a preceding segment, it may provide some of
-         * our data already.  If so, drop the data from the incoming
-         * segment.  If it provides all of our data, drop us.
-         */
-        if (u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *) != (struct tcpiphdr *)tp) {
-                register int i;
-                q = u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *);
-                /* conversion to int (in i) handles seq wraparound */
-                i = q->ti_seq + q->ti_len - ti->ti_seq;
-                if (i > 0) {
-                        if (i >= ti->ti_len) {
-                                tcpstat.tcps_rcvduppack++;
-                                tcpstat.tcps_rcvdupbyte += ti->ti_len;
-                                m_freem(pData, m);
-                                /*
-                                 * Try to present any queued data
-                                 * at the left window edge to the user.
-                                 * This is needed after the 3-WHS
-                                 * completes.
-                                 */
-                                goto present;   /* ??? */
-                        }
-                        m_adj(m, i);
-                        ti->ti_len -= i;
-                        ti->ti_seq += i;
-                }
-                q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *);
-        }
-        tcpstat.tcps_rcvoopack++;
-        tcpstat.tcps_rcvoobyte += ti->ti_len;
-        REASS_MBUF_SET(ti, m); /* XXX */
-
-        /*
-         * While we overlap succeeding segments trim them or,
-         * if they are completely covered, dequeue them.
-         */
-        while (q != (struct tcpiphdr *)tp) {
-                register int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
-                if (i <= 0)
-                        break;
-                if (i < q->ti_len) {
-                        q->ti_seq += i;
-                        q->ti_len -= i;
-                        m_adj(REASS_MBUF_GET(q), i);
-                        break;
-                }
-                q = u32_to_ptr(pData, q->ti_next, struct tcpiphdr *);
-                m = REASS_MBUF_GET(u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
-                remque_32(pData, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
-                m_freem(pData, m);
-        }
-
-        /*
-         * Stick new segment in its place.
-         */
-        insque_32(pData, ti, u32_to_ptr(pData, q->ti_prev, struct tcpiphdr *));
-
-present:
-        /*
-         * Present data to user, advancing rcv_nxt through
-         * completed sequence space.
-         */
-        if (!TCPS_HAVEESTABLISHED(tp->t_state))
-                return (0);
-        ti = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
-        if (ti == (struct tcpiphdr *)tp || ti->ti_seq != tp->rcv_nxt)
-                return (0);
-        if (tp->t_state == TCPS_SYN_RECEIVED && ti->ti_len)
-                return (0);
-        do {
-                tp->rcv_nxt += ti->ti_len;
-                flags = ti->ti_flags & TH_FIN;
-                remque_32(pData, ti);
-                m = REASS_MBUF_GET(ti); /* XXX */
-                ti = u32_to_ptr(pData, ti->ti_next, struct tcpiphdr *);
-/*              if (so->so_state & SS_FCANTRCVMORE) */
-                if (so->so_state & SS_FCANTSENDMORE)
-                        m_freem(pData, m);
-                else {
-                        if (so->so_emu) {
-                                if (tcp_emu(pData, so,m)) sbappend(pData, so, m);
-                        } else
-                                sbappend(pData, so, m);
-                }
-        } while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
-/*      sorwakeup(so); */
-        return (flags);
-}
-
-#else /* VBOX_WITH_BSD_REASS */
-
 #ifndef TCP_ACK_HACK
 #define DELAY_ACK(tp, ti)                           \
                if (ti->ti_flags & TH_PUSH)          \
@@ -399,7 +229,6 @@ present:
         } while (q && q->tqe_th->th_seq == tp->rcv_nxt);
         return (flags);
 }
-#endif /* VBOX_WITH_BSD_REASS */
 
 /*
  * TCP input routine, follows pages 65-76 of the
@@ -469,12 +298,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
          * Checksum extended TCP header and data.
          */
         tlen = ((struct ip *)ti)->ip_len;
-#if !defined(VBOX_WITH_BSD_REASS)
-        ti->ti_next = ti->ti_prev = 0;
-        ti->ti_x1 = 0;
-#else
         memset(ti->ti_x1, 0, 9);
-#endif
         ti->ti_len = htons((u_int16_t)tlen);
         len = sizeof(struct ip ) + tlen;
         /* keep checksum for ICMP reply
@@ -722,11 +546,7 @@ findso:
                                 return;
                         }
                 } else if (ti->ti_ack == tp->snd_una &&
-#ifndef VBOX_WITH_BSD_REASS
-                    u32_to_ptr(pData, tp->seg_next, struct tcpcb *) == tp &&
-#else  /* VBOX_WITH_BSD_REASS */
                     LIST_FIRST(&tp->t_segq) &&
-#endif /* VBOX_WITH_BSD_REASS */
                     ti->ti_len <= sbspace(&so->so_rcv)) {
                         /*
                          * this is a pure, in-sequence data packet
@@ -926,12 +746,7 @@ findso:
  *                              tp->rcv_scale = tp->request_r_scale;
  *                      }
  */
-#ifndef VBOX_WITH_BSD_REASS
-                        (void) tcp_reass(pData, tp, (struct tcpiphdr *)0,
-                                (struct mbuf *)0);
-#else  /* VBOX_WITH_BSD_REASS */
                         (void) tcp_reass(pData, tp, (struct tcphdr *)0, NULL, (struct mbuf *)0);
-#endif /* VBOX_WITH_BSD_REASS */
                         /*
                          * if we didn't have to retransmit the SYN,
                          * use its rtt as our initial srtt & rtt var.
@@ -1186,11 +1001,7 @@ trimthenstep6:
  *                      tp->rcv_scale = tp->request_r_scale;
  *              }
  */
-#ifndef VBOX_WITH_BSD_REASS
-                (void) tcp_reass(pData, tp, (struct tcpiphdr *)0, (struct mbuf *)0);
-#else  /* VBOX_WITH_BSD_REASS */
                 (void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
-#endif /*VBOX_WITH_BSD_REASS*/
                 tp->snd_wl1 = ti->ti_seq - 1;
                 /* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
                 goto synrx_to_est;
@@ -1504,9 +1315,6 @@ dodata:
          */
         if ((ti->ti_len || (tiflags&TH_FIN)) &&
             TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-#ifndef VBOX_WITH_BSD_REASS
-                TCP_REASS(pData, tp, ti, m, so, tiflags);
-#else  /* VBOX_WITH_BSD_REASS */
                 if (ti->ti_seq == tp->rcv_nxt
                 && LIST_EMPTY(&tp->t_segq)
                 && tp->t_state == TCPS_ESTABLISHED) {
@@ -1524,7 +1332,6 @@ dodata:
                     tiflags = tcp_reass(pData, tp, &ti->ti_t, &tlen, m);
                     tiflags |= TF_ACKNOW;
                 }
-#endif /* VBOX_WITH_BSD_REASS */
                 /*
                  * Note the amount of data that peer has sent into
                  * our window, in order to estimate the sender's

@@ -73,9 +73,7 @@ struct m_hdr
 
     caddr_t mh_data;           /* Location of data */
     int     mh_len;            /* Amount of data in this mbuf */
-#ifdef VBOX_WITH_BSD_REASS
-    void *header;              /*XXX: in real BSD sources this field lays in pkthdr structure*/
-#endif
+    void    *header;           /*XXX: in real BSD sources this field lays in pkthdr structure*/
 };
 
 /*
@@ -125,11 +123,9 @@ struct mbuf
 #define M_USEDLIST              0x04    /* XXX mbuf is on used list (for dtom()) */
 #define M_DOFREE                0x08    /* when m_free is called on the mbuf, free()
                                          * it rather than putting it on the free list */
-#ifdef VBOX_WITH_BSD_REASS
-#define M_FRAG                  0x0800  /* packet is a fragment of a larger packet */
-#define M_FIRSTFRAG             0x1000  /* paket is first fragment */
-#define M_LASTFRAG              0x2000  /* paket is last fragment */
-#endif /* VBOX_WITH_BSD_REASS */
+#define M_FRAG                0x0800    /* packet is a fragment of a larger packet */
+#define M_FIRSTFRAG           0x1000    /* paket is first fragment */
+#define M_LASTFRAG            0x2000    /* paket is last fragment */
 
 extern int mbuf_alloced;
 extern struct mbuf m_freelist, m_usedlist;

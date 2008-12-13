@@ -53,16 +53,12 @@
 void
 ip_init(PNATState pData)
 {
-#ifndef VBOX_WITH_BSD_REASS
-    ipq.next = ipq.prev = ptr_to_u32(pData, &ipq);
-#else /* !VBOX_WITH_BSD_REASS */
     int i = 0;
     for (i = 0; i < IPREASS_NHASH; ++i)
         TAILQ_INIT(&ipq[i]);
     maxnipq = 100; /* ??? */
     maxfragsperpacket = 16;
     nipq = 0;
-#endif /* VBOX_WITH_BSD_REASS */
     ip_currid = tt.tv_sec & 0xffff;
     udp_init(pData);
     tcp_init(pData);
@@ -162,60 +158,6 @@ ip_input(PNATState pData, struct mbuf *m)
      *
      * XXX This should fail, don't fragment yet
      */
-#ifndef VBOX_WITH_BSD_REASS
-    if (ip->ip_off &~ IP_DF)
-    {
-        register struct ipq_t *fp;
-        /*
-         * Look for queue of fragments
-         * of this datagram.
-         */
-        for (fp = u32_to_ptr(pData, ipq.next, struct ipq_t *);
-                fp != &ipq;
-                fp = u32_to_ptr(pData, fp->next, struct ipq_t *))
-            if (   ip->ip_id == fp->ipq_id
-                && ip->ip_src.s_addr == fp->ipq_src.s_addr
-                && ip->ip_dst.s_addr == fp->ipq_dst.s_addr
-                && ip->ip_p == fp->ipq_p)
-                goto found;
-        fp = 0;
-found:
-
-        /*
-         * Adjust ip_len to not reflect header,
-         * set ip_mff if more fragments are expected,
-         * convert offset of this to bytes.
-         */
-        ip->ip_len -= hlen;
-        if (ip->ip_off & IP_MF)
-            ((struct ipasfrag *)ip)->ipf_mff |= 1;
-        else
-            ((struct ipasfrag *)ip)->ipf_mff &= ~1;
-
-        ip->ip_off <<= 3;
-
-        /*
-         * If datagram marked as having more fragments
-         * or if this is not the first fragment,
-         * attempt reassembly; if it succeeds, proceed.
-         */
-        if (((struct ipasfrag *)ip)->ipf_mff & 1 || ip->ip_off)
-        {
-            ipstat.ips_fragments++;
-            ip = ip_reass(pData, (struct ipasfrag *)ip, fp);
-            if (ip == 0)
-                return;
-            ipstat.ips_reassembled++;
-            m = dtom(pData, ip);
-        }
-        else
-            if (fp)
-                ip_freef(pData, fp);
-
-    }
-    else
-        ip->ip_len -= hlen;
-#else /* !VBOX_WITH_BSD_REASS */
     if (ip->ip_off & (IP_MF | IP_OFFMASK))
     {
         m = ip_reass(pData, m);
@@ -226,7 +168,6 @@ found:
     }
     else
         ip->ip_len -= hlen;
-#endif /* VBOX_WITH_BSD_REASS */
 
     /*
      * Switch out to protocol's input routine.
@@ -252,198 +193,6 @@ bad:
     m_freem(pData, m);
     return;
 }
-
-#ifndef VBOX_WITH_BSD_REASS
-/*
- * Take incoming datagram fragment and try to
- * reassemble it into whole datagram.  If a chain for
- * reassembly of this datagram already exists, then it
- * is given as fp; otherwise have to make a chain.
- */
-struct ip *
-ip_reass(PNATState pData, register struct ipasfrag *ip, register struct ipq_t *fp)
-{
-    register struct mbuf *m = dtom(pData, ip);
-    register struct ipasfrag *q;
-    int hlen = ip->ip_hl << 2;
-    int i, next;
-
-    DEBUG_CALL("ip_reass");
-    DEBUG_ARG("ip = %lx", (long)ip);
-    DEBUG_ARG("fp = %lx", (long)fp);
-    DEBUG_ARG("m = %lx", (long)m);
-
-    /*
-     * Presence of header sizes in mbufs
-     * would confuse code below.
-     * Fragment m_data is concatenated.
-     */
-    m->m_data += hlen;
-    m->m_len -= hlen;
-
-    /*
-     * If first fragment to arrive, create a reassembly queue.
-     */
-    if (fp == 0)
-    {
-        struct mbuf *t;
-        if ((t = m_get(pData)) == NULL) goto dropfrag;
-        fp = mtod(t, struct ipq_t *);
-        insque_32(pData, fp, &ipq);
-        fp->ipq_ttl = IPFRAGTTL;
-        fp->ipq_p = ip->ip_p;
-        fp->ipq_id = ip->ip_id;
-        fp->ipq_next = fp->ipq_prev = ptr_to_u32(pData, (struct ipasfrag *)fp);
-        fp->ipq_src = ((struct ip *)ip)->ip_src;
-        fp->ipq_dst = ((struct ip *)ip)->ip_dst;
-        q = (struct ipasfrag *)fp;
-        goto insert;
-    }
-
-    /*
-     * Find a segment which begins after this one does.
-     */
-    for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
-         q != (struct ipasfrag *)fp;
-         q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *))
-        if (q->ip_off > ip->ip_off)
-            break;
-
-    /*
-     * If there is a preceding segment, it may provide some of
-     * our data already.  If so, drop the data from the incoming
-     * segment.  If it provides all of our data, drop us.
-     */
-    if (u32_to_ptr(pData, q->ipf_prev, struct ipq_t *) != fp)
-    {
-        i = (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *))->ip_off +
-            (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *))->ip_len - ip->ip_off;
-        if (i > 0)
-        {
-            if (i >= ip->ip_len)
-                goto dropfrag;
-            m_adj(dtom(pData, ip), i);
-            ip->ip_off += i;
-            ip->ip_len -= i;
-        }
-    }
-
-    /*
-     * While we overlap succeeding segments trim them or,
-     * if they are completely covered, dequeue them.
-     */
-    while (q != (struct ipasfrag *)fp && ip->ip_off + ip->ip_len > q->ip_off)
-    {
-        i = (ip->ip_off + ip->ip_len) - q->ip_off;
-        if (i < q->ip_len) {
-            q->ip_len -= i;
-            q->ip_off += i;
-            m_adj(dtom(pData, q), i);
-            break;
-        }
-        q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
-        m_freem(pData, dtom(pData, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *)));
-        ip_deq(pData, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *));
-    }
-
-insert:
-    /*
-     * Stick new segment in its place;
-     * check for complete reassembly.
-     */
-    ip_enq(pData, ip, u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *));
-    next = 0;
-    for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
-         q != (struct ipasfrag *)fp;
-         q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *))
-    {
-        if (q->ip_off != next)
-            return (0);
-        next += q->ip_len;
-    }
-    if (u32_to_ptr(pData, q->ipf_prev, struct ipasfrag *)->ipf_mff & 1)
-        return (0);
-
-    /*
-     * Reassembly is complete; concatenate fragments.
-     */
-    q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
-    m = dtom(pData, q);
-
-    q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
-    while (q != (struct ipasfrag *)fp)
-    {
-        struct mbuf *t;
-        t = dtom(pData, q);
-        q = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
-        m_cat(pData, m, t);
-    }
-
-    /*
-     * Create header for new ip packet by
-     * modifying header of first packet;
-     * dequeue and discard fragment reassembly header.
-     * Make header visible.
-     */
-    ip = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
-
-    /*
-     * If the fragments concatenated to an mbuf that's
-     * bigger than the total size of the fragment, then and
-     * m_ext buffer was alloced. But fp->ipq_next points to
-     * the old buffer (in the mbuf), so we must point ip
-     * into the new buffer.
-     */
-    if (m->m_flags & M_EXT)
-    {
-        int delta;
-        delta = (char *)ip - m->m_dat;
-        ip = (struct ipasfrag *)(m->m_ext + delta);
-    }
-
-    /* DEBUG_ARG("ip = %lx", (long)ip);
-     * ip=(struct ipasfrag *)m->m_data; */
-
-    ip->ip_len = next;
-    ip->ipf_mff &= ~1;
-    ((struct ip *)ip)->ip_src = fp->ipq_src;
-    ((struct ip *)ip)->ip_dst = fp->ipq_dst;
-    remque_32(pData, fp);
-    (void) m_free(pData, dtom(pData, fp));
-    m = dtom(pData, ip);
-    m->m_len += (ip->ip_hl << 2);
-    m->m_data -= (ip->ip_hl << 2);
-
-    return ((struct ip *)ip);
-
-dropfrag:
-    ipstat.ips_fragdropped++;
-    m_freem(pData, m);
-    return (0);
-}
-
-/*
- * Free a fragment reassembly header and all
- * associated datagrams.
- */
-void
-ip_freef(PNATState pData, struct ipq_t *fp)
-{
-    register struct ipasfrag *q, *p;
-
-    for (q = u32_to_ptr(pData, fp->ipq_next, struct ipasfrag *);
-         q != (struct ipasfrag *)fp;
-         q = p)
-    {
-        p = u32_to_ptr(pData, q->ipf_next, struct ipasfrag *);
-        ip_deq(pData, q);
-        m_freem(pData, dtom(pData, q));
-    }
-    remque_32(pData, fp);
-    (void) m_free(pData, dtom(pData, fp));
-}
-
-#else /* VBOX_WITH_BSD_REASS */
 
 struct mbuf *
 ip_reass(PNATState pData, struct mbuf* m)
@@ -759,37 +508,6 @@ ip_freef(PNATState pData, struct ipqhead *fhp, struct ipq_t *fp)
     free(fp);
     nipq--;
 }
-#endif /* VBOX_WITH_BSD_REASS */
-
-#ifndef VBOX_WITH_BSD_REASS
-/*
- * Put an ip fragment on a reassembly chain.
- * Like insque, but pointers in middle of structure.
- */
-void
-ip_enq(PNATState pData, register struct ipasfrag *p, register struct ipasfrag *prev)
-{
-    DEBUG_CALL("ip_enq");
-    DEBUG_ARG("prev = %lx", (long)prev);
-    p->ipf_prev = ptr_to_u32(pData, prev);
-    p->ipf_next = prev->ipf_next;
-    u32_to_ptr(pData, prev->ipf_next, struct ipasfrag *)->ipf_prev = ptr_to_u32(pData, p);
-    prev->ipf_next = ptr_to_u32(pData, p);
-}
-
-/*
- * To ip_enq as remque is to insque.
- */
-void
-ip_deq(PNATState pData, register struct ipasfrag *p)
-{
-    struct ipasfrag *prev = u32_to_ptr(pData, p->ipf_prev, struct ipasfrag *);
-    struct ipasfrag *next = u32_to_ptr(pData, p->ipf_next, struct ipasfrag *);
-    u32ptr_done(pData, prev->ipf_next, p);
-    prev->ipf_next = p->ipf_next;
-    next->ipf_prev = p->ipf_prev;
-}
-#endif /* !VBOX_WITH_BSD_REASS */
 
 /*
  * IP timer processing;
@@ -801,24 +519,6 @@ ip_slowtimo(PNATState pData)
 {
     register struct ipq_t *fp;
 
-#ifndef VBOX_WITH_BSD_REASS
-    DEBUG_CALL("ip_slowtimo");
-
-    fp = u32_to_ptr(pData, ipq.next, struct ipq_t *);
-    if (fp == 0)
-        return;
-
-    while (fp != &ipq)
-    {
-        --fp->ipq_ttl;
-        fp = u32_to_ptr(pData, fp->next, struct ipq_t *);
-        if (u32_to_ptr(pData, fp->prev, struct ipq_t *)->ipq_ttl == 0)
-        {
-            ipstat.ips_fragtimeout++;
-            ip_freef(pData, u32_to_ptr(pData, fp->prev, struct ipq_t *));
-        }
-        }
-#else /* VBOX_WITH_BSD_REASS */
     /* XXX: the fragment expiration is the same but requier
      * additional loop see (see ip_input.c in FreeBSD tree)
      */
@@ -854,7 +554,6 @@ ip_slowtimo(PNATState pData)
             }
         }
     }
-#endif /* VBOX_WITH_BSD_REASS */
 }
 
 

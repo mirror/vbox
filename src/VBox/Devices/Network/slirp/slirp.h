@@ -294,15 +294,8 @@ void if_output _P((PNATState, struct socket *, struct mbuf *));
 /* ip_input.c */
 void ip_init _P((PNATState));
 void ip_input _P((PNATState, struct mbuf *));
-#ifndef VBOX_WITH_BSD_REASS
-struct ip * ip_reass _P((PNATState, register struct ipasfrag *, register struct ipq_t *));
-void ip_freef _P((PNATState, struct ipq_t *));
-void ip_enq _P((PNATState, register struct ipasfrag *, register struct ipasfrag *));
-void ip_deq _P((PNATState, register struct ipasfrag *));
-#else /* !VBOX_WITH_BSD_REASS */
 struct mbuf * ip_reass _P((PNATState, register struct mbuf *));
 void ip_freef _P((PNATState, struct ipqhead *, struct ipq_t *));
-#endif  /* VBOX_WITH_BSD_REASS */
 void ip_slowtimo _P((PNATState));
 void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
 
@@ -310,11 +303,7 @@ void ip_stripoptions _P((register struct mbuf *, struct mbuf *));
 int ip_output _P((PNATState, struct socket *, struct mbuf *));
 
 /* tcp_input.c */
-#ifndef VBOX_WITH_BSD_REASS
-int tcp_reass _P((PNATState, register struct tcpcb *, register struct tcpiphdr *, struct mbuf *));
-#else /* !VBOX_WITH_BSD_REASS */
 int tcp_reass _P((PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *));
-#endif /* VBOX_WITH_BSD_REASS */
 void tcp_input _P((PNATState, register struct mbuf *, int, struct socket *));
 void tcp_dooptions _P((PNATState, struct tcpcb *, u_char *, int, struct tcpiphdr *));
 void tcp_xmit_timer _P((PNATState, register struct tcpcb *, int));

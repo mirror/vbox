@@ -29,42 +29,6 @@ getouraddr(PNATState pData)
     our_addr.s_addr = loopback_addr.s_addr;
 }
 
-#if SIZEOF_CHAR_P == 8 && !defined(VBOX_WITH_BSD_REASS)
-
-struct quehead_32
-{
-    u_int32_t qh_link;
-    u_int32_t qh_rlink;
-};
-
-void
-insque_32(PNATState pData, void *a, void *b)
-{
-    register struct quehead_32 *element = (struct quehead_32 *) a;
-    register struct quehead_32 *head = (struct quehead_32 *) b;
-    struct quehead_32 *link = u32_to_ptr(pData, head->qh_link, struct quehead_32 *);
-
-    element->qh_link = head->qh_link;
-    element->qh_rlink = ptr_to_u32(pData, head);
-    Assert(link->qh_rlink == element->qh_rlink);
-    link->qh_rlink = head->qh_link = ptr_to_u32(pData, element);
-}
-
-void
-remque_32(PNATState pData, void *a)
-{
-    register struct quehead_32 *element = (struct quehead_32 *) a;
-    struct quehead_32 *link = u32_to_ptr(pData, element->qh_link, struct quehead_32 *);
-    struct quehead_32 *rlink = u32_to_ptr(pData, element->qh_rlink, struct quehead_32 *);
-
-    u32ptr_done(pData, link->qh_rlink, element);
-    link->qh_rlink = element->qh_rlink;
-    rlink->qh_link = element->qh_link;
-    element->qh_rlink = 0;
-}
-
-#endif /* SIZEOF_CHAR_P == 8 && !VBOX_WITH_BSD_REASS */
-
 struct quehead
 {
     struct quehead *qh_link;

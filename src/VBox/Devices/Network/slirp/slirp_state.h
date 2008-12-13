@@ -73,14 +73,10 @@ typedef struct NATState
     struct icmpstat_t icmpstat;
     /* Stuff from ip_input.c */
     struct ipstat_t ipstat;
-#ifndef VBOX_WITH_BSD_REASS
-    struct ipq_t ipq;
-#else /* !VBOX_WITH_BSD_REASS */
     struct ipqhead ipq[IPREASS_NHASH];
     int maxnipq;    /* Administrative limit on # of reass queues*/
     int maxfragsperpacket; /* Maximum number of IPv4 fragments allowed per packet */
     int nipq; /* total number of reass queues */
-#endif /* VBOX_WITH_BSD_REASS */
     uint16_t ip_currid;
     /* Stuff from mbuf.c */
     int mbuf_alloced, mbuf_max;
@@ -109,23 +105,13 @@ typedef struct NATState
     struct socket tcb;
     struct socket *tcp_last_so;
     tcp_seq tcp_iss;
-#if ARCH_BITS == 64 && !defined(VBOX_WITH_BSD_REASS)
-    /* Stuff from tcp_subr.c */
-    void *apvHash[16384];
-    uint32_t cpvHashUsed;
-    uint32_t cpvHashCollisions;
-    uint64_t cpvHashInserts;
-    uint64_t cpvHashDone;
-#endif /* ARCH_BITS == 64 && !defined(VBOX_WITH_BSD_REASS) */
     /* Stuff from tcp_timer.c */
     struct tcpstat_t tcpstat;
     uint32_t tcp_now;
-#ifdef VBOX_WITH_BSD_REASS
     int tcp_reass_qsize;
     int tcp_reass_maxqlen;
     int tcp_reass_maxseg;
     int tcp_reass_overflows;
-#endif /* VBOX_WITH_BSD_REASS */
     /* Stuff from tftp.c */
     struct tftp_session tftp_sessions[TFTP_SESSIONS_MAX];
     const char *tftp_prefix;
@@ -255,8 +241,6 @@ typedef struct NATState
 #define udb pData->udb
 #define udp_last_so pData->udp_last_so
 
-#ifdef VBOX_WITH_BSD_REASS
-
 #define maxfragsperpacket pData->maxfragsperpacket
 #define maxnipq pData->maxnipq
 #define nipq pData->nipq
@@ -265,32 +249,5 @@ typedef struct NATState
 #define tcp_reass_maxqlen pData->tcp_reass_maxqlen
 #define tcp_reass_maxseg pData->tcp_reass_maxseg
 #define tcp_reass_overflows pData->tcp_reass_overflows
-
-#else /* ! VBOX_WITH_BSD_REASS */
-
-#if SIZEOF_CHAR_P != 4
-    extern void     VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint);
-    extern uint32_t VBoxU32PtrHashSlow(PNATState pData, void *pv);
-
-    /** Hash the pointer, inserting it if need be. */
-    DECLINLINE(uint32_t) VBoxU32PtrHash(PNATState pData, void *pv)
-    {
-        uint32_t i = ((uintptr_t)pv >> 3) % RT_ELEMENTS(pData->apvHash);
-        if (RT_LIKELY(pData->apvHash[i] == pv && pv))
-            return i;
-        return VBoxU32PtrHashSlow(pData, pv);
-    }
-    /** Lookup the hash value. */
-    DECLINLINE(void *) VBoxU32PtrLookup(PNATState pData, uint32_t i)
-    {
-        void *pv;
-        Assert(i < RT_ELEMENTS(pData->apvHash));
-        pv = pData->apvHash[i];
-        Assert(pv || !i);
-        return pv;
-    }
-#endif
-
-#endif
 
 #endif /* !_slirp_state_h_ */

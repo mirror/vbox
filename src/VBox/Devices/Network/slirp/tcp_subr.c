@@ -55,10 +55,8 @@ tcp_init(PNATState pData)
     tcp_iss = 1;            /* wrong */
     tcb.so_next = tcb.so_prev = &tcb;
     tcp_last_so = &tcb;
-#ifdef VBOX_WITH_BSD_REASS
     tcp_reass_maxqlen = 48;
     tcp_reass_maxseg  = 256;
-#endif /* VBOX_WITH_BSD_REASS */
 }
 
 /*
@@ -74,12 +72,7 @@ tcp_template(struct tcpcb *tp)
     struct socket *so = tp->t_socket;
     register struct tcpiphdr *n = &tp->t_template;
 
-#if !defined(VBOX_WITH_BSD_REASS)
-    n->ti_next = n->ti_prev = 0;
-    n->ti_x1 = 0;
-#else
     memset(n->ti_x1, 0, 9);
-#endif
     n->ti_pr = IPPROTO_TCP;
     n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
     n->ti_src = so->so_faddr;
@@ -159,12 +152,7 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
     tlen += sizeof (struct tcpiphdr);
     m->m_len = tlen;
 
-#if !defined(VBOX_WITH_BSD_REASS)
-    ti->ti_next = ti->ti_prev = 0;
-    ti->ti_x1 = 0;
-#else
     memset(ti->ti_x1, 0, 9);
-#endif
     ti->ti_seq = htonl(seq);
     ti->ti_ack = htonl(ack);
     ti->ti_x2 = 0;
@@ -202,9 +190,6 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
         return ((struct tcpcb *)0);
 
     memset((char *) tp, 0, sizeof(struct tcpcb));
-#ifndef VBOX_WITH_BSD_REASS
-    tp->seg_next = tp->seg_prev = ptr_to_u32(pData, (struct tcpiphdr *)tp);
-#endif /* !VBOX_WITH_BSD_REASS */
     tp->t_maxseg = tcp_mssdflt;
 
     tp->t_flags = tcp_do_rfc1323 ? (TF_REQ_SCALE|TF_REQ_TSTMP) : 0;
@@ -278,21 +263,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     struct socket *so = tp->t_socket;
     register struct mbuf *m;
 
-#ifndef VBOX_WITH_BSD_REASS
-    DEBUG_CALL("tcp_close");
-    DEBUG_ARG("tp = %lx", (long )tp);
-
-    /* free the reassembly queue, if any */
-    t = u32_to_ptr(pData, tp->seg_next, struct tcpiphdr *);
-    while (t != (struct tcpiphdr *)tp)
-    {
-        t = u32_to_ptr(pData, t->ti_next, struct tcpiphdr *);
-        m = REASS_MBUF_GET(u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-        remque_32(pData, u32_to_ptr(pData, t->ti_prev, struct tcpiphdr *));
-        m_freem(pData, m);
-    }
-    u32ptr_done(pData, ptr_to_u32(pData, tp), tp);
-#else  /* VBOX_WITH_BSD_REASS */
     struct tseg_qent *te;
     DEBUG_CALL("tcp_close");
     DEBUG_ARG("tp = %lx", (long )tp);
@@ -304,7 +274,6 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
         free(te);
         tcp_reass_qsize--;
     }
-#endif /* VBOX_WITH_BSD_REASS */
     free(tp);
     so->so_tcpcb = 0;
     soisfdisconnected(so);
@@ -971,125 +940,3 @@ tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
             return 1;
     }
 }
-
-#if SIZEOF_CHAR_P != 4 && !defined(VBOX_WITH_BSD_REASS)
-/**
- * Slow pointer hashing that deals with automatic inserting and collisions.
- */
-uint32_t VBoxU32PtrHashSlow(PNATState pData, void *pv)
-{
-    uint32_t i;
-    if (pv == NULL)
-        i = 0;
-    else
-    {
-        const uint32_t i1 = ((uintptr_t)pv >> 3) % RT_ELEMENTS(pData->apvHash);
-        if (pData->apvHash[i1] == pv)
-            i = i1;
-        else
-        {
-            /*
-             * Try up to 10 times then assume it's an insertion.
-             * If we didn't find a free entry by then, try another 100 times.
-             * If that fails, give up.
-             */
-            const uint32_t  i2 = ((uintptr_t)pv >> 2) % 7867;
-            uint32_t        i1stFree = pData->apvHash[i1] ? 0 : i1;
-            int             cTries = 10;
-            int             cTries2 = 100;
-
-            i = i1;
-            for (;;)
-            {
-                /* check if we should give in.*/
-                if (--cTries > 0)
-                {
-                    if (i1stFree != 0)
-                    {
-                        i = i1stFree;
-                        pData->apvHash[i] = pv;
-                        pData->cpvHashUsed++;
-                        if (i != i1)
-                            pData->cpvHashCollisions++;
-                        pData->cpvHashInserts++;
-                        break;
-                    }
-                    if (!cTries2)
-                    {
-                        AssertReleaseMsgFailed(("NAT pointer hash error. pv=%p cpvHashUsed=%d cpvHashCollisions=%u\n",
-                                                pv, pData->cpvHashUsed, pData->cpvHashCollisions));
-                        i = 0;
-                        break;
-                    }
-                    cTries = cTries2;
-                    cTries2 = 0;
-                }
-
-                /* advance to the next hash entry and test it. */
-                i = (i + i2) % RT_ELEMENTS(pData->apvHash);
-                while (RT_UNLIKELY(!i))
-                    i = (i + i2) % RT_ELEMENTS(pData->apvHash);
-                if (pData->apvHash[i] == pv)
-                    break;
-                if (RT_UNLIKELY(!i1stFree && !pData->apvHash[i]))
-                    i1stFree = i;
-            }
-        }
-    }
-    return i;
-}
-
-
-/**
- * Removes the pointer from the hash table.
- */
-void VBoxU32PtrDone(PNATState pData, void *pv, uint32_t iHint)
-{
-    /* We don't count NULL pointers. */
-    if (pv == NULL)
-        return;
-    pData->cpvHashDone++;
-
-    /* try the hint */
-    if (    iHint
-        &&  iHint < RT_ELEMENTS(pData->apvHash)
-        &&  pData->apvHash[iHint] == pv)
-    {
-        pData->apvHash[iHint] = NULL;
-        pData->cpvHashUsed--;
-        return;
-    }
-
-    iHint = ((uintptr_t)pv >> 3) % RT_ELEMENTS(pData->apvHash);
-    if (RT_UNLIKELY(pData->apvHash[iHint] != pv))
-    {
-        /*
-         * Try up to 120 times then assert.
-         */
-        const uint32_t  i2 = ((uintptr_t)pv >> 2) % 7867;
-        int             cTries = 120;
-        for (;;)
-        {
-            /* advance to the next hash entry and test it. */
-            iHint = (iHint + i2) % RT_ELEMENTS(pData->apvHash);
-            while (RT_UNLIKELY(!iHint))
-                iHint = (iHint + i2) % RT_ELEMENTS(pData->apvHash);
-            if (pData->apvHash[iHint] == pv)
-                break;
-
-            /* check if we should give in.*/
-            if (--cTries > 0)
-            {
-                AssertReleaseMsgFailed(("NAT pointer hash error. pv=%p cpvHashUsed=%u cpvHashCollisions=%u\n",
-                                        pv, pData->cpvHashUsed, pData->cpvHashCollisions));
-                return;
-            }
-        }
-    }
-
-    /* found it */
-    pData->apvHash[iHint] = NULL;
-    pData->cpvHashUsed--;
-}
-
-#endif /* SIZEOF_CHAR_P != 4 && !defined(VBOX_WITH_BSD_REASS */
