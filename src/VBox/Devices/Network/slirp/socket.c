@@ -849,12 +849,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         ip->ip_tos = ((ip->ip_tos & 0x1E) | 0xC0);  /* high priority for errors */
     }
 
-    /* the low level expects fields to be in host format so let's convert them*/
-#if 0 /* need check on linux */
-    NTOHS(ip->ip_len);
-    NTOHS(ip->ip_off);
-    NTOHS(ip->ip_id);
-#endif
     ip->ip_src.s_addr = src;
     ip->ip_dst.s_addr = dst;
     icmp_reflect(pData, m);
