@@ -422,7 +422,10 @@ PGM_GST_DECL(int, GetPDE)(PVM pVM, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  * Note that a MapCR3 call is usually not followed by an UnmapCR3 call; whenever
  * CR3 is updated we simply call MapCR3 again.
  *
- * @returns VBox status, no specials.
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VINF_PGM_SYNC_CR3 if the shadow page pool overflowed.
+ *
  * @param   pVM             VM handle.
  * @param   GCPhysCR3       The physical address in the CR3 register.
  */
@@ -508,31 +511,35 @@ PGM_GST_DECL(int, MapCR3)(PVM pVM, RTGCPHYS GCPhysCR3)
 #  endif
             if (!HWACCMIsNestedPagingActive(pVM))
             {
+                /*
+                 * Update the shadow root page as well since that's not fixed.
+                 */
+                /** @todo Move this into PGMAllBth.h. */
                 PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
                 if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3))
                 {
                     /* It might have been freed already by a pool flush (see e.g. PGMR3MappingsUnfix). */
+                    /** @todo Coordinate this better with the pool. */
                     if (pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->enmKind != PGMPOOLKIND_FREE)
                         pgmPoolFreeByPage(pPool, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3), PGMPOOL_IDX_AMD64_CR3, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->GCPhys >> PAGE_SHIFT);
-                    pVM->pgm.s.CTX_SUFF(pShwAmd64CR3) = 0;
-                    pVM->pgm.s.pShwPaePml4R3          = 0;
+                    pVM->pgm.s.pShwAmd64CR3R3   = 0;
+                    pVM->pgm.s.pShwAmd64CR3R0   = 0;
+                    pVM->pgm.s.pShwPaePml4R3    = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    pVM->pgm.s.pShwPaePml4R0          = 0;
+                    pVM->pgm.s.pShwPaePml4R0    = 0;
 #  endif
-                    pVM->pgm.s.HCPhysShwPaePml4       = 0;
+                    pVM->pgm.s.HCPhysShwPaePml4 = 0;
                 }
 
                 Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
-l_try_again:
                 rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_64BIT_PML4_FOR_64BIT_PML4, PGMPOOL_IDX_AMD64_CR3, GCPhysCR3 >> PAGE_SHIFT, &pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
                 if (rc == VERR_PGM_POOL_FLUSHED)
                 {
-                    Log(("MapCR3: Flush pool and try again\n"));
-                    Assert(pVM->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL);
-                    rc = pgmPoolSyncCR3(pVM);
-                    AssertRC(rc);
-                    goto l_try_again;
+                    Log(("MapCR3: PGM pool flushed -> signal sync cr3\n"));
+                    Assert(VM_FF_ISSET(pVM, VM_FF_PGM_SYNC_CR3));
+                    return VINF_PGM_SYNC_CR3;
                 }
+                AssertRCReturn(rc, rc);
 #  ifdef IN_RING0
                 pVM->pgm.s.pShwAmd64CR3R3 = MMHyperCCToR3(pVM, pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
 #  else
@@ -544,6 +551,7 @@ l_try_again:
                 pVM->pgm.s.pShwPaePml4R0 = (R0PTRTYPE(PX86PML4))PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pVM->pgm.s.CTX_SUFF(pShwAmd64CR3));
 #  endif
                 pVM->pgm.s.HCPhysShwPaePml4 = pVM->pgm.s.CTX_SUFF(pShwAmd64CR3)->Core.Key;
+                rc = VINF_SUCCESS; /* clear it - pgmPoolAlloc returns hints. */
             }
 # endif
         }
