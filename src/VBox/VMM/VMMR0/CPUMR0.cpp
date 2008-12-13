@@ -335,11 +335,14 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     else
 #endif
     {
-/** @todo @bugref{3202}: Need to wrap these buggers! */
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+        cpumR0SaveDRx(&pCtx->dr[0]);
+#else
         pCtx->dr[0] = ASMGetDR0();
         pCtx->dr[1] = ASMGetDR1();
         pCtx->dr[2] = ASMGetDR2();
         pCtx->dr[3] = ASMGetDR3();
+#endif
         if (fDR6)
             pCtx->dr[6] = ASMGetDR6();
     }
@@ -348,11 +351,15 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
      * Restore the host's debug state. DR0-3, DR6 and only then DR7!
      * DR7 contains 0x400 right now.
      */
-/** @todo @bugref{3202}: And these! */
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
+    cpumR0LoadDRx(&pVCpu->cpum.s.Host.dr0);
+#else
     ASMSetDR0(pVCpu->cpum.s.Host.dr0);
     ASMSetDR1(pVCpu->cpum.s.Host.dr1);
     ASMSetDR2(pVCpu->cpum.s.Host.dr2);
     ASMSetDR3(pVCpu->cpum.s.Host.dr3);
+#endif
     ASMSetDR6(pVCpu->cpum.s.Host.dr6);
     ASMSetDR7(pVCpu->cpum.s.Host.dr7);
 
@@ -373,11 +380,15 @@ VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
 VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6)
 {
     /* Save the host state. */
-/** @todo @bugref{3202}: And these as well! */
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
+    cpumR0SaveDRx(&pVCpu->cpum.s.Host.dr0);
+#else
     pVCpu->cpum.s.Host.dr0 = ASMGetDR0();
     pVCpu->cpum.s.Host.dr1 = ASMGetDR1();
     pVCpu->cpum.s.Host.dr2 = ASMGetDR2();
     pVCpu->cpum.s.Host.dr3 = ASMGetDR3();
+#endif
     pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
     /** @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
     pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
@@ -394,11 +405,14 @@ VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     else
 #endif
     {
-/** @todo @bugref{3202}: This too! */
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+        cpumR0LoadDRx(&pCtx->dr[0]);
+#else
         ASMSetDR0(pCtx->dr[0]);
         ASMSetDR1(pCtx->dr[1]);
         ASMSetDR2(pCtx->dr[2]);
         ASMSetDR3(pCtx->dr[3]);
+#endif
         if (fDR6)
             ASMSetDR6(pCtx->dr[6]);
     }
