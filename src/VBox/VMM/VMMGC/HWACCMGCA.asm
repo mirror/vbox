@@ -307,6 +307,10 @@ ALIGN(16)
     cmp     xCX, 0
     jnz     .cached_read
 .no_cached_reads:
+
+    ; Save CR2 for EPT
+    mov     xAX, cr2
+    mov     [xDX + VMCSCACHE.cr2], xAX
 %endif
 
     ; Restore segment registers
