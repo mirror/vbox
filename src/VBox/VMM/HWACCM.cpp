@@ -214,18 +214,23 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     if (VMMIsHwVirtExtForced(pVM))
         pVM->fHWACCMEnabled = true;
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+#if HC_ARCH_BITS == 32
     /* 64-bit mode is configurable and it depends on both the kernel mode and VT-x.
      * (To use the default, don't set 64bitEnabled in CFGM.) */
-    rc = CFGMR3QueryBoolDef(pHWVirtExt, "64bitEnabled", &pVM->hwaccm.s.fAllow64BitGuests,
-                            VMMIsHwVirtExtForced(pVM) && SUPGetPagingMode() >= SUPPAGINGMODE_AMD64);
+    rc = CFGMR3QueryBoolDef(pHWVirtExt, "64bitEnabled", &pVM->hwaccm.s.fAllow64BitGuests, false);
     AssertLogRelRCReturn(rc, rc);
     if (pVM->hwaccm.s.fAllow64BitGuests)
     {
+# ifdef RT_OS_DARWIN
         if (!VMMIsHwVirtExtForced(pVM))
-            return VM_SET_ERROR(pVM, VERR_INVALID_PARAMETER, "64-bit was requested without also enabling VT-x.");
-        LogRel(( "HWACCM: Enabled support for 64-bit guests.\n"));
+# else
+        if (!pVM->hwaccm.s.fAllowed)
+# endif
+            return VM_SET_ERROR(pVM, VERR_INVALID_PARAMETER, "64-bit guest support was requested without also enabling VT-x.");
     }
+#else
+    /* We always allow 64 bits guests on 64 bits hosts. */
+    pVM->hwaccm.s.fAllow64BitGuests = true;
 #endif
 
     return VINF_SUCCESS;
@@ -819,9 +824,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL /* remove */
                 if (pVM->hwaccm.s.fAllow64BitGuests)
-# endif
                 {
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
@@ -831,11 +834,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 }
 #endif
                 LogRel(("HWACCM: VMX enabled!\n"));
-#if defined(VBOX_ENABLE_64_BITS_GUESTS) && defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM: 32-bit and 64-bit guest supported.\n"
                         : "HWACCM: 32-bit guest supported.\n"));
-#endif
                 if (pVM->hwaccm.s.fNestedPaging)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
@@ -934,9 +935,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
 #ifdef VBOX_ENABLE_64_BITS_GUESTS
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
                 if (pVM->hwaccm.s.fAllow64BitGuests)
-# endif
                 {
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
@@ -944,6 +943,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
                 }
 #endif
+                LogRel((pVM->hwaccm.s.fAllow64BitGuests
+                        ? "HWACCM:    32-bit and 64-bit guest supported.\n"
+                        : "HWACCM:    32-bit guest supported.\n"));
             }
             else
             {
