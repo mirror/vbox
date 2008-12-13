@@ -385,17 +385,19 @@ typedef HWACCM *PHWACCM;
 /* Structure for storing read and write VMCS actions. */
 typedef struct VMCSCACHE
 {
+    /* CR2 is saved here for EPT syncing. */
+    uint64_t        cr2;
     struct
     {
         uint32_t    cValidEntries;
-        uint32_t    uAlignment[3];
+        uint32_t    uAlignment;
         uint32_t    aField[VMCSCACHE_MAX_ENTRY];
         uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
     } Write;
     struct
     {
         uint32_t    cValidEntries;
-        uint32_t    uAlignment[3];
+        uint32_t    uAlignment;
         uint32_t    aField[VMCSCACHE_MAX_ENTRY];
         uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
     } Read;
@@ -413,13 +415,13 @@ typedef struct VMCSCACHE
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
     } TestOut;
-   struct
-   {
+    struct
+    {
         uint64_t    param1;
         uint64_t    param2;
         uint64_t    param3;
         uint64_t    param4;
-   } ScratchPad;
+    } ScratchPad;
 #endif
 } VMCSCACHE;
 /** Pointer to VMCSCACHE. */

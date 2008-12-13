@@ -1648,8 +1648,10 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (    pVM->hwaccm.s.fNestedPaging
         &&  CPUMIsGuestInPagedProtectedModeEx(pCtx))
     {
+        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+
         /* Can be updated behind our back in the nested paging case. */
-        CPUMSetGuestCR2(pVM, ASMGetCR2());
+        CPUMSetGuestCR2(pVM, pCache->cr2);
 
         VMXReadCachedVMCS(VMX_VMCS64_GUEST_CR3, &val);
 

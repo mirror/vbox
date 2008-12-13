@@ -25,12 +25,13 @@
 
 ; Structure for storing read and write VMCS actions. 
 struc VMCSCACHE
+    .cr2                      resq    1
     .Write.cValidEntries      resd    1
-    .Write.uAlignment         resd    3
+    .Write.uAlignment         resd    1
     .Write.aField             resd    VMCSCACHE_MAX_ENTRY
     .Write.aFieldVal          resq    VMCSCACHE_MAX_ENTRY
     .Read.cValidEntries       resd    1
-    .Read.uAlignment          resd    3
+    .Read.uAlignment          resd    1
     .Read.aField              resd    VMCSCACHE_MAX_ENTRY
     .Read.aFieldVal           resq    VMCSCACHE_MAX_ENTRY
 %ifdef DEBUG
