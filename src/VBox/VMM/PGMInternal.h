@@ -4635,10 +4635,9 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
 # else
-        int rc = PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
-        if (RT_SUCCESS(rc))
+        PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
 # endif
-            return pv;
+        return pv;
     }
     return pgmPoolMapPageFallback(pPGM, pPage);
 }

@@ -464,17 +464,16 @@ VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
  * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
  * reused after 8 mappings (or perhaps a few more if you score with the cache).
  *
- * @returns VBox status.
+ * @returns VINF_SUCCESS - will bail out to ring-3 on failure.
  * @param   pVM         VM handle.
  * @param   HCPhys      HC Physical address of the page.
  * @param   ppv         Where to store the address corresponding to HCPhys.
  */
 DECLINLINE(int) PGMDynMapHCPageOff(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
-    int rc = PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
-    if (RT_SUCCESS(rc))
-        *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
-    return rc;
+    PGMDynMapHCPage(pVM, HCPhys & ~(RTHCPHYS)PAGE_OFFSET_MASK, ppv);
+    *ppv = (void *)((uintptr_t)*ppv | (HCPhys & PAGE_OFFSET_MASK));
+    return VINF_SUCCESS;
 }
 #endif
 
