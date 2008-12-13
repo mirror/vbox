@@ -241,7 +241,7 @@ static void pgmR0DynMapReleasePage(PPGMR0DYNMAP pThis, uint32_t iPage, uint32_t 
 static int  pgmR0DynMapSetup(PPGMR0DYNMAP pThis);
 static int  pgmR0DynMapExpand(PPGMR0DYNMAP pThis);
 static void pgmR0DynMapTearDown(PPGMR0DYNMAP pThis);
-#ifdef DEBUG
+#if 0 /*def DEBUG*/
 static int  pgmR0DynMapTest(PVM pVM);
 #endif
 
@@ -391,7 +391,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     if (pThis->cUsers == 1)
     {
         rc = pgmR0DynMapSetup(pThis);
-#ifdef DEBUG
+#if 0 /*def DEBUG*/
         if (RT_SUCCESS(rc))
         {
             rc = pgmR0DynMapTest(pVM);
@@ -1789,7 +1789,7 @@ static void pgmDynMapOptimizeAutoSet(PPGMMAPSET pSet)
  * Common worker code for PGMDynMapHCPhys, pgmR0DynMapHCPageInlined and
  * pgmR0DynMapGCPageInlined.
  *
- * @returns VBox status code.
+ * @returns VINF_SUCCESS, bails out to ring-3 on failure.
  * @param   pVM         The shared VM structure (for statistics).
  * @param   pSet        The set.
  * @param   HCPhys      The physical address of the page.
@@ -1925,15 +1925,14 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
      */
     STAM_PROFILE_START(&pVM->pgm.s.StatR0DynMapHCPage, a);
     AssertPtr(ppv);
-    AssertMsgReturn(pVM->pgm.s.pvR0DynMapUsed == g_pPGMR0DynMap,
-                    ("%p != %p\n", pVM->pgm.s.pvR0DynMapUsed, g_pPGMR0DynMap),
-                    VERR_ACCESS_DENIED);
+    AssertMsg(pVM->pgm.s.pvR0DynMapUsed == g_pPGMR0DynMap,
+              ("%p != %p\n", pVM->pgm.s.pvR0DynMapUsed, g_pPGMR0DynMap));
     AssertMsg(!(HCPhys & PAGE_OFFSET_MASK), ("HCPhys=%RHp\n", HCPhys));
     PVMCPU          pVCpu   = VMMGetCpu(pVM);
+    AssertPtr(pVCpu);
     PPGMMAPSET      pSet    = &pVCpu->pgm.s.AutoSet;
-    AssertPtrReturn(pVCpu, VERR_INTERNAL_ERROR);
-    AssertMsgReturn(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries),
-                    ("%#x (%u)\n", pSet->cEntries, pSet->cEntries), VERR_WRONG_ORDER);
+    AssertMsg(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries),
+              ("%#x (%u)\n", pSet->cEntries, pSet->cEntries));
 
     /*
      * Call common code.
@@ -1945,7 +1944,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 }
 
 
-#ifdef DEBUG
+#if 0 /*def DEBUG*/
 /** For pgmR0DynMapTest3PerCpu. */
 typedef struct PGMR0DYNMAPTEST
 {
