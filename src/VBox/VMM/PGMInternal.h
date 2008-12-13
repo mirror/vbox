@@ -1324,11 +1324,11 @@ typedef struct PGMMAPSET
     /** The index of the current CPU, only valid if the set is open. */
     int32_t                     iCpu;
     /** The entries. */
-    PGMMAPSETENTRY              aEntries[32];
+    PGMMAPSETENTRY              aEntries[64];
     /** HCPhys -> iEntry fast lookup table.
      * Use PGMMAPSET_HASH for hashing.
      * The entries may or may not be valid, check against cEntries. */
-    uint8_t                     aiHashTable[64];
+    uint8_t                     aiHashTable[128];
 } PGMMAPSET;
 /** Pointer to the mapping cache set. */
 typedef PGMMAPSET *PPGMMAPSET;
@@ -1337,7 +1337,7 @@ typedef PGMMAPSET *PPGMMAPSET;
 #define PGMMAPSET_CLOSED            UINT32_C(0xdeadc0fe)
 
 /** Hash function for aiHashTable. */
-#define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 63)
+#define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 127)
 
 
 /** @name Context neutrual page mapper TLB.

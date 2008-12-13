@@ -3613,6 +3613,12 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
 {
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Start a subset so we won't run out of mapping space. */
+    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+#endif
+
     /*
      * These special pages are all mapped into the indexes 1..PGMPOOL_IDX_FIRST.
      */
@@ -3663,6 +3669,11 @@ static void pgmPoolFlushAllSpecialRoots(PPGMPOOL pPool)
      * Paranoia (to be removed), flag a global CR3 sync.
      */
     VM_FF_SET(pPool->CTX_SUFF(pVM), VM_FF_PGM_SYNC_CR3);
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Pop the subset. */
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#endif
 }
 
 
@@ -3687,12 +3698,6 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
         return;
     }
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Start a subset so we won't run out of mapping space. */
-    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
-    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
-#endif
 
     /*
      * Nuke the free list and reinsert all pages into it.
@@ -3834,11 +3839,6 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         Assert(pPage->iAgePrev == NIL_PGMPOOL_IDX);
 #endif
     }
-
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    /* Pop the subset. */
-    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
-#endif
 
     /*
      * Finally, assert the FF.
