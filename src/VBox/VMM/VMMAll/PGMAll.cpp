@@ -1912,10 +1912,11 @@ VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
     //Log(("PGMDynMapGCPage: GCPhys=%RGp HCPhys=%RHp\n", GCPhys, HCPhys));
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    return pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
+    pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
 #else
-    return PGMDynMapHCPage(pVM, HCPhys, ppv);
+    PGMDynMapHCPage(pVM, HCPhys, ppv);
 #endif
+    return VINF_SUCCESS;
 }
 
 
@@ -1953,13 +1954,12 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
      */
     RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    int rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
+    pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
 #else
-    int rc = PGMDynMapHCPage(pVM, HCPhys, ppv);
+    PGMDynMapHCPage(pVM, HCPhys, ppv);
 #endif
-    if (RT_SUCCESS(rc))
-        *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));
-    return rc;
+    *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));
+    return VINF_SUCCESS;
 }
 
 
@@ -1970,7 +1970,7 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
  * Be WARNED that the dynamic page mapping area is small, 8 pages, thus the space is
  * reused after 8 mappings (or perhaps a few more if you score with the cache).
  *
- * @returns VBox status.
+ * @returns VINF_SUCCESS, will bail out to ring-3 on failure.
  * @param   pVM         VM handle.
  * @param   HCPhys      HC Physical address of the page.
  * @param   ppv         Where to store the address of the mapping. This is the

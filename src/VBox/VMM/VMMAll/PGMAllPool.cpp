@@ -909,10 +909,19 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
      * This ASSUMES that we're not invoked by Trap0e on in a out-of-sync
      * write situation, meaning that it's safe to write here.
      */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PVMCPU      pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+#endif
     RTGCUINTPTR pu32 = (RTGCUINTPTR)pvFault;
     while (pRegFrame->ecx)
     {
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+        uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
         pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
+        PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#else
+        pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, (RTGCPTR)pu32, NULL);
+#endif
 #ifdef IN_RC
         *(uint32_t *)pu32 = pRegFrame->eax;
 #else
@@ -958,7 +967,14 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE
     /*
      * Clear all the pages. ASSUMES that pvFault is readable.
      */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PVMCPU      pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    uint32_t    iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
     pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, pvFault, pCpu);
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#else
+    pgmPoolMonitorChainChanging(pPool, pPage, GCPhysFault, pvFault, pCpu);
+#endif
 
     /*
      * Interpret the instruction.
