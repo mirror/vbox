@@ -1917,6 +1917,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
 }
 
 
+#if 0 /* Not used in R0, should internalized the other PGMDynMapHC/GCPage too. */
 /* documented elsewhere - a bit of a mess. */
 VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 {
@@ -1942,6 +1943,7 @@ VMMDECL(int) PGMDynMapHCPage(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     STAM_PROFILE_STOP(&pVM->pgm.s.StatR0DynMapHCPage, a);
     return rc;
 }
+#endif
 
 
 #if 0 /*def DEBUG*/
