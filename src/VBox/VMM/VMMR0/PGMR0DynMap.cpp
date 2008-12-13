@@ -51,7 +51,7 @@
 #define PGMR0DYNMAP_PAGES_PER_CPU           256
 /** The minimum number of pages we reserve per CPU.
  * This must be equal or larger than the autoset size.  */
-#define PGMR0DYNMAP_PAGES_PER_CPU_MIN       32
+#define PGMR0DYNMAP_PAGES_PER_CPU_MIN       64
 /** The number of guard pages.
  * @remarks Never do tuning of the hashing or whatnot with a strict build!  */
 #if defined(VBOX_STRICT)
@@ -1565,6 +1565,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     pSet->iSubset = UINT32_MAX;
     pSet->iCpu = -1;
 
+    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
     if (cEntries > RT_ELEMENTS(pSet->aEntries) * 50 / 100)
         Log(("PGMDynMapReleaseAutoSet: cEntries=%d\n", pSet->cEntries));
@@ -1588,6 +1589,7 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
      */
     uint32_t cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
+    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
     {
         pSet->cEntries = 0;
@@ -1732,14 +1734,15 @@ Assert(iPrevSubset == UINT32_MAX);
 VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
 {
     PPGMMAPSET      pSet = &pVCpu->pgm.s.AutoSet;
-    AssertReturnVoid(pSet->cEntries != PGMMAPSET_CLOSED);
+    uint32_t        cEntries = pSet->cEntries;
+    AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertReturnVoid(pSet->iSubset <= iPrevSubset || iPrevSubset == UINT32_MAX);
 Assert(iPrevSubset == UINT32_MAX);
-    if (    pSet->cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
-        &&  pSet->cEntries != pSet->iSubset)
+    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
+    if (    cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
+        &&  cEntries != pSet->iSubset)
     {
-        AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
-        STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapPopFlushes);
+        AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
         pgmDynMapFlushSubset(pSet);
     }
     pSet->iSubset = iPrevSubset;
@@ -1887,6 +1890,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
             if (pSet->iSubset < pSet->cEntries)
             {
                 STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapSetSearchFlushes);
+                STAM_COUNTER_INC(&pVM->pgm.s.aStatR0DynMapSetSize[(pSet->cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
                 AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }

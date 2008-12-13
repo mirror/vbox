@@ -1622,6 +1622,17 @@ static void pgmR3InitStats(PVM pVM)
     //STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLostHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLostHits",    STAMUNIT_OCCURENCES,     "Lost hits.");
     STAM_REG(pVM, &pPGM->StatR0DynMapSubsets,               STAMTYPE_COUNTER, "/PGM/R0/Subsets",                    STAMUNIT_OCCURENCES,     "Times PGMDynMapPushAutoSubset was called.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPopFlushes,            STAMTYPE_COUNTER, "/PGM/R0/SubsetPopFlushes",           STAMUNIT_OCCURENCES,     "Times PGMDynMapPopAutoSubset flushes the subset.");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[0],           STAMTYPE_COUNTER, "/PGM/R0/SetSize000..09",              STAMUNIT_OCCURENCES,    "00-09% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[1],           STAMTYPE_COUNTER, "/PGM/R0/SetSize010..19",              STAMUNIT_OCCURENCES,    "10-19% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[2],           STAMTYPE_COUNTER, "/PGM/R0/SetSize020..29",              STAMUNIT_OCCURENCES,    "20-29% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[3],           STAMTYPE_COUNTER, "/PGM/R0/SetSize030..39",              STAMUNIT_OCCURENCES,    "30-39% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[4],           STAMTYPE_COUNTER, "/PGM/R0/SetSize040..49",              STAMUNIT_OCCURENCES,    "40-49% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[5],           STAMTYPE_COUNTER, "/PGM/R0/SetSize050..59",              STAMUNIT_OCCURENCES,    "50-59% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[6],           STAMTYPE_COUNTER, "/PGM/R0/SetSize060..69",              STAMUNIT_OCCURENCES,    "60-69% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[7],           STAMTYPE_COUNTER, "/PGM/R0/SetSize070..79",              STAMUNIT_OCCURENCES,    "70-79% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[8],           STAMTYPE_COUNTER, "/PGM/R0/SetSize080..89",              STAMUNIT_OCCURENCES,    "80-89% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[9],           STAMTYPE_COUNTER, "/PGM/R0/SetSize090..99",              STAMUNIT_OCCURENCES,    "90-99% filled");
+    STAM_REG(pVM, &pPGM->aStatR0DynMapSetSize[10],          STAMTYPE_COUNTER, "/PGM/R0/SetSize100",                 STAMUNIT_OCCURENCES,     "100% filled");
 
     /* GC only: */
     STAM_REG(pVM, &pPGM->StatRCDynMapCacheHits,             STAMTYPE_COUNTER, "/PGM/RC/DynMapCache/Hits" ,          STAMUNIT_OCCURENCES,     "Number of dynamic page mapping cache hits.");
