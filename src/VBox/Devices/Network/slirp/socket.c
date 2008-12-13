@@ -840,6 +840,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     /* saves original ip header and options */
     memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
     m->m_len = len - hlen + original_hlen;
+    ip->ip_len = m->m_len;
+    ip->ip_p = IPPROTO_ICMP; /* the original package could ba whatever, but we're response via ICMP*/
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
     if (icp->icmp_type == ICMP_TIMXCEED)
