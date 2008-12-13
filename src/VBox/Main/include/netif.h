@@ -34,7 +34,10 @@
 #include <iprt/types.h>
 #include <iprt/net.h>
 
+//#include "VBox/com/ptr.h"
+//#include <list>
 
+#if 1
 /**
  * Encapsulation type.
  */
@@ -78,8 +81,9 @@ typedef struct NETIFINFO
 typedef NETIFINFO *PNETIFINFO;
 /** Pointer to a const network interface info. */
 typedef NETIFINFO const *PCNETIFINFO;
+#endif
 
-PNETIFINFO NetIfList();
+int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list);
 
 #endif
 

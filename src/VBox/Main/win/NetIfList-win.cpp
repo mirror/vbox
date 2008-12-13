@@ -36,11 +36,12 @@
 #define LOG_GROUP LOG_GROUP_MAIN
 
 #include <iprt/err.h>
+#include <list>
+
+#include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
-
-PNETIFINFO NetIfList()
+int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
-    return NULL;
+    return VERR_NOT_IMPLEMENTED;
 }
-

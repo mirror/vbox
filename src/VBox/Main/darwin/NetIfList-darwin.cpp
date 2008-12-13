@@ -46,12 +46,14 @@
 #include <ifaddrs.h>
 #include <errno.h>
 #include <unistd.h>
+#include <list>
 
+#include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 #include "iokit.h"
 #include "Logging.h"
 
-PNETIFINFO NetIfList()
+int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
     int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock < 0)
@@ -68,8 +70,6 @@ PNETIFINFO NetIfList()
         return NULL;
     }
 
-    PNETIFINFO pIfs = NULL;
-    PNETIFINFO pPrev = NULL;
     PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
     while (pEtherNICs)
     {
@@ -132,11 +132,11 @@ PNETIFINFO NetIfList()
             }
         }
 
-        if (pIfs)
-            pPrev->pNext = pNew;
-        else
-            pIfs = pNew;
-        pPrev = pNew;
+        ComObjPtr<HostNetworkInterface> IfObj;
+        IfObj.createObject();
+        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), pNew)))
+            list.push_back(IfObj);
+        RTMemFree(pNew);
 
         /* next, free current */
         void *pvFree = pEtherNICs;
