@@ -1314,12 +1314,15 @@ typedef PGMMAPSETENTRY *PPGMMAPSETENTRY;
  */
 typedef struct PGMMAPSET
 {
-    /** The index of the current CPU, only valid if the set is open. */
-    int32_t                     iCpu;
-    /** The number of occupied.
+    /** The number of occupied entries.
      * This is PGMMAPSET_CLOSED if the set is closed and we're not supposed to do
      * dynamic mappings. */
     uint32_t                    cEntries;
+    /** The start of the current subset.
+     * This is UINT32_MAX if no subset is currently open. */
+    uint32_t                    iSubset;
+    /** The index of the current CPU, only valid if the set is open. */
+    int32_t                     iCpu;
     /** The entries. */
     PGMMAPSETENTRY              aEntries[32];
     /** HCPhys -> iEntry fast lookup table.
@@ -1817,7 +1820,7 @@ typedef struct PGMPOOL
 
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage);
+DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage, int iLine, const char *pszFile);
 #endif
 
 /** @def PGMPOOL_PAGE_2_PTR
@@ -1831,8 +1834,10 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage);
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
+#if defined(IN_RC)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage), __LINE__, 0)
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage), __LINE__, __PRETTY_FUNCTION__)
 #elif defined(VBOX_STRICT)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageStrict(pPage)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
@@ -1855,8 +1860,10 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
+#if defined(IN_RC)
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage), __LINE__, 0)
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage), __LINE__, __PRETTY_FUNCTION__)
 #else
 # define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
 #endif
@@ -2659,6 +2666,7 @@ typedef struct PGM
     STAMCOUNTER StatR0DynMapHCPageInlMisses;        /**< R0: Misses that falls back to code common with PGMDynMapHCPage. */
     STAMPROFILE StatR0DynMapHCPage;                 /**< R0: Calls to PGMDynMapHCPage. */
     STAMCOUNTER StatR0DynMapSetOptimize;            /**< R0: Calls to pgmDynMapOptimizeAutoSet. */
+    STAMCOUNTER StatR0DynMapSetSearchFlushes;       /**< R0: Set search restorting to subset flushes. */
     STAMCOUNTER StatR0DynMapSetSearchHits;          /**< R0: Set search hits. */
     STAMCOUNTER StatR0DynMapSetSearchMisses;        /**< R0: Set search misses. */
     STAMCOUNTER StatR0DynMapPage;                   /**< R0: Calls to pgmR0DynMapPage. */
@@ -2670,6 +2678,8 @@ typedef struct PGM
     STAMCOUNTER StatR0DynMapPageSlowLoopHits;       /**< R0: Hits in the pgmR0DynMapPageSlow search loop. */
     STAMCOUNTER StatR0DynMapPageSlowLoopMisses;     /**< R0: Misses in the pgmR0DynMapPageSlow search loop. */
     //STAMCOUNTER StatR0DynMapPageSlowLostHits;       /**< R0: Lost hits. */
+    STAMCOUNTER StatR0DynMapSubsets;                /**< R0: Times PGMDynMapPushAutoSubset was called. */
+    STAMCOUNTER StatR0DynMapPopFlushes;             /**< R0: Times PGMDynMapPopAutoSubset flushes the subset. */
 
     /* RC only: */
     STAMCOUNTER StatRCDynMapCacheMisses;            /**< RC: The number of dynamic page mapping cache hits */
@@ -4620,7 +4630,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   pVM         Pointer to the PGM instance data.
  * @param   pPage       The page.
  */
-DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
+DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage, int iLine, const char *pszFile)
 {
     if (pPage->idx >= PGMPOOL_IDX_FIRST)
     {
@@ -4633,6 +4643,7 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
 # endif
         if (RT_SUCCESS(rc))
             return pv;
+        AssertMsgFailed(("%Rrc: %s(%d)\n", rc, pszFile, iLine));
     }
     return pgmPoolMapPageFallback(pPGM, pPage);
 }

@@ -454,6 +454,8 @@ VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
+VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVMCPU pVCpu);
+VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 
 /**
  * Temporarily maps one host page specified by HC physical address, returning
