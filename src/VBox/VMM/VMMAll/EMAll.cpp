@@ -1357,7 +1357,9 @@ static int emInterpretStosWD(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame,
 
         LogFlow(("emInterpretStosWD dest=%04X:%RGv (%RGv) cbSize=%d cTransfers=%x DF=%d\n", pRegFrame->es, GCOffset, GCDest, cbSize, cTransfers, pRegFrame->eflags.Bits.u1DF));
         /* Access verification first; we currently can't recover properly from traps inside this instruction */
-        rc = PGMVerifyAccess(pVM, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)), cTransfers * cbSize, X86_PTE_RW | X86_PTE_US);
+        rc = PGMVerifyAccess(pVM, GCDest - ((offIncrement > 0) ? 0 : ((cTransfers-1) * cbSize)),
+                             cTransfers * cbSize,
+                             X86_PTE_RW | (CPUMGetGuestCPL(pVM, pRegFrame) == 3 ? X86_PTE_US : 0));
         if (rc != VINF_SUCCESS)
         {
             Log(("STOSWD will generate a trap -> recompiler, rc=%d\n", rc));
