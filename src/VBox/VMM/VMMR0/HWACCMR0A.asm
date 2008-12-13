@@ -1022,13 +1022,13 @@ ENDPROC   hwaccmR0Get64bitCR3
  ; restoring, but better safe than sorry...
  ;
 
-; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx);
+; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache /*, PVM pVM, PVMCPU pVCpu*/);
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM32
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     je near NAME(VMXR0StartVM32_32)
 
-    ; stack frame.
+    ; stack frame
     push    esi
     push    edi
     push    fs
@@ -1061,168 +1061,130 @@ ALIGNCODE(16)
     ret
 ENDPROC   VMXR0StartVM32
 
-; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx)
+
+; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache /*, PVM pVM, PVMCPU pVCpu*/);
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
-    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
-    ret
+    je      .not_in_long_mode
 
-.longmode:
-    ; stack frame.
-    push    ebp
-    mov     ebp, esp
-    and     esp, 0fffffff0h
+    ; stack frame
     push    esi
     push    edi
-    push    ebx
-    push    ds
-    push    es
     push    fs
     push    gs
-    push    ss
-
-    ; retf frame (64 -> 32).
-    push    0
-    push    cs
-    push    0
-    push    .thunk32
 
     ; jmp far .thunk64
     db      0xea
     dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+
+ALIGNCODE(16)
 BITS 64
 .thunk64:
-    and     esp, 0ffffffffh
-    and     ebp, 0ffffffffh
-    mov     edi, [rbp + 8]              ; fResume
-    mov     esi, [rbp + 12]             ; pCtx
-    mov     edx, [rbp + 16]             ; pCache
-    sub     rsp, 20h
+    sub     esp, 20h
+    mov     edi, [rsp + 20h + 14h]      ; fResume
+    mov     esi, [rsp + 20h + 18h]      ; pCtx
+    mov     edx, [rsp + 20h + 1Ch]      ; pCache
     call    NAME(VMXR0StartVM64_64)
-    add     rsp, 20h
-    retf
+    add     esp, 20h
+    jmp far [.fpthunk32 wrt rip]
+.fpthunk32:                             ; 16:32 Pointer to .thunk32.
+    dd      .thunk32, NAME(SUPR0AbsKernelCS)
+
 BITS 32
+ALIGNCODE(16)
 .thunk32:
-    pop     ss
     pop     gs
     pop     fs
-    pop     es
-    pop     ds
-    pop     ebx
     pop     edi
     pop     esi
-    leave
+    ret
+
+.not_in_long_mode:
+    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
     ret
 ENDPROC   VMXR0StartVM64
 
-;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx /*, PVM pVM, PVMCPU pVCpu*/);
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
     je near NAME(SVMR0VMRun_32)
 
-    ; stack frame.
-    push    ebp
-    mov     ebp, esp
-    and     esp, 0fffffff0h
+    ; stack frame
     push    esi
     push    edi
-    push    ebx
-    push    ds
-    push    es
     push    fs
     push    gs
-    push    ss
-
-    ; retf frame (64 -> 32).
-    push    0
-    push    cs
-    push    0
-    push    .thunk32
 
     ; jmp far .thunk64
     db      0xea
     dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+
+ALIGNCODE(16)
 BITS 64
 .thunk64:
-    and     esp, 0ffffffffh
-    and     ebp, 0ffffffffh
-    mov     rdi, [rbp + 8]              ; pVMCBHostPhys
-    mov     rsi, [rbp + 16]             ; pVMCBPhys
-    mov     edx, [rbp + 24]             ; pCtx
-    sub     rsp, 20h
+    sub     esp, 20h
+    mov     rdi, [rsp + 20h + 14h]      ; pVMCBHostPhys
+    mov     rsi, [rsp + 20h + 1Ch]      ; pVMCBPhys
+    mov     edx, [rsp + 20h + 24h]      ; pCtx
     call    NAME(SVMR0VMRun_64)
-    add     rsp, 20h
-    retf
+    add     esp, 20h
+    jmp far [.fpthunk32 wrt rip]
+.fpthunk32:                             ; 16:32 Pointer to .thunk32.
+    dd      .thunk32, NAME(SUPR0AbsKernelCS)
+
 BITS 32
+ALIGNCODE(16)
 .thunk32:
-    pop     ss
     pop     gs
     pop     fs
-    pop     es
-    pop     ds
-    pop     ebx
     pop     edi
     pop     esi
-    leave
     ret
 ENDPROC   SVMR0VMRun
 
-; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+
+; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx /*, PVM pVM, PVMCPU pVCpu*/);
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
-    jne     .longmode
-    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
-    ret
+    je      .not_in_long_mode
 
-.longmode:
-    ; stack frame.
-    push    ebp
-    mov     ebp, esp
-    and     esp, 0fffffff0h
+    ; stack frame
     push    esi
     push    edi
-    push    ebx
-    push    ds
-    push    es
     push    fs
     push    gs
-    push    ss
-
-    ; retf frame (64 -> 32).
-    push    0
-    push    cs
-    push    0
-    push    .thunk32
 
     ; jmp far .thunk64
     db      0xea
     dd      .thunk64, NAME(SUPR0Abs64bitKernelCS)
+
+ALIGNCODE(16)
 BITS 64
 .thunk64:
-    and     esp, 0ffffffffh
-    and     ebp, 0ffffffffh
-    mov     rdi, [rbp + 8]              ; pVMCBHostPhys
-    mov     rsi, [rbp + 16]             ; pVMCBPhys
-    mov     edx, [rbp + 24]             ; pCtx
-    sub     rsp, 20h
+    sub     esp, 20h
+    mov     rdi, [rbp + 20h + 14h]      ; pVMCBHostPhys
+    mov     rsi, [rbp + 20h + 1Ch]      ; pVMCBPhys
+    mov     edx, [rbp + 20h + 24h]      ; pCtx
     call    NAME(SVMR0VMRun64_64)
-    add     rsp, 20h
-    retf
+    add     esp, 20h
+    jmp far [.fpthunk32 wrt rip]
+.fpthunk32:                             ; 16:32 Pointer to .thunk32.
+    dd      .thunk32, NAME(SUPR0AbsKernelCS)
+
 BITS 32
+ALIGNCODE(16)
 .thunk32:
-    pop     ss
     pop     gs
     pop     fs
-    pop     es
-    pop     ds
-    pop     ebx
     pop     edi
     pop     esi
-    leave
+    ret
+
+.not_in_long_mode:
+    mov     eax, VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE
     ret
 ENDPROC   SVMR0VMRun64
 
