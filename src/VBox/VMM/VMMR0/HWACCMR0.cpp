@@ -1020,7 +1020,14 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
     rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);
 
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
-    AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == idCpu, ("owner is %d, I'm %d", (int)pVCpu->hwaccm.s.idEnteredCpu, (int)idCpu));
+#ifdef RT_STRICT
+    if (RT_UNLIKELY(    pVCpu->hwaccm.s.idEnteredCpu != idCpu
+                    &&  RT_FAILURE(rc)))
+    {
+        AssertMsgFailed(("Owner is %d, I'm %d", (int)pVCpu->hwaccm.s.idEnteredCpu, (int)idCpu));
+        rc = VERR_INTERNAL_ERROR;
+    }
+#endif
     pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
