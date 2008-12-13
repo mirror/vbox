@@ -177,7 +177,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-        uint64_t oldMsrEFERHost;
+        uint64_t oldMsrEFERHost = 0;
         uint32_t oldCR0 = ASMGetCR0();
 
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
@@ -216,7 +216,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
             pVCpu->cpum.s.Host.fpu.MXCSR = CPUMGetMXCSR();
 
-        CPUMR0LoadFPU(pCtx);
+        cpumR0LoadFPU(pCtx);
 
         /*
          * The MSR_K6_EFER_FFXSR feature is AMD only so far, but check the cpuid just in case Intel adds it in the future.
@@ -231,7 +231,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (msrEFERHost & MSR_K6_EFER_FFXSR)
             {
                 /* fxrstor doesn't restore the XMM state! */
-                CPUMR0LoadXMM(pCtx);
+                cpumR0LoadXMM(pCtx);
                 pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
             }
         }
@@ -263,13 +263,13 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE))
             HWACCMR0SaveFPUState(pVM, pVCpu, pCtx);
 
-        CPUMR0RestoreHostFPUState(&pVCpu->cpum.s);
+        cpumR0RestoreHostFPUState(&pVCpu->cpum.s);
     }
     else
 #endif
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
-        uint64_t oldMsrEFERHost;
+        uint64_t oldMsrEFERHost = 0;
 
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
@@ -277,27 +277,27 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
         }
-        CPUMR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
+        cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
 
         /* Restore EFER MSR */
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
 #else  /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
-        CPUMR0SaveFPU(pCtx);
+        cpumR0SaveFPU(pCtx);
         if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
         {
             /* fxsave doesn't save the XMM state! */
-            CPUMR0SaveXMM(pCtx);
+            cpumR0SaveXMM(pCtx);
         }
 
         /*
          * Restore the original FPU control word and MXCSR.
          * We don't want the guest to be able to trigger floating point/SSE exceptions on the host.
          */
-        CPUMR0SetFCW(pVCpu->cpum.s.Host.fpu.FCW);
+        cpumR0SetFCW(pVCpu->cpum.s.Host.fpu.FCW);
         if (pVM->cpum.s.CPUFeatures.edx.u1SSE)
-            CPUMR0SetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
+            cpumR0SetMXCSR(pVCpu->cpum.s.Host.fpu.MXCSR);
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 

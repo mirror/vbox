@@ -34,6 +34,33 @@
  %error "The jump table doesn't link on leopard."
 %endif
 
+
+;*******************************************************************************
+;* External Symbols                                                            *
+;*******************************************************************************
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+extern NAME(SUPR0AbsIs64bit)
+extern NAME(SUPR0Abs64bitKernelCS)
+extern NAME(SUPR0Abs64bitKernelSS)
+extern NAME(SUPR0Abs64bitKernelDS)
+extern NAME(SUPR0AbsKernelCS)
+%endif
+
+
+;*******************************************************************************
+;*  Global Variables                                                           *
+;*******************************************************************************
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+BEGINDATA
+;;
+; Store the SUPR0AbsIs64bit absolute value here so we can cmp/test without
+; needing to clobber a register. (This trick doesn't quite work for PE btw.
+; but that's not relevant atm.)
+GLOBALNAME g_fCPUMIs64bitHost
+    dd  NAME(SUPR0AbsIs64bit)
+%endif
+
+
 BEGINCODE
 
 
@@ -44,7 +71,7 @@ BEGINCODE
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
 ;
 align 16
-BEGINPROC CPUMR0SaveGuestRestoreHostFPUState
+BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -58,22 +85,44 @@ BEGINPROC CPUMR0SaveGuestRestoreHostFPUState
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
-    jz short gth_fpu_no
+    jz short .fpu_not_used
 
     mov     xAX, cr0
     mov     xCX, xAX                    ; save old CR0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, xAX
 
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
     fxsave  [xDX + CPUMCPU.Guest.fpu]
     fxrstor [xDX + CPUMCPU.Host.fpu]
 
+.done:
     mov     cr0, xCX                    ; and restore old CR0 again
     and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
-gth_fpu_no:
+.fpu_not_used:
     xor     eax, eax
     ret
-ENDPROC   CPUMR0SaveGuestRestoreHostFPUState
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+    fxsave  [rdx + CPUMCPU.Guest.fpu]
+    fxrstor [rdx + CPUMCPU.Host.fpu]
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 
 ;;
 ; Sets the host's FPU/XMM state
@@ -82,7 +131,7 @@ ENDPROC   CPUMR0SaveGuestRestoreHostFPUState
 ; @param    pCPUMCPU  x86:[esp+4] GCC:rdi MSC:rcx     CPUMCPU pointer
 ;
 align 16
-BEGINPROC CPUMR0RestoreHostFPUState
+BEGINPROC cpumR0RestoreHostFPUState
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xDX, rcx
@@ -96,21 +145,43 @@ BEGINPROC CPUMR0RestoreHostFPUState
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
-    jz short gth_fpu_no_2
+    jz short .fpu_not_used
 
     mov     xAX, cr0
     mov     xCX, xAX                    ; save old CR0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, xAX
 
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
     fxrstor [xDX + CPUMCPU.Host.fpu]
 
+.done:
     mov     cr0, xCX                    ; and restore old CR0 again
     and     dword [xDX + CPUMCPU.fUseFlags], ~CPUM_USED_FPU
-gth_fpu_no_2:
+.fpu_not_used:
     xor     eax, eax
     ret
-ENDPROC   CPUMR0RestoreHostFPUState
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+    fxrstor [rdx + CPUMCPU.Host.fpu]
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+ENDPROC   cpumR0RestoreHostFPUState
+
 
 ;;
 ; Restores the guest's FPU/XMM state
@@ -128,8 +199,29 @@ BEGINPROC   CPUMLoadFPU
 %else
     mov     xDX, dword [esp + 4]
 %endif
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
     fxrstor [xDX + CPUMCTX.fpu]
+.done:
     ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+    fxrstor [rdx + CPUMCTX.fpu]
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
 ENDPROC     CPUMLoadFPU
 
 
@@ -149,8 +241,28 @@ BEGINPROC   CPUMSaveFPU
 %else
     mov     xDX, dword [esp + 4]
 %endif
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
     fxsave  [xDX + CPUMCTX.fpu]
+.done:
     ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+    fxsave  [rdx + CPUMCTX.fpu]
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
 ENDPROC CPUMSaveFPU
 
 
@@ -170,6 +282,14 @@ BEGINPROC   CPUMLoadXMM
 %else
     mov     xDX, dword [esp + 4]
 %endif
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
     movdqa  xmm0, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*0]
     movdqa  xmm1, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*1]
     movdqa  xmm2, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*2]
@@ -181,7 +301,7 @@ BEGINPROC   CPUMLoadXMM
 
 %ifdef RT_ARCH_AMD64
     test qword [xDX + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
-    jz CPUMLoadXMM_done
+    jz .done
 
     movdqa  xmm8, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*8]
     movdqa  xmm9, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*9]
@@ -191,10 +311,43 @@ BEGINPROC   CPUMLoadXMM
     movdqa  xmm13, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*13]
     movdqa  xmm14, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*14]
     movdqa  xmm15, [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15]
-CPUMLoadXMM_done:
 %endif
+.done:
 
     ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+
+    movdqa  xmm0, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*0]
+    movdqa  xmm1, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*1]
+    movdqa  xmm2, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*2]
+    movdqa  xmm3, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*3]
+    movdqa  xmm4, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*4]
+    movdqa  xmm5, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*5]
+    movdqa  xmm6, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*6]
+    movdqa  xmm7, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*7]
+
+    test qword [rdx + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
+    jz .sixtyfourbit_done
+
+    movdqa  xmm8,  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*8]
+    movdqa  xmm9,  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*9]
+    movdqa  xmm10, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*10]
+    movdqa  xmm11, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*11]
+    movdqa  xmm12, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*12]
+    movdqa  xmm13, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*13]
+    movdqa  xmm14, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*14]
+    movdqa  xmm15, [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15]
+.sixtyfourbit_done:
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
 ENDPROC     CPUMLoadXMM
 
 
@@ -214,6 +367,14 @@ BEGINPROC   CPUMSaveXMM
 %else
     mov     xDX, dword [esp + 4]
 %endif
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+    cmp     byte [NAME(g_fCPUMIs64bitHost)], 0
+    jz      .legacy_mode
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+.legacy_mode:
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*0], xmm0
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*1], xmm1
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*2], xmm2
@@ -225,7 +386,7 @@ BEGINPROC   CPUMSaveXMM
 
 %ifdef RT_ARCH_AMD64
     test qword [xDX + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
-    jz CPUMSaveXMM_done
+    jz .done
 
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*8], xmm8
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*9], xmm9
@@ -236,9 +397,44 @@ BEGINPROC   CPUMSaveXMM
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*14], xmm14
     movdqa  [xDX + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15], xmm15
 
-CPUMSaveXMM_done:
 %endif
+.done:
     ret
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ALIGNCODE(16)
+BITS 64
+.sixtyfourbit_mode:
+    and     edx, 0ffffffffh
+
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*0], xmm0
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*1], xmm1
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*2], xmm2
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*3], xmm3
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*4], xmm4
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*5], xmm5
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*6], xmm6
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*7], xmm7
+
+    test qword [rdx + CPUMCTX.msrEFER], MSR_K6_EFER_LMA
+    jz .sixtyfourbit_done
+
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*8], xmm8
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*9], xmm9
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*10], xmm10
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*11], xmm11
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*12], xmm12
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*13], xmm13
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*14], xmm14
+    movdqa  [rdx + CPUMCTX.fpu + X86FXSTATE.aXMM + 16*15], xmm15
+
+.sixtyfourbit_done:
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .the_end.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif
+
 ENDPROC     CPUMSaveXMM
 
 
@@ -247,7 +443,7 @@ ENDPROC     CPUMSaveXMM
 ;
 ; @param  u16FCW    x86:[esp+4] GCC:rdi MSC:rcx     New FPU control word
 align 16
-BEGINPROC CPUMR0SetFCW
+BEGINPROC cpumR0SetFCW
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xAX, rcx
@@ -262,18 +458,18 @@ BEGINPROC CPUMR0SetFCW
     fldcw   [xSP]
     pop     xAX
     ret
-ENDPROC   CPUMR0SetFCW
+ENDPROC   cpumR0SetFCW
 
 
 ;;
 ; Get the FPU control word
 ;
 align 16
-BEGINPROC CPUMR0GetFCW
+BEGINPROC cpumR0GetFCW
     fnstcw  [xSP - 8]
     mov     ax, word [xSP - 8]
     ret
-ENDPROC   CPUMR0GetFCW
+ENDPROC   cpumR0GetFCW
 
 
 ;;
@@ -281,7 +477,7 @@ ENDPROC   CPUMR0GetFCW
 ;
 ; @param  u32MXCSR    x86:[esp+4] GCC:rdi MSC:rcx     New MXCSR
 align 16
-BEGINPROC CPUMR0SetMXCSR
+BEGINPROC cpumR0SetMXCSR
 %ifdef RT_ARCH_AMD64
  %ifdef RT_OS_WINDOWS
     mov     xAX, rcx
@@ -295,15 +491,15 @@ BEGINPROC CPUMR0SetMXCSR
     ldmxcsr [xSP]
     pop     xAX
     ret
-ENDPROC   CPUMR0SetMXCSR
+ENDPROC   cpumR0SetMXCSR
 
 
 ;;
 ; Get the MXCSR
 ;
 align 16
-BEGINPROC CPUMR0GetMXCSR
+BEGINPROC cpumR0GetMXCSR
     stmxcsr [xSP - 8]
     mov     eax, dword [xSP - 8]
     ret
-ENDPROC   CPUMR0GetMXCSR
+ENDPROC   cpumR0GetMXCSR
