@@ -158,8 +158,7 @@ void *pgmPoolMapPageFallback(PPGM pPGM, PPGMPOOLPAGE pPage)
     AssertMsg(HCPhys && HCPhys != NIL_RTHCPHYS && !(PAGE_OFFSET_MASK & HCPhys), ("%RHp\n", HCPhys));
 
     void *pv;
-    int rc = pgmR0DynMapHCPageInlined(pPGM, HCPhys, &pv);
-    AssertReleaseRCReturn(rc, NULL);
+    pgmR0DynMapHCPageInlined(pPGM, HCPhys, &pv);
     return pv;
 # endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 }

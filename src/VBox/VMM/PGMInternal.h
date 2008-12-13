@@ -1820,7 +1820,7 @@ typedef struct PGMPOOL
 
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage, int iLine, const char *pszFile);
+DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage);
 #endif
 
 /** @def PGMPOOL_PAGE_2_PTR
@@ -1835,9 +1835,9 @@ DECLINLINE(void *) pgmPoolMapPageInlined(PVM pVM, PPGMPOOLPAGE pPage, int iLine,
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage), __LINE__, 0)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage), __LINE__, __PRETTY_FUNCTION__)
+# define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageInlined(&(pVM)->pgm.s, (pPage))
 #elif defined(VBOX_STRICT)
 # define PGMPOOL_PAGE_2_PTR(pVM, pPage)  pgmPoolMapPageStrict(pPage)
 DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
@@ -1861,9 +1861,9 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
  * @remark  There is no need to assert on the result.
  */
 #if defined(IN_RC)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage), __LINE__, 0)
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
 #elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage), __LINE__, __PRETTY_FUNCTION__)
+# define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  pgmPoolMapPageInlined((pPGM), (pPage))
 #else
 # define PGMPOOL_PAGE_2_PTR_BY_PGM(pPGM, pPage)  PGMPOOL_PAGE_2_PTR(PGM2VM(pPGM), pPage)
 #endif
@@ -3273,7 +3273,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PPGM pPGM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
  * Inlined version of the ring-0 version of PGMDynMapHCPage that
  * optimizes access to pages already in the set.
  *
- * @returns See pgmR0DynMapHCPageCommon.
+ * @returns VINF_SUCCESS. Will bail out to ring-3 on failure.
  * @param   pPGM        Pointer to the PVM instance data.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the mapping address.
@@ -3284,7 +3284,6 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
     PPGMMAPSET  pSet    = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpu))->AutoSet; /* very pretty ;-) */
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
-    int         rc;
 
     unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
     unsigned    iEntry  = pSet->aiHashTable[iHash];
@@ -3293,16 +3292,15 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
         STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlHits);
-        rc = VINF_SUCCESS;
     }
     else
     {
         STAM_COUNTER_INC(&pPGM->StatR0DynMapHCPageInlMisses);
-        rc = pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+        pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
     }
 
     STAM_PROFILE_STOP(&pPGM->StatR0DynMapHCPageInl, a);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -3310,7 +3308,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
  * Inlined version of the ring-0 version of PGMDynMapGCPage that optimizes
  * access to pages already in the set.
  *
- * @returns See pgmR0DynMapHCPageCommon.
+ * @returns See PGMDynMapGCPage.
  * @param   pPGM        Pointer to the PVM instance data.
  * @param   HCPhys      The physical address of the page.
  * @param   ppv         Where to store the mapping address.
@@ -3342,7 +3340,6 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     PPGMMAPSET  pSet    = &((PPGMCPU)((uint8_t *)VMMGetCpu(PGM2VM(pPGM)) + pPGM->offVCpu))->AutoSet; /* very pretty ;-) */
     Assert(!(HCPhys & PAGE_OFFSET_MASK));
     Assert(pSet->cEntries <= RT_ELEMENTS(pSet->aEntries));
-    int         rc;
 
     unsigned    iHash   = PGMMAPSET_HASH(HCPhys);
     unsigned    iEntry  = pSet->aiHashTable[iHash];
@@ -3351,16 +3348,15 @@ DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
     {
         *ppv = pSet->aEntries[iEntry].pvPage;
         STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlHits);
-        rc = VINF_SUCCESS;
     }
     else
     {
         STAM_COUNTER_INC(&pPGM->StatR0DynMapGCPageInlMisses);
-        rc = pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
+        pgmR0DynMapHCPageCommon(PGM2VM(pPGM), pSet, HCPhys, ppv);
     }
 
     STAM_PROFILE_STOP(&pPGM->StatR0DynMapGCPageInl, a);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 #endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
@@ -4630,20 +4626,19 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  * @param   pVM         Pointer to the PGM instance data.
  * @param   pPage       The page.
  */
-DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage, int iLine, const char *pszFile)
+DECLINLINE(void *) pgmPoolMapPageInlined(PPGM pPGM, PPGMPOOLPAGE pPage)
 {
     if (pPage->idx >= PGMPOOL_IDX_FIRST)
     {
         Assert(pPage->idx < pPGM->CTX_SUFF(pPool)->cCurPages);
         void *pv;
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-        int rc = pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
+        pgmR0DynMapHCPageInlined(pPGM, pPage->Core.Key, &pv);
 # else
         int rc = PGMDynMapHCPage(PGM2VM(pPGM), pPage->Core.Key, &pv);
-# endif
         if (RT_SUCCESS(rc))
+# endif
             return pv;
-        AssertMsgFailed(("%Rrc: %s(%d)\n", rc, pszFile, iLine));
     }
     return pgmPoolMapPageFallback(pPGM, pPage);
 }
