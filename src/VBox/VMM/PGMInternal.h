@@ -1339,6 +1339,9 @@ typedef PGMMAPSET *PPGMMAPSET;
 /** Hash function for aiHashTable. */
 #define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 127)
 
+/** The max fill size (strict builds). */
+#define PGMMAPSET_MAX_FILL          (64U * 80U / 100U)
+
 
 /** @name Context neutrual page mapper TLB.
  *
