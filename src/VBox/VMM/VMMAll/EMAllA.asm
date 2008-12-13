@@ -49,6 +49,7 @@
 %endif
 %ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
  %define CAN_DO_8_BYTE_OP  1
+ %define MY_PTR_REG64   rcx
 %endif
 
 
@@ -155,7 +156,7 @@ BEGINPROC   EMEmulateAnd
 %endif
 
     ; switch on size
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -190,6 +191,22 @@ BEGINPROC   EMEmulateAnd
     pushf
     pop     MY_RET_REG
     retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    and     [MY_PTR_REG64], rdx         ; do 8 bytes AND
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateAnd
 
 
@@ -220,7 +237,7 @@ BEGINPROC   EMEmulateOr
 %endif
 
     ; switch on size
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -255,6 +272,22 @@ BEGINPROC   EMEmulateOr
     pushf
     pop     MY_RET_REG
     retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    or      [MY_PTR_REG64], rdx         ; do 8 bytes OR
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateOr
 
 
@@ -285,7 +318,7 @@ BEGINPROC   EMEmulateLockOr
 %endif
 
     ; switch on size
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -332,6 +365,23 @@ BEGINPROC   EMEmulateLockOr
     mov     eax, VINF_SUCCESS
     retn
 
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    lock or [MY_PTR_REG64], rdx         ; do 8 bytes OR
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+
+
 %ifdef IN_RC
 ; #PF resume point.
 GLOBALNAME EMEmulateLockOr_Error
@@ -369,7 +419,7 @@ BEGINPROC   EMEmulateXor
 %endif
 
     ; switch on size
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -404,6 +454,22 @@ BEGINPROC   EMEmulateXor
     pushf
     pop     MY_RET_REG
     retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rdx, qword [rsp + 08h]      ; rdx = second parameter
+    xor     [MY_PTR_REG64], rdx         ; do 8 bytes XOR
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateXor
 
 
