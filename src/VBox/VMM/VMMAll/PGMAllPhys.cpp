@@ -1235,8 +1235,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                        void *pvSrc = NULL;
-                        PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
+                        void *pvSrc = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1283,8 +1282,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                        void *pvSrc = NULL;
-                        PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
+                        void *pvSrc = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                         void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1312,8 +1310,7 @@ VMMDECL(void) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                         case MM_RAM_FLAGS_MMIO2: // MMIO2 isn't in the mask.
                         {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                            void *pvSrc = NULL;
-                            PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvSrc);
+                            void *pvSrc = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                             void *pvSrc = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1536,8 +1533,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                            void *pvDst = NULL;
-                            PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
+                            void *pvDst = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1580,8 +1576,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                         {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                            void *pvDst = NULL;
-                            PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
+                            void *pvDst = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1624,8 +1619,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                        void *pvDst = NULL;
-                        PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
+                        void *pvDst = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                         void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
@@ -1652,8 +1646,7 @@ VMMDECL(void) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t c
                         case MM_RAM_FLAGS_ROM | MM_RAM_FLAGS_MMIO2: /* shadow rom */
                         {
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                            void *pvDst = NULL;
-                            PGMDynMapHCPageOff(pVM, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK), &pvDst);
+                            void *pvDst = pgmDynMapHCPageOff(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage) + (off & PAGE_OFFSET_MASK));
 #else
                             void *pvDst = PGMRAMRANGE_GETHCPTR(pRam, off)
 #endif
