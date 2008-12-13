@@ -42,6 +42,25 @@
  %define MY_RET_REG     eax
 %endif
 
+;; @def RT_ARCH_AMD64
+; Indicator for whether we can deal with 8 byte operatands. (Darwin fun again.)
+%ifdef RT_ARCH_AMD64
+ %define CAN_DO_8_BYTE_OP  1
+%endif
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ %define CAN_DO_8_BYTE_OP  1
+%endif
+
+
+;*******************************************************************************
+;*  External Symbols                                                           *
+;*******************************************************************************
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+extern NAME(SUPR0Abs64bitKernelCS)
+extern NAME(SUPR0AbsKernelCS)
+%endif
+
+
 BEGINCODE
 
 
@@ -882,7 +901,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     mov     eax, [esp + 14h + 4]        ; eax = size of parameters
 %endif
 
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -899,7 +918,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     ; load 2nd parameter's value
     mov     rax, qword [rbx]
 
-    lock cmpxchg qword [rcx], rdx            ; do 8 bytes CMPXCHG
+    lock cmpxchg qword [rcx], rdx       ; do 8 bytes CMPXCHG
     mov     qword [rbx], rax
     jmp     short .done
 %endif
@@ -908,7 +927,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     ; load 2nd parameter's value
     mov     eax, dword [xBX]
 
-    lock cmpxchg dword [xCX], edx            ; do 4 bytes CMPXCHG
+    lock cmpxchg dword [xCX], edx       ; do 4 bytes CMPXCHG
     mov     dword [xBX], eax
     jmp     short .done
 
@@ -916,7 +935,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     ; load 2nd parameter's value
     mov     eax, dword [xBX]
 
-    lock cmpxchg word [xCX], dx              ; do 2 bytes CMPXCHG
+    lock cmpxchg word [xCX], dx         ; do 2 bytes CMPXCHG
     mov     word [xBX], ax
     jmp     short .done
 
@@ -924,7 +943,7 @@ BEGINPROC   EMEmulateLockCmpXchg
     ; load 2nd parameter's value
     mov     eax, dword [xBX]
 
-    lock cmpxchg byte [xCX], dl              ; do 1 byte CMPXCHG
+    lock cmpxchg byte [xCX], dl         ; do 1 byte CMPXCHG
     mov     byte [xBX], al
 
 .done:
@@ -934,6 +953,26 @@ BEGINPROC   EMEmulateLockCmpXchg
 
     pop     xBX
     retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     ebx, 0ffffffffh
+    and     esp, 0ffffffffh
+    and     ecx, 0ffffffffh
+    mov     rax, qword [rbx]            ; load 2nd parameter's value
+    mov     rdx, qword [rsp + 0ch + 4]  ; rdx = third parameter
+
+    lock cmpxchg qword [rcx], rdx       ; do 8 byte CMPXCHG
+    mov     qword [rbx], rax
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateLockCmpXchg
 
 
@@ -970,7 +1009,7 @@ BEGINPROC   EMEmulateCmpXchg
     mov     eax, [esp + 14h + 4]        ; eax = size of parameters
 %endif
 
-%ifdef RT_ARCH_AMD64
+%ifdef CAN_DO_8_BYTE_OP
     cmp     al, 8
     je short .do_qword                  ; 8 bytes variant
 %endif
@@ -1022,6 +1061,26 @@ BEGINPROC   EMEmulateCmpXchg
 
     pop     xBX
     retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     ebx, 0ffffffffh
+    and     esp, 0ffffffffh
+    and     ecx, 0ffffffffh
+    mov     rax, qword [rbx]            ; load 2nd parameter's value
+    mov     rdx, qword [rsp + 0ch + 4]  ; rdx = third parameter
+
+    cmpxchg qword [rcx], rdx            ; do 8 byte CMPXCHG
+    mov     qword [rbx], rax
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 ENDPROC     EMEmulateCmpXchg
 
 

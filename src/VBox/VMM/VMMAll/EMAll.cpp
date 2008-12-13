@@ -1415,7 +1415,7 @@ static int emInterpretCmpXchg(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame
 {
     OP_PARAMVAL param1, param2;
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
     Assert(pCpu->param1.size <= 4);
 #endif
 
@@ -2940,8 +2940,8 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             &&  pCpu->pCurInstr->opcode != OP_MOV
             &&  pCpu->pCurInstr->opcode != OP_CMPXCHG8B
             &&  pCpu->pCurInstr->opcode != OP_XCHG
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            /** @todo */
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+            &&  pCpu->pCurInstr->opcode != OP_CMPXCHG
 # endif
             )
         {
