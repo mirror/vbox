@@ -32,7 +32,7 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
   PROGRAMS.linux += \
-	tstHostHardwareLinux
+	$(if $(VBOX_WITH_USB),tstHostHardwareLinux,)
  endif # !VBOX_WITH_TESTCASES
 endif # !VBOX_ONLY_SDK
 if defined(VBOX_ONLY_SDK) || !defined(VBOX_WITH_XPCOM)
