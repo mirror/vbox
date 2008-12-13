@@ -791,12 +791,14 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     char ip_copy[256];
     struct icmp *icp;
     int old_ip_len;
+    int hlen, original_hlen;
     struct mbuf *m;
     struct icmp_msg *icm;
     uint8_t proto;
 
     ip = (struct ip *)buff;
-    icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+    hlen = (ip->ip_hl << 2);
+    icp = (struct icmp *)((char *)ip + hlen);
 
     LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
     if (icp->icmp_type != ICMP_ECHOREPLY && icp->icmp_type != ICMP_TIMXCEED)
@@ -833,9 +835,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     dst = ip->ip_src.s_addr;
 
     /* overide ther tail of old packet */
-    memcpy(m->m_data, buff, len);
-    m->m_len = len;
     ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
+    original_hlen = ip->ip_hl << 2;
+    /* saves original ip header and options */
+    memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
+    m->m_len = len - hlen + original_hlen;
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
     if (icp->icmp_type == ICMP_TIMXCEED)
@@ -846,12 +850,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     }
 
     /* the low level expects fields to be in host format so let's convert them*/
-#ifndef RT_OS_DARWIN
-    /* Darwin returns this fields in host byte order */
+#if 0 /* need check on linux */
     NTOHS(ip->ip_len);
     NTOHS(ip->ip_off);
-#endif
     NTOHS(ip->ip_id);
+#endif
     ip->ip_src.s_addr = src;
     ip->ip_dst.s_addr = dst;
     icmp_reflect(pData, m);
