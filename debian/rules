@@ -184,8 +184,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
-	    $(if $(NOQT),,VirtualBox) $(if $(ose),,VBoxVRDP) \
-	    VBoxHeadless; do \
+	    $(if $(NOQT),,VirtualBox) \
+	    VBoxHeadless $(if $(ose),,vboxwebsrv webtest); do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
@@ -215,6 +215,7 @@ endif
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
+	    $(if $(ose),,usr/bin/VBox           usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxdrv    usr/src/vboxdrv-$(ver) \
 	    usr/share/virtualbox/src/vboxnetflt usr/src/vboxnetflt-$(ver)
 	dh_desktop
