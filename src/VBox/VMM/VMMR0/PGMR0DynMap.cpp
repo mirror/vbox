@@ -1561,10 +1561,13 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
      */
     uint32_t    cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
-    AssertMsg(cEntries <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", cEntries, cEntries));
     pSet->cEntries = PGMMAPSET_CLOSED;
     pSet->iSubset = UINT32_MAX;
     pSet->iCpu = -1;
+
+    AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
+    if (cEntries > RT_ELEMENTS(pSet->aEntries) * 50 / 100)
+        Log(("PGMDynMapReleaseAutoSet: cEntries=%d\n", pSet->cEntries));
 
     pgmDynMapFlushAutoSetWorker(pSet, cEntries);
 }
@@ -1581,14 +1584,16 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
     AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
 
     /*
-     * Only flush it if it's 50% full.
+     * Only flush it if it's 45% full.
      */
     uint32_t cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
-    if (cEntries >= RT_ELEMENTS(pSet->aEntries) / 2)
+    if (cEntries >= RT_ELEMENTS(pSet->aEntries) * 45 / 100)
     {
-        AssertMsg(cEntries <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", cEntries, cEntries));
         pSet->cEntries = 0;
+
+        AssertMsg(cEntries < PGMMAPSET_MAX_FILL, ("%u\n", cEntries));
+        Log(("PGMDynMapFlushAutoSet: cEntries=%d\n", pSet->cEntries));
 
         pgmDynMapFlushAutoSetWorker(pSet, cEntries);
         AssertMsg(pSet->iCpu == RTMpCpuIdToSetIndex(RTMpCpuId()), ("%d %d(%d) efl=%#x\n", pSet->iCpu, RTMpCpuIdToSetIndex(RTMpCpuId()), RTMpCpuId(), ASMGetFlags()));
@@ -1668,6 +1673,7 @@ static void pgmDynMapFlushSubset(PPGMMAPSET pSet)
     if (    i > iSubset
         &&  i <= RT_ELEMENTS(pSet->aEntries))
     {
+        Log(("pgmDynMapFlushSubset: cEntries=%d iSubset=%d\n", pSet->cEntries, iSubset));
         pSet->cEntries = iSubset;
 
         PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
@@ -1729,9 +1735,10 @@ VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     AssertReturnVoid(pSet->cEntries != PGMMAPSET_CLOSED);
     AssertReturnVoid(pSet->iSubset <= iPrevSubset || iPrevSubset == UINT32_MAX);
 Assert(iPrevSubset == UINT32_MAX);
-    if (    pSet->cEntries >= RT_ELEMENTS(pSet->aEntries) / 2
+    if (    pSet->cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
         &&  pSet->cEntries != pSet->iSubset)
     {
+        AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
         STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapPopFlushes);
         pgmDynMapFlushSubset(pSet);
     }
@@ -1851,8 +1858,8 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
     else if (   pSet->aEntries[i - 4].iPage == iPage
              && pSet->aEntries[i - 4].cRefs < UINT16_MAX - 1)
         pSet->aEntries[i - 4].cRefs++;
-    /* Don't bother searching unless we're above a 75% load. */
-    else if (RT_LIKELY(i <= (int32_t)RT_ELEMENTS(pSet->aEntries) / 4 * 3))
+    /* Don't bother searching unless we're above a 60% load. */
+    else if (RT_LIKELY(i <= (int32_t)RT_ELEMENTS(pSet->aEntries) * 60 / 100))
     {
         unsigned iEntry = pSet->cEntries++;
         pSet->aEntries[iEntry].cRefs  = 1;
@@ -1880,6 +1887,7 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
             if (pSet->iSubset < pSet->cEntries)
             {
                 STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapSetSearchFlushes);
+                AssertMsg(pSet->cEntries < PGMMAPSET_MAX_FILL, ("%u\n", pSet->cEntries));
                 pgmDynMapFlushSubset(pSet);
             }
 
