@@ -72,7 +72,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     struct ip save_ip;
     struct socket *so;
 #ifdef VBOX_WITH_SLIRP_ICMP
-        int ret;
+    int ret;
+    int ttl;
 #endif
 
     DEBUG_CALL("udp_input");
@@ -244,8 +245,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         udp_emu(pData, so, m);
 
 #ifdef VBOX_WITH_SLIRP_ICMP
-    ip->ip_ttl = save_ip.ip_ttl;
-    ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, (void *)&ip->ip_ttl, sizeof(ip->ip_ttl));
+    ttl = ip->ip_ttl = save_ip.ip_ttl;
+    ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
     if (ret < 0) {
         LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
     }
