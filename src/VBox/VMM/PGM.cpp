@@ -1608,6 +1608,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPageInlMisses,       STAMTYPE_COUNTER, "/PGM/R0/DynMapPageHCPageInl/Misses", STAMUNIT_OCCURENCES,     "Misses that falls back to code common with PGMDynMapHCPage.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPage,                  STAMTYPE_COUNTER, "/PGM/R0/DynMapPage",                 STAMUNIT_OCCURENCES,     "Calls to pgmR0DynMapPage");
     STAM_REG(pVM, &pPGM->StatR0DynMapSetOptimize,           STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SetOptimize",     STAMUNIT_OCCURENCES,     "Calls to pgmDynMapOptimizeAutoSet.");
+    STAM_REG(pVM, &pPGM->StatR0DynMapSetSearchFlushes,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SetSearchFlushes",STAMUNIT_OCCURENCES,     "Set search restorting to subset flushes.");
     STAM_REG(pVM, &pPGM->StatR0DynMapSetSearchHits,         STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SetSearchHits",   STAMUNIT_OCCURENCES,     "Set search hits.");
     STAM_REG(pVM, &pPGM->StatR0DynMapSetSearchMisses,       STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SetSearchMisses", STAMUNIT_OCCURENCES,     "Set search misses.");
     STAM_REG(pVM, &pPGM->StatR0DynMapHCPage,                STAMTYPE_PROFILE, "/PGM/R0/DynMapPage/HCPage",          STAMUNIT_TICKS_PER_CALL, "Calls to PGMDynMapHCPage (ring-0).");
@@ -1619,6 +1620,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLoopHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLoopHits" ,   STAMUNIT_OCCURENCES,     "Hits in the loop path.");
     STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLoopMisses,    STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLoopMisses",  STAMUNIT_OCCURENCES,     "Misses in the loop path. NonLoopMisses = Slow - SlowLoopHit - SlowLoopMisses");
     //STAM_REG(pVM, &pPGM->StatR0DynMapPageSlowLostHits,      STAMTYPE_COUNTER, "/PGM/R0/DynMapPage/SlowLostHits",    STAMUNIT_OCCURENCES,     "Lost hits.");
+    STAM_REG(pVM, &pPGM->StatR0DynMapSubsets,               STAMTYPE_COUNTER, "/PGM/R0/Subsets",                    STAMUNIT_OCCURENCES,     "Times PGMDynMapPushAutoSubset was called.");
+    STAM_REG(pVM, &pPGM->StatR0DynMapPopFlushes,            STAMTYPE_COUNTER, "/PGM/R0/SubsetPopFlushes",           STAMUNIT_OCCURENCES,     "Times PGMDynMapPopAutoSubset flushes the subset.");
 
     /* GC only: */
     STAM_REG(pVM, &pPGM->StatRCDynMapCacheHits,             STAMTYPE_COUNTER, "/PGM/RC/DynMapCache/Hits" ,          STAMUNIT_OCCURENCES,     "Number of dynamic page mapping cache hits.");

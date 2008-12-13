@@ -366,6 +366,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
             pSet->aEntries[j].HCPhys = NIL_RTHCPHYS;
         }
         pSet->cEntries = PGMMAPSET_CLOSED;
+        pSet->iSubset = UINT32_MAX;
         pSet->iCpu = -1;
         memset(&pSet->aiHashTable[0], 0xff, sizeof(pSet->aiHashTable));
     }
@@ -465,6 +466,7 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
                     pSet->aEntries[j].HCPhys = NIL_RTHCPHYS;
                 }
                 pSet->cEntries = PGMMAPSET_CLOSED;
+                pSet->iSubset = UINT32_MAX;
                 pSet->iCpu = -1;
             }
             else
@@ -1497,6 +1499,7 @@ VMMR0DECL(int) PGMR0DynMapAssertIntegrity(void)
 VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 {
     Assert(pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED);
+    Assert(pVCpu->pgm.s.AutoSet.iSubset == UINT32_MAX);
     pVCpu->pgm.s.AutoSet.cEntries = 0;
     pVCpu->pgm.s.AutoSet.iCpu = RTMpCpuIdToSetIndex(RTMpCpuId());
 }
@@ -1556,6 +1559,7 @@ VMMDECL(void) PGMDynMapReleaseAutoSet(PVMCPU pVCpu)
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertMsg(cEntries <= RT_ELEMENTS(pSet->aEntries), ("%#x (%u)\n", cEntries, cEntries));
     pSet->cEntries = PGMMAPSET_CLOSED;
+    pSet->iSubset = UINT32_MAX;
     pSet->iCpu = -1;
 
     pgmDynMapFlushAutoSetWorker(pSet, cEntries);
@@ -1588,7 +1592,6 @@ VMMDECL(void) PGMDynMapFlushAutoSet(PVMCPU pVCpu)
 }
 
 
-
 /**
  * Migrates the automatic mapping set of the current vCPU if it's active and
  * necessary.
@@ -1615,6 +1618,9 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
             if (i != 0 && RT_LIKELY(i <= RT_ELEMENTS(pSet->aEntries)))
             {
                 PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+                RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+                RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
                 while (i-- > 0)
                 {
                     Assert(pSet->aEntries[i].cRefs > 0);
@@ -1623,15 +1629,109 @@ VMMDECL(void) PGMDynMapMigrateAutoSet(PVMCPU pVCpu)
                     if (RTCpuSetIsMemberByIndex(&pThis->paPages[iPage].PendingSet, iRealCpu))
                     {
                         RTCpuSetDelByIndex(&pThis->paPages[iPage].PendingSet, iRealCpu);
+                        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
                         ASMInvalidatePage(pThis->paPages[iPage].pvPage);
                         STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapMigrateInvlPg);
+
+                        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
                     }
                 }
 
+                RTSpinlockRelease(pThis->hSpinlock, &Tmp);
             }
         }
         pSet->iCpu = iRealCpu;
     }
+}
+
+
+/**
+ * Worker function that flushes the current subset.
+ *
+ * This is called when the set is popped or when the set
+ * hash a too high load. As also pointed out elsewhere, the
+ * whole subset thing is a hack for working around code that
+ * accesses too many pages. Like PGMPool.
+ *
+ * @param   pSet        The set which subset to flush.
+ */
+static void pgmDynMapFlushSubset(PPGMMAPSET pSet)
+{
+    uint32_t iSubset = pSet->iSubset;
+    uint32_t i       = pSet->cEntries;
+    Assert(i <= RT_ELEMENTS(pSet->aEntries));
+    if (    i > iSubset
+        &&  i <= RT_ELEMENTS(pSet->aEntries))
+    {
+        pSet->cEntries = iSubset;
+
+        PPGMR0DYNMAP    pThis = g_pPGMR0DynMap;
+        RTSPINLOCKTMP   Tmp   = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
+        while (i-- > iSubset)
+        {
+            uint32_t iPage = pSet->aEntries[i].iPage;
+            Assert(iPage < pThis->cPages);
+            int32_t  cRefs = pSet->aEntries[i].cRefs;
+            Assert(cRefs > 0);
+            pgmR0DynMapReleasePageLocked(pThis, iPage, cRefs);
+
+            pSet->aEntries[i].iPage = UINT16_MAX;
+            pSet->aEntries[i].cRefs = 0;
+        }
+
+        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    }
+}
+
+
+/**
+ * Creates a subset.
+ *
+ * A subset is a hack to avoid having to rewrite code that touches a lot of
+ * pages. It prevents the mapping set from being overflowed by automatically
+ * flushing previous mappings when a certain threshold is reached.
+ *
+ * Pages mapped after calling this function are only valid until the next page
+ * is mapped.
+ *
+ * @returns The index of the previous subset. Pass this to
+ *        PGMDynMapPopAutoSubset when poping it.
+ * @param   pVCpu           Pointer to the virtual cpu data.
+ */
+VMMDECL(uint32_t) PGMDynMapPushAutoSubset(PVMCPU pVCpu)
+{
+    PPGMMAPSET      pSet = &pVCpu->pgm.s.AutoSet;
+    AssertReturn(pSet->cEntries != PGMMAPSET_CLOSED, UINT32_MAX);
+    uint32_t        iPrevSubset = pSet->iSubset;
+Assert(iPrevSubset == UINT32_MAX);
+    pSet->iSubset = pSet->cEntries;
+    STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapSubsets);
+    return iPrevSubset;
+}
+
+
+/**
+ * Pops a subset created by a previous call to PGMDynMapPushAutoSubset.
+ *
+ * @param   pVCpu           Pointer to the virtual cpu data.
+ * @param   iPrevSubset     What PGMDynMapPushAutoSubset returned.
+ */
+VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
+{
+    PPGMMAPSET      pSet = &pVCpu->pgm.s.AutoSet;
+    AssertReturnVoid(pSet->cEntries != PGMMAPSET_CLOSED);
+    AssertReturnVoid(pSet->iSubset <= iPrevSubset || iPrevSubset == UINT32_MAX);
+Assert(iPrevSubset == UINT32_MAX);
+    if (    pSet->cEntries >= RT_ELEMENTS(pSet->aEntries) / 2
+        &&  pSet->cEntries != pSet->iSubset)
+    {
+        STAM_COUNTER_INC(&pVCpu->pVMR0->pgm.s.StatR0DynMapPopFlushes);
+        pgmDynMapFlushSubset(pSet);
+    }
+    pSet->iSubset = iPrevSubset;
 }
 
 
@@ -1773,11 +1873,18 @@ int pgmR0DynMapHCPageCommon(PVM pVM, PPGMMAPSET pSet, RTHCPHYS HCPhys, void **pp
         if (i < 0)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapSetSearchMisses);
+            if (pSet->iSubset < pSet->cEntries)
+            {
+                STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapSetSearchFlushes);
+                pgmDynMapFlushSubset(pSet);
+            }
+
             if (RT_UNLIKELY(pSet->cEntries >= RT_ELEMENTS(pSet->aEntries)))
             {
                 STAM_COUNTER_INC(&pVM->pgm.s.StatR0DynMapSetOptimize);
                 pgmDynMapOptimizeAutoSet(pSet);
             }
+
             if (RT_LIKELY(pSet->cEntries < RT_ELEMENTS(pSet->aEntries)))
             {
                 unsigned iEntry = pSet->cEntries++;

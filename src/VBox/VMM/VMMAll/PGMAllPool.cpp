@@ -3673,6 +3673,12 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
         return;
     }
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Start a subset so we won't run out of mapping space. */
+    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+#endif
+
     /*
      * Nuke the free list and reinsert all pages into it.
      */
@@ -3814,6 +3820,11 @@ static void pgmPoolFlushAllInt(PPGMPOOL pPool)
 #endif
     }
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Pop the subset. */
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#endif
+
     /*
      * Finally, assert the FF.
      */
@@ -3862,6 +3873,12 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         return VINF_SUCCESS;
     }
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Start a subset so we won't run out of mapping space. */
+    PVMCPU pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+#endif
+
     /*
      * Mark the page as being in need of a ASMMemZeroPage().
      */
@@ -3883,6 +3900,11 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     pgmPoolCacheFlushPage(pPool, pPage);
 #endif /* PGMPOOL_WITH_CACHE */
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    /* Heavy stuff done. */
+    PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#endif
 
 #ifdef PGMPOOL_WITH_MONITORING
     /*
