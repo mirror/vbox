@@ -36,14 +36,16 @@
 #define LOG_GROUP LOG_GROUP_MAIN
 
 #include <iprt/err.h>
-
-#include "netif.h"
-
+#include <iprt/ctype.h>
 #include <list>
-#include <map>
+
+#include "HostNetworkInterfaceImpl.h"
+#include "netif.h"
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 
+#include <map>
+#include <string>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stropts.h>
@@ -60,7 +62,9 @@
 #include <net/if.h>
 #include <sys/types.h>
 
-static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, void *pvHostNetworkInterfaceList)
+#include "DynLoadLibSolaris.h"
+
+static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
 {
     std::list<ComObjPtr <HostNetworkInterface> > *pList = (std::list<ComObjPtr <HostNetworkInterface> > *)pvHostNetworkInterfaceList;
     Assert(pList);
@@ -112,6 +116,43 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
     else
         RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
 
+    NETIFINFO Info;
+    memset(&Info, 0, sizeof(Info));
+    int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (Sock > 0)
+    {
+        struct lifreq IfReq;
+        strcpy(IfReq.lifr_name, szNICInstance);
+        if (ioctl(Sock, SIOCGLIFADDR, &IfReq) >= 0)
+        {
+            memcpy(Info.IPAddress.au8, ((struct sockaddr *)&IfReq.lifr_addr)->sa_data,
+                    sizeof(Info.IPAddress.au8));
+            // SIOCGLIFNETMASK
+            struct arpreq ArpReq;
+            memcpy(&ArpReq.arp_pa, &IfReq.lifr_addr, sizeof(struct sockaddr_in));
+
+            /*
+             * We might fail if the interface has not been assigned an IP address.
+             * That doesn't matter; as long as it's plumbed we can pick it up.
+             * But, if it has not acquired an IP address we cannot obtain it's MAC
+             * address this way, so we just use all zeros there.
+             */
+            if (ioctl(Sock, SIOCGARP, &ArpReq) >= 0)
+                memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
+
+        }
+
+        if (ioctl(Sock, SIOCGLIFNETMASK, &IfReq) >= 0)
+        {
+            memcpy(Info.IPNetMask.au8, ((struct sockaddr *)&IfReq.lifr_addr)->sa_data,
+                    sizeof(Info.IPNetMask.au8));
+        }
+        if (ioctl(Sock, SIOCGLIFFLAGS, &IfReq) >= 0)
+        {
+            Info.enmStatus = IfReq.lifr_flags & IFF_UP ? NETIF_S_UP : NETIF_S_DOWN;
+        }
+        close(Sock);
+    }
     /*
      * Construct UUID with interface name and the MAC address if available.
      */
@@ -120,15 +161,13 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, PCRTMAC pMac, 
     memcpy(&Uuid, szNICInstance, RT_MIN(strlen(szNICInstance), sizeof(Uuid)));
     Uuid.Gen.u8ClockSeqHiAndReserved = (Uuid.Gen.u8ClockSeqHiAndReserved & 0x3f) | 0x80;
     Uuid.Gen.u16TimeHiAndVersion = (Uuid.Gen.u16TimeHiAndVersion & 0x0fff) | 0x4000;
-    if (pMac)
-    {
-        Uuid.Gen.au8Node[0] = pMac->au8[0];
-        Uuid.Gen.au8Node[1] = pMac->au8[1];
-        Uuid.Gen.au8Node[2] = pMac->au8[2];
-        Uuid.Gen.au8Node[3] = pMac->au8[3];
-        Uuid.Gen.au8Node[4] = pMac->au8[4];
-        Uuid.Gen.au8Node[5] = pMac->au8[5];
-    }
+    Uuid.Gen.au8Node[0] = Info.MACAddress.au8[0];
+    Uuid.Gen.au8Node[1] = Info.MACAddress.au8[1];
+    Uuid.Gen.au8Node[2] = Info.MACAddress.au8[2];
+    Uuid.Gen.au8Node[3] = Info.MACAddress.au8[3];
+    Uuid.Gen.au8Node[4] = Info.MACAddress.au8[4];
+    Uuid.Gen.au8Node[5] = Info.MACAddress.au8[5];
+    Info.Uuid = Uuid;
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
@@ -168,7 +207,7 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
     /*
      * Add the interface.
      */
-    vboxSolarisAddHostIface(szIfaceName, Instance, NULL, pvHostNetworkInterfaceList);
+    vboxSolarisAddHostIface(szIfaceName, Instance, pvHostNetworkInterfaceList);
 
     /*
      * Continue walking...
@@ -213,7 +252,7 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
     if (!strcmp(di_driver_name(Node), "softmac"))
         return DI_WALK_CONTINUE;
 
-    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), NULL, pvHostNetworkInterfaceList);
+    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), pvHostNetworkInterfaceList);
     return DI_WALK_CONTINUE;
 }
 # endif /* VBOX_SOLARIS_NSL_RESOLVED */
@@ -274,12 +313,12 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                     if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
                         continue;
 
-                    NETIFINFO Info;
-                    memset(&Info, 0, sizeof(Info));
+#if 0
                     rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
                     if (rc >= 0)
                     {
-                        memcpy(Info.IPAddress.au8, &Ifaces[i].lifr_addr.sa_data, Info.IPAddress.au8);
+                        memcpy(Info.IPAddress.au8, ((struct sockaddr *)&Ifaces[i].lifr_addr)->sa_data,
+                               sizeof(Info.IPAddress.au8));
                         // SIOCGLIFNETMASK
                         struct arpreq ArpReq;
                         memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
@@ -294,25 +333,14 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                         if (rc >= 0)
                             memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
 
-#if 0
                         char szNICDesc[LIFNAMSIZ + 256];
                         char *pszIface = Ifaces[i].lifr_name;
                         strcpy(szNICDesc, pszIface);
 
                         vboxSolarisAddLinkHostIface(pszIface, &list);
+                    }
 #endif
-                    }
 
-                    rc = ioctl(Sock, SIOCGLIFNETMASK, &(Ifaces[i]));
-                    if (rc >= 0)
-                    {
-                        memcpy(Info.IPNetMask.au8, &Ifaces[i].lifr_addr.sa_data, Info.IPNetMask.au8);
-                    }
-                    rc = ioctl(Sock, SIOCGLIFFLAGS, &(Ifaces[i]));
-                    if (rc >= 0)
-                    {
-                        Info.enmStatus = Ifaces[i].lifr_flags & IFF_UP ? NETIF_S_UP : NETIF_S_DOWN;
-                    }
                     char *pszIface = Ifaces[i].lifr_name;
                     vboxSolarisAddLinkHostIface(pszIface, &list);
                 }
