@@ -2943,6 +2943,9 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCO
             &&  uOpCode != OP_MOV
             &&  uOpCode != OP_CMPXCHG8B
             &&  uOpCode != OP_XCHG
+            &&  uOpCode != OP_BTS
+            &&  uOpCode != OP_BTR
+            &&  uOpCode != OP_BTC
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
             &&  uOpCode != OP_CMPXCHG /* solaris */
             &&  uOpCode != OP_AND     /* windows */
