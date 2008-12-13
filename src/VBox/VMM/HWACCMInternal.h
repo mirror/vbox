@@ -34,7 +34,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) // || defined (VBOX_WITH_64_BITS_GUESTS)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined (VBOX_WITH_64_BITS_GUESTS)
 /* Enable 64 bits guest support. */
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
@@ -200,18 +200,12 @@ typedef struct HWACCM
     /** Set if we're supposed to inject an NMI. */
     bool                        fInjectNMI;
 
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-#endif
 
     /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
      *  naturally. */
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     bool                        padding[1];
-#else
-    bool                        padding[2];
-#endif
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
@@ -219,7 +213,7 @@ typedef struct HWACCM
     /** Maximum ASID allowed. */
     RTUINT                      uMaxASID;
 
-#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
     R0PTRTYPE(PFNHWACCMSWITCHERHC) pfnHost32ToGuest64R0;
 

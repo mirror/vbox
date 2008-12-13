@@ -218,8 +218,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         /* Indicate whether 64-bit guests are supported or not. */
         /** @todo This is currently only forced off on 32-bit hosts only because it
-         *        makes a lof of differnese there (REM and Solaris performance). This
-         *        will later be done on all platforms, see @bugref{3383}. */
+         *        makes a lof of difference there (REM and Solaris performance). 
+         */
 
         Bstr osTypeId;
         hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                 H();
@@ -242,7 +242,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                      RC_CHECK();
 #endif
         }
-#if ARCH_BITS == 32 /* Until we've got a check box on/off thing, 32-bit only. */
+#if ARCH_BITS == 32 /* 32-bit guests only. */
         else
         {
             rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 0);                RC_CHECK();
