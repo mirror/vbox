@@ -245,13 +245,13 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
     }
 #endif
-    if(sosendto(pData, so,m) == -1)
+    if (sosendto(pData, so, m) == -1)
     {
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
-        DEBUG_MISC((dfd,"udp tx errno = %d-%s\n",errno,strerror(errno)));
-        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
+        DEBUG_MISC((dfd,"udp tx errno = %d-%s\n", errno, strerror(errno)));
+        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
     }
 
     m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
