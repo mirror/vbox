@@ -345,6 +345,12 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             if (!vboxGlobal().isValid())
                 break;
 
+            /* Note: the settings conversion check must be done before
+             * anything else that can unconditionally overwrite settings files
+             * int he new format (like the license thingy below) */
+            if (!vboxGlobal().checkForAutoConvertedSettings())
+                break;
+
 #ifndef VBOX_OSE
 #ifdef Q_WS_X11
             /* show the user license file */
@@ -352,9 +358,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 break;
 #endif
 #endif
-
-            if (!vboxGlobal().checkForAutoConvertedSettings())
-                break;
 
             VBoxGlobalSettings settings = vboxGlobal().settings();
             /* Process known keys */
@@ -397,7 +400,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #endif
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 }
-                
+
                 do
                 {
 #endif
