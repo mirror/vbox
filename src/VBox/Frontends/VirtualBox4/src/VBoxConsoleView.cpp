@@ -946,7 +946,7 @@ void VBoxConsoleView::normalizeGeometry (bool adjustPosition /* = false */)
 {
     /* Make no normalizeGeometry in case we are in manual resize
      * mode or main window is maximized */
-    if (mMainWnd->isMaximized() || mMainWnd->isFullScreen())
+    if (mMainWnd->isWindowMaximized() || mMainWnd->isWindowFullScreen())
         return;
 
     QWidget *tlw = window();
@@ -2373,6 +2373,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
 void VBoxConsoleView::toggleFSMode (const QSize &aSize)
 {
     if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
+        mMainWnd->isTrueSeamless() ||
         mMainWnd->isTrueFullscreen())
     {
         QSize newSize;

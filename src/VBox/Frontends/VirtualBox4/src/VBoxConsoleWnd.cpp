@@ -1234,7 +1234,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         {
             QResizeEvent *re = (QResizeEvent *) e;
 
-            if (!mIsWaitingModeResize && !isMaximized() &&
+            if (!mIsWaitingModeResize && !isWindowMaximized() &&
                 !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.setSize (re->size());
@@ -1255,7 +1255,7 @@ bool VBoxConsoleWnd::event (QEvent *e)
         }
         case QEvent::Move:
         {
-            if (!isMaximized() && !isTrueFullscreen() && !isTrueSeamless())
+            if (!isWindowMaximized() && !isTrueFullscreen() && !isTrueSeamless())
             {
                 mNormalGeo.moveTo (geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1550,7 +1550,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *e)
         QString winPos = QString ("%1,%2,%3,%4")
             .arg (mNormalGeo.x()).arg (mNormalGeo.y())
             .arg (mNormalGeo.width()).arg (mNormalGeo.height());
-        if (isMaximized() || (mIsFullscreen && was_max)
+        if (isWindowMaximized() || (mIsFullscreen && was_max)
                           || (mIsSeamless && was_max))
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
@@ -2143,7 +2143,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 {
     /* Please note: For some platforms like the Mac, the calling order of the
-     * functions in this methods is vital. So please be carefull on changing
+     * functions in this methods is vital. So please be careful on changing
      * this. */
 
     QSize initialSize = size();
@@ -2263,7 +2263,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 
         /* Memorize the maximized state. */
         QDesktopWidget *dtw = QApplication::desktop();
-        was_max = isMaximized() &&
+        was_max = isWindowMaximized() &&
                   dtw->availableGeometry().width()  == frameSize().width() &&
                   dtw->availableGeometry().height() == frameSize().height();
 
@@ -2337,7 +2337,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
             /* Please note: All the stuff below has to be done before the
              * window switch back to normal size. Qt changes the winId on the
              * fullscreen switch and make this stuff useless with the old
-             * winId. So please be carefull on rearrangement of the method
+             * winId. So please be careful on rearrangement of the method
              * calls. */
             /* Undo all mac specific installations */
             OSStatus status;
@@ -2382,7 +2382,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         /* Please note: All the stuff below has to be done after the window has
          * switched to fullscreen. Qt changes the winId on the fullscreen
          * switch and make this stuff useless with the old winId. So please be
-         * carefull on rearrangement of the method calls. */
+         * careful on rearrangement of the method calls. */
         OSStatus status;
         HIViewRef viewRef = ::darwinToHIViewRef (console->viewport());
         Assert (VALID_PTR (viewRef));
@@ -2422,11 +2422,11 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     }
 #endif
 
-    /* Process all console attributes changes and sub-widget hidings */
-    qApp->processEvents();
-
     /* Send guest size hint */
     console->toggleFSMode (consoleSize);
+
+    /* Process all console attributes changes and sub-widget hidings */
+    qApp->processEvents();
 
     if (!mIsWaitingModeResize)
         onExitFullscreen();
@@ -2583,7 +2583,7 @@ void VBoxConsoleWnd::vmAdjustWindow()
 {
     if (console)
     {
-        if (isMaximized())
+        if (isWindowMaximized())
             showNormal();
         console->normalizeGeometry (true /* adjustPosition */);
     }
@@ -2991,7 +2991,7 @@ void VBoxConsoleWnd::setMask (const QRegion &aRegion)
          * in the paint engine. */
         HIViewReshapeStructure (::darwinToHIViewRef (console->viewport()));
 //        HIWindowInvalidateShadow (::darwinToWindowRef (console->viewport()));
-//        ReshapeCustomWindow (mapToWindowRef (this));
+//        ReshapeCustomWindow (::darwinToWindowRef (this));
     }
     else
 # endif
