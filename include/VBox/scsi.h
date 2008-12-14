@@ -203,7 +203,7 @@ typedef struct SCSIINQUIRYDATA
     unsigned u2Reserved0 : 2;
     unsigned fTrmlOP : 1;
     unsigned fAEC : 1;
-    uint8_t  cbAdditional;                  /**< 0x04 */
+    unsigned cbAdditional: 8;               /**< 0x04 */
     unsigned u8Reserved1 : 8;               /**< 0x05 */
     unsigned u8Reserved2 : 8;               /**< 0x06 */
     unsigned fSftRe : 1;                    /**< 0x07 */
