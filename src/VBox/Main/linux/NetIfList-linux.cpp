@@ -43,6 +43,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <iprt/asm.h>
 
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
