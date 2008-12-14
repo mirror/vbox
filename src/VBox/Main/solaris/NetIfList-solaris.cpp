@@ -39,6 +39,7 @@
 #include <iprt/ctype.h>
 #include <list>
 
+#include "Logging.h"
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
@@ -125,9 +126,8 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         strcpy(IfReq.lifr_name, szNICInstance);
         if (ioctl(Sock, SIOCGLIFADDR, &IfReq) >= 0)
         {
-            memcpy(Info.IPAddress.au8, ((struct sockaddr *)&IfReq.lifr_addr)->sa_data,
+            memcpy(Info.IPAddress.au8, &((struct sockaddr_in *)&IfReq.lifr_addr)->sin_addr.s_addr,
                     sizeof(Info.IPAddress.au8));
-            // SIOCGLIFNETMASK
             struct arpreq ArpReq;
             memcpy(&ArpReq.arp_pa, &IfReq.lifr_addr, sizeof(struct sockaddr_in));
 
@@ -138,13 +138,15 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
              * address this way, so we just use all zeros there.
              */
             if (ioctl(Sock, SIOCGARP, &ArpReq) >= 0)
+            {
                 memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
+            }
 
         }
 
         if (ioctl(Sock, SIOCGLIFNETMASK, &IfReq) >= 0)
         {
-            memcpy(Info.IPNetMask.au8, ((struct sockaddr *)&IfReq.lifr_addr)->sa_data,
+            memcpy(Info.IPNetMask.au8, &((struct sockaddr_in *)&IfReq.lifr_addr)->sin_addr.s_addr,
                     sizeof(Info.IPNetMask.au8));
         }
         if (ioctl(Sock, SIOCGLIFFLAGS, &IfReq) >= 0)
@@ -168,10 +170,11 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     Uuid.Gen.au8Node[4] = Info.MACAddress.au8[4];
     Uuid.Gen.au8Node[5] = Info.MACAddress.au8[5];
     Info.Uuid = Uuid;
+    Info.enmType = NETIF_T_ETHERNET;
 
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), Guid(Uuid))))
+    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), &Info)))
         pList->push_back(IfObj);
 }
 
