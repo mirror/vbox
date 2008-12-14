@@ -72,10 +72,12 @@ static int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
                                bool isDVD, bool *pfSuccess);
 static int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList);
 #ifdef VBOX_WITH_DBUS
-/* This must be extern to be used in the RTMemAutoPtr template */
+/* These must be extern to be used in the RTMemAutoPtr template */
 extern void halShutdown (DBusConnection *pConnection);
+extern void halShutdownPrivate (DBusConnection *pConnection);
 
 static int halInit(RTMemAutoPtr <DBusConnection, halShutdown> *pConnection);
+static int halInitPrivate(RTMemAutoPtr <DBusConnection, halShutdownPrivate> *pConnection);
 static int halFindDeviceStringMatch (DBusConnection *pConnection,
                                      const char *pszKey, const char *pszValue,
                                      RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> *pMessage);
@@ -221,7 +223,7 @@ struct VBoxMainHotplugWaiter::Context
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
     /** The connection to DBus */
-    RTMemAutoPtr <DBusConnection, halShutdown> mConnection;
+    RTMemAutoPtr <DBusConnection, halShutdownPrivate> mConnection;
     /** Semaphore which is set when a device is hotplugged and reset when
      * it is read. */
     bool mTriggered;
@@ -236,20 +238,27 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
     int rc = VINF_SUCCESS;
 
-    mContext = new Context;
-    for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mContext->mConnection; ++i)
+    if (VBoxDBusCheckPresence())
     {
-        rc = halInit (&mContext->mConnection);
+        mContext = new Context;
+        for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mContext->mConnection; ++i)
+        {
+            rc = halInitPrivate (&mContext->mConnection);
+        }
+        if (!mContext->mConnection)
+            rc = VERR_NOT_SUPPORTED;
+        DBusMessage *pMessage;
+        while (   RT_SUCCESS (rc)
+               && (pMessage = dbus_connection_pop_message (mContext->mConnection.get())) != NULL)
+            dbus_message_unref (pMessage); /* empty the message queue. */
+        if (   RT_SUCCESS (rc)
+            && !dbus_connection_add_filter (mContext->mConnection.get(),
+                                            dbusFilterFunction,
+                                            &mContext->mTriggered, NULL))
+            rc = VERR_NO_MEMORY;
+        if (RT_FAILURE (rc))
+            mContext->mConnection.reset();
     }
-    if (!mContext->mConnection)
-        rc = VERR_NOT_SUPPORTED;
-    if (   RT_SUCCESS (rc)
-        && !dbus_connection_add_filter (mContext->mConnection.get(),
-                                        dbusFilterFunction,
-                                        &mContext->mTriggered, NULL))
-        rc = VERR_NO_MEMORY;
-    if (RT_FAILURE (rc))
-        mContext->mConnection.reset();
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
@@ -264,15 +273,7 @@ VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
-/**
- * Wait for a hotplug event.
- *
- * @returns  VINF_SUCCESS if an event occurred or if Exit() was called.
- * @returns  VERR_TRY_AGAIN if something failed at the DBus level.
- * @returns  VERR_NOT_SUPPORTED if the service could not be contacted.
- * @returns  Possibly other iprt status codes otherwise.
- */
-int VBoxMainHotplugWaiter::Wait()
+int VBoxMainHotplugWaiter::Wait(unsigned cMillies)
 {
     int rc = VINF_SUCCESS;
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
@@ -281,10 +282,19 @@ int VBoxMainHotplugWaiter::Wait()
     bool connected = true;
     mContext->mTriggered = false;
     mContext->mInterrupt = false;
+    unsigned cRealMillies;
+    if (cMillies != RT_INDEFINITE_WAIT)
+        cRealMillies = cMillies;
+    else
+        cRealMillies = DBUS_POLL_TIMEOUT;
     while (   RT_SUCCESS (rc) && connected && !mContext->mTriggered
            && !mContext->mInterrupt)
+    {
         connected = dbus_connection_read_write_dispatch (mContext->mConnection.get(),
-                                                         DBUS_POLL_TIMEOUT);
+                                                         cRealMillies);
+        if (cMillies != RT_INDEFINITE_WAIT)
+            mContext->mInterrupt = true;
+    }
     if (!connected)
         rc = VERR_TRY_AGAIN;
 #else  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
@@ -583,6 +593,49 @@ int halInit (RTMemAutoPtr <DBusConnection, halShutdown> *pConnection)
 }
 
 /**
+ * Helper function for setting up a private connection to hal
+ * @returns iprt status code
+ * @param   pConnection  where to store the connection handle
+ */
+/* static */
+int halInitPrivate (RTMemAutoPtr <DBusConnection, halShutdownPrivate> *pConnection)
+{
+    AssertReturn(VALID_PTR (pConnection), VERR_INVALID_POINTER);
+    LogFlowFunc (("pConnection=%p\n", pConnection));
+    int rc = VINF_SUCCESS;
+    bool halSuccess = true;
+    autoDBusError dbusError;
+
+    RTMemAutoPtr <DBusConnection, VBoxDBusConnectionUnref> dbusConnection;
+    dbusConnection = dbus_bus_get_private (DBUS_BUS_SYSTEM, &dbusError.get());
+    if (!dbusConnection)
+        halSuccess = false;
+    if (halSuccess)
+    {
+        dbus_connection_set_exit_on_disconnect (dbusConnection.get(), false);
+        halSuccess = dbus_bus_name_has_owner (dbusConnection.get(),
+                                              "org.freedesktop.Hal", &dbusError.get());
+    }
+    if (halSuccess)
+    {
+        dbus_bus_add_match (dbusConnection.get(), 
+                            "type='signal',"
+                            "interface='org.freedesktop.Hal.Manager',"
+                            "sender='org.freedesktop.Hal',"
+                            "path='/org/freedesktop/Hal/Manager'",
+                            &dbusError.get());
+        halSuccess = !dbusError.IsSet();
+    }
+    if (dbusError.HasName (DBUS_ERROR_NO_MEMORY))
+        rc = VERR_NO_MEMORY;
+    if (halSuccess)
+        *pConnection = dbusConnection.release();
+    LogFlowFunc(("rc=%Rrc, (*pConnection).get()=%p\n", rc, (*pConnection).get()));
+    dbusError.FlowLog();
+    return rc;
+}
+
+/**
  * Helper function for shutting down a connection to hal
  * @param   pConnection  the connection handle
  */
@@ -599,6 +652,29 @@ void halShutdown (DBusConnection *pConnection)
                            "sender='org.freedesktop.Hal',"
                            "path='/org/freedesktop/Hal/Manager'",
                            &dbusError.get());
+    dbus_connection_unref (pConnection);
+    LogFlowFunc(("returning\n"));
+    dbusError.FlowLog();
+}
+
+/**
+ * Helper function for shutting down a connection to hal
+ * @param   pConnection  the connection handle
+ */
+/* static */
+void halShutdownPrivate (DBusConnection *pConnection)
+{
+    AssertReturnVoid(VALID_PTR (pConnection));
+    LogFlowFunc (("pConnection=%p\n", pConnection));
+    autoDBusError dbusError;
+
+    dbus_bus_remove_match (pConnection, 
+                           "type='signal',"
+                           "interface='org.freedesktop.Hal.Manager',"
+                           "sender='org.freedesktop.Hal',"
+                           "path='/org/freedesktop/Hal/Manager'",
+                           &dbusError.get());
+    dbus_connection_close (pConnection);
     dbus_connection_unref (pConnection);
     LogFlowFunc(("returning\n"));
     dbusError.FlowLog();

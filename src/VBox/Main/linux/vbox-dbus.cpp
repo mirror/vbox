@@ -41,8 +41,10 @@ static RTLDRMOD ghLibDBus = NULL;
 /** The following are the symbols which we need from libdbus. */
 void (*dbus_error_init)(DBusError *);
 DBusConnection *(*dbus_bus_get)(DBusBusType, DBusError *);
+DBusConnection *(*dbus_bus_get_private)(DBusBusType, DBusError *);
 void (*dbus_error_free)(DBusError *);
 void (*dbus_connection_unref)(DBusConnection *);
+void (*dbus_connection_close)(DBusConnection *);
 void (*dbus_connection_set_exit_on_disconnect)(DBusConnection *, dbus_bool_t);
 dbus_bool_t (*dbus_bus_name_has_owner)(DBusConnection *, const char *,
                                        DBusError *);
@@ -69,6 +71,7 @@ void (*dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessageFuncti
                                        void *);
 dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int);
 dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
+DBusMessage *(*dbus_connection_pop_message)(DBusConnection *);
 
 bool VBoxDBusCheckPresence(void)
 {
@@ -87,10 +90,14 @@ bool VBoxDBusCheckPresence(void)
                                      (void **) &dbus_error_init))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_get",
                                      (void **) &dbus_bus_get))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_get_private",
+                                     (void **) &dbus_bus_get_private))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_error_free",
                                      (void **) &dbus_error_free))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_unref",
                                      (void **) &dbus_connection_unref))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_close",
+                                     (void **) &dbus_connection_close))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_set_exit_on_disconnect",
                                      (void **) &dbus_connection_set_exit_on_disconnect))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_bus_name_has_owner",
@@ -129,6 +136,8 @@ bool VBoxDBusCheckPresence(void)
                                      (void **) &dbus_connection_read_write_dispatch))
         && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_message_is_signal",
                                      (void **) &dbus_message_is_signal))
+        && RT_SUCCESS(RTLdrGetSymbol(hLibDBus, "dbus_connection_pop_message",
+                                     (void **) &dbus_connection_pop_message))
        )
     {
         ghLibDBus = hLibDBus;

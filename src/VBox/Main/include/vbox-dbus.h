@@ -90,8 +90,10 @@ typedef void (*DBusFreeFunction) (void *);
 /** The following are the symbols which we need from libdbus-1. */
 extern void (*dbus_error_init)(DBusError *);
 extern DBusConnection *(*dbus_bus_get)(DBusBusType, DBusError *);
+extern DBusConnection *(*dbus_bus_get_private)(DBusBusType, DBusError *);
 extern void (*dbus_error_free)(DBusError *);
 extern void (*dbus_connection_unref)(DBusConnection *);
+extern void (*dbus_connection_close)(DBusConnection *);
 extern void (*dbus_connection_set_exit_on_disconnect)(DBusConnection *, dbus_bool_t);
 extern dbus_bool_t (*dbus_bus_name_has_owner)(DBusConnection *, const char *,
                                        DBusError *);
@@ -118,6 +120,7 @@ extern void (*dbus_connection_remove_filter) (DBusConnection *, DBusHandleMessag
                                               void *);
 extern dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int);
 extern dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
+extern DBusMessage *(*dbus_connection_pop_message)(DBusConnection *);
 
 extern bool VBoxDBusCheckPresence(void);
 extern void VBoxDBusConnectionUnref(DBusConnection *pConnection);
