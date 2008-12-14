@@ -167,7 +167,7 @@ typedef enum SCSICMD
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                 0x3a
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED    0x39
 #define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED         0x53
-
+#define SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION 0x00
 
 /** @name SCSI_INQUIRY
  * @{
@@ -203,7 +203,7 @@ typedef struct SCSIINQUIRYDATA
     unsigned u2Reserved0 : 2;
     unsigned fTrmlOP : 1;
     unsigned fAEC : 1;
-    unsigned cbAdditional : 8;              /**< 0x04 */
+    uint8_t  cbAdditional;                  /**< 0x04 */
     unsigned u8Reserved1 : 8;               /**< 0x05 */
     unsigned u8Reserved2 : 8;               /**< 0x06 */
     unsigned fSftRe : 1;                    /**< 0x07 */
