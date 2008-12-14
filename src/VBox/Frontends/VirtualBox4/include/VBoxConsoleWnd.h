@@ -73,6 +73,29 @@ public:
 
     void refreshView();
 
+    bool isWindowMaximized() const 
+    { 
+#ifdef Q_WS_MAC
+        /* On Mac OS X we didn't really jump to the fullscreen mode but
+         * maximize the window. This situation has to be considered when
+         * checking for maximized or fullscreen mode. */
+        return !(isTrueSeamless()) && QMainWindow::isMaximized();
+#else /* Q_WS_MAC */
+        return QMainWindow::isMaximized();
+#endif /* Q_WS_MAC */ 
+    }
+    bool isWindowFullScreen() const 
+    { 
+#ifdef Q_WS_MAC
+        /* On Mac OS X we didn't really jump to the fullscreen mode but
+         * maximize the window. This situation has to be considered when
+         * checking for maximized or fullscreen mode. */
+        return isTrueFullscreen() || isTrueSeamless();
+#else /* Q_WS_MAC */
+        return QMainWindow::isFullscreen();
+#endif /* Q_WS_MAC */ 
+    }
+
     bool isTrueFullscreen() const { return mIsFullscreen; }
 
     bool isTrueSeamless() const { return mIsSeamless; }
