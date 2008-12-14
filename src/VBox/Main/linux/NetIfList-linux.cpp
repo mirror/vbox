@@ -41,6 +41,8 @@
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <netinet/in.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
