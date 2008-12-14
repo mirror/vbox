@@ -71,6 +71,10 @@
 # undef LOG_GROUP
 # include "../Storage/DevBusLogic.cpp"
 #endif
+#ifdef VBOX_WITH_LSILOGIC
+# undef LOG_GROUP
+# include "../Storage/DevLsiLogicSCSI.cpp"
+#endif
 
 #include <stdio.h>
 

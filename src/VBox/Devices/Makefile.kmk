@@ -157,6 +157,9 @@ endif
 ifdef VBOX_WITH_LSILOGIC
  VBoxDD_DEFS           += VBOX_WITH_LSILOGIC
 endif
+ifdef VBOX_WITH_FAULT_INJECTION
+ VBoxDD_DEFS           += VBOX_WITH_FAULT_INJECTION
+endif
 VBoxDD_LIBS             = \
 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
@@ -554,6 +557,9 @@ Drivers_DEFS.win  += _WIN32_WINNT=0x0510
 Drivers_DEFS       = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
 Drivers_DEFS      += VBOX_WITH_NETFLT
+endif
+ifdef VBOX_WITH_FAULT_INJECTION
+Drivers_DEFS      += VBOX_WITH_FAULT_INJECTION
 endif
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \

@@ -2560,8 +2560,9 @@ typedef struct PDMISCSIPORT
      * @returns VBox status code.
      * @param   pInterface    Pointer to this interface.
      * @param   pSCSIRequest  Pointer to the finished SCSI request.
+     * @param   rcCompletion  SCSI_STATUS_* code for the completed request.
      */
-     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest));
+     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest, int rcCompletion));
 
 } PDMISCSIPORT;
 

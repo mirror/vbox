@@ -390,6 +390,8 @@ VBOX_WITH_RESOURCE_USAGE_API = 1
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Enable BusLogic SCSI host adapter
 VBOX_WITH_BUSLOGIC = 1
+# Enable LsiLogic SCSI host adapter
+VBOX_WITH_LSILOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable host network interface API.
@@ -657,6 +659,7 @@ ifdef VBOX_OSE
  VBOX_WITH_AHCI=
  VBOX_WITH_PDM_ASYNC_COMPLETION=
  VBOX_WITH_BUSLOGIC=
+ VBOX_WITH_LSILOGIC=
  VBOX_WITH_SCSI=
  # branding
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp

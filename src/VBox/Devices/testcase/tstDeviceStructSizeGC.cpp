@@ -81,6 +81,10 @@
 # undef LOG_GROUP
 # include "../Storage/DevBusLogic.cpp"
 #endif
+#ifdef VBOX_WITH_LSILOGIC
+# undef LOG_GROUP
+# include "../Storage/DevLsiLogicSCSI.cpp"
+#endif
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -1327,8 +1331,80 @@ int main()
     GEN_CHECK_OFF(BUSLOGIC, pTaskCache);
     GEN_CHECK_OFF(BUSLOGIC, VBoxSCSI);
     GEN_CHECK_OFF(BUSLOGIC, aDeviceStates);
-    GEN_CHECK_OFF(BUSLOGIC, aDeviceStates[BUSLOGIC_MAX_DEVICES]);
+    GEN_CHECK_OFF(BUSLOGIC, aDeviceStates[BUSLOGIC_MAX_DEVICES-1]);
 #endif /* VBOX_WITH_BUSLOGIC */
+
+#ifdef VBOX_WITH_LSILOGIC
+    GEN_CHECK_SIZE(LSILOGICDEVICE);
+    GEN_CHECK_OFF(LSILOGICDEVICE, pLsiLogicR3);
+    GEN_CHECK_OFF(LSILOGICDEVICE, pLsiLogicR0);
+    GEN_CHECK_OFF(LSILOGICDEVICE, pLsiLogicRC);
+    GEN_CHECK_OFF(LSILOGICDEVICE, iLUN);
+    GEN_CHECK_OFF(LSILOGICDEVICE, cOutstandingRequests);
+    GEN_CHECK_OFF(LSILOGICDEVICE, IBase);
+    GEN_CHECK_OFF(LSILOGICDEVICE, ISCSIPort);
+    GEN_CHECK_OFF(LSILOGICDEVICE, pDrvBase);
+    GEN_CHECK_OFF(LSILOGICDEVICE, pDrvSCSIConnector);
+
+    GEN_CHECK_SIZE(LSILOGICSCSI);
+    GEN_CHECK_OFF(LSILOGICSCSI, PciDev);
+    GEN_CHECK_OFF(LSILOGICSCSI, pDevInsR3);
+    GEN_CHECK_OFF(LSILOGICSCSI, pDevInsR0);
+    GEN_CHECK_OFF(LSILOGICSCSI, pDevInsRC);
+    GEN_CHECK_OFF(LSILOGICSCSI, fGCEnabled);
+    GEN_CHECK_OFF(LSILOGICSCSI, fR0Enabled);
+    GEN_CHECK_OFF(LSILOGICSCSI, enmState);
+    GEN_CHECK_OFF(LSILOGICSCSI, enmWhoInit);
+    GEN_CHECK_OFF(LSILOGICSCSI, fDoorbellInProgress);
+    GEN_CHECK_OFF(LSILOGICSCSI, fDiagnosticEnabled);
+    GEN_CHECK_OFF(LSILOGICSCSI, fNotificationSend);
+    GEN_CHECK_OFF(LSILOGICSCSI, fEventNotificationEnabled);
+    GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueR3);
+    GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueR0);
+    GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueRC);
+    GEN_CHECK_OFF(LSILOGICSCSI, aDeviceStates);
+    GEN_CHECK_OFF(LSILOGICSCSI, aDeviceStates[LSILOGIC_DEVICES_MAX-1]);
+    GEN_CHECK_OFF(LSILOGICSCSI, GCPhysMMIOBase);
+    GEN_CHECK_OFF(LSILOGICSCSI, IOPortBase);
+    GEN_CHECK_OFF(LSILOGICSCSI, uInterruptMask);
+    GEN_CHECK_OFF(LSILOGICSCSI, uInterruptStatus);
+    GEN_CHECK_OFF(LSILOGICSCSI, aMessage);
+    GEN_CHECK_OFF(LSILOGICSCSI, aMessage[sizeof(MptIOCInitRequest)-1]);
+    GEN_CHECK_OFF(LSILOGICSCSI, iMessage);
+    GEN_CHECK_OFF(LSILOGICSCSI, cMessage);
+    GEN_CHECK_OFF(LSILOGICSCSI, ReplyBuffer);
+    GEN_CHECK_OFF(LSILOGICSCSI, uNextReplyEntryRead);
+    GEN_CHECK_OFF(LSILOGICSCSI, cReplySize);
+    GEN_CHECK_OFF(LSILOGICSCSI, u16IOCFaultCode);
+    GEN_CHECK_OFF(LSILOGICSCSI, u32HostMFAHighAddr);
+    GEN_CHECK_OFF(LSILOGICSCSI, u32SenseBufferHighAddr);
+    GEN_CHECK_OFF(LSILOGICSCSI, cMaxDevices);
+    GEN_CHECK_OFF(LSILOGICSCSI, cMaxBuses);
+    GEN_CHECK_OFF(LSILOGICSCSI, cbReplyFrame);
+    GEN_CHECK_OFF(LSILOGICSCSI, iDiagnosticAccess);
+    GEN_CHECK_OFF(LSILOGICSCSI, cReplyQueueEntries);
+    GEN_CHECK_OFF(LSILOGICSCSI, cRequestQueueEntries);
+    GEN_CHECK_OFF(LSILOGICSCSI, ReplyPostQueueCritSect);
+    GEN_CHECK_OFF(LSILOGICSCSI, ReplyFreeQueueCritSect);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyFreeQueueBaseR3);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyPostQueueBaseR3);
+    GEN_CHECK_OFF(LSILOGICSCSI, pRequestQueueBaseR3);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyFreeQueueBaseR0);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyPostQueueBaseR0);
+    GEN_CHECK_OFF(LSILOGICSCSI, pRequestQueueBaseR0);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyFreeQueueBaseRC);
+    GEN_CHECK_OFF(LSILOGICSCSI, pReplyPostQueueBaseRC);
+    GEN_CHECK_OFF(LSILOGICSCSI, pRequestQueueBaseRC);
+    GEN_CHECK_OFF(LSILOGICSCSI, uReplyFreeQueueNextEntryFreeWrite);
+    GEN_CHECK_OFF(LSILOGICSCSI, uReplyFreeQueueNextAddressRead);
+    GEN_CHECK_OFF(LSILOGICSCSI, uReplyPostQueueNextEntryFreeWrite);
+    GEN_CHECK_OFF(LSILOGICSCSI, uReplyPostQueueNextAddressRead);
+    GEN_CHECK_OFF(LSILOGICSCSI, uRequestQueueNextEntryFreeWrite);
+    GEN_CHECK_OFF(LSILOGICSCSI, uRequestQueueNextAddressRead);
+    GEN_CHECK_OFF(LSILOGICSCSI, ConfigurationPages);
+    GEN_CHECK_OFF(LSILOGICSCSI, VBoxSCSI);
+    GEN_CHECK_OFF(LSILOGICSCSI, pTaskCache);
+#endif /* VBOX_WITH_LSILOGIC */
 
     return (0);
 }
