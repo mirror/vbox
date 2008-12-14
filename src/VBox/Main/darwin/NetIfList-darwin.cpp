@@ -67,7 +67,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
     {
         close(sock);
         Log(("NetIfList: getifaddrs() -> %d\n", rc));
-        return NULL;
+        return VERR_INTERNAL_ERROR;
     }
 
     PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
@@ -146,5 +146,5 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 
     freeifaddrs(IfAddrs);
     close(sock);
-    return pIfs;
+    return VINF_SUCCESS;
 }
