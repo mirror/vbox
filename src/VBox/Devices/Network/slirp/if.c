@@ -12,32 +12,32 @@
 
 static void ifs_insque(struct mbuf *ifm, struct mbuf *ifmhead)
 {
-        ifm->ifs_next = ifmhead->ifs_next;
-        ifmhead->ifs_next = ifm;
-        ifm->ifs_prev = ifmhead;
-        ifm->ifs_next->ifs_prev = ifm;
+    ifm->ifs_next = ifmhead->ifs_next;
+    ifmhead->ifs_next = ifm;
+    ifm->ifs_prev = ifmhead;
+    ifm->ifs_next->ifs_prev = ifm;
 }
 
 static void ifs_remque(struct mbuf *ifm)
 {
-        ifm->ifs_prev->ifs_next = ifm->ifs_next;
-        ifm->ifs_next->ifs_prev = ifm->ifs_prev;
+    ifm->ifs_prev->ifs_next = ifm->ifs_next;
+    ifm->ifs_next->ifs_prev = ifm->ifs_prev;
 }
 
 void
 if_init(PNATState pData)
 {
-        /* 2 for alignment, 14 for ethernet, 40 for TCP/IP */
-        if_maxlinkhdr = 2 + 14 + 40;
-        if_queued = 0;
-        if_thresh = 10;
-        if_mtu = 1500;
-        if_mru = 1500;
-        if_comp = IF_AUTOCOMP;
-        if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
-        if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
-        /*      sl_compress_init(&comp_s); */
-        next_m = &if_batchq;
+    /* 2 for alignment, 14 for ethernet, 40 for TCP/IP */
+    if_maxlinkhdr = 2 + 14 + 40;
+    if_queued = 0;
+    if_thresh = 10;
+    if_mtu = 1500;
+    if_mru = 1500;
+    if_comp = IF_AUTOCOMP;
+    if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
+    if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
+/*  sl_compress_init(&comp_s); */
+    next_m = &if_batchq;
 }
 
 /*
@@ -56,93 +56,102 @@ if_init(PNATState pData)
 void
 if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
 {
-        struct mbuf *ifq;
-        int on_fastq = 1;
+    struct mbuf *ifq;
+    int on_fastq = 1;
 
-        DEBUG_CALL("if_output");
-        DEBUG_ARG("so = %lx", (long)so);
-        DEBUG_ARG("ifm = %lx", (long)ifm);
+    DEBUG_CALL("if_output");
+    DEBUG_ARG("so = %lx", (long)so);
+    DEBUG_ARG("ifm = %lx", (long)ifm);
 
-        /*
-         * First remove the mbuf from m_usedlist,
-         * since we're gonna use m_next and m_prev ourselves
-         * XXX Shouldn't need this, gotta change dtom() etc.
-         */
-        if (ifm->m_flags & M_USEDLIST) {
-                remque(pData, ifm);
-                ifm->m_flags &= ~M_USEDLIST;
+    /*
+     * First remove the mbuf from m_usedlist,
+     * since we're gonna use m_next and m_prev ourselves
+     * XXX Shouldn't need this, gotta change dtom() etc.
+     */
+    if (ifm->m_flags & M_USEDLIST)
+    {
+        remque(pData, ifm);
+        ifm->m_flags &= ~M_USEDLIST;
+    }
+
+    /*
+     * See if there's already a batchq list for this session.
+     * This can include an interactive session, which should go on fastq,
+     * but gets too greedy... hence it'll be downgraded from fastq to batchq.
+     * We mustn't put this packet back on the fastq (or we'll send it out of order)
+     * XXX add cache here?
+     */
+    for (ifq = if_batchq.ifq_prev; ifq != &if_batchq; ifq = ifq->ifq_prev)
+    {
+        if (so == ifq->ifq_so)
+        {
+            /* A match! */
+            ifm->ifq_so = so;
+            ifs_insque(ifm, ifq->ifs_prev);
+            goto diddit;
         }
+    }
 
+    /* No match, check which queue to put it on */
+    if (so && (so->so_iptos & IPTOS_LOWDELAY))
+    {
+        ifq = if_fastq.ifq_prev;
+        on_fastq = 1;
         /*
-         * See if there's already a batchq list for this session.
-         * This can include an interactive session, which should go on fastq,
-         * but gets too greedy... hence it'll be downgraded from fastq to batchq.
-         * We mustn't put this packet back on the fastq (or we'll send it out of order)
-         * XXX add cache here?
+         * Check if this packet is a part of the last
+         * packet's session
          */
-        for (ifq = if_batchq.ifq_prev; ifq != &if_batchq; ifq = ifq->ifq_prev) {
-                if (so == ifq->ifq_so) {
-                        /* A match! */
-                        ifm->ifq_so = so;
-                        ifs_insque(ifm, ifq->ifs_prev);
-                        goto diddit;
-                }
+        if (ifq->ifq_so == so)
+        {
+            ifm->ifq_so = so;
+            ifs_insque(ifm, ifq->ifs_prev);
+            goto diddit;
         }
+    }
+    else
+        ifq = if_batchq.ifq_prev;
 
-        /* No match, check which queue to put it on */
-        if (so && (so->so_iptos & IPTOS_LOWDELAY)) {
-                ifq = if_fastq.ifq_prev;
-                on_fastq = 1;
-                /*
-                 * Check if this packet is a part of the last
-                 * packet's session
-                 */
-                if (ifq->ifq_so == so) {
-                        ifm->ifq_so = so;
-                        ifs_insque(ifm, ifq->ifs_prev);
-                        goto diddit;
-                }
-        } else
-                ifq = if_batchq.ifq_prev;
-
-        /* Create a new doubly linked list for this session */
-        ifm->ifq_so = so;
-        ifs_init(ifm);
-        insque(pData, ifm, ifq);
+    /* Create a new doubly linked list for this session */
+    ifm->ifq_so = so;
+    ifs_init(ifm);
+    insque(pData, ifm, ifq);
 
 diddit:
-        ++if_queued;
+    ++if_queued;
 
-        if (so) {
-                /* Update *_queued */
-                so->so_queued++;
-                so->so_nqueued++;
-                /*
-                 * Check if the interactive session should be downgraded to
-                 * the batchq.  A session is downgraded if it has queued 6
-                 * packets without pausing, and at least 3 of those packets
-                 * have been sent over the link
-                 * (XXX These are arbitrary numbers, probably not optimal..)
-                 */
-                if (on_fastq && ((so->so_nqueued >= 6) &&
-                                 (so->so_nqueued - so->so_queued) >= 3)) {
+    if (so)
+    {
+        /* Update *_queued */
+        so->so_queued++;
+        so->so_nqueued++;
+        /*
+         * Check if the interactive session should be downgraded to
+         * the batchq.  A session is downgraded if it has queued 6
+         * packets without pausing, and at least 3 of those packets
+         * have been sent over the link
+         * (XXX These are arbitrary numbers, probably not optimal..)
+         */
+        if (on_fastq
+            && so->so_nqueued >= 6
+            && (so->so_nqueued - so->so_queued) >= 3)
+        {
+            /* Remove from current queue... */
+            remque(pData, ifm->ifs_next);
 
-                        /* Remove from current queue... */
-                        remque(pData, ifm->ifs_next);
-
-                        /* ...And insert in the new.  That'll teach ya! */
-                        insque(pData, ifm->ifs_next, &if_batchq);
-                }
+            /* ...And insert in the new.  That'll teach ya! */
+            insque(pData, ifm->ifs_next, &if_batchq);
         }
+    }
 
 #ifndef FULL_BOLT
-        /*
-         * This prevents us from malloc()ing too many mbufs
-         */
-        if (link_up) {
-                /* if_start will check towrite */
-                if_start(pData);
-        }
+    /*
+     * This prevents us from malloc()ing too many mbufs
+     */
+    if (link_up)
+    {
+        /* if_start will check towrite */
+        if_start(pData);
+    }
 #endif
 }
 
@@ -161,14 +170,15 @@ diddit:
 void
 if_start(PNATState pData)
 {
-        struct mbuf *ifm, *ifqt;
+    struct mbuf *ifm, *ifqt;
 
-        DEBUG_CALL("if_start");
+    DEBUG_CALL("if_start");
 
-        if (if_queued == 0)
-           return; /* Nothing to do */
+    if (!if_queued)
+        return; /* Nothing to do */
 
- again:
+    for (;;)
+    {
         /* check if we can really output */
         if (!slirp_can_output(pData->pvUser))
             return;
@@ -177,17 +187,18 @@ if_start(PNATState pData)
          * See which queue to get next packet from
          * If there's something in the fastq, select it immediately
          */
-        if (if_fastq.ifq_next != &if_fastq) {
-                ifm = if_fastq.ifq_next;
-        } else {
-                /* Nothing on fastq, see if next_m is valid */
-                if (next_m != &if_batchq)
-                   ifm = next_m;
-                else
-                   ifm = if_batchq.ifq_next;
+        if (if_fastq.ifq_next != &if_fastq)
+            ifm = if_fastq.ifq_next;
+        else
+        {
+            /* Nothing on fastq, see if next_m is valid */
+            if (next_m != &if_batchq)
+                ifm = next_m;
+            else
+                ifm = if_batchq.ifq_next;
 
-                /* Set which packet to send on next iteration */
-                next_m = ifm->ifq_next;
+            /* Set which packet to send on next iteration */
+            next_m = ifm->ifq_next;
         }
         /* Remove it from the queue */
         ifqt = ifm->ifq_prev;
@@ -195,16 +206,18 @@ if_start(PNATState pData)
         --if_queued;
 
         /* If there are more packets for this session, re-queue them */
-        if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm) {
-                insque(pData, ifm->ifs_next, ifqt);
-                ifs_remque(ifm);
+        if (ifm->ifs_next != /* ifm->ifs_prev != */ ifm)
+        {
+            insque(pData, ifm->ifs_next, ifqt);
+            ifs_remque(ifm);
         }
 
         /* Update so_queued */
-        if (ifm->ifq_so) {
-                if (--ifm->ifq_so->so_queued == 0)
-                   /* If there's no more queued, reset nqueued */
-                   ifm->ifq_so->so_nqueued = 0;
+        if (ifm->ifq_so)
+        {
+            if (--ifm->ifq_so->so_queued == 0)
+                /* If there's no more queued, reset nqueued */
+                ifm->ifq_so->so_nqueued = 0;
         }
 
         /* Encapsulate the packet for sending */
@@ -212,6 +225,7 @@ if_start(PNATState pData)
 
         m_free(pData, ifm);
 
-        if (if_queued)
-           goto again;
+        if (!if_queued)
+            return;
+    }
 }
