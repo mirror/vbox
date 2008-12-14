@@ -239,7 +239,7 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     /*
      * Check if we're initited at all.
      */
-    if (pThis->hDevice >= 0)
+    if ((int)pThis->hDevice >= 0)
     {
         if (close(pThis->hDevice))
             AssertFailed();
