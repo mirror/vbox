@@ -172,7 +172,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                 if (  (   (icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
                        || (icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
                     && icp->icmp_id == icp0->icmp_id
-                    && icp->icmp_seq == icp->icmp_seq)
+                    && icp->icmp_seq == icp0->icmp_seq)
                 {
                     found = 1;
                     break;
