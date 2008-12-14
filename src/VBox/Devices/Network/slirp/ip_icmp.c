@@ -392,7 +392,7 @@ freeit:
                 if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
                 {
                     /* It's an alias */
-                    switch(ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
+                    switch (ntohl(ip->ip_dst.s_addr) & ~pData->netmask)
                     {
                         case CTL_DNS:
                             addr.sin_addr = dns_addr;
@@ -405,25 +405,28 @@ freeit:
                 }
                 else
                     addr.sin_addr.s_addr = ip->ip_dst.s_addr;
-                icmp_attach(pData, m);
-                /* Send the packet */
 # ifndef RT_OS_WINDOWS
-                ttl = ip->ip_ttl;
-                LogRel(("NAT/ICMP: try to set TTL(%d)\n", ttl));
-                status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL, (void *)&ttl, sizeof(ttl));
-                if (status < 0)
+                if (pData->icmp_socket.s != -1)
                 {
-                    LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n", strerror(errno)));
-                }
-                if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
-                            (struct sockaddr *)&addr, sizeof(addr)) == -1)
-                {
-                    DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-                                errno,strerror(errno)));
-                    icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-                    m_free(pData, m);
+                    icmp_attach(pData, m);
+                    ttl = ip->ip_ttl;
+                    LogRel(("NAT/ICMP: try to set TTL(%d)\n", ttl));
+                    status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL,
+                                        (void *)&ttl, sizeof(ttl));
+                    if (status < 0)
+                        LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n",
+                                strerror(errno)));
+                    if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
+                              (struct sockaddr *)&addr, sizeof(addr)) == -1)
+                    {
+                        DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                                    errno, strerror(errno)));
+                        icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
+                        m_free(pData, m);
+                    }
                 }
 # else /* RT_OS_WINDOWS */
+                icmp_attach(pData, m);
                 pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
                 pData->icmp_socket.so_icmp_id = icp->icmp_id;
                 pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
