@@ -35,7 +35,10 @@
 extern bool g_testHostHardwareLinux;
 
 /**
- * Class for probing and returning information about host DVD and floppy drives
+ * Class for probing and returning information about host DVD and floppy
+ * drives.  To use this class, create an instance, call one of the update
+ * methods to do the actual probing and use the iterator methods to get the
+ * result of the probe.
  */
 class VBoxMainDriveInfo
 {
@@ -68,14 +71,14 @@ public:
 
     /**
      * Search for host floppy drives and rebuild the list, which remains empty
-     * until the first time it is called.
+     * until the first time this method is called.
      * @returns iprt status code
      */
     int updateFloppies ();
 
     /**
      * Search for host DVD drives and rebuild the list, which remains empty
-     * until the first time it is called.
+     * until the first time this method is called.
      * @returns iprt status code
      */
     int updateDVDs ();
@@ -110,11 +113,15 @@ private:
     DriveInfoList mDVDList;
 };
 
+/** Convenience typedef. */
 typedef VBoxMainDriveInfo::DriveInfoList DriveInfoList;
+/** Convenience typedef. */
 typedef VBoxMainDriveInfo::DriveInfo DriveInfo;
 
 /**
- * Class for probing and returning information about host USB devices
+ * Class for probing and returning information about host USB devices.
+ * To use this class, create an instance, call the update methods to do the
+ * actual probing and use the iterator methods to get the result of the probe.
  */
 class VBoxMainUSBDeviceInfo
 {
@@ -142,7 +149,7 @@ public:
 
     /**
      * Search for host USB devices and rebuild the list, which remains empty
-     * until the first time it is called.
+     * until the first time this method is called.
      * @returns iprt status code
      */
     int UpdateDevices ();
@@ -164,10 +171,19 @@ private:
     DeviceInfoList mDeviceList;
 };
 
+/** Convenience typedef. */
 typedef VBoxMainUSBDeviceInfo::DeviceInfoList USBDeviceInfoList;
+/** Convenience typedef. */
 typedef VBoxMainUSBDeviceInfo::USBDeviceInfo USBDeviceInfo;
+/** Convenience typedef. */
 typedef VBoxMainUSBDeviceInfo::USBDeviceInfo::InterfaceList USBInterfaceList;
 
+/**
+ * Class for waiting for a hotplug event.  To use this class, create an
+ * instance and call the @a Wait() method, which blocks until an event or a
+ * user-triggered interruption occurs.  Call @a Interrupt() to interrupt the
+ * wait before an event occurs.
+ */
 class VBoxMainHotplugWaiter
 {
     /** Opaque context struct. */
@@ -192,7 +208,10 @@ public:
      * @param    cMillies   How long to wait for at most.
      */
     int Wait (unsigned cMillies);
-    /** Interrupts an active wait. */
+    /**
+     * Interrupts an active wait.  In the current implementation, the wait
+     * may not return until up to two seconds after calling this method.
+     */
     void Interrupt (void);
 };
 

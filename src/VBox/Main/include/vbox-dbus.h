@@ -34,12 +34,12 @@ struct DBusError
 {
     const char *name;
     const char *message;
-    unsigned int dummy1 : 1; /**< placeholder */
-    unsigned int dummy2 : 1; /**< placeholder */
-    unsigned int dummy3 : 1; /**< placeholder */
-    unsigned int dummy4 : 1; /**< placeholder */
-    unsigned int dummy5 : 1; /**< placeholder */
-    void *padding1; /**< placeholder */
+    unsigned int dummy1 : 1;
+    unsigned int dummy2 : 1;
+    unsigned int dummy3 : 1;
+    unsigned int dummy4 : 1;
+    unsigned int dummy5 : 1;
+    void *padding1;
 };
 struct DBusConnection;
 typedef struct DBusConnection DBusConnection;
@@ -50,20 +50,20 @@ struct DBusMessage;
 typedef struct DBusMessage DBusMessage;
 struct DBusMessageIter
 { 
-    void *dummy1;         /**< Don't use this */
-    void *dummy2;         /**< Don't use this */
-    dbus_uint32_t dummy3; /**< Don't use this */
-    int dummy4;           /**< Don't use this */
-    int dummy5;           /**< Don't use this */
-    int dummy6;           /**< Don't use this */
-    int dummy7;           /**< Don't use this */
-    int dummy8;           /**< Don't use this */
-    int dummy9;           /**< Don't use this */
-    int dummy10;          /**< Don't use this */
-    int dummy11;          /**< Don't use this */
-    int pad1;             /**< Don't use this */
-    int pad2;             /**< Don't use this */
-    void *pad3;           /**< Don't use this */
+    void *dummy1;
+    void *dummy2;
+    dbus_uint32_t dummy3;
+    int dummy4;
+    int dummy5;
+    int dummy6;
+    int dummy7;
+    int dummy8;
+    int dummy9;
+    int dummy10;
+    int dummy11;
+    int pad1;
+    int pad2;
+    void *pad3;
 };
 typedef struct DBusMessageIter DBusMessageIter;
 
@@ -74,13 +74,9 @@ typedef struct DBusMessageIter DBusMessageIter;
 
 typedef enum
 {
-  DBUS_HANDLER_RESULT_HANDLED,         /**< Message has had its effect - no need
- to run more handlers. */ 
-  DBUS_HANDLER_RESULT_NOT_YET_HANDLED, /**< Message has not had any effect - see
- if other handlers want it. */
-  DBUS_HANDLER_RESULT_NEED_MEMORY      /**< Need more memory in order to return 
-#DBUS_HANDLER_RESULT_HANDLED or #DBUS_HANDLER_RESULT_NOT_YET_HANDLED. Please try
- again later with more memory. */
+  DBUS_HANDLER_RESULT_HANDLED,
+  DBUS_HANDLER_RESULT_NOT_YET_HANDLED,
+  DBUS_HANDLER_RESULT_NEED_MEMORY
 } DBusHandlerResult;
 
 typedef DBusHandlerResult (*DBusHandleMessageFunction) (DBusConnection *,
@@ -122,8 +118,18 @@ extern dbus_bool_t (*dbus_connection_read_write_dispatch) (DBusConnection *, int
 extern dbus_bool_t (*dbus_message_is_signal) (DBusMessage *, const char *, const char *);
 extern DBusMessage *(*dbus_connection_pop_message)(DBusConnection *);
 
+/**
+ * Checks whether libdbus is present and if so loads all symbols we need.  This
+ * should be called before making any calls to libdbus if that library is being
+ * loaded at runtime.
+ * @returns true if libdbus was found, false otherwise.
+ */
 extern bool VBoxDBusCheckPresence(void);
+/** Wrapper around dbus_connection_unref.  We need this to use it as a free
+ * function in auto pointers, as a function pointer won't wash here. */
 extern void VBoxDBusConnectionUnref(DBusConnection *pConnection);
+/** Wrapper around dbus_message_unref.  We need this to use it as a free
+ * function in auto pointers, as a function pointer won't wash here. */
 extern void VBoxDBusMessageUnref(DBusMessage *pMessage);
 
 #endif /* ____H_VBOX_DBUS not defined */
