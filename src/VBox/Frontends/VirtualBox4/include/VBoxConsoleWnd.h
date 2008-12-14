@@ -92,7 +92,7 @@ public:
          * checking for maximized or fullscreen mode. */
         return isTrueFullscreen() || isTrueSeamless();
 #else /* Q_WS_MAC */
-        return QMainWindow::isFullscreen();
+        return QMainWindow::isFullScreen();
 #endif /* Q_WS_MAC */ 
     }
 
