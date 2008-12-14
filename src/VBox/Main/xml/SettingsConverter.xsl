@@ -478,13 +478,9 @@ Value '<xsl:value-of select="@mode"/>' of 'BootMenu::mode' attribute is invalid.
       <xsl:when test="*[self::vb:VirtualDiskImage][1]">VDI</xsl:when>
       <xsl:when test="*[self::vb:VMDKImage][1]">VMDK</xsl:when>
       <xsl:when test="*[self::vb:VHDImage][1]">VHD</xsl:when>
+      <xsl:when test="*[self::vb:ISCSIHardDisk][1]">iSCSI</xsl:when>
       <xsl:when test="*[self::vb:CustomHardDisk][1]">
         <xsl:value-of select="@format"/>
-      </xsl:when>
-      <xsl:when test="*[self::vb:ISCSIHardDisk][1]">
-        <xsl:message terminate="yes">
-ISCSIHardDisk node requires manual conversion. Contact the product vendor.
-        </xsl:message>
       </xsl:when>
       <xsl:otherwise>
         <xsl:message terminate="yes">
@@ -507,11 +503,87 @@ Sub-element '<xsl:value-of select="name(*[1])"/>' of 'HardDisk' element is inval
       <xsl:when test="*[self::vb:CustomHardDisk][1]">
         <xsl:value-of select="vb:CustomHardDisk/@location"/>
       </xsl:when>
-      <!--xsl:when test="*[self::vb:ISCSIHardDisk][1]">
-        <xsl:value-of select="concat('iscsi://',vb:ISCSIHardDisk/@userName,':',vb:ISCSIHardDisk/@password,'@',vb:ISCSIHardDisk/@server,':',vb:ISCSIHardDisk/@port,'/',vb:ISCSIHardDisk/@target,'/',vb:ISCSIHardDisk/@lun)"/>
-      </xsl:when-->
+      <xsl:when test="*[self::vb:ISCSIHardDisk][1]">
+        <xsl:text>iscsi://</xsl:text>
+        <xsl:if test="vb:ISCSIHardDisk/@userName">
+          <xsl:value-of select="vb:ISCSIHardDisk/@userName"/>
+          <!-- note that for privacy reasons we don't show the password in the
+               location string -->
+          <xsl:text>@</xsl:text>
+        </xsl:if>
+        <xsl:if test="vb:ISCSIHardDisk/@server">
+          <xsl:value-of select="vb:ISCSIHardDisk/@server"/>
+          <xsl:if test="vb:ISCSIHardDisk/@port">
+            <xsl:value-of select="concat(':',vb:ISCSIHardDisk/@port)"/>
+          </xsl:if>
+        </xsl:if>
+        <xsl:if test="vb:ISCSIHardDisk/@target">
+          <xsl:value-of select="concat('/',vb:ISCSIHardDisk/@target)"/>
+        </xsl:if>
+        <xsl:if test="vb:ISCSIHardDisk/@lun">
+          <xsl:value-of select="concat('/enc',vb:ISCSIHardDisk/@lun)"/>
+        </xsl:if>
+        <xsl:if test="not(vb:ISCSIHardDisk/@server) or not(vb:ISCSIHardDisk/@target)">
+          <xsl:message terminate="yes">
+Required attribute 'server' or 'target' is missing from ISCSIHardDisk element!
+          </xsl:message>
+        </xsl:if>
+      </xsl:when>
     </xsl:choose>
   </xsl:attribute>
+  <xsl:if test="*[self::vb:ISCSIHardDisk][1]">
+    <xsl:choose>
+      <xsl:when test="vb:ISCSIHardDisk/@server and vb:ISCSIHardDisk/@port">
+        <xsl:element name="Property">
+          <xsl:attribute name="name">TargetAddress</xsl:attribute>
+          <xsl:attribute name="value">
+            <xsl:value-of select="concat(vb:ISCSIHardDisk/@server,
+                                         ':',vb:ISCSIHardDisk/@port)"/>
+          </xsl:attribute>
+        </xsl:element>
+      </xsl:when>
+      <xsl:when test="vb:ISCSIHardDisk/@server">
+        <xsl:element name="Property">
+          <xsl:attribute name="name">TargetAddress</xsl:attribute>
+          <xsl:attribute name="value">
+            <xsl:value-of select="vb:ISCSIHardDisk/@server"/>
+          </xsl:attribute>
+        </xsl:element>
+      </xsl:when>
+    </xsl:choose>
+    <xsl:if test="vb:ISCSIHardDisk/@target">
+      <xsl:element name="Property">
+        <xsl:attribute name="name">TargetName</xsl:attribute>
+        <xsl:attribute name="value">
+          <xsl:value-of select="vb:ISCSIHardDisk/@target"/>
+        </xsl:attribute>
+      </xsl:element>
+    </xsl:if>
+    <xsl:if test="vb:ISCSIHardDisk/@userName">
+      <xsl:element name="Property">
+        <xsl:attribute name="name">InitiatorUsername</xsl:attribute>
+        <xsl:attribute name="value">
+          <xsl:value-of select="vb:ISCSIHardDisk/@userName"/>
+        </xsl:attribute>
+      </xsl:element>
+    </xsl:if>
+    <xsl:if test="vb:ISCSIHardDisk/@password">
+      <xsl:element name="Property">
+        <xsl:attribute name="name">InitiatorSecret</xsl:attribute>
+        <xsl:attribute name="value">
+          <xsl:value-of select="vb:ISCSIHardDisk/@password"/>
+        </xsl:attribute>
+      </xsl:element>
+    </xsl:if>
+    <xsl:if test="vb:ISCSIHardDisk/@lun">
+      <xsl:element name="Property">
+        <xsl:attribute name="name">LUN</xsl:attribute>
+        <xsl:attribute name="value">
+          <xsl:value-of select="concat('enc',vb:ISCSIHardDisk/@lun)"/>
+        </xsl:attribute>
+      </xsl:element>
+    </xsl:if>
+  </xsl:if>
 </xsl:template>
 
 <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
@@ -519,7 +591,6 @@ Sub-element '<xsl:value-of select="name(*[1])"/>' of 'HardDisk' element is inval
               mode="v1.4">
   <HardDisk>
     <xsl:attribute name="uuid"><xsl:value-of select="@uuid"/></xsl:attribute>
-    <xsl:apply-templates select="." mode="v1.4-HardDisk-format-location"/>
     <xsl:attribute name="type">
       <xsl:choose>
         <xsl:when test="@type='normal'">Normal</xsl:when>
@@ -532,6 +603,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
         </xsl:otherwise>
       </xsl:choose>
     </xsl:attribute>
+    <xsl:apply-templates select="." mode="v1.4-HardDisk-format-location"/>
     <xsl:apply-templates select="vb:DiffHardDisk" mode="v1.4"/>
   </HardDisk>
 </xsl:template>
