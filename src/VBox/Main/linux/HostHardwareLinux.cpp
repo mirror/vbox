@@ -64,6 +64,8 @@ static bool testing () { return g_testHostHardwareLinux; }
 *   Typedefs and Defines                                                       *
 *******************************************************************************/
 
+/** When waiting for hotplug events, we currently restart the wait after at
+ * most this many milliseconds. */
 enum { DBUS_POLL_TIMEOUT = 2000 /* ms */ };
 
 
@@ -72,7 +74,7 @@ static int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
                                bool isDVD, bool *pfSuccess);
 static int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList);
 #ifdef VBOX_WITH_DBUS
-/* These must be extern to be used in the RTMemAutoPtr template */
+/* These must be extern to be usable in the RTMemAutoPtr template */
 extern void halShutdown (DBusConnection *pConnection);
 extern void halShutdownPrivate (DBusConnection *pConnection);
 
@@ -94,11 +96,6 @@ static DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
                                              DBusMessage *pMessage, void *pvUser);
 #endif  /* VBOX_WITH_DBUS */
 
-/**
- * Updates the list of host DVD drives.
- *
- * @returns iprt status code
- */
 int VBoxMainDriveInfo::updateDVDs ()
 {
     LogFlowThisFunc (("entered\n"));
@@ -144,11 +141,6 @@ int VBoxMainDriveInfo::updateDVDs ()
     return rc;
 }
 
-/**
- * Updates the list of host floppy drives.
- *
- * @returns iprt status code
- */
 int VBoxMainDriveInfo::updateFloppies ()
 {
     LogFlowThisFunc (("entered\n"));
@@ -191,11 +183,6 @@ int VBoxMainDriveInfo::updateFloppies ()
     return rc;
 }
 
-/**
- * Updates the list of host USB devices.
- *
- * @returns iprt status code
- */
 int VBoxMainUSBDeviceInfo::UpdateDevices ()
 {
     LogFlowThisFunc (("entered\n"));
@@ -232,7 +219,10 @@ struct VBoxMainHotplugWaiter::Context
 #endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 };
 
-/** Constructor */
+/* This constructor sets up a private connection to the DBus daemon, connects
+ * to the hal service and installs a filter which sets the mTriggered flag in
+ * the Context structure when a device (not necessarily USB) is added or
+ * removed. */
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
@@ -262,7 +252,7 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
-/** Destructor */
+/* Destructor */
 VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
@@ -273,6 +263,9 @@ VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
+/* Currently this is implemented using a timed out wait on our private DBus
+ * connection.  Because the connection is private we don't have to worry about
+ * blocking other users. */
 int VBoxMainHotplugWaiter::Wait(unsigned cMillies)
 {
     int rc = VINF_SUCCESS;
@@ -303,6 +296,7 @@ int VBoxMainHotplugWaiter::Wait(unsigned cMillies)
     return rc;
 }
 
+/* Set a flag to tell the Wait not to resume next time it times out. */
 void VBoxMainHotplugWaiter::Interrupt()
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
@@ -518,8 +512,6 @@ int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList)
 #endif  /* RT_OS_LINUX */
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DBUS)
-/* Linux, load libdbus statically */
-
 /** Wrapper class around DBusError for automatic cleanup */
 class autoDBusError
 {
@@ -550,7 +542,11 @@ public:
 };
 
 /**
- * Helper function for setting up a connection to hal
+ * Helper function for setting up a connection to the DBus daemon and
+ * registering with the hal service.
+ *
+ * @note If libdbus is being loaded at runtime then be sure to call
+ *       VBoxDBusCheckPresence before calling this.
  * @returns iprt status code
  * @param   ppConnection  where to store the connection handle
  */
@@ -593,7 +589,12 @@ int halInit (RTMemAutoPtr <DBusConnection, halShutdown> *pConnection)
 }
 
 /**
- * Helper function for setting up a private connection to hal
+ * Helper function for setting up a private connection to the DBus daemon and
+ * registering with the hal service.  Private connections are considered
+ * unsociable and should not be used unnecessarily (as per the DBus API docs).
+ *
+ * @note If libdbus is being loaded at runtime then be sure to call
+ *       VBoxDBusCheckPresence before calling this.
  * @returns iprt status code
  * @param   pConnection  where to store the connection handle
  */
@@ -636,7 +637,7 @@ int halInitPrivate (RTMemAutoPtr <DBusConnection, halShutdownPrivate> *pConnecti
 }
 
 /**
- * Helper function for shutting down a connection to hal
+ * Helper function for shutting down a connection to DBus and hal.
  * @param   pConnection  the connection handle
  */
 /* static */
@@ -658,7 +659,7 @@ void halShutdown (DBusConnection *pConnection)
 }
 
 /**
- * Helper function for shutting down a connection to hal
+ * Helper function for shutting down a private connection to DBus and hal.
  * @param   pConnection  the connection handle
  */
 /* static */
