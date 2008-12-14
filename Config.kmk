@@ -392,6 +392,10 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 VBOX_WITH_BUSLOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
+# Enable host network interface API.
+if1of ($(KBUILD_TARGET), darwin solaris linux)
+ VBOX_WITH_HOSTNETIF_API = 1
+endif
 # Enables the Python<->XPCOM and later Python<->COM bindings.
 # (Current not enabled by default because all the build servers has
 # different Python versions installed and would start burning.)
