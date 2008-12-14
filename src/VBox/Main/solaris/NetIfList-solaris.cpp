@@ -117,6 +117,9 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     else
         RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
 
+    /*
+     * Try to get IP V4 address and netmask as well as Ethernet address.
+     */
     NETIFINFO Info;
     memset(&Info, 0, sizeof(Info));
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
@@ -155,6 +158,26 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         }
         close(Sock);
     }
+    /*
+     * Try to get IP V6 address and netmask.
+     */
+    Sock = socket(PF_INET6, SOCK_DGRAM, IPPROTO_IP);
+    if (Sock > 0)
+    {
+        struct lifreq IfReq;
+        strcpy(IfReq.lifr_name, szNICInstance);        if (ioctl(Sock, SIOCGLIFADDR, &IfReq) >= 0)
+        {
+            memcpy(Info.IPv6Address.au8, ((struct sockaddr_in6 *)&IfReq.lifr_addr)->sin6_addr.s6_addr,
+                    sizeof(Info.IPv6Address.au8));
+        }
+        if (ioctl(Sock, SIOCGLIFNETMASK, &IfReq) >= 0)
+        {
+            memcpy(Info.IPv6NetMask.au8, ((struct sockaddr_in6 *)&IfReq.lifr_addr)->sin6_addr.s6_addr,
+                    sizeof(Info.IPv6NetMask.au8));
+        }
+        close(Sock);
+    }   
+
     /*
      * Construct UUID with interface name and the MAC address if available.
      */
