@@ -125,7 +125,7 @@ public:
     STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
     STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
     STDMETHOD(COMSETTER(HostInterface)) (IN_BSTR aHostInterface);
-#ifndef RT_OS_WINDOWS /** @todo ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: need to find a way to exclude this in the xidl... */
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
     STDMETHOD(COMGETTER(TAPFileDescriptor)) (LONG *aTAPFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor)) (LONG aTAPFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication)) (BSTR *aTAPSetupApplication);
