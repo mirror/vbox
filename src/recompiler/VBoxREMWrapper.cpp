@@ -1918,13 +1918,81 @@ static void remUnloadLinuxObj(void)
     }
 # endif
 }
-#endif
 
+#endif /* USE_REM_STUBS */
+#ifdef VBOX_USE_BITNESS_SELECTOR
+
+/**
+ * Checks if 64-bit support is enabled.
+ *
+ * @returns true / false.
+ * @param   pVM         Pointer to the shared VM structure.
+ */
+static bool remIs64bitEnabled(PVM pVM)
+{
+    bool f;
+    int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "REM"), "64bitEnabled", &f, false);
+    AssertRCReturn(rc, false);
+    return f;
+}
+
+
+/**
+ * Loads real REM object, resolves all exports (imports are done by native loader).
+ *
+ * @returns VBox status code.
+ */
+static int remLoadProperObj(PVM pVM)
+{
+    /*
+     * Load the VBoxREM32/64 object/DLL.
+     */
+    int rc = SUPR3HardenedLdrLoadAppPriv(remIs64bitEnabled(pVM) ? "VBoxREM64" : "VBoxREM32", &g_ModREM2);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Resolve exports.
+         */
+        unsigned i;
+        for (i = 0; i < RT_ELEMENTS(g_aExports); i++)
+        {
+            void *pvValue;
+            rc = RTLdrGetSymbol(g_ModREM2, g_aExports[i].pszName, &pvValue);
+            AssertLogRelMsgRCBreak(rc, ("%s rc=%Rrc\n", g_aExports[i].pszName, rc));
+            *(void **)g_aExports[i].pv = pvValue;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Unloads the real REM object.
+ */
+static void remUnloadProperObj(void)
+{
+    /* close module. */
+    RTLdrClose(g_ModREM2);
+    g_ModREM2 = NIL_RTLDRMOD;
+}
+
+#endif /* VBOX_USE_BITNESS_SELECTOR */
 
 REMR3DECL(int) REMR3Init(PVM pVM)
 {
 #ifdef USE_REM_STUBS
     return VINF_SUCCESS;
+
+#elif defined(VBOX_USE_BITNESS_SELECTOR)
+    if (!pfnREMR3Init)
+    {
+        int rc = remLoadProperObj(pVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    return pfnREMR3Init(pVM);
+
 #else
     if (!pfnREMR3Init)
     {
@@ -1940,6 +2008,14 @@ REMR3DECL(int) REMR3Term(PVM pVM)
 {
 #ifdef USE_REM_STUBS
     return VINF_SUCCESS;
+
+#elif defined(VBOX_USE_BITNESS_SELECTOR)
+    int rc;
+    Assert(VALID_PTR(pfnREMR3Term));
+    rc = pfnREMR3Term(pVM);
+    remUnloadProperObj();
+    return rc;
+
 #else
     int rc;
     Assert(VALID_PTR(pfnREMR3Term));
