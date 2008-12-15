@@ -993,6 +993,15 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #endif
         AssertRC(rc);
 
+#if 0 /* @todo deal with 32/64 */
+        /* Restore the host EFER - on CPUs that support it. */
+        if (pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1 & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR)
+        {
+            uint64_t msrEFER = ASMRdMsr(MSR_IA32_EFER);
+            rc = VMXWriteVMCS64(VMX_VMCS_HOST_FIELD_EFER_FULL, msrEFER);
+            AssertRC(rc);
+        }
+#endif
         pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_HOST_CONTEXT;
     }
     return rc;
@@ -1089,9 +1098,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val  = pVM->hwaccm.s.vmx.msr.vmx_entry.n.disallowed0;
     /* Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
-    /* Required for the EFER write below, not supported on all CPUs. */ /** @todo Sander, check this. */
+#if 0 /* @todo deal with 32/64 */
+    /* Required for the EFER write below, not supported on all CPUs. */
     val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR;
-
+#endif
     /* 64 bits guest mode? */
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
         val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA64_MODE;
@@ -1108,7 +1118,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val  = pVM->hwaccm.s.vmx.msr.vmx_exit.n.disallowed0;
 
     /* Save debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
+#if 0 /* @todo deal with 32/64 */
+    val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG | VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR;
+#else
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
+#endif 
+
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (VMX_IS_64BIT_HOST_MODE())
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
@@ -1117,7 +1132,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pCtx->msrEFER & MSR_K6_EFER_LMA)
         val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;      /* our switcher goes to long mode */
     else
-        val &= ~VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64;
+        Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_AMD64));
 #endif
     val &= pVM->hwaccm.s.vmx.msr.vmx_exit.n.allowed1;
     /* Don't acknowledge external interrupts on VM-exit. */
@@ -1580,12 +1595,14 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.vmx.pfnStartVM  = VMXR0StartVM32;
     }
 
+#if 0 /* @todo deal with 32/64 */
     /* Unconditionally update the guest EFER - on CPUs that supports it. */
     if (pVM->hwaccm.s.vmx.msr.vmx_entry.n.allowed1 & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR)
     {
         rc = VMXWriteVMCS64(VMX_VMCS_GUEST_EFER_FULL, pCtx->msrEFER);
         AssertRC(rc);
     }
+#endif
 
     vmxR0UpdateExceptionBitmap(pVM, pVCpu, pCtx);
 
