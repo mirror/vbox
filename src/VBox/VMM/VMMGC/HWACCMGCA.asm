@@ -163,7 +163,7 @@ ALIGN(16)
     ; Save the pCache pointer
     push    xBX
 %endif
-  
+ 
     ; Save the host state that's relevant in the temporary 64 bits mode
     mov     rdx, cr0
     mov     eax, VMX_VMCS_HOST_CR0
@@ -319,9 +319,12 @@ ALIGN(16)
     mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
+
+%ifdef VMX_USE_CACHED_VMCS_ACCESSES
 %ifdef DEBUG
     mov     rdx, [rsp]                             ; pVMCSPhys
     mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rdx
+%endif
 %endif
 
     ; Write back the data and disable the VMCS
@@ -340,7 +343,7 @@ ALIGN(16)
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS     ; pCache
+    pop     rdi         ; pCache
 %endif
 
     ; Restore segment registers
@@ -354,7 +357,7 @@ ALIGN(16)
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS     ; pCache
+    pop     rdi         ; pCache
 %endif
 
     ; Restore segment registers
