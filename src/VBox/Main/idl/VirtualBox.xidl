@@ -8512,6 +8512,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="compact">
+      <desc>
+        Starts compacting of this hard disk. This means that the disk is
+        transformed into a possibly more compact storage representation.
+        This potentially creates temporary images, which can require a
+        substantial amount of additional disk space.
+
+        After the returned progress object reports that the operation is
+        successfully complete, the media state will be set back to the
+        current state.
+
+        <note>
+          This hard disk and all its parent hard disks will be placed to <link
+          to="MediaState_LockedRead"/> state for the duration of this
+          operation.
+        </note>
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
   </interface>
 
 
