@@ -129,7 +129,7 @@ INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enm
     return pRef;
 }
 
-INTNETR3DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
+INTNETR3DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBlocking)
 {
     if (pSession != g_pSession)
     {
@@ -140,6 +140,11 @@ INTNETR3DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
     POBJREF pRef = (POBJREF)pvObj;
     ASMAtomicIncU32(&pRef->cRefs);
     return VINF_SUCCESS;
+}
+
+INTNETR3DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
+{
+    return SUPR0ObjAddRefEx(pvObj, pSession, false);
 }
 
 INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)

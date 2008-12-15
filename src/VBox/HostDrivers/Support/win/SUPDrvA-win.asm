@@ -59,6 +59,7 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ComponentDeregisterFac
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ComponentQueryFactory
 NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, SUPR0ObjRegister
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjAddRef
+NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjAddRefEx
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjRelease
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0ObjVerifyAccess
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, SUPR0LockMem

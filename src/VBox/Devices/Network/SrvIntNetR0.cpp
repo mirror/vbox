@@ -536,7 +536,7 @@ DECLINLINE(void) intnetR0SgRead(PCINTNETSG pSG, void *pvBuf)
  */
 DECLINLINE(int) intnetR0IfRetain(PINTNETIF pIf, PSUPDRVSESSION pSession)
 {
-    int rc = SUPR0ObjAddRef(pIf->pvObj, pSession);
+    int rc = SUPR0ObjAddRefEx(pIf->pvObj, pSession, true /* fNoBlocking */);
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
@@ -2000,7 +2000,7 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
     if (    pIpHdr->ip_p != RTNETIPV4_PROT_UDP                               /* DHCP is UDP. */
         ||  cbPacket < cbIpHdr + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN) /* Min DHCP packet len */
         return;
- 
+
     size_t cbUdpPkt = cbPacket - cbIpHdr;
     PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uintptr_t)pIpHdr + cbIpHdr);
     /* We are only interested in DHCP packets coming from client to server. */
