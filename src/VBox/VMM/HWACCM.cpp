@@ -1155,6 +1155,9 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 
         /* Reset state information for real-mode emulation in VT-x. */
         pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
+        pVCpu->hwaccm.s.vmx.enmPrevGuestMode     = PGMMODE_REAL;
+        pVCpu->hwaccm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
+
     }
 }
 
