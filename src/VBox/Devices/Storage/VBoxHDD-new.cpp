@@ -1864,6 +1864,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
+ *                          This parameter is used if and only if a true copy is created.
+ *                          In all rename/move cases the UUIDs are copied over.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
@@ -1872,7 +1875,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
-                         bool fMoveByRename, uint64_t cbSize,
+                         bool fMoveByRename, uint64_t cbSize, PRTUUID pDstUuid,
                          PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation)
@@ -1910,57 +1913,24 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskTo->u32Signature));
 
-        /* If the containers are equal and the backend is the same, rename the image. */
-        if (   (pDiskFrom == pDiskTo)
-            && (!RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+        /* Move the image. */
+        if (pDiskFrom == pDiskTo)
         {
-            /* Rename the image. */
-            rc = pImageFrom->Backend->pfnRename(pImageFrom->pvBackendData, pszFilename ? pszFilename : pImageFrom->pszFilename);
-            break;
-        }
-
-        /* If the fMoveByRename flag is set and the backend is the same, rename the image. */
-        if (   (fMoveByRename == true)
-            && (!RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
-        {
-            /* Close the source image. */
-            rc = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, false);
-            if (RT_FAILURE(rc))
+            /* Rename only works when backends are the same. */
+            if (    fMoveByRename
+                &&  !RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName))
+            {
+                rc = pImageFrom->Backend->pfnRename(pImageFrom->pvBackendData, pszFilename ? pszFilename : pImageFrom->pszFilename);
                 break;
+            }
 
-            /* Open the source image in the destination container. */
-            /** @todo fix open flags - the flags in pImageFrom are not the right info, the info from the image format backend is relevant */
-            rc = VDOpen(pDiskTo, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags, pDstVDIfsImage);
-            if (RT_FAILURE(rc))
-                goto movefail;
-
-            pImageTo = pDiskTo->pLast;
-
-            /* Rename the image. */
-            rc = pImageTo->Backend->pfnRename(pImageTo->pvBackendData, pszFilename ? pszFilename : pImageTo->pszFilename);
-            if (RT_FAILURE(rc))
-                goto movefail;
-
-            /* Cleanup the leftovers. */
-            vdRemoveImageFromList(pDiskFrom, pImageFrom);
-            pImageFrom->pvBackendData = NULL;
-
-            if (pImageFrom->pszFilename)
-                RTStrFree(pImageFrom->pszFilename);
-
-            RTMemFree(pImageFrom);
-
-            break;
-movefail:
-            /* In case of failure, re-open the source image in the source container. */
-            rc2 = VDOpen(pDiskFrom, pImageFrom->Backend->pszBackendName, pImageFrom->pszFilename, pImageFrom->uOpenFlags, pImageFrom->pVDIfsImage);
-            if (RT_FAILURE(rc2))
-                /** @todo Uncertain what to do on error. If this happens pImageFrom and pImageTo are both closed. */
-                rc = rc2;
-            break;
+            /** @todo Moving (including shrinking/growing) of the image is
+             * requested, but the rename attempt failed or it wasn't possible.
+             * Must now copy image to temp location. */
+            AssertReleaseMsgFailed(("VDCopy: moving by copy/delete not implemented\n"));
         }
 
-        /* If fMoveByRename is set pszFilename is allowed to be NULL, so do the parameter check here. */
+        /* When moving an image pszFilename is allowed to be NULL, so do the parameter check here. */
         AssertMsgBreakStmt(VALID_PTR(pszFilename) && *pszFilename,
                            ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
                            rc = VERR_INVALID_PARAMETER);
@@ -1982,27 +1952,61 @@ movefail:
         unsigned uImageFlagsFrom;
         uImageFlagsFrom = pImageFrom->Backend->pfnGetImageFlags(pImageFrom->pvBackendData);
 
-        /** @todo Get this from the source image. */
         PDMMEDIAGEOMETRY PCHSGeometryFrom = {0, 0, 0};
         PDMMEDIAGEOMETRY LCHSGeometryFrom = {0, 0, 0};
+        pImageFrom->Backend->pfnGetPCHSGeometry(pImageFrom->pvBackendData, &PCHSGeometryFrom);
+        pImageFrom->Backend->pfnGetLCHSGeometry(pImageFrom->pvBackendData, &LCHSGeometryFrom);
+
+        RTUUID ImageUuid, ImageModificationUuid;
+        RTUUID ParentUuid, ParentModificationUuid;
+        if (pDiskFrom != pDiskTo)
+        {
+            if (pDstUuid)
+                ImageUuid = *pDstUuid;
+            else
+                RTUuidCreate(&ImageUuid);
+        }
+        else
+        {
+            rc = pImageFrom->Backend->pfnGetUuid(pImageFrom->pvBackendData, &ImageUuid);
+            if (RT_FAILURE(rc))
+                RTUuidClear(&ImageUuid);
+        }
+        rc = pImageFrom->Backend->pfnGetModificationUuid(pImageFrom->pvBackendData, &ImageModificationUuid);
+        if (RT_FAILURE(rc))
+            RTUuidClear(&ImageModificationUuid);
+        rc = pImageFrom->Backend->pfnGetParentUuid(pImageFrom->pvBackendData, &ParentUuid);
+        if (RT_FAILURE(rc))
+            RTUuidClear(&ParentUuid);
+        rc = pImageFrom->Backend->pfnGetParentModificationUuid(pImageFrom->pvBackendData, &ParentModificationUuid);
+        if (RT_FAILURE(rc))
+            RTUuidClear(&ParentModificationUuid);
+
+        char szComment[1024];
+        rc = pImageFrom->Backend->pfnGetComment(pImageFrom->pvBackendData, szComment, sizeof(szComment));
+        if (RT_FAILURE(rc))
+            szComment[0] = '\0';
+        else
+            szComment[sizeof(szComment) - 1] = '\0';
 
         unsigned uOpenFlagsFrom;
         uOpenFlagsFrom = pImageFrom->Backend->pfnGetOpenFlags(pImageFrom->pvBackendData);
 
         /* Create destination image with the properties of the source image. */
-        /** @todo Copy the comment. */
         /** @todo replace the VDCreateDiff/VDCreateBase calls by direct
          * calls to the backend. Unifies the code and reduces the API
          * dependencies. */
         if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
         {
             rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
-                              "", NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                              szComment, &ImageUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         } else {
             rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
-                              cbSize, uImageFlagsFrom, "",
+                              cbSize, uImageFlagsFrom, szComment,
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+            if (!RTUuidIsNull(&ImageUuid))
+                 pImageFrom->Backend->pfnSetUuid(pImageFrom->pvBackendData, &ImageUuid);
         }
         if (RT_FAILURE(rc))
             break;
@@ -2057,22 +2061,11 @@ movefail:
             }
         } while (uOffset < cbSize);
 
-        /* If fMoveByRename is set but the backend is different, close and delete pImageFrom. */
-        if (   (fMoveByRename == true)
-            && (RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName)))
+        if (RT_SUCCESS(rc))
         {
-            vdRemoveImageFromList(pDiskFrom, pImageFrom);
-
-            /* Close and delete image. */
-            rc2 = pImageFrom->Backend->pfnClose(pImageFrom->pvBackendData, true);
-            AssertRC(rc2);
-            pImageFrom->pvBackendData = NULL;
-
-            /* Free remaining resources. */
-            if (pImageFrom->pszFilename)
-                RTStrFree(pImageFrom->pszFilename);
-
-            RTMemFree(pImageFrom);
+            pImageFrom->Backend->pfnSetModificationUuid(pImageFrom->pvBackendData, &ImageModificationUuid);
+            pImageFrom->Backend->pfnGetParentUuid(pImageFrom->pvBackendData, &ParentUuid);
+            pImageFrom->Backend->pfnGetParentModificationUuid(pImageFrom->pvBackendData, &ParentModificationUuid);
         }
     } while (0);
 

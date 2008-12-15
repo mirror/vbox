@@ -1256,6 +1256,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
+ *                          This parameter is used if and only if a true copy is created.
+ *                          In all rename/move cases the UUIDs are copied over.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
@@ -1264,7 +1267,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  */
 VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
-                         bool fMoveByRename, uint64_t cbSize,
+                         bool fMoveByRename, uint64_t cbSize, PRTUUID pDstUuid,
                          PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation);
