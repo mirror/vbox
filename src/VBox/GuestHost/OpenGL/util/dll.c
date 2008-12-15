@@ -10,6 +10,10 @@
 #include "cr_string.h"
 #include "stdio.h"
 
+#ifndef IN_GUEST
+#include <string.h>
+#endif
+
 #if defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(DARWIN) || defined(SunOS) || defined(OSF1)
 #include <dlfcn.h>
 #endif
@@ -297,7 +301,10 @@ void crDLLClose( CRDLL *dll )
 		break;
 	}
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
-	dll_err = dlclose( dll->hinstLib );
+#ifndef IN_GUEST
+	if (strncmp(dll->name, "libGL", 5))
+#endif
+		dll_err = dlclose( dll->hinstLib );
 #else
 #error DSO
 #endif
