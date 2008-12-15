@@ -1,0 +1,140 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox Windows Chromium OpenGL ICD.
+#
+
+#
+# Copyright (C) 2008 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+ifndef VBOX_BLD_PYTHON
+ if1of ($(KBUILD_HOST), win)
+  VBOX_BLD_PYTHON := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/python/v*/python$(HOSTSUFF_EXE))) python-not-found.exe)
+ else
+  VBOX_BLD_PYTHON := python$(HOSTSUFF_EXE)
+ endif
+endif
+
+## @todo r=bird: This conflicts with the export you're doing in GuestHost for reasons pointed out there.
+GLAPI_PATH := $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/glapi_parser
+if1of ($(KBUILD_HOST), win)
+ export PYTHONPATH := $(GLAPI_PATH);$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer;$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+else
+ export PYTHONPATH := $(GLAPI_PATH):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
+endif
+## @todo r=bird: See GuestHost makefile.
+APIFILES := $(GLAPI_PATH)/apiutil.py $(GLAPI_PATH)/APIspec.txt
+
+## @todo r=bird: This appears to be common between GuestHost and this file, so move up to Config.kmk. Put it before the SDKs or something.
+## Also, see comments in the GuestHost makefile.
+# Actually this
+VBOXCROGL_GENFILES      := VBoxOGLgen
+PATH_VBOXCROGL_GENFILES := $(PATH_OBJ)/$(VBOXCROGL_GENFILES)
+PATH_VBOXCROGL_INCLUDE  := $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/include
+
+# Include sub-makefile(s).
+include $(PATH_SUB_CURRENT)/array/Makefile.kmk
+include $(PATH_SUB_CURRENT)/pack/Makefile.kmk
+include $(PATH_SUB_CURRENT)/passthrough/Makefile.kmk
+
+$$(PATH_VBoxOGL)/cropengl.def: $(PATH_SUB_CURRENT)/defs.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+
+ifeq ($(KBUILD_TARGET),win)
+$$(PATH_VBoxOGL)/getprocaddress.c: $(PATH_SUB_CURRENT)/windows_getprocaddress.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+else
+$$(PATH_VBoxOGL)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+endif
+
+ifeq ($(KBUILD_TARGET),win)
+$$(PATH_VBoxOGL)/windows_exports.asm: \
+		$(PATH_SUB_CURRENT)/windows_i386_exports.py \
+		$(APIFILES) $(PATH_SUB_CURRENT)/entrypoints.py \
+		| $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+$$(PATH_VBoxOGL)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+$$(PATH_VBoxOGL)/gen/getprocaddress$(SUFF_OBJ): $(PATH_TARGET)/VBoxOGL/cr_gl.h
+endif
+
+$$(PATH_VBoxOGL)/NULLfuncs.c: $(PATH_SUB_CURRENT)/NULLfuncs.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+
+$$(PATH_VBoxOGL)/tsfuncs.c: $(PATH_SUB_CURRENT)/tsfuncs.py $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) > $@
+
+## @todo r=bird: See comments elsewhere about the GEN_?_FILES stuff.
+GEN_C_FILES := getprocaddress.c NULLfuncs.c
+GEN_C_FILES := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_C_FILES))
+
+GEN_C_FILES.win := cropengl.def
+GEN_C_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_C_FILES.win))
+
+GEN_ASM_FILES.win := windows_exports.asm
+GEN_ASM_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_ASM_FILES.win))
+
+GEN_H_FILES.win := cr_gl.h
+GEN_H_FILES.win := $(addprefix $(PATH_TARGET)/VBoxOGL/, $(GEN_H_FILES.win))
+
+THREADSAFE=1
+
+DLLS += VBoxOGL
+
+VBoxOGL_TEMPLATE     = VBOXGUESTR3NPDLL
+VBoxOGL_DEFS         = CHROMIUM_THREADSAFE VBOX_WITH_HGCM
+VBoxOGL_DEFS.win     = _WIN32_WINNT=0x0500 WINDOWS=1
+VBoxOGL_DEFS.linux   = Linux=1
+VBoxOGL_DEFS.solaris = SunOS=1 GLEXT_64_TYPES_DEFINED
+VBoxOGL_INCS	     := \
+	$(PATH_SUB_CURRENT) \
+	$(PATH_VBOXCROGL_INCLUDE) \
+	$(PATH_VBOXCROGL_GENFILES) \
+	$(PATH_TARGET)/VBoxOGL
+VBoxOGL_SOURCES    := \
+	load.c \
+	stub.c \
+	context.c \
+	$(GEN_C_FILES)
+VBoxOGL_SOURCES.win := wgl.c icd_drv.c ogl_hgcm.c VBoxCROGL.rc $(GEN_ASM_FILES.win) $(GEN_C_FILES.win)
+VBoxOGL_DEPS.win   := $(GEN_H_FILES.win)
+VBoxOGL_CLEAN      := $(GEN_C_FILES)
+VBoxOGL_CLEAN.win  := $(GEN_ASM_FILES.win) $(GEN_H_FILES.win) $(GEN_C_FILES.win)
+
+ifeq ($(THREADSAFE), 1)
+VBoxOGL_DEFS    += CHROMIUM_THREADSAFE
+VBoxOGL_SOURCES += $(PATH_TARGET)/VBoxOGL/tsfuncs.c
+VBoxOGL_CLEAN   += $(PATH_TARGET)/VBoxOGL/tsfuncs.c
+endif
+
+VBoxOGL_LIBS.win = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET), linux solaris) ## @todo r=bird: See dll comment else where.
+ VBoxOGL_LIBS += \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
+endif
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
