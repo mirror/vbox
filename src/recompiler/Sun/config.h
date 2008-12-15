@@ -26,5 +26,7 @@
 #define CONFIG_SOFTMMU 1
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
-#define TARGET_X86_64
+# if defined(__x86_64__) || defined (VBOX_ENABLE_VBOXREM64)
+#  define TARGET_X86_64
+# endif
 #endif
