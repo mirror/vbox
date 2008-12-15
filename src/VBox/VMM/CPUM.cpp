@@ -772,9 +772,6 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    /* Set the size of RTGCPTR for use of SSMR3Get/PutGCPtr. */
-    SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR));
-
     /*
      * Save.
      */
@@ -928,8 +925,8 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     /* Set the size of RTGCPTR for SSMR3GetGCPtr. */
     if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
         SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR32));
-    else
-        SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR));
+    else if (u32Version <= CPUM_SAVED_STATE_VERSION)
+        SSMR3SetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
     /*
      * Restore.
