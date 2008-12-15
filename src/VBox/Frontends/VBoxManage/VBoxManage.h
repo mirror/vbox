@@ -118,9 +118,9 @@ int errorArgument(const char *pszFormat, ...);
 
 void printUsageInternal(USAGECATEGORY u64Cmd);
 
+#ifndef VBOX_ONLY_DOCS
 void showProgress(ComPtr<IProgress> progress);
 
-#ifndef VBOX_ONLY_DOCS
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 #endif /* !VBOX_ONLY_DOCS */
