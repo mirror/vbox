@@ -1197,6 +1197,11 @@ bool VBoxConsoleView::event (QEvent *e)
                     doResizeHint (mNormalSize);
                 }
 
+#ifdef Q_WS_MAC
+                /* Enable async resizing. */
+                ::darwinEnableAsyncDragForWindow (mMainWnd);
+#endif /* Q_WS_MAC */
+
                 return true;
             }
 

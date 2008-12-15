@@ -258,6 +258,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     setWindowIcon (QIcon (":/VirtualBox_48px.png"));
 #endif
 
+#ifdef Q_WS_MAC
+    /* Enable async resizing. */
+    ::darwinEnableAsyncDragForWindow (this);
+#endif /* Q_WS_MAC */
+
     /* ensure status bar is created */
     setStatusBar (new QIStatusBar (this));
 

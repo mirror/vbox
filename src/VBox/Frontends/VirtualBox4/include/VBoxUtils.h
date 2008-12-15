@@ -216,6 +216,9 @@ void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffe
 /* Icons in the menu of an mac application are unusual. */
 void darwinDisableIconsInMenus();
 
+/* Enable the async resize/move handling on Mac OS X */
+void darwinEnableAsyncDragForWindow (QWidget *aWindow);
+
 /* Experimental region handler for the seamless mode */
 OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
 
