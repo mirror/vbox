@@ -158,7 +158,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     fport = ~0;
 
 
-    LogRel(("%s: processing (proto:%d)\n", __FUNCTION__, ip->ip_p));
+    Log(("%s: processing (proto:%d)\n", __FUNCTION__, ip->ip_p));
     switch (ip->ip_p)
     {
         case IPPROTO_ICMP:
@@ -177,7 +177,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     found = 1;
                     break;
                 }
-                LogRel(("Have found nothing\n"));
+                Log(("Have found nothing\n"));
             }
             break;
 
@@ -218,7 +218,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             for (so = head_socket->so_prev; so != head_socket; so = so->so_prev)
             {
                 /* Should be reaplaced by hash here */
-                LogRel(("trying:%R[natsock] against %R[IP4]:%d lport=%d hlport=%d\n", so, &faddr, fport, lport, so->so_hlport));
+                Log(("trying:%R[natsock] against %R[IP4]:%d lport=%d hlport=%d\n", so, &faddr, fport, lport, so->so_hlport));
                 if (   so->so_faddr.s_addr == faddr.s_addr
                     && so->so_fport == fport
                     && so->so_hlport == lport)
@@ -239,7 +239,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
         icm->im_m = so->so_m;
         icm->im_so = so;
         found = 1;
-        LogRel(("hit:%R[natsock]\n", so));
+        Log(("hit:%R[natsock]\n", so));
         /*XXX: this storage not very long,
          * better add flag if it should removed from lis
          */
@@ -412,7 +412,7 @@ freeit:
                 {
                     icmp_attach(pData, m);
                     ttl = ip->ip_ttl;
-                    LogRel(("NAT/ICMP: try to set TTL(%d)\n", ttl));
+                    Log(("NAT/ICMP: try to set TTL(%d)\n", ttl));
                     status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL,
                                         (void *)&ttl, sizeof(ttl));
                     if (status < 0)
