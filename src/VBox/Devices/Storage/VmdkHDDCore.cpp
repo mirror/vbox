@@ -4710,7 +4710,7 @@ static int vmdkGetComment(void *pBackendData, char *pszComment,
         else if (RT_FAILURE(rc))
             goto out;
 
-        if (pszComment)
+        if (pszComment && pszCommentEncoded)
             rc = vmdkDecodeString(pszCommentEncoded, pszComment, cbComment);
         else
             rc = VINF_SUCCESS;
