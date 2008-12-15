@@ -117,6 +117,9 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
 int errorArgument(const char *pszFormat, ...);
 
 void printUsageInternal(USAGECATEGORY u64Cmd);
+
+void showProgress(ComPtr<IProgress> progress);
+
 #ifndef VBOX_ONLY_DOCS
 int handleInternalCommands(int argc, char *argv[],
                            ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
@@ -144,7 +147,24 @@ int handleList(int argc, char *argv[],
 int handleMetrics(int argc, char *argv[],
                   ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
 
-/* VBoxManageVD.cpp */
+/* VBoxManageDisk.cpp */
+int handleCreateHardDisk(int argc, char *argv[],
+                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleModifyHardDisk(int argc, char *argv[],
+                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleCloneHardDisk(int argc, char *argv[],
+                        ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleConvertHardDisk(int argc, char **argv);
+int handleConvertDDImage(int argc, char *argv[]);
+int handleAddiSCSIDisk(int argc, char *argv[],
+                       ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
+int handleShowHardDiskInfo(int argc, char *argv[],
+                           ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleOpenMedium(int argc, char *argv[],
+                     ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+int handleCloseMedium(int argc, char *argv[],
+                      ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
+
 /* VBoxManageUSB.cpp */
 /* VBoxManageTODO.cpp */
 

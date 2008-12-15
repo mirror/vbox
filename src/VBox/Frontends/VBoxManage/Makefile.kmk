@@ -46,6 +46,7 @@ else # !VBOX_ONLY_DOCS
  	VBoxManageInfo.cpp \
  	VBoxManageMetrics.cpp \
  	VBoxManageList.cpp \
+ 	VBoxManageDisk.cpp \
  	VBoxInternalManage.cpp \
  	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
  	VBoxManageSVN.cpp
