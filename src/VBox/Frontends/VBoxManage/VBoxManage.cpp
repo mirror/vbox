@@ -529,6 +529,8 @@ static void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_CLONEHD)
     {
         RTPrintf("VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
+                 "                            [-format VDI|VMDK|VHD|RAW|<other>]\n"
+                 "                            [-remember]\n"
                  "\n");
     }
 

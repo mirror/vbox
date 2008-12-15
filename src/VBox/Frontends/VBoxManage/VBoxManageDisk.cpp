@@ -313,50 +313,118 @@ int handleModifyHardDisk(int argc, char *argv[],
 int handleCloneHardDisk(int argc, char *argv[],
                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session)
 {
-#if 1
-    RTPrintf("Error: Clone hard disk operation is temporarily unavailable!\n");
-    return 1;
-#else
-    /// @todo NEWMEDIA use IHardDisk2::cloneTo/flattenTo (not yet implemented)
+    Bstr src, dst;
+    Bstr format;
+    bool remember = false;
+
     HRESULT rc;
 
-    /* source hard disk and target path */
-    if (argc != 2)
-        return errorSyntax(USAGE_CLONEHD, "Incorrect number of parameters");
+    /* Parse the arguments. */
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-format") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            format = argv[i];
+        }
+        else if (strcmp(argv[i], "-remember") == 0 ||
+                 strcmp(argv[i], "-register") == 0 /* backward compatiblity */)
+        {
+            remember = true;
+        }
+        else if (src.isEmpty())
+        {
+            src = argv[i];
+        }
+        else if (dst.isEmpty())
+        {
+            dst = argv[i];
+        }
+        else
+        {
+            return errorSyntax(USAGE_CLONEHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+        }
+    }
+
+    if (src.isEmpty())
+        return errorSyntax(USAGE_CLONEHD, "Mandatory UUID or input file parameter missing");
+    if (dst.isEmpty())
+        return errorSyntax(USAGE_CLONEHD, "Mandatory output file parameter missing");
+
+    ComPtr<IHardDisk2> srcDisk;
+    ComPtr<IHardDisk2> dstDisk;
+    bool unknown = false;
 
     /* first guess is that it's a UUID */
     Guid uuid(argv[0]);
-    ComPtr<IHardDisk2> hardDisk;
-    rc = virtualBox->GetHardDisk2(uuid, hardDisk.asOutParam());
-    if (!hardDisk)
+    rc = virtualBox->GetHardDisk2(uuid, srcDisk.asOutParam());
+    /* no? then it must be a filename */
+    if (FAILED (rc))
     {
-        /* not successful? Then it must be a filename */
-        CHECK_ERROR(virtualBox, OpenHardDisk2(Bstr(argv[0]), hardDisk.asOutParam()));
-    }
-    if (hardDisk)
-    {
-        ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, CloneToImage(Bstr(argv[1]), hardDisk.asOutParam(), progress.asOutParam()));
-        if (SUCCEEDED(rc))
+        rc = virtualBox->FindHardDisk2(src, srcDisk.asOutParam());
+        /* no? well, then it's an unkwnown image */
+        if (FAILED (rc))
         {
-            showProgress(progress);
-            progress->COMGETTER(ResultCode)(&rc);
-            if (FAILED(rc))
+            CHECK_ERROR(virtualBox, OpenHardDisk2(src, srcDisk.asOutParam()));
+            if (SUCCEEDED (rc))
             {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                {
-                    RTPrintf("Error: failed to clone disk image. Error message: %lS\n", info.getText().raw());
-                }
-                else
-                {
-                    RTPrintf("Error: failed to clone disk image. No error message available!\n");
-                }
+                unknown = true;
             }
         }
     }
+
+    do
+    {
+        if (!SUCCEEDED(rc))
+            break;
+
+        if (format.isEmpty())
+        {
+            /* get the format of the source hard disk */
+            CHECK_ERROR_BREAK(srcDisk, COMGETTER(Format) (format.asOutParam()));
+        }
+
+        CHECK_ERROR_BREAK(virtualBox, CreateHardDisk2(format, dst, dstDisk.asOutParam()));
+
+        ComPtr<IProgress> progress;
+        CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, progress.asOutParam()));
+
+        showProgress(progress);
+        progress->COMGETTER(ResultCode)(&rc);
+        if (FAILED(rc))
+        {
+            com::ProgressErrorInfo info(progress);
+            if (info.isBasicAvailable())
+                RTPrintf("Error: failed to clone hard disk. Error message: %lS\n", info.getText().raw());
+            else
+                RTPrintf("Error: failed to clone hard disk. No error message available!\n");
+            break;
+        }
+
+        CHECK_ERROR_BREAK(dstDisk, COMGETTER(Id)(uuid.asOutParam()));
+
+        RTPrintf("Clone hard disk created in format '%ls'. UUID: %s\n",
+                 format.raw(), uuid.toString().raw());
+    }
+    while (0);
+
+    if (!remember && !dstDisk.isNull())
+    {
+        /* forget the created clone */
+        dstDisk->Close();
+    }
+
+    if (unknown)
+    {
+        /* close the unknown hard disk to forget it again */
+        srcDisk->Close();
+    }
+
     return SUCCEEDED(rc) ? 0 : 1;
-#endif
 }
 
 int handleConvertHardDisk(int argc, char **argv)
