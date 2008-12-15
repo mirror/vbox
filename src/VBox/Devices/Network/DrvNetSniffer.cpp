@@ -319,6 +319,9 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     if (!CFGMR3AreValuesValid(pCfgHandle, "File\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
+    if (CFGMR3GetFirstChild(pCfgHandle))
+        LogRel(("NetSniffer: Found child config entries -- are you trying to redirect ports?\n"));
+
     /*
      * Init the static parts.
      */
