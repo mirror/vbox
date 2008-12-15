@@ -112,6 +112,7 @@ public:
     STDMETHOD(MergeTo) (IN_GUID aTargetId, IProgress **aProgress);
     STDMETHOD(CloneTo) (IHardDisk2 *aTarget, IProgress **aProgress);
     STDMETHOD(FlattenTo) (IHardDisk2 *aTarget, IProgress **aProgress);
+    STDMETHOD(Compact) (IProgress **aProgress);
 
     // public methods for internal purposes only
 
