@@ -888,17 +888,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 for (size_t i = 0; i < names.size(); ++ i)
                 {
                     if (values [i])
-                        rc = CFGMR3InsertString (pVDC, Utf8Str (names [i]),
-                                                 Utf8Str (values [i]));             RC_CHECK();
-                    if (    names [i] == L"HostIPStack"
-                        &&  values [i] == L"0")
-                        fHostIP = false;
+                    {
+                        Utf8Str name = names [i];
+                        Utf8Str value = values [i];
+                        rc = CFGMR3InsertString (pVDC, name, value);
+                        if (    !(name.compare("HostIPStack"))
+                            &&  !(value.compare("0")))
+                            fHostIP = false;
+                    }
                 }
                 /* Custom code: put marker to not use host IP stack to driver
                  * configuration node. Simplifies life of DrvVD a bit. */
                 if (!fHostIP)
                 {
-                    rc = CFGMR3InsertString (pCfg, "HostIPStack", "0");             RC_CHECK();
+                    rc = CFGMR3InsertInteger (pCfg, "HostIPStack", 0);          RC_CHECK();
                 }
             }
 
