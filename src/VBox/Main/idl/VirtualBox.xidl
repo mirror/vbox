@@ -5877,7 +5877,8 @@
     </const>
     <const name="Ethernet" value="1">
       <desc>
-        TBD.
+        Ethernet frame encapsulation. This includes both wired and wireless
+        Ethernet connections.
       </desc>
     </const>
     <const name="PPP" value="2">
@@ -5923,6 +5924,12 @@
      uuid="832720ac-2df6-41d4-a867-a0b40df14c7f"
      wsmap="managed"
      >
+    <desc>
+      Reprents one of host's network interfaces. IP V6 address and network
+      mask are strings of 32 hexdecimal digits grouped by four. Groups are
+      separated by colons.
+      For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
+    </desc>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>Returns the host network interface name.</desc>
     </attribute>
@@ -5932,7 +5939,7 @@
     </attribute>
 
     <attribute name="IPAddress" type="unsigned long" readonly="yes">
-      <desc>Returns the IP address of the interface.</desc>
+      <desc>Returns the IP V4 address of the interface.</desc>
     </attribute>
 
     <attribute name="networkMask" type="unsigned long" readonly="yes">
