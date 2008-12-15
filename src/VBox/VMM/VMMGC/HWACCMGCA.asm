@@ -316,17 +316,17 @@ ALIGN(16)
     ; Restore segment registers
     MYPOPSEGS rax
 
+    mov     eax, VINF_SUCCESS
+
 .vmstart64_end:
 %ifdef DEBUG
-    mov     rax, [rsp]                             ; pVMCSPhys
-    mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rax
+    mov     rdx, [rsp]                             ; pVMCSPhys
+    mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rdx
 %endif
 
     ; Write back the data and disable the VMCS
     vmclear qword [rsp]  ;Pushed pVMCS
     add     rsp, 8
-
-    mov     eax, VINF_SUCCESS
 
 .vmstart64_vmoff_end:
     ; Disable VMX root mode
