@@ -426,7 +426,17 @@ freeit:
                         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
                         m_free(pData, m);
                     }
-                }
+                } 
+		else
+		{
+			/* 
+			 * We're freeing the ICMP message, which unable sent or process.
+			 * That behavior described in rfc 793, we shouldn't notify sender about
+			 * fail of processing it's ICMP packets
+			 */
+			m_free(pData, m);
+			return;
+		}
 # else /* RT_OS_WINDOWS */
                 icmp_attach(pData, m);
                 pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
