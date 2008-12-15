@@ -192,7 +192,7 @@ typedef const SCSIINQUIRYCDB *PCSCSIINQUIRYCDB;
 #pragma pack(1)
 typedef struct SCSIINQUIRYDATA
 {
-    unsigned u5PeripheralDeviceType : 5;   /**< 0x00 / 00 */
+    unsigned u5PeripheralDeviceType : 5;    /**< 0x00 / 00 */
     unsigned u3PeripheralQualifier : 3;
     unsigned u6DeviceTypeModifier : 7;      /**< 0x01 */
     unsigned fRMB : 1;
@@ -203,7 +203,7 @@ typedef struct SCSIINQUIRYDATA
     unsigned u2Reserved0 : 2;
     unsigned fTrmlOP : 1;
     unsigned fAEC : 1;
-    unsigned cbAdditional: 8;               /**< 0x04 */
+    unsigned cbAdditional : 8;              /**< 0x04 */
     unsigned u8Reserved1 : 8;               /**< 0x05 */
     unsigned u8Reserved2 : 8;               /**< 0x06 */
     unsigned fSftRe : 1;                    /**< 0x07 */
@@ -214,12 +214,12 @@ typedef struct SCSIINQUIRYDATA
     unsigned fWBus16 : 1;
     unsigned fWBus32 : 1;
     unsigned fRelAdr : 1;
-    int8_t achVendorId[8];                  /**< 0x08 */
-    int8_t achProductId[16];                /**< 0x10 */
-    int8_t achProductLevel[4];              /**< 0x20 */
-    uint8_t abVendorSpecific[20];           /**< 0x24/36 - Optional it seems. */
-    uint8_t abReserved4[40];
-    uint8_t abVendorSpecificParameters[1];  /**< 0x60/96 - Variable size. */
+    int8_t   achVendorId[8];                /**< 0x08 */
+    int8_t   achProductId[16];              /**< 0x10 */
+    int8_t   achProductLevel[4];            /**< 0x20 */
+    uint8_t  abVendorSpecific[20];          /**< 0x24/36 - Optional it seems. */
+    uint8_t  abReserved4[40];
+    uint8_t  abVendorSpecificParameters[1]; /**< 0x60/96 - Variable size. */
 } SCSIINQUIRYDATA;
 #pragma pack()
 AssertCompileSize(SCSIINQUIRYDATA, 97);
