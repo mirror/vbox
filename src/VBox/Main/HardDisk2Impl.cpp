@@ -1319,6 +1319,14 @@ STDMETHODIMP HardDisk2::FlattenTo (IHardDisk2 *aTarget, IProgress **aProgress)
     ReturnComNotImplemented();
 }
 
+STDMETHODIMP HardDisk2::Compact (IProgress **aProgress)
+{
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    ReturnComNotImplemented();
+}
+
 // public methods for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
