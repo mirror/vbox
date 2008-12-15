@@ -1,0 +1,63 @@
+# $Id$
+## @file
+# Makefile for Chromium SPU loader
+#
+
+#
+# Copyright (C) 2008 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+## @todo r=bird: We don't do dependencies like this, and it's also wrong since both arrayspu_config.c
+# and arrayspu_init.c makes use of these headers according to the dependency info.
+# Add these as INTERMEDIATES, that way all sources will depend upon them being made.
+# Btw. *if* you needed such a hack like this, put if *after* the target, not before. [another unwritten rule]
+$$(PATH_VBoxOGLarrayspu)/arrayspu$(SUFF_OBJ): \
+	$(PATH_VBOXCROGL_GENFILES)/state/cr_currentpointers.h \
+	$(PATH_VBOXCROGL_GENFILES)/state/cr_statefuncs.h
+
+DLLS += VBoxOGLarrayspu
+
+VBoxOGLarrayspu_TEMPLATE   = VBOXGUESTR3NPDLL
+VBoxOGLarrayspu_DEFS       = CHROMIUM_THREADSAFE
+VBoxOGLarrayspu_DEFS.win   = _WIN32_WINNT=0x0500 WINDOWS=1
+VBoxOGLarrayspu_DEFS.linux = Linux=1
+VBoxOGLarrayspu_DEFS.solaris = SunOS=1
+VBoxOGLarrayspu_DEFS.darwin  = DARWIN=1 GL_GLEXT_LEGACY
+VBoxOGLarrayspu_INCS      := \
+	$(PATH_VBOXCROGL_INCLUDE) \
+	$(PATH_VBOXCROGL_GENFILES)
+VBoxOGLarrayspu_INCS.darwin += $(PATH_OUT)/obj/VBoxOGL
+VBoxOGLarrayspu_LDFLAGS.darwin += -framework Carbon -framework OpenGL
+VBoxOGLarrayspu_SOURCES    = \
+	arrayspu.c \
+	arrayspu_config.c \
+	arrayspu_init.c
+VBoxOGLarrayspu_SOURCES.win = arrayspu.def
+VBoxOGLarrayspu_LIBS.win    = \
+	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET), linux solaris darwin)
+ VBoxOGLarrayspu_LIBS += \
+	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+endif
+
+include	$(KBUILD_PATH)/subfooter.kmk
+

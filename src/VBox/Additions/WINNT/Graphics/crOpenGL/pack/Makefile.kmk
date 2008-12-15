@@ -1,0 +1,93 @@
+# $Id$
+## @file
+# Makefile for Chromium packer
+#
+
+#
+# Copyright (C) 2008 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+## @todo r-bird: VBOX_BLD_PYTHON is defined elsewhere, this stuff will not work. Please, merge into parent makefile.
+## Also heed the comments else about these kind of targets.
+
+$$(PATH_VBoxOGLpackspu)/packspu.c: $(PATH_SUB_CURRENT)/pack.py $(PATH_SUB_CURRENT)/packspu_special $(PATH_SUB_CURRENT)/packspu_unimplemented_special $(PATH_TARGET)/VBoxOGLpackspu/packspu_proto.h $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
+
+$$(PATH_VBoxOGLpackspu)/packspu_get.c: $(PATH_SUB_CURRENT)/packspu_get.py $(PATH_SUB_CURRENT)/packspu_special $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(PATH_TARGET)/VBoxOGLpackspu/packspu_proto.h $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
+
+$$(PATH_VBoxOGLpackspu)/packspu_flush.c: $(PATH_SUB_CURRENT)/packspu_flush.py $(PATH_SUB_CURRENT)/packspu_flush_special $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
+
+$$(PATH_VBoxOGLpackspu)/packspu_beginend.c: $(PATH_SUB_CURRENT)/packspu_beginend.py $(PATH_SUB_CURRENT)/packspu_vertex_special $(PATH_TARGET)/VBoxOGLpackspu/packspu_proto.h $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
+
+$$(PATH_VBoxOGLpackspu)/packspu_proto.h: $(PATH_SUB_CURRENT)/packspu_proto.py $(PATH_SUB_CURRENT)/packspu_special $(PATH_SUB_CURRENT)/packspu_unimplemented_special $(APIFILES) | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $(GLAPI_PATH) $(<D) > $@
+
+## @todo r=bird: GEN_?_FILES has been explained elsewhere.
+GEN_C_FILES := packspu.c packspu_get.c packspu_flush.c packspu_beginend.c
+GEN_C_FILES := $(addprefix $(PATH_TARGET)/VBoxOGLpackspu/, $(GEN_C_FILES))
+
+GEN_H_FILES := packspu_proto.h
+GEN_H_FILES := $(addprefix $(PATH_TARGET)/VBoxOGLpackspu/, $(GEN_H_FILES))
+
+DLLS += VBoxOGLpackspu
+
+VBoxOGLpackspu_TEMPLATE   = VBOXGUESTR3NPDLL
+VBoxOGLpackspu_DEFS       = CHROMIUM_THREADSAFE TRACKS_STATE=1 PACKS=1
+VBoxOGLpackspu_DEFS.win   = _WIN32_WINNT=0x0500 WINDOWS=1
+VBoxOGLpackspu_DEFS.linux = Linux=1
+VBoxOGLpackspu_DEFS.solaris = SunOS=1
+VBoxOGLpackspu_INCS      := \
+	$(PATH_SUB_CURRENT) \
+	$(PATH_VBOXCROGL_INCLUDE) \
+	$(PATH_VBOXCROGL_GENFILES) \
+	$(PATH_TARGET)/VBoxOGLpackspu
+VBoxOGLpackspu_SOURCES   := \
+	packspu_bufferobject.c \
+	packspu_client.c \
+	packspu_config.c \
+	packspu_context.c \
+	packspu_getstring.c \
+	packspu_init.c \
+	packspu_misc.c \
+	packspu_net.c \
+	packspu_swapbuf.c \
+	packspu_pixel.c \
+	$(GEN_C_FILES)
+VBoxOGLpackspu_SOURCES.win = pack.def
+## @todo r=bird: INTERMEDIATES not DEPS.
+VBoxOGLpackspu_DEPS       := \
+	$(GEN_H_FILES)
+VBoxOGLpackspu_CLEAN      := $(GEN_C_FILES) $(GEN_H_FILES)
+VBoxOGLpackspu_LIBS.win    = \
+	$(PATH_LIB)/VBoxOGLcrutil$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET), linux solaris) ## @todo r=bird: this is really 'if win then use implibs, else use dynlibs. The static libs are the same, so do a += for those to shorten the stuff. */
+ VBoxOGLpackspu_LIBS += \
+	$(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL) \
+	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+endif
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
