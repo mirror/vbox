@@ -56,7 +56,8 @@
  */
 struct HardDisk2::Task : public com::SupportErrorInfoBase
 {
-    enum Operation { CreateDynamic, CreateFixed, CreateDiff, Merge, Delete };
+    enum Operation { CreateDynamic, CreateFixed, CreateDiff,
+                     Merge, Clone, Delete };
 
     HardDisk2 *that;
     VirtualBoxBaseProto::AutoCaller autoCaller;
@@ -1127,8 +1128,7 @@ STDMETHODIMP HardDisk2::SetProperties (ComSafeArrayIn (IN_BSTR, aNames),
 STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
                                               IProgress **aProgress)
 {
-    if (aProgress == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid (aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1183,8 +1183,7 @@ STDMETHODIMP HardDisk2::CreateDynamicStorage (ULONG64 aLogicalSize,
 STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
                                             IProgress **aProgress)
 {
-    if (aProgress == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid (aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1238,8 +1237,10 @@ STDMETHODIMP HardDisk2::CreateFixedStorage (ULONG64 aLogicalSize,
 
 STDMETHODIMP HardDisk2::DeleteStorage (IProgress **aProgress)
 {
-    if (aProgress == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid (aProgress);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
     ComObjPtr <Progress> progress;
 
@@ -1255,10 +1256,8 @@ STDMETHODIMP HardDisk2::DeleteStorage (IProgress **aProgress)
 
 STDMETHODIMP HardDisk2::CreateDiffStorage (IHardDisk2 *aTarget, IProgress **aProgress)
 {
-    if (aTarget == NULL)
-        return E_INVALIDARG;
-    if (aProgress == NULL)
-        return E_POINTER;
+    CheckComArgNotNull (aTarget);
+    CheckComArgOutPointerValid (aProgress);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -1305,10 +1304,72 @@ STDMETHODIMP HardDisk2::MergeTo (IN_GUID aTargetId, IProgress **aProgress)
 
 STDMETHODIMP HardDisk2::CloneTo (IHardDisk2 *aTarget, IProgress **aProgress)
 {
+    CheckComArgNotNull (aTarget);
+    CheckComArgOutPointerValid (aProgress);
+
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    ReturnComNotImplemented();
+    ComObjPtr <HardDisk2> target;
+    HRESULT rc = mVirtualBox->cast (aTarget, target);
+    CheckComRCReturnRC (rc);
+
+    AutoMultiWriteLock2 alock (this, target);
+
+    /* We want to be locked for reading as long as the clone hard disk is being
+     * created*/
+    rc = LockRead (NULL);
+    CheckComRCReturnRC (rc);
+
+    ComObjPtr <Progress> progress;
+
+    try
+    {
+        if (target->m.state != MediaState_NotCreated)
+            throw target->setStateError();
+
+        progress.createObject();
+        rc = progress->init (mVirtualBox, static_cast <IHardDisk2 *> (this),
+            BstrFmt (tr ("Creating a clone hard disk '%s'"),
+                     target->name().raw()),
+            FALSE /* aCancelable */);
+        CheckComRCThrowRC (rc);
+
+        /* setup task object and thread to carry out the operation
+         * asynchronously */
+
+        std::auto_ptr <Task> task (new Task (this, progress, Task::Clone));
+        AssertComRCThrowRC (task->autoCaller.rc());
+
+        task->setData (target);
+
+        rc = task->startThread();
+        CheckComRCThrowRC (rc);
+
+        /* go to Creating state before leaving the lock */
+        target->m.state = MediaState_Creating;
+
+        /* task is now owned (or already deleted) by taskThread() so release it */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (FAILED (rc))
+    {
+        HRESULT rc2 = UnlockRead (NULL);
+        AssertComRC (rc2);
+        /* Note: on success, taskThread() will unlock this */
+    }
+    else
+    {
+        /* return progress to the caller */
+        progress.queryInterfaceTo (aProgress);
+    }
+
+    return rc;
 }
 
 STDMETHODIMP HardDisk2::FlattenTo (IHardDisk2 *aTarget, IProgress **aProgress)
@@ -3202,9 +3263,16 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
             /* these parameters we need after creation */
             uint64_t size = 0, logicalSize = 0;
 
-            /* the object may request a specific UUID (through a special
-             * form of the setLocation() argumet) */
+            /* The object may request a specific UUID (through a special form of
+             * the setLocation() argumet). Otherwise we have to generate it */
             Guid id = that->m.id;
+            bool generateUuid = id.isEmpty();
+            if (generateUuid)
+            {
+                id.create();
+                /* VirtualBox::registerHardDisk2() will need UUID */
+                unconst (that->m.id) = id;
+            }
 
             try
             {
@@ -3237,8 +3305,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                                             VD_IMAGE_TYPE_FIXED,
                                         task->d.size * _1M,
                                         VD_IMAGE_FLAGS_NONE,
-                                        NULL, &geo, &geo,
-                                        id.isEmpty() ? NULL : id.raw(),
+                                        NULL, &geo, &geo, id.raw(),
                                         VD_OPEN_FLAGS_NORMAL,
                                         NULL, that->mm.vdDiskIfaces);
 
@@ -3248,23 +3315,6 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                             tr ("Could not create the hard disk storage "
                                 "unit '%s'%s"),
                             location.raw(), that->vdError (vrc).raw());
-                    }
-
-                    if (capabilities & HardDiskFormatCapabilities_Uuid)
-                    {
-                        RTUUID uuid;
-                        vrc = VDGetUuid (hdd, 0, &uuid);
-                        ComAssertRCThrow (vrc, E_FAIL);
-
-                        if (!id.isEmpty())
-                            Assert (id == uuid);
-                        else
-                            id = uuid;
-                    }
-                    else
-                    {
-                        /* we have to generate an UUID ourselves */
-                        id.create();
                     }
 
                     size = VDGetFileSize (hdd, 0);
@@ -3278,30 +3328,29 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
             if (SUCCEEDED (rc))
             {
-                /* mVirtualBox->registerHardDisk2() needs a write lock */
-                AutoWriteLock vboxLock (that->mVirtualBox);
-                thatLock.enter();
-
-                unconst (that->m.id) = id;
-
-                that->m.size = size;
-                that->mm.logicalSize = logicalSize;
-
                 /* register with mVirtualBox as the last step and move to
                  * Created state only on success (leaving an orphan file is
                  * better than breaking media registry consistency) */
                 rc = that->mVirtualBox->registerHardDisk2 (that);
-
-                if (SUCCEEDED (rc))
-                    that->m.state = MediaState_Created;
             }
 
-            if (FAILED (rc))
-            {
-                thatLock.maybeEnter();
+            thatLock.maybeEnter();
 
+            if (SUCCEEDED (rc))
+            {
+                that->m.state = MediaState_Created;
+
+                that->m.size = size;
+                that->mm.logicalSize = logicalSize;
+            }
+            else
+            {
                 /* back to NotCreated on failiure */
                 that->m.state = MediaState_NotCreated;
+
+                /* reset UUID to prevent it from being reused next time */
+                if (generateUuid)
+                    unconst (that->m.id).clear();
             }
 
             break;
@@ -3320,6 +3369,17 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
             uint64_t size = 0, logicalSize = 0;
 
+            /* The object may request a specific UUID (through a special form of
+             * the setLocation() argumet). Otherwise we have to generate it */
+            Guid targetId = target->m.id;
+            bool generateUuid = targetId.isEmpty();
+            if (generateUuid)
+            {
+                targetId.create();
+                /* VirtualBox::registerHardDisk2() will need UUID */
+                unconst (target->m.id) = targetId;
+            }
+
             try
             {
                 PVBOXHDD hdd;
@@ -3331,10 +3391,6 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
                 Utf8Str targetFormat (target->mm.format);
                 Utf8Str targetLocation (target->m.locationFull);
-                Guid targetId = target->m.id;
-
-                /* UUID must have been set by setLocation() */
-                Assert (!targetId.isEmpty());
 
                 Assert (target->m.state == MediaState_Creating);
 
@@ -3433,6 +3489,10 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
             {
                 /* back to NotCreated on failiure */
                 target->m.state = MediaState_NotCreated;
+
+                /* reset UUID to prevent it from being reused next time */
+                if (generateUuid)
+                    unconst (target->m.id).clear();
             }
 
             if (isAsync)
@@ -3752,6 +3812,173 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
                 NOREF (saveSettingsFailed);
             }
+
+            break;
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        case Task::Clone:
+        {
+            ComObjPtr <HardDisk2> &target = task->d.target;
+
+            /* Lock both in {parent,child} order. The lock is also used as a
+             * signal from the task initiator (which releases it only after
+             * RTThreadCreate()) that we can start the job*/
+            AutoMultiWriteLock2 thatLock (that, target);
+
+            uint64_t size = 0, logicalSize = 0;
+
+            /* The object may request a specific UUID (through a special form of
+             * the setLocation() argumet). Otherwise we have to generate it */
+            Guid targetId = target->m.id;
+            bool generateUuid = targetId.isEmpty();
+            if (generateUuid)
+            {
+                targetId.create();
+                /* VirtualBox::registerHardDisk2() will need UUID */
+                unconst (target->m.id) = targetId;
+            }
+
+            try
+            {
+                PVBOXHDD hdd;
+                int vrc = VDCreate (that->mm.vdDiskIfaces, &hdd);
+                ComAssertRCThrow (vrc, E_FAIL);
+
+                Utf8Str format (that->mm.format);
+                Utf8Str location (that->m.locationFull);
+
+                Utf8Str targetFormat (target->mm.format);
+                Utf8Str targetLocation (target->m.locationFull);
+
+                Assert (target->m.state == MediaState_Creating);
+
+                Assert (that->m.state == MediaState_LockedRead);
+
+                /* unlock before the potentially lengthy operation */
+                thatLock.leave();
+
+                try
+                {
+                    vrc = VDOpen (hdd, format, location,
+                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                  NULL);
+                    if (RT_FAILURE (vrc))
+                    {
+                        throw setError (E_FAIL,
+                            tr ("Could not open the hard disk storage "
+                                "unit '%s'%s"),
+                            location.raw(), that->vdError (vrc).raw());
+                    }
+
+                    /* ensure the target directory exists */
+                    rc = VirtualBox::ensureFilePathExists (targetLocation);
+                    CheckComRCThrowRC (rc);
+
+                    /* needed for vdProgressCallback */
+                    that->mm.vdProgress = task->progress;
+
+                    PVBOXHDD targetHdd;
+                    int vrc = VDCreate (that->mm.vdDiskIfaces, &targetHdd);
+                    ComAssertRCThrow (vrc, E_FAIL);
+
+                    vrc = VDCopy (hdd, 0, targetHdd, targetFormat,
+                                  targetLocation, false, 0, targetId.raw(),
+                                  NULL, NULL, that->mm.vdDiskIfaces);
+
+                    that->mm.vdProgress = NULL;
+
+                    if (RT_FAILURE (vrc))
+                    {
+                        VDDestroy (targetHdd);
+
+                        throw setError (E_FAIL,
+                            tr ("Could not create the clone hard disk "
+                                "'%s'%s"),
+                            targetLocation.raw(), that->vdError (vrc).raw());
+                    }
+
+                    size = VDGetFileSize (hdd, 0);
+                    logicalSize = VDGetSize (hdd, 0) / _1M;
+
+                    VDDestroy (targetHdd);
+                }
+                catch (HRESULT aRC) { rc = aRC; }
+
+                VDDestroy (hdd);
+            }
+            catch (HRESULT aRC) { rc = aRC; }
+
+            if (SUCCEEDED (rc))
+            {
+                /* we set mParent & children() (note that thatLock is released
+                 * here), but lock VirtualBox first to follow the rule */
+                AutoMultiWriteLock2 alock (that->mVirtualBox->lockHandle(),
+                                           that->treeLock());
+
+                Assert (target->mParent.isNull());
+
+                if (!that->mParent.isNull())
+                {
+                    /* associate the clone with the original's parent and
+                     * deassociate from VirtualBox */
+                    target->mParent = that->mParent;
+                    that->mParent->addDependentChild (target);
+                    target->mVirtualBox->removeDependentChild (target);
+
+                    /* register with mVirtualBox as the last step and move to
+                     * Created state only on success (leaving an orphan file is
+                     * better than breaking media registry consistency) */
+                    rc = that->mVirtualBox->registerHardDisk2 (target);
+
+                    if (FAILED (rc))
+                    {
+                        /* break the parent association on failure to register */
+                        target->mVirtualBox->addDependentChild (target);
+                        that->mParent->removeDependentChild (target);
+                        target->mParent.setNull();
+                    }
+                }
+                else
+                {
+                    /* just register  */
+                    rc = that->mVirtualBox->registerHardDisk2 (target);
+                }
+            }
+
+            thatLock.maybeEnter();
+
+            if (SUCCEEDED (rc))
+            {
+                target->m.state = MediaState_Created;
+
+                target->m.size = size;
+                target->mm.logicalSize = logicalSize;
+            }
+            else
+            {
+                /* back to NotCreated on failiure */
+                target->m.state = MediaState_NotCreated;
+
+                /* reset UUID to prevent it from being reused next time */
+                if (generateUuid)
+                    unconst (target->m.id).clear();
+            }
+
+            if (isAsync)
+            {
+                /* unlock ourselves when done (unless in MediaState_LockedWrite
+                 * state because of taking the online snapshot*/
+                if (that->m.state != MediaState_LockedWrite)
+                {
+                    HRESULT rc2 = that->UnlockRead (NULL);
+                    AssertComRC (rc2);
+                }
+            }
+
+            /* Note that in sync mode, it's the caller's responsibility to
+             * unlock the hard disk */
 
             break;
         }
