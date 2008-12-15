@@ -186,7 +186,7 @@ CG_EXTERN_C_END
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  * @param   aStateImage   an optional state overlay image to add at the center of the icon
  */
-void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage /*= NULL*/)
+void darwinUpdateDockPreview (QWidget *aMainWindow, CGImageRef aVMImage, CGImageRef aOverlayImage, CGImageRef aStateImage /*= NULL*/)
 {
     Assert (aVMImage);
 
@@ -236,7 +236,7 @@ void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
     iconRect = CGRectInset (iconRect, 1, 1);
     CGContextDrawImage (context, iconRect, aVMImage);
     /* Process the content of any external OpenGL windows. */
-    WindowRef w = FrontNonFloatingWindow();
+    WindowRef w = darwinToWindowRef (aMainWindow);
     WindowGroupRef g = GetWindowGroup (w);
     WindowGroupContentOptions wgco = kWindowGroupContentsReturnWindows | kWindowGroupContentsRecurse | kWindowGroupContentsVisible;
     ItemCount c = CountWindowGroupContents (g, wgco);
@@ -253,19 +253,25 @@ void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
         if (status == noErr &&
             wc != w)
         {
-            Rect tmpR1;
-            GetWindowBounds (wc, kWindowContentRgn, &tmpR1);
-            HIRect rect;
-            rect.size.width = (tmpR1.right-tmpR1.left) * a1;
-            rect.size.height = (tmpR1.bottom-tmpR1.top) * a2;
-            rect.origin.x = iconRect.origin.x + (tmpR1.left - mainRect.origin.x) * a1;
-            rect.origin.y = targetHeight - (iconRect.origin.y + (tmpR1.top - mainRect.origin.y) * a2) - rect.size.height;
-            /* This is a big, bad hack. The following functions aren't
-             * documented nor official supported by apple. But its the only way
-             * to capture the OpenGL content of a window without fiddling
-             * around with gPixelRead or something like that. */
-            CGSWindowID wid = GetNativeWindowFromWindowRef(wc);
-            CGContextCopyWindowCaptureContentsToRect(context, rect, CGSMainConnectionID(), wid, 0);
+            WindowClass winClass;
+            status = GetWindowClass (wc, &winClass);
+            if (status == noErr &&
+                winClass == kOverlayWindowClass)
+            {
+                Rect tmpR1;
+                GetWindowBounds (wc, kWindowContentRgn, &tmpR1);
+                HIRect rect;
+                rect.size.width = (tmpR1.right-tmpR1.left) * a1;
+                rect.size.height = (tmpR1.bottom-tmpR1.top) * a2;
+                rect.origin.x = iconRect.origin.x + (tmpR1.left - mainRect.origin.x) * a1;
+                rect.origin.y = targetHeight - (iconRect.origin.y + (tmpR1.top - mainRect.origin.y) * a2) - rect.size.height;
+                /* This is a big, bad hack. The following functions aren't
+                 * documented nor official supported by apple. But its the only way
+                 * to capture the OpenGL content of a window without fiddling
+                 * around with gPixelRead or something like that. */
+                CGSWindowID wid = GetNativeWindowFromWindowRef(wc);
+                CGContextCopyWindowCaptureContentsToRect(context, rect, CGSMainConnectionID(), wid, 0);
+            }
         }
     }
 
@@ -303,7 +309,7 @@ void darwinUpdateDockPreview (CGImageRef aVMImage, CGImageRef aOverlayImage, CGI
  * @param   aFrameBuffer    The guest frame buffer.
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  */
-void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
@@ -314,7 +320,7 @@ void darwinUpdateDockPreview (VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlay
                                    kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
                                    kCGRenderingIntentDefault);
     /* Update the dock preview icon */
-    ::darwinUpdateDockPreview (ir, aOverlayImage);
+    ::darwinUpdateDockPreview (aMainWindow, ir, aOverlayImage);
     /* Release the temp data and image */
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
