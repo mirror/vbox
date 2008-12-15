@@ -198,7 +198,7 @@ struct mbuf *
 ip_reass(PNATState pData, struct mbuf* m)
 {
     struct ip *ip;
-    struct mbuf *p, *q, *nq, *t;
+    struct mbuf *p, *q, *nq;
     struct ipq_t *fp = NULL;
     struct ipqhead *head;
     int i, hlen, next;
@@ -441,11 +441,6 @@ found:
      * Concatenate fragments.
      */
     m = q;
-#if 0
-    t = m->m_next;
-    m->m_next = NULL;
-    m_cat(pData, m, t);
-#endif
     nq = q->m_nextpkt;
     q->m_nextpkt = NULL;
     for (q = nq; q != NULL; q = nq)
