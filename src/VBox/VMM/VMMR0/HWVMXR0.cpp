@@ -73,7 +73,10 @@ static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu);
 static void vmxR0FlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPHYS GCPhys);
 static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GCPtr);
 static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-
+#ifdef VBOX_STRICT
+static bool vmxR0IsValidReadField(uint32_t idxField);
+static bool vmxR0IsValidWriteField(uint32_t idxField);
+#endif
 
 static void VMXR0CheckError(PVM pVM, PVMCPU pVCpu, int rc)
 {
@@ -3602,6 +3605,14 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Write.aField));
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Read.aField));
 
+#ifdef VBOX_STRICT
+    for (unsigned i=0;i<pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries;i++)
+        Assert(vmxR0IsValidWriteField(pVCpu->hwaccm.s.vmx.VMCSCache.Write.aField[i]));
+
+    for (unsigned i=0;i<pVCpu->hwaccm.s.vmx.VMCSCache.Read.cValidEntries;i++)
+        Assert(vmxR0IsValidReadField(pVCpu->hwaccm.s.vmx.VMCSCache.Read.aField[i]));
+#endif
+
     pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
@@ -3748,3 +3759,101 @@ VMMR0DECL(int) VMXWriteCachedVMCSEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
 }
 
 #endif /* HC_ARCH_BITS == 32 && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+
+#ifdef VBOX_STRICT
+static bool vmxR0IsValidReadField(uint32_t idxField)
+{
+    switch(idxField)
+    {
+    case VMX_VMCS64_GUEST_RIP:
+    case VMX_VMCS64_GUEST_RSP:
+    case VMX_VMCS_GUEST_RFLAGS:
+    case VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE:
+    case VMX_VMCS_CTRL_CR0_READ_SHADOW:
+    case VMX_VMCS64_GUEST_CR0:
+    case VMX_VMCS_CTRL_CR4_READ_SHADOW:
+    case VMX_VMCS64_GUEST_CR4:
+    case VMX_VMCS64_GUEST_DR7:
+    case VMX_VMCS32_GUEST_SYSENTER_CS:
+    case VMX_VMCS64_GUEST_SYSENTER_EIP:
+    case VMX_VMCS64_GUEST_SYSENTER_ESP:
+    case VMX_VMCS32_GUEST_GDTR_LIMIT:
+    case VMX_VMCS64_GUEST_GDTR_BASE:
+    case VMX_VMCS32_GUEST_IDTR_LIMIT:
+    case VMX_VMCS64_GUEST_IDTR_BASE:
+    case VMX_VMCS16_GUEST_FIELD_CS:
+    case VMX_VMCS32_GUEST_CS_LIMIT:
+    case VMX_VMCS64_GUEST_CS_BASE:
+    case VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_DS:
+    case VMX_VMCS32_GUEST_DS_LIMIT:
+    case VMX_VMCS64_GUEST_DS_BASE:
+    case VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_ES:
+    case VMX_VMCS32_GUEST_ES_LIMIT:
+    case VMX_VMCS64_GUEST_ES_BASE:
+    case VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_FS:
+    case VMX_VMCS32_GUEST_FS_LIMIT:
+    case VMX_VMCS64_GUEST_FS_BASE:
+    case VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_GS:
+    case VMX_VMCS32_GUEST_GS_LIMIT:
+    case VMX_VMCS64_GUEST_GS_BASE:
+    case VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_SS:
+    case VMX_VMCS32_GUEST_SS_LIMIT:
+    case VMX_VMCS64_GUEST_SS_BASE:
+    case VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_LDTR:
+    case VMX_VMCS32_GUEST_LDTR_LIMIT:
+    case VMX_VMCS64_GUEST_LDTR_BASE:
+    case VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS:
+    case VMX_VMCS16_GUEST_FIELD_TR:
+    case VMX_VMCS32_GUEST_TR_LIMIT:
+    case VMX_VMCS64_GUEST_TR_BASE:
+    case VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS:
+    case VMX_VMCS32_RO_EXIT_REASON:
+    case VMX_VMCS32_RO_VM_INSTR_ERROR:
+    case VMX_VMCS32_RO_EXIT_INSTR_LENGTH:
+    case VMX_VMCS32_RO_EXIT_INTERRUPTION_ERRCODE:
+    case VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO:
+    case VMX_VMCS32_RO_EXIT_INSTR_INFO:
+    case VMX_VMCS_RO_EXIT_QUALIFICATION:
+    case VMX_VMCS32_RO_IDT_INFO:
+    case VMX_VMCS32_RO_IDT_ERRCODE:
+    case VMX_VMCS64_GUEST_CR3:
+    case VMX_VMCS_EXIT_PHYS_ADDR_FULL:
+        return true;
+    }
+    return false;
+}
+
+static bool vmxR0IsValidWriteField(uint32_t idxField)
+{
+    switch(idxField)
+    {
+    case VMX_VMCS64_GUEST_LDTR_BASE:
+    case VMX_VMCS64_GUEST_TR_BASE:
+    case VMX_VMCS64_GUEST_GDTR_BASE:
+    case VMX_VMCS64_GUEST_IDTR_BASE:
+    case VMX_VMCS64_GUEST_SYSENTER_EIP:
+    case VMX_VMCS64_GUEST_SYSENTER_ESP:
+    case VMX_VMCS64_GUEST_CR0:
+    case VMX_VMCS64_GUEST_CR4:
+    case VMX_VMCS64_GUEST_CR3:
+    case VMX_VMCS64_GUEST_DR7:
+    case VMX_VMCS64_GUEST_RIP:
+    case VMX_VMCS64_GUEST_RSP:
+    case VMX_VMCS64_GUEST_CS_BASE:
+    case VMX_VMCS64_GUEST_DS_BASE:
+    case VMX_VMCS64_GUEST_ES_BASE:
+    case VMX_VMCS64_GUEST_FS_BASE:
+    case VMX_VMCS64_GUEST_GS_BASE:
+    case VMX_VMCS64_GUEST_SS_BASE:
+        return true;
+    }
+    return false;
+}
+
+#endif
