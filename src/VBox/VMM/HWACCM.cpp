@@ -1159,8 +1159,9 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         pVCpu->hwaccm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
 
         /* Reset the contents of the read cache. */
-        for (unsigned i=0;i<pCache->Read.cValidEntries;i++)
-            pCache->Read.aFieldVal[i] = 0;
+        PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+        for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
+            pCache->Read.aFieldVal[j] = 0;
     }
 }
 
