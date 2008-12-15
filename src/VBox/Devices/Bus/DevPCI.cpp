@@ -2082,7 +2082,7 @@ static DECLCALLBACK(int) pcibridgeSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHa
  */
 static DECLCALLBACK(int) pcibridgeLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
-    PPCIBUS      pBus  = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    PPCIBUS     pBus  = PDMINS_2_DATA(pDevIns, PPCIBUS);
     uint32_t    u32;
     uint32_t    i;
     int         rc;
