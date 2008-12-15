@@ -83,6 +83,8 @@
 #define SSMFILEHDR_MAGIC_V1_0   "\177VirtualBox SavedState V1.0\n"
 /** Saved state file v1.1 magic. */
 #define SSMFILEHDR_MAGIC_V1_1   "\177VirtualBox SavedState V1.1\n"
+/** Saved state file v1.2 magic. */
+#define SSMFILEHDR_MAGIC_V1_2   "\177VirtualBox SavedState V1.2\n\0\0\0"
 
 /** Data unit magic. */
 #define SSMFILEUNITHDR_MAGIC    "\nUnit\n"
@@ -101,7 +103,8 @@
 /** SSM state. */
 typedef enum SSMSTATE
 {
-    SSMSTATE_SAVE_PREP = 1,
+    SSMSTATE_INVALID = 0,
+    SSMSTATE_SAVE_PREP,
     SSMSTATE_SAVE_EXEC,
     SSMSTATE_SAVE_DONE,
     SSMSTATE_LOAD_PREP,
@@ -157,15 +160,63 @@ typedef struct SSMHANDLE
     /** the amount of % we reserve for the 'done' stage */
     unsigned        uPercentDone;
 
-    /** RTGCPTR size in bytes */
+    /** RTGCPHYS size in bytes. (Only applicable when loading/reading.) */
+    unsigned        cbGCPhys;
+    /** RTGCPTR size in bytes. (Only applicable when loading/reading.) */
     unsigned        cbGCPtr;
+    /** Whether cbGCPtr is fixed or settable. */
+    bool            fFixedGCPtrSize;
 } SSMHANDLE;
 
 
 /**
  * Header of the saved state file.
+ *
+ * @remarks This is a superset of SSMFILEHDRV11.
  */
 typedef struct SSMFILEHDR
+{
+    /** Magic string which identifies this file as a version of VBox saved state
+     *  file format (SSMFILEHDR_MAGIC_V1_2). */
+    char            achMagic[32];
+    /** The size of this file. Used to check
+     * whether the save completed and that things are fine otherwise. */
+    uint64_t        cbFile;
+    /** File checksum. The actual calculation skips past the u32CRC field. */
+    uint32_t        u32CRC;
+    /** Padding. */
+    uint32_t        u32Reserved;
+    /** The machine UUID. (Ignored if NIL.) */
+    RTUUID          MachineUuid;
+
+    /** The major version number. */
+    uint16_t        u16VerMajor;
+    /** The minor version number. */
+    uint16_t        u16VerMinor;
+    /** The build number. */
+    uint32_t        u32VerBuild;
+    /** The SVN revision. */
+    uint32_t        u32SvnRev;
+
+    /** 32 or 64 depending on the host. */
+    uint8_t         cHostBits;
+    /** The size of RTGCPHYS. */
+    uint8_t         cbGCPhys;
+    /** The size of RTGCPTR. */
+    uint8_t         cbGCPtr;
+    /** Padding. */
+    uint8_t         au8Reserved;
+} SSMFILEHDR;
+AssertCompileSize(SSMFILEHDR, 64+16);
+AssertCompileMemberSize(SSMFILEHDR, achMagic, sizeof(SSMFILEHDR_MAGIC_V1_2));
+/** Pointer to a saved state file header. */
+typedef SSMFILEHDR *PSSMFILEHDR;
+
+
+/**
+ * Header of the saved state file, version 1.1.
+ */
+typedef struct SSMFILEHDRV11
 {
     /** Magic string which identifies this file as a version of VBox saved state
      *  file format (SSMFILEHDR_MAGIC_V1_1). */
@@ -179,10 +230,10 @@ typedef struct SSMFILEHDR
     uint32_t        u32Reserved;
     /** The machine UUID. (Ignored if NIL.) */
     RTUUID          MachineUuid;
-} SSMFILEHDR;
-AssertCompileSize(SSMFILEHDR, 64);
+} SSMFILEHDRV11;
+AssertCompileSize(SSMFILEHDRV11, 64);
 /** Pointer to a saved state file header. */
-typedef SSMFILEHDR *PSSMFILEHDR;
+typedef SSMFILEHDRV11 *PSSMFILEHDRV11;
 
 
 /**
@@ -277,7 +328,8 @@ static int ssmR3LazyInit(PVM pVM)
 
 
 /**
- * For saving the version + revision and stuff.
+ * For saving usful things without having to go thru the tedious process of
+ * adding it to the header.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
@@ -291,11 +343,6 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
      * String table containg pairs of variable and value string.
      * Terminated by two empty strings.
      */
-    SSMR3PutStrZ(pSSM, "VBox Version");
-    SSMR3PutStrZ(pSSM, VBOX_VERSION_STRING);
-    SSMR3PutStrZ(pSSM, "VBox Revision");
-    RTStrPrintf(szTmp, sizeof(szTmp), "%d", VMMGetSvnRev());
-    SSMR3PutStrZ(pSSM, szTmp);
 #ifdef VBOX_OSE
     SSMR3PutStrZ(pSSM, "OSE");
     SSMR3PutStrZ(pSSM, "true");
@@ -323,8 +370,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
      * String table containg pairs of variable and value string.
      * Terminated by two empty strings.
      */
-    LogRel(("SSM: Saved state info:\n"));
-    for (;;)
+    for (unsigned i = 0; ; i++)
     {
         char szVar[128];
         char szValue[1024];
@@ -334,6 +380,8 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
         AssertRCReturn(rc, rc);
         if (!szVar[0] && !szValue[0])
             break;
+        if (i == 0)
+            LogRel(("SSM: Saved state info:\n"));
         LogRel(("SSM:   %s: %s\n", szVar, szValue));
     }
     return VINF_SUCCESS;
@@ -924,13 +972,26 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * the saved state file might take a long time.
      */
     SSMHANDLE Handle       = {0};
-    Handle.enmAfter        = enmAfter;
-    Handle.pVM             = pVM;
-    Handle.cbFileHdr       = sizeof(SSMFILEHDR);
-    Handle.pfnProgress     = pfnProgress;
-    Handle.pvUser          = pvUser;
-    Handle.uPercentPrepare = 2;
-    Handle.uPercentDone    = 20;
+    Handle.File             = NIL_RTFILE;
+    Handle.pVM              = pVM;
+    Handle.cbFileHdr        = sizeof(SSMFILEHDR);
+    Handle.enmOp            = SSMSTATE_INVALID;
+    Handle.enmAfter         = enmAfter;
+    Handle.rc               = VINF_SUCCESS;
+    Handle.pZipComp         = NULL;
+    Handle.pZipDecomp       = NULL;
+    Handle.pfnProgress      = pfnProgress;
+    Handle.pvUser           = pvUser;
+    Handle.uPercent         = 0;
+    Handle.offEstProgress   = 0;
+    Handle.cbEstTotal       = 0;
+    Handle.offEst           = 0;
+    Handle.offEstUnitEnd    = 0;
+    Handle.uPercentPrepare  = 20;
+    Handle.uPercentDone     = 2;
+    Handle.cbGCPhys         = sizeof(RTGCPHYS);
+    Handle.cbGCPtr          = sizeof(RTGCPTR);
+    Handle.fFixedGCPtrSize  = true;
 
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
@@ -944,7 +1005,22 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Write header.
      */
-    SSMFILEHDR Hdr = { SSMFILEHDR_MAGIC_V1_1, 0, 0, 0 };
+    SSMFILEHDR Hdr =
+    {
+        /* .achMagic[32] = */ SSMFILEHDR_MAGIC_V1_2,
+        /* .cbFile       = */ 0,
+        /* .u32CRC       = */ 0,
+        /* .u32Reserved  = */ 0,
+        /* .MachineUuid  = */ {{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0}},
+        /* .u16VerMajor  = */ VBOX_VERSION_MAJOR,
+        /* .u16VerMinor  = */ VBOX_VERSION_MINOR,
+        /* .u32VerBuild  = */ VBOX_VERSION_BUILD,
+        /* .u32SvnRev    = */ VMMGetSvnRev(),
+        /* .cHostBits    = */ HC_ARCH_BITS,
+        /* .cbGCPhys     = */ sizeof(RTGCPHYS),
+        /* .cbGCPtr      = */ sizeof(RTGCPTR),
+        /* .au8Reserved  = */ 0
+    };
     rc = RTFileWrite(Handle.File, &Hdr, sizeof(Hdr), NULL);
     if (RT_SUCCESS(rc))
     {
@@ -1275,26 +1351,75 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
             pHdr->u32CRC = OldHdr.u32CRC;
             pHdr->u32Reserved = 0;
             pHdr->MachineUuid = OldHdr.MachineUuid;
+            pHdr->cHostBits   = 32;
 
             offCrc32 = RT_OFFSETOF(SSMFILEHDRV10X86, u32CRC) + sizeof(pHdr->u32CRC);
             *pcbFileHdr = sizeof(OldHdr);
         }
         else
         {
-            /* (It's identical to the current, but this doesn't harm us and will
-               continue working after future changes.) */
             SSMFILEHDRV10AMD64 OldHdr;
             memcpy(&OldHdr, pHdr, sizeof(OldHdr));
             pHdr->cbFile = OldHdr.cbFile;
             pHdr->u32CRC = OldHdr.u32CRC;
             pHdr->u32Reserved = 0;
             pHdr->MachineUuid = OldHdr.MachineUuid;
+            pHdr->cHostBits   = 64;
 
             offCrc32 = RT_OFFSETOF(SSMFILEHDRV10AMD64, u32CRC) + sizeof(pHdr->u32CRC);
             *pcbFileHdr = sizeof(OldHdr);
         }
+        pHdr->u16VerMajor = 0;
+        pHdr->u16VerMinor = 0;
+        pHdr->u32VerBuild = 0;
+        pHdr->u32SvnRev   = 0;
+        pHdr->cbGCPhys    = sizeof(uint32_t);
+        pHdr->cbGCPtr     = sizeof(uint32_t);
+        pHdr->au8Reserved = 0;
     }
-    else if (memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1_1, sizeof(SSMFILEHDR_MAGIC_V1_1)))
+    else if (!memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1_1, sizeof(SSMFILEHDR_MAGIC_V1_1)))
+    {
+        *pcbFileHdr = sizeof(SSMFILEHDRV11);
+        pHdr->u16VerMajor = 0;
+        pHdr->u16VerMinor = 0;
+        pHdr->u32VerBuild = 0;
+        pHdr->u32SvnRev   = 0;
+        pHdr->cHostBits   = 0; /* unknown */
+        pHdr->cbGCPhys    = sizeof(RTGCPHYS);
+        pHdr->cbGCPtr     = 0; /* settable. */
+        pHdr->au8Reserved = 0;
+    }
+    else if (!memcmp(pHdr->achMagic, SSMFILEHDR_MAGIC_V1_2, sizeof(pHdr->achMagic)))
+    {
+        if (    pHdr->u16VerMajor == 0
+            ||  pHdr->u16VerMajor > 1000
+            ||  pHdr->u32SvnRev == 0
+            ||  pHdr->u32SvnRev > 10000000 /*100M*/)
+        {
+            LogRel(("SSM: Incorrect version values: %d.%d.%d.r%d\n",
+                    pHdr->u16VerMajor, pHdr->u16VerMinor, pHdr->u32VerBuild, pHdr->u32SvnRev));
+            return VERR_SSM_INTEGRITY_VBOX_VERSION;
+        }
+        if (    pHdr->cHostBits != 32
+            &&  pHdr->cHostBits != 64)
+        {
+            LogRel(("SSM: Incorrect cHostBits value: %d\n", pHdr->cHostBits));
+            return VERR_SSM_INTEGRITY_SIZES;
+        }
+        if (    pHdr->cbGCPhys != sizeof(uint32_t)
+            &&  pHdr->cbGCPhys != sizeof(uint64_t))
+        {
+            LogRel(("SSM: Incorrect cbGCPhys value: %d\n", pHdr->cbGCPhys));
+            return VERR_SSM_INTEGRITY_SIZES;
+        }
+        if (    pHdr->cbGCPtr != sizeof(uint32_t)
+            &&  pHdr->cbGCPtr != sizeof(uint64_t))
+        {
+            LogRel(("SSM: Incorrect cbGCPtr value: %d\n", pHdr->cbGCPtr));
+            return VERR_SSM_INTEGRITY_SIZES;
+        }
+    }
+    else
     {
         Log(("SSM: Unknown file format version. magic=%.*s\n", sizeof(pHdr->achMagic) - 1, pHdr->achMagic));
         return VERR_SSM_INTEGRITY_VERSION;
@@ -1409,14 +1534,27 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * Note that we reserve 20% of the time on validating the image since this might
      * take a long time.
      */
-    SSMHANDLE Handle       = {0};
-    Handle.enmAfter        = enmAfter;
-    Handle.pVM             = pVM;
-    Handle.cbFileHdr       = sizeof(SSMFILEHDR);
-    Handle.pfnProgress     = pfnProgress;
-    Handle.pvUser          = pvUser;
-    Handle.uPercentPrepare = 20;
-    Handle.uPercentDone    = 2;
+    SSMHANDLE Handle = {0};
+    Handle.File             = NIL_RTFILE;
+    Handle.pVM              = pVM;
+    Handle.cbFileHdr        = sizeof(SSMFILEHDR);
+    Handle.enmOp            = SSMSTATE_INVALID;
+    Handle.enmAfter         = enmAfter;
+    Handle.rc               = VINF_SUCCESS;
+    Handle.pZipComp         = NULL;
+    Handle.pZipDecomp       = NULL;
+    Handle.pfnProgress      = pfnProgress;
+    Handle.pvUser           = pvUser;
+    Handle.uPercent         = 0;
+    Handle.offEstProgress   = 0;
+    Handle.cbEstTotal       = 0;
+    Handle.offEst           = 0;
+    Handle.offEstUnitEnd    = 0;
+    Handle.uPercentPrepare  = 20;
+    Handle.uPercentDone     = 2;
+    Handle.cbGCPhys         = sizeof(RTGCPHYS);
+    Handle.cbGCPtr          = sizeof(RTGCPTR);
+    Handle.fFixedGCPtrSize  = false;
 
     int rc = RTFileOpen(&Handle.File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
@@ -1432,6 +1570,24 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     rc = ssmR3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
     if (RT_SUCCESS(rc))
     {
+        if (Hdr.cbGCPhys)
+            Handle.cbGCPhys = Hdr.cbGCPhys;
+        if (Hdr.cbGCPtr)
+        {
+            Handle.cbGCPtr = Hdr.cbGCPtr;
+            Handle.fFixedGCPtrSize = true;
+        }
+
+        if (Handle.cbFileHdr == sizeof(Hdr))
+            LogRel(("SSM: File header: Format %.4s, VirtualBox Version %u.%u.%u r%u, %u-bit host, cbGCPhys=%u, cbGCPtr=%u\n",
+                    &Hdr.achMagic[sizeof(SSMFILEHDR_MAGIC_BASE) - 1],
+                    Hdr.u16VerMajor, Hdr.u16VerMinor, Hdr.u32VerBuild, Hdr.u32SvnRev,
+                    Hdr.cHostBits, Hdr.cbGCPhys, Hdr.cbGCPtr));
+        else
+            LogRel(("SSM: File header: Format %.4s, %u-bit host, cbGCPhys=%u, cbGCPtr=%u\n" ,
+                    &Hdr.achMagic[sizeof(SSMFILEHDR_MAGIC_BASE)-1], Hdr.cHostBits, Hdr.cbGCPhys, Hdr.cbGCPtr));
+
+
         /*
          * Clear the per unit flags.
          */
@@ -1850,8 +2006,6 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
             pSSM->cbFileHdr       = cbFileHdr;
             pSSM->enmOp           = SSMSTATE_OPEN_READ;
             pSSM->enmAfter        = SSMAFTER_OPENED;
-            pSSM->uPercentPrepare = 20;
-            pSSM->uPercentDone    = 2;
             //pSSM->rc            = VINF_SUCCESS;
             //pSSM->pZipComp      = NULL;
             //pSSM->pZipDecomp    = NULL;
@@ -1863,10 +2017,22 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
             //pSSM->cbEstTotal    = 0;
             //pSSM->offEst        = 0;
             //pSSM->offEstUnitEnd = 0;
+            pSSM->uPercentPrepare = 20;
+            pSSM->uPercentDone    = 2;
+            pSSM->cbGCPhys        = Hdr.cbGCPhys ? Hdr.cbGCPhys : sizeof(RTGCPHYS);
+            pSSM->cbGCPtr         = sizeof(RTGCPTR);
+            pSSM->fFixedGCPtrSize = false;
+            if (Hdr.cbGCPtr)
+            {
+                pSSM->cbGCPtr         = Hdr.cbGCPtr;
+                pSSM->fFixedGCPtrSize = true;
+            }
+
             *ppSSM = pSSM;
             LogFlow(("SSMR3Open: returns VINF_SUCCESS *ppSSM=%p\n", *ppSSM));
             return VINF_SUCCESS;
         }
+
         Log(("SSMR3Open: Validation of '%s' failed, rc=%Rrc.\n",  pszFilename, rc));
         RTFileClose(pSSM->File);
     }
@@ -2939,26 +3105,12 @@ VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
  * @param   pSSM            SSM operation handle.
  * @param   pu              Where to store the integer.
  *
- * @deprecated Silly type, don't use it.
+ * @deprecated Silly type with an incorrect size, don't use it.
  */
 VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
 {
-    Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
-
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-    {
-        if (sizeof(*pu) != pSSM->cbGCPtr)
-        {
-            uint32_t val;
-            Assert(sizeof(*pu) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
-            *pu = val;
-            return rc;
-        }
-        return ssmR3Read(pSSM, pu, sizeof(*pu));
-    }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertCompile(sizeof(RTGCPTR) == sizeof(*pu));
+    return SSMR3GetGCPtr(pSSM, (PRTGCPTR)pu);
 }
 
 
@@ -2971,22 +3123,8 @@ VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
  */
 VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
 {
-    Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
-
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-    {
-        if (sizeof(*pu) != pSSM->cbGCPtr)
-        {
-            uint32_t val;
-            Assert(sizeof(*pu) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
-            *pu = val;
-            return rc;
-        }
-        return ssmR3Read(pSSM, pu, sizeof(*pu));
-    }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertCompile(sizeof(RTGCPTR) == sizeof(*pu));
+    return SSMR3GetGCPtr(pSSM, (PRTGCPTR)pu);
 }
 
 
@@ -3032,7 +3170,28 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3Read(pSSM, pGCPhys, sizeof(*pGCPhys));
+    {
+        if (sizeof(*pGCPhys) != pSSM->cbGCPhys)
+        {
+            Assert(sizeof(*pGCPhys) == sizeof(uint64_t) || sizeof(*pGCPhys) == sizeof(uint32_t));
+            Assert(pSSM->cbGCPhys   == sizeof(uint64_t) || pSSM->cbGCPhys   == sizeof(uint32_t));
+            if (pSSM->cbGCPhys == sizeof(uint64_t))
+            {
+                /* 64-bit saved, 32-bit load: try truncate it. */
+                uint64_t u64;
+                int rc = ssmR3Read(pSSM, &u64, pSSM->cbGCPhys);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (u64 >= _4G)
+                    return VERR_SSM_GCPHYS_OVERFLOW;
+                *pGCPhys = (RTGCPHYS)u64;
+                return rc;
+            }
+            /* 32-bit saved, 64-bit load: clear the high part. */
+            *pGCPhys = 0;
+        }
+        return ssmR3Read(pSSM, pGCPhys, pSSM->cbGCPhys);
+    }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
@@ -3041,7 +3200,7 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 /**
  * Loads a GC virtual address item from the current data unit.
  *
- * Only applies to:
+ * Only applies to in the 1.1 format:
  *  - SSMR3GetGCPtr
  *  - SSMR3GetGCUIntPtr
  *  - SSMR3GetGCUInt
@@ -3052,12 +3211,23 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * @returns VBox status.
  * @param   pSSM            SSM operation handle.
  * @param   cbGCPtr         Size of RTGCPTR
+ *
+ * @remarks This interface only works with saved state version 1.1, if the
+ *          format isn't 1.1 the call will be ignored.
  */
 VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 {
     Assert(cbGCPtr == sizeof(RTGCPTR32) || cbGCPtr == sizeof(RTGCPTR64));
-    Log(("SSMR3SetGCPtrSize %d bytes\n", cbGCPtr));
-    pSSM->cbGCPtr = cbGCPtr;
+    if (!pSSM->fFixedGCPtrSize)
+    {
+        Log(("SSMR3SetGCPtrSize: %d -> %d bytes\n", pSSM->cbGCPtr, cbGCPtr));
+        pSSM->cbGCPtr = cbGCPtr;
+        pSSM->fFixedGCPtrSize = true;
+    }
+    else if (   pSSM->cbGCPtr != cbGCPtr
+             && pSSM->cbFileHdr == sizeof(SSMFILEHDRV11))
+        AssertMsgFailed(("SSMR3SetGCPtrSize: already fixed at %d bytes; requested %d bytes\n", pSSM->cbGCPtr, cbGCPtr));
+
     return VINF_SUCCESS;
 }
 
@@ -3071,22 +3241,45 @@ VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
  */
 VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 {
-    Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
-
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
     {
         if (sizeof(*pGCPtr) != pSSM->cbGCPtr)
         {
-            RTGCPTR32 val;
-            Assert(sizeof(*pGCPtr) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
-            *pGCPtr = val;
-            return rc;
+            Assert(sizeof(*pGCPtr) == sizeof(uint64_t) || sizeof(*pGCPtr) == sizeof(uint32_t));
+            Assert(pSSM->cbGCPtr   == sizeof(uint64_t) || pSSM->cbGCPtr   == sizeof(uint32_t));
+            if (pSSM->cbGCPtr == sizeof(uint64_t))
+            {
+                /* 64-bit saved, 32-bit load: try truncate it. */
+                uint64_t u64;
+                int rc = ssmR3Read(pSSM, &u64, pSSM->cbGCPhys);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (u64 >= _4G)
+                    return VERR_SSM_GCPTR_OVERFLOW;
+                *pGCPtr = (RTGCPTR)u64;
+                return rc;
+            }
+            /* 32-bit saved, 64-bit load: clear the high part. */
+            *pGCPtr = 0;
         }
         return ssmR3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
     }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
+}
+
+
+/**
+ * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
+ *
+ * @returns VBox status.
+ * @param   pSSM            SSM operation handle.
+ * @param   pGCPtr          Where to store the GC virtual address.
+ */
+VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
+{
+    AssertCompile(sizeof(RTGCPTR) == sizeof(*pGCPtr));
+    return SSMR3GetGCPtr(pSSM, (PRTGCPTR)pGCPtr);
 }
 
 
@@ -3102,34 +3295,6 @@ VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
     if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
         return ssmR3Read(pSSM, pRCPtr, sizeof(*pRCPtr));
 
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
-}
-
-
-/**
- * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
- *
- * @returns VBox status.
- * @param   pSSM            SSM operation handle.
- * @param   pGCPtr          Where to store the GC virtual address.
- */
-VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
-{
-    Assert(pSSM->cbGCPtr == sizeof(RTGCPTR32) || pSSM->cbGCPtr == sizeof(RTGCPTR64));
-
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-    {
-        if (sizeof(*pGCPtr) != pSSM->cbGCPtr)
-        {
-            RTGCUINTPTR32 val;
-            Assert(sizeof(*pGCPtr) == sizeof(uint64_t) && pSSM->cbGCPtr == sizeof(uint32_t));
-            int rc = ssmR3Read(pSSM, &val, pSSM->cbGCPtr);
-            *pGCPtr = val;
-            return rc;
-        }
-        return ssmR3Read(pSSM, pGCPtr, pSSM->cbGCPtr);
-    }
     AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
     return VERR_SSM_INVALID_STATE;
 }
