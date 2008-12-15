@@ -408,7 +408,7 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
 VirtualBox4_QT_TRANSLATIONS := $(TRANSLATIONS) \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
 # Compress the translation units.
-VirtualBox4_LRCFLAGS = -compress -silent
+VirtualBox4_LRCFLAGS = -silent
 # Where to install the translations (a separate install target, VirtualBox4-nls-inst is created).
 VirtualBox4_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
 
