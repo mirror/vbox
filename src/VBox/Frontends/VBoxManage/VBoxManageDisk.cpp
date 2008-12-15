@@ -129,7 +129,7 @@ int handleCreateHardDisk(int argc, char *argv[],
          * created unless fRegister is set */
         bool doClose = false;
 
-        if (!comment.isEmpty())
+        if (!comment.isNull())
         {
             CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
         }
