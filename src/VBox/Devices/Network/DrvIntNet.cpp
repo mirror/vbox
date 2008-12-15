@@ -463,9 +463,21 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                     rc = drvIntNetAsyncIoWaitForSpace(pThis);
                     if (RT_FAILURE(rc))
                     {
-                        STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                        LogFlow(("drvIntNetAsyncIoRun: returns %Rrc (wait-for-space)\n", rc));
-                        return rc;
+                        if (rc == VERR_INTERRUPTED)
+                        {
+                            /*
+                             * NIC is going down, likely because the VM is being reset. Skip the frame.
+                             */
+                            AssertMsg(pHdr->u16Type == INTNETHDR_TYPE_FRAME, ("Unknown frame type %RX16! offRead=%#x\n",
+                                                                              pHdr->u16Type, pRingBuf->offRead));
+                            INTNETRingSkipFrame(pBuf, pRingBuf);
+                        }
+                        else
+                        {
+                            STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
+                            LogFlow(("drvIntNetAsyncIoRun: returns %Rrc (wait-for-space)\n", rc));
+                            return rc;
+                        }
                     }
                 }
             }
