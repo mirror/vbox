@@ -670,8 +670,6 @@ static void show_usage()
              "  -hostkey <key> {<key2>} <mod> Set the host key to the values obtained using -detecthostkey\n"
              "  -termacpi                Send an ACPI power button event when closing the window\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) /** @todo UNIXISH_TAP stuff out of main and up to Config.kmk! */
-             "  -tapdev<1-N> <dev>       Use existing persistent TAP device with the given name\n"
-             "  -tapfd<1-N> <fd>         Use existing TAP device, don't allocate\n"
              "  -evdevkeymap             Use evdev keycode map\n"
 #endif
 #ifdef VBOX_WITH_VRDP
@@ -1196,11 +1194,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     virtualBox->COMGETTER(SystemProperties) (sysInfo.asOutParam());
     sysInfo->COMGETTER (NetworkAdapterCount) (&NetworkAdapterCount);
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
-    std::vector <Bstr> tapdev (NetworkAdapterCount);
-    std::vector <int> tapfd (NetworkAdapterCount, 0);
-#endif
-
     ConvertSettings fConvertSettings = ConvertSettings_No;
 
     // command line argument parsing stuff
@@ -1425,34 +1418,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             guseEvdevKeymap = TRUE;
         }
 #endif /* RT_OS_LINUX  */
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
-        else if (strncmp(argv[curArg], "-tapdev", 7) == 0)
-        {
-            ULONG n = 0;
-            if (!argv[curArg][7] || ((n = strtoul(&argv[curArg][7], NULL, 10)) < 1) ||
-                (n > NetworkAdapterCount) || (argc <= (curArg + 1)))
-            {
-                RTPrintf("Error: invalid TAP device option!\n");
-                rc = E_FAIL;
-                break;
-            }
-            tapdev[n - 1] = argv[curArg + 1];
-            curArg++;
-        }
-        else if (strncmp(argv[curArg], "-tapfd", 6) == 0)
-        {
-            ULONG n = 0;
-            if (!argv[curArg][6] || ((n = strtoul(&argv[curArg][6], NULL, 10)) < 1) ||
-                (n > NetworkAdapterCount) || (argc <= (curArg + 1)))
-            {
-                RTPrintf("Error: invalid TAP file descriptor option!\n");
-                rc = E_FAIL;
-                break;
-            }
-            tapfd[n - 1] = atoi(argv[curArg + 1]);
-            curArg++;
-        }
-#endif /* RT_OS_LINUX || RT_OS_DARWIN */
 #ifdef VBOX_WITH_VRDP
         else if (strcmp(argv[curArg], "-vrdp") == 0)
         {
@@ -2019,45 +1984,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     gConsole->RegisterCallback(consoleCallback);
     // until we've tried to to start the VM, ignore power off events
     consoleCallback->ignorePowerOffEvents(true);
-
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
-    /*
-     * Do we have a TAP device name or file descriptor? If so, communicate
-     * it to the network adapter so that it doesn't allocate a new one
-     * in case TAP is already configured.
-     */
-    {
-        ComPtr<INetworkAdapter> networkAdapter;
-        for (ULONG i = 0; i < NetworkAdapterCount; i++)
-        {
-            if (tapdev[i] || tapfd[i])
-            {
-                gMachine->GetNetworkAdapter(i, networkAdapter.asOutParam());
-                if (networkAdapter)
-                {
-                    NetworkAttachmentType_T attachmentType;
-                    networkAdapter->COMGETTER(AttachmentType)(&attachmentType);
-                    if (attachmentType == NetworkAttachmentType_HostInterface)
-                    {
-                        if (tapdev[i])
-                            networkAdapter->COMSETTER(HostInterface)(tapdev[i]);
-                        else
-                            networkAdapter->COMSETTER(TAPFileDescriptor)(tapfd[i]);
-                    }
-                    else
-                    {
-                        RTPrintf("Warning: network adapter %d is not configured for TAP. Command ignored!\n", i + 1);
-                    }
-                }
-                else
-                {
-                    /* warning */
-                    RTPrintf("Warning: network adapter %d not defined. Command ignored!\n", i + 1);
-                }
-            }
-        }
-    }
-#endif /* RT_OS_LINUX || RT_OS_DARWIN */
 
 #ifdef VBOX_WITH_VRDP
     if (portVRDP != ~0)

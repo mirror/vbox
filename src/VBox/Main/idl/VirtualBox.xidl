@@ -9732,32 +9732,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-<if target="xpidl">
-    <attribute name="TAPFileDescriptor" type="long">
-      <desc>
-        File descriptor of the TAP device. It can either be setup by the caller
-        which has to supply an existing valid file handle allocated in the parent
-        process of the VM process or allocated by VirtualBox. The value is -1 if it
-        has not been defined. This property is non persistent, i.e. it will not be
-        stored in the VM's configuration data and thus has to be set at each startup.
-      </desc>
-    </attribute>
-    <attribute name="TAPSetupApplication" type="wstring">
-      <desc>
-        Application to start to configure the TAP device.
-        It is being passed two parameters, 1) the file handle (as ASCII),
-        2) the TAP device name if it is available.
-      </desc>
-    </attribute>
-    <attribute name="TAPTerminateApplication" type="wstring">
-      <desc>
-        Application to start before closing a TAP device.
-        It is being passed two parameters, 1) the file handle (as ASCII),
-        2) the TAP device name if it is available.
-      </desc>
-    </attribute>
-</if>
-
     <attribute name="internalNetwork" type="wstring">
       <desc>
         Name of the internal network the VM is attached to.
