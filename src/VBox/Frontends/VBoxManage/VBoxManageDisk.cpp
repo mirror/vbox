@@ -767,8 +767,7 @@ int handleAddiSCSIDisk(int argc, char *argv[],
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            lun = L"enc";
-            lun = lun + argv[i];
+            lun = BstrFmt("enc%s", argv[i]);
         }
         else if (strcmp(argv[i], "-username") == 0)
         {
