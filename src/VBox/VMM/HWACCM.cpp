@@ -1178,7 +1178,9 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
             || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
             || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
+        {
             return false;
+        }
     }
     else
     {
