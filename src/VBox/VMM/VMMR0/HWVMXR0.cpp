@@ -223,7 +223,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
         /* Current guest paging mode. */
-        pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
+        pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
 
 #ifdef LOG_ENABLED
         SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hwaccm.s.vmx.pVMCS, (uint32_t)pVCpu->hwaccm.s.vmx.pVMCSPhys);
@@ -1144,10 +1144,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
         PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
-        if (pVCpu->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
+        if (pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode != enmGuestMode)
         {
             /* Correct weird requirements for switching to protected mode. */
-            if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                 &&  enmGuestMode >= PGMMODE_PROTECTED)
             {
                 /* DPL of all hidden selector registers must match the current CPL (0). */
@@ -1162,7 +1162,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             }
             else
             /* Switching from protected mode to real mode. */
-            if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode >= PGMMODE_PROTECTED
+            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode >= PGMMODE_PROTECTED
                 &&  enmGuestMode == PGMMODE_REAL)
             {
                 /* The limit must also be adjusted. */
@@ -1179,7 +1179,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 Assert(pCtx->fsHid.u64Base <= 0xfffff);
                 Assert(pCtx->gsHid.u64Base <= 0xfffff);
             }
-            pVCpu->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
+            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
         }
         else
         /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */

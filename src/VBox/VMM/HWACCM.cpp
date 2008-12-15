@@ -1012,8 +1012,8 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
             /* @todo SMP */
-            pVCpu->hwaccm.s.enmShadowMode        = PGMGetShadowMode(pVM);
-            pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMGetGuestMode(pVM);
+            pVCpu->hwaccm.s.enmShadowMode            = PGMGetShadowMode(pVM);
+            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMGetGuestMode(pVM);
         }
     }
 
@@ -1053,7 +1053,7 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
     if (   pVM->hwaccm.s.vmx.fEnabled
         && pVM->fHWACCMEnabled)
     {
-        if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+        if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
             &&  enmGuestMode >= PGMMODE_PROTECTED)
         {
             PCPUMCTX pCtx;
@@ -1064,6 +1064,20 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
              * CPL to 0. Our real mode emulation had to set it to 3.
              */
             pCtx->ssHid.Attr.n.u2Dpl  = 0;
+        }
+    }
+
+    if (pVCpu->hwaccm.s.vmx.enmCurrGuestMode != enmGuestMode)
+    {
+        /* Keep track of paging mode changes. */
+        pVCpu->hwaccm.s.vmx.enmPrevGuestMode = pVCpu->hwaccm.s.vmx.enmCurrGuestMode;
+        pVCpu->hwaccm.s.vmx.enmCurrGuestMode = enmGuestMode;
+
+        /* Did we miss a change, because all code was executed in the recompiler? */
+        if (pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == enmGuestMode)
+        {
+            Log(("HWACCMR3PagingModeChanged missed %s->%s transition (last seen %s)\n", PGMGetModeName(pVCpu->hwaccm.s.vmx.enmPrevGuestMode), PGMGetModeName(pVCpu->hwaccm.s.vmx.enmCurrGuestMode), PGMGetModeName(pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode)));
+            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = pVCpu->hwaccm.s.vmx.enmPrevGuestMode;
         }
     }
 }
@@ -1140,7 +1154,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         pVCpu->hwaccm.s.Event.fPending = false;
 
         /* Reset state information for real-mode emulation in VT-x. */
-        pVCpu->hwaccm.s.vmx.enmCurrGuestMode = PGMMODE_REAL;
+        pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
     }
 }
 
@@ -1190,7 +1204,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
          */
         PVMCPU pVCpu = VMMGetCpu(pVM);
 
-        if (    pVCpu->hwaccm.s.vmx.enmCurrGuestMode == PGMMODE_REAL
+        if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
             &&  enmGuestMode >= PGMMODE_PROTECTED)
         {
             if (   (pCtx->cs & X86_SEL_RPL)
@@ -1391,6 +1405,13 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
         rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hwaccm.s.Event.intInfo);
         AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.vmx.enmLastSeenGuestMode);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.vmx.enmCurrGuestMode);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.vmx.enmPrevGuestMode);
+        AssertRCReturn(rc, rc);
     }
 
     return VINF_SUCCESS;
@@ -1413,7 +1434,8 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
     /*
      * Validate version.
      */
-    if (u32Version != HWACCM_SSM_VERSION)
+    if (   u32Version != HWACCM_SSM_VERSION
+        && u32Version != HWACCM_SSM_VERSION_2_0_X)
     {
         AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -1426,6 +1448,23 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         AssertRCReturn(rc, rc);
         rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hwaccm.s.Event.intInfo);
         AssertRCReturn(rc, rc);
+
+        if (u32Version >= HWACCM_SSM_VERSION)
+        {
+            uint32_t val;
+
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+            pVM->aCpus[i].hwaccm.s.vmx.enmLastSeenGuestMode = (PGMMODE)val;
+
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+            pVM->aCpus[i].hwaccm.s.vmx.enmCurrGuestMode = (PGMMODE)val;
+
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+            pVM->aCpus[i].hwaccm.s.vmx.enmPrevGuestMode = (PGMMODE)val;
+        }
     }
     return VINF_SUCCESS;
 }
