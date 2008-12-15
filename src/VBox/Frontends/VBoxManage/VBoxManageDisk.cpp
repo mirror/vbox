@@ -129,7 +129,10 @@ int handleCreateHardDisk(int argc, char *argv[],
          * created unless fRegister is set */
         bool doClose = false;
 
-        CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
+        if (!comment.isEmpty())
+        {
+            CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
+        }
         ComPtr<IProgress> progress;
         if (fStatic)
         {
