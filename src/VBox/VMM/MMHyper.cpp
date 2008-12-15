@@ -78,7 +78,7 @@ int mmR3HyperInit(PVM pVM)
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
         cbHyperHeap = VMMIsHwVirtExtForced(pVM)
-                    ? 384*_1K
+                    ? 640*_1K
                     : 1280*_1K;
     else if (RT_FAILURE(rc))
     {
