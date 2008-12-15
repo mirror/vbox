@@ -129,8 +129,8 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, PNETIFINFO pIf)
     m.IPV6Address = composeIPv6Address(&pIf->IPv6Address);
     m.IPV6NetworkMask = composeIPv6Address(&pIf->IPv6NetMask);
     m.hardwareAddress = composeHardwareAddress(&pIf->MACAddress);
-    m.type = pIf->enmType;
-    m.status = pIf->enmStatus;
+    m.type = (HostNetworkInterfaceType)pIf->enmType;
+    m.status = (HostNetworkInterfaceStatus)pIf->enmStatus;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
