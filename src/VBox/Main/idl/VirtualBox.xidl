@@ -3310,7 +3310,7 @@
     </attribute>
 
     <attribute name="CPUCount" type="unsigned long">
-      <desc>Number of virtual CPUs in the VM.</desc>
+      <desc>Number of virtual CPUs in the VM. In the current version of the product, this is always 1.</desc>
     </attribute>
 
     <attribute name="memorySize" type="unsigned long">
@@ -5255,7 +5255,7 @@
     </method>
 
     <method name="powerButton">
-      <desc>Send the ACPI power button event to the guest.
+      <desc>Sends the ACPI power button event to the guest.
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine not in Running state.
         </result>
