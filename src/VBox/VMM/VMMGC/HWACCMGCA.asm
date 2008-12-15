@@ -344,6 +344,12 @@ ALIGN(16)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
+
+%ifdef DEBUG
+    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+%endif
+
 %endif
 
     ; Restore segment registers
@@ -358,6 +364,12 @@ ALIGN(16)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
+
+%ifdef DEBUG
+    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+%endif
+
 %endif
 
     ; Restore segment registers
