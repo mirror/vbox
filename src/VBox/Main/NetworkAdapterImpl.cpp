@@ -443,7 +443,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
     return S_OK;
 }
 
-#ifndef RT_OS_WINDOWS /** @todo ifdef VBOX_WITH_UNIXY_TAP_NETWORKING: need to find a way to exclude this in the xidl... */
+#ifdef VBOX_WITH_UNIXY_TAP_NETWORKING
 
 STDMETHODIMP NetworkAdapter::COMGETTER(TAPFileDescriptor)(LONG *aTAPFileDescriptor)
 {
