@@ -260,7 +260,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x000a0000
-                                  ? 0x000a0007
+                                  ? 0x000a0008
                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -388,6 +388,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "SUPR0ComponentQueryFactory",             0xefeeffff },
         { "SUPR0ObjRegister",                       0xefef0000 },
         { "SUPR0ObjAddRef",                         0xefef0001 },
+        { "SUPR0ObjAddRefEx",                       0xefef0001 },
         { "SUPR0ObjRelease",                        0xefef0002 },
         { "SUPR0ObjVerifyAccess",                   0xefef0003 },
         { "SUPR0LockMem",                           0xefef0004 },

@@ -187,7 +187,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *          - Remove SUPR0PageAlloc in favor of SUPR0PageAllocEx, removing
  *            and renaming the related IOCtls too.
  */
-#define SUPDRV_IOC_VERSION                              0x000a0007
+#define SUPDRV_IOC_VERSION                              0x000a0008
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

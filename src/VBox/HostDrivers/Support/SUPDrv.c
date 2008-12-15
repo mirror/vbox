@@ -160,6 +160,7 @@ DECLASM(int)    UNWIND_WRAP(SUPR0ComponentDeregisterFactory)(PSUPDRVSESSION pSes
 DECLASM(int)    UNWIND_WRAP(SUPR0ComponentQueryFactory)(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
 DECLASM(void *) UNWIND_WRAP(SUPR0ObjRegister)(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2);
 DECLASM(int)    UNWIND_WRAP(SUPR0ObjAddRef)(void *pvObj, PSUPDRVSESSION pSession);
+DECLASM(int)    UNWIND_WRAP(SUPR0ObjAddRefEx)(void *pvObj, PSUPDRVSESSION pSession, bool fNoPreempt);
 DECLASM(int)    UNWIND_WRAP(SUPR0ObjRelease)(void *pvObj, PSUPDRVSESSION pSession);
 DECLASM(int)    UNWIND_WRAP(SUPR0ObjVerifyAccess)(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName);
 DECLASM(int)    UNWIND_WRAP(SUPR0LockMem)(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t cPages, PRTHCPHYS paPages);
@@ -295,6 +296,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0ComponentQueryFactory",             (void *)UNWIND_WRAP(SUPR0ComponentQueryFactory) },
     { "SUPR0ObjRegister",                       (void *)UNWIND_WRAP(SUPR0ObjRegister) },
     { "SUPR0ObjAddRef",                         (void *)UNWIND_WRAP(SUPR0ObjAddRef) },
+    { "SUPR0ObjAddRefEx",                       (void *)UNWIND_WRAP(SUPR0ObjAddRefEx) },
     { "SUPR0ObjRelease",                        (void *)UNWIND_WRAP(SUPR0ObjRelease) },
     { "SUPR0ObjVerifyAccess",                   (void *)UNWIND_WRAP(SUPR0ObjVerifyAccess) },
     { "SUPR0LockMem",                           (void *)UNWIND_WRAP(SUPR0LockMem) },
@@ -1724,7 +1726,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
 
     /*
      * Allocate the usage record.
-     * (We keep freed usage records around to simplify SUPR0ObjAddRef().)
+     * (We keep freed usage records around to simplify SUPR0ObjAddRefEx().)
      */
     RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
 
@@ -1778,9 +1780,35 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
  */
 SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 {
+    return SUPR0ObjAddRefEx(pvObj, pSession, false /* fNoBlocking */);
+}
+
+
+/**
+ * Increment the reference counter for the object associating the reference
+ * with the specified session.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TRY_AGAIN if fNoBlocking was set and a new usage record
+ *          couldn't be allocated. (If you see this you're not doing the right
+ *          thing and it won't ever work reliably.)
+ *
+ * @param   pvObj           The identifier returned by SUPR0ObjRegister().
+ * @param   pSession        The session which is referencing the object.
+ * @param   fNoBlocking     Set if it's not OK to block. Never try to make the
+ *                          first reference to an object in a session with this
+ *                          argument set.
+ *
+ * @remarks The caller should not own any spinlocks and must carefully protect
+ *          itself against potential race with the destructor so freed memory
+ *          isn't accessed here.
+ */
+SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBlocking)
+{
     RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPDRVDEVEXT   pDevExt     = pSession->pDevExt;
     PSUPDRVOBJ      pObj        = (PSUPDRVOBJ)pvObj;
+    int             rc          = VINF_SUCCESS;
     PSUPDRVUSAGE    pUsagePre;
     PSUPDRVUSAGE    pUsage;
 
@@ -1806,12 +1834,12 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
     }
 
     /*
-     * Preallocate the usage record.
+     * Preallocate the usage record if we can.
      */
     pUsagePre = pDevExt->pUsageFree;
     if (pUsagePre)
         pDevExt->pUsageFree = pUsagePre->pNext;
-    else
+    else if (!fNoBlocking)
     {
         RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
         pUsagePre = (PSUPDRVUSAGE)RTMemAlloc(sizeof(*pUsagePre));
@@ -1819,6 +1847,13 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
             return VERR_NO_MEMORY;
 
         RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        if (RT_UNLIKELY(pObj->u32Magic != SUPDRVOBJ_MAGIC))
+        {
+            RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+
+            AssertMsgFailed(("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
+            return VERR_WRONG_ORDER;
+        }
     }
 
     /*
@@ -1837,7 +1872,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
     }
     if (pUsage)
         pUsage->cUsage++;
-    else
+    else if (pUsagePre)
     {
         /* create a new session record. */
         pUsagePre->cUsage   = 1;
@@ -1847,6 +1882,11 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
         /*Log(("SUPR0AddRef: pUsagePre=%p:{.pObj=%p, .pNext=%p}\n", pUsagePre, pUsagePre->pObj, pUsagePre->pNext));*/
 
         pUsagePre = NULL;
+    }
+    else
+    {
+        pObj->cUsage--;
+        rc = VERR_TRY_AGAIN;
     }
 
     /*
@@ -1860,7 +1900,7 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 
     RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1970,6 +2010,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     AssertMsg(pUsage, ("pvObj=%p\n", pvObj));
     return pUsage ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
 }
+
 
 /**
  * Verifies that the current process can access the specified object.
