@@ -9735,7 +9735,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                  * because it will be going to delete the child) */
 
                 /* The below assert would be nice but I don't want to move
-                 * HardDisk2::MergeChain to the header just for that
+                 * HardDisk2::MergeChain to the header just for that */
                  * Assert (!chain->isForward()); */
 
                 Assert (hd->children().size() == 1);
