@@ -51,6 +51,7 @@
     <file alias="os_os2warp4.png">images/os_os2warp4.png</file>
     <file alias="os_os2warp45.png">images/os_os2warp45.png</file>
     <file alias="os_other.png">images/os_other.png</file>
+    <file alias="os_qnx.png">images/os_qnx.png</file>
     <file alias="os_redhat.png">images/os_redhat.png</file>
     <file alias="os_redhat_64.png">images/os_redhat_64.png</file>
     <file alias="os_solaris.png">images/os_solaris.png</file>
