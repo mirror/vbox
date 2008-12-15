@@ -3084,7 +3084,13 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
     if (mode == VBoxDefs::Quartz2DMode && mFrameBuf)
+    {
         mFrameBuf->paintEvent (pe);
+        ::darwinUpdateDockPreview (mMainWnd,
+                                   ::darwinToCGImageRef (&mPausedShot),
+                                   mVirtualBoxLogo,
+                                   mMainWnd->dockImageState());
+    }
     else
 #endif
     {
@@ -3100,7 +3106,8 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
         /* Restore the attribute to its previous state */
         viewport()->setAttribute (Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
-        ::darwinUpdateDockPreview (::darwinToCGImageRef (&mPausedShot),
+        ::darwinUpdateDockPreview (mMainWnd,
+                                   ::darwinToCGImageRef (&mPausedShot),
                                    mVirtualBoxLogo,
                                    mMainWnd->dockImageState());
 #endif
@@ -3884,11 +3891,11 @@ void VBoxConsoleView::updateDockIcon()
              * This saves some conversion time. */
             CGImageRef ir =
                 static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-            ::darwinUpdateDockPreview (ir, mVirtualBoxLogo);
+            ::darwinUpdateDockPreview (mMainWnd, ir, mVirtualBoxLogo);
         }
         else
 # endif
-            ::darwinUpdateDockPreview (mFrameBuf, mVirtualBoxLogo);
+            ::darwinUpdateDockPreview (mMainWnd, mFrameBuf, mVirtualBoxLogo);
     }
 }
 #endif
