@@ -1611,12 +1611,10 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     VMMDevState *pThis = PCIDEV_2_VMMDEVSTATE(pPciDev);
     int rc;
 
-    AssertReturn((iRegion <= 2 && enmType == PCI_ADDRESS_SPACE_MEM) || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
-    Assert(pThis->pVMMDevRAMR3 != NULL);
-    Assert(pThis->pVMMDevHeapR3 != NULL);
-
     if (iRegion == 1)
     {
+        AssertReturn(enmType == PCI_ADDRESS_SPACE_MEM, VERR_INTERNAL_ERROR);
+        Assert(pThis->pVMMDevRAMR3 != NULL);
         if (GCPhysAddress != NIL_RTGCPHYS)
         {
             /*
@@ -1637,6 +1635,8 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     }
     else if (iRegion == 2)
     {
+        AssertReturn(enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
+        Assert(pThis->pVMMDevHeapR3 != NULL);
         if (GCPhysAddress != NIL_RTGCPHYS)
         {
             /*
@@ -1659,7 +1659,10 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ i
         }
     }
     else
+    {
+        AssertMsgFailed(("%d\n", iRegion));
         rc = VERR_INVALID_PARAMETER;
+    }
 
     return rc;
 }
@@ -2186,7 +2189,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GetHostTimeDisabled\0" "BackdoorLogDisabled\0" "KeepCredentials\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle,
+                              "GetHostTimeDisabled\0"
+                              "BackdoorLogDisabled\0"
+                              "KeepCredentials\0"
+                              "HeapEnabled\0"
+                              ))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfgHandle, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
@@ -2203,6 +2211,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
+
+    bool fHeapEnabled;
+    rc = CFGMR3QueryBoolDef(pCfgHandle, "HeapEnabled", &fHeapEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
 
     /*
      * Initialize data (most of it anyway).
@@ -2273,16 +2287,19 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Allocate and initialize the MMIO2 memory.
      */
-    rc = PDMDevHlpMMIO2Register(pDevIns, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0, (void **)&pThis->pVMMDevRAMR3, "VMMDev");
+    rc = PDMDevHlpMMIO2Register(pDevIns, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0 /*fFlags*/, (void **)&pThis->pVMMDevRAMR3, "VMMDev");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
     vmmdevInitRam(pThis);
 
-    rc = PDMDevHlpMMIO2Register(pDevIns, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0, (void **)&pThis->pVMMDevHeapR3, "VMMDev Heap");
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("Failed to allocate %u bytes of memory for the VMM device"), PAGE_SIZE);
+    if (fHeapEnabled)
+    {
+        rc = PDMDevHlpMMIO2Register(pDevIns, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0 /*fFlags*/, (void **)&pThis->pVMMDevHeapR3, "VMMDev Heap");
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to allocate %u bytes of memory for the VMM device heap"), PAGE_SIZE);
+    }
 
     /*
      * Register the PCI device.
@@ -2298,9 +2315,12 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, VMMDEV_RAM_SIZE, PCI_ADDRESS_SPACE_MEM, vmmdevIORAMRegionMap);
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH, vmmdevIORAMRegionMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (fHeapEnabled)
+    {
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, VMMDEV_HEAP_SIZE, PCI_ADDRESS_SPACE_MEM_PREFETCH, vmmdevIORAMRegionMap);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /*
      * Get the corresponding connector interface
