@@ -277,7 +277,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     int icmplen = ip->ip_len;
     int status;
     uint32_t dst;
+#if defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)
     int ttl;
+#endif
 
     /* int code; */
 
@@ -335,9 +337,9 @@ freeit:
             }
             else
             {
-                struct socket *so;
                 struct sockaddr_in addr;
 #ifndef VBOX_WITH_SLIRP_ICMP
+                struct socket *so;
                 if ((so = socreate()) == NULL)
                     goto freeit;
                 if (udp_attach(pData, so) == -1)
