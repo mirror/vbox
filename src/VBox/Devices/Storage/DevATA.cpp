@@ -4988,7 +4988,12 @@ static DECLCALLBACK(void)  ataReset(PPDMDEVINS pDevIns)
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetARequest);
         ataAsyncIOPutRequest(&pThis->aCts[i], &ataResetCRequest);
         if (!ataWaitForAsyncIOIsIdle(&pThis->aCts[i], 30000))
-            AssertReleaseMsgFailed(("Async I/O thread busy after reset\n"));
+        {
+            VMSetRuntimeError(PDMDevHlpGetVM(pDevIns),
+                              false, "DevATA_ASYNCBUSY",
+                              N_("The IDE async I/O thread remained busy after a reset, usually a host filesystem performance problem\n"));
+            AssertMsgFailed(("Async I/O thread busy after reset\n"));
+        }
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
             ataResetDevice(&pThis->aCts[i].aIfs[j]);
