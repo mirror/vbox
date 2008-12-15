@@ -852,9 +852,9 @@ typedef enum
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON         RT_BIT(11)
 /** This control determines whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR        RT_BIT(13)
-/** This control determines whether the guest IA32_PAT MSR is loaded on VM exit. */
+/** This control determines whether the guest IA32_PAT MSR is loaded on VM entry. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR         RT_BIT(14)
-/** This control determines whether the guest IA32_EFER MSR is loaded on VM exit. */
+/** This control determines whether the guest IA32_EFER MSR is loaded on VM entry. */
 #define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR        RT_BIT(15)
 /** @} */
 
