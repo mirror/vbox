@@ -3116,6 +3116,11 @@ void VBoxGlobal::languageChange()
 
     detailReportTemplatesReady = false;
 
+    /* refresh media properties since they contain some translations too  */
+    for (VBoxMediaList::iterator it = mMediaList.begin();
+         it != mMediaList.end(); ++ it)
+        (*it).refresh();
+
 #if defined (Q_WS_PM) || defined (Q_WS_X11)
     /* As PM and X11 do not (to my knowledge) have functionality for providing
      * human readable key names, we keep a table of them, which must be
