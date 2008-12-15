@@ -839,11 +839,13 @@ VMMDECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MM
 
     /*
      * Choose between allocating a new chunk of HMA memory
-     * and the heap. We will only do BIG allocations from HMA.
+     * and the heap. We will only do BIG allocations from HMA and
+     * only at creation time.
      */
-    if (    cb < _64K
-        &&  (   uAlignment != PAGE_SIZE
-             || cb < 48*_1K))
+    if (   (   cb < _64K
+            && (   uAlignment != PAGE_SIZE
+               || cb < 48*_1K))
+        ||  VMR3GetState(pVM) != VMSTATE_CREATING)
     {
         int rc = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
         if (    rc != VERR_MM_HYPER_NO_MEMORY

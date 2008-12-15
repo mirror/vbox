@@ -200,7 +200,7 @@ typedef struct ATADevState {
     R0PTRTYPE(uint8_t *) pbIOBufferR0;
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferRC;
-    
+
     RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundrary. */
 
     /*
@@ -5587,7 +5587,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         else
             pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * 512;
         Assert(!pIf->pbIOBufferR3);
-        rc = MMHyperAlloc(pVM, pIf->cbIOBuffer, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferR3); /** @todo rainy day: change to MMR3HyperAllocOnceNoRel */
+        rc = MMR3HyperAllocOnceNoRel(pVM, pIf->cbIOBuffer, 0, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferR3);
         if (RT_FAILURE(rc))
             return VERR_NO_MEMORY;
         pIf->pbIOBufferR0 = MMHyperR3ToR0(pVM, pIf->pbIOBufferR3);
