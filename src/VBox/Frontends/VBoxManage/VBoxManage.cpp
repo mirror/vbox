@@ -1470,38 +1470,18 @@ static int handleAddiSCSIDisk(int argc, char *argv[],
         }
         else if (strcmp(argv[i], "-lun") == 0)
         {
-            /// @todo is the below todo still relevant? Note that we do a
-            /// strange string->int->string conversion here.
-
-            /** @todo move the LUN encoding algorithm into IISCSIHardDisk, add decoding */
-
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            char *pszNext;
-            uint64_t lunNum;
-            int rc = RTStrToUInt64Ex(argv[i], &pszNext, 0, &lunNum);
-            if (RT_FAILURE(rc) || *pszNext != '\0' || lunNum >= 16384)
-                return errorArgument("Invalid LUN number '%s'", argv[i]);
-            if (lunNum <= 255)
-            {
-                /* Assume bus identifier = 0. */
-                lunNum = (lunNum << 48); /* uses peripheral device addressing method */
-            }
-            else
-            {
-                /* Check above already limited the LUN to 14 bits. */
-                lunNum = (lunNum << 48) | RT_BIT_64(62); /* uses flat space addressing method */
-            }
-
-            lun = BstrFmt ("%llu", lunNum);
+            lun = argv[i];
         }
         else if (strcmp(argv[i], "-encodedlun") == 0)
         {
             if (argc <= i + 1)
                 return errorArgument("Missing argument to '%s'", argv[i]);
             i++;
-            lun = argv[i];
+            lun = L"enc";
+            lun = lun + argv[i];
         }
         else if (strcmp(argv[i], "-username") == 0)
         {
