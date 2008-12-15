@@ -1369,7 +1369,7 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, uInterruptMask);
     GEN_CHECK_OFF(LSILOGICSCSI, uInterruptStatus);
     GEN_CHECK_OFF(LSILOGICSCSI, aMessage);
-    GEN_CHECK_OFF(LSILOGICSCSI, aMessage[sizeof(MptIOCInitRequest)-1]);
+    GEN_CHECK_OFF(LSILOGICSCSI, aMessage[sizeof(MptConfigurationRequest)-1]);
     GEN_CHECK_OFF(LSILOGICSCSI, iMessage);
     GEN_CHECK_OFF(LSILOGICSCSI, cMessage);
     GEN_CHECK_OFF(LSILOGICSCSI, ReplyBuffer);
