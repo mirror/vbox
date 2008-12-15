@@ -3105,7 +3105,7 @@ ResumeExecution:
     case VMX_EXIT_ERR_INVALID_GUEST_STATE:  /* 33 VM-entry failure due to invalid guest state. */
     {
 #ifdef VBOX_STRICT
-        RTCCUINTREG val;
+        RTCCUINTREG val = 0;
 
         Log(("VMX_EXIT_ERR_INVALID_GUEST_STATE\n"));
 
