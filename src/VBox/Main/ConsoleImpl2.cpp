@@ -218,7 +218,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         /* Indicate whether 64-bit guests are supported or not. */
         /** @todo This is currently only forced off on 32-bit hosts only because it
-         *        makes a lof of difference there (REM and Solaris performance). 
+         *        makes a lof of difference there (REM and Solaris performance).
          */
 
         Bstr osTypeId;
@@ -1452,7 +1452,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                     {
                                         int winEr = GetLastError();
                                         LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
-                                        AssertBreakpoint();
+                                        Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
                                     }
 
                                     CloseHandle(hDevice);
