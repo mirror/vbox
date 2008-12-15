@@ -807,6 +807,9 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
             break;
     }
 
+    if (RT_FAILURE(rc))
+        LogRel(("PDMThread: Thread '%s' (%RTthrd) quit unexpectedly with rc=%Rrc.\n", RTThreadGetName(Thread), Thread, rc));
+
     /*
      * Advance the state to terminating and then on to terminated.
      */
