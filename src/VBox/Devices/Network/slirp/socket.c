@@ -908,7 +908,11 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     struct ip *ip_broken; /* ICMP returns header + 64 bit of packet */
     uint32_t src;
     ICMP_ECHO_REPLY *icr;
+    int hlen = 0;
+    int data_len = 0;
+    int nbytes = 0;
     u_char code = ~0;
+
     len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
     if (len < 0)
     {
@@ -917,6 +921,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     }
     if (len == 0)
         return; /* no error */
+
     icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
     for (i = 0; i < len; ++i)
     {
@@ -940,7 +945,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 DO_ALIAS(&ip->ip_src);
                 ip->ip_p = IPPROTO_ICMP;
                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
-                ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
+                data_len = sizeof(struct ip);
+                ip->ip_hl =  data_len >> 2; /* requiered for icmp_reflect, no IP options */
                 ip->ip_ttl = icr[i].Options.Ttl;
 
                 icp = (struct icmp *)&ip[1]; /* no options */
@@ -948,9 +954,15 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icp->icmp_code = 0;
                 icp->icmp_id = so->so_icmp_id;
                 icp->icmp_seq = so->so_icmp_seq;
-                memcpy(icp->icmp_data, icr[i].Data, icr[i].DataSize);
 
-                ip->ip_len = sizeof(struct ip) + ICMP_MINLEN + icr[i].DataSize;
+                data_len += ICMP_MINLEN;
+
+                nbytes = (data_len + icr[i].DataSize > m->m_size? m->m_size - data_len: icr[i].DataSize);
+                memcpy(icp->icmp_data, icr[i].Data, nbytes);
+                
+                data_len += icr[i].DataSize;
+
+                ip->ip_len = data_len;
                 m->m_len = ip->ip_len;
 
                 icmp_reflect(pData, m);
@@ -969,9 +981,14 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 src = ip->ip_src.s_addr;
                 ip->ip_dst.s_addr = src;
                 ip->ip_dst.s_addr = icr[i].Address;
-                icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
+
+                hlen = (ip->ip_hl << 2);
+                icp = (struct icmp *)((char *)ip + hlen);
                 ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
-                memcpy(icp->icmp_data, ip_broken, (ip_broken->ip_hl << 2) + 64);
+                data_len = (ip_broken->ip_hl << 2) + 64;
+
+                nbytes =(hlen + ICMP_MINLEN + data_len > m->m_size? m->m_size - (hlen + ICMP_MINLEN): data_len); 
+                memcpy(icp->icmp_data, ip_broken,  nbytes);
                 icmp_reflect(pData, m);
                 break;
             default:
