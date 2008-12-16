@@ -1034,6 +1034,14 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.idtr.cbIdt     = env->idt.limit;
         Ctx.idtr.pIdt      = env->idt.base;
 
+        Ctx.gdtr.cbGdt     = env->gdt.limit;
+        Ctx.gdtr.pGdt      = env->gdt.base;
+
+        Ctx.rsp            = env->regs[R_ESP];
+#ifdef LOG_ENABLED
+        Ctx.rip            = env->eip;
+#endif
+
         Ctx.eflags.u32     = env->eflags;
 
         Ctx.cs             = env->segs[R_CS].selector;
@@ -1376,7 +1384,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
      */
     if (!fGlobal && !(env->cr[4] & X86_CR4_PGE))
         fGlobal = true;
-    Log(("remR3FlushTLB: CR0=%RGr CR3=%RGr CR4=%RGr %s\n", env->cr[0], env->cr[3], env->cr[4], fGlobal ? " global" : ""));
+    Log(("remR3FlushTLB: CR0=%08RX64 CR3=%08RX64 CR4=%08RX64 %s\n", (uint64_t)env->cr[0], (uint64_t)env->cr[3], (uint64_t)env->cr[4], fGlobal ? " global" : ""));
 
     /*
      * Update the control registers before calling PGMR3FlushTLB.

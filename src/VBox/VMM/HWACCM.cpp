@@ -781,10 +781,13 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             pVM->hwaccm.s.fInitialized = true;
 
             /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
+#if 1
             rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
+#else
+            rc = VERR_NO_MEMORY; /* simulation of no VMMDev Heap. */
+#endif
             if (RT_SUCCESS(rc))
             {
-
                 /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
                 ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
                 pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
@@ -1248,6 +1251,12 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     {
         if (!CPUMIsGuestInLongModeEx(pCtx))
         {
+            /** @todo   This should (probably) be set on every excursion to the REM,
+             *          however it's too risky right now. So, only apply it when we go
+             *          back to REM for real mode execution. (The XP hack below doesn't
+             *          work reliably without this.) */
+            pVM->aCpus[0].hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
+
             /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
             if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
                 return false;
@@ -1259,6 +1268,20 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 return false;
             if (pCtx->ssHid.Attr.n.u1Present == 0)
                 return false;
+
+            /* Windows XP: possible same as above, but new recompiler requires new heuristics?
+               VT-x doesn't seem to like something about the guest state and this stuff avoids it. */
+            if (pCtx->rsp >= pCtx->ssHid.u32Limit)
+                return false;
+#if 0
+            if (    pCtx->cs >= pCtx->gdtr.cbGdt
+                ||  pCtx->ss >= pCtx->gdtr.cbGdt
+                ||  pCtx->ds >= pCtx->gdtr.cbGdt
+                ||  pCtx->es >= pCtx->gdtr.cbGdt
+                ||  pCtx->fs >= pCtx->gdtr.cbGdt
+                ||  pCtx->gs >= pCtx->gdtr.cbGdt)
+                return false;
+#endif
         }
     }
 
@@ -1500,7 +1523,4 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
     }
     return VINF_SUCCESS;
 }
-
-
-
 
