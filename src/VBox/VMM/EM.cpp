@@ -98,7 +98,8 @@ static int emR3HighPriorityPostForcedActions(PVM pVM, int rc);
 static int emR3ForcedActions(PVM pVM, int rc);
 static int emR3RawGuestTrap(PVM pVM);
 static int emR3PatchTrap(PVM pVM, PCPUMCTX pCtx, int gcret);
-
+static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations);
+static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx);
 
 /**
  * Initializes the EM.
@@ -1127,7 +1128,7 @@ void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 }
 
 
-int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
+static int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
 
@@ -1149,7 +1150,7 @@ int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
 }
 
 
-void emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
+static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
 
@@ -1161,10 +1162,13 @@ void emR3SingleStepExecRem(PVM pVM, uint32_t cIterations)
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         emR3RemStep(pVM);
+        if (emR3Reschedule(pVM, pVM->em.s.pCtx) != EMSTATE_REM)
+            break;
     }
     Log(("Single step END:\n"));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
+    return VINF_EM_RESCHEDULE;
 }
 
 #endif /* DEBUG */
@@ -2877,7 +2881,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
  * @param   pVM     The VM.
  * @param   pCtx    The CPU context.
  */
-DECLINLINE(EMSTATE) emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
+static EMSTATE emR3Reschedule(PVM pVM, PCPUMCTX pCtx)
 {
     /*
      * When forcing raw-mode execution, things are simple.
