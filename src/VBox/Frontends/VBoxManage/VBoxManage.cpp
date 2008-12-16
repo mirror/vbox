@@ -534,19 +534,11 @@ static void printUsage(USAGECATEGORY u64Cmd)
                  "\n");
     }
 
-    if (u64Cmd & USAGE_CONVERTHD)
+    if (u64Cmd & USAGE_CONVERTFROMRAW)
     {
-        RTPrintf("VBoxManage converthd        [-srcformat VDI|VMDK|VHD|RAW]\n"
-                 "                            [-dstformat VDI|VMDK|VHD|RAW]\n"
-                 "                            <inputfile> <outputfile>\n"
-                 "\n");
-    }
-
-    if (u64Cmd & USAGE_CONVERTDD)
-    {
-        RTPrintf("VBoxManage convertdd        [-static] [-format VDI|VMDK|VHD]"
+        RTPrintf("VBoxManage convertfromraw   [-static] [-format VDI|VMDK|VHD]\n"
                  "                            <filename> <outputfile>\n"
-                 "VBoxManage convertdd        [-static] [-format VDI|VMDK|VHD]"
+                 "VBoxManage convertfromraw   [-static] [-format VDI|VMDK|VHD]\n"
                  "                            stdin <outputfile> <bytes>\n"
                  "\n");
     }
@@ -4803,17 +4795,11 @@ int main(int argc, char *argv[])
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    /* converthd: does not need a VirtualBox instantiation. */
-    if (argc >= iCmdArg && (strcmp(argv[iCmd], "converthd") == 0))
+    /* convertfromraw: does not need a VirtualBox instantiation. */
+    if (argc >= iCmdArg && (   !strcmp(argv[iCmd], "convertfromraw")
+                            || !strcmp(argv[iCmd], "convertdd")))
     {
-        rc = handleConvertHardDisk(argc - iCmdArg, argv + iCmdArg);
-        break;
-    }
-
-    /* convertdd: does not need a VirtualBox instantiation. */
-    if (argc >= iCmdArg && (strcmp(argv[iCmd], "convertdd") == 0))
-    {
-        rc = handleConvertDDImage(argc - iCmdArg, argv + iCmdArg);
+        rc = handleConvertFromRaw(argc - iCmdArg, argv + iCmdArg);
         break;
     }
 

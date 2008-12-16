@@ -427,133 +427,7 @@ int handleCloneHardDisk(int argc, char *argv[],
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleConvertHardDisk(int argc, char **argv)
-{
-    Bstr srcformat;
-    Bstr dstformat;
-    Bstr src;
-    Bstr dst;
-    int vrc;
-    PVBOXHDD pSrcDisk = NULL;
-    PVBOXHDD pDstDisk = NULL;
-
-    /* Parse the arguments. */
-    for (int i = 0; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-srcformat") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            srcformat = argv[i];
-        }
-        else if (strcmp(argv[i], "-dstformat") == 0)
-        {
-            if (argc <= i + 1)
-            {
-                return errorArgument("Missing argument to '%s'", argv[i]);
-            }
-            i++;
-            dstformat = argv[i];
-        }
-        else if (src.isEmpty())
-        {
-            src = argv[i];
-        }
-        else if (dst.isEmpty())
-        {
-            dst = argv[i];
-        }
-        else
-        {
-            return errorSyntax(USAGE_CONVERTHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
-        }
-    }
-
-    if (src.isEmpty())
-        return errorSyntax(USAGE_CONVERTHD, "Mandatory input image parameter missing");
-    if (dst.isEmpty())
-        return errorSyntax(USAGE_CONVERTHD, "Mandatory output image parameter missing");
-
-
-    PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      vdInterfaceError;
-    VDINTERFACEERROR vdInterfaceErrorCallbacks;
-    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
-    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
-
-    vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
-    AssertRC(vrc);
-
-    do
-    {
-        /* Try to determine input image format */
-        if (srcformat.isEmpty())
-        {
-            char *pszFormat = NULL;
-            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
-            if (RT_FAILURE(vrc))
-            {
-                RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
-                break;
-            }
-            srcformat = pszFormat;
-            RTStrFree(pszFormat);
-        }
-
-        vrc = VDCreate(pVDIfs, &pSrcDisk);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while creating the source virtual disk container: %Rrc\n", vrc);
-            break;
-        }
-
-        /* Open the input image */
-        vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
-            break;
-        }
-
-        /* Output format defaults to VDI */
-        if (dstformat.isEmpty())
-            dstformat = "VDI";
-
-        vrc = VDCreate(pVDIfs, &pDstDisk);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while creating the destination virtual disk container: %Rrc\n", vrc);
-            break;
-        }
-
-        uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
-        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
-
-        /* Create the output image */
-        vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
-                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL, NULL);
-        if (RT_FAILURE(vrc))
-        {
-            RTPrintf("Error while copying the image: %Rrc\n", vrc);
-            break;
-        }
-    }
-    while (0);
-    if (pDstDisk)
-        VDCloseAll(pDstDisk);
-    if (pSrcDisk)
-        VDCloseAll(pSrcDisk);
-
-    return RT_SUCCESS(vrc) ? 0 : 1;
-}
-
-
-int handleConvertDDImage(int argc, char *argv[])
+int handleConvertFromRaw(int argc, char *argv[])
 {
     VDIMAGETYPE enmImgType = VD_IMAGE_TYPE_NORMAL;
     bool fReadFromStdIn = false;
@@ -588,7 +462,7 @@ int handleConvertDDImage(int argc, char *argv[])
                     if (fReadFromStdIn && !filesize)
                         filesize = argv[i];
                     else
-                        return errorSyntax(USAGE_CONVERTDD, "Incorrect number of parameters");
+                        return errorSyntax(USAGE_CONVERTFROMRAW, "Incorrect number of parameters");
                 }
                 else
                     dstfilename = argv[i];
@@ -603,7 +477,7 @@ int handleConvertDDImage(int argc, char *argv[])
         }
     }
 
-    RTPrintf("Converting VDI: from DD image file=\"%s\" to file=\"%s\"...\n",
+    RTPrintf("Converting from raw image file=\"%s\" to file=\"%s\"...\n",
              srcfilename, dstfilename);
 
     int rc = VINF_SUCCESS;

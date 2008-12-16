@@ -122,7 +122,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
              "\n"
              "Commands:\n"
              "\n"
-             "%s%s%s%s%s%s%s%s"
+             "%s%s%s%s%s%s%s%s%s"
              "WARNING: This is a development tool and shall only be used to analyse\n"
              "         problems. It is completely unsupported and will change in\n"
              "         incompatible ways without warning.\n",
@@ -183,6 +183,13 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
                  " or stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
                  ".\n"
+                 "\n"
+                 : "",
+             (u64Cmd & USAGE_CONVERTHD) ?
+                 "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
+                 "            [-dstformat VDI|VMDK|VHD|RAW]\n"
+                 "            <inputfile> <outputfile>\n"
+                 "       converts hard disk images between formats\n"
                  "\n"
                  : "",
 #ifdef RT_OS_WINDOWS
@@ -1482,6 +1489,131 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     return 0;
 }
 
+static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    Bstr srcformat;
+    Bstr dstformat;
+    Bstr src;
+    Bstr dst;
+    int vrc;
+    PVBOXHDD pSrcDisk = NULL;
+    PVBOXHDD pDstDisk = NULL;
+
+    /* Parse the arguments. */
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-srcformat") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            srcformat = argv[i];
+        }
+        else if (strcmp(argv[i], "-dstformat") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            dstformat = argv[i];
+        }
+        else if (src.isEmpty())
+        {
+            src = argv[i];
+        }
+        else if (dst.isEmpty())
+        {
+            dst = argv[i];
+        }
+        else
+        {
+            return errorSyntax(USAGE_CONVERTHD, "Invalid parameter '%s'", Utf8Str(argv[i]).raw());
+        }
+    }
+
+    if (src.isEmpty())
+        return errorSyntax(USAGE_CONVERTHD, "Mandatory input image parameter missing");
+    if (dst.isEmpty())
+        return errorSyntax(USAGE_CONVERTHD, "Mandatory output image parameter missing");
+
+
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACE      vdInterfaceError;
+    VDINTERFACEERROR vdInterfaceErrorCallbacks;
+    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
+    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
+    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+
+    vrc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
+    AssertRC(vrc);
+
+    do
+    {
+        /* Try to determine input image format */
+        if (srcformat.isEmpty())
+        {
+            char *pszFormat = NULL;
+            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+            if (RT_FAILURE(vrc))
+            {
+                RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);
+                break;
+            }
+            srcformat = pszFormat;
+            RTStrFree(pszFormat);
+        }
+
+        vrc = VDCreate(pVDIfs, &pSrcDisk);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while creating the source virtual disk container: %Rrc\n", vrc);
+            break;
+        }
+
+        /* Open the input image */
+        vrc = VDOpen(pSrcDisk, Utf8Str(srcformat).raw(), Utf8Str(src).raw(), VD_OPEN_FLAGS_READONLY, NULL);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while opening the source image: %Rrc\n", vrc);
+            break;
+        }
+
+        /* Output format defaults to VDI */
+        if (dstformat.isEmpty())
+            dstformat = "VDI";
+
+        vrc = VDCreate(pVDIfs, &pDstDisk);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while creating the destination virtual disk container: %Rrc\n", vrc);
+            break;
+        }
+
+        uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
+        RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
+
+        /* Create the output image */
+        vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, Utf8Str(dstformat).raw(),
+                     Utf8Str(dst).raw(), false, 0, NULL, NULL, NULL, NULL);
+        if (RT_FAILURE(vrc))
+        {
+            RTPrintf("Error while copying the image: %Rrc\n", vrc);
+            break;
+        }
+    }
+    while (0);
+    if (pDstDisk)
+        VDCloseAll(pDstDisk);
+    if (pSrcDisk)
+        VDCloseAll(pSrcDisk);
+
+    return RT_SUCCESS(vrc) ? 0 : 1;
+}
+
 /**
  * Unloads the neccessary driver.
  *
@@ -1546,6 +1678,8 @@ int handleInternalCommands(int argc, char *argv[],
         return CmdRenameVMDK(argc - 1, &argv[1], aVirtualBox, aSession);
     if (!strcmp(pszCmd, "converttoraw"))
         return CmdConvertToRaw(argc - 1, &argv[1], aVirtualBox, aSession);
+    if (!strcmp(pszCmd, "converthd"))
+        return CmdConvertHardDisk(argc - 1, &argv[1], aVirtualBox, aSession);
 
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
