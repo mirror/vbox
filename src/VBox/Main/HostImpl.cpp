@@ -1377,12 +1377,12 @@ Host::CreateHostNetworkInterface (IN_BSTR aName,
     /* first check whether an interface with the given name already exists */
     {
         com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-        rc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+        rc = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
         CheckComRCReturnRC (rc);
         for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
         {
             Bstr name;
-            hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+            hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
             if (name == aName)
             {
                 return setError (E_INVALIDARG,
@@ -1445,20 +1445,20 @@ Host::RemoveHostNetworkInterface (IN_GUID aId,
     /* first check whether an interface with the given name already exists */
     {
         com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-        rc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+        rc = COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
         CheckComRCReturnRC (rc);
         ComPtr <IHostNetworkInterface> iface;
         for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
         {
             Guid guid;
-            hostNetworkInterfaces[i].COMGETTER(Id) (guid.asOutParam());
+            hostNetworkInterfaces[i]->COMGETTER(Id) (guid.asOutParam());
             if (guid == aId)
             {
                 iface = hostNetworkInterfaces[i];
                 break;
             }
         }
-        if (iface.IsNull())
+        if (iface.isNull())
             return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Host network interface with UUID {%RTuuid} does not exist"),
                 Guid (aId).raw());

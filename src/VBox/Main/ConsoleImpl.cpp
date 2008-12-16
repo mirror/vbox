@@ -4298,13 +4298,12 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                 ComPtr<IHost> host;
                 virtualBox->COMGETTER(Host)(host.asOutParam());
                 com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-                CHECK_ERROR(host, 
-                            COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+                host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
                 bool found = false;
                 for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
                 {
                     Bstr name;
-                    hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+                    hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
                     if (name == hostif)
                     {
                         found = true;
