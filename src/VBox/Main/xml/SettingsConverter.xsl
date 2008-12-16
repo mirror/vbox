@@ -666,6 +666,19 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
  *  Machine settings
 -->
 
+  <xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.3']/
+                     vb:Machine/vb:Hardware"
+              mode="v1.4">
+  <!-- add version attribute to Hardware if parent Machine has a stateFile attribute -->
+  <xsl:copy>
+    <xsl:if test="../@stateFile">
+      <xsl:attribute name="version">1</xsl:attribute>
+    </xsl:if>
+    <xsl:apply-templates select="node()" mode="v1.4"/>
+  </xsl:copy>
+</xsl:template>
+
+
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *  1.4 => 1.5

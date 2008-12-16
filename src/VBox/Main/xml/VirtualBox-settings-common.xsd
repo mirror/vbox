@@ -762,6 +762,7 @@
       </xsd:unique>
     </xsd:element>
   </xsd:all>
+  <xsd:attribute name="version" type="xsd:string" default="2"/>
 </xsd:complexType>
 
 <xsd:complexType name="TMachine">

@@ -186,6 +186,7 @@ Machine::UserData::~UserData()
 Machine::HWData::HWData()
 {
     /* default values for a newly created machine */
+    mHWVersion = "2"; /** @todo get the default from the schema if that is possible. */
     mMemorySize = 128;
     mCPUCount = 1;
     mMemoryBalloonSize = 0;
@@ -219,7 +220,8 @@ bool Machine::HWData::operator== (const HWData &that) const
     if (this == &that)
         return true;
 
-    if (mMemorySize != that.mMemorySize ||
+    if (mHWVersion != that.mHWVersion ||
+        mMemorySize != that.mMemorySize ||
         mMemoryBalloonSize != that.mMemoryBalloonSize ||
         mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
         mVRAMSize != that.mVRAMSize ||
@@ -906,6 +908,44 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
 
     mUserData.backup();
     mUserData->mOSTypeId = aOSTypeId;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(HardwareVersion) (BSTR *aHWVersion)
+{
+    if (!aHWVersion)
+        return E_POINTER;
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
+
+    mHWData->mHWVersion.cloneTo (aHWVersion);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(HardwareVersion) (IN_BSTR aHWVersion)
+{
+    /* check known version */
+    Utf8Str hwVersion = aHWVersion;
+    if (    hwVersion.compare ("1") != 0
+        &&  hwVersion.compare ("2") != 0)
+        return setError (E_INVALIDARG,
+            tr ("Invalid hardware version: %ls\n"), aHWVersion);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    HRESULT rc = checkStateDependency (MutableStateDep);
+    CheckComRCReturnRC (rc);
+
+    mHWData.backup();
+    mHWData->mHWVersion = hwVersion;
 
     return S_OK;
 }
@@ -4968,6 +5008,9 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
 
     HRESULT rc = S_OK;
 
+    /* The hardware version attribute (optional). */
+    mHWData->mHWVersion = aNode.stringValue ("version");
+
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
@@ -6356,6 +6399,19 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
     AssertReturn (!aNode.isNull(), E_INVALIDARG);
 
     HRESULT rc = S_OK;
+
+    /* The hardware version attribute (optional).
+       Automatically upgrade from 1 to 2 when there is no saved state. (ugly!) */
+    {
+        Utf8Str hwVersion = mHWData->mHWVersion;
+        if (   hwVersion.compare ("1") == 0
+            && mSSData->mStateFilePath.isEmpty())
+            mHWData->mHWVersion = hwVersion = "2";  /** @todo Is this safe, to update mHWVersion here? If not some other point needs to be found where this can be done. */
+        if (hwVersion.compare ("2") == 0)           /** @todo get the default from the schema if possible. */
+            aNode.zapValue ("version");
+        else
+            aNode.setStringValue ("version", hwVersion.raw());
+    }
 
     /* CPU (optional, but always created atm) */
     {
