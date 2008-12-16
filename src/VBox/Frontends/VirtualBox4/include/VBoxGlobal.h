@@ -1050,8 +1050,10 @@ private:
     QUuid vmUuid;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    bool mIsTrayMenu;           /* Tray icon active/desired? */
+    bool mIsTrayMenu : 1; /*< Tray icon active/desired? */
+    bool mIncreasedWindowCounter : 1;
 #endif
+
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;
 
