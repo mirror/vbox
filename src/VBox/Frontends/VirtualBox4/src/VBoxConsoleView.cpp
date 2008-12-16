@@ -3091,10 +3091,7 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
     if (mode == VBoxDefs::Quartz2DMode && mFrameBuf)
     {
         mFrameBuf->paintEvent (pe);
-        ::darwinUpdateDockPreview (mMainWnd,
-                                   ::darwinToCGImageRef (&mPausedShot),
-                                   mVirtualBoxLogo,
-                                   mMainWnd->dockImageState());
+        updateDockIcon();
     }
     else
 #endif
@@ -3111,10 +3108,7 @@ void VBoxConsoleView::paintEvent (QPaintEvent *pe)
         /* Restore the attribute to its previous state */
         viewport()->setAttribute (Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
-        ::darwinUpdateDockPreview (mMainWnd,
-                                   ::darwinToCGImageRef (&mPausedShot),
-                                   mVirtualBoxLogo,
-                                   mMainWnd->dockImageState());
+        updateDockIcon();
 #endif
     }
 
@@ -3888,19 +3882,25 @@ void VBoxConsoleView::updateDockIcon()
 {
     if (mDockIconEnabled)
     {
-# if defined (VBOX_GUI_USE_QUARTZ2D)
-        if (mode == VBoxDefs::Quartz2DMode)
-        {
-            /* If the render mode is Quartz2D we could use the
-             * CGImageRef of the framebuffer for the dock icon creation.
-             * This saves some conversion time. */
-            CGImageRef ir =
-                static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef();
-            ::darwinUpdateDockPreview (mMainWnd, ir, mVirtualBoxLogo);
-        }
+        if (!mPausedShot.isNull())
+            /* Use the pause image as background */
+            ::darwinUpdateDockPreview (mMainWnd, ::darwinToCGImageRef (&mPausedShot), mVirtualBoxLogo, mMainWnd->dockImageState());
         else
+        {
+# if defined (VBOX_GUI_USE_QUARTZ2D)
+            if (mode == VBoxDefs::Quartz2DMode)
+            {
+                /* If the render mode is Quartz2D we could use the CGImageRef
+                 * of the framebuffer for the dock icon creation. This saves
+                 * some conversion time. */
+                ::darwinUpdateDockPreview (mMainWnd, static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef(), mVirtualBoxLogo, mMainWnd->dockImageState());
+            }
+            else
 # endif
-            ::darwinUpdateDockPreview (mMainWnd, mFrameBuf, mVirtualBoxLogo);
+                /* In image mode we have to create the image ref out of the
+                 * framebuffer */
+                ::darwinUpdateDockPreview (mMainWnd, mFrameBuf, mVirtualBoxLogo, mMainWnd->dockImageState());
+        }
     }
 }
 #endif
