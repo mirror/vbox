@@ -3406,7 +3406,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 {
                     vrc = VDOpen (hdd, format, location,
                                   VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  NULL);
+                                  that->mm.vdDiskIfaces);
                     if (RT_FAILURE (vrc))
                     {
                         throw setError (E_FAIL,
@@ -3426,7 +3426,8 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                                         VD_IMAGE_FLAGS_NONE,
                                         NULL, targetId.raw(),
                                         VD_OPEN_FLAGS_NORMAL,
-                                        NULL, that->mm.vdDiskIfaces);
+                                        target->mm.vdDiskIfaces,
+                                        that->mm.vdDiskIfaces);
 
                     that->mm.vdProgress = NULL;
 
@@ -3573,7 +3574,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                                       Utf8Str ((*it)->m.locationFull),
                                       it == chain->begin() ?
                                           VD_OPEN_FLAGS_INFO : 0,
-                                      NULL);
+                                      (*it)->mm.vdDiskIfaces);
                         if (RT_FAILURE (vrc))
                             throw vrc;
 #if 1
@@ -3623,7 +3624,8 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                                 /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
                                 vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
                                               Utf8Str ((*it)->m.locationFull),
-                                              VD_OPEN_FLAGS_INFO, NULL);
+                                              VD_OPEN_FLAGS_INFO,
+                                              (*it)->mm.vdDiskIfaces);
                                 if (RT_FAILURE (vrc))
                                     throw vrc;
 
@@ -3863,7 +3865,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 {
                     vrc = VDOpen (hdd, format, location,
                                   VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  NULL);
+                                  that->mm.vdDiskIfaces);
                     if (RT_FAILURE (vrc))
                     {
                         throw setError (E_FAIL,
@@ -3885,7 +3887,8 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
 
                     vrc = VDCopy (hdd, 0, targetHdd, targetFormat,
                                   targetLocation, false, 0, targetId.raw(),
-                                  NULL, NULL, that->mm.vdDiskIfaces);
+                                  NULL, target->mm.vdDiskIfaces,
+                                  that->mm.vdDiskIfaces);
 
                     that->mm.vdProgress = NULL;
 
@@ -4008,7 +4011,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 {
                     vrc = VDOpen (hdd, format, location,
                                   VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  NULL);
+                                  that->mm.vdDiskIfaces);
                     if (RT_SUCCESS (vrc))
                         vrc = VDClose (hdd, true /* fDelete */);
 
