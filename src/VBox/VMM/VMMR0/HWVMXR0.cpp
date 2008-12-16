@@ -1071,7 +1071,7 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 # ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
-    if (CPUMIsGuestInRealModeEx(pCtx))
+    if (CPUMIsGuestInRealModeEx(pCtx) && pVM->hwaccm.s.vmx.pRealModeTSS)
         u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
 # endif /* HWACCM_VMX_EMULATE_REALMODE */
 
@@ -1125,7 +1125,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG | VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR;
 #else
     val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
-#endif 
+#endif
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (VMX_IS_64BIT_HOST_MODE())
@@ -1146,51 +1146,54 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-        PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
-        if (pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode != enmGuestMode)
+        if (pVM->hwaccm.s.vmx.pRealModeTSS)
         {
-            /* Correct weird requirements for switching to protected mode. */
-            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-                &&  enmGuestMode >= PGMMODE_PROTECTED)
+            PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+            if (pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode != enmGuestMode)
             {
-                /* DPL of all hidden selector registers must match the current CPL (0). */
-                pCtx->csHid.Attr.n.u2Dpl  = 0;
-                pCtx->csHid.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
+                /* Correct weird requirements for switching to protected mode. */
+                if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
+                    &&  enmGuestMode >= PGMMODE_PROTECTED)
+                {
+                    /* DPL of all hidden selector registers must match the current CPL (0). */
+                    pCtx->csHid.Attr.n.u2Dpl  = 0;
+                    pCtx->csHid.Attr.n.u4Type = X86_SEL_TYPE_CODE | X86_SEL_TYPE_RW_ACC;
 
-                pCtx->dsHid.Attr.n.u2Dpl  = 0;
-                pCtx->esHid.Attr.n.u2Dpl  = 0;
-                pCtx->fsHid.Attr.n.u2Dpl  = 0;
-                pCtx->gsHid.Attr.n.u2Dpl  = 0;
-                pCtx->ssHid.Attr.n.u2Dpl  = 0;
+                    pCtx->dsHid.Attr.n.u2Dpl  = 0;
+                    pCtx->esHid.Attr.n.u2Dpl  = 0;
+                    pCtx->fsHid.Attr.n.u2Dpl  = 0;
+                    pCtx->gsHid.Attr.n.u2Dpl  = 0;
+                    pCtx->ssHid.Attr.n.u2Dpl  = 0;
+                }
+                else
+                /* Switching from protected mode to real mode. */
+                if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode >= PGMMODE_PROTECTED
+                    &&  enmGuestMode == PGMMODE_REAL)
+                {
+                    /* The limit must also be adjusted. */
+                    pCtx->csHid.u32Limit &= 0xffff;
+                    pCtx->dsHid.u32Limit &= 0xffff;
+                    pCtx->esHid.u32Limit &= 0xffff;
+                    pCtx->fsHid.u32Limit &= 0xffff;
+                    pCtx->gsHid.u32Limit &= 0xffff;
+                    pCtx->ssHid.u32Limit &= 0xffff;
+
+                    Assert(pCtx->csHid.u64Base <= 0xfffff);
+                    Assert(pCtx->dsHid.u64Base <= 0xfffff);
+                    Assert(pCtx->esHid.u64Base <= 0xfffff);
+                    Assert(pCtx->fsHid.u64Base <= 0xfffff);
+                    Assert(pCtx->gsHid.u64Base <= 0xfffff);
+                }
+                pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
             }
             else
-            /* Switching from protected mode to real mode. */
-            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode >= PGMMODE_PROTECTED
-                &&  enmGuestMode == PGMMODE_REAL)
+            /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
+            if (   CPUMIsGuestInRealModeEx(pCtx)
+                && pCtx->csHid.u64Base == 0xffff0000)
             {
-                /* The limit must also be adjusted. */
-                pCtx->csHid.u32Limit &= 0xffff;
-                pCtx->dsHid.u32Limit &= 0xffff;
-                pCtx->esHid.u32Limit &= 0xffff;
-                pCtx->fsHid.u32Limit &= 0xffff;
-                pCtx->gsHid.u32Limit &= 0xffff;
-                pCtx->ssHid.u32Limit &= 0xffff;
-
-                Assert(pCtx->csHid.u64Base <= 0xfffff);
-                Assert(pCtx->dsHid.u64Base <= 0xfffff);
-                Assert(pCtx->esHid.u64Base <= 0xfffff);
-                Assert(pCtx->fsHid.u64Base <= 0xfffff);
-                Assert(pCtx->gsHid.u64Base <= 0xfffff);
+                pCtx->csHid.u64Base = 0xf0000;
+                pCtx->cs = 0xf000;
             }
-            pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
-        }
-        else
-        /* VT-x will fail with a guest invalid state otherwise... (CPU state after a reset) */
-        if (   CPUMIsGuestInRealModeEx(pCtx)
-            && pCtx->csHid.u64Base == 0xffff0000)
-        {
-            pCtx->csHid.u64Base = 0xf0000;
-            pCtx->cs = 0xf000;
         }
 #endif /* HWACCM_VMX_EMULATE_REALMODE */
 
@@ -1382,7 +1385,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             {
             case PGMMODE_REAL:          /* Real mode                 -> emulated using v86 mode */
             case PGMMODE_PROTECTED:     /* Protected mode, no paging -> emulated using identity mapping. */
-            case PGMMODE_32_BIT:        /* 32-bit paging. */                
+            case PGMMODE_32_BIT:        /* 32-bit paging. */
                 val &= ~X86_CR4_PAE;
                 break;
 
