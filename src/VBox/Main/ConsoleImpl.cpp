@@ -6894,12 +6894,16 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
         }
     }
 
+    /** @todo this should be unified with the relevant part of
+    * Console::configConstructor to avoid inconsistencies. */
+
     /*
      * Is there an existing LUN? If not create it.
      * We ASSUME that this will NEVER collide with the DVD.
      */
     PCFGMNODE pCfg;
     PCFGMNODE pLunL1;
+    PCFGMNODE pLunL2;
 
     pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/0/LUN#%d/AttachedDriver/", pcszDevice, iLUN);
 
@@ -6928,75 +6932,13 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
         MMR3HeapFree(pszDriver);
 #endif
 
-        /*
-         * Check if things has changed.
-         */
         pCfg = CFGMR3GetChild(pLunL1, "Config");
         AssertReturn(pCfg, VERR_INTERNAL_ERROR);
 
-        /* the format */
-        hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
-        char *pszFormat;
-        rc = CFGMR3QueryStringAlloc(pCfg, "Format", &pszFormat);                    RC_CHECK();
-        if (bstr == pszFormat)
-        {
-            /* the image */
-            hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
-            char *pszPath;
-            rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                        RC_CHECK();
-            if (bstr == pszPath)
-            {
-                /* parent images. */
-                ComPtr<IHardDisk2> parentHardDisk = hardDisk;
-                for (PCFGMNODE pParent = pCfg;;)
-                {
-                    MMR3HeapFree(pszPath);
-                    pszPath = NULL;
-
-                    MMR3HeapFree(pszFormat);
-                    pszFormat = NULL;
-
-                    /* get parent */
-                    ComPtr<IHardDisk2> curHardDisk;
-                    hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());  H();
-                    PCFGMNODE pCur;
-                    pCur = CFGMR3GetChild(pParent, "Parent");
-                    if (!pCur && !curHardDisk)
-                    {
-                        /* no change */
-                        LogFlowFunc (("No change!\n"));
-                        return VINF_SUCCESS;
-                    }
-                    if (!pCur || !curHardDisk)
-                        break;
-
-                    /* compare formats. */
-                    hrc = curHardDisk->COMGETTER(Format)(bstr.asOutParam());            H();
-                    rc = CFGMR3QueryStringAlloc(pCfg, "Format", &pszPath);              RC_CHECK();
-                    if (bstr != pszFormat)
-                        break;
-
-                    /* compare paths. */
-                    hrc = curHardDisk->COMGETTER(Location)(bstr.asOutParam());          H();
-                    rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszPath);                RC_CHECK();
-                    if (bstr != pszPath)
-                        break;
-
-                    /* next */
-                    pParent = pCur;
-                    parentHardDisk = curHardDisk;
-                }
-
-            }
-            else
-                LogFlowFunc (("LUN#%d: old leaf location '%s'\n", iLUN, pszPath));
-
-            MMR3HeapFree(pszPath);
-        }
-        else
-            LogFlowFunc (("LUN#%d: old leaf format '%s'\n", iLUN, pszFormat));
-
-        MMR3HeapFree(pszFormat);
+        /* Here used to be a lot of code checking if things have changed,
+         * but that's not really worth it, as with snapshots there is always
+         * some change, so the code was just logging useless information in
+         * a hard to analyze form. */
 
         /*
          * Detach the driver and replace the config node.
@@ -7009,32 +6951,109 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, IHardDisk2Attachment *hda
     /*
      * Create the driver configuration.
      */
-    hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
-    LogFlowFunc (("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
-    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr));                     RC_CHECK();
     hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
     LogFlowFunc (("LUN#%d: leaf location '%ls'\n", iLUN, bstr.raw()));
     rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr));                       RC_CHECK();
+    hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
+    LogFlowFunc (("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
+    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr));                     RC_CHECK();
+
+#if defined(VBOX_WITH_PDM_ASYNC_COMPLETION)
+    if (bstr == L"VMDK")
+    {
+        /* Create cfgm nodes for async transport driver because VMDK is
+         * currently the only one which may support async I/O. This has
+         * to be made generic based on the capabiliy flags when the new
+         * HardDisk interface is merged.
+         */
+        rc = CFGMR3InsertNode (pLunL1, "AttachedDriver", &pLunL2);      RC_CHECK();
+        rc = CFGMR3InsertString (pLunL2, "Driver", "TransportAsync");   RC_CHECK();
+        /* The async transport driver has no config options yet. */
+    }
+#endif
+
+    /* Pass all custom parameters. */
+    bool fHostIP = true;
+    SafeArray <BSTR> names;
+    SafeArray <BSTR> values;
+    hrc = hardDisk->GetProperties (NULL,
+                                   ComSafeArrayAsOutParam (names),
+                                   ComSafeArrayAsOutParam (values));    H();
+
+    if (names.size() != 0)
+    {
+        PCFGMNODE pVDC;
+        rc = CFGMR3InsertNode (pCfg, "VDConfig", &pVDC);                RC_CHECK();
+        for (size_t i = 0; i < names.size(); ++ i)
+        {
+            if (values [i])
+            {
+                Utf8Str name = names [i];
+                Utf8Str value = values [i];
+                rc = CFGMR3InsertString (pVDC, name, value);
+                if (    !(name.compare("HostIPStack"))
+                    &&  !(value.compare("0")))
+                    fHostIP = false;
+            }
+        }
+    }
+
     /* Create an inversed tree of parents. */
     ComPtr<IHardDisk2> parentHardDisk = hardDisk;
     for (PCFGMNODE pParent = pCfg;;)
     {
-        ComPtr<IHardDisk2> curHardDisk;
-        hrc = parentHardDisk->COMGETTER(Parent)(curHardDisk.asOutParam());      H();
-        if (!curHardDisk)
+        hrc = parentHardDisk->COMGETTER(Parent)(hardDisk.asOutParam());     H();
+        if (hardDisk.isNull())
             break;
 
         PCFGMNODE pCur;
         rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-        hrc = curHardDisk->COMGETTER(Format)(bstr.asOutParam());                H();
-        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr));                RC_CHECK();
-        hrc = curHardDisk->COMGETTER(Location)(bstr.asOutParam());              H();
+        hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                 H();
         rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr));                  RC_CHECK();
+
+        hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                   H();
+        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr));                RC_CHECK();
+
+        /* Pass all custom parameters. */
+        SafeArray <BSTR> names;
+        SafeArray <BSTR> values;
+        hrc = hardDisk->GetProperties (NULL,
+                                       ComSafeArrayAsOutParam (names),
+                                       ComSafeArrayAsOutParam (values));H();
+
+        if (names.size() != 0)
+        {
+            PCFGMNODE pVDC;
+            rc = CFGMR3InsertNode (pCur, "VDConfig", &pVDC);            RC_CHECK();
+            for (size_t i = 0; i < names.size(); ++ i)
+            {
+                if (values [i])
+                {
+                    Utf8Str name = names [i];
+                    Utf8Str value = values [i];
+                    rc = CFGMR3InsertString (pVDC, name, value);
+                    if (    !(name.compare("HostIPStack"))
+                        &&  !(value.compare("0")))
+                        fHostIP = false;
+                }
+            }
+        }
+
+
+        /* Custom code: put marker to not use host IP stack to driver
+        * configuration node. Simplifies life of DrvVD a bit. */
+        if (!fHostIP)
+        {
+            rc = CFGMR3InsertInteger (pCfg, "HostIPStack", 0);          RC_CHECK();
+        }
+
 
         /* next */
         pParent = pCur;
-        parentHardDisk = curHardDisk;
+        parentHardDisk = hardDisk;
     }
+
+    CFGMR3Dump(CFGMR3GetRoot(pVM));
 
     /*
      * Attach the new driver.

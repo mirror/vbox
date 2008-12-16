@@ -840,19 +840,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "Format\0Path\0"
                                           "ReadOnly\0HonorZeroWrites\0"
                                           "HostIPStack\0");
-
-            rc = CFGMR3QueryBool(pCfgHandle, "HostIPStack", &fHostIP);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-            {
-                fHostIP = true;
-                rc = VINF_SUCCESS;
-            }
-            else if (RT_FAILURE(rc))
-            {
-                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
-                                      N_("DrvVD: Configuration error: Querying \"HostIPStack\" as boolean failed"));
-                break;
-            }
         }
         else
         {
@@ -865,6 +852,48 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                      RT_SRC_POS, N_("DrvVD: Configuration error: keys incorrect at level %d"), iLevel);
             break;
+        }
+
+        if (pCurNode == pCfgHandle)
+        {
+            rc = CFGMR3QueryBool(pCurNode, "HostIPStack", &fHostIP);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                fHostIP = true;
+                rc = VINF_SUCCESS;
+            }
+            else if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"HostIPStack\" as boolean failed"));
+                break;
+            }
+
+            rc = CFGMR3QueryBool(pCurNode, "HonorZeroWrites", &fHonorZeroWrites);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                fHonorZeroWrites = false;
+                rc = VINF_SUCCESS;
+            }
+            else if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
+                break;
+            }
+
+            rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                fReadOnly = false;
+                rc = VINF_SUCCESS;
+            }
+            else if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
+                break;
+            }
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
@@ -944,40 +973,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             break;
         }
 
-        rc = CFGMR3QueryStringAlloc(pCfgHandle, "Format", &pszFormat);
+        rc = CFGMR3QueryStringAlloc(pCurNode, "Format", &pszFormat);
         if (RT_FAILURE(rc))
         {
             rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                   N_("DrvVD: Configuration error: Querying \"Format\" as string failed"));
             break;
-        }
-
-        if (iLevel == 0)
-        {
-            rc = CFGMR3QueryBool(pCurNode, "ReadOnly", &fReadOnly);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                fReadOnly = false;
-            else if (RT_FAILURE(rc))
-            {
-                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
-                                      N_("DrvVD: Configuration error: Querying \"ReadOnly\" as boolean failed"));
-                break;
-            }
-
-            rc = CFGMR3QueryBool(pCfgHandle, "HonorZeroWrites", &fHonorZeroWrites);
-            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                fHonorZeroWrites = false;
-            else if (RT_FAILURE(rc))
-            {
-                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
-                                      N_("DrvVD: Configuration error: Querying \"HonorZeroWrites\" as boolean failed"));
-                break;
-            }
-        }
-        else
-        {
-            fReadOnly = true;
-            fHonorZeroWrites = false;
         }
 
         PCFGMNODE pCfg = CFGMR3GetChild(pCurNode, "VDConfig");
@@ -989,7 +990,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
          * Open the image.
          */
         unsigned uOpenFlags;
-        if (fReadOnly)
+        if (fReadOnly || iLevel != 0)
             uOpenFlags = VD_OPEN_FLAGS_READONLY;
         else
             uOpenFlags = VD_OPEN_FLAGS_NORMAL;
