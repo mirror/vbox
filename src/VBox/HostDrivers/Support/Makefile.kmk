@@ -237,8 +237,7 @@ vboxdrv-mod_MODE    = a+r,u+w
 vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
 vboxdrv-mod_SOURCES += \
 	$(if $(VBOX_OSE),,\
-	  $(PATH_vboxdrv-mod)/dkms.conf \
-	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers) \
+	  $(PATH_vboxdrv-mod)/dkms.conf) \
 	$(PATH_vboxdrv-mod)/Makefile
 vboxdrv-mod_CLEAN   = \
 	$(PATH_vboxdrv-mod)/dkms.conf \
@@ -247,7 +246,10 @@ vboxdrv-mod_CLEAN   = \
 vboxdrv-sh_INST     = bin/src/vboxdrv
 vboxdrv-sh_MODE     = a+rx,u+w
 vboxdrv-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
-vboxdrv-sh_SOURCES += $(PATH_vboxdrv-sh)/build_in_tmp
+vboxdrv-sh_SOURCES += \
+	$(PATH_vboxdrv-sh)/build_in_tmp \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
 vboxdrv-sh_CLEAN    = \
 	$(PATH_TARGET)/vboxdrv-sh-1.dep \
 	$(PATH_vboxdrv-sh)/build_in_tmp

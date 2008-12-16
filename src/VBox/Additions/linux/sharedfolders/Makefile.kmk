@@ -37,14 +37,16 @@ vboxvfs-mod_INST        = $(INST_ADDITIONS)src/vboxvfs/
 vboxvfs-mod_MODE        = a+r,u+w
 vboxvfs-mod_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
 vboxvfs-mod_SOURCES    += $(if $(VBOX_OSE),,\
-			    $(PATH_vboxvfs-mod)/dkms.conf \
-			    $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+			    $(PATH_vboxvfs-mod)/dkms.conf)
 vboxvfs-mod_CLEAN      += $(PATH_vboxvfs-mod)/dkms.conf
 
 vboxvfs-sh_INST        = $(INST_ADDITIONS)src/vboxvfs/
 vboxvfs-sh_MODE        = a+rx,u+w
 vboxvfs-sh_SOURCES     = $(subst ",,$(FILES_VBOXVFS_BIN))
-vboxvfs-sh_SOURCES    += $(PATH_vboxvfs-sh)/build_in_tmp
+vboxvfs-sh_SOURCES    += \
+	$(PATH_vboxvfs-sh)/build_in_tmp \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
 vboxvfs-sh_CLEAN      += $(PATH_vboxvfs-sh)/build_in_tmp
 
 
