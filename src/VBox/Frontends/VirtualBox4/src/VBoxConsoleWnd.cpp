@@ -951,9 +951,11 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateSharedFoldersState()));
 
 #ifdef Q_WS_MAC
-    bool b = (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_RealtimeDockIconUpdateEnabled) == "true") ? true : false;
-    console->setDockIconEnabled (b);
-    if (b)
+    QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value */
+    bool f = (testStr.isEmpty() || testStr == "true");
+    console->setDockIconEnabled (f);
+    if (f)
     {
         QString osTypeId = cmachine.GetOSTypeId();
         QImage osImg100x75 = vboxGlobal().vmGuestOSTypeIcon (osTypeId).toImage().scaled (100, 75, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -2475,7 +2477,12 @@ void VBoxConsoleWnd::changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &
         if (e.mChanged)
             console->updateDockIcon();
         else
+        {
             RestoreApplicationDockTileImage();
+            CGImageRef img = dockImageState();
+            if (img)
+                OverlayApplicationDockTileImage (img);
+        }
     }
 #else
     Q_UNUSED (e);
@@ -3486,6 +3493,8 @@ void VBoxConsoleWnd::updateMachineState (KMachineState state)
     CGImageRef img = dockImageState();
     if (img)
         OverlayApplicationDockTileImage (img);
+    else
+        RestoreApplicationDockTileImage();
 #endif
 }
 

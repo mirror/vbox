@@ -886,7 +886,12 @@ public:
 #endif
 #ifdef Q_WS_MAC
                 if (sKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled)
-                    QApplication::postEvent (&mGlobal, new VBoxChangeDockIconUpdateEvent ((sVal.toLower() == "true") ? true : false));
+                {
+                    /* Default to true if it is an empty value */
+                    QString testStr = sVal.toLower();
+                    bool f = (testStr.isEmpty() || testStr == "true");
+                    QApplication::postEvent (&mGlobal, new VBoxChangeDockIconUpdateEvent (f));
+                }
 #endif
 
                 mMutex.lock();

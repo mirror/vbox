@@ -311,7 +311,7 @@ void darwinUpdateDockPreview (QWidget *aMainWindow, CGImageRef aVMImage, CGImage
  * @param   aFrameBuffer    The guest frame buffer.
  * @param   aOverlayImage   an optional icon overlay image to add at the bottom right of the icon
  */
-void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage)
+void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffer, CGImageRef aOverlayImage, CGImageRef aStateImage /*= NULL*/)
 {
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
     Assert (cs);
@@ -322,7 +322,7 @@ void darwinUpdateDockPreview (QWidget *aMainWindow, VBoxFrameBuffer *aFrameBuffe
                                    kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
                                    kCGRenderingIntentDefault);
     /* Update the dock preview icon */
-    ::darwinUpdateDockPreview (aMainWindow, ir, aOverlayImage);
+    ::darwinUpdateDockPreview (aMainWindow, ir, aOverlayImage, aStateImage);
     /* Release the temp data and image */
     CGDataProviderRelease (dp);
     CGImageRelease (ir);
