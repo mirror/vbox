@@ -794,7 +794,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     char ip_copy[256];
     struct icmp *icp;
     int old_ip_len;
-    int hlen, original_hlen;
+    int hlen, original_hlen = 0;
     struct mbuf *m;
     struct icmp_msg *icm;
     uint8_t proto;
@@ -804,15 +804,15 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     icp = (struct icmp *)((char *)ip + hlen);
 
     LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
-    if (icp->icmp_type != ICMP_ECHOREPLY 
-        && icp->icmp_type != ICMP_TIMXCEED 
+    if (   icp->icmp_type != ICMP_ECHOREPLY
+        && icp->icmp_type != ICMP_TIMXCEED
         && icp->icmp_type != ICMP_UNREACH)
     {
         return;
     }
 
-    if (icp->icmp_type == ICMP_TIMXCEED 
-        || icp->icmp_type == ICMP_UNREACH )
+    if (   icp->icmp_type == ICMP_TIMXCEED
+        || icp->icmp_type == ICMP_UNREACH)
         ip = &icp->icmp_ip;
 
     icm = icmp_find_original_mbuf(pData, ip);
@@ -831,10 +831,12 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
     /* Now ip is pointing on header we've sent from guest */
-    if (icp->icmp_type == ICMP_TIMXCEED 
-        ||  icp->icmp_type == ICMP_UNREACH)
+    if (   icp->icmp_type == ICMP_TIMXCEED
+        || icp->icmp_type == ICMP_UNREACH)
     {
         old_ip_len = (ip->ip_hl << 2) + 64;
+        if (old_ip_len > sizeof(ip_copy))
+            old_ip_len = sizeof(ip_copy);
         memcpy(ip_copy, ip, old_ip_len);
     }
 
@@ -851,7 +853,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip->ip_p = IPPROTO_ICMP; /* the original package could be whatever, but we're response via ICMP*/
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-    if (icp->icmp_type == ICMP_TIMXCEED
+    if (   icp->icmp_type == ICMP_TIMXCEED
         || icp->icmp_type == ICMP_UNREACH)
     {
         /* according RFC 793 error messages required copy of initial IP header + 64 bit */
@@ -865,7 +867,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     LIST_REMOVE(icm, im_list);
     /* Don't call m_free here*/
 
-    if (icp->icmp_type == ICMP_TIMXCEED
+    if (   icp->icmp_type == ICMP_TIMXCEED
         || icp->icmp_type == ICMP_UNREACH)
     {
         icm->im_so->so_m = NULL;
