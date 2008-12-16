@@ -629,8 +629,14 @@ void VBoxNIList::delHostInterface()
         return;
 
     CHost host = vboxGlobal().virtualBox().GetHost();
-    CHostNetworkInterface iFace = host.GetNetworkInterfaces().FindByName (iName);
-    if (host.isOk())
+    CHostNetworkInterfaceVector interfaces =
+        host.GetNetworkInterfaces();
+    CHostNetworkInterface iFace;
+    for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
+         it != interfaces.end(); ++it)
+        if (it->GetName() == iName)
+            iFace = *it;
+    if (!iFace.isNull())
     {
         /* Delete interface */
         CProgress progress = host.RemoveHostNetworkInterface (iFace.GetId(), iFace);
