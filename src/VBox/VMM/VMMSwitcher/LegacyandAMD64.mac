@@ -144,6 +144,14 @@ BEGINPROC vmmR0HostToGuestAsm
     mov     eax, cr4
     mov     [edx + CPUMCPU.Host.cr4], eax
 
+    ; save the host EFER msr
+    mov     ebx, edx
+    mov     ecx, MSR_K6_EFER
+    rdmsr
+    mov     [ebx + CPUMCPU.Host.efer], eax
+    mov     [ebx + CPUMCPU.Host.efer + 4], edx
+    mov     edx, ebx
+
     CPUM_FROM_CPUMCPU(edx)
     ; Load new gdt so we can do a far jump after going into 64 bits mode
     lgdt    [edx + CPUM.Hyper.gdtr]
@@ -439,7 +447,14 @@ GLOBALNAME ICExitTarget
     mov     edx, 0ffffffffh
     CPUMCPU_FROM_CPUM(edx)
 
-       
+    ; restore the host EFER
+    mov     ebx, edx
+    mov     ecx, MSR_K6_EFER
+    mov     eax, [ebx + CPUMCPU.Host.efer]
+    mov     edx, [ebx + CPUMCPU.Host.efer + 4]
+    wrmsr
+    mov     edx, ebx
+    
     ; activate host gdt and idt
     lgdt    [edx + CPUMCPU.Host.gdtr]
     DEBUG_CHAR('0')
