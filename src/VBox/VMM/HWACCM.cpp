@@ -962,44 +962,6 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             }
         }
     }
-
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (pVM->fHWACCMEnabled)
-    {
-        switch(PGMGetHostMode(pVM))
-        {
-        case PGMMODE_32_BIT:
-            pVM->hwaccm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_32_TO_AMD64);
-            break;
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            pVM->hwaccm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_PAE_TO_AMD64);
-            break;
-
-        default:
-            AssertFailed();
-            break;
-        }
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "VMXGCStartVM64", &pVM->hwaccm.s.pfnVMXGCStartVM64);
-        AssertMsgRCReturn(rc, ("VMXGCStartVM64 -> rc=%Rrc\n", rc), rc);
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hwaccm.s.pfnSVMGCVMRun64);
-        AssertMsgRCReturn(rc, ("SVMGCVMRun64 -> rc=%Rrc\n", rc), rc);
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestFPU64",   &pVM->hwaccm.s.pfnSaveGuestFPU64);
-        AssertMsgRCReturn(rc, ("HWACCMSetupFPU64 -> rc=%Rrc\n", rc), rc);
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
-        AssertMsgRCReturn(rc, ("HWACCMSetupDebug64 -> rc=%Rrc\n", rc), rc);
-
-# ifdef DEBUG
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMTestSwitcher64",   &pVM->hwaccm.s.pfnTest64);
-        AssertMsgRCReturn(rc, ("HWACCMTestSwitcher64 -> rc=%Rrc\n", rc), rc);
-# endif
-    }
-#endif
     return VINF_SUCCESS;
 }
 
@@ -1025,7 +987,44 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
             pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMGetGuestMode(pVM);
         }
     }
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (pVM->fHWACCMEnabled)
+    {
+        int rc;
 
+        switch(PGMGetHostMode(pVM))
+        {
+        case PGMMODE_32_BIT:
+            pVM->hwaccm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_32_TO_AMD64);
+            break;
+
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            pVM->hwaccm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_PAE_TO_AMD64);
+            break;
+
+        default:
+            AssertFailed();
+            break;
+        }
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "VMXGCStartVM64", &pVM->hwaccm.s.pfnVMXGCStartVM64);
+        AssertReleaseMsgRC(rc, ("VMXGCStartVM64 -> rc=%Rrc\n", rc));
+
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hwaccm.s.pfnSVMGCVMRun64);
+        AssertReleaseMsgRC(rc, ("SVMGCVMRun64 -> rc=%Rrc\n", rc));
+
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestFPU64",   &pVM->hwaccm.s.pfnSaveGuestFPU64);
+        AssertReleaseMsgRC(rc, ("HWACCMSetupFPU64 -> rc=%Rrc\n", rc));
+
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMSaveGuestDebug64",   &pVM->hwaccm.s.pfnSaveGuestDebug64);
+        AssertReleaseMsgRC(rc, ("HWACCMSetupDebug64 -> rc=%Rrc\n", rc));
+
+# ifdef DEBUG
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HWACCMTestSwitcher64",   &pVM->hwaccm.s.pfnTest64);
+        AssertReleaseMsgRC(rc, ("HWACCMTestSwitcher64 -> rc=%Rrc\n", rc));
+# endif
+    }
+#endif
     return;
 }
 
