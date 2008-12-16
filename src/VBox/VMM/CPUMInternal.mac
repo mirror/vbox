@@ -271,6 +271,7 @@ struc CPUMCPU
     .Host.SysEnter.cs    resq    1
     .Host.SysEnter.eip   resq    1
     .Host.SysEnter.esp   resq    1
+    .Host.efer           resq    1
 
 %else ; 64-bit
 

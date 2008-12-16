@@ -188,8 +188,13 @@ typedef struct CPUMHOSTCTX
      * This member is not used by the hypervisor context. */
     CPUMSYSENTER    SysEnter;
 
+    /** MSRs
+     * @{ */
+    uint64_t        efer;
+    /** @} */
+
     /* padding to get 64byte aligned size */
-    uint8_t         auPadding[24+32];
+    uint8_t         auPadding[16+32];
 
 #elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 
