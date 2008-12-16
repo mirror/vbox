@@ -3386,13 +3386,12 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                 int vrc = VDCreate (that->mm.vdDiskIfaces, &hdd);
                 ComAssertRCThrow (vrc, E_FAIL);
 
+                Guid id = that->m.id;
                 Utf8Str format (that->mm.format);
                 Utf8Str location (that->m.locationFull);
 
                 Utf8Str targetFormat (target->mm.format);
                 Utf8Str targetLocation (target->m.locationFull);
-
-                Guid thatId = that->m.id;
 
                 Assert (target->m.state == MediaState_Creating);
 
@@ -3427,7 +3426,7 @@ DECLCALLBACK(int) HardDisk2::taskThread (RTTHREAD thread, void *pvUser)
                     vrc = VDCreateDiff (hdd, targetFormat, targetLocation,
                                         VD_IMAGE_FLAGS_NONE,
                                         NULL, targetId.raw(),
-                                        thatId.raw(),
+                                        id.raw(),
                                         VD_OPEN_FLAGS_NORMAL,
                                         target->mm.vdDiskIfaces,
                                         that->mm.vdDiskIfaces);
