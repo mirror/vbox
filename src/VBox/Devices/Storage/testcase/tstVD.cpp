@@ -581,7 +581,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     writeSegmentsToDisk(pVD, pvBuf, paBaseSegments);
 
     rc = VDCreateDiff(pVD, pszBackend, pszDiffFilename,
-                      VD_IMAGE_FLAGS_NONE, "Test diff image", NULL,
+                      VD_IMAGE_FLAGS_NONE, "Test diff image", NULL, NULL,
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     CHECK("VDCreateDiff()");
 

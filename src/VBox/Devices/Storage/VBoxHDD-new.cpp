@@ -1419,6 +1419,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
  * @param   uImageFlags     Flags specifying special image features.
  * @param   pszComment      Pointer to image comment. NULL is ok.
  * @param   pUuid           New UUID of the image. If NULL, a new UUID is created.
+ * @param   pParentUuid     New parent UUID of the image. If NULL, the UUID is queried automatically.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
@@ -1426,15 +1427,16 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
 VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                const char *pszFilename, unsigned uImageFlags,
                                const char *pszComment, PCRTUUID pUuid,
-                               unsigned uOpenFlags, PVDINTERFACE pVDIfsImage,
+                               PCRTUUID pParentUuid, unsigned uOpenFlags,
+                               PVDINTERFACE pVDIfsImage,
                                PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
-                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, uOpenFlags,
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid ParentUuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
+                 pDisk, pszBackend, pszFilename, uImageFlags, pszComment, pUuid, pParentUuid, uOpenFlags,
                  pVDIfsImage, pVDIfsOperation));
 
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
@@ -1462,6 +1464,10 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         /* The UUID may be NULL. */
         AssertMsgBreakStmt(pUuid == NULL || VALID_PTR(pUuid),
                            ("pUuid=%#p UUID=%RTuuid\n", pUuid, pUuid),
+                           rc = VERR_INVALID_PARAMETER);
+        /* The parent UUID may be NULL. */
+        AssertMsgBreakStmt(pParentUuid == NULL || VALID_PTR(pParentUuid),
+                           ("pParentUuid=%#p ParentUUID=%RTuuid\n", pParentUuid, pParentUuid),
                            rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt((uOpenFlags & ~VD_OPEN_FLAGS_MASK) == 0,
                            ("uOpenFlags=%#x\n", uOpenFlags),
@@ -1543,17 +1549,25 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
             RTTIMESPEC ts;
             int rc2;
 
-            rc2 = pDisk->pLast->Backend->pfnGetUuid(pDisk->pLast->pvBackendData,
-                                                    &Uuid);
-            if (RT_SUCCESS(rc2))
+            if (pParentUuid && !RTUuidIsNull(pParentUuid))
+            {
+                Uuid = *pParentUuid;
                 pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, &Uuid);
+            }
+            else
+            {
+                rc2 = pDisk->pLast->Backend->pfnGetUuid(pDisk->pLast->pvBackendData,
+                                                        &Uuid);
+                if (RT_SUCCESS(rc2))
+                    pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, &Uuid);
+            }
             rc2 = pDisk->pLast->Backend->pfnGetModificationUuid(pDisk->pLast->pvBackendData,
                                                                 &Uuid);
             if (RT_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentModificationUuid(pImage->pvBackendData,
                                                               &Uuid);
             rc2 = pDisk->pLast->Backend->pfnGetTimeStamp(pDisk->pLast->pvBackendData,
-                                                             &ts);
+                                                         &ts);
             if (RT_SUCCESS(rc2))
                 pImage->Backend->pfnSetParentTimeStamp(pImage->pvBackendData, &ts);
 
@@ -1999,7 +2013,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         if (enmTypeFrom == VD_IMAGE_TYPE_DIFF)
         {
             rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlagsFrom,
-                              szComment, &ImageUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                              szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
         } else {
             rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, enmTypeFrom,
                               cbSize, uImageFlagsFrom, szComment,
@@ -2007,6 +2021,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
             if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
                  pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
+            if (RT_SUCCESS(rc) && !RTUuidIsNull(&ParentUuid))
+                 pDiskTo->pLast->Backend->pfnSetParentUuid(pDiskTo->pLast->pvBackendData, &ParentUuid);
         }
         if (RT_FAILURE(rc))
             break;
@@ -2064,7 +2080,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         if (RT_SUCCESS(rc))
         {
             pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
-            pImageTo->Backend->pfnGetParentUuid(pImageTo->pvBackendData, &ParentUuid);
             pImageTo->Backend->pfnGetParentModificationUuid(pImageTo->pvBackendData, &ParentModificationUuid);
         }
     } while (0);
