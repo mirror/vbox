@@ -19,7 +19,7 @@
 
 
 # chkconfig: 35 30 60
-# description: VirtualBox Linux Additions kernel module
+# description: VirtualBox Linux Additions kernel modules
 #
 ### BEGIN INIT INFO
 # Provides:       vboxadd
@@ -27,10 +27,13 @@
 # Required-Stop:
 # Default-Start:  2 3 4 5
 # Default-Stop:   0 1 6
-# Description:    VirtualBox Linux Additions kernel module
+# Description:    VirtualBox Linux Additions kernel modules
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
+BUILDVBOXADD=`/bin/ls /usr/src/vboxadd*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
+BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
+LOG="/var/log/vboxadd-install.log"
 
 if [ -f /etc/redhat-release ]; then
     system=redhat
@@ -109,14 +112,12 @@ if [ "$system" = "other" ]; then
     }
 fi
 
-kdir=/lib/modules/`uname -r`/misc
 dev=/dev/vboxadd
-modname=vboxadd
-module=$kdir/$modname
 owner=vboxadd
 group=1
 
-fail() {
+fail()
+{
     if [ "$system" = "gentoo" ]; then
         eerror $1
         exit 1
@@ -126,21 +127,27 @@ fail() {
     exit 1
 }
 
-running() {
-    lsmod | grep -q "$modname[^_-]"
+running_vboxadd()
+{
+    lsmod | grep -q "vboxadd[^_-]"
 }
 
-start() {
+running_vboxvfs()
+{
+    lsmod | grep -q "vboxvfs[^_-]"
+}
+
+start()
+{
     begin "Starting VirtualBox Additions ";
-    running || {
+    running_vboxadd || {
         rm -f $dev || {
             fail "Cannot remove $dev"
         }
 
-        modprobe $modname >/dev/null 2>&1 || {
-            fail "modprobe $modname failed"
+        modprobe vboxadd >/dev/null 2>&1 || {
+            fail "modprobe vboxadd failed"
         }
-
         sleep .5
     }
     if [ ! -c $dev ]; then
@@ -154,42 +161,102 @@ start() {
             fi
         fi
         test -z "$maj" && {
-            rmmod $modname 2>/dev/null
+            rmmod vboxadd 2>/dev/null
             fail "Cannot locate the VirtualBox device"
         }
 
         mknod -m 0664 $dev c $maj $min || {
-            rmmod $modname 2>/dev/null
+            rmmod vboxadd 2>/dev/null
             fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
-
     chown $owner:$group $dev 2>/dev/null || {
-        rmmod $modname 2>/dev/null
+        rmmod vboxadd 2>/dev/null
         fail "Cannot change owner $owner:$group for device $dev"
     }
+
+    if [ -n "$BUILDVBOXVFS" ]; then
+        running_vboxvfs || {
+            modprobe vboxvfs > /dev/null 2>&1 || {
+                if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
+                    fail_msg
+                    echo "You may be trying to run Guest Additions from binary release of VirtualBox"
+                    echo "in the Open Source Edition."
+                    exit 1
+                fi
+                fail "modprobe vboxvfs failed"
+            }
+        }
+    fi
+
+    # Mount all shared folders from /etc/fstab. Normally this is done by some
+    # other startup script but this requires the vboxdrv kernel module loaded.
+    mount -a -t vboxsf
 
     succ_msg
     return 0
 }
 
-stop() {
+stop()
+{
     begin "Stopping VirtualBox Additions ";
-    if running; then
-        rmmod $modname 2>/dev/null || fail "Cannot unload module $modname"
+    if !umount -a -t vboxsf 2>/dev/null; then
+        fail "Cannot unmount vboxsf folders"
+    fi
+    if [ -n "$BUILDVBOXVFS" ]; then
+        if running_vboxvfs; then
+            rmmod vboxvfs 2>/dev/null || fail "Cannot unload module vboxvfs"
+        fi
+    fi
+    if running_vboxadd; then
+        rmmod vboxadd 2>/dev/null || fail "Cannot unload module vboxadd"
         rm -f $dev || fail "Cannot unlink $dev"
     fi
     succ_msg
     return 0
 }
 
-restart() {
+restart()
+{
     stop && start
     return 0
 }
 
-dmnstatus() {
-    if running; then
+setup()
+{
+    # don't stop the old modules here -- they might be in use
+    if find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|grep -q vboxvfs; then
+        begin "Removing old VirtualBox vboxvfs kernel module"
+        find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi  
+    if find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|grep -q vboxadd; then
+        begin "Removing old VirtualBox vboxadd kernel module"
+        find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+        succ_msg
+    fi
+    begin "Recompiling VirtualBox kernel modules"
+    if ! $BUILDVBOXADD \
+        --save-module-symvers /tmp/vboxadd-Module.symvers \
+        --no-print-directory install > $LOG 2>&1; then
+        fail "Look at $LOG to find out what went wrong"
+    fi
+    if [ -n "$BUILDVBOXVFS" ]; then
+        if ! $BUILDVBOXVFS \
+            --use-module-symvers /tmp/vboxadd-Module.symvers \
+            --no-print-directory install >> $LOG 2>&1; then
+            fail "Look at $LOG to find out what went wrong"
+        fi
+    fi
+    start
+    succ_msg
+    echo
+    echo "You should reboot your guest to make sure the new modules are actually used"
+}
+
+dmnstatus()
+{
+    if running_vboxadd; then
         echo "The VirtualBox Additions are currently running."
     else
         echo "The VirtualBox Additions are not currently running."
@@ -205,6 +272,9 @@ stop)
     ;;
 restart)
     restart
+    ;;
+setup)
+    setup
     ;;
 status)
     dmnstatus
