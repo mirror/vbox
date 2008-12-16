@@ -1312,7 +1312,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 # elif defined(RT_OS_WINDOWS)
                     com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
-                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces));
                     if(FAILED(hrc))
                     {
                         LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(NetworkInterfaces) failed, hrc (0x%x)", hrc));
@@ -1322,14 +1322,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
                     {
                         Bstr name;
-                        hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
-                        if (name == hostif)
+                        hostNetworkInterfaces[i]->COMGETTER(Name) (name.asOutParam());
+                        if (name == HifName)
                         {
                             hostInterface = hostNetworkInterfaces[i];
                             break;
                         }
                     }
-                    if (hostInterface.IsNull())
+                    if (hostInterface.isNull())
                     {
                         AssertBreakpoint();
                         LogRel(("NetworkAttachmentType_HostInterface: FindByName failed, rc (0x%x)", rc));
@@ -1520,7 +1520,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                             break;
                         }
                     }
-                    if (hostInterface.IsNull())
+                    if (hostInterface.isNull())
                     {
                         AssertMsgFailed(("Cannot get GUID for host interface '%ls'\n", hostInterfaceName));
                         hrc = networkAdapter->Detach();                             H();
