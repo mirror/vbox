@@ -782,37 +782,43 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 
             /* Allocate three pages for the TSS we need for real mode emulation. (2 page for the IO bitmap) */
             rc = PDMR3VMMDevHeapAlloc(pVM, HWACCM_VTX_TOTAL_DEVHEAP_MEM, (RTR3PTR *)&pVM->hwaccm.s.vmx.pRealModeTSS);
-            AssertRC(rc);
-            if (RT_FAILURE(rc))
-                return rc;
-
-            /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
-            ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
-            pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
-            /* Bit set to 0 means redirection enabled. */
-            memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
-            /* Allow all port IO, so the VT-x IO intercepts do their job. */
-            memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
-            *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
-
-            /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in
-             * real and protected mode without paging with EPT.
-             */
-            pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
-            for (unsigned i=0;i<X86_PG_ENTRIES;i++)
+            if (RT_SUCCESS(rc))
             {
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
-                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+
+                /* The I/O bitmap starts right after the virtual interrupt redirection bitmap. */
+                ASMMemZero32(pVM->hwaccm.s.vmx.pRealModeTSS, sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS));
+                pVM->hwaccm.s.vmx.pRealModeTSS->offIoBitmap = sizeof(*pVM->hwaccm.s.vmx.pRealModeTSS);
+                /* Bit set to 0 means redirection enabled. */
+                memset(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap, 0x0, sizeof(pVM->hwaccm.s.vmx.pRealModeTSS->IntRedirBitmap));
+                /* Allow all port IO, so the VT-x IO intercepts do their job. */
+                memset(pVM->hwaccm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE*2);
+                *((unsigned char *)pVM->hwaccm.s.vmx.pRealModeTSS + HWACCM_VTX_TSS_SIZE - 2) = 0xff;
+
+                /* Construct a 1024 element page directory with 4 MB pages for the identity mapped page table used in
+                 * real and protected mode without paging with EPT.
+                 */
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hwaccm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
+                for (unsigned i=0;i<X86_PG_ENTRIES;i++)
+                {
+                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;
+                    pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable->a[i].u |= X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_PS | X86_PDE4M_G;
+                }
+
+                /* We convert it here every time as pci regions could be reconfigured. */
+                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
+                AssertRC(rc);
+                LogRel(("HWACCM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
+
+                rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
+                AssertRC(rc);
+                LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
             }
-
-            /* We convert it here every time as pci regions could be reconfigured. */
-            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pRealModeTSS, &GCPhys);
-            AssertRC(rc);
-            LogRel(("HWACCM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
-
-            rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
-            AssertRC(rc);
-            LogRel(("HWACCM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
+            else
+            {
+                LogRel(("HWACCM: No real mode VT-x support (PDMR3VMMDevHeapAlloc returned %Rrc)\n", rc));
+                pVM->hwaccm.s.vmx.pRealModeTSS = NULL;
+                pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable = NULL;
+            }
 
             rc = SUPCallVMMR0Ex(pVM->pVMR0, VMMR0_DO_HWACC_SETUP_VM, 0, NULL);
             AssertRC(rc);
@@ -1192,60 +1198,65 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-    if (CPUMIsGuestInRealModeEx(pCtx))
+    if (pVM->hwaccm.s.vmx.pRealModeTSS)
     {
-        /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
-         * The base must also be equal to (sel << 4).
-         */
-        if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
-                && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
-            || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
-            || pCtx->es != (pCtx->esHid.u64Base >> 4)
-            || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
-            || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
-            || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
+        if (CPUMIsGuestInRealModeEx(pCtx))
         {
-            return false;
-        }
-    }
-    else
-    {
-        PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
-        /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
-         * from real to protected mode. (all sorts of RPL & DPL assumptions)
-         */
-        PVMCPU pVCpu = VMMGetCpu(pVM);
-
-        if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-            &&  enmGuestMode >= PGMMODE_PROTECTED)
-        {
-            if (   (pCtx->cs & X86_SEL_RPL)
-                || (pCtx->ds & X86_SEL_RPL)
-                || (pCtx->es & X86_SEL_RPL)
-                || (pCtx->fs & X86_SEL_RPL)
-                || (pCtx->gs & X86_SEL_RPL)
-                || (pCtx->ss & X86_SEL_RPL))
+            /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
+             * The base must also be equal to (sel << 4).
+             */
+            if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
+                    && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
+                || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
+                || pCtx->es != (pCtx->esHid.u64Base >> 4)
+                || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
+                || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
+                || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
             {
                 return false;
             }
         }
-    }
-#else
-    if (!CPUMIsGuestInLongModeEx(pCtx))
-    {
-        /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
-        if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
-            return false;
+        else
+        {
+            PGMMODE enmGuestMode = PGMGetGuestMode(pVM);
+            /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
+             * from real to protected mode. (all sorts of RPL & DPL assumptions)
+             */
+            PVMCPU pVCpu = VMMGetCpu(pVM);
 
-        /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
-        /* Windows XP; switch to protected mode; all selectors are marked not present in the
-         * hidden registers (possible recompiler bug; see load_seg_vm) */
-        if (pCtx->csHid.Attr.n.u1Present == 0)
-            return false;
-        if (pCtx->ssHid.Attr.n.u1Present == 0)
-            return false;
+            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
+                &&  enmGuestMode >= PGMMODE_PROTECTED)
+            {
+                if (   (pCtx->cs & X86_SEL_RPL)
+                    || (pCtx->ds & X86_SEL_RPL)
+                    || (pCtx->es & X86_SEL_RPL)
+                    || (pCtx->fs & X86_SEL_RPL)
+                    || (pCtx->gs & X86_SEL_RPL)
+                    || (pCtx->ss & X86_SEL_RPL))
+                {
+                    return false;
+                }
+            }
+        }
     }
-#endif
+    else
+#endif /* HWACCM_VMX_EMULATE_REALMODE */
+    {
+        if (!CPUMIsGuestInLongModeEx(pCtx))
+        {
+            /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
+            if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
+                return false;
+
+            /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
+            /* Windows XP; switch to protected mode; all selectors are marked not present in the
+             * hidden registers (possible recompiler bug; see load_seg_vm) */
+            if (pCtx->csHid.Attr.n.u1Present == 0)
+                return false;
+            if (pCtx->ssHid.Attr.n.u1Present == 0)
+                return false;
+        }
+    }
 
     if (pVM->hwaccm.s.vmx.fEnabled)
     {
@@ -1257,12 +1268,17 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
         mask &= ~X86_CR0_NE;
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-        /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-        mask &= ~(X86_CR0_PG|X86_CR0_PE);
-#else
-        /* We support protected mode without paging using identity mapping. */
-        mask &= ~X86_CR0_PG;
+        if (pVM->hwaccm.s.vmx.pRealModeTSS)
+        {
+            /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+            mask &= ~(X86_CR0_PG|X86_CR0_PE);
+        }
+        else
 #endif
+        {
+            /* We support protected mode without paging using identity mapping. */
+            mask &= ~X86_CR0_PG;
+        }
         if ((pCtx->cr0 & mask) != mask)
             return false;
 
