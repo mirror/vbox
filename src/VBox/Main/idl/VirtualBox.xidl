@@ -3125,7 +3125,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="a744b229-3457-422f-8550-649c40346c55"
+     uuid="ea6fb7ea-1993-4642-b113-f29eb39e0df0"
      wsmap="managed"
      >
     <desc>
@@ -3307,6 +3307,10 @@
           installed to the guest OS.
         </note>
       </desc>
+    </attribute>
+
+    <attribute name="HardwareVersion" type="wstring">
+      <desc>Hardware version identifier. Internal use only for now.</desc>
     </attribute>
 
     <attribute name="CPUCount" type="unsigned long">

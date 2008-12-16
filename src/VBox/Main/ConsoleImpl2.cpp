@@ -1701,6 +1701,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     Assert(!afPciDeviceNo[4]);
     afPciDeviceNo[4] = true;
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
+    Bstr hwVersion;
+    hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());             H();
+    if (hwVersion.compare(Bstr("1")) == 0) /* <= 2.0.x */
+    {
+        CFGMR3InsertInteger(pCfg, "HeapEnabled", 0);                                RC_CHECK();
+    }
 
     /* the VMM device's Main driver */
     rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
