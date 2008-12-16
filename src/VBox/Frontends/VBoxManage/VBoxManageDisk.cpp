@@ -360,7 +360,7 @@ int handleCloneHardDisk(int argc, char *argv[],
     bool unknown = false;
 
     /* first guess is that it's a UUID */
-    Guid uuid(argv[0]);
+    Guid uuid(Utf8Str(src).raw());
     rc = virtualBox->GetHardDisk2(uuid, srcDisk.asOutParam());
     /* no? then it must be a filename */
     if (FAILED (rc))
