@@ -1311,16 +1311,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     const char *pszTrunk = szTrunk;
 
 # elif defined(RT_OS_WINDOWS)
-                    ComPtr<IHostNetworkInterfaceCollection> coll;
-                    hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());
+                    com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
                     if(FAILED(hrc))
                     {
                         LogRel(("NetworkAttachmentType_HostInterface: COMGETTER(NetworkInterfaces) failed, hrc (0x%x)", hrc));
                         H();
                     }
                     ComPtr<IHostNetworkInterface> hostInterface;
-                    rc = coll->FindByName(HifName, hostInterface.asOutParam());
-                    if (!SUCCEEDED(rc))
+                    for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+                    {
+                        Bstr name;
+                        hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+                        if (name == hostif)
+                        {
+                            hostInterface = hostNetworkInterfaces[i];
+                            break;
+                        }
+                    }
+                    if (hostInterface.IsNull())
                     {
                         AssertBreakpoint();
                         LogRel(("NetworkAttachmentType_HostInterface: FindByName failed, rc (0x%x)", rc));
@@ -1498,11 +1507,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                     Bstr hostInterfaceName;
                     hrc = networkAdapter->COMGETTER(HostInterface)(hostInterfaceName.asOutParam()); H();
-                    ComPtr<IHostNetworkInterfaceCollection> coll;
-                    hrc = host->COMGETTER(NetworkInterfaces)(coll.asOutParam());    H();
+                    com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+                    hrc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces))); H();
                     ComPtr<IHostNetworkInterface> hostInterface;
-                    rc = coll->FindByName(hostInterfaceName, hostInterface.asOutParam());
-                    if (!SUCCEEDED(rc))
+                    for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+                    {
+                        Bstr name;
+                        hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+                        if (name == hostif)
+                        {
+                            hostInterface = hostNetworkInterfaces[i];
+                            break;
+                        }
+                    }
+                    if (hostInterface.IsNull())
                     {
                         AssertMsgFailed(("Cannot get GUID for host interface '%ls'\n", hostInterfaceName));
                         hrc = networkAdapter->Detach();                             H();

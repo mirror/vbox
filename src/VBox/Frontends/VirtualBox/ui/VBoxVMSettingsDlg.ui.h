@@ -981,10 +981,11 @@ void VBoxVMSettingsDlg::loadInterfacesList()
     /* clear inner list */
     mInterfaceList.clear();
     /* load current inner list */
-    CHostNetworkInterfaceEnumerator en =
-        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces().Enumerate();
-    while (en.HasMore())
-        mInterfaceList += en.GetNext().GetName();
+    CHostNetworkInterfaceVector interfaces =
+        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+    for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
+         it != interfaces.end(); ++it)
+        mInterfaceList += it->GetName();
     /* save current list item name */
     QString currentListItemName = lbHostInterface->currentText();
     /* load current list items */

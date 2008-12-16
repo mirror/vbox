@@ -5967,52 +5967,9 @@
     </attribute>
   </interface>
 
-  <enumerator
-     name="IHostNetworkInterfaceEnumerator" type="IHostNetworkInterface"
-     uuid="7B52FEF7-56E8-4aec-92F5-15E6D11EC630"
-     />
-
-  <collection
-     name="IHostNetworkInterfaceCollection" type="IHostNetworkInterface"
-     enumerator="IHostNetworkInterfaceEnumerator"
-     uuid="BF1D41F2-B97B-4314-A0FB-D4823AF42FB5"
-     readonly="yes"
-     >
-    <method name="findByName">
-      <desc>
-        Searches this collection for a host network interface with the given name.
-        <note>
-          The method returns an error if the given name does not
-          correspond to any host network interface in the collection.
-        </note>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of the host network interface to search for.</desc>
-      </param>
-      <param name="networkInterface" type="IHostNetworkInterface" dir="return">
-        <desc>Found host network interface object.</desc>
-      </param>
-    </method>
-    <method name="findById">
-      <desc>
-        Searches this collection for a host network interface with the given GUID.
-        <note>
-          The method returns an error if the given GUID does not
-          correspond to any host network interface in the collection.
-        </note>
-      </desc>
-      <param name="id" type="uuid" dir="in">
-        <desc>GUID of the host network interface to search for.</desc>
-      </param>
-      <param name="networkInterface" type="IHostNetworkInterface" dir="return">
-        <desc>Found host network interface object.</desc>
-      </param>
-    </method>
-  </collection>
-
   <interface
      name="IHost" extends="$unknown"
-     uuid="4be2e85f-a54c-4bc7-8bf6-f070f9113940"
+     uuid="f39438d7-abfd-409b-bc80-5f5291d92897"
      wsmap="managed"
      >
     <desc>
@@ -6076,7 +6033,7 @@
       </desc>
     </attribute>
 
-    <attribute name="networkInterfaces" type="IHostNetworkInterfaceCollection" readonly="yes">
+    <attribute name="networkInterfaces" type="IHostNetworkInterface" safearray="yes" readonly="yes">
       <desc>List of host network interfaces currently defined on the host.</desc>
     </attribute>
 

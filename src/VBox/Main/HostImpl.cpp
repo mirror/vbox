@@ -750,11 +750,12 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection **networkInterfaces)
+STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces))
 {
 #if defined(RT_OS_WINDOWS) ||  defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
-    if (!networkInterfaces)
+    if (ComSafeArrayOutIsNull (aNetworkInterfaces))
         return E_POINTER;
+
     AutoWriteLock alock (this);
     CHECK_READY();
 
@@ -1055,10 +1056,9 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (IHostNetworkInterfaceCollection
     }
 # endif /* RT_OS_LINUX */
 #endif
-    ComObjPtr <HostNetworkInterfaceCollection> collection;
-    collection.createObject();
-    collection->init (list);
-    collection.queryInterfaceTo (networkInterfaces);
+    SafeIfaceArray <IHostNetworkInterface> networkInterfaces (list);
+    networkInterfaces.detachTo (ComSafeArrayOutArg (aNetworkInterfaces));
+
     return S_OK;
 
 #else
@@ -1376,13 +1376,19 @@ Host::CreateHostNetworkInterface (IN_BSTR aName,
 
     /* first check whether an interface with the given name already exists */
     {
-        ComPtr <IHostNetworkInterfaceCollection> coll;
-        rc = COMGETTER(NetworkInterfaces) (coll.asOutParam());
+        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+        rc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
         CheckComRCReturnRC (rc);
-        ComPtr <IHostNetworkInterface> iface;
-        if (SUCCEEDED (coll->FindByName (aName, iface.asOutParam())))
-            return setError (E_INVALIDARG,
-                tr ("Host network interface '%ls' already exists"), aName);
+        for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+        {
+            Bstr name;
+            hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+            if (name == aName)
+            {
+                return setError (E_INVALIDARG,
+                                 tr ("Host network interface '%ls' already exists"), aName);
+            }
+        }
     }
 
     /* create a progress object */
@@ -1438,11 +1444,21 @@ Host::RemoveHostNetworkInterface (IN_GUID aId,
 
     /* first check whether an interface with the given name already exists */
     {
-        ComPtr <IHostNetworkInterfaceCollection> coll;
-        rc = COMGETTER(NetworkInterfaces) (coll.asOutParam());
+        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+        rc = host->COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
         CheckComRCReturnRC (rc);
         ComPtr <IHostNetworkInterface> iface;
-        if (FAILED (coll->FindById (aId, iface.asOutParam())))
+        for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+        {
+            Guid guid;
+            hostNetworkInterfaces[i].COMGETTER(Id) (guid.asOutParam());
+            if (guid == aId)
+            {
+                iface = hostNetworkInterfaces[i];
+                break;
+            }
+        }
+        if (iface.IsNull())
             return setError (VBOX_E_OBJECT_NOT_FOUND,
                 tr ("Host network interface with UUID {%RTuuid} does not exist"),
                 Guid (aId).raw());
