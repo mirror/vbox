@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="ru">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -38,35 +39,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Дважды щелкните мышью для создания нового подключения</translation>
+        <translation>Дважды щелкните мышью для создания нового подключения</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Жесткий диск</translation>
+        <translation>Жесткий диск</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">Разъем</translation>
-    </message>
-</context>
-<context>
-    <name>HDItemsModel</name>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
-        <source>Double-click to add a new attachment</source>
-        <translation type="obsolete">Дважды щелкните мышью для создания нового подключения</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
-        <source>Hard Disk</source>
-        <translation type="obsolete">Жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
-        <source>Slot</source>
-        <translation type="obsolete">Разъем</translation>
+        <translation>Разъем</translation>
     </message>
 </context>
 <context>
@@ -84,17 +67,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Ошибка в %1</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Попробуйте выполнить повторную установку приложения VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -333,12 +316,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Вышло время ожидания соединения</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось обнаружить данный файл на сервере (ответ: %1)</translation>
     </message>
 </context>
 <context>
@@ -410,34 +393,14 @@
         <translation>VirtualBox - О программе</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
-        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Графический интерфейс VirtualBox версии %1&lt;br&gt;%2&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Графический интерфейс VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">Версия %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxAboutNonOSEDlg</name>
-    <message>
-        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="38"/>
-        <source>VirtualBox - About</source>
-        <translation type="obsolete">VirtualBox - О программе</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="39"/>
-        <source>VirtualBox Graphical User Interface
-Version %1</source>
-        <translation type="obsolete">Графический интерфейс VirtualBox
-Версия %1</translation>
+        <translation>Версия %1</translation>
     </message>
 </context>
 <context>
@@ -473,27 +436,27 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished">Отмена</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Отменить скачивание CD-образа пакета Дополнений гостевой ОС</translation>
+        <translation>Отменить скачивание CD-образа пакета Дополнений гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Не удалось сохранить скачанный файл как &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось сохранить скачанный файл как &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Выберите папку для сохранения образа Дополнений гостевой ОС</translation>
+        <translation>Выберите папку для сохранения образа Дополнений гостевой ОС</translation>
     </message>
 </context>
 <context>
@@ -762,11 +725,6 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1715"/>
         <source>&amp;Help</source>
         <translation>Справк&amp;а</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
-        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="obsolete">Показывает назначенную хост-клавишу.&lt;br&gt;Эта клавиша, если ее нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Ее можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1985"/>
@@ -1042,290 +1000,16 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>С&amp;бор данных...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VBoxDiskImageManagerDlg</name>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="330"/>
-        <source>Name</source>
-        <translation type="obsolete">Имя</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="85"/>
-        <source>Virtual Size</source>
-        <translation type="obsolete">Вирт. размер</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="90"/>
-        <source>Actual Size</source>
-        <translation type="obsolete">Факт. размер</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="335"/>
-        <source>Size</source>
-        <translation type="obsolete">Размер</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="36"/>
-        <source>Virtual Disk Manager</source>
-        <translation type="obsolete">Менеджер виртуальных дисков</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="211"/>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">О&amp;бразы CD/DVD</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="308"/>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">Об&amp;разы дискет</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation type="obsolete">--</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
-        <source>R&amp;emove</source>
-        <translation type="obsolete">&amp;Удалить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="782"/>
-        <source>Re&amp;lease</source>
-        <translation type="obsolete">Ос&amp;вободить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="783"/>
-        <source>Re&amp;fresh</source>
-        <translation type="obsolete">Об&amp;новить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
-        <source>&amp;Actions</source>
-        <translation type="obsolete">&amp;Действия</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="812"/>
-        <source>Checking accessibility</source>
-        <translation type="obsolete">Проверка доступности</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="588"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Проверка доступности...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="596"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Тип диска:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Формат:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="602"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Подсоединен к:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="605"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Снимок:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="614"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Ошибка при проверке  доступости носителя</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="620"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="726"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Проверка доступности...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="732"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="737"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Подсоединен к:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="746"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Ошибка при проверке доступости носителя</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="754"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="756"/>
-        <source>The image file is not accessible</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">Файл образа недоступен</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="822"/>
-        <source>&amp;Select</source>
-        <translation type="obsolete">&amp;Выбрать</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">Выберите файл образа жесткого диска</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Выберите файл образа диска CD/DVD-ROM</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1109"/>
-        <source>Select a floppy disk image file</source>
-        <translation type="obsolete">Выберите файл образа дискеты</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="792"/>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="793"/>
-        <source>Add (register) an existing image file</source>
-        <translation type="obsolete">Добавить (зарегистрировать) имеющийся файл образа</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="795"/>
-        <source>Remove (unregister) the selected media</source>
-        <translation type="obsolete">Удалить (дерегистрировать) выбранный носитель</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="796"/>
-        <source>Release the selected media by detaching it from the machine</source>
-        <translation type="obsolete">Освободить выбранный носитель, отсоединив его от машины</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="797"/>
-        <source>Refresh the media list</source>
-        <translation type="obsolete">Обновить список носителей</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1101"/>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Образы CD/DVD-ROM (*.iso);;Все файлы (*)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1108"/>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">Образы дискет (*.img);;Все файлы (*)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
-        <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="obsolete">Все образы жестких дисков (*.vdi *.vmdk *.vhd);;Образы VDI (*.vdi);;Образы VMDK (*.vmdk);;Образы VHD (*.vhd);;Все файлы (*)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">&amp;Жесткие диски</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
-        <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;Расположение:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
-        <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;Тип диска:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
-        <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Формат:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
-        <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;Подсоединен к:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
-        <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Снимок:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
-        <source>&amp;New...</source>
-        <translation type="obsolete">&amp;Создать...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
-        <source>&amp;Add...</source>
-        <translation type="obsolete">&amp;Добавить...</translation>
+        <translation>Показывает назначенную хост-клавишу.&lt;br&gt;Эта клавиша, если ее нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Ее можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
     </message>
 </context>
 <context>
     <name>VBoxDownloaderWgt</name>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
-        <source>Cancel</source>
-        <translation type="obsolete">Отмена</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Отменить скачивание CD-образа пакета Дополнений гостевой ОС</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">Не удалось обнаружить данный файл на сервере (ответ: %1).</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Не удалось сохранить скачанный файл как &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="278"/>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">Выберите папку для сохранения образа Дополнений гостевой ОС</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="191"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Вышло время ожидания соединения.</translation>
-    </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="152"/>
         <source>The download process has been cancelled by the user.</source>
@@ -1436,11 +1120,6 @@ Version %1</source>
 <context>
     <name>VBoxGLSettingsGeneral</name>
     <message>
-        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">Показывает путь к папке по умолчанию для файлов VDI. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Показывает путь к папке по умолчанию для виртуальных машин. Эта папка используется (если другая папка не указана явным образом) при создании новых виртуальных машин.</translation>
@@ -1468,17 +1147,17 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает путь к папке по умолчанию для файлов жестких дисков. Эта папка используется (если другая папка не указана явным образом) при создании или добавлении виртуальных жестких дисков.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, в области системных уведомлений рабочего стола (системном трее) будет отображаться значок приложения с контекстным меню.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать значок в системном трее</translation>
     </message>
 </context>
 <context>
@@ -1601,12 +1280,6 @@ Version %1</source>
 </context>
 <context>
     <name>VBoxGlobal</name>
-    <message>
-        <location filename="../include/VBoxGlobal.h" line="400"/>
-        <source>Differencing</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Разностный</translation>
-    </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1787"/>
         <source>Unknown device %1:%2</source>
@@ -1985,24 +1658,6 @@ Version %1</source>
         <translation>Сквозной</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2581"/>
-        <source>Virtual Disk Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">Образ VDI</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2583"/>
-        <source>iSCSI</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">iSCSI</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2585"/>
-        <source>VMDK Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">Образ VMDK</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGlobal.cpp" line="3157"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
@@ -2129,18 +1784,6 @@ Version %1</source>
         <translation>Захвачено</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1331"/>
-        <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&lt;i&gt;Проверка...&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1338"/>
-        <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&lt;i&gt;Недоступен&lt;/i&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGlobal.cpp" line="3216"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
@@ -2251,12 +1894,6 @@ Version %1</source>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Пользовательский</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2587"/>
-        <source>Custom Hard Disk</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">Пользовательский</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="454"/>
@@ -2377,12 +2014,6 @@ Version %1</source>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
         <translation>порт %1</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2589"/>
-        <source>VHD Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">Образ VHD</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3180"/>
@@ -2514,89 +2145,89 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Тип&amp;nbsp;(Формат):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Подсоединен к:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Подсоединен к:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Не&amp;nbsp;подсоединен&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Проверка доступности...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Не удалось провести проверку доступности носителя.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Данный жесткий диск будет подсоединен косвенно с помощью создания нового разностного жесткого диска.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Проверка...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">Недоступна</translation>
+        <translation>Недоступен</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Некоторые жесткие диски в данной цепочке недоступны. Используйте Менеджер виртуальных носителей в режиме &lt;b&gt;Показывать разностные жесткие диски&lt;/b&gt; для просмотра подробной информации об этих жестких дисках.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;Этот базовый жесткий диск подключен косвенно с помощью следующего разностного жесткого диска:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D-ускорение</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Настройка</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">Разностный</translation>
+        <translation>Разностный</translation>
     </message>
 </context>
 <context>
@@ -2691,24 +2322,14 @@ Version %1</source>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
-        <source>&lt;no hard disk&gt;</source>
-        <translation type="obsolete">&lt;нет жесткого диска&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
-        <source>No hard disk</source>
-        <translation type="obsolete">Нет жесткого диска</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсуствуют доступные носители. Используйте Менеджер виртуальных носителей для добавления носителей соответствующего типа.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;нет носителей&gt;</translation>
     </message>
 </context>
 <context>
@@ -2716,168 +2337,168 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">&amp;Действия</translation>
+        <translation>&amp;Действия</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Создать...</translation>
+        <translation>&amp;Создать...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Добавить...</translation>
+        <translation>&amp;Добавить...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">&amp;Удалить</translation>
+        <translation>&amp;Удалить</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">Ос&amp;вободить</translation>
+        <translation>Ос&amp;вободить</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Об&amp;новить</translation>
+        <translation>Об&amp;новить</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">Создать новый виртуальный жесткий диск</translation>
+        <translation>Создать новый виртуальный жесткий диск</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить существующий носитель</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранный носитель</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Освободить выбранный носитель, отсоединив его от машин</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">Обновить список носителей</translation>
+        <translation>Обновить список носителей</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished">Расположение</translation>
+        <translation>Расположение</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип (Формат)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished"></translation>
+        <translation>Подсоединен к</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">Проверка доступности</translation>
+        <translation>Проверка доступности</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">&amp;Выбрать</translation>
+        <translation>&amp;Выбрать</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Все образы жестких дисков (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Все файлы (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">Выберите файл образа жесткого диска</translation>
+        <translation>Выберите файл образа жесткого диска</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">Образы CD/DVD-ROM (*.iso);;Все файлы (*)</translation>
+        <translation>Образы CD/DVD-ROM (*.iso);;Все файлы (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">Выберите файл образа диска CD/DVD-ROM</translation>
+        <translation>Выберите файл образа диска CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">Образы дискет (*.img);;Все файлы (*)</translation>
+        <translation>Образы дискет (*.img);;Все файлы (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">Выберите файл образа дискеты</translation>
+        <translation>Выберите файл образа дискеты</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Не&amp;nbsp;подсоединен&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер виртуальных носителей</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished">&amp;Жесткие диски</translation>
+        <translation>&amp;Жесткие диски</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">Имя</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">Вирт. размер</translation>
+        <translation>Вирт. размер</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">Факт. размер</translation>
+        <translation>Факт. размер</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">О&amp;бразы CD/DVD</translation>
+        <translation>О&amp;бразы CD/DVD</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">Размер</translation>
+        <translation>Размер</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">Об&amp;разы дискет</translation>
+        <translation>Об&amp;разы дискет</translation>
     </message>
 </context>
 <context>
@@ -2936,44 +2557,9 @@ Version %1</source>
         <translation>Мастер создания нового виртуального диска</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
-        <source>Image Type</source>
-        <translation type="obsolete">Тип образа</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">Д&amp;инамически расширяющийся образ</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">Образ &amp;фиксированного размера</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">Тип образа виртуального диска</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">&amp;Имя файла образа</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">&amp;Размер образа</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="435"/>
         <source>Virtual Disk Location and Size</source>
         <translation>Местоположение и размер виртуального диска</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">Вы собираетесь создать образ виртуального жесткого диска со следующими параметрами:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
@@ -2996,11 +2582,6 @@ Version %1</source>
         <translation>Выберите файл для образа нового жесткого диска</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Этот мастер поможет создать образ нового виртуального диска для Вашей виртуальной машины.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера, или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; &amp;Назад</translation>
@@ -3009,26 +2590,6 @@ Version %1</source>
         <location filename="../ui/VBoxNewHDWzd.ui" line="697"/>
         <source>&amp;Next &gt;</source>
         <translation>&amp;Далее &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите тип образа виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень маломеста на физическом жестком диске. Он будет динамически расти (до заданного размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно того же размера, что и размер виртуального жесткого диска. Создание жесткого диска фиксированного размера может занять длительное время, в зависимости от размера образа и производительности физического диска.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора местоположения и имени файла образа виртуального жесткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите размер виртуального жесткого диска в мегабайтах. Указанный размер будет фигурировать в гостевой ОС в качестве размера данного жесткого диска.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="obsolete">Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого будет создан образ нового жесткого диска.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
@@ -3067,62 +2628,62 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Этот мастер поможет создать новый виртуальный жесткий диск для Вашей виртуальной машины.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера, или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип виртуального диска</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите тип виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень мало места на физическом жестком диске. Он будет динамически расти (до заданного размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно того же размера, что и размер виртуального жесткого диска. Создание жесткого диска фиксированного размера может занять длительное время, в зависимости от размера образа и производительности физического диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Д&amp;инамически расширяющийся образ</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Образ &amp;фиксированного размера</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора расположения и имени файла виртуального жесткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Расположение</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите размер виртуального жесткого диска в мегабайтах. Указанный размер будет фигурировать в гостевой ОС в качестве размера данного жесткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Р&amp;азмер</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы собираетесь создать виртуальный жесткий диск со следующими параметрами:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого будет создан новый жесткий диск.</translation>
     </message>
 </context>
 <context>
@@ -3173,11 +2734,6 @@ Version %1</source>
         <translation>Память</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="873"/>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">&amp;Загрузочный жесткий диск (первичный мастер)</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="832"/>
         <source>N&amp;ew...</source>
         <translation>&amp;Создать...</translation>
@@ -3226,11 +2782,6 @@ Version %1</source>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Введите имя для новой виртуальной машины и выберите тип гостевой операционной системы, которую Вы планируете установить на эту машину.&lt;/p&gt;&lt;p&gt;Имя виртуальной машины обычно отражает ее программную и аппаратную конфигурацию. Это имя будет использоваться всеми приложениями VirtualBox для обозначения созданной виртуальной машины.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Выберите образ жесткого диска, который будет загрузочным диском виртуальной машины. Вы можете создать новый жесткий диск, нажав кнопку &lt;b&gt;Создать&lt;/b&gt;, либо выбрать существующий из выпадающего списка или из Менеджера виртуальных дисков (который откроется при нажатии на кнопку &lt;b&gt;Существующий&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жестких дисков, то можно пропустить этот шаг и подсоединить жесткие диски позднее с помощью диалога Свойств машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1020"/>
@@ -3285,12 +2836,12 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выберите жесткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жесткий диск, нажав кнопку &lt;b&gt;Создать&lt;/b&gt;, либо выбрать существующий из выпадающего списка или из Менеджера виртуальных носителей (который откроется при нажатии на кнопку &lt;b&gt;Существующий&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жестких дисков, то можно пропустить этот шаг и подсоединить жесткие диски позднее с помощью диалога Свойств машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Загрузочный жесткий диск (первичный мастер)</translation>
     </message>
 </context>
 <context>
@@ -3298,22 +2849,22 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Операционная система:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задает разновидность операционной системы, которую вы хотите установить на эту виртуальную машину.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Версия:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Задает тип операционной системы, которую вы хотите установить на эту виртуальную машину (эта операционная система называется гостевая ОС).</translation>
+        <translation>Задает версию операционной системы, которую вы хотите установить на эту виртуальную машину (эта операционная система называется &quot;гостевая ОС&quot;).</translation>
     </message>
 </context>
 <context>
@@ -3470,56 +3021,6 @@ Version %1</source>
         <translation>&lt;p&gt;Вы уверены, что хотите сбросить (удалить) сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
-        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Освобождение этого носителя приведет к его отсоединению от следующих виртуальных машин: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Продолжать?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1113"/>
-        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Файл образа &lt;b&gt;%1&lt;/b&gt; уже существует. Вы не можете создать новый виртуальный жесткий диск, использующий этот файл, потому что он уже может использоваться другим вируальным жестким диском.&lt;/p&gt;&lt;p&gt;Укажите другое имя файла для.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1145"/>
-        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось удалить образ виртуального жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
-        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить виртуальный жесткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка зарегистрированных носителей?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1195"/>
-        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Не удалось создать образ виртуального жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1252"/>
-        <source>hard disk</source>
-        <translation type="obsolete">жесткий диск</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1253"/>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">образ CD/DVD</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1254"/>
-        <source>floppy image</source>
-        <translation type="obsolete">образ дискеты</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1243"/>
-        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Не удалось зарегистрировать %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1261"/>
-        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Не удалось дерегистрировать %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1317"/>
         <source>Failed to create a new session.</source>
         <translation>Не удалось создать новую сессию.</translation>
@@ -3528,11 +3029,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1336"/>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось открыть сессию для виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1320"/>
-        <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation type="obsolete">Не удалось получить состояние доступности носителя &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Некоторые зарегистрированные носители могут стать недоступными.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1367"/>
@@ -3715,11 +3211,6 @@ Version %1</source>
         <translation>&lt;p&gt;Окно виртуальной машины оптимизировано для работы в режиме &lt;b&gt;%1-битной&lt;/b&gt; цветопередачи, однако в настоящий момент виртуальный дисплей работает в &lt;b&gt;%2-битном&lt;/b&gt; режиме.&lt;/p&gt;&lt;p&gt;Откройте диалог свойств дисплея гостевой ОС и выберите &lt;b&gt;%3-битный&lt;/b&gt; режим цветопередачи (если он доступен) для обеспечения наилучшей производительности виртуальной видеоподсистемы.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;. Некоторые операционные системы, такие как OS/2, могут фактически работать в 32-битном режиме, но показывать его в настройках как 24-битный (16 миллионов цветов). Вы можете попробовать выбрать другой режим цветопередачи, чтобы проверить, не исчезнет ли это сообщение. Помимо этого, Вы можете запретить показ данного сообщения, если Вы уверены, что требуемый режим цветопередачи (%4&amp;nbsp;бит) недоступен в данной гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1946"/>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Во время работы виртуальной машины произошла критическая ошибка. Выполнение виртуальной машины приостановлено.&lt;/p&gt;&lt;p&gt;Вы можете обратиться за помощью к разделу Community на веб-сайте &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;, либо к Вашему контракту на поддержку и сопровождение продукта. Пожалуйста, предоставьте содержимое журнала &lt;tt&gt;VBox.log&lt;/tt&gt; и изображение &lt;tt&gt;VBox.png&lt;/tt&gt;, которые находятся в папке &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, а также подробное описание того, что вы делали, когда возникла эта ошибка. Получить доступ к вышеуказанным файлам можно также через пункт &lt;b&gt;Показать журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt;, если Вы хотите выключить виртуальную машину, либо нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, если Вы хотите оставить ее в текущем состоянии для отладки. Обратите внимание, что отладка требует наличия специальных инструментов и навыков, поэтому рекомендуется просто выбрать &lt;b&gt;ОК&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2041"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Вы не подсоединили ни одного жесткого диска к новой виртуальной машине. Такая машина не сможет загрузиться, пока Вы не подсоедините к ней жесткий диск с гостевой операционной системой или какой-либо другой загрузочный носитель позже, используя диалог свойств машины или Мастер первого запуска.&lt;/p&gt;&lt;p&gt;Хотите ли Вы продолжить?&lt;/p&gt;</translation>
@@ -3738,11 +3229,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="822"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось послать ACPI-сигнал нажатия кнопки питания в виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1600"/>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Не удалось подключится к службе онлайн-регистрации VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1638"/>
@@ -3798,29 +3284,6 @@ Version %1</source>
         <translation>Сбросить</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1102"/>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">Продолжить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить образ жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то файл образа будет физически удален после удаления виртуального жесткого диска из списка. Эту операцию отменить нельзя.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Дерегистрировать&lt;/b&gt;, то виртуальный жесткий диск будет удален из списка зарегистрированных носителей, но файл образа останется на физическом жестком диске (и сможет быть впоследствии зарегистрирован вновь).&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Удалить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Дерегистрировать</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1202"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
         <translation>&lt;p&gt;К SATA-портам этой виртуальной машины подключены жесткие диски. Если вы отключите контроллер SATA, то все эти жесткие диски будут автоматически отсоединены.&lt;/p&gt;&lt;p&gt;Уверены ли Вы, что хотите отключить контроллер SATA?&lt;/p&gt;</translation>
@@ -3830,16 +3293,6 @@ Version %1</source>
         <source>Disable</source>
         <comment>hard disk</comment>
         <translation>Отключить</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1208"/>
-        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось подсоединить образ жесткого диска с UUID %1 к слоту устройства %2 канала %3 шины %4 машины &lt;b&gt;%5&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1223"/>
-        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось отсоединить образ жесткого диска от слота устройства %1 канала %2 шины %3 машины &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1549"/>
@@ -3866,38 +3319,16 @@ Version %1</source>
         <translation>Захватить</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1790"/>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Один или несколько зарегистрированных жестких дисков, образов CD/DVD или дискет сейчас недоступны. В результате, Вы не сможете запускать виртуальные машины, использующие эти носители, до тех пор, пока к ним не появится доступ.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Проверить&lt;/b&gt;, чтобы открыть окно Менеджера виртуальных дисков и увидеть, какие именно носители недоступны, или нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы пропустить это сообщение.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1822"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>Проверить</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Нижеперечисленные файлы настроек VirtualBox были автоматически преобразованы в новый формат версии &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Однако, результаты преобразования пока еще не были сохранены обратно  на диск. Пожалуйста, нажмите:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Сохранить&lt;/b&gt;, чтобы сохранить все преобразованные файлы настроек прямо сейчас (Вы больше не сможете использовать эти файлы с предыдущими версиями VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Скопировать&lt;/b&gt;, чтобы создать резервные копии файлов настроек в старом формате перед сохранением их в новом формате;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Отмена&lt;/b&gt;, чтобы не сохранять преобразованные файлы настроек.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Учтите, что если Вы выберете &lt;b&gt;Отмена&lt;/b&gt;, то преобразованные файлы все равно будут неявно записаны на диск в новом формате, как только Вы измение какую-либо настройку или запустите виртуальную машину, но резервные копии в таком случае созданы &lt;b&gt;не будут&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1838"/>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Сохранить</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1901"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>&amp;Копировать</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1840"/>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Отмена</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1925"/>
@@ -3940,11 +3371,6 @@ Version %1</source>
         <translation>Не удалось скопировать файл &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1180"/>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Отсутствуют неиспользуемые жесткие диски, доступные для созданного подключения.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Создать&lt;/b&gt; для запуска &lt;i&gt;Мастера нового виртуального диска&lt;/i&gt; и создания нового жесткого диска, либо кнопку &lt;b&gt;Выбрать&lt;/b&gt; для открытия &lt;i&gt;Менеджера виртуальных дисков&lt;/i&gt; и выбора нужного действия.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1220"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
@@ -3965,11 +3391,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1046"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в полноэкранный режим из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртаульной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в полноэкранный режим в любом случае, или нажмите &lt;b&gt;Отмена&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1634"/>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Невозможно получить информацию о версии из-за следующей сетевой ошибки: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1668"/>
@@ -4069,182 +3490,182 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите освободить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Это приведет к отсоединению этого носителя от следующих виртуальных машин: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Освободить</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите убрать %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Имейте в виду, что этот жесткий диск недоступен, поэтому его файл не может быть удален.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
+        <translation>Следующий диалог позволит Вам выбрать, нужно ли удалять файл этого жесткого диска или Вы хотите сохранить его для дальнейшего использования.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Имейте в виду, что файл с данными этого носителя не будет удален и в дальнейшем может быть снова добавлен в список.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Убрать</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жесткий диск будет убран из списка используемых жестких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жесткий диск в список при необходимости.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">Удалить</translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1215"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Отсутствуют неиспользуемые жесткие диски, доступные для созданного подключения.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Создать&lt;/b&gt; для запуска &lt;i&gt;Мастера нового виртуального диска&lt;/i&gt; и создания нового жесткого диска, либо кнопку &lt;b&gt;Выбрать&lt;/b&gt; для открытия &lt;i&gt;Менеджера виртуальных носителей&lt;/i&gt; и выбора нужного действия.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1230"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подсоединить жесткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; к слоту  &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1257"/>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отсоединить жесткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; к машине &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; от машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось закрыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1347"/>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось проверить доступность носителя &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1627"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось подключится к службе онлайн-регистрации VirtualBox из-за следующей ошибки:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Невозможно получить информацию о новой версии из-за следующей ошибки:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Один или несколько виртуальных жестких дисков, образов CD/DVD или дискет сейчас недоступны. В результате, Вы не сможете запускать виртуальные машины, использующие эти носители, до тех пор, пока к ним не появится доступ.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Проверить&lt;/b&gt;, чтобы открыть окно Менеджера виртуальных носителей и увидеть, какие именно носители недоступны, или нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы пропустить это сообщение.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Существующие файлы настроек VirtualBox были автоматически преобразованы из старого формата в формат, который требуется для новой версии VirtualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt; для запуска VirtualBox или нажмите &lt;b&gt;Дополнительно&lt;/b&gt;, если Вы хотите узнать, какие именно файлы были преобразованы, а также получить доступ к дополнительным действиям.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Выход&lt;/b&gt; для завершения приложения без сохранения результатов преобразования на диск.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Дополнительно</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">&amp;Выход</translation>
+        <translation>&amp;Выход</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нижеперечисленные файлы настроек VirtualBox были автоматически преобразованы в новый формат версии &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Однако, результаты преобразования пока еще не были сохранены на диск. Пожалуйста, нажмите:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Копировать&lt;/b&gt;, чтобы создать резервные копии файлов настроек в старом формате перед сохранением их в новом формате;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Перезаписать&lt;/b&gt;, чтобы сохранить все преобразованные файлы настроек поверх старых версий без создания резервных копий (Вы больше не сможете использовать эти файлы с предыдущими версиями VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Рекомендуется всегда выбирать &lt;b&gt;Копировать&lt;/b&gt;, так как это позволит Вам вернуться к предыдущей версии VirtualBox (если возникнет такая необходимость) без потери текущих настроек. Обратитесь к Руководству пользователя VirtualBox за более подробной информацией о возврате к предыдущим версиям.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;li&gt;&lt;b&gt;Выход&lt;/b&gt; для завершения VirtualBox без сохранения результатов преобразования на диск.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Перезаписать</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Во время работы виртуальной машины произошла критическая ошибка. Выполнение виртуальной машины приостановлено.&lt;/p&gt;&lt;p&gt;Вы можете обратиться за помощью к разделу Community на веб-сайте &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;, либо к Вашему контракту на поддержку и сопровождение продукта. Пожалуйста, предоставьте содержимое журнала &lt;tt&gt;VBox.log&lt;/tt&gt; и изображение &lt;tt&gt;VBox.png&lt;/tt&gt;, которые находятся в папке &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, а также подробное описание того, что Вы делали, когда возникла эта ошибка. Получить доступ к вышеуказанным файлам можно также через пункт &lt;b&gt;Показать журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt;, если Вы хотите выключить виртуальную машину, либо нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, если Вы хотите оставить ее в текущем состоянии для отладки. Обратите внимание, что отладка требует наличия специальных инструментов и навыков, поэтому рекомендуется просто выбрать &lt;b&gt;ОК&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">жесткий диск</translation>
+        <translation>жесткий диск</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">образ CD/DVD</translation>
+        <translation>образ CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">образ дискеты</translation>
+        <translation>образ дискеты</translation>
     </message>
 </context>
 <context>
@@ -4283,16 +3704,6 @@ Version %1</source>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="63"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
         <translation>Регистрационная форма VirtualBox</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxRegistrationDlg.cpp" line="366"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Вышло время ожидания соединения.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxRegistrationDlg.cpp" line="376"/>
-        <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="obsolete">Не удалось обнаружить регистрационную форму на сервере (ответ: %1).</translation>
     </message>
     <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="336"/>
@@ -4339,16 +3750,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1232"/>
         <source>&amp;Details</source>
         <translation>&amp;Детали</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1123"/>
-        <source>Virtual &amp;Disk Manager...</source>
-        <translation type="obsolete">&amp;Менеджер виртуальных дисков...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1125"/>
-        <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="obsolete">Открыть диалог Менеджера виртуальных дисков</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1261"/>
@@ -4514,18 +3915,18 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Менеджер виртуальных носителей...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог Менеджера виртуальных носителей</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation type="unfinished"></translation>
+        <translation>Журнал</translation>
     </message>
 </context>
 <context>
@@ -4548,7 +3949,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Обнаружены неоптимальные настройки</translation>
     </message>
 </context>
 <context>
@@ -4746,28 +4147,28 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
         <source>Show Selector Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать главное окно</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
         <source>Show the selector window assigned to this menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать главное окно VirtualBox со списком виртуальных машин</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
         <source>Hide Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Убрать значок из трея</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
         <source>Remove this icon from the system tray</source>
-        <translation type="unfinished"></translation>
+        <translation>Убрать этот значок из системного трея</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Еще машины...</translation>
     </message>
 </context>
 <context>
@@ -4843,16 +4244,6 @@ Version %1</source>
         <translation>Никогда</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Вышло время ожидания соединения.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Не удалось обнаружить список последних версий на сервере (ответ: %1).</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="267"/>
         <source>Chec&amp;k</source>
         <translation>&amp;Проверить</translation>
@@ -4865,12 +4256,12 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="264"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Мастер обновления VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="266"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Проверить обновления</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="268"/>
@@ -4885,7 +4276,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="286"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выпущена новая версия программы VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; доступна на сайте &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Вы можете скачать эту версию, используя следующую прямую ссылку: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выпущена новая версия программы VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; доступна на сайте &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Вы можете скачать эту версию, используя следующую прямую ссылку: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="289"/>
@@ -4900,7 +4291,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Этот мастер попробует соединиться с веб-сайтом VirtualBox и проверить, не выпущена ли новая версия приложения VirtualBox.&lt;/p&gt;&lt;p&gt;Используйте кнопку &lt;b&gt;Проверить&lt;/b&gt; для выполнения проверки прямо сейчас или кнопку &lt;b&gt;Отмена&lt;/b&gt;, если Вы не хотите выполнять проверку.&lt;/p&gt;&lt;p&gt;Вы можете вызвать мастера обновлений в любое время с помощью пункта &lt;b&gt;Проверить обновления...&lt;/b&gt; в меню &lt;b&gt;Справка&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5239,42 +4630,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">&amp;Показать</translation>
+        <translation>&amp;Показать</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Переключиться в окно выбранной виртуальной машины</translation>
+        <translation>Переключиться в окно выбранной виртуальной машины</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">С&amp;тарт</translation>
+        <translation>С&amp;тарт</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Начать выполнение выбранной виртуальной машины</translation>
+        <translation>Начать выполнение выбранной виртуальной машины</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">П&amp;родолжить</translation>
+        <translation>П&amp;родолжить</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Возобновить работу приостановленной виртуальной машины</translation>
+        <translation>Возобновить работу приостановленной виртуальной машины</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">Па&amp;уза</translation>
+        <translation>Па&amp;уза</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Приостановить работу виртуальной машины</translation>
+        <translation>Приостановить работу виртуальной машины</translation>
     </message>
 </context>
 <context>
@@ -5417,22 +4808,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
-        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог Менеджера виртуальных носителей для выбора файла образа.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
-    <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="370"/>
-        <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
-        <translation type="obsolete">%1 на странице &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="412"/>
         <source>General</source>
@@ -5506,7 +4887,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished"></translation>
+        <translation>На странице &lt;b&gt;%1&lt;/b&gt; %2</translation>
     </message>
 </context>
 <context>
@@ -5563,13 +4944,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
-        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">Открывает диалог Менеджера виртуальных дисков для выбора файла образа.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог Менеджера виртуальных носителей для выбора файла образа.</translation>
     </message>
 </context>
 <context>
@@ -5603,16 +4979,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="88"/>
         <source>Displays the name of the virtual machine.</source>
         <translation>Указывает имя виртуальной машины.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
-        <source>OS &amp;Type:</source>
-        <translation type="obsolete">&amp;Тип ОС:</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">Задает тип операционной системы, которую вы хотите установить на эту виртуальную машину (эта операционная система называется гостевая ОС).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="104"/>
@@ -5792,27 +5158,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>виртуальной машине назначено более &lt;b&gt;75%&lt;/b&gt; памяти компьютера (&lt;b&gt;%1&lt;/b&gt;). Недостаточно памяти для операционной системы основного ПК. Задайте меньшее значение.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="385"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>виртуальной машине назначено более &lt;b&gt;50%&lt;/b&gt; памяти компьютера (&lt;b&gt;%1&lt;/b&gt;). Для операционной системы основного ПК может оказаться недостаточно памяти. Продолжайте только на свой страх и риск.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>под видеопамять выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для переключения виртуальной машины в полноэкранный режим или в режим интеграции дисплея.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, виртуальная машина получит доступ к возможностям 3D-графики, имеющимся на основном ПК.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить &amp;3D-ускорение</translation>
     </message>
 </context>
 <context>
@@ -5853,11 +5219,6 @@ p, li { white-space: pre-wrap; }
         <translation>Отсоединяет выбранный жесткий диск.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="655"/>
-        <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Вызывает Менеджер виртуальных дисков для выбора жесткого диска, подключаемого к указанному разъему.</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
         <translation>Когда стоит галочка, включается виртуальный SATA-контроллер этой машины. Имейте в виду, что вы не сможете подсоединить жесткие диски к портам SATA, если виртуальный SATA-контроллер выключен.</translation>
@@ -5880,17 +5241,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вызывает Менеджер виртуальных носителей для выбора жесткого диска, подключаемого к указанному разъему.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="114"/>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, Вы увидите разностные диски, которые на самом деле подсоединены к слотам (вместо базовых дисков, показанных в случае косвенных подсоединений), а также сможете подсоединять другие разностные диски напрямую. Это нужно только для сложных конфигураций.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="117"/>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показывать разностные жесткие диски</translation>
     </message>
 </context>
 <context>
