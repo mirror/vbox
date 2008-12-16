@@ -97,7 +97,7 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/vboxvideo_drv_13.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_14.so \
 		$(PATH_BIN)/additions/vboxvideo_drv_15.so \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxvfs.sh $(PATH_BIN)/additions/mountvboxsf \
+		$(PATH_BIN)/additions/mountvboxsf \
 		$(VBOX_SELINUX_CMPLD) \
 		$(wildcard $(PATH_BIN)/additions/src/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*) \
@@ -148,7 +148,6 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_14.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_14.so
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/vboxvideo_drv_15.so           $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxvideo_drv_15.so
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/mountvboxsf                   $(VBOX_LNX_ADD_INS_OUT_DIR)/mount.vboxsf
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxvfs.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
 ifdef VBOX_SELINUX_CMPLD
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_SELINUX_CMPLD)                                     $(VBOX_LNX_ADD_INS_OUT_DIR)
 endif
