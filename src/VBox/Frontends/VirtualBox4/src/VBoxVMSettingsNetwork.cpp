@@ -673,10 +673,11 @@ void VBoxNIList::populateInterfacesList()
 {
     /* Load current inner list */
     QList<QTreeWidgetItem*> itemsList;
-    CHostNetworkInterfaceEnumerator en =
-        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces().Enumerate();
-    while (en.HasMore())
-        itemsList << new VBoxNIListItem (en.GetNext().GetName());
+    CHostNetworkInterfaceVector interfaces =
+        vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+    for (CHostNetworkInterfaceVector::ConstIterator it = interfaces.begin();
+         it != interfaces.end(); ++it)
+        itemsList << new VBoxNIListItem (it->GetName());
 
     /* Save current list item name */
     QString currentListItemName = mList->currentItem() ?

@@ -4297,10 +4297,21 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
                 mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
                 ComPtr<IHost> host;
                 virtualBox->COMGETTER(Host)(host.asOutParam());
-                ComPtr<IHostNetworkInterfaceCollection> coll;
-                host->COMGETTER(NetworkInterfaces)(coll.asOutParam());
-                ComPtr<IHostNetworkInterface> hostInterface;
-                if (!SUCCEEDED(coll->FindByName(hostif, hostInterface.asOutParam())))
+                com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+                CHECK_ERROR(host, 
+                            COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
+                bool found = false;
+                for (size_t i = 0; i < hostNetworkInterfaces.size(); ++i)
+                {
+                    Bstr name;
+                    hostNetworkInterfaces[i].COMGETTER(Name) (name.asOutParam());
+                    if (name == hostif)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
                 {
                     return setError (VBOX_E_HOST_ERROR,
                         tr ("VM cannot start because the host interface '%ls' "
