@@ -70,7 +70,7 @@
 #define USAGE_LOADSYMS              RT_BIT_64(29)
 #define USAGE_UNLOADSYMS            RT_BIT_64(30)
 #define USAGE_SETHDUUID             RT_BIT_64(31)
-#define USAGE_CONVERTDD             RT_BIT_64(32)
+#define USAGE_CONVERTFROMRAW        RT_BIT_64(32)
 #define USAGE_LISTPARTITIONS        RT_BIT_64(33)
 #define USAGE_CREATERAWVMDK         RT_BIT_64(34)
 #define USAGE_VM_STATISTICS         RT_BIT_64(35)
@@ -155,7 +155,7 @@ int handleModifyHardDisk(int argc, char *argv[],
 int handleCloneHardDisk(int argc, char *argv[],
                         ComPtr<IVirtualBox> virtualBox, ComPtr<ISession> session);
 int handleConvertHardDisk(int argc, char **argv);
-int handleConvertDDImage(int argc, char *argv[]);
+int handleConvertFromRaw(int argc, char *argv[]);
 int handleAddiSCSIDisk(int argc, char *argv[],
                        ComPtr <IVirtualBox> aVirtualBox, ComPtr<ISession> aSession);
 int handleShowHardDiskInfo(int argc, char *argv[],
