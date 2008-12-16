@@ -228,6 +228,8 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
             if (NS_SUCCEEDED (rc))
                 break;
 
+            LogFlowFunc (("Failed to connect (rc=%Rhrc (%#08x))\n", rc, rc));
+
             /* It's possible that the server gets shut down after we
              * successfully resolve the server name but before it
              * receives our CreateInstance() request. So, check for the
@@ -238,6 +240,9 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
                     ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
                 if (NS_SUCCEEDED (rc2))
                     break;
+
+                LogFlowFunc (("Server seems to have terminated before "
+                              "receiving our request. Will try again.\n"));
             }
             else
                 break;
@@ -246,7 +251,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
     }
     while (0);
 
-    LogFlowFunc (("rc=%08X, vrc=%Rrc\n", rc, vrc));
+    LogFlowFunc (("rc=%Rhrc (%#08x), vrc=%Rrc\n", rc, rc, vrc));
     LogFlowFuncLeave();
 
     return rc;

@@ -337,7 +337,7 @@ public:
         LogFlowFunc (("Deleting VirtualBox...\n"));
 
         FinalRelease();
-        sInstance = 0;
+        sInstance = NULL;
 
         LogFlowFunc (("VirtualBox object deleted.\n"));
         printf ("Informational: VirtualBox object deleted.\n");
@@ -361,8 +361,7 @@ public:
 
             PRBool timerStarted = PR_FALSE;
 
-            /* sTimes is null if this call originates from
-             * FactoryDestructor() */
+            /* sTimer is null if this call originates from FactoryDestructor()*/
             if (sTimer != NULL)
             {
                 LogFlowFunc (("Last VirtualBox instance was released.\n"));
@@ -455,7 +454,7 @@ public:
             }
             else
             {
-                /* This condition is quite rare: a new client will have to
+                /* This condition is quite rare: a new client happened to
                  * connect after this event has been posted to the main queue
                  * but before it started to process it. */
                 LogFlowFunc (("Destruction is canceled (refcnt=%d).\n", count));
@@ -515,7 +514,7 @@ public:
 
         RTCritSectDelete (&sLock);
 
-        if (sInstance)
+        if (sInstance != NULL)
         {
             /* Either posting a destruction event falied for some reason (most
              * likely, the quit event has been received before the last release),
@@ -534,13 +533,26 @@ public:
 
         RTCritSectEnter (&sLock);
 
-        int rv = NS_OK;
+        if (!gKeepRunning)
+        {
+            LogFlowFunc (("Process termination requested first. Refusing.\n"));
 
-        if (sInstance == 0)
+            RTCritSectLeave (&sLock);
+
+            /* this rv is what CreateInstance() on the client side returns
+             * when the server process stops accepting events. Do the same
+             * here. The client wrapper should attempt to start a new process in
+             * response to a failure from us. */
+            return NS_ERROR_ABORT;
+        }
+
+        nsresult rv = NS_OK;
+
+        if (sInstance == NULL)
         {
             LogFlowFunc (("Creating new VirtualBox object...\n"));
             sInstance = new VirtualBoxClassFactory();
-            if (sInstance)
+            if (sInstance != NULL)
             {
                 /* make an extra AddRef to take the full control
                  * on the VirtualBox destruction (see FinalRelease()) */
@@ -562,7 +574,7 @@ public:
                      * info from a server-side IVirtualBoxErrorInfo object. */
                     sInstance->Release();
                     sInstance->Release();
-                    Assert (sInstance == 0);
+                    Assert (sInstance == NULL);
                 }
                 else
                 {
@@ -613,7 +625,7 @@ private:
     static RTTIMERLR sTimer;
 };
 
-VirtualBoxClassFactory *VirtualBoxClassFactory::sInstance = 0;
+VirtualBoxClassFactory *VirtualBoxClassFactory::sInstance = NULL;
 RTCRITSECT VirtualBoxClassFactory::sLock = {0};
 
 RTTIMERLR VirtualBoxClassFactory::sTimer = NIL_RTTIMERLR;
@@ -1151,12 +1163,20 @@ int main (int argc, char **argv)
             gEventQ->HandleEvent (ev);
         }
 
-        gIpcServ->RemoveName (VBOXSVC_IPC_NAME);
-
-        /* stop accepting new events */
+        /* stop accepting new events. Clients that happen to resolve our
+         * name and issue a CreateInstance() request after this point will
+         * get NS_ERROR_ABORT once we hande the remaining messages. As a
+         * result, they should try to start a new server process. */
         gEventQ->StopAcceptingEvents();
 
-        /* process any remaining events */
+        /* unregister ourselves. After this point, clients will start a new
+         * process because they won't be able to resolve the server name.*/
+        gIpcServ->RemoveName (VBOXSVC_IPC_NAME);
+
+        /* process any remaining events. These events may include
+         * CreateInstance() requests received right before we called
+         * StopAcceptingEvents() above. We will detect this case below,
+         * restore gKeepRunning and continue to serve. */
         gEventQ->ProcessPendingEvents();
 
         printf ("Terminated event loop.\n");
