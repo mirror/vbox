@@ -1970,9 +1970,12 @@ static int remLoadProperObj(PVM pVM)
     /*
      * Load the VBoxREM32/64 object/DLL.
      */
-    int rc = SUPR3HardenedLdrLoadAppPriv(remIs64bitEnabled(pVM) ? "VBoxREM64" : "VBoxREM32", &g_ModREM2);
+    const char *pszModule = remIs64bitEnabled(pVM) ? "VBoxREM64" : "VBoxREM32";
+    int rc = SUPR3HardenedLdrLoadAppPriv(pszModule, &g_ModREM2);
     if (RT_SUCCESS(rc))
     {
+        LogRel(("REM: %s\n", pszModule));
+
         /*
          * Resolve exports.
          */
