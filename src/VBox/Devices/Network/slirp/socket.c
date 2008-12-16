@@ -803,7 +803,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     hlen = (ip->ip_hl << 2);
     icp = (struct icmp *)((char *)ip + hlen);
 
-    LogRel(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
+    Log(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
     if (   icp->icmp_type != ICMP_ECHOREPLY
         && icp->icmp_type != ICMP_TIMXCEED
         && icp->icmp_type != ICMP_UNREACH)
@@ -826,7 +826,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
 
     if (icm == NULL)
     {
-        LogRel(("NAT: Can't find the corresponding packet for the received ICMP\n"));
+        Log(("NAT: Can't find the corresponding packet for the received ICMP\n"));
         return;
     }
 
@@ -960,7 +960,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 ip_broken = icr[i].Data;
                 icm = icmp_find_original_mbuf(pData, ip_broken);
                 if (icm == NULL) {
-                    LogRel(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
+                    Log(("ICMP: can't find original package (first double word %x)\n", *(uint32_t *)ip_broken));
                     return;
                 }
                 m = icm->im_m;
@@ -975,7 +975,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icmp_reflect(pData, m);
                 break;
             default:
-                LogRel(("ICMP(default): message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
+                Log(("ICMP(default): message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
                 break;
         }
     }
