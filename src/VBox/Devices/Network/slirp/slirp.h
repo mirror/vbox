@@ -347,4 +347,11 @@ int errno_func(const char *file, int line);
 # endif
 #endif
 
+#define DO_ALIAS(paddr)                                                     \
+do {                                                                        \
+    if ((paddr)->s_addr == dns_addr.s_addr)                                 \
+    {                                                                       \
+        (paddr)->s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);      \
+    }                                                                       \
+} while(0)
 #endif

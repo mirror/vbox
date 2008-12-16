@@ -813,7 +813,14 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
 
     if (   icp->icmp_type == ICMP_TIMXCEED
         || icp->icmp_type == ICMP_UNREACH)
+    {
         ip = &icp->icmp_ip;
+        DO_ALIAS(&ip->ip_dst);
+    }
+    else
+    {
+        DO_ALIAS(&ip->ip_src);
+    }
 
     icm = icmp_find_original_mbuf(pData, ip);
 
@@ -931,6 +938,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 m = m_get(pData);
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
+                DO_ALIAS(&ip->ip_src);
                 ip->ip_p = IPPROTO_ICMP;
                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
                 ip->ip_hl = sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
