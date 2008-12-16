@@ -3559,6 +3559,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCache->TestOut.pVMCSPhys   = 0;
     pCache->TestOut.pCache      = 0;
     pCache->TestOut.pCtx        = 0;
+    pCache->TestOut.eflags      = 0;
 #endif
 
     aParam[0] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
@@ -3577,6 +3578,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     AssertMsg(pCache->TestIn.pCache       == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache, pCache->TestOut.pCache));
     AssertMsg(pCache->TestIn.pCache       == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache), ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache)));
     AssertMsg(pCache->TestIn.pCtx         == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx, pCache->TestOut.pCtx));
+    Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
 #endif
 
     return rc;
