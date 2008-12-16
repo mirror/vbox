@@ -167,8 +167,11 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,mv $(archdir)/VirtualBox.desktop \
 	   $(prefix)/usr/share/applications/VirtualBox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
-	install -D -g 0 -o 0 -m 644 debian/lintian-override \
-	   $(prefix)/usr/share/lintian/overrides/$(package)
+	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
+	sed \
+	    -e 's|%VERPKG%|$(verpkg)|g' \
+	    debian/lintian-override.in > \
+	   $(prefix)/usr/share/lintian/overrides/$(verpkg)
 	mv $(archdir)/VBox.png \
 	   $(prefix)/usr/share/pixmaps/VBox.png
 	mv $(archdir)/*.gc $(prefix)/usr/lib/$(package)
