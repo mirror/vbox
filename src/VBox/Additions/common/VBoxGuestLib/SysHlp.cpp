@@ -26,7 +26,7 @@
 #include "SysHlp.h"
 
 #include <iprt/assert.h>
-#if !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_LINUX)
 #include <iprt/memobj.h>
 #endif
 
@@ -61,8 +61,13 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined(RT_OS_FREEBSD) /** @todo r=bird: I don't think FreeBSD shouldn't go here, solaris and OS/2 doesn't
-                              * That said, the assumption below might be wrong for in kernel calls... */
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+    /** @todo r=bird: I don't think FreeBSD shouldn't go here, solaris and OS/2 doesn't
+      * That said, the assumption below might be wrong for in kernel calls... */
+
+    /** @todo r=frank: Linux: pv is at least in some cases, e.g. with VBoxMapFolder,
+     *  an R0 address -- the memory was allocated with kmalloc(). I don't know
+     *  if this is true in any case. */
     NOREF(ppvCtx);
     NOREF(pv);
     NOREF(u32Size);
@@ -96,7 +101,7 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         IoFreeMdl (pMdl);
     }
 
-#elif defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     NOREF(pvCtx);
 
 #else
