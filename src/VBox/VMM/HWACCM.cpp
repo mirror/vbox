@@ -1253,7 +1253,8 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             /** @todo   This should (probably) be set on every excursion to the REM,
              *          however it's too risky right now. So, only apply it when we go
              *          back to REM for real mode execution. (The XP hack below doesn't
-             *          work reliably without this.) */
+             *          work reliably without this.)
+             *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HWACCM.  */
             pVM->aCpus[0].hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
 
             /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
