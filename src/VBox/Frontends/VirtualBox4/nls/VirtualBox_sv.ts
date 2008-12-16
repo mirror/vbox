@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="sv">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -38,33 +39,30 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Dubbelklicka för att lägga till en ny anslutning</translation>
+        <translation>Dubbelklicka för att lägga till en ny anslutning</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Hårddisk</translation>
+        <translation>Hårddisk</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">Plats</translation>
+        <translation>Plats</translation>
     </message>
 </context>
 <context>
     <name>HDItemsModel</name>
     <message>
-        <location filename="" line="0"/>
         <source>Double-click to add a new attachment</source>
         <translation type="obsolete">Dubbelklicka för att lägga till en ny anslutning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Hard Disk</source>
         <translation type="obsolete">Hårddisk</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Slot</source>
         <translation type="obsolete">Plats</translation>
     </message>
@@ -84,17 +82,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Fel i %1</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Det kan hjälpa att installera om VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -333,12 +331,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidsgränsen för anslutningen överstegs</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte hitta filen på servern (svar: %1)</translation>
     </message>
 </context>
 <context>
@@ -410,30 +408,27 @@
         <translation>VirtualBox - Om</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Grafiskt användargränssnitt för VirtualBox version %1&lt;br&gt;%2&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafiskt användargränssnitt för VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">Version %1</translation>
+        <translation>Version %1</translation>
     </message>
 </context>
 <context>
     <name>VBoxAboutNonOSEDlg</name>
     <message>
-        <location filename="" line="0"/>
         <source>VirtualBox - About</source>
         <translation type="obsolete">VirtualBox - Om</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>VirtualBox Graphical User Interface
 Version %1</source>
         <translation type="obsolete">Grafiskt användargränssnitt för VirtualBox
@@ -473,27 +468,27 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished">Avbryt</translation>
+        <translation>Avbryt</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
+        <translation>Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Välj en mapp att spara avbildning för Gästtillägg till</translation>
+        <translation>Välj en mapp att spara avbildning för Gästtillägg till</translation>
     </message>
 </context>
 <context>
@@ -764,7 +759,6 @@ Version %1</translation>
         <translation>&amp;Hjälp</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="obsolete">Visar den för tillfället tilldelade Värdtangenten.&lt;br&gt;Denna tangent, när den används, växlar fångsttillståndet för tangentbord och mus. Den kan även användas i kombination med andra tangenter för att snabbt genomföra åtgärder från huvudmenyn.</translation>
     </message>
@@ -1042,249 +1036,204 @@ Version %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Loggning...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar den för närvarande tilldelade värdtangenten.&lt;br&gt;Denna tangent, när använd separat, växlar fångsttillståndet för tangentbord och mus. Den kan också användas i kombination med andra tangenter för att snabbt genomföra åtgärder från huvudmenyn.</translation>
     </message>
 </context>
 <context>
     <name>VBoxDiskImageManagerDlg</name>
     <message>
-        <location filename="" line="0"/>
         <source>Name</source>
         <translation type="obsolete">Namn</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Virtual Size</source>
         <translation type="obsolete">Virtuell storlek</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Actual Size</source>
         <translation type="obsolete">Faktisk storlek</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Size</source>
         <translation type="obsolete">Storlek</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Virtual Disk Manager</source>
         <translation type="obsolete">Virtuell diskhanterare</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;CD/DVD Images</source>
         <translation type="obsolete">&amp;CD/DVD-avbildningar</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Floppy Images</source>
         <translation type="obsolete">&amp;Diskettavbildningar</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>--</source>
         <comment>no info</comment>
         <translation type="obsolete">--</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;New...</source>
         <translation type="obsolete">&amp;Ny...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Add...</source>
         <translation type="obsolete">&amp;Lägg till...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>R&amp;emove</source>
         <translation type="obsolete">&amp;Ta bort</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Re&amp;lease</source>
         <translation type="obsolete">Fr&amp;igör</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Re&amp;fresh</source>
         <translation type="obsolete">&amp;Uppdatera</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Actions</source>
         <translation type="obsolete">&amp;Åtgärder</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Checking accessibility</source>
         <translation type="obsolete">Kontrollerar tillgänglighet</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Kontrollerar tillgänglighet...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disktyp:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Lagringstyp:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ansluten till:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ögonblicksbild:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fel vid kontroll av mediatillgänglighet</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Kontrollerar tillgänglighet...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ansluten till:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fel vid kontroll av mediatillgänglighet</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>The image file is not accessible</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">Avbildningsfilen är inte åtkomlig</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Select</source>
         <translation type="obsolete">&amp;Välj</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Select a hard disk image file</source>
         <translation type="obsolete">Välj en hårddiskavbildningsfil</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Select a CD/DVD-ROM disk image file</source>
         <translation type="obsolete">Välj en CD/DVD-ROM-diskavbildningsfil</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Select a floppy disk image file</source>
         <translation type="obsolete">Välj en diskettavbildningsfil</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Create a new virtual hard disk</source>
         <translation type="obsolete">Skapa en ny virtuell hårddisk</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Add (register) an existing image file</source>
         <translation type="obsolete">Lägg till (registrera) en befintlig avbildningsfil</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Remove (unregister) the selected media</source>
         <translation type="obsolete">Ta bort (avregistrera) markerat media</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Release the selected media by detaching it from the machine</source>
         <translation type="obsolete">Frigör det markerade mediet genom att koppla loss det från maskinen</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Refresh the media list</source>
         <translation type="obsolete">Uppdatera medialistan</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
         <translation type="obsolete">CD/DVD-ROM-avbildningar (*.iso);;Alla filer (*)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Floppy images (*.img);;All files (*)</source>
         <translation type="obsolete">Diskettavbildningar (*.img);;Alla filer (*)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
         <translation type="obsolete">Alla hårddiskavbildningar (*.vdi *.vmdk *.vhd);;Virtuella diskavbildningar (*.vdi);;VMDK-avbildningar (*.vmdk);;VHD-avbildningar (*.vhd);;Alla filer (*)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Hard &amp;Disks</source>
         <translation type="obsolete">Hård&amp;diskar</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;Plats:&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;Disktyp:&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Lagringstyp:&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;Ansluten till:&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
         <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Ögonblicksbild:&lt;/nobr&gt;</translation>
     </message>
@@ -1292,37 +1241,30 @@ Version %1</translation>
 <context>
     <name>VBoxDownloaderWgt</name>
     <message>
-        <location filename="" line="0"/>
         <source>Cancel</source>
         <translation type="obsolete">Avbryt</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
         <translation type="obsolete">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Could not locate the file on the server (response: %1).</source>
         <translation type="obsolete">Kunde inte hitta filen på servern (svar: %1).</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Select folder to save Guest Additions image to</source>
         <translation type="obsolete">Välj en mapp att spara avbildning för Gästtillägg till</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Connection timed out.</source>
         <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
     </message>
@@ -1436,7 +1378,6 @@ Version %1</translation>
 <context>
     <name>VBoxGLSettingsGeneral</name>
     <message>
-        <location filename="" line="0"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visar sökvägen till standard-VDI-mappen. Den här mappen används, om inte uttryckligen angiven, när befintliga eller nya virtuella hårddiskar läggs till eller skapas.</translation>
     </message>
@@ -1468,17 +1409,17 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar sökvägen till standardmappen för hårddiskar. Denna mapp används, om inte uttryckligen angiven någon annanstans, när befintliga eller nya virtuella hårddiskar läggs till.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer programmet att tillhandahålla en ikon med sammanhangsmeny i aktivitetsfältet.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visa ikon i aktivitetsfältet</translation>
     </message>
 </context>
 <context>
@@ -1602,7 +1543,6 @@ Version %1</translation>
 <context>
     <name>VBoxGlobal</name>
     <message>
-        <location filename="" line="0"/>
         <source>Differencing</source>
         <comment>hard disk</comment>
         <translation type="obsolete">Skiljer sig</translation>
@@ -1985,19 +1925,16 @@ Version %1</translation>
         <translation>Writethrough</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Virtual Disk Image</source>
         <comment>DiskStorageType</comment>
         <translation type="obsolete">Virtuell diskavbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>iSCSI</source>
         <comment>DiskStorageType</comment>
         <translation type="obsolete">iSCSI</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>VMDK Image</source>
         <comment>DiskStorageType</comment>
         <translation type="obsolete">VMDK-avbildning</translation>
@@ -2129,13 +2066,11 @@ Version %1</translation>
         <translation>Fångad</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;i&gt;Kontrollerar...&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;i&gt;Oåtkomlig&lt;/i&gt;</translation>
@@ -2253,7 +2188,6 @@ Version %1</translation>
         <translation>Användardefinierad</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Custom Hard Disk</source>
         <comment>DiskStorageType</comment>
         <translation type="obsolete">Anpassad hårddisk</translation>
@@ -2379,7 +2313,6 @@ Version %1</translation>
         <translation>Port %1</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>VHD Image</source>
         <comment>DiskStorageType</comment>
         <translation type="obsolete">VHD-avbildning</translation>
@@ -2514,89 +2447,89 @@ Version %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Typ&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Ansluten till:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Ansluten till:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Inte&amp;nbsp;ansluten&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;i&gt;Kontrollerar tillgänglighet...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Misslyckades med att kontrollera mediets tillgänglighet.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Ansluta denna hårddisk kommer att genomföras indirekt med en nyligen skapad skiljande hårddisk.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollerar...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">Oåtkomlig</translation>
+        <translation>Oåtkomlig</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Delar av mediet i denna hårddiskkedja är inte tillgängliga. Använd Hanterare för virtuella media i &lt;b&gt;Visa skiljande hårddiskar&lt;/b&gt;-läget för att inspektera dessa media.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;Denna grundhårddisk är indirekt ansluten med följande skiljande hårddisk:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D-acceleration</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aktiverad</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Inaktiverad</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurerar</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">Skiljer sig</translation>
+        <translation>Skiljer sig</translation>
     </message>
 </context>
 <context>
@@ -2691,24 +2624,22 @@ Version %1</translation>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;no hard disk&gt;</source>
         <translation type="obsolete">&lt;ingen hårddisk&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>No hard disk</source>
         <translation type="obsolete">Ingen hårddisk</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inget media tillgängligt. Använd Hanterare för virtuella media för att lägga till media av motsvarande typ.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;inget media&gt;</translation>
     </message>
 </context>
 <context>
@@ -2716,168 +2647,168 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">&amp;Åtgärder</translation>
+        <translation>&amp;Åtgärder</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Ny...</translation>
+        <translation>&amp;Ny...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Lägg till...</translation>
+        <translation>&amp;Lägg till...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">&amp;Ta bort</translation>
+        <translation>&amp;Ta bort</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">Fr&amp;igör</translation>
+        <translation>Fr&amp;igör</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Uppdatera</translation>
+        <translation>&amp;Uppdatera</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">Skapa en ny virtuell hårddisk</translation>
+        <translation>Skapa en ny virtuell hårddisk</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Lägg till ett befintligt media</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort markerat media</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Frigör det markerade mediet genom att koppla loss det från maskinerna</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">Uppdatera medialistan</translation>
+        <translation>Uppdatera medialistan</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished">Plats</translation>
+        <translation>Plats</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ (Format)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished"></translation>
+        <translation>Ansluten till</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">Kontrollerar tillgänglighet</translation>
+        <translation>Kontrollerar tillgänglighet</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">&amp;Välj</translation>
+        <translation>&amp;Välj</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla hårddiskavbildningar (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla filer (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">Välj en hårddiskavbildningsfil</translation>
+        <translation>Välj en hårddiskavbildningsfil</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">CD/DVD-ROM-avbildningar (*.iso);;Alla filer (*)</translation>
+        <translation>CD/DVD-ROM-avbildningar (*.iso);;Alla filer (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">Välj en CD/DVD-ROM-diskavbildningsfil</translation>
+        <translation>Välj en CD/DVD-ROM-diskavbildningsfil</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">Diskettavbildningar (*.img);;Alla filer (*)</translation>
+        <translation>Diskettavbildningar (*.img);;Alla filer (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">Välj en diskettavbildningsfil</translation>
+        <translation>Välj en diskettavbildningsfil</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Inte&amp;nbsp;ansluten&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Hanterare för virtuella media</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished">Hård&amp;diskar</translation>
+        <translation>Hård&amp;diskar</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">Namn</translation>
+        <translation>Namn</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">Virtuell storlek</translation>
+        <translation>Virtuell storlek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">Faktisk storlek</translation>
+        <translation>Faktisk storlek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">&amp;CD/DVD-avbildningar</translation>
+        <translation>&amp;CD/DVD-avbildningar</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">Storlek</translation>
+        <translation>Storlek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">&amp;Diskettavbildningar</translation>
+        <translation>&amp;Diskettavbildningar</translation>
     </message>
 </context>
 <context>
@@ -2936,32 +2867,26 @@ Version %1</translation>
         <translation>Välkommen till guiden för att skapa ny virtuell disk!</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Image Type</source>
         <translation type="obsolete">Avbildningstyp</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Dynamically expanding image</source>
         <translation type="obsolete">&amp;Dynamiskt växande avbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Fixed-size image</source>
         <translation type="obsolete">A&amp;vbildning med fast storlek</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Virtual Disk Image Type</source>
         <translation type="obsolete">Typ av virtuell diskavbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Image File Name</source>
         <translation type="obsolete">Filnamn för &amp;avbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Image &amp;Size</source>
         <translation type="obsolete">Avbildnings&amp;storlek</translation>
     </message>
@@ -2971,7 +2896,6 @@ Version %1</translation>
         <translation>Plats och storlek för virtuell disk</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
         <translation type="obsolete">Du kommer att skapa en ny virtuell hårddiskavbildning med följande parametrar:</translation>
     </message>
@@ -2996,7 +2920,6 @@ Version %1</translation>
         <translation>Välj en fil för den nya hårddiskavbildningsfilen</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuella hårddiskavbildning för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida.&lt;/p&gt;</translation>
     </message>
@@ -3011,22 +2934,18 @@ Version %1</translation>
         <translation>&amp;Nästa &gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj den typ av virtuell hårddiskavbildning som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande avbildning&lt;/b&gt; tar initialt upp en mycket liten mängd uttrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) när gästoperativsystemet behöver diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;avbildning med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil med ungefär samma storlek som storleken för den virtuella hårddisken. Skapandet av en avbildning med fast storlek kan ta mycket lång tid beroende på avbildningens storlek och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja en plats och namn för filen att lagra den virtuella hårddiskavbildningen som eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj storlek för den virtuella hårddiskavbildningen i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som storleken för den virtuella hårddisken.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
         <translation type="obsolete">Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekta. När du trycker på den kommer en ny hårddiskavbildning att skapas.</translation>
     </message>
@@ -3067,62 +2986,62 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuell hårddisk för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och knappen &lt;b&gt;Bakåt&lt;/b&gt; för att gå tillbaka till föregående sida.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagringstyp för hårddisk</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Välj den typ av virtuell hårddisk som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande lagring&lt;/b&gt; tar initialt upp en mycket liten mängd utrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) allt eftersom gästoperativsystemet använder det lediga diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;lagring med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil av ungefär samma storlek som den virtuella hårddisken. Skapandet av en lagringsplats med fast storlek kan ta lång tid beroende på lagringsstorleken och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagringstyp</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dynamiskt växande lagring</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagring med &amp;fast storlek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja platsen för en fil att lagra hårddiskens data eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Plats</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Välj storleken för den virtuella hårddisken i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som den maximala storleken för denna hårddisk.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Storlek</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Du är på väg att skapa en ny virtuell hårddisk med följande parametrar:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekt. Den nya hårddisken kommer att skapas när du har tryckt på denna knapp.</translation>
     </message>
 </context>
 <context>
@@ -3173,7 +3092,6 @@ Version %1</translation>
         <translation>Minne</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
         <translation type="obsolete">Upps&amp;tartshårddisk (primär master)</translation>
     </message>
@@ -3228,7 +3146,6 @@ Version %1</translation>
         <translation>&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
     </message>
@@ -3285,12 +3202,12 @@ Version %1</translation>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppstartshård&amp;disk (Primär master)</translation>
     </message>
 </context>
 <context>
@@ -3298,22 +3215,22 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>Operativ&amp;system:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visar operativsystemsfamiljen som du planerar att installera på denna virtuella maskin.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;ersion:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Visar operativsystemet som du planerar att installera i den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
+        <translation>Visar operativsystemstypen som du planerar att installera på den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
     </message>
 </context>
 <context>
@@ -3470,52 +3387,42 @@ Version %1</translation>
         <translation>&lt;p&gt;Är du säker på att du vill förkasta det sparade tillståndet för den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Den här åtgärden är samma som att starta om eller stänga av maskinen utan att göra en korrekt avstängning i gästoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Frigöring av den här mediaavbildningen kommer att koppla loss den från följande virtuella maskiner: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vill du fortsätta?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Avbildningsfilen &lt;b&gt;%1&lt;/b&gt; finns redan. Du kan inte skapa en ny virtuell hårddisk som använder den här filen därför att den kanske redan används av en annan virtuell hårddisk.&lt;/p&gt;&lt;p&gt;Ange ett annat filnamn för avbildningen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Misslyckades med att ta bort den virtuella hårddiskavbildningen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vill du ta bort (avregistrera) den virtuella hårddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
         <translation type="obsolete">Misslyckades med att skapa den virtuella hårddiskavbildningen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>hard disk</source>
         <translation type="obsolete">hårddisk</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>CD/DVD image</source>
         <translation type="obsolete">CD/DVD-avbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>floppy image</source>
         <translation type="obsolete">diskettavbildning</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="obsolete">Misslyckades med att registrera %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="obsolete">Misslyckades med att avregistrera %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
@@ -3530,7 +3437,6 @@ Version %1</translation>
         <translation>Misslyckades med att öppna en session för den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
         <translation type="obsolete">Misslyckades med att läsa av tillgänglighetstillståndet för mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Delar av det registrerade mediet kan bli oåtkomligt.</translation>
     </message>
@@ -3715,7 +3621,6 @@ Version %1</translation>
         <translation>&lt;p&gt;Det virtuella maskinfönstret är optimerat till att arbeta i &lt;b&gt;%1-bitars&lt;/b&gt; färgläge men färgkvaliteten för den virtuella displayen är för närvarande inställd till &lt;b&gt;%2&amp;nbsp;bitar&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Öppna dialogrutan för displayegenskaper i gästoperativsystemet och välj ett &lt;b&gt;%3-bitars&lt;/b&gt; färgläge, om det finns tillgängligt, för bästa tänkbara prestanda för det virtuella grafiksystemet.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Observera&lt;/b&gt;. Vissa operativsystem, såsom OS/2, kan faktiskt fungera i 32-bitars läge men rapportera det som 24-bitars (16 miljoner färger). Du kan försöka att välja en annan färgkvalitet för att se om det här meddelandet försvinner eller så kan du helt enkelt inaktivera meddelandet för tillfället om du är säker på att den nödvändiga färgkvaliteten (%4 bitar) inte finns tillgänglig i det angivna gästoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ett kritiskt fel har inträffat vid körning av den virtuella maskinen och maskinkörningen har stoppats.&lt;/p&gt;&lt;p&gt;Se Community-sektionen på &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; för mer hjälp eller ditt supportkontrakt. Tillhandahåll innehållet i loggfilen &lt;tt&gt;VBox.log&lt;/tt&gt; och bildfilen &lt;tt&gt;VBox.png&lt;/tt&gt;, vilka du kan hitta i katalogen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, såväl som en beskrivning av vad du gjorde när felet inträffade. Observera att du även kan komma åt ovanstående filer genom att välja &lt;b&gt;Visa logg&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; om du vill stänga av maskinen eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; om du vill lämna den som den är för vidare felsökning. Observera dock att felsökning kräver speciell kunskap och verktyg, därför rekommenderas det att trycka på &lt;b&gt;OK&lt;/b&gt; nu.&lt;/p&gt;</translation>
     </message>
@@ -3740,7 +3645,6 @@ Version %1</translation>
         <translation>Misslyckades med att skicka ACPI Power Button-knapphändelse till virtuella maskinen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Misslyckades med att ansluta till VirtualBox onlineregistreringstjänst.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
@@ -3798,24 +3702,20 @@ Version %1</translation>
         <translation>Förkasta</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Continue</source>
         <comment>detach image</comment>
         <translation type="obsolete">Fortsätt</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vill du ta bort avbildningsfilen för denna hårddisk, &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Om du väljer &lt;b&gt;Ta bort&lt;/b&gt; så kommer avbildningsfilen att tas bort permanent efter att hårddisken har avregistrerats. Denna åtgärd kan inte ångras.&lt;/p&gt;&lt;p&gt;Om du väljer &lt;b&gt;Avregistrera&lt;/b&gt; så kommer den virtuella hårddisken att avregistreras och tas bort från samlingen, men avbildningsfilen kommer att lämnas kvar på din fysiska disk.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Delete</source>
         <comment>hard disk</comment>
         <translation type="obsolete">Ta bort</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Unregister</source>
         <comment>hard disk</comment>
         <translation type="obsolete">Avregistrera</translation>
@@ -3832,12 +3732,10 @@ Version %1</translation>
         <translation>Inaktivera</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
         <translation type="obsolete">Misslyckades med att ansluta en hårddiskavbildning med UUID %1 till enhetsplats %2 på kanal %3 på %4-bussen för maskinen &lt;b&gt;%5&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation type="obsolete">Misslyckades med att koppla från en hårddiskavbildning från enhetsplats %1 på kanal %2 på %3-bussen för maskinen &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
@@ -3866,7 +3764,6 @@ Version %1</translation>
         <translation>Fånga</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;En eller flera av de registrerade virtuella hårddiskarna, CD/DVD- eller diskettmedia är för närvarande inte tillgängliga. Du kommer därför inte att kunna köra virtuella maskiner som använder dessa media förräns de senare blir tillgängliga.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Kontrollera&lt;/b&gt; för att öppna hanteraren för virtuella diskar och se vilket media som inte är tillgängligt, eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att ignorera det här meddelandet.&lt;/p&gt;</translation>
     </message>
@@ -3877,12 +3774,10 @@ Version %1</translation>
         <translation>Kontrollera</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Följande inställningsfiler för VirtualBox har automatiskt konverterats till version &lt;b&gt;%1&lt;/b&gt; som är det nya formatet för inställningsfiler.&lt;/p&gt;&lt;p&gt;Dock har inte resultatet av konverteringen sparats till disk än. Tryck på:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Spara&lt;/b&gt; för att spara alla automatiskt konverterade filer nu (det kommer inte att vara möjligt att använda dessa inställningsfiler med en äldre version av VirtualBox senare);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Säkerhetskopiera&lt;/b&gt; för att skapa en säkerhetskopia av inställningsfilerna i det gamla formatet innan de sparas i det nya formatet;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Avbryt&lt;/b&gt; för att inte spara de automatiskt konverterade inställningsfilerna.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Observera att om du väljer &lt;b&gt;Avbryt&lt;/b&gt; så kommer de automatiskt konverterade inställningsfilerna underförstått sparas i det nya formatet ändå när du ändrar en inställning eller startar en virtuell maskin, dock kommer &lt;b&gt;inga&lt;/b&gt; säkerhetskopior att skapas i det här fallet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&amp;Save</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation type="obsolete">&amp;Spara</translation>
@@ -3894,7 +3789,6 @@ Version %1</translation>
         <translation>Säkerhets&amp;kopiera</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Cancel</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation type="obsolete">Avbryt</translation>
@@ -3940,7 +3834,6 @@ Version %1</translation>
         <translation>Misslyckades med att kopiera filen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; till &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden för &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</translation>
     </message>
@@ -3967,7 +3860,6 @@ Version %1</translation>
         <translation>&lt;p&gt;Kunde inte växla gästskärmen till helskärmsläge på grund av otillräckligt videominne.&lt;/p&gt;&lt;p&gt;Du bör konfigurera den virtuella maskinen till att ha minst &lt;b&gt;%1&lt;/b&gt; videominne.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att växla till helskärmsläge ändå eller tryck &lt;b&gt;Avbryt&lt;/b&gt; för att avbryta åtgärden.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunde inte hämta information om ny version på grund av följande nätverksfel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
@@ -4069,182 +3961,182 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Är du säker på att du vill frigöra %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Detta kommer att koppla loss det från följande virtuella maskin(er): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Frigör</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Är du säker på att du vill ta bort %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; från listan över kända media?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Observera att denna hårddisk inte är tillgänglig så att dess lagringsenhet inte kan tas bort just nu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nästa dialogruta kommer att låta dig välja huruvida du även vill ta bort lagringsenheten för denna hårddisk eller behålla den för senare användning.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Observera att lagringsenheten för detta media inte kommer att tas bort och därför är det möjligt att lägga till den till listan igen senare.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hårddisklagringsenheten på platsen &lt;b&gt;%1&lt;/b&gt; finns redan. Du kan inte skapa en ny virtuell hårddisk som använder denna plats därför att den kanske redan används av en annan virtuell hårddisk.&lt;/p&gt;&lt;p&gt;Ange en annan plats.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vill du ta bort lagringsenheten för hårddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Om du väljer &lt;b&gt;Ta bort&lt;/b&gt; så kommer den angivna lagringsenheten att permanent tas bort. Denna åtgärd &lt;b&gt;kan inte ångras&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Om du väljer &lt;b&gt;Behåll&lt;/b&gt; så kommer hårddisken endast att tas bort från listan över kända hårddiskar men den kommer inte att röras, vilket gör det möjligt att lägga till denna hårddisk till listan igen senare.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">Ta bort</translation>
+        <translation>Ta bort</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>Behåll</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att ta bort lagringsenheten för hårddisken &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1215"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Det finns inga oanvända hårddiskar tillgängliga för den nyligen skapade anslutningen.&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Skapa&lt;/b&gt; för att starta guiden &lt;i&gt;Ny virtuell disk&lt;/i&gt; och skapa en ny hårddisk eller tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att öppna &lt;i&gt;Hanterare för virtuella media&lt;/i&gt; och välj vad som ska göras.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1230"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att skapa hårddisklagringen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att ansluta hårddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; till platsen &lt;i&gt;%2&lt;/i&gt; för maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1257"/>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att koppla loss hårddisken &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; från platsen &lt;i&gt;%2&lt;/i&gt; för maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att montera %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; till maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att avmontera %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; från maskinen &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att öppna %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att stänga %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1347"/>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att få tag på tillgänglighetstillstånd för mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1627"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Misslyckades med att ansluta till VirtualBox registreringstjänst på grund av följande fel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kunde inte hämta information om ny version på grund av följande fel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;En eller flera virtuella hårddiskar, CD/DVD- eller diskettmedia är inte tillgängliga för närvarande. Du kommer därför inte att kunna använda virtuella maskiner som använder dessa media förrän de blir åtkomliga.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Kontrollera&lt;/b&gt; för att öppna Hanterare för virtuella media och se vilket media som är oåtkomligt, eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att ignorera detta meddelande.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dina befintliga VirtualBox-inställningsfiler blev automatiskt konverterade från det äldre formatet till ett nytt format som krävs av den nya versionen av VirtualBox.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; för att starta VirtualBox nu eller tryck på &lt;b&gt;Mer&lt;/b&gt; om du vill få mer information om vilka filer som blev konverterade och få åtkomst till ytterligare åtgärder.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Avsluta&lt;/b&gt; för att avsluta programmet VirtualBox utan att spara resultatet för konverteringen till disk.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mer</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">A&amp;vsluta</translation>
+        <translation>A&amp;vsluta</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Följande VirtualBox-inställningsfiler har automatiskt konverterats till det nya formatet för inställningsfiler med version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Dock har resultatet för konverteringen inte sparats till disk än. Tryck på:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Säkerhetskopiera&lt;/b&gt; för att skapa säkerhetskopior av inställningsfilerna i det gamla formatet innan de sparas i det nya formatet;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Skriv över&lt;/b&gt; för att spara alla automatiskt konverterade filer utan att skapa säkerhetskopior (det kommer inte att vara möjligt att använda dessa inställningsfiler med en äldre version av VirtualBox efteråt);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Det rekommenderas att alltid välja &lt;b&gt;Säkerhetskopiera&lt;/b&gt; därför att det i detta fall är möjligt att gå tillbaka till en tidigare version av VirtualBox (om nödvändigt) utan att förlora dina aktuella inställningar. Se handboken för VirtualBox för mer information om nedgradering.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;li&gt;&lt;b&gt;Avsluta&lt;/b&gt; för att avsluta VirtualBox utan att spara resultatet för konverteringen till disk.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Skriv &amp;över</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ett kritiskt fel har inträffat vid körning av den virtuella maskinen och därför har maskinkörningen stoppats.&lt;/p&gt;&lt;p&gt;För hjälp kan du se avsnittet Community på &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; eller ditt supportkontrakt. Tillhandahåll innehållet i loggfilen &lt;tt&gt;VBox.log&lt;/tt&gt; och bildfilen &lt;tt&gt;VBox.png&lt;/tt&gt; som du kan hitta i katalogen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, såväl som en beskrivning av vad du gjorde när detta fel inträffade. Observera att du även kan komma åt ovanstående filer genom att välja &lt;b&gt;Visa logg&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; om du vill stänga av maskinen eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; om du vill lämna den som den är för felsökning. Observera att felsökning kräver speciella kunskaper och verktyg så det rekommenderas att trycka på &lt;b&gt;OK&lt;/b&gt; nu.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">hårddisk</translation>
+        <translation>hårddisk</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">CD/DVD-avbildning</translation>
+        <translation>CD/DVD-avbildning</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">diskettavbildning</translation>
+        <translation>diskettavbildning</translation>
     </message>
 </context>
 <context>
@@ -4285,12 +4177,10 @@ Version %1</translation>
         <translation>Välkommen till registreringsformuläret för VirtualBox!</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Connection timed out.</source>
         <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Could not locate the registration form on the server (response: %1).</source>
         <translation type="obsolete">Kunde inte hitta registreringsformuläret på servern (svar: %1).</translation>
     </message>
@@ -4341,12 +4231,10 @@ Version %1</translation>
         <translation>&amp;Detaljer</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Virtual &amp;Disk Manager...</source>
         <translation type="obsolete">Virtuell &amp;diskhanterare...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Display the Virtual Disk Manager dialog</source>
         <translation type="obsolete">Visa den virtuella diskhanteraren</translation>
     </message>
@@ -4514,18 +4402,18 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Hanterare för &amp;virtuella media...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa Hanterare för virtuella media</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation type="unfinished"></translation>
+        <translation>Logg</translation>
     </message>
 </context>
 <context>
@@ -4548,7 +4436,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Icke-optimala inställningar hittades</translation>
     </message>
 </context>
 <context>
@@ -4746,28 +4634,28 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
         <source>Show Selector Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa väljare</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
         <source>Show the selector window assigned to this menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Visa väljarfönstret tilldelat till denna meny</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
         <source>Hide Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Dölj aktivitetsfältsikon</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
         <source>Remove this icon from the system tray</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta bort denna ikon från aktivitetsfältet</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation type="unfinished"></translation>
+        <translation>And&amp;ra maskiner...</translation>
     </message>
 </context>
 <context>
@@ -4843,12 +4731,10 @@ Version %1</translation>
         <translation>Aldrig</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Connection timed out.</source>
         <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Could not locate the latest version list on the server (response: %1).</source>
         <translation type="obsolete">Kunde inte hitta den senaste versionslistan på servern (svar: %1).</translation>
     </message>
@@ -4873,7 +4759,6 @@ Version %1</translation>
         <translation>Leta efter uppdateringar</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
 &lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -4909,7 +4794,7 @@ Version %1</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Denna guide kommer att ansluta till VirtualBox webbplats och kontrollera om en nyare version av VirtualBox finns tillgänglig.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Kontrollera&lt;/b&gt; för att leta efter en ny version nu eller knappen &lt;b&gt;Avbryt&lt;/b&gt; om du inte vill genomföra denna kontroll.&lt;/p&gt;&lt;p&gt;Du kan köra denna guide när som helst genom att välja &lt;b&gt;Leta efter uppdateringar...&lt;/b&gt; från menyn &lt;b&gt;Hjälp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5253,42 +5138,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">V&amp;isa</translation>
+        <translation>V&amp;isa</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Växla till fönstret för den markerade virtuella maskinen</translation>
+        <translation>Växla till fönstret för den markerade virtuella maskinen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">S&amp;tarta</translation>
+        <translation>S&amp;tarta</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Starta den markerade virtuella maskinen</translation>
+        <translation>Starta den markerade virtuella maskinen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">Å&amp;teruppta</translation>
+        <translation>Å&amp;teruppta</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Återuppta körningen av den virtuella maskinen</translation>
+        <translation>Återuppta körningen av den virtuella maskinen</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">Gör &amp;paus</translation>
+        <translation>Gör &amp;paus</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Pausa körningen av den virtuella maskinen</translation>
+        <translation>Gör paus i körningen av den virtuella maskinen</translation>
     </message>
 </context>
 <context>
@@ -5430,20 +5315,18 @@ p, li { white-space: pre-wrap; }
         <translation>Visar avbildningsfilen att montera på den virtuella CD/DVD-enheten och tillåter att snabbt välja en annan avbildning.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">Anropar Virtuella diskhanteraren för att välja en CD/DVD-avbildning att montera.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anropar Hanterare för virtuella media för att välja en cd/dvd-avbildning att montera.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="0"/>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
         <translation type="obsolete">%1 på &lt;b&gt;%2&lt;/b&gt;-sidan.</translation>
     </message>
@@ -5520,7 +5403,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished"></translation>
+        <translation>På &lt;b&gt;%1&lt;/b&gt;-sidan, %2</translation>
     </message>
 </context>
 <context>
@@ -5576,14 +5459,13 @@ p, li { white-space: pre-wrap; }
         <translation>Visar avbildningsfilen att montera på den virtuella diskettenheten och tillåter att snabbt välja en annan avbildning.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">Anropar Virtuella diskhanteraren för att välja en diskettavbildning att montera.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anropar Hanterare för virtuella media för att välja en diskettavbildning att montera.</translation>
     </message>
 </context>
 <context>
@@ -5619,12 +5501,10 @@ p, li { white-space: pre-wrap; }
         <translation>Visar namnet på den virtuella maskinen.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>OS &amp;Type:</source>
         <translation type="obsolete">Operativsystems&amp;typ:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visar operativsystemet som du planerar att installera i den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
     </message>
@@ -5806,27 +5686,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>du har tilldelat mer än &lt;b&gt;75%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj ett mindre värde för minnesanvändningen.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="385"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>du har tilldelat mer än &lt;b&gt;50%&lt;/b&gt; av din dators minne (&lt;b&gt;%1&lt;/b&gt;) till den virtuella maskinen. Det finns kanske inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Fortsätt på egen risk.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>du har tilldelat mindre än &lt;b&gt;1%&lt;/b&gt; för grafikminnet vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer den virtuella maskinen att få åtkomst till 3D-grafikförmågor tillgängliga på värddatorn.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktivera &amp;3D-acceleration</translation>
     </message>
 </context>
 <context>
@@ -5867,7 +5747,6 @@ p, li { white-space: pre-wrap; }
         <translation>Tar bort markerad hårddiskanslutning.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation type="obsolete">Anropar Virtuella diskhanteraren för att välja en hårddisk att ansluta till den för närvarande markerade platsen.</translation>
     </message>
@@ -5894,17 +5773,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anropar Hanterare för virtuella media för att välja en hårddisk att ansluta till den markerade platsen.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="114"/>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Om kryssad kommer den att visa skiljande hårddiskar som anslutits till platserna istället för deras bashårddiskar (visas vid indirekta anslutningar) och kommer även att tillåta uttrycklig anslutning av andra skiljande hårddiskar. Kryssa endast i denna om du behöver en komplex hårddiskkonfiguration.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="117"/>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visa skiljande hårddiskar</translation>
     </message>
 </context>
 <context>
@@ -6051,7 +5930,6 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsParallel</name>
     <message>
-        <location filename="" line="0"/>
         <source>Port %1</source>
         <comment>
 parallel ports</comment>
@@ -6111,7 +5989,7 @@ parallel ports</comment>
         <location filename="../src/VBoxVMSettingsParallel.cpp" line="113"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
 </context>
 <context>
@@ -6256,7 +6134,6 @@ parallel ports</comment>
 <context>
     <name>VBoxVMSettingsSerial</name>
     <message>
-        <location filename="" line="0"/>
         <source>Port %1</source>
         <comment>
 serial ports</comment>
@@ -6336,7 +6213,7 @@ serial ports</comment>
         <location filename="../src/VBoxVMSettingsSerial.cpp" line="130"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
 </context>
 <context>

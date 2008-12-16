@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="pt_PT">
+<defaultcodec></defaultcodec>
 <context>
     <name>PPDOptionsModel</name>
     <message>
@@ -23,7 +24,7 @@
     <message>
         <location filename="../src/qt3support/other/q3accel.cpp" line="497"/>
         <source>Ambiguous %1 not handled</source>
-        <translation>%1 ambíguo não tratado</translation>
+        <translation>%1 ambíguo, não tratado</translation>
     </message>
 </context>
 <context>
@@ -244,7 +245,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4200"/>
         <source>R&amp;eload</source>
-        <translation>&amp;Recarregar</translation>
+        <translation>R&amp;ecarregar</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4204"/>
@@ -274,7 +275,7 @@
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4228"/>
         <source>Show &amp;hidden files</source>
-        <translation>Mostrar ficheiros &amp;escondidos</translation>
+        <translation>Mostrar fic&amp;heiros escondidos</translation>
     </message>
     <message>
         <location filename="../src/qt3support/dialogs/q3filedialog.cpp" line="4259"/>
@@ -682,7 +683,7 @@ para
     <message>
         <location filename="../src/network/qabstractsocket.cpp" line="1449"/>
         <source>Socket operation timed out</source>
-        <translation>Operação de &apos;socket&apos; expirada</translation>
+        <translation>Operação de &apos;socket&apos; expirou</translation>
     </message>
     <message>
         <location filename="../src/network/qabstractsocket.cpp" line="1831"/>
@@ -705,7 +706,7 @@ para
     <message>
         <location filename="../src/gui/widgets/qabstractspinbox.cpp" line="1142"/>
         <source>&amp;Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Seleccionar tudo</translation>
     </message>
 </context>
 <context>
@@ -861,17 +862,17 @@ para
     <message>
         <location filename="../src/gui/itemviews/qitemeditorfactory.cpp" line="515"/>
         <source>False</source>
-        <translation type="unfinished">Falso</translation>
+        <translation>Falso</translation>
     </message>
     <message>
         <location filename="../src/gui/itemviews/qitemeditorfactory.cpp" line="516"/>
         <source>True</source>
-        <translation type="unfinished">Verdadeiro</translation>
+        <translation>Verdadeiro</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/widgets/complexwidgets.cpp" line="1394"/>
         <source>Close</source>
-        <translation type="unfinished">Fechar</translation>
+        <translation>Fechar</translation>
     </message>
 </context>
 <context>
@@ -884,12 +885,12 @@ para
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="1414"/>
         <source>Unable to commit transaction</source>
-        <translation>Finalização de transacção não possível</translation>
+        <translation type="unfinished">Incapaz de estabelecer a transacção</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="1431"/>
         <source>Unable to rollback transaction</source>
-        <translation>Anulação de transacção não possível</translation>
+        <translation>Incapaz de reverter a transacção</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/db2/qsql_db2.cpp" line="1446"/>
@@ -963,7 +964,7 @@ para
     <message>
         <location filename="../src/plugins/accessible/widgets/rangecontrols.cpp" line="922"/>
         <source>SpeedoMeter</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Velocímetro</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/widgets/rangecontrols.cpp" line="924"/>
@@ -1049,7 +1050,7 @@ para
     <message>
         <location filename="../src/gui/widgets/qdialogbuttonbox.cpp" line="566"/>
         <source>N&amp;o to All</source>
-        <translation>N&amp;ão para Todos</translation>
+        <translation>Nã&amp;o para Todos</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qdialogbuttonbox.cpp" line="569"/>
@@ -1117,12 +1118,12 @@ para
     <message>
         <location filename="../src/plugins/accessible/widgets/qaccessiblewidgets.cpp" line="1198"/>
         <source>Close</source>
-        <translation type="unfinished">Fechar</translation>
+        <translation>Fechar</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/widgets/qaccessiblewidgets.cpp" line="1201"/>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Fixar</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/widgets/qaccessiblewidgets.cpp" line="1201"/>
@@ -1135,12 +1136,12 @@ para
     <message>
         <location filename="../src/plugins/accessible/widgets/rangecontrols.cpp" line="387"/>
         <source>More</source>
-        <translation type="unfinished">Mais</translation>
+        <translation>Mais</translation>
     </message>
     <message>
         <location filename="../src/plugins/accessible/widgets/rangecontrols.cpp" line="389"/>
         <source>Less</source>
-        <translation type="unfinished">Menos</translation>
+        <translation>Menos</translation>
     </message>
 </context>
 <context>
@@ -1232,7 +1233,7 @@ Por favor verifique o nome do ficheiro.</translation>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="444"/>
         <source>Show &amp;hidden files</source>
-        <translation>Mostrar ficheiros &amp;escondidos</translation>
+        <translation>Mostrar fic&amp;heiros escondidos</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="257"/>
@@ -1327,52 +1328,52 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="420"/>
         <source>Find Directory</source>
-        <translation type="unfinished">Procurar Pasta</translation>
+        <translation>Procurar Pasta</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="438"/>
         <source>Show </source>
-        <translation type="unfinished"></translation>
+        <translation>Mostrar</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="258"/>
         <source>Forward</source>
-        <translation type="unfinished">Seguinte</translation>
+        <translation>Seguinte</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="1997"/>
         <source>New Folder</source>
-        <translation type="unfinished">Nova Pasta</translation>
+        <translation>Nova Pasta</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="445"/>
         <source>&amp;New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nova Pasta</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="782"/>
         <source>&amp;Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Es&amp;colher</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qsidebar.cpp" line="376"/>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Remover</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfiledialog.cpp" line="752"/>
         <source>File &amp;name:</source>
-        <translation type="unfinished">&amp;Nome do Ficheiro:</translation>
+        <translation>&amp;Nome do Ficheiro:</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="256"/>
         <source>Look in:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Procurar em:</translation>
     </message>
     <message>
         <location filename="../src/gui/ui_qfiledialog.h" line="260"/>
         <source>Create New Folder</source>
-        <translation type="unfinished">Criar Nova Pasta</translation>
+        <translation>Criar Nova Pasta</translation>
     </message>
 </context>
 <context>
@@ -1380,47 +1381,47 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="479"/>
         <source>%1 TB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 TB</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="481"/>
         <source>%1 GB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 GB</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="483"/>
         <source>%1 MB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="485"/>
         <source>%1 KB</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 KB</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="486"/>
         <source>%1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bytes</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="560"/>
         <source>Invalid filename</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome de ficheiro inválido</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="562"/>
         <source>&lt;b&gt;The name &quot;%1&quot; can not be used.&lt;/b&gt;&lt;p&gt;Try using another name, with fewer characters or no punctuations marks.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;b&gt;O nome &quot;%1&quot; não pode ser usado.&lt;/b&gt;&lt;p&gt;Tente com outro nome, com menos caracteres ou sem marcas de pontuação.</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="607"/>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="609"/>
         <source>Size</source>
-        <translation type="unfinished">Tamanho</translation>
+        <translation>Tamanho</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="613"/>
@@ -1432,22 +1433,22 @@ Deseja apagar de qualquer forma?</translation>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="615"/>
         <source>Type</source>
         <comment>All other platforms</comment>
-        <translation type="unfinished">Tipo</translation>
+        <translation>Tipo</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel.cpp" line="622"/>
         <source>Date Modified</source>
-        <translation type="unfinished">Data de Modificação</translation>
+        <translation>Data de Modificação</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel_p.h" line="261"/>
         <source>My Computer</source>
-        <translation type="unfinished">O Meu Computador</translation>
+        <translation>O Meu Computador</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qfilesystemmodel_p.h" line="263"/>
         <source>Computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Computador</translation>
     </message>
 </context>
 <context>
@@ -1632,7 +1633,7 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/network/qhostinfo_win.cpp" line="207"/>
         <source>Host not found</source>
-        <translation>Servidor Não encontrado</translation>
+        <translation>Servidor não encontrado</translation>
     </message>
     <message>
         <location filename="../src/network/qhostinfo_win.cpp" line="202"/>
@@ -1730,12 +1731,12 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/network/qhttp.cpp" line="2652"/>
         <source>Proxy authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Autenticação na Proxy necessária</translation>
     </message>
     <message>
         <location filename="../src/network/qhttp.cpp" line="2656"/>
         <source>Authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation>Autenticação necessária</translation>
     </message>
 </context>
 <context>
@@ -1743,7 +1744,7 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/network/qhttpsocketengine.cpp" line="492"/>
         <source>Authentication required</source>
-        <translation type="unfinished"></translation>
+        <translation>Autenticação necessária</translation>
     </message>
 </context>
 <context>
@@ -1958,17 +1959,17 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="602"/>
         <source>The shared library was not found.</source>
-        <translation type="unfinished"></translation>
+        <translation>A biblioteca partilhada não foi encontrada.</translation>
     </message>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="604"/>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">O ficheiro &apos;%1&apos; não é um &quot;plugin&quot; Qt válido.</translation>
     </message>
     <message>
         <location filename="../src/corelib/plugin/qlibrary.cpp" line="643"/>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">O &quot;plugin&quot; &apos;%1&apos; usa uma biblioteca de Qt incompatível. (Não é possível utilizar bibliotecas de teste e estáveis)</translation>
     </message>
 </context>
 <context>
@@ -2090,57 +2091,57 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="255"/>
         <source>%1 - [%2]</source>
-        <translation type="unfinished">%1 - [%2]</translation>
+        <translation>%1 - [%2]</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="547"/>
         <source>Close</source>
-        <translation type="unfinished">Fechar</translation>
+        <translation>Fechar</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="550"/>
         <source>Minimize</source>
-        <translation type="unfinished">Minimizar</translation>
+        <translation>Minimizar</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="553"/>
         <source>Restore Down</source>
-        <translation type="unfinished">Restaurar Baixo</translation>
+        <translation type="unfinished">Restaurar em Baixo</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="893"/>
         <source>&amp;Restore</source>
-        <translation type="unfinished">&amp;Restaurar</translation>
+        <translation>&amp;Restaurar</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="896"/>
         <source>&amp;Move</source>
-        <translation type="unfinished">&amp;Mover</translation>
+        <translation>&amp;Mover</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="897"/>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Tamanho</translation>
+        <translation>&amp;Tamanho</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="898"/>
         <source>Mi&amp;nimize</source>
-        <translation type="unfinished">Mi&amp;nimizar</translation>
+        <translation>Mi&amp;nimizar</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="900"/>
         <source>Ma&amp;ximize</source>
-        <translation type="unfinished">Ma&amp;ximizar</translation>
+        <translation>Ma&amp;ximizar</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="902"/>
         <source>Stay on &amp;Top</source>
-        <translation type="unfinished">Permanecer no &amp;Topo</translation>
+        <translation>Permanecer no &amp;Topo</translation>
     </message>
     <message>
         <location filename="../src/gui/widgets/qmdisubwindow.cpp" line="905"/>
         <source>&amp;Close</source>
-        <translation type="unfinished">&amp;Fechar</translation>
+        <translation>&amp;Fechar</translation>
     </message>
 </context>
 <context>
@@ -2435,7 +2436,7 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1283"/>
         <source>Unable to bind column for batch execute</source>
-        <translation>Não foi possível fazer a licação da coluna para execução &apos;batch&apos;</translation>
+        <translation>Não foi possível fazer a ligação da coluna para execução &apos;batch&apos;</translation>
     </message>
     <message>
         <location filename="../src/sql/drivers/oci/qsql_oci.cpp" line="1297"/>
@@ -2583,7 +2584,7 @@ Deseja apagar de qualquer forma?</translation>
     <message>
         <location filename="../src/corelib/plugin/qpluginloader.cpp" line="194"/>
         <source>The plugin was not loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>O &quot;plugin&quot; não foi carregado.</translation>
     </message>
 </context>
 <context>
@@ -2936,7 +2937,8 @@ Deseja substituir?</translation>
         <location filename="../src/gui/dialogs/qprintdialog_unix.cpp" line="1174"/>
         <source>%1 is a directory.
 Please choose a different file name.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 é uma pasta.
+Por favor escolha um nome de ficheiro diferente.</translation>
     </message>
 </context>
 <context>
@@ -3354,47 +3356,47 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="319"/>
         <source>Volume Down</source>
-        <translation>Volume Cima</translation>
+        <translation type="unfinished">Baixar Volume</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="320"/>
         <source>Volume Mute</source>
-        <translation>Volume Mute</translation>
+        <translation type="unfinished">Silenciar</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="321"/>
         <source>Volume Up</source>
-        <translation>Volume Baixo</translation>
+        <translation type="unfinished">Aumentar Volume</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="322"/>
         <source>Bass Boost</source>
-        <translation>Bass Boost</translation>
+        <translation type="unfinished">Acentuar Graves</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="323"/>
         <source>Bass Up</source>
-        <translation>Bass Cima</translation>
+        <translation type="unfinished">Aumentar Graves</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="324"/>
         <source>Bass Down</source>
-        <translation>Bass Baixo</translation>
+        <translation type="unfinished">Baixar Graves</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="325"/>
         <source>Treble Up</source>
-        <translation>Treble Cima</translation>
+        <translation type="unfinished">Aumentar Agudos</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="326"/>
         <source>Treble Down</source>
-        <translation>Treble Baixo</translation>
+        <translation type="unfinished">Baixar Agudos</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="327"/>
         <source>Media Play</source>
-        <translation>Tocar Média</translation>
+        <translation type="unfinished">Reproduzir Média</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="328"/>
@@ -3414,7 +3416,7 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="331"/>
         <source>Media Record</source>
-        <translation>Gravação Média</translation>
+        <translation type="unfinished">Gravar Média</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="333"/>
@@ -3444,7 +3446,7 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="338"/>
         <source>Launch Media</source>
-        <translation>Média</translation>
+        <translation type="unfinished">Abrir Média</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="339"/>
@@ -3534,12 +3536,12 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="359"/>
         <source>Page Up</source>
-        <translation>Page Up</translation>
+        <translation>Página Acima</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="360"/>
         <source>Page Down</source>
-        <translation>Page Down</translation>
+        <translation>Página a Baixo</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="361"/>
@@ -3564,12 +3566,12 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="365"/>
         <source>Insert</source>
-        <translation>Insert</translation>
+        <translation>Inserir</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="366"/>
         <source>Delete</source>
-        <translation>Delete</translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="367"/>
@@ -3579,12 +3581,12 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="368"/>
         <source>System Request</source>
-        <translation>System Request</translation>
+        <translation>Pedido do Sistema</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="372"/>
         <source>Select</source>
-        <translation>Select</translation>
+        <translation>Seleccionar</translation>
     </message>
     <message>
         <location filename="../src/gui/kernel/qkeysequence.cpp" line="373"/>
@@ -3700,7 +3702,7 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/network/qsocks5socketengine.cpp" line="1187"/>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation>Socks5 expirado ao ligar ao servidor socks</translation>
+        <translation>Socks5 expirou ao ligar ao servidor socks</translation>
     </message>
 </context>
 <context>
@@ -3774,57 +3776,57 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="483"/>
         <source>Unable to write data: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Incapaz de escrever dados: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="552"/>
         <source>Error while reading: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao escrever: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="582"/>
         <source>Error during SSL handshake: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro durante a inicialização SSL: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="218"/>
         <source>Error creating SSL context (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao criar contexto SSL (%1)</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="240"/>
         <source>Invalid or empty cipher list (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista de cifras inválida ou vazia (%1)</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="291"/>
         <source>Error creating SSL session, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao criar sessão SSL, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="305"/>
         <source>Error creating SSL session: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao criar sessão SSL: %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="256"/>
         <source>Cannot provide a certificate with no key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível fornecer certificado sem chave, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="263"/>
         <source>Error loading local certificate, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao carregar certificado local, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="275"/>
         <source>Error loading private key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Erro ao carregar chave privada, %1</translation>
     </message>
     <message>
         <location filename="../src/network/qsslsocket_openssl.cpp" line="282"/>
         <source>Private key do not certificate public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Chave privada não certifica chave publica, %1</translation>
     </message>
 </context>
 <context>
@@ -4038,12 +4040,12 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="554"/>
         <source>Go Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Para trás</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="555"/>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="565"/>
@@ -4053,37 +4055,37 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="557"/>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminado</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="558"/>
         <source>Quit</source>
-        <translation type="unfinished">Sair</translation>
+        <translation>Sair</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="559"/>
         <source>Help</source>
-        <translation type="unfinished">Ajuda</translation>
+        <translation>Ajuda</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="561"/>
         <source>&lt; &amp;Back</source>
-        <translation type="unfinished">&lt; &amp;Recuar</translation>
+        <translation>&lt; &amp;Recuar</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="566"/>
         <source>&amp;Finish</source>
-        <translation type="unfinished">&amp;Terminar</translation>
+        <translation>&amp;Terminar</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="567"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <location filename="../src/gui/dialogs/qwizard.cpp" line="568"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Ajuda</translation>
+        <translation>&amp;Ajuda</translation>
     </message>
 </context>
 <context>
@@ -4277,62 +4279,62 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1687"/>
         <source>Extra content at end of document.</source>
-        <translation type="unfinished"></translation>
+        <translation>Conteúdo extra no fim do documento.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="613"/>
         <source>Invalid entity value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valor de entidade inválido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="720"/>
         <source>Invalid XML character.</source>
-        <translation type="unfinished"></translation>
+        <translation>Caractere XLM inválido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="978"/>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sequência &apos;]]&gt;&apos; não permitida no conteúdo.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1286"/>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">O prefixo &apos;%1&apos; do &quot;namespace&quot; não declarado</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1324"/>
         <source>Attribute redefined.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Atributo redefinido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1436"/>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Caractere &apos;%1&apos; inesperado na identificação pública literal.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1464"/>
         <source>Invalid XML version string.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&quot;String&quot; da versão XML inválida.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1466"/>
         <source>Unsupported XML version.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Versão XML não suportada.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1489"/>
         <source>%1 is an invalid encoding name.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 é um nome de codificação inválido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1496"/>
         <source>Encoding %1 is unsupported</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Codificação %1 não é suportada</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1498"/>
         <source>Invalid XML encoding name.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nome de codificação XML inválido.</translation>
     </message>
     <message>
         <location filename="../src/xml/qxmlstream.cpp" line="1514"/>
@@ -4452,7 +4454,7 @@ Please choose a different file name.</source>
     <message>
         <location filename="../src/xml/qxmlstream_p.h" line="1558"/>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 é um identificador PUBLIC inválido.</translation>
     </message>
 </context>
 </TS>

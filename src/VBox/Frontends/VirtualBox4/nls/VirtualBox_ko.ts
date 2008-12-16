@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="ko">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -38,35 +39,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">새 하드디스크를 연결하려면 두 번 누르십시오</translation>
+        <translation>새 하드디스크를 연결하려면 두 번 누르십시오</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">하드디스크</translation>
+        <translation>하드디스크</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">슬롯</translation>
-    </message>
-</context>
-<context>
-    <name>HDItemsModel</name>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="97"/>
-        <source>Double-click to add a new attachment</source>
-        <translation type="obsolete">새 하드디스크를 연결하려면 두 번 누르십시오</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
-        <source>Hard Disk</source>
-        <translation type="obsolete">하드디스크</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="162"/>
-        <source>Slot</source>
-        <translation type="obsolete">슬롯</translation>
+        <translation>슬롯</translation>
     </message>
 </context>
 <context>
@@ -84,17 +67,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1 오류</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox를 다시 설치하시면 해결될 수도 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -333,12 +316,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>연결 시간이 초과되었습니다.</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>서버에서 파일을 찾을 수 없습니다 (응답: %1)</translation>
     </message>
 </context>
 <context>
@@ -410,34 +393,14 @@
         <translation>VirtualBox - 정보</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxAboutDlg.ui" line="100"/>
-        <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;%2&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;VirtualBox 그래픽 사용자 인터페이스 버전 %1&lt;br&gt;%2&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 그래픽 사용자 인터페이스</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">버전 %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxAboutNonOSEDlg</name>
-    <message>
-        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="38"/>
-        <source>VirtualBox - About</source>
-        <translation type="obsolete">VirtualBox - 정보</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxAboutNonOSEDlg.cpp" line="39"/>
-        <source>VirtualBox Graphical User Interface
-Version %1</source>
-        <translation type="obsolete">VirtualBox 그래픽 사용자 인터페이스
-버전 %1</translation>
+        <translation>버전 %1</translation>
     </message>
 </context>
 <context>
@@ -473,27 +436,27 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
+        <translation>VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">게스트 확장 이미지를 저장할 폴더 선택</translation>
+        <translation>게스트 확장 이미지를 저장할 폴더 선택</translation>
     </message>
 </context>
 <context>
@@ -734,36 +697,6 @@ Version %1</source>
         <translation>게스트 확장 설치 이미지를 마운트합니다</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1588"/>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="obsolete">VirtualBox 웹 사이트(&amp;V)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="obsolete">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1600"/>
-        <source>&amp;About VirtualBox...</source>
-        <translation type="obsolete">VirtualBox 정보(&amp;A)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1601"/>
-        <source>Show a dialog with product information</source>
-        <translation type="obsolete">제품 정보 대화상자를 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1603"/>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="obsolete">모든 경고 초기화(&amp;R)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1605"/>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="obsolete">모든 경고 메시지를 다시 보이도록 설정합니다</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1698"/>
         <source>Mount &amp;Floppy</source>
         <translation>플로피 장치 마운트(&amp;F)</translation>
@@ -792,11 +725,6 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1715"/>
         <source>&amp;Help</source>
         <translation>도움말(&amp;H)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1652"/>
-        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="obsolete">현재의 호스트 키를 표시합니다.&lt;br&gt;이 키를 단독으로 누르면 키보드와 마우스가 잡힌 상태를 변경하며 다른 키와의 조합으로 특정 동작을 실행할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1985"/>
@@ -1022,26 +950,6 @@ Version %1</source>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;공유 폴더 없음&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1584"/>
-        <source>&amp;Contents...</source>
-        <translation type="obsolete">내용(&amp;C)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1586"/>
-        <source>Show the online help contents</source>
-        <translation type="obsolete">온라인 도움말의 내용을 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1592"/>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation type="obsolete">VirtualBox 등록(&amp;E)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1594"/>
-        <source>Open VirtualBox registration form</source>
-        <translation type="obsolete">VirtualBox 등록 대화 상자를 엽니다</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1574"/>
         <source>Sun xVM VirtualBox</source>
         <translation>Sun xVM VirtualBox</translation>
@@ -1069,16 +977,6 @@ Version %1</source>
         <translation>명령줄(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1596"/>
-        <source>C&amp;heck for a new version...</source>
-        <translation type="obsolete">새 버전 찾기(&amp;H)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxConsoleWnd.cpp" line="1598"/>
-        <source>Check for a new VirtualBox version</source>
-        <translation type="obsolete">새 VirtualBox 버전을 찾습니다</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1724"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation>게스트 디스플레이 자동 크기 조정이 켜져 있거나(&lt;img src=:/auto_resize_on_16px.png/&gt;) 꺼져 있음(&lt;img src=:/auto_resize_off_16px.png/&gt;)을 나타냅니다. 이 기능을 사용하려면 게스트 확장을 게스트 OS에 설치해야 합니다.</translation>
@@ -1102,315 +1000,16 @@ Version %1</source>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>로그(&amp;L)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>VBoxDiskImageManagerDlg</name>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="330"/>
-        <source>Name</source>
-        <translation type="obsolete">이름</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="85"/>
-        <source>Virtual Size</source>
-        <translation type="obsolete">가상 크기</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="90"/>
-        <source>Actual Size</source>
-        <translation type="obsolete">실제 크기</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="335"/>
-        <source>Size</source>
-        <translation type="obsolete">크기</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="36"/>
-        <source>Virtual Disk Manager</source>
-        <translation type="obsolete">가상 디스크 관리자</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="211"/>
-        <source>&amp;CD/DVD Images</source>
-        <translation type="obsolete">CD/DVD 이미지(&amp;C)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="308"/>
-        <source>&amp;Floppy Images</source>
-        <translation type="obsolete">플로피 이미지(&amp;F)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="123"/>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation type="obsolete">정보 없음</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="781"/>
-        <source>R&amp;emove</source>
-        <translation type="obsolete">삭제(&amp;E)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="782"/>
-        <source>Re&amp;lease</source>
-        <translation type="obsolete">등록 해제(&amp;L)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="783"/>
-        <source>Re&amp;fresh</source>
-        <translation type="obsolete">새로 고침(&amp;F)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="785"/>
-        <source>Ctrl+N</source>
-        <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="786"/>
-        <source>Ctrl+A</source>
-        <translation type="obsolete">Ctrl+A</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="788"/>
-        <source>Ctrl+D</source>
-        <translation type="obsolete">Ctrl+D</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="789"/>
-        <source>Ctrl+L</source>
-        <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="790"/>
-        <source>Ctrl+R</source>
-        <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="776"/>
-        <source>&amp;Actions</source>
-        <translation type="obsolete">동작(&amp;A)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="812"/>
-        <source>Checking accessibility</source>
-        <translation type="obsolete">접근 가능성 검사 중</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="588"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;접근 가능성 검사 중...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="596"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Disk type:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Storage type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;디스크 종류:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;저장소 종류:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="602"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;다음에 연결됨:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="605"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Snapshot:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;스냅샷:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="614"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;미디어 접근 가능성 검사 중 오류 발생</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="620"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <comment>HDD</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="726"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Checking accessibility...</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;접근 가능성 검사 중...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="732"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="737"/>
-        <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;다음에 연결됨:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="746"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;미디어 접근 가능성 검사 중 오류 발생</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="754"/>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;%2</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="756"/>
-        <source>The image file is not accessible</source>
-        <comment>CD/DVD/Floppy</comment>
-        <translation type="obsolete">이미지 파일에 접근할 수 없습니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="822"/>
-        <source>&amp;Select</source>
-        <translation type="obsolete">선택(&amp;S)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1095"/>
-        <source>Select a hard disk image file</source>
-        <translation type="obsolete">하드디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1102"/>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">CD/DVD-ROM 디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1109"/>
-        <source>Select a floppy disk image file</source>
-        <translation type="obsolete">플로피 디스크 이미지 파일 선택</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="792"/>
-        <source>Create a new virtual hard disk</source>
-        <translation type="obsolete">새 가상 하드디스크 만들기</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="793"/>
-        <source>Add (register) an existing image file</source>
-        <translation type="obsolete">이미 존재하는 이미지 파일 추가(등록)하기</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="795"/>
-        <source>Remove (unregister) the selected media</source>
-        <translation type="obsolete">선택한 미디어 삭제(등록 해제)하기</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="796"/>
-        <source>Release the selected media by detaching it from the machine</source>
-        <translation type="obsolete">미디어를 가상 머신에서 연결 해제하여 등록 해제하기</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="797"/>
-        <source>Refresh the media list</source>
-        <translation type="obsolete">미디어 목록 새로 고치기</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1101"/>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROM 이미지 (*.iso);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1108"/>
-        <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="obsolete">플로피 이미지 (*.img);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="778"/>
-        <source>&amp;New</source>
-        <translation type="obsolete">새로 만들기(&amp;N)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="779"/>
-        <source>&amp;Add</source>
-        <translation type="obsolete">추가(&amp;A)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDiskImageManagerDlg.cpp" line="1094"/>
-        <source>All hard disk images (*.vdi *.vmdk *.vhd);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;VHD images (*.vhd);;All files (*)</source>
-        <translation type="obsolete">모든 하드디스크 이미지 (*.vdi *.vmdk *.vhd);;가상 디스크 이미지 (*.vdi);;VMDK 이미지 (*.vmdk);;VHD 이미지 (*.vhd);;모든 파일 (*)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="58"/>
-        <source>Hard &amp;Disks</source>
-        <translation type="obsolete">하드디스크(&amp;D)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="370"/>
-        <source>&lt;nobr&gt;Location:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;위치:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="139"/>
-        <source>&lt;nobr&gt;Disk Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;디스크 종류:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="156"/>
-        <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Storage Type:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;저장소 종류:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="387"/>
-        <source>&lt;nobr&gt;Attached to:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;다음에 연결됨:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxDiskImageManagerDlg.ui" line="190"/>
-        <source>&lt;nobr&gt;&amp;nbsp;&amp;nbsp;Snapshot:&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&amp;nbsp;&amp;nbsp;스냅샷:&lt;/nobr&gt;</translation>
+        <translation>현재 할당된 호스트 키를 표시합니다.&lt;br&gt;이 키를 누르면 키보드와 마우스가 잡힌 상태를 전환합니다. 이 키와 다른 키를 같이 누르면 주 메뉴에 있는 여러 동작들을 빠르게 수행할 수 있습니다.</translation>
     </message>
 </context>
 <context>
     <name>VBoxDownloaderWgt</name>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="178"/>
-        <source>Cancel</source>
-        <translation type="obsolete">취소</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="182"/>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="185"/>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="226"/>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">서버에서 파일을 찾을 수 없습니다 (응답: %1).</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="271"/>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="278"/>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">게스트 확장 이미지를 저장할 폴더 선택</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxDownloaderWgt.cpp" line="191"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">연결 시간이 초과되었습니다.</translation>
-    </message>
     <message>
         <location filename="../src/VBoxDownloaderWgt.cpp" line="152"/>
         <source>The download process has been cancelled by the user.</source>
@@ -1521,11 +1120,6 @@ Version %1</source>
 <context>
     <name>VBoxGLSettingsGeneral</name>
     <message>
-        <location filename="../src/VBoxGLSettingsGeneral.cpp" line="76"/>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="obsolete">기본값으로 선택된 VDI 폴더를 표시합니다. 새 가상 하드디스크를 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>기본값으로 선택된 가상 머신 폴더를 표시합니다. 새 가상 머신을 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
@@ -1553,17 +1147,17 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>기본값으로 선택된 가상 하드 디스크 폴더를 표시합니다. 새 가상 하드디스크를 만들거나 기존의 하드 디스크 이미지를 추가할 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 시스템 트레이에 컨텍스트 메뉴가 있는 아이콘을 만듭니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템 트레이 아이콘 보이기(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -1621,11 +1215,6 @@ Version %1</source>
         <translation>언어:</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
-        <source>Author:</source>
-        <translation type="obsolete">작성자:</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
         <translation>인터페이스 언어(&amp;I):</translation>
@@ -1658,7 +1247,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>작성자:</translation>
     </message>
 </context>
 <context>
@@ -1691,12 +1280,6 @@ Version %1</source>
 </context>
 <context>
     <name>VBoxGlobal</name>
-    <message>
-        <location filename="../include/VBoxGlobal.h" line="400"/>
-        <source>Differencing</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">변경 사항만 저장</translation>
-    </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1787"/>
         <source>Unknown device %1:%2</source>
@@ -2075,24 +1658,6 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2581"/>
-        <source>Virtual Disk Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">가상 디스크 이미지</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2583"/>
-        <source>iSCSI</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">iSCSI</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2585"/>
-        <source>VMDK Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">VMDK 이미지</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGlobal.cpp" line="3157"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
@@ -2219,18 +1784,6 @@ Version %1</source>
         <translation>잡힘</translation>
     </message>
     <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1331"/>
-        <source>&lt;i&gt;Checking...&lt;/i&gt;</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&lt;i&gt;검사 중...&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="1338"/>
-        <source>&lt;i&gt;Inaccessible&lt;/i&gt;</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&lt;i&gt;접근할 수 없음&lt;/i&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxGlobal.cpp" line="3216"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
@@ -2341,12 +1894,6 @@ Version %1</source>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>사용자 정의</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2587"/>
-        <source>Custom Hard Disk</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">사용자 정의 하드디스크</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="454"/>
@@ -2467,12 +2014,6 @@ Version %1</source>
         <source>Port %1</source>
         <comment>StorageBusChannel</comment>
         <translation>포트 %1</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxGlobal.cpp" line="2589"/>
-        <source>VHD Image</source>
-        <comment>DiskStorageType</comment>
-        <translation type="obsolete">VHD 이미지</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3180"/>
@@ -2604,89 +2145,89 @@ Version %1</source>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;종류&amp;nbsp;(형식):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;다음에 연결됨:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;다음에 연결됨:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;연결되지&amp;nbsp;않음&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;i&gt;접근 가능성 검사 중...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;미디어 접근 가능성을 검사하는 데 실패했습니다.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;이 하드디스크의 변경 사항을 저장하는 새 가상 하드디스크를 통해서 간접적으로 연결됩니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>검사 중...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">접근할 수 없음</translation>
+        <translation>접근할 수 없음</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;이 하드디스크의 미디어 중 일부에 접근할 수 없습니다. 가상 미디어 관리자의 &lt;b&gt;변경 사항을 저장하는 하드디스크 보이기&lt;/b&gt; 모드를 사용하셔서 이 미디어를 찾아 보십시오.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;이 하드디스크는 다음의 변경 사항을 저장하는 하드디스크를 통하여 간접적으로 연결되어 있습니다:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3차원 가속</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">사용 안함</translation>
+        <translation>사용 안함</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>설정 중</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">변경 사항만 저장</translation>
+        <translation>변경 사항만 저장</translation>
     </message>
 </context>
 <context>
@@ -2781,24 +2322,14 @@ Version %1</source>
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
-        <source>&lt;no hard disk&gt;</source>
-        <translation type="obsolete">&lt;하드디스크 없음&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxMediaComboBox.cpp" line="107"/>
-        <source>No hard disk</source>
-        <translation type="obsolete">하드디스크 없음</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용할 수 있는 미디어가 없습니다. 해당하는 미디어를 추가하려면 가상 미디어 관리자를 사용하십시오.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;미디어 없음&gt;</translation>
     </message>
 </context>
 <context>
@@ -2806,168 +2337,168 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">동작(&amp;A)</translation>
+        <translation>동작(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">새로 만들기(&amp;N)...</translation>
+        <translation>새로 만들기(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished"></translation>
+        <translation>추가(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">삭제(&amp;E)</translation>
+        <translation>삭제(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">등록 해제(&amp;L)</translation>
+        <translation>등록 해제(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">새로 고침(&amp;F)</translation>
+        <translation>새로 고침(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">새 가상 하드디스크 만들기</translation>
+        <translation>새 가상 하드디스크 만들기</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>이미 존재하는 미디어 추가하기</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 미디어 삭제하기</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 미디어를 가상 머신에서 연결 해제하여 등록 해제하기</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">미디어 목록 새로 고치기</translation>
+        <translation>미디어 목록 새로 고치기</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished"></translation>
+        <translation>위치</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>종류 (형식)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished"></translation>
+        <translation>다음에 연결됨</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">접근 가능성 검사 중</translation>
+        <translation>접근 가능성 검사 중</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">선택(&amp;S)</translation>
+        <translation>선택(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 하드디스크 이미지 (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 파일 (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">하드디스크 이미지 파일 선택</translation>
+        <translation>하드디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">CD/DVD-ROM 이미지 (*.iso);;모든 파일 (*)</translation>
+        <translation>CD/DVD-ROM 이미지 (*.iso);;모든 파일 (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">CD/DVD-ROM 디스크 이미지 파일 선택</translation>
+        <translation>CD/DVD-ROM 디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">플로피 이미지 (*.img);;모든 파일 (*)</translation>
+        <translation>플로피 이미지 (*.img);;모든 파일 (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">플로피 디스크 이미지 파일 선택</translation>
+        <translation>플로피 디스크 이미지 파일 선택</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;연결되지&amp;nbsp;않음&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">정보 없음</translation>
+        <translation>정보 없음</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 미디어 관리자</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished">하드디스크(&amp;D)</translation>
+        <translation>하드디스크(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">가상 크기</translation>
+        <translation>가상 크기</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">실제 크기</translation>
+        <translation>실제 크기</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">CD/DVD 이미지(&amp;C)</translation>
+        <translation>CD/DVD 이미지(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">크기</translation>
+        <translation>크기</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">플로피 이미지(&amp;F)</translation>
+        <translation>플로피 이미지(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -3026,44 +2557,9 @@ Version %1</source>
         <translation>새 가상 디스크 생성 마법사에 오신 것을 환영합니다!</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
-        <source>Image Type</source>
-        <translation type="obsolete">이미지 종류</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">동적 크기 이미지(&amp;D)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">고정 크기 이미지(&amp;F)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">가상 디스크 이미지 종류</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">이미지 파일 이름(&amp;I)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">이미지 크기(&amp;S)</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="435"/>
         <source>Virtual Disk Location and Size</source>
         <translation>가상 디스크 위치와 크기</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">다음 설정을 사용하여 새 가상 디스크 이미지를 만듭니다:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="741"/>
@@ -3086,16 +2582,6 @@ Version %1</source>
         <translation>새 하드디스크 이미지 파일을 선택하십시오</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewHDWzd.cpp" line="203"/>
-        <source>&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Location:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Size:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table cellspacing=0 cellpadding=2&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;종류:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;위치:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;크기:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;&lt;nobr&gt;%3&amp;nbsp;(%4&amp;nbsp;바이트)&lt;/nobr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;이 마법사는 가상 머신을 위한 새 가상 디스크 이미지를 만들도록 도와 줍니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;앞으로&lt;/b&gt; 단추를 누르면 이 마법사의 다음 쪽으로 갈 수 있으며&lt;b&gt;뒤로&lt;/b&gt; 단추를 누르면 이전 쪽으로 갈 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="904"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 이전(&amp;B)</translation>
@@ -3106,31 +2592,6 @@ Version %1</source>
         <translation>다음(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">취소(&amp;C)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;만들고자 하는 가상 하드디스크 이미지의 종류를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;동적 크기 이미지&lt;/b&gt;는 처음 만들었을 때 아주 작은 공간만 차지합니다. 게스트 운영체제에서 디스크 공간을 사용하면 디스크 이미지 파일은 여기에 지정한 크기까지 커집니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;고정 크기 이미지&lt;/b&gt;의 크기는 변하지 않습니다. 가상 하드디스크와 거의 같은 크기의 이미지 파일에 저장됩니다. 하드디스크의 쓰기 성능과 이미지 크기에 따라서 생성 시간이 달라질 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 가상 디스크 이미지가 저장될 경로와 파일 이름을 지정할 수 있거나 파일 이름을 직접 입력할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 디스크의 크기를 메가바이트 단위로 지정하십시오. 이 크기는 게스트 운영체제에 가상 하드디스크의 크기로 보여집니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="obsolete">만약 위 설정이 올바르다면 &lt;b&gt;마침&lt;/b&gt; 단추를 누르십시오. 완료 단추를 누르면 새 하드디스크 이미지가 생성됩니다.                            </translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="911"/>
         <source>&amp;Finish</source>
         <translation>완료(&amp;F)</translation>
@@ -3139,90 +2600,90 @@ Version %1</source>
         <location filename="../src/VBoxNewHDWzd.cpp" line="213"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>종류</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="214"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>위치</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="215"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">크기</translation>
+        <translation>크기</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="216"/>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>바이트</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 마법사는 가상 머신을 위한 새 가상 하드디스크를 만들도록 도와 줍니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;앞으로&lt;/b&gt; 단추를 누르면 이 마법사의 다음 쪽으로 갈 수 있으며&lt;b&gt;뒤로&lt;/b&gt; 단추를 누르면 이전 쪽으로 갈 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="934"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>하드디스크 저장소 종류</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;만들고자 하는 가상 하드디스크 이미지의 종류를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;동적 확장 저장소&lt;/b&gt;는 처음 만들었을 때 아주 작은 공간만 차지합니다. 게스트 운영체제에서 디스크 공간을 사용하면 디스크 이미지 파일은 여기에 지정한 크기까지 커집니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;고정 크기 저장소&lt;/b&gt;의 크기는 변하지 않습니다. 가상 하드디스크와 거의 같은 크기의 이미지 파일에 저장됩니다. 하드디스크의 쓰기 성능과 저장소 크기에 따라서 생성 시간이 달라질 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>저장소 종류</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>동적 확장 저장소(&amp;D)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>고정 크기 저장소(&amp;F)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 하드디스크 데이터를 저장할 경로와 파일 이름을 지정하거나 파일 이름을 직접 입력하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>위치(&amp;L)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 하드디스크의 크기를 메가바이트 단위로 지정하십시오. 이 크기는 게스트 운영체제에 가상 하드디스크의 크기로 보여집니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>크기(&amp;S)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 설정을 사용하여 새 가상 하드디스크를 만듭니다:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>만약 위 설정이 올바르다면 &lt;b&gt;마침&lt;/b&gt; 단추를 누르십시오. 완료 단추를 누르면 새 가상 하드디스크가 생성됩니다.                            </translation>
     </message>
 </context>
 <context>
@@ -3273,11 +2734,6 @@ Version %1</source>
         <translation>메모리</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="873"/>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">부팅용 하드디스크 (프라이머리 마스터)(&amp;O)</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="832"/>
         <source>N&amp;ew...</source>
         <translation>새로 만들기(&amp;N)...</translation>
@@ -3285,7 +2741,7 @@ Version %1</source>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="839"/>
         <source>E&amp;xisting...</source>
-        <translation>기존 파일 사용(&amp;X)...</translation>
+        <translation>기존 디스크 사용(&amp;X)...</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="724"/>
@@ -3298,11 +2754,6 @@ Version %1</source>
         <translation>요약</translation>
     </message>
     <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="162"/>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="140"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>권장하는 기본 메모리 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
@@ -3311,16 +2762,6 @@ Version %1</source>
         <location filename="../src/VBoxNewVMWzd.cpp" line="143"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="172"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Name:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;OS Type:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Base Memory:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;이름:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;운영체제 종류:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;기본 메모리:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxNewVMWzd.cpp" line="179"/>
-        <source>&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;Boot Hard Disk:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;&lt;nobr&gt;부팅 하드 디스크:&lt;/nobr&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
@@ -3338,19 +2779,9 @@ Version %1</source>
         <translation>다음(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="1199"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">취소(&amp;C)</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;새 가상 머신의 이름과 가상 머신에 설치할 운영체제의 종류를 선택하십시오.&lt;/p&gt;&lt;p&gt;가상 머신의 이름은 대개의 경우 소프트웨어와 하드웨어 설정을 반영합니다. VirtualBox 내부에서 가상 머신을 식별하는 데에도 사용됩니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxNewVMWzd.ui" line="835"/>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 머신의 부팅 하드디스크로 사용할 하드디스크 이미지를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드디스크 이미지를 만들 수 있으며, 또한 &lt;b&gt;기존 파일 사용&lt;/b&gt; 단추를 눌러서 가상 디스크 관리자에서 존재하는 하드디스크 이미지를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1020"/>
@@ -3371,46 +2802,46 @@ Version %1</source>
         <location filename="../src/VBoxNewVMWzd.cpp" line="166"/>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="163"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">이름</translation>
+        <translation>이름</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="164"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">운영체제 종류</translation>
+        <translation>운영체제 종류</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="165"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">기본 메모리</translation>
+        <translation>기본 메모리</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewVMWzd.cpp" line="171"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>부팅 하드디스크</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1149"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드디스크를 만들 수 있으며, 또한 &lt;b&gt;기존 디스크 사용&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>부팅용 하드디스크 (프라이머리 마스터)(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -3418,22 +2849,22 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>운영체제(&amp;S):</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 가상 머신에 설치할 운영 체제의 종류를 표시합니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>버전(&amp;E):</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
+        <translation>이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
     </message>
 </context>
 <context>
@@ -3590,56 +3021,6 @@ Version %1</source>
         <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 게스트 OS를 올바르게 종료하지 않은 상태에서 전원을 끄거나 재부팅하는 것과 같습니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1005"/>
-        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;이 미디어 이미지를 등록 해제하면 다음 가상 머신에서 분리됩니다: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;계속하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1018"/>
-        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;이미지 파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 이 파일은 이미 다른 가상 디스크가 사용하고 있으므로 새 가상 디스크를 이 파일에 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 이미지 파일 이름을 지정하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1050"/>
-        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 하드디스크 이미지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1060"/>
-        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1100"/>
-        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">가상 하드디스크 이미지 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 만드는 데 실패했습니다.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1157"/>
-        <source>hard disk</source>
-        <translation type="obsolete">하드디스크</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1158"/>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">CD/DVD 이미지</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1159"/>
-        <source>floppy image</source>
-        <translation type="obsolete">플로피 이미지</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1148"/>
-        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 등록하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1166"/>
-        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;의 등록을 해제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1317"/>
         <source>Failed to create a new session.</source>
         <translation>새 세션을 만들 수 없습니다.</translation>
@@ -3648,11 +3029,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1336"/>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 세션을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1225"/>
-        <source>Failed to get the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation type="obsolete">미디어 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 접근 가능성 상태를 알 수 없습니다. 등록된 미디어 중 일부는 사용 불가능할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1367"/>
@@ -3835,11 +3211,6 @@ Version %1</source>
         <translation>&lt;p&gt;가상 머신 창은 &lt;b&gt;%1&amp;nbsp;비트&lt;/b&gt; 모드에 최적화되어 있지만 현재 가상 디스플레이의 색 설정은 &lt;b&gt;%2&amp;nbsp;비트&lt;/b&gt;입니다.&lt;/p&gt;&lt;p&gt;게스트 운영체제의 성능을 향상시키려면 게스트 운영체제의 디스플레이 속성을 여시고 사용 가능한 경우 &lt;b&gt;%3&amp;nbsp;비트&lt;/b&gt; 모드를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: OS/2 같은 일부 운영체제는 실제로 32&amp;nbsp;비트 모드에서 작동하지만 24&amp;nbsp;비트 모드를 사용한다고 보고합니다. 만약 이 메시지가 나타나면 다른 색 품질을 선택하거나 게스트 운영체제에서 필요한 색 품질(%4&amp;nbsp;비트)을 지원하지 않으면 이 메시지를 비활성화 시킬 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;Vbox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2041"/>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;새 가상 머신에 하드디스크를 연결하지 않았습니다. 게스트 운영체제가 설치되어 있는 하드디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
@@ -3858,11 +3229,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="822"/>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1505"/>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox 온라인 등록 서비스에 연결할 수 없습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1638"/>
@@ -3918,29 +3284,6 @@ Version %1</source>
         <translation>삭제</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1007"/>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">계속</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1033"/>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;하드디스크 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;도 같이 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하시면 하드디스크의 등록을 해제한 다음 디스크 이미지 파일도 같이 삭제됩니다. 이 동작은 취소할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;등록 해제&lt;/b&gt;를 선택하시면 가상 하드디스크의 등록이 해제되어 모음집에서 삭제되지만, 디스크 이미지 파일은 그대로 남아 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1038"/>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">삭제</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1062"/>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">등록 해제</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1202"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
         <translation>&lt;p&gt;이 가상 머신의 SATA 포트에 연결된 하드디스크가 있습니다. SATA 컨트롤러를 비활성화시키면 연결된 하드디스크의 연결이 자동으로 끊깁니다.&lt;/p&gt;&lt;p&gt;SATA 컨트롤러를 끄시겠습니까?&lt;/p&gt;</translation>
@@ -3950,16 +3293,6 @@ Version %1</source>
         <source>Disable</source>
         <comment>hard disk</comment>
         <translation>사용 안함</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1113"/>
-        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%5&lt;/b&gt;의 %4 버스, %3 채널 %2 슬롯에 연결된 UUID가 %1인 하드디스크 이미지의 연결을 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
-        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%4&lt;/b&gt;의 %3 버스, %2 채널 %1 슬롯에 연결된 하드디스크 이미지의 연결을 해제할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1549"/>
@@ -3986,38 +3319,16 @@ Version %1</source>
         <translation>잡기</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1697"/>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;하나 이상의 등록된 가상 하드디스크나, CD/DVD 또는 플로피 미디어에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 디스크 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1822"/>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
         <translation>검사하기</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1739"/>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;다음 VirtualBox 설정 파일들은 새 설정 파일 형식 버전 &lt;b&gt;%1&lt;/b&gt;(으)로 자동으로 변환되었습니다.&lt;/p&gt;&lt;p&gt;그러나 변환 결과가 아직 디스크에 저장되지 않았습니다.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;저장&lt;/b&gt; 단추를 누르면 자동으로 변환된 파일을 지금 저장합니다. 나중에 과거 버전의 VirtualBox에서 이 설정 파일을 사용할 수 없습니다.&lt;/li&gt;&lt;li&gt;&lt;b&gt;백업&lt;/b&gt; 단추를 누르면 새 형식으로 저장된 파일의 백업 복사본을 만듭니다.&lt;/li&gt;&lt;li&gt;&lt;b&gt;취소&lt;/b&gt; 단추늘 누르면 자동으로 변환된 파일을 저장하지 않습니다.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;b&gt;취소&lt;/b&gt;를 누른 후 가상 머신을 시작하거나 설정을 바꾸면 자동으로 변환된 설정 파일은 새 형식으로 저장되지만, 이 경우 백업 파일은 만들어지지 않습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1745"/>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">저장(&amp;S)</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1901"/>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
         <translation>백업(&amp;B)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1747"/>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">취소</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1925"/>
@@ -4060,11 +3371,6 @@ Version %1</source>
         <translation>파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;(으)로 복사하는 데 실패했습니다. (%3).</translation>
     </message>
     <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1085"/>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;새로 연결할 하드디스크가 더 이상 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 누르면 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 시작하여 새 가상 하드 디스크를 만들 것이며, &lt;b&gt;선택&lt;/b&gt; 단추를 누르면 &lt;i&gt;가상 디스크 관리자&lt;/i&gt;가 열려서 무엇을 할 지 결정할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1220"/>
         <source>&amp;Create</source>
         <comment>hard disk</comment>
@@ -4085,16 +3391,6 @@ Version %1</source>
         <location filename="../src/VBoxProblemReporter.cpp" line="1046"/>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;&lt;p&gt;그래도 전체 화면 모드로 들어가려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르시고, &lt;b&gt;취소&lt;/b&gt; 단추를 누르면 작업을 취소합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1532"/>
-        <source>&lt;p&gt;There is a new version of VirtualBox found on the VirtualBox web-site: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you want to download and install this version please proceed with the following link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox 웹 사이트에 새 버전이 올라왔습니다: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;이 버전을 다운로드하고 설치하려면 다음 링크를 따라가십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxProblemReporter.cpp" line="1541"/>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;다음 네트워크 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1668"/>
@@ -4129,247 +3425,247 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="266"/>
         <source>&amp;Contents...</source>
-        <translation type="unfinished">내용(&amp;C)...</translation>
+        <translation>내용(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="269"/>
         <source>Show the online help contents</source>
-        <translation type="unfinished">온라인 도움말의 내용을 표시합니다</translation>
+        <translation>온라인 도움말의 내용을 표시합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="271"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">VirtualBox 웹 사이트(&amp;V)...</translation>
+        <translation>VirtualBox 웹 사이트(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="273"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
+        <translation>웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="275"/>
         <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">모든 경고 초기화(&amp;R)</translation>
+        <translation>모든 경고 초기화(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="277"/>
         <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="unfinished">모든 경고 메시지를 다시 보이도록 설정합니다</translation>
+        <translation>모든 경고 메시지를 다시 보이도록 설정합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="279"/>
         <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">VirtualBox 등록(&amp;E)...</translation>
+        <translation>VirtualBox 등록(&amp;E)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="281"/>
         <source>Open VirtualBox registration form</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 등록 대화 상자를 엽니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="283"/>
         <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 찾기(&amp;H)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="285"/>
         <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished">새 VirtualBox 버전을 찾습니다</translation>
+        <translation>새 VirtualBox 버전을 찾습니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="287"/>
         <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished">VirtualBox 정보(&amp;A)...</translation>
+        <translation>VirtualBox 정보(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="289"/>
         <source>Show a dialog with product information</source>
-        <translation type="unfinished">제품 정보 대화상자를 표시합니다</translation>
+        <translation>제품 정보 대화상자를 표시합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;의 연결을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 다음 가상 머신에서의 연결을 끊습니다: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>연결 해제</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;미디어 목록에서 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 하드디스크에 접근할 수 없기 때문에 저장소 유닛을 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
+        <translation>다음 대화 상자에서 저장소 유닛을 같이 삭제하거나 나중에 사용하기 위해서 삭제하지 않을지 여부를 선택할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 미디어의 저장소 유닛은 삭제되지 않을 것이며 다음에 다시 사용할 때 추가할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>삭제</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;하드 디스크 저장소 유닛 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 다른 가상 하드디스크가 이 저장소 유닛을 사용하고 있으므로 새 가상 하드디스크를 여기에 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 위치를 지정하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 저장소 유닛을 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하면 선택한 저장소 유닛도 같이 삭제됩니다. 이 작업은 &lt;b&gt;실행 취소할 수 없습니다.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;유지&lt;/b&gt;를 선택하면 하드디스크 목록에서만 삭제되며 저장소 유닛은 삭제되지 않으므로 다음에 하드디스크를 다시 추가할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">삭제</translation>
+        <translation>삭제</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>유지</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>하드디스크 &lt;b&gt;%1&lt;/b&gt;의 저장소 유닛을 삭제할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1215"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;새로 연결할 수 있는 하드디스크가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 누르면 새 하드디스크를 만들 수 있는 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 열 수 있으며, &lt;b&gt;선택&lt;/b&gt; 단추를 누르면 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열어서 할 수 있는 일을 선택할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1230"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>하드디스크 저장소 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 만들 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1257"/>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에 마운트하는 데 실패했습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 마운트 해제하는 데 실패했습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 여는 데 실패했습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 닫는 데 실패했습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1347"/>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 접근성을 검사하는 데 실패했습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1627"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 이유로 VirtualBox 온라인 등록 서비스에 연결할 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1652"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;하나 이상의 등록된 가상 하드디스크나, CD/DVD 또는 플로피 미디어에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;존재하는 VirtualBox 설정 파일이 새로운 버전의 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 설정 파일을 변환하면서 VirtualBox를 시작하며 &lt;b&gt;더 보기&lt;/b&gt; 단추를 누르면 어떤 파일이 변환되며 어떤 추가 동작을 진행하는지 알 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;종료&lt;/b&gt; 단추를 누르면 VirtualBox 설정 파일을 변환하지 않고 종료합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>더 보기(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">종료(&amp;X)</translation>
+        <translation>종료(&amp;X)</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;다음 VirtualBox 설정 파일들은 새 설정 파일 형식 버전 &lt;b&gt;%1&lt;/b&gt;(으)로 자동으로 변환되었습니다.&lt;/p&gt;&lt;p&gt;그러나 변환 결과가 아직 디스크에 저장되지 않았습니다.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;백업&lt;/b&gt; 단추를 누르면 변환하기 전 파일을 백업해 둡니다.&lt;/li&gt;&lt;li&gt;&lt;b&gt;덮어쓰기&lt;/b&gt; 단추를 누르면 백업 파일을 만들지 않고 변환된 파일을 덮어씁니다. 나중에 과거 버전의 VirtualBox에서 이 설정 파일을 사용할 수 없습니다. &lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;이전 버전의 VirtualBox로 돌아갈 때를 대비해서 현재 설정을 보존할 수 있는 &lt;b&gt;백업&lt;/b&gt; 단추를 누르는 것을 추천합니다. 다운그레이딩에 대해서는 VirtualBox 설명서를 참고하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;li&gt;&lt;b&gt;끝내기&lt;/b&gt; 단추를 누르면 변환된 파일을 디스크에 저장하지 않고 VirtualBox를 종료합니다.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>덮어쓰기(&amp;V)</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;VBox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">하드디스크</translation>
+        <translation>하드디스크</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">CD/DVD 이미지</translation>
+        <translation>CD/DVD 이미지</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">플로피 이미지</translation>
+        <translation>플로피 이미지</translation>
     </message>
 </context>
 <context>
@@ -4410,16 +3706,6 @@ Version %1</source>
         <translation>VirtualBox 등록 양식에 오신 것을 환영합니다!</translation>
     </message>
     <message>
-        <location filename="../src/VBoxRegistrationDlg.cpp" line="366"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">연결 시간이 초과되었습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxRegistrationDlg.cpp" line="376"/>
-        <source>Could not locate the registration form on the server (response: %1).</source>
-        <translation type="obsolete">서버에서 등록 양식을 찾을 수 없습니다. (응답: %1).</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxRegistrationDlg.cpp" line="336"/>
         <source>Could not perform connection handshake.</source>
         <translation>연결 협상을 진행할 수 없습니다.</translation>
@@ -4440,14 +3726,9 @@ Version %1</source>
         <translation>확인(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxRegistrationDlg.ui" line="241"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">취소(&amp;C)</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="238"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
@@ -4471,30 +3752,10 @@ Version %1</source>
         <translation>자세한 정보(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1169"/>
-        <source>Virtual &amp;Disk Manager...</source>
-        <translation type="obsolete">가상 디스크 관리자(&amp;D)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1170"/>
-        <source>Ctrl+D</source>
-        <translation type="obsolete">Ctrl+D</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1171"/>
-        <source>Display the Virtual Disk Manager dialog</source>
-        <translation type="obsolete">가상 디스크 관리자 대화 상자를 표시합니다</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1261"/>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
         <translation>환경 설정(&amp;P)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1193"/>
-        <source>Ctrl+G</source>
-        <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1264"/>
@@ -4507,11 +3768,6 @@ Version %1</source>
         <translation>종료(&amp;X)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1197"/>
-        <source>Ctrl+Q</source>
-        <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1268"/>
         <source>Close application</source>
         <translation>프로그램을 종료합니다</translation>
@@ -4522,11 +3778,6 @@ Version %1</source>
         <translation>새로 만들기(&amp;N)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1201"/>
-        <source>Ctrl+N</source>
-        <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1272"/>
         <source>Create a new virtual machine</source>
         <translation>새 가상 머신을 만듭니다</translation>
@@ -4535,11 +3786,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1276"/>
         <source>&amp;Settings...</source>
         <translation>설정(&amp;S)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1205"/>
-        <source>Ctrl+S</source>
-        <translation type="obsolete">Ctrl+S</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1278"/>
@@ -4572,54 +3818,9 @@ Version %1</source>
         <translation>새로 고침(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1218"/>
-        <source>Ctrl+R</source>
-        <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1298"/>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1227"/>
-        <source>&amp;Contents...</source>
-        <translation type="obsolete">내용(&amp;C)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
-        <source>Show the online help contents</source>
-        <translation type="obsolete">온라인 도움말의 내용을 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1231"/>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="obsolete">VirtualBox 웹 사이트(&amp;V)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1233"/>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="obsolete">웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1243"/>
-        <source>&amp;About VirtualBox...</source>
-        <translation type="obsolete">VirtualBox 정보(&amp;A)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1244"/>
-        <source>Show a dialog with product information</source>
-        <translation type="obsolete">제품 정보 대화상자를 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1246"/>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="obsolete">모든 경고 초기화(&amp;R)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1248"/>
-        <source>Cause all suppressed warnings and messages to be shown again</source>
-        <translation type="obsolete">모든 경고 메시지를 다시 보이도록 설정합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1308"/>
@@ -4677,24 +3878,9 @@ Version %1</source>
         <translation>로그 보기(&amp;L)...</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1223"/>
-        <source>Ctrl+L</source>
-        <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1304"/>
         <source>Show the log files of the selected virtual machine</source>
         <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1235"/>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation type="obsolete">VirtualBox 등록(&amp;E)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1237"/>
-        <source>Open VirtualBox registration form</source>
-        <translation type="obsolete">VirtualBox 등록 양식을 엽니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1229"/>
@@ -4705,11 +3891,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1399"/>
         <source>R&amp;esume</source>
         <translation>다시 시작(&amp;E)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1347"/>
-        <source>Ctrl+P</source>
-        <translation type="obsolete">Ctrl+P</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1402"/>
@@ -4727,16 +3908,6 @@ Version %1</source>
         <translation>가상 머신의 실행을 일시 중지합니다</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
-        <source>C&amp;heck for update...</source>
-        <translation type="obsolete">업데이트 찾기(&amp;H)...</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
-        <source>Check server for VirtualBox updates</source>
-        <translation type="obsolete">서버에서 VirtualBox 업데이트를 찾습니다</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1455"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;VirtualBox에 오신 것을 환영합니다!&lt;/h3&gt;&lt;p&gt;이 창의 왼쪽 부분은 컴퓨터에 있는 모든 가상 머신 목록을 표시합니다. 아직 가상 머신을 만들지 않았기 때문에 이 목록은 현재 비어 있습니다.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;새 가상 머신을 만들시려면, 창 위쪽 도구 모음의 &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;F1&lt;/b&gt; 키를 누르면 상황에 맞는 도움말을 볼 수 있으며, 최근 정보와 뉴스를 보려면 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;를 방문하십시오.&lt;/p&gt;</translation>
@@ -4744,18 +3915,18 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 미디어 관리자(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 미디어 관리자 대화상자를 표시합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation type="unfinished"></translation>
+        <translation>로그</translation>
     </message>
 </context>
 <context>
@@ -4778,7 +3949,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>최적화되지 않은 설정 감지됨</translation>
     </message>
 </context>
 <context>
@@ -4976,28 +4147,28 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
         <source>Show Selector Window</source>
-        <translation type="unfinished"></translation>
+        <translation>선택기 창 보이기</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
         <source>Show the selector window assigned to this menu</source>
-        <translation type="unfinished"></translation>
+        <translation>이 메뉴에 할당 된 선택기 창 보이기</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
         <source>Hide Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>트레이 아이콘 숨기기</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
         <source>Remove this icon from the system tray</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템 트레이에 있는 이 아이콘 숨기기</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation type="unfinished"></translation>
+        <translation>다른 가상 머신(&amp;O)...</translation>
     </message>
 </context>
 <context>
@@ -5073,59 +4244,9 @@ Version %1</source>
         <translation>하지 않음</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="324"/>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">연결 시간이 초과되었습니다.</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="334"/>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">서버에서 최신 버전 목록을 찾을 수 없습니다. (응답: %1).</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="30"/>
-        <source>VirtualBox New Version Notifier</source>
-        <translation type="obsolete">VirtualBox 새 버전 알리미</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="66"/>
-        <source>Check for a new version</source>
-        <translation type="obsolete">새 버전 찾기</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="115"/>
-        <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox에서는 최신 버전을 자동으로 검사할 수 있습니다. 자동으로 업데이트를 찾으시겠습니까?&lt;/p&gt;&lt;p&gt;자동으로 업데이트를 찾도록 하려면 아래의 &lt;b&gt;찾기&lt;/b&gt; 단추를 누르시고, 수동으로 업데이트를 찾으려면 &lt;b&gt;취소&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;도움말 메뉴에서 &lt;b&gt;&apos;새 버전 찾기...&apos;&lt;/b&gt; 항목을 누르면 언제든지 VirtualBox 새 버전 알리미를 실행시킬 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="267"/>
         <source>Chec&amp;k</source>
         <translation>찾기(&amp;K)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="215"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">취소(&amp;C)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="236"/>
-        <source>Check Results</source>
-        <translation type="obsolete">결과</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="290"/>
-        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;새 VirtualBox 버전 %1을(를) 다운로드할 수 있습니다:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="312"/>
-        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;다음 네트워크 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxUpdateDlg.ui" line="334"/>
-        <source>You have already installed the latest VirtualBox version, there is no newer version currently available.</source>
-        <translation type="obsolete">최신 버전의 VirtualBox를 사용하고 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="271"/>
@@ -5135,42 +4256,42 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="264"/>
         <source>VirtualBox Update Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 업데이트 마법사</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="266"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>업데이트 찾기</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="268"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="270"/>
         <source>Summary</source>
-        <translation type="unfinished">요약</translation>
+        <translation>요약</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 마법사는 VirtualBox 웹 사이트에 접속해서 새 버전이 있는지 확인합니다.&lt;/p&gt;&lt;p&gt;새 버전을 지금 확인하려면 &lt;b&gt;검사하기&lt;/b&gt; 단추를 누르고, 나중에 확인하려면 &lt;b&gt;취소&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;도움말&lt;/b&gt; 메뉴에서 &lt;b&gt;업데이트 찾기...&lt;/b&gt; 항목을 선택해서 언제든지 이 마법사를 실행할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="286"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version from this direct link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="289"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;다음 네트워크 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;다음 네트워크 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="292"/>
         <source>You have already installed the latest VirtualBox version. Please repeat the version check later.</source>
-        <translation type="unfinished">최신 버전의 VirtualBox를 사용하고 있습니다. 나중에 다시 확인하십시오.</translation>
+        <translation>최신 버전의 VirtualBox를 사용하고 있습니다. 나중에 다시 확인하십시오.</translation>
     </message>
 </context>
 <context>
@@ -5189,11 +4310,6 @@ Version %1</source>
         <location filename="../src/VBoxSelectorWnd.cpp" line="327"/>
         <source>Edit (Ctrl+E)</source>
         <translation>편집 (Ctrl+E)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxSelectorWnd.cpp" line="328"/>
-        <source>Ctrl+E</source>
-        <translation type="obsolete">Ctrl+E</translation>
     </message>
 </context>
 <context>
@@ -5317,11 +4433,6 @@ Version %1</source>
         <translation>&lt;p&gt;위 사항이 올바르다면 &lt;b&gt;완료&lt;/b&gt; 단추를 누르십시오. 선택한 미디어가 가상 머신에 마운트되고 가상 머신의 실행이 시작됩니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMFirstRunWzd.cpp" line="105"/>
-        <source>&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt; cellspacing=0 cellpadding=2&lt;tr&gt;&lt;td&gt;종류:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;원본:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 이전(&amp;B)</translation>
@@ -5330,11 +4441,6 @@ Version %1</source>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="549"/>
         <source>&amp;Next &gt;</source>
         <translation>다음(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">취소(&amp;C)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="723"/>
@@ -5360,18 +4466,18 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="107"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>종류</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMFirstRunWzd.cpp" line="108"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>원본</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="835"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
 </context>
 <context>
@@ -5422,16 +4528,6 @@ p, li { white-space: pre-wrap; }
         <translation>받은 데이터</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
-        <source>Enabled</source>
-        <translation type="obsolete">사용함</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="642"/>
-        <source>Disabled</source>
-        <translation type="obsolete">사용 안함</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="452"/>
         <source>Runtime Attributes</source>
         <translation>런타임 속성</translation>
@@ -5442,11 +4538,6 @@ p, li { white-space: pre-wrap; }
         <translation>화면 해상도</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="646"/>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">VirtualBox - 정보</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="509"/>
         <source>CD/DVD-ROM Statistics</source>
         <translation>CD/DVD-ROM 통계</translation>
@@ -5455,41 +4546,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="519"/>
         <source>Network Adapter Statistics</source>
         <translation>네트워크 어댑터 통계</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
-        <source>Adapter 1</source>
-        <translation type="obsolete">어댑터 1</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="665"/>
-        <source>Adapter 2</source>
-        <translation type="obsolete">어댑터 2</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="651"/>
-        <source>Hard Disks Statistics</source>
-        <translation type="obsolete">하드디스크 통계</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
-        <source>Primary Master</source>
-        <translation type="obsolete">프라이머리 마스터</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="653"/>
-        <source>Primary Slave</source>
-        <translation type="obsolete">프라이머리 슬레이브</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
-        <source>Secondary Master</source>
-        <translation type="obsolete">세컨더리 마스터</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMInformationDlg.cpp" line="658"/>
-        <source>Secondary Slave</source>
-        <translation type="obsolete">세컨더리 슬레이브</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="436"/>
@@ -5577,58 +4633,44 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2부터 접근할 수 없음&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMListView.cpp" line="533"/>
-        <source>%1 (%2)
- %3</source>
-        <comment>Accessible string of the list view item</comment>
-        <translation type="obsolete">%1 (%2)
- %3</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMListView.cpp" line="583"/>
-        <source>VM</source>
-        <comment>Horizontal header description</comment>
-        <translation type="obsolete">VM</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">보이기(&amp;H)</translation>
+        <translation>보이기(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신의 창으로 전환합니다</translation>
+        <translation>선택한 가상 머신의 창으로 전환합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">시작(&amp;T)</translation>
+        <translation>시작(&amp;T)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">선택한 가상 머신을 시작합니다</translation>
+        <translation>선택한 가상 머신을 시작합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">다시 시작(&amp;E)</translation>
+        <translation>다시 시작(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">가상 머신의 실행을 다시 시작합니다</translation>
+        <translation>가상 머신의 실행을 다시 시작합니다</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">일시 정지(&amp;P)</translation>
+        <translation>일시 정지(&amp;P)</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">가상 머신의 실행을 일시 중지합니다</translation>
+        <translation>가상 머신의 실행을 일시 중지합니다</translation>
     </message>
 </context>
 <context>
@@ -5771,22 +4813,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
-        <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">마운트할 CD/DVD 이미지를 선택할 수 있는 가상 디스크 관리자를 엽니다.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>마운트할 CD/DVD 이미지를 선택할 수 있는 가상 미디어 관리자를 엽니다.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
-    <message>
-        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="370"/>
-        <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
-        <translation type="obsolete">&lt;b&gt;%2&lt;/b&gt; 페이지의 %1.</translation>
-    </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="412"/>
         <source>General</source>
@@ -5860,7 +4892,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 페이지의 %2</translation>
     </message>
 </context>
 <context>
@@ -5917,13 +4949,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
-        <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">마운트할 플로피 이미지를 선택할 수 있는 가상 디스크 관리자를 엽니다.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>마운트할 플로피 이미지를 선택할 수 있는 가상 미디어 관리자를 엽니다.</translation>
     </message>
 </context>
 <context>
@@ -5957,16 +4984,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="88"/>
         <source>Displays the name of the virtual machine.</source>
         <translation>가상 머신의 이름을 표시합니다.</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="94"/>
-        <source>OS &amp;Type:</source>
-        <translation type="obsolete">운영체제 종류(&amp;T):</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="110"/>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="obsolete">이 가상 머신에 설치할 운영체제(게스트 운영체제라고도 함) 종류를 표시합니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="104"/>
@@ -6129,11 +5146,6 @@ p, li { white-space: pre-wrap; }
         <translation>기타(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="878"/>
-        <source>R&amp;untime:</source>
-        <translation type="obsolete">실행할 때(&amp;U):</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="886"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>만약 선택하면 가상 머신을 실행하는 동안 CD/DVD나 플로피 미디어가 마운트된 상태의 변경 사항을 저장하여 다음 번 실행 때 사용할 수 있도록 합니다.</translation>
@@ -6146,32 +5158,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>컴퓨터의 메모리(&lt;b&gt;%1&lt;/b&gt;)의 &lt;b&gt;75%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="385"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>컴퓨터의 메모리(&lt;b&gt;%1&lt;/b&gt;)의 &lt;b&gt;50%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 비디오 메모리가 전체 화면이나 심리스 모드로 전환하기 위해 필요한 것(&lt;b&gt;%1&lt;/b&gt;)보다 부족합니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>3차원 가속 사용하기(&amp;3)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="873"/>
         <source>Runtime:</source>
-        <translation type="unfinished"></translation>
+        <translation>실행할 때:</translation>
     </message>
 </context>
 <context>
@@ -6212,11 +5224,6 @@ p, li { white-space: pre-wrap; }
         <translation>하드디스크의 연결을 끊습니다.</translation>
     </message>
     <message>
-        <location filename="../src/VBoxVMSettingsHD.cpp" line="624"/>
-        <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">새 가상 디스크를 만들거나 기존의 가상 하드디스크를 선택할 수 있는 가상 디스크 관리자를 엽니다.</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="33"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
         <translation>선택하면 이 가상 머신의 가상 SATA 컨트롤러를 사용합니다. SATA 컨트롤러를 사용할 때에만 SATA 포트에 하드디스크를 연결할 수 있습니다.</translation>
@@ -6232,29 +5239,24 @@ p, li { white-space: pre-wrap; }
         <translation>연결(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
-        <source>Lists all hard disks attached to this machine. Use a mouse click or the F2 key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="obsolete">이 가상 머신에 연결된 모든 하드디스크의 목록입니다. 강조된 항목에서 마우스를 누르거나 F2 키를 누르면 드롭다운 목록이 표시되며, 원하는 값을 선택할 수 있습니다. 컨텍스트 메뉴나 오른쪽에 있는 단추를 사용하면 새 가상 하드디스크를 연결할 수 있습니다.</translation>
-    </message>
-    <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 강조된 슬롯에 연결할 수 있는 하드디스크를 선택할 수 있는 가상 미디어 관리자를 엽니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 연결된 모든 하드디스크의 목록입니다. 강조된 항목에서 마우스를 누르거나 &lt;tt&gt;Space&lt;/tt&gt; 키를 누르면 드롭다운 목록이 표시되며, 원하는 값을 선택할 수 있습니다. 컨텍스트 메뉴나 오른쪽에 있는 단추를 사용하면 새 가상 하드디스크를 연결할 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="114"/>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 하드디스크를 바로 연결하지 않고 변경 사항을 저장하는 하드디스크를 보여주며, 다른 변경 사항이 저장된 하드디스크를 연결할 수 있습니다. 복잡한 디스크 구성을 사용하려는 경우에만 선택하십시오.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="117"/>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>변경 사항을 저장하는 하드디스크 보이기(&amp;S)</translation>
     </message>
 </context>
 <context>
@@ -6330,11 +5332,6 @@ p, li { white-space: pre-wrap; }
         <translation>생성(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="172"/>
-        <source>Alt+G</source>
-        <translation type="obsolete">Alt+G</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="176"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>가상 네트워크 케이블이 머신 시작 시 연결되거나 연결되지 않음을 표시합니다.</translation>
@@ -6343,11 +5340,6 @@ p, li { white-space: pre-wrap; }
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="179"/>
         <source>Ca&amp;ble Connected</source>
         <translation>케이블 연결됨(&amp;B)</translation>
-    </message>
-    <message>
-        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="189"/>
-        <source>&amp;Host Interface Settings</source>
-        <translation type="obsolete">호스트 인터페이스 설정(&amp;H)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="196"/>
@@ -6392,7 +5384,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="186"/>
         <source>Host Interface Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 인터페이스 설정</translation>
     </message>
 </context>
 <context>
@@ -6828,11 +5820,6 @@ p, li { white-space: pre-wrap; }
         <translation>아니오</translation>
     </message>
     <message>
-        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
-        <source>Filter details</source>
-        <translation type="obsolete">필터 정보</translation>
-    </message>
-    <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="42"/>
         <source>&amp;Name:</source>
         <translation>이름(&amp;N):</translation>
@@ -6935,7 +5922,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
         <source>USB Filter Details</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 필터 정보</translation>
     </message>
 </context>
 <context>
