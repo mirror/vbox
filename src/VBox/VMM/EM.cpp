@@ -1127,7 +1127,7 @@ void emR3SingleStepExecRaw(PVM pVM, uint32_t cIterations)
 }
 
 
-void emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
+int emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
 {
     EMSTATE  enmOldState = pVM->em.s.enmState;
 
@@ -1139,10 +1139,13 @@ void emR3SingleStepExecHwAcc(PVM pVM, RTCPUID idCpu, uint32_t cIterations)
         DBGFR3PrgStep(pVM);
         DBGFR3DisasInstrCurrentLog(pVM, "RSS: ");
         emR3HwAccStep(pVM, idCpu);
+        if (!HWACCMR3CanExecuteGuest(pVM, pVM->em.s.pCtx))
+            break;
     }
     Log(("Single step END:\n"));
     CPUMSetGuestEFlags(pVM, CPUMGetGuestEFlags(pVM) & ~X86_EFL_TF);
     pVM->em.s.enmState = enmOldState;
+    return VINF_EM_RESCHEDULE_REM;
 }
 
 
