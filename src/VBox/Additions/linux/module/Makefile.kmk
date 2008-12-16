@@ -36,14 +36,16 @@ vboxadd-mod_INST     = $(INST_ADDITIONS)src/vboxadd/
 vboxadd-mod_MODE     = a+r,u+w
 vboxadd-mod_SOURCES  = $(subst ",,$(FILES_VBOXADD_NOBIN))
 vboxadd-mod_SOURCES += $(if $(VBOX_OSE),,\
-			 $(PATH_vboxadd-mod)/dkms.conf \
-			 $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+			 $(PATH_vboxadd-mod)/dkms.conf)
 vboxadd-mod_CLEAN    = $(PATH_vboxadd-mod)/dkms.conf
 
 vboxadd-sh_INST      = $(INST_ADDITIONS)src/vboxadd/
 vboxadd-sh_MODE      = a+rx,u+w
 vboxadd-sh_SOURCES   = $(subst ",,$(FILES_VBOXADD_BIN))
-vboxadd-sh_SOURCES  += $(PATH_vboxadd-sh)/build_in_tmp
+vboxadd-sh_SOURCES  += \
+	$(PATH_vboxadd-sh)/build_in_tmp \
+	$(if $(VBOX_OSE),,\
+	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
 vboxadd-sh_CLEAN    += $(PATH_vboxadd-sh)/build_in_tmp
 
 
