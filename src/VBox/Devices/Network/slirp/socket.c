@@ -917,7 +917,6 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     }
     if (len == 0)
         return; /* no error */
-    LogRel(("IcmpParseReplies returns %ld\n", len));
     icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
     for (i = 0; i < len; ++i)
     {
@@ -955,6 +954,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 m->m_len = ip->ip_len;
 
                 icmp_reflect(pData, m);
+                break;
             case IP_TTL_EXPIRED_TRANSIT: /* TTL expired */
 
                 ip_broken = icr[i].Data;
