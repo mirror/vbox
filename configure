@@ -1583,8 +1583,9 @@ check_libcap()
 
 extern "C" int main(void)
 {
+  char buf[1024];
   cap_t caps = cap_get_proc();
-  printf("Current caps are '%s'\n", cap_to_text(caps, NULL));
+  snprintf(buf, sizeof(buf), "Current caps are '%s'\n", cap_to_text(caps, NULL));
   return 0;
 }
 EOF
