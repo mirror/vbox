@@ -381,7 +381,7 @@ typedef struct HWACCM
 typedef HWACCM *PHWACCM;
 
 /* Maximum number of cached entries. */
-#define VMCSCACHE_MAX_ENTRY                             256
+#define VMCSCACHE_MAX_ENTRY                             128
 
 /* Structure for storing read and write VMCS actions. */
 typedef struct VMCSCACHE

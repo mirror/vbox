@@ -21,7 +21,7 @@
 %define VMX_USE_CACHED_VMCS_ACCESSES
 
 ;Maximum number of cached entries. 
-%define VMCSCACHE_MAX_ENTRY                             256
+%define VMCSCACHE_MAX_ENTRY                             128
 
 ; Structure for storing read and write VMCS actions. 
 struc VMCSCACHE
