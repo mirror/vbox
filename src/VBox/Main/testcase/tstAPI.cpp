@@ -1126,6 +1126,20 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
+#if 0
+    do {
+        // Get host
+        ComPtr <IHost> host;
+        CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
+
+        ULONG uMemSize, uMemAvail;
+        CHECK_ERROR_BREAK (host, COMGETTER(MemorySize) (&uMemSize));
+        printf("Total memory (MB): %u\n", uMemSize);
+        CHECK_ERROR_BREAK (host, COMGETTER(MemoryAvailable) (&uMemAvail));
+        printf("Free memory (MB): %u\n", uMemAvail);
+    } while (0);
+#endif
+
 #if 0 && defined (VBOX_WITH_RESOURCE_USAGE_API)
     do {
         // Get collector
