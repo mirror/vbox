@@ -45,7 +45,7 @@
 #define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d
 
 /** Buffer size used for merging images. */
-#define VD_MERGE_BUFFER_SIZE    (1024 * 1024)
+#define VD_MERGE_BUFFER_SIZE    (16 * _1M)
 
 /**
  * VBox HDD Container image descriptor.
@@ -1970,7 +1970,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         {
             rc = pImageFrom->Backend->pfnGetUuid(pImageFrom->pvBackendData, &ImageUuid);
             if (RT_FAILURE(rc))
-                RTUuidClear(&ImageUuid);
+                RTUuidCreate(&ImageUuid);
         }
         rc = pImageFrom->Backend->pfnGetModificationUuid(pImageFrom->pvBackendData, &ImageModificationUuid);
         if (RT_FAILURE(rc))
@@ -2006,7 +2006,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
             if (!RTUuidIsNull(&ImageUuid))
-                 pImageFrom->Backend->pfnSetUuid(pImageFrom->pvBackendData, &ImageUuid);
+                 pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
         }
         if (RT_FAILURE(rc))
             break;
@@ -2063,9 +2063,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
         if (RT_SUCCESS(rc))
         {
-            pImageFrom->Backend->pfnSetModificationUuid(pImageFrom->pvBackendData, &ImageModificationUuid);
-            pImageFrom->Backend->pfnGetParentUuid(pImageFrom->pvBackendData, &ParentUuid);
-            pImageFrom->Backend->pfnGetParentModificationUuid(pImageFrom->pvBackendData, &ParentModificationUuid);
+            pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
+            pImageTo->Backend->pfnGetParentUuid(pImageTo->pvBackendData, &ParentUuid);
+            pImageTo->Backend->pfnGetParentModificationUuid(pImageTo->pvBackendData, &ParentModificationUuid);
         }
     } while (0);
 
