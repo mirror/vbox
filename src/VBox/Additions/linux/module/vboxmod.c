@@ -70,6 +70,7 @@ do { \
 #include <VBox/VBoxDev.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/memobj.h>
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 
@@ -363,6 +364,85 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
         return rc;
 }
 
+/** Lock down R3 memory as needed for the HGCM call.  Copied from
+ * HGCMInternal.cpp and SysHlp.cpp */
+static int vboxadd_lock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
+{
+    uint32_t cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
+    int rc = VINF_SUCCESS;
+    unsigned iParm;
+    HGCMFunctionParameter *pParm;
+    memset (ppvCtx, 0, sizeof(void *) * pCallInfo->cParms);
+    if (cbParms)
+    {
+        /* Lock user buffers. */
+        pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
+
+        for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
+        {
+            switch (pParm->type)
+            {
+            case VMMDevHGCMParmType_LinAddr_Locked_In:
+                pParm->type = VMMDevHGCMParmType_LinAddr_In;
+                break;
+            case VMMDevHGCMParmType_LinAddr_Locked_Out:
+                pParm->type = VMMDevHGCMParmType_LinAddr_Out;
+                break;
+            case VMMDevHGCMParmType_LinAddr_Locked:
+                pParm->type = VMMDevHGCMParmType_LinAddr;
+                break;
+
+            case VMMDevHGCMParmType_LinAddr_In:
+            case VMMDevHGCMParmType_LinAddr_Out:
+            case VMMDevHGCMParmType_LinAddr:
+            {
+                RTR3PTR pv = (RTR3PTR)pParm->u.Pointer.u.linearAddr;
+                uint32_t u32Size = pParm->u.Pointer.size;
+                RTR0MEMOBJ MemObj;
+                rc = RTR0MemObjLockUser(&MemObj, pv, u32Size, NIL_RTR0PROCESS);
+                if (RT_SUCCESS(rc))
+                    ppvCtx[iParm] = MemObj;
+                else
+                    ppvCtx[iParm] = NIL_RTR0MEMOBJ;
+                break;
+            }
+            default:
+                /* make gcc happy */
+                break;
+            }
+            if (RT_FAILURE (rc))
+                break;
+        }
+    }
+    return RTErrConvertToErrno (rc);
+}
+
+/** Unlock R3 memory after the HGCM call.  Copied from HGCMInternal.cpp and
+ * SysHlp.cpp */
+static void vboxadd_unlock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallInfo)
+{
+    unsigned iParm;
+    /* Unlock user buffers. */
+    HGCMFunctionParameter *pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
+
+    for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
+    {
+        if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
+            || pParm->type == VMMDevHGCMParmType_LinAddr_Out
+            || pParm->type == VMMDevHGCMParmType_LinAddr)
+        {
+            if (ppvCtx[iParm] != NULL)
+            {
+                RTR0MEMOBJ MemObj = (RTR0MEMOBJ)ppvCtx[iParm];
+                int rc = RTR0MemObjFree(MemObj, false);
+                AssertRC(rc);
+            }
+        }
+        else
+            Assert(!ppvCtx[iParm]);
+    }
+}
+
 /**
  * IOCTL handler.  Make an HGCM call.
  *
@@ -375,8 +455,10 @@ static int vboxadd_hgcm_disconnect(struct file *filp, unsigned long userspace_in
 static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
 {
         VBoxGuestHGCMCallInfo *pInfo = NULL;
+        void *apvCtx[VBOX_HGCM_MAX_PARMS];
+        unsigned haveParms = 0;
         int rc = 0;
-        
+   
         pInfo = kmalloc(u32Size, GFP_KERNEL);
         if (pInfo == NULL)
                 rc = -ENOMEM;
@@ -393,6 +475,10 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
             rc = -EINVAL;
         }
         if (rc >= 0) {
+            haveParms = 1;
+            rc = vboxadd_lock_hgcm_parms(apvCtx, pInfo);
+        }
+        if (rc >= 0) {
                 int vrc;
                 LogRelFunc(("client ID %u\n", pInfo->u32ClientID));
                 vrc = vboxadd_cmc_call(vboxDev,
@@ -405,6 +491,8 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
                         rc = -EFAULT;
                 }
         }
+        if (haveParms)
+            vboxadd_unlock_hgcm_parms(apvCtx, pInfo);
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
@@ -423,6 +511,8 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
                                      uint32_t u32Size)
 {
         VBoxGuestHGCMCallInfoTimed *pInfo = NULL;
+        void *apvCtx[VBOX_HGCM_MAX_PARMS];
+        unsigned haveParms = 0;
         int rc = 0;
         
         pInfo = kmalloc(u32Size, GFP_KERNEL);
@@ -441,6 +531,10 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
             rc = -EINVAL;
         }
         if (rc >= 0) {
+            haveParms = 1;
+            rc = vboxadd_lock_hgcm_parms(apvCtx, &pInfo->info);
+        }
+        if (rc >= 0) {
                 int vrc;
                 LogRelFunc(("client ID %u\n", pInfo->info.u32ClientID));
                 pInfo->fInterruptible = true;  /* User space may not do uninterruptible waits */
@@ -454,6 +548,8 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
                         rc = -EFAULT;
                 }
         }
+        if (haveParms)
+            vboxadd_unlock_hgcm_parms(apvCtx, &pInfo->info);
         if (pInfo != NULL)
             kfree(pInfo);
         return rc;
