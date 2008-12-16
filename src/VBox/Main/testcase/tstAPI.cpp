@@ -1126,7 +1126,7 @@ int main(int argc, char *argv[])
     printf ("\n");
 #endif
 
-#if 0
+#if 1
     do {
         // Get host
         ComPtr <IHost> host;
