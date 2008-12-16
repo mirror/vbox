@@ -262,7 +262,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val);   \
         Log(("%s Limit        %x\n", szSelReg, val));                \
         VMXReadVMCS(VMX_VMCS64_GUEST_##REG##_BASE,          &val);   \
-        Log(("%s Base         %RX64\n", szSelReg, val));             \
+        Log(("%s Base         %RX64\n", szSelReg, (uint64_t)val));   \
         VMXReadVMCS(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val);   \
         Log(("%s Attributes   %x\n", szSelReg, val));                \
 }

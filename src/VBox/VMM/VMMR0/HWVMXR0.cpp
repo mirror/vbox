@@ -1430,7 +1430,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         val =   0
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-              | X86_CR4_VME
+              | (pVM->hwaccm.s.vmx.pRealModeTSS ? X86_CR4_VME : 0)
 #endif
               | X86_CR4_PAE
               | X86_CR4_PGE
@@ -3120,13 +3120,13 @@ ResumeExecution:
         Log(("Old eip %RGv new %RGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)val));
 
         VMXReadVMCS(VMX_VMCS64_GUEST_CR0, &val);
-        Log(("VMX_VMCS_GUEST_CR0        %RX64\n", val));
+        Log(("VMX_VMCS_GUEST_CR0        %RX64\n", (uint64_t)val));
 
         VMXReadVMCS(VMX_VMCS64_GUEST_CR3, &val);
-        Log(("VMX_VMCS_GUEST_CR3        %RGp\n", val));
+        Log(("VMX_VMCS_GUEST_CR3        %RX64\n", (uint64_t)val));
 
         VMXReadVMCS(VMX_VMCS64_GUEST_CR4, &val);
-        Log(("VMX_VMCS_GUEST_CR4        %RX64\n", val));
+        Log(("VMX_VMCS_GUEST_CR4        %RX64\n", (uint64_t)val));
 
         VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS, &val);
         Log(("VMX_VMCS_GUEST_RFLAGS     %08x\n", val));
@@ -3141,9 +3141,9 @@ ResumeExecution:
         VMX_LOG_SELREG(LDTR, "LDTR");
 
         VMXReadVMCS(VMX_VMCS64_GUEST_GDTR_BASE, &val);
-        Log(("VMX_VMCS_GUEST_GDTR_BASE    %RGv\n", val));
+        Log(("VMX_VMCS_GUEST_GDTR_BASE    %RX64\n", (uint64_t)val));
         VMXReadVMCS(VMX_VMCS64_GUEST_IDTR_BASE, &val);
-        Log(("VMX_VMCS_GUEST_IDTR_BASE    %RGv\n", val));
+        Log(("VMX_VMCS_GUEST_IDTR_BASE    %RX64\n", (uint64_t)val));
 #endif /* VBOX_STRICT */
         rc = VERR_VMX_INVALID_GUEST_STATE;
         break;
