@@ -1080,6 +1080,11 @@ VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PGMMODE enmShadowMode, PGMMOD
             pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = pVCpu->hwaccm.s.vmx.enmPrevGuestMode;
         }
     }
+
+    /* Reset the contents of the read cache. */
+    PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
+    for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
+        pCache->Read.aFieldVal[j] = 0;
 }
 
 /**
