@@ -371,12 +371,13 @@ void darwinDisableIconsInMenus()
 
 void darwinEnableAsyncDragForWindow (QWidget *aWindow)
 {
-    WindowAttributes waGet;
-    WindowAttributes waSet = kWindowAsyncDragAttribute;
-    GetWindowAttributes (::darwinToWindowRef (aWindow), &waGet);
-    if ((waGet & kWindowResizableAttribute) != kWindowResizableAttribute)
-        waSet |= kWindowResizableAttribute;
-    ChangeWindowAttributes (::darwinToWindowRef (aWindow), waSet, kWindowNoAttributes);
+    /* Disabled for now, cause we didn't get any move events anymore. */
+//    WindowAttributes waGet;
+//    WindowAttributes waSet = kWindowAsyncDragAttribute | kWindowLiveResizeAttribute;
+//    GetWindowAttributes (::darwinToWindowRef (aWindow), &waGet);
+//    if ((waGet & kWindowResizableAttribute) != kWindowResizableAttribute)
+//        waSet |= kWindowResizableAttribute;
+//    ChangeWindowAttributes (::darwinToWindowRef (aWindow), waSet, kWindowNoAttributes);
     /* Not working yet : */
 //    ReshapeCustomWindow(::darwinToWindowRef (aWindow));
 //    QMainWindow *mw = qobject_cast<QMainWindow *> (aWindow);
