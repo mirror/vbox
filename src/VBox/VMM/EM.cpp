@@ -80,6 +80,14 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if 0 /* Disabled till after 2.1.0 when we've time to test it. */
+#define EM_NOTIFY_HWACCM
+#endif
+
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM);
@@ -1311,6 +1319,10 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
             if (RT_SUCCESS(rc))
             {
                 pCtx->rip += Cpu.opsize;
+#ifdef EM_NOTIFY_HWACCM
+                if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                    HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+#endif
                 STAM_PROFILE_STOP(&pVM->em.s.StatMiscEmu, a);
                 return rc;
             }
@@ -1325,6 +1337,10 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, int rcGC)
     rc = REMR3EmulateInstruction(pVM);
     STAM_PROFILE_STOP(&pVM->em.s.StatREMEmu, a);
 
+#ifdef EM_NOTIFY_HWACCM
+    if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+        HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+#endif
     return rc;
 }
 
@@ -1562,6 +1578,10 @@ static int emR3RawGuestTrap(PVM pVM)
                 if (RT_SUCCESS(rc))
                 {
                     pCtx->rip += cpu.opsize;
+#ifdef EM_NOTIFY_HWACCM
+                    if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                        HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+#endif
                     return rc;
                 }
                 return emR3RawExecuteInstruction(pVM, "Monitor: ");
@@ -2056,6 +2076,10 @@ int emR3RawPrivileged(PVM pVM)
                     if (RT_SUCCESS(rc))
                     {
                         pCtx->rip += Cpu.opsize;
+#ifdef EM_NOTIFY_HWACCM
+                        if (pVM->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
+                            HWACCMR3NotifyEmulated(VMMGetCpu(pVM));
+#endif
                         STAM_PROFILE_STOP(&pVM->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->opcode == OP_MOV_CR
@@ -2782,6 +2806,10 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
 
     STAM_COUNTER_INC(&pVM->em.s.StatHwAccExecuteEntry);
 
+#ifdef EM_NOTIFY_HWACCM
+    HWACCMR3NotifyScheduled(&pVM->aCpus[idCpu]);
+#endif
+
     /*
      * Spin till we get a forced action which returns anything but VINF_SUCCESS.
      */
@@ -2864,6 +2892,7 @@ static int emR3HwAccExecute(PVM pVM, RTCPUID idCpu, bool *pfFFDone)
             }
         }
     }
+
     /*
      * Return to outer loop.
      */

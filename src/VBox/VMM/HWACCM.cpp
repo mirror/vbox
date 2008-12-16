@@ -1332,6 +1332,27 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 }
 
 /**
+ * Notifcation from EM about a rescheduling into hardware assisted execution
+ * mode.
+ *
+ * @param   pVCpu       Pointer to the current virtual cpu structure.
+ */
+VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu)
+{
+    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
+}
+
+/**
+ * Notifcation from EM about returning from instruction emulation (REM / EM).
+ *
+ * @param   pVCpu       Pointer to the current virtual cpu structure.
+ */
+VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu)
+{
+    pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
+}
+
+/**
  * Checks if we are currently using hardware accelerated raw mode.
  *
  * @returns boolean
