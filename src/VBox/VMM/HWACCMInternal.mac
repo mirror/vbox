@@ -42,6 +42,7 @@ struc VMCSCACHE
     .TestOut.pVMCSPhys        resq    1
     .TestOut.pCache           resq    1
     .TestOut.pCtx             resq    1
+    .TestOut.eflags           resq    1
     .ScratchPad.param1        resq    1
     .ScratchPad.param2        resq    1
     .ScratchPad.param3        resq    1

@@ -415,6 +415,7 @@ typedef struct VMCSCACHE
         RTHCPHYS    pVMCSPhys;
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
+        uint64_t    eflags;
     } TestOut;
     struct
     {
