@@ -2005,7 +2005,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                               cbSize, uImageFlagsFrom, szComment,
                               &PCHSGeometryFrom, &LCHSGeometryFrom,
                               NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
-            if (!RTUuidIsNull(&ImageUuid))
+            if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
                  pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
         }
         if (RT_FAILURE(rc))
