@@ -89,7 +89,7 @@
             </property>
            </widget>
           </item>
-         </layout> 
+         </layout>
         </widget>
        </item>
        <item row="2" column="0" colspan="2" >
@@ -442,7 +442,23 @@
          </layout>
         </widget>
        </item>
-       <item row="6" column="1" >
+       <item row="6" column="0" colspan="2" >
+        <widget class="QCheckBox" name="mCb3D" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis" >
+          <string>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</string>
+         </property>
+         <property name="text" >
+          <string>Enable &amp;3D Acceleration</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" >
         <spacer>
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
@@ -694,22 +710,6 @@
            </property>
            <property name="text" >
             <string>Enable PA&amp;E/NX</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="mCb3D" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="whatsThis" >
-            <string>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</string>
-           </property>
-           <property name="text" >
-            <string>Enable &amp;3D Acceleration</string>
            </property>
           </widget>
          </item>
