@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="1.1" language="ca">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -38,17 +39,17 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished">Doble clic per afegir un nou adjunt</translation>
+        <translation>Doble clic per afegir un nou adjunt</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Disc dur</translation>
+        <translation>Disc dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">Ranura</translation>
+        <translation>Ranura</translation>
     </message>
 </context>
 <context>
@@ -115,17 +116,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Error en %1</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hauria d&apos;ajudar-vos a tornar a instal·lar VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -364,12 +365,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;ha excedit el temps d&apos;espera de la connexió</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>No es pot localitzar el fitxer al servidor (resposta: %1)</translation>
     </message>
 </context>
 <context>
@@ -463,12 +464,12 @@
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Interfície Gràfica d&apos;Usuari de VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">Versió %1</translation>
+        <translation>Versió %1</translation>
     </message>
 </context>
 <context>
@@ -587,27 +588,27 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancel·la</translation>
+        <translation>Cancel·la</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">S&apos;està descarregant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>S&apos;està descarregant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
+        <translation>Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Hi ha hagut un error mentre es desava el fitxer descarregat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Hi ha hagut un error mentre es desava el fitxer descarregat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Seleccioneu la carpeta on desar la imatge de les Guest Additions</translation>
+        <translation>Seleccioneu la carpeta on desar la imatge de les Guest Additions</translation>
     </message>
 </context>
 <context>
@@ -1297,12 +1298,12 @@ Versió %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;S&apos;està connectant...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la tecla assignada a l&apos;amfitrió.&lt;br&gt;Quan es prem aquesta tecla commuta l&apos;estat de captura del teclat i el ratolí. També es pot fer servir en combinació amb altres tecles per accedir ràpidament a algunes opcions del menú principal.</translation>
     </message>
 </context>
 <context>
@@ -1843,17 +1844,17 @@ Versió %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la ruta cap a la carpeta de disc dur predeterminada. S&apos;usa aquesta carpeta, si no se n&apos;especifica explícitament una altra, quan s&apos;afegeix o es crea un disc virtual.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estiga marcat, l&apos;aplicació proveirà una icona amb el menú de context a la safata de sistema.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mostra la Icona a la Safata del Sistema</translation>
     </message>
 </context>
 <context>
@@ -2925,89 +2926,89 @@ Versió %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Connectat a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Connectat a:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;No&amp;nbsp;Adjuntat&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;i&gt;S&apos;està comprovant l&apos;accessibilitat...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Ha fallat la comprovació de l&apos;accessibilita.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Per a adjuntar aquest disc dur es crearà un altre disc dur diferenciat.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;està comprovant...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">No s&apos;hi pot accedir</translation>
+        <translation>No s&apos;hi pot accedir</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;No s&apos;hi pot accedir a alguns dels medis d&apos;aquest disc. Feu servir el Gestor Virtual de Medis al mode &lt;b&gt;Mostra diferències als discs durs&lt;/b&gt; per inspeccionar aquest medi.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="592"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1&lt;hr&gt;Aquest disc dur base s&apos;adjunta indirectament fent servint el següent disc dur diferenciat:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Acceleració 3D</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">Activat</translation>
+        <translation>Activat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">Desactivat</translation>
+        <translation>Desactivat</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;està configurant</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">S&apos;estan calculant les diferències</translation>
+        <translation>S&apos;estan calculant les diferències</translation>
     </message>
 </context>
 <context>
@@ -3758,12 +3759,12 @@ un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translatio
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>No hi ha medis disponibles. Feu servir el Gestor Virtual de Medis per a afegir nous medis del tipus corresponent.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;sense medis&gt;</translation>
     </message>
 </context>
 <context>
@@ -3771,168 +3772,168 @@ un disc dur per adjuntar a la ranura remarcada actualment.&lt;/a&gt;</translatio
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">&amp;Accions</translation>
+        <translation>&amp;Accions</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Nova...</translation>
+        <translation>&amp;Nova...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Afegeix...</translation>
+        <translation>&amp;Afegeix...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">&amp;Elimina</translation>
+        <translation>&amp;Elimina</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">A&amp;llibera</translation>
+        <translation>A&amp;llibera</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Re&amp;fresca</translation>
+        <translation>Re&amp;fresca</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">Crea un disc dur virtual nou</translation>
+        <translation>Crea un disc dur virtual nou</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Afegeix un medi existent</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina el medi seleccionat</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Allibera el medi seleccionat de forma que ja no estiga adjunt a les màquines</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">Refresca la llista de suports</translation>
+        <translation>Refresca la llista de suports</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished">Ubicació</translation>
+        <translation>Ubicació</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipus (Format)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished">Connectat a</translation>
+        <translation>Connectat a</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">S&apos;està comprovant l&apos;accessibilitat</translation>
+        <translation>S&apos;està comprovant l&apos;accessibilitat</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">&amp;Selecciona</translation>
+        <translation>&amp;Selecciona</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Totes les imatges de disc dur (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tots els fitxers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">Seleccioneu un fitxer d&apos;imatge de disc dur</translation>
+        <translation>Seleccioneu un fitxer d&apos;imatge de disc dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">Imatges de CD/DVD-ROM (*.iso);;Tots els fitxers (*)</translation>
+        <translation>Imatges de CD/DVD-ROM (*.iso);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="unfinished">Seleccioneu un fitxer d&apos;imatge de disc CD/DVD-ROM</translation>
+        <translation>Seleccioneu un fitxer d&apos;imatge de disc CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1039"/>
         <source>Floppy images (*.img);;All files (*)</source>
-        <translation type="unfinished">Imatges de disquet (*.img);;Tots els fitxers (*)</translation>
+        <translation>Imatges de disquet (*.img);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1040"/>
         <source>Select a floppy disk image file</source>
-        <translation type="unfinished">Seleccioneu un fitxer d&apos;imatge de disquet</translation>
+        <translation>Seleccioneu un fitxer d&apos;imatge de disquet</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1429"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;No&amp;nbsp;Adjuntat&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1898"/>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestor Virtual de Meis</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
         <source>Hard &amp;Disks</source>
-        <translation type="unfinished">&amp;Discs durs</translation>
+        <translation>&amp;Discs durs</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="279"/>
         <source>Name</source>
-        <translation type="unfinished">Nom</translation>
+        <translation>Nom</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="86"/>
         <source>Virtual Size</source>
-        <translation type="unfinished">Mida virtual</translation>
+        <translation>Mida virtual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="91"/>
         <source>Actual Size</source>
-        <translation type="unfinished">Mida actual</translation>
+        <translation>Mida actual</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="169"/>
         <source>&amp;CD/DVD Images</source>
-        <translation type="unfinished">Imatges de &amp;CD/DVD</translation>
+        <translation>Imatges de &amp;CD/DVD</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="284"/>
         <source>Size</source>
-        <translation type="unfinished">Mida</translation>
+        <translation>Mida</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="257"/>
         <source>&amp;Floppy Images</source>
-        <translation type="unfinished">Imatges de dis&amp;quet</translation>
+        <translation>Imatges de dis&amp;quet</translation>
     </message>
 </context>
 <context>
@@ -4197,62 +4198,63 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aquest auxiliar us ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Enrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipus d&apos;emmagatzematge per al disc dur</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear. Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida especificada) conforme el Sistema Amfitrió consumisca espai. Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una imatge de mida fixa triga un temps segons la grandària de la mateixa i de l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
-        <translation type="unfinished">Tipus d&apos;emmagatzematge</translation>
+        <translation>Tipus d&apos;emmagatzematge</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Imatge que s&apos;expandeix &amp;dinàmicament</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Imatge de mida &amp;fixa</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ubicació</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Aquesta serà la mida que s&apos;informarà
+al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mida</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="799"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Esteu a punt de crear una imatge de disc dur virtual amb els paràmetres següents:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="849"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una imatge de disc dur nova.</translation>
     </message>
 </context>
 <context>
@@ -4524,12 +4526,12 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="782"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discs virtuals). Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discs durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="820"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation>D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
     </message>
 </context>
 <context>
@@ -4537,22 +4539,22 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="118"/>
         <source>Operating &amp;System:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sistema Operatiu:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="120"/>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el tipus de sistema operatiu que voleu instal·lar a dins d&apos;aquesta màquina virtual.</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="121"/>
         <source>V&amp;ersion:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;ersió:</translation>
     </message>
     <message>
         <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="124"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Mostra el tipus de sistema operatiu que voleu instal·lar a dins d&apos;aquesta màquina virtual (anomenat sistema operatiu client).</translation>
+        <translation>Mostra el tipus de sistema operatiu que voleu instal·lar a dins d&apos;aquesta màquina virtual (anomenat sistema operatiu client).</translation>
     </message>
 </context>
 <context>
@@ -5378,182 +5380,182 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1107"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Esteu segur que voleu alliberar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Això el desadjuntarà de les següents màquines virtuals: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1111"/>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="unfinished">Allibera</translation>
+        <translation>Allibera</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1120"/>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Esteu segur que voleu eliminar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la llista de medis coneguts?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1128"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tingueu en compte que aquest disc dur és innaccessible i per tant no es pot esborrar el seu contigut.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1133"/>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
+        <translation>El següent diàleg us permetrà triar si voleu eliminar també la unitat d&apos;emmagatzematge d&apos;aquest disc dur o mantenir-la per a més endavant.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1139"/>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and therefore it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tingueu en compte que la unitat d&apos;emmagatzematge d&apos;aquest medi no s&apos;eliminarà i, a més serà possible afegir-la novament més tard.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Elimina</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1155"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;L&apos;ubicació de de disc dur d&apos;emmagatzematge &lt;b&gt;%1&lt;/b&gt; ja existeix. No podeu crear un nou disc dur virtual que faça servir la mateix ubicació perquè ja està fent-se servir per un altre disc dur virtual.&lt;/p&gt;&lt;p&gt;Especifiqueu una ubicació diferent.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1171"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Voleu eliminar la unitat d&apos;emmagatzematge del disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Si seleccioneu &lt;b&gt;Elimina&lt;/b&gt;, la unitat especificada s&apos;eliminarà de forma permanent. Aquesta operació &lt;b&gt;no pot desfer-se&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si seleccioneu &lt;b&gt;Manté&lt;/b&gt;, el disc dur s&apos;eliminarà del llistat de disc durs coneguts, però la unitat d&apos;emmagatzematge no s&apos;eliminarà de forma que podreu afegir-la a aquest disc dur novament més tard.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1176"/>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished">Suprimeix</translation>
+        <translation>Suprimeix</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1177"/>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
+        <translation>Manté</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1189"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pugt eliminar la unitat del disc dur &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1215"/>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hi ha discs durs disponibles que no es fan servir per al nou adjunt creat.&lt;/p&gt;&lt;p&gt;Prmeu el botó &lt;b&gt;Crea&lt;/b&gt; per iniciar el gestor de &lt;i&gt;Creació de disc durs virtuals&lt;/i&gt; i crear un nou disc dur, o premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per obrir el &lt;i&gt;Gestor de Discs Durs&lt;/i&gt; i seleccionar què fer.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1230"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut crear el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1244"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut adjuntar el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; a l&apos;slot &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1257"/>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut treure el disc dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; de l&apos;slot &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1270"/>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; to the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut muntar %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1283"/>
         <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut desmuntar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1295"/>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut obrir el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1305"/>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut tancar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1347"/>
         <source>Failed to get the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;ha pogut accedir a l&apos;estat del medi &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1627"/>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No s&apos;ha pogut connectar al servei de llegistre en línia del VirtualBox degut al següent error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1661"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No es pot obtindre informació de noves versions degut al següent problema:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1817"/>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No es pot accedir a un o més dels discs, CD/DVD o disquet virtuals. Com a resultat, no podreu operar amb les màquines virtuals que els facen servir fins que estiguen accessibles.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Comprova&lt;/b&gt; per obrir el Gestor de Discs Virtuals i veure a quins suports no s&apos;hi pot accedir, o premeu &lt;b&gt;Ignora&lt;/b&gt; per ignorar aquest missatge.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1853"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Els fitxers de configuració actuals del VirtualBox es convertiran des del format antic al nou format necessari per a la nova versió del VirtualBox.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; per iniciar el VirtualBox ara o premeu &lt;b&gt;Més&lt;/b&gt; si voleu obtindre més informació sobre quins fitxers es convertiran i accedir a accions addicionals.&lt;/p&gt;&lt;p&gt;Premeu &lt;b&gt;Eixida&lt;/b&gt; per tancar l&apos;apliació del VirtualBox sense desar els resultats de la conversió al disc.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1859"/>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Més</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1903"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished">Ei&amp;xida</translation>
+        <translation>Ei&amp;xida</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1890"/>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han desat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Desa&lt;/b&gt; per desar ara els fitxers auto-convertits (ja no serà possible fer servir aquests paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans de desar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per desar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el Manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1893"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;li&gt;&lt;b&gt;Ix&lt;/b&gt; tancant el VirtualBox sense desar els resultats de la conversió del disc.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1900"/>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sob&amp;reescriu</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2009"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;S&apos;ha produït un error crític mentre s&apos;executava la màquina virtual, que s&apos;ha aturat.&lt;/p&gt;&lt;p&gt;Per obtindre ajuda, visiteu la secció Community a  &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostre contracte de suport. Afegiu el contingut del fitxer de registre &lt;tt&gt;VBox.log&lt;/tt&gt; i el fitxer d&apos;imatge &lt;tt&gt;VBox.png&lt;/tt&gt;,que podreu trobar al directori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, i una descripció sobre allò que estàveu fent al moment al qual es va produir l&apos;error. Podeu accedir als fitxers especificats mitjançant &lt;b&gt;Mostra registre&lt;/b&gt; des del menú de la &lt;b&gt;Màquina&lt;/b&gt; a la finestra principal del VirtualBox.&lt;/p&gt;Premeu &lt;b&gt;D&apos;acord&lt;/b&gt; si voleu aturar la màquina o &lt;b&gt;Ignora&lt;/b&gt; si voleu deixar-la en procés de depuració. Tingueu en compte que el procés de depuració requereix coneixements avançats i eines especials, per tant és recomanabla prémer &lt;b&gt;D&apos;acord&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2166"/>
         <source>hard disk</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">disc dur</translation>
+        <translation>disc dur</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2168"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">Imatge CD/DVD</translation>
+        <translation>Imatge CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2170"/>
         <source>floppy image</source>
         <comment>failed to close ...</comment>
-        <translation type="unfinished">imatge disquet</translation>
+        <translation>imatge disquet</translation>
     </message>
 </context>
 <context>
@@ -6008,18 +6010,18 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1239"/>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestor &amp;Virtual de Medis...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1241"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el diàleg del Gestor Virtual de Medis</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1301"/>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation type="unfinished"></translation>
+        <translation>Registre</translation>
     </message>
 </context>
 <context>
@@ -6042,7 +6044,7 @@ pas i connectar discs durs més endavant, fent servir el diàleg de configuraci�
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="133"/>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>No s&apos;han seleccionat els paràmetres òptims</translation>
     </message>
 </context>
 <context>
@@ -6478,28 +6480,28 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1679"/>
         <source>Show Selector Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el selector de finestra</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1681"/>
         <source>Show the selector window assigned to this menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra el selector de finestra assignat a aquest menú</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1683"/>
         <source>Hide Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaga la icona de sistema</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1685"/>
         <source>Remove this icon from the system tray</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina aquesta icona de la safata del sistema</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1873"/>
         <source>&amp;Other Machines...</source>
         <comment>tray menu</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Altres Màquines...</translation>
     </message>
 </context>
 <context>
@@ -6815,7 +6817,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="280"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aquest assistent connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova de VirtualBox. Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions. Podeu iniciar aquest assistent en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -7269,42 +7271,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1748"/>
         <source>S&amp;how</source>
-        <translation type="unfinished">Mo&amp;stra</translation>
+        <translation>Mo&amp;stra</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1750"/>
         <source>Switch to the window of the selected virtual machine</source>
-        <translation type="unfinished">Canvia a la finestra de la màquina virtual seleccionada</translation>
+        <translation>Canvia a la finestra de la màquina virtual seleccionada</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1810"/>
         <source>S&amp;tart</source>
-        <translation type="unfinished">Ini&amp;cia</translation>
+        <translation>Ini&amp;cia</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1812"/>
         <source>Start the selected virtual machine</source>
-        <translation type="unfinished">Inicia la màquina virtual seleccionada</translation>
+        <translation>Inicia la màquina virtual seleccionada</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1767"/>
         <source>R&amp;esume</source>
-        <translation type="unfinished">R&amp;eprèn</translation>
+        <translation>R&amp;eprèn</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1769"/>
         <source>Resume the execution of the virtual machine</source>
-        <translation type="unfinished">Reprèn l&apos;execució de la màquina virtual</translation>
+        <translation>Reprèn l&apos;execució de la màquina virtual</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1776"/>
         <source>&amp;Pause</source>
-        <translation type="unfinished">&amp;Pausa</translation>
+        <translation>&amp;Pausa</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1778"/>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="unfinished">Suspèn l&apos;execució de la màquina virtual</translation>
+        <translation>Suspèn l&apos;execució de la màquina virtual</translation>
     </message>
 </context>
 <context>
@@ -7747,7 +7749,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca el Gestor de Disc Durs Virtuals per seleccionar una imatge CD/DVD a muntar.</translation>
     </message>
 </context>
 <context>
@@ -8883,7 +8885,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="369"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished"></translation>
+        <translation>A la &lt;b&gt;%1&lt;/b&gt; pàgina, %2</translation>
     </message>
 </context>
 <context>
@@ -8946,7 +8948,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca el Gestor de Discs Durs Virtuals per seleccionar una imatge de disquet a muntar.</translation>
     </message>
 </context>
 <context>
@@ -9169,27 +9171,27 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="376"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>heu assignat més del &lt;b&gt;75%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%1&lt;/b&gt;) per a la màquina virtual. D&apos;aquesta manera no es deixa la suficient memòria per al sistema amfitrió. Seleccioneu una quantitat de memòria inferior.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="385"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>heu assignat més del &lt;b&gt;50%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%1&lt;/b&gt;) per a la màquina virtual. D&apos;aquesta manera no es deixa la suficient memòria per al sistema amfitrió. Contineu pel vostre compte (no recomanable).</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="394"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluïd.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="709"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan estiga marcat, la màquina virtual permetrà l&apos;accés als gràfics 3D disponibles a l&apos;amfitrió.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="712"/>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished"></translation>
+        <translation>Activa l&apos;acceleració &amp;3D</translation>
     </message>
 </context>
 <context>
@@ -9257,17 +9259,17 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="790"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Invoca el Gestor de Medis Virtuals per crear un de nou o seleccionar un disc dur existent per adjuntar a l&apos;slot remarcat.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="114"/>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si està marcat, mostrarà de forma diferenciada els discs durs adjuntats als slots en lloc de als discs durs base (mostrat en cas d&apos;adjunts indirectes), a més permetrà adjuntar altres discs durs explicitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="117"/>
         <source>&amp;Show Differencing Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Mo&amp;stra els Discs Durs Diferenciats</translation>
     </message>
 </context>
 <context>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<!DOCTYPE TS><TS version="1.1" language="sk">
+<defaultcodec></defaultcodec>
 <context>
     <name>@@@</name>
     <message>
@@ -38,38 +39,34 @@
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="141"/>
         <source>Double-click to add a new attachment</source>
-        <translation type="unfinished"></translation>
+        <translation>Dvojitým kliknutím pridáte nový pevný disk</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Hard Disk</source>
-        <translation type="unfinished">Pevný disk</translation>
+        <translation>Pevný disk</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="198"/>
         <source>Slot</source>
-        <translation type="unfinished">Slot</translation>
+        <translation>Slot</translation>
     </message>
 </context>
 <context>
     <name>BootItemsList</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">Presunúť hore (Ctrl-hore)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">Presunúť dolu (Ctrl-dolu)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">Presunie zvolené bootovacie zariadenie vyššie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">Presunie zvolené bootovacie zariadenie nižšie.</translation>
     </message>
@@ -77,7 +74,6 @@
 <context>
     <name>BootItemsTable</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Definuje poradie zariadení, z ktorých sa bude bootovať. Pomocou zaškrtávacieho poľa vľavo zapnete alebo vypnete jednotlivé bootovacie zariadenia. Presunutím položky hore alebo dolu zmeníte poradie zariadení.</translation>
     </message>
@@ -110,17 +106,17 @@
     <message>
         <location filename="../src/main.cpp" line="447"/>
         <source>VirtualBox - Error In %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - Chyba v %1</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="453"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="474"/>
         <source>It may help to reinstall VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Možno pomôže preinštalovanie VirtualBoxu.</translation>
     </message>
 </context>
 <context>
@@ -128,7 +124,7 @@
     <message>
         <location filename="../src/QIHelpButton.cpp" line="120"/>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Pomocník</translation>
+        <translation>&amp;Pomocník</translation>
     </message>
 </context>
 <context>
@@ -359,12 +355,12 @@
     <message>
         <location filename="../include/QIHttp.h" line="90"/>
         <source>Connection timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Spojenie vypršalo</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="93"/>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepodarilo sa nájsť súbor na serveri (odpoveď: %1)</translation>
     </message>
 </context>
 <context>
@@ -372,7 +368,7 @@
     <message>
         <location filename="../src/QILabel.cpp" line="363"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopírovať</translation>
     </message>
 </context>
 <context>
@@ -406,7 +402,6 @@
 <context>
     <name>QIRichLabel</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Copy to clipboard</source>
         <translation type="obsolete">Kopírovať do schránky</translation>
     </message>
@@ -444,7 +439,6 @@
         <translation>O aplikácii VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;qt&gt;VirtualBox Graphical User Interface Version %1&lt;br&gt;
 %2&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Grafické používateľské rozhranie VirtualBox, verzia %1&lt;br&gt;
@@ -453,12 +447,12 @@
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="48"/>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafické užívateľské rozhranie VirtualBoxu</translation>
     </message>
     <message>
         <location filename="../src/VBoxAboutDlg.cpp" line="49"/>
         <source>Version %1</source>
-        <translation type="unfinished">Verzia %1</translation>
+        <translation>Verzia %1</translation>
     </message>
 </context>
 <context>
@@ -507,67 +501,54 @@ verzia %1</translation>
 <context>
     <name>VBoxAddSFDialog</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Share</source>
         <translation type="obsolete">Pridať zdieľaný priečinok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Edit Share</source>
         <translation type="obsolete">Upraviť zdieľaný priečinok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select a folder to share</source>
         <translation type="obsolete">Zvoliť priečinok, ktorý sa bude zdieľať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Folder Path</source>
         <translation type="obsolete">Cesta k priečinku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Folder Name</source>
         <translation type="obsolete">Názov priečinka</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Zobrazí cestu k existujúcemu priečinku na hostiteľskom PC.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Zobrazí názov zdieľaného priečinka (ako ho uvidí hosťovský OS).</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Opens the dialog to select a folder.</source>
         <translation type="obsolete">Otvorí dialóg pre výber priečinka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">&amp;Uložiť nastálo</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Read-only</source>
         <translation type="obsolete">I&amp;ba na čítanie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Keď je zaškrtnuté, hosťovský OS nebude môcť zapisovať do vybraného zdieľaného priečinka.</translation>
     </message>
@@ -577,27 +558,27 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="121"/>
         <source>Cancel</source>
-        <translation type="unfinished">Zrušiť</translation>
+        <translation>Zrušiť</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="124"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Sťahuje sa obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Sťahujem obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="126"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBox</translation>
+        <translation>Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBoxu</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="157"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="162"/>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="unfinished">Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
+        <translation>Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
     </message>
 </context>
 <context>
@@ -618,7 +599,6 @@ verzia %1</translation>
         <translation>&amp;Uložiť stav virtuálneho stroja</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+S</source>
         <translation type="obsolete">Alt+S</translation>
     </message>
@@ -628,7 +608,6 @@ verzia %1</translation>
         <translation>&amp;Vypnúť virtuálny stroj</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -638,7 +617,6 @@ verzia %1</translation>
         <translation>&amp;Vrátiť sa na poslednú snímku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+R</source>
         <translation type="obsolete">Alt+R</translation>
     </message>
@@ -648,27 +626,22 @@ verzia %1</translation>
         <translation>Vráti stav stroja na stav uložený v poslednom snímku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
@@ -680,22 +653,22 @@ verzia %1</translation>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ak je zaškrtnuté, bude stav počítača obnovený zo stavu uloženého v aktuálnej snímke ihneď po vypnutí. To sa hodí, keď ste si istý, že chcete zahodiť výsledky vášho posledného sedenia a vrátiť sa k aktuálnej snímke.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Uloží aktuálny stav virtuálneho počítača na fyzický pevný disk hostiteľského PC.&lt;/p&gt;&lt;p&gt;Pri budúcom spustení počítača bude uložený stav obnovený a vykonávanie bude pokračovať od miesta, kde ste skončili, takže budete môcť ihneď pokračovať v práci.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že uloženie stavu počítača môže chvíľu trvať v závislosti na hosťovanom operačnom systéme a množstve pamäte priradenej virtuálnemu počítaču.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Pošle ACPI udalosť stlačenie zapínacieho tlačidla virtuálnemu počítaču.&lt;/p&gt;&lt;p&gt;Za bežných okolností hosťovaný operačný systém, ktorý beží vnútri virtuálneho počítača, deteguje túto udalosť a vykoná korektnú ukončovaciu procedúru. Toto je odporúčaný spôsob vypínania, pretože všetky aplikácia bežiace vnútri dostanú šancu uložiť svoje dáta a stav.&lt;/p&gt;&lt;p&gt;Ak počítač neodpovedá na túto akciu, potom je buď zle nakonfigurovaný alebo vôbec nerozumie ACPI udalosti stlačenia zapínacieho tlačidla. V tomto prípade by ste mali zvoliť akciu &lt;b&gt;Vypnúť počítač&lt;/b&gt; pre zastavenie počítača.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vypne virtuálny počítač.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že táto akcia okamžite zastaví virtuálny počítač, takže vo vnútri bežiaci operačný systém nebude môcť korektne skončiť, čo môže spôsobiť &lt;i&gt;stratu dát&lt;/i&gt; z virtuálneho počítača. Použitie tejto akcie odporúčame len v prípade, kedy virtuálny počítač neodpovedá na akciu &lt;b&gt;Poslať signál na vypnutie&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -706,7 +679,6 @@ verzia %1</translation>
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -853,7 +825,6 @@ verzia %1</translation>
         <translation>Odpojí momentálne pripojený obraz nosiča CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
         <translation type="obsolete">Server Vzdialenej plochy (RDP)</translation>
@@ -889,12 +860,10 @@ verzia %1</translation>
         <translation>Pripojí inštalačný obraz Hosťovských doplnkov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Statistics...</source>
         <translation type="obsolete">&amp;Štatistika...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Command line...</source>
         <translation type="obsolete">&amp;Príkazový riadok...</translation>
     </message>
@@ -959,12 +928,10 @@ verzia %1</translation>
         <translation>&amp;Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Indikuje, či je funkcia automatickej zmeny veľkosti hosťovskej obrazovky Zapnutá (&lt;img src=auto_resize_on_16px.png/&gt;) alebo Vypnutá (&lt;img src=auto_resize_off_16px.png/&gt;). Pamätajte, že táto funkcia vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Indikuje, či hosťovský OS zachytáva hostiteľský ukazovateľ myši.&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrácia myš (MI) je Zapnutá&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa zachytáva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI je vypnutá, ukazovateľ sa nezachytáva&lt;/nobr&gt;&lt;br&gt;Pamätajte, že integrácia myši vyžaduje nainštalovanie Hosťovských doplnkov v hosťovskom OS.</translation>
     </message>
@@ -1077,7 +1044,6 @@ verzia %1</translation>
         <translation>Prepnúť režim plynulého prechodu medzi plochami</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">Indikuje, či klávesnicu zachytáva hosťovský OS (&lt;img src=hostkey_captured_16px.png/&gt;) alebo nie (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
@@ -1190,7 +1156,6 @@ verzia %1</translation>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB ovládač je vypnutý&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
         <translation type="obsolete">Indikuje, či je Vzdialený displej (VRDP server) zapnutý (&lt;img src=vrdp_16px.png/&gt;) alebo nie (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
@@ -1212,7 +1177,6 @@ verzia %1</translation>
         <translation type="obsolete">&amp;Obsah...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -1262,12 +1226,12 @@ verzia %1</translation>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1689"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">&amp;Logovanie...</translation>
+        <translation>&amp;Logovanie...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1724"/>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inidkuje, či je funkcia prispôsobenia hosťovanej obrazovky zapnutá (&lt;img src=:/auto_resize_on_16px.png/&gt;) alebo vypnutá (&lt;img src=:/auto_resize_off_16px.png/&gt;). Táto funkcia vyžaduje nainštalované Hosťovské doplnky na hosťovanom OS.</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
@@ -1318,7 +1282,6 @@ verzia %1</translation>
         <translation type="obsolete">Správca virtuálnych diskov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Pevné disky</translation>
     </message>
@@ -1333,42 +1296,34 @@ verzia %1</translation>
         <translation type="obsolete">Obrazy &amp;diskiet</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Invoke dialog&apos;s help</source>
         <translation type="obsolete">Vyvolať Pomocníka dialógu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Accept dialog</source>
         <translation type="obsolete">Prijať dialóg</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel dialog</source>
         <translation type="obsolete">Zrušiť dialóg</translation>
     </message>
@@ -1404,27 +1359,22 @@ verzia %1</translation>
         <translation type="obsolete">O&amp;bnoviť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>New</source>
         <translation type="obsolete">Nový</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add</source>
         <translation type="obsolete">Pridať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove</source>
         <translation type="obsolete">Odstrániť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Release</source>
         <translation type="obsolete">Uvoľniť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Refresh</source>
         <translation type="obsolete">Obnoviť</translation>
     </message>
@@ -1459,27 +1409,22 @@ verzia %1</translation>
         <translation type="obsolete">Č&amp;innosti</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Location</source>
         <translation type="obsolete">Umiestnenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Disk Type</source>
         <translation type="obsolete">Typ disku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Storage Type</source>
         <translation type="obsolete">Typ úložiska</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Attached to</source>
         <translation type="obsolete">Pripojený k</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Snapshot</source>
         <translation type="obsolete">Snímka</translation>
     </message>
@@ -1564,7 +1509,6 @@ verzia %1</translation>
         <translation type="obsolete">&amp;Vybrať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>All hard disk images (*.vdi; *.vmdk);;Virtual Disk images (*.vdi);;VMDK images (*.vmdk);;All files (*)</source>
         <translation type="obsolete">Všetky obrazy pevných diskov (*.vdi; *.vmdk);;Obrazy virtuálnych diskov (*.vdi);;Obrazy VMDK (*.vmdk);;Všetky súbory (*)</translation>
     </message>
@@ -1642,17 +1586,14 @@ verzia %1</translation>
         <translation type="obsolete">Nepodarilo sa nájsť súbor na serveri (odpoveď: %1).</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Could not determine the file size.</source>
         <translation type="obsolete">Nepodarilo sa zistiť veľkosť súbrou.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Could not connect to the server (%1).</source>
         <translation type="obsolete">Nepodarilo sa pripojiť sa k serveru (%1).</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Could not download the file (%1).</source>
         <translation type="obsolete">Nepodarilo sa stiahnuť súbor (%1).</translation>
     </message>
@@ -1682,67 +1623,67 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="212"/>
         <source>&lt;reset to default&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;vrátiť sa na východziu&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="214"/>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuálna východzia cesta bude zobrazená po akceptovaní zmien a novom otvorení tohto dialógového okna.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="218"/>
         <source>&lt;not selected&gt;</source>
-        <translation type="unfinished">&lt;nevybrané&gt;</translation>
+        <translation>&lt;nevybrané&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="220"/>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a desired path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pre výber požadovanej cesty použite, prosím, položku &lt;b&gt;Iné...&lt;/b&gt; z rozbaľovacieho zoznamu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="232"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>Iné...</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="236"/>
         <source>Reset</source>
-        <translation type="unfinished">Reštartovať</translation>
+        <translation>Reštartovať</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="243"/>
         <source>Opens a dialog to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otvorí dialógové okno, kde môžete vybrať iný priečinok.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="246"/>
         <source>Resets the folder path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastaví cestu k priečinku na východziu hodnotu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="251"/>
         <source>Opens a dialog to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otvorí dialógové okno, kde môžete vybrať iný súbor.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="254"/>
         <source>Resets the file path to the default value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastaví cestu k súboru na východziu hodnotu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="262"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopírovať</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="423"/>
         <source>Please type the desired folder path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prosím zadajte sem požadovanú cestu k priečinku.</translation>
     </message>
     <message>
         <location filename="../src/VBoxFilePathSelectorWidget.cpp" line="424"/>
         <source>Please type the desired file path here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prosím zadajte sem požadovanú cestu k súboru.</translation>
     </message>
 </context>
 <context>
@@ -1750,32 +1691,32 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="156"/>
         <source>General</source>
-        <translation type="unfinished">Všeobecné</translation>
+        <translation>Všeobecné</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="159"/>
         <source>Input</source>
-        <translation type="unfinished"></translation>
+        <translation>Vstup</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="162"/>
         <source>Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizácia</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>Language</source>
-        <translation type="unfinished">Jazyk</translation>
+        <translation>Jazyk</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="169"/>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="183"/>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1788,42 +1729,42 @@ verzia %1</translation>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="83"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation type="unfinished">Zobrazí cestu k štandardnému priečinku s virtuálnymi strojmi. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
+        <translation>Zobrazuje cestu k štandardnému priečinku s virtuálnymi strojmi. Tento priečinok sa použije, ak nie je výslovne uvedené inak, pri vytváraní nových virtuálnych strojov.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="86"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation type="unfinished">Zobrazí cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
+        <translation>Zobrazuje cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="45"/>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Východzí priečin&amp;ok pre pevné disky:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="68"/>
         <source>Default &amp;Machine Folder:</source>
-        <translation type="unfinished"></translation>
+        <translation>Výcho&amp;dzí priečinok pre stroj:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="98"/>
         <source>V&amp;RDP Authentication Library:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;RDP Autentizačná knižnica:</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsGeneral.cpp" line="79"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazuje cestu k východziemu priečinok s pevným diskom. Tento priečinok sa používa, ak nie je výslovne určený inak, pri pridávaní existujúceho alebo vytváraní nového virtuálneho disku.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, aplikácia bude v kontextovom menu v systémovej lište zobrazovať ikonu.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
         <source>&amp;Show System Tray Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zobraziť ikonu v systémovej lište</translation>
     </message>
 </context>
 <context>
@@ -1831,22 +1772,22 @@ verzia %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="61"/>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hostiteľský &amp;kláves:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="71"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
-        <translation type="unfinished">Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
+        <translation>Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves v okne VM. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="91"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished">Ak je voľba začiarknutá, klávesnica sa automaticky zachytí pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako Alt-Tab) sú presmerované do okna virtuálneho stroja.</translation>
+        <translation>Ak je voľba zaškrtnutá, klávesnica bude automaticky zachytená pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako je Alt-Tab) sú presmerované do virtuálneho stroja.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsInput.ui" line="94"/>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automaticky zachytávať klávesnicu</translation>
     </message>
 </context>
 <context>
@@ -1855,65 +1796,65 @@ verzia %1</translation>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (vstavaný)</translation>
+        <translation> (vstavaný)</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;nedostupný&gt;</translation>
+        <translation>&lt;nedostupný&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;neznámy&gt;</translation>
+        <translation>&lt;neznámy&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">Štandardný</translation>
+        <translation>Východzí</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="303"/>
         <source>Language:</source>
-        <translation type="unfinished">Jazyk:</translation>
+        <translation>Jazyk:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="49"/>
         <source>&amp;Interface Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Jazyk prostredia:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazuje všetky dostupné jazyky prostredia. Aktuálne vybraný jazyk je zvýraznený &lt;b&gt;tučným&lt;/b&gt;. Vyberte &lt;i&gt;Východzí&lt;/i&gt;, ak chcete použiť východzí jazyk systému.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="99"/>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="104"/>
         <source>Language</source>
-        <translation type="unfinished">Jazyk</translation>
+        <translation>Jazyk</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="109"/>
         <source>Author</source>
-        <translation type="unfinished"></translation>
+        <translation>Autor</translation>
     </message>
     <message>
         <location filename="../src/VBoxGLSettingsLanguage.cpp" line="305"/>
         <source>Author(s):</source>
-        <translation type="unfinished">Autor(i):</translation>
+        <translation>Autor(i):</translation>
     </message>
 </context>
 <context>
@@ -1921,27 +1862,27 @@ verzia %1</translation>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak je zaškrtnuté, aplikácia sa bude pravidelne pripájať na webový server VirtualBoxu a kontrolovať, či nie sú dostupné nové verzie.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
         <source>&amp;Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kontrolovať aktualizácie</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="90"/>
         <source>&amp;Once per:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Raz za:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Určuje, ako často sa má vykonávať kontrola novej verzie. Všimnite si, že ak chcete úplne vypnúť túto kontrolu, stačí túto voľbu odškrtnúť.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="145"/>
         <source>Next Check:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ďalšia kontrola:</translation>
     </message>
 </context>
 <context>
@@ -2121,7 +2062,6 @@ verzia %1</translation>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adapter</source>
         <comment>details report (audio)</comment>
         <translation type="obsolete">Adaptér</translation>
@@ -2318,13 +2258,11 @@ verzia %1</translation>
         <translation>Sieť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Primary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">Primárny</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Secondary</source>
         <comment>DiskControllerType</comment>
         <translation type="obsolete">Sekundárny</translation>
@@ -2396,19 +2334,16 @@ verzia %1</translation>
         <translation>Podržať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Master</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Master</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Slave</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Slave</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Device&amp;nbsp;%1</source>
         <comment>DiskControllerDevice</comment>
         <translation type="obsolete">Zariadenie&amp;nbsp;%1</translation>
@@ -2829,97 +2764,97 @@ verzia %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1843"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID dodávateľa: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1848"/>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;ID produktu: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1853"/>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Revízia: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1858"/>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Produkt: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1863"/>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Výrobca: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1868"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Sériové číslo: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1873"/>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1880"/>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Stav: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2202"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>rozhranie hostiteľa, %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2205"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>interná sieť, &apos;%1&apos;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsNetwork.cpp" line="179"/>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation type="unfinished">Adaptér %1</translation>
+        <translation>Adaptér %1</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="322"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Tye&amp;nbsp;(Formát):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;Pripojený k:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Pripojený k:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="329"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Nepripojené&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="337"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;i&gt;Zisťujem dostupnosť...&lt;/i&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="355"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Zlyhalo overenie dostupností média.&lt;br&gt;%1.</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="405"/>
@@ -2931,13 +2866,13 @@ verzia %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="523"/>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolujem...</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="527"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
-        <translation type="unfinished">Nedostupné</translation>
+        <translation>Nedostupné</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="573"/>
@@ -2953,31 +2888,31 @@ verzia %1</translation>
         <location filename="../src/VBoxGlobal.cpp" line="1946"/>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>3D akcelerácia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished">Zapnutá</translation>
+        <translation>Zapnutá</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2069"/>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutá</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3115"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurácia</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="3154"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
-        <translation type="unfinished">diferenčný</translation>
+        <translation>Zisťovanie rozdielov</translation>
     </message>
 </context>
 <context>
@@ -3001,296 +2936,238 @@ verzia %1</translation>
 <context>
     <name>VBoxGlobalSettingsDlg</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Category</source>
         <translation type="obsolete">Kategória</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[link]</source>
         <translation type="obsolete">[odkaz]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[name]</source>
         <translation type="obsolete">[názov]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> General </source>
         <translation type="obsolete"> Všeobecné </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#general</source>
         <translation type="obsolete">#všeobecné</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Input </source>
         <translation type="obsolete"> Vstup </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#input</source>
         <translation type="obsolete">#vstup</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#usb</source>
         <translation type="obsolete">#usb</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Default &amp;Folders</source>
         <translation type="obsolete">Štandardné &amp;priečinky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Machines</source>
         <translation type="obsolete">Stroje</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VDI files</source>
         <translation type="obsolete">VDI súbory</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select</source>
         <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Keyboard</source>
         <translation type="obsolete">&amp;Klávesnica</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Host Key</source>
         <translation type="obsolete">&amp;Kláves hostiteľa</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Auto capture keyboard</source>
         <translation type="obsolete">&amp;Automaticky zachytávať klávesnicu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+A</source>
         <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;USB Device Filters</source>
         <translation type="obsolete">Filtre &amp;USB zariadení</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Pridať prázdny (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Pridať z  (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Odstrániť (Del)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Odstráni zvolený USB filter.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+hore</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Presunúť hore (Ctrl-hore)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Presunie zvolený USB filter vyššie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+dolu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Presunúť dolu (Ctrl+dolu)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Presunie zvolený USB filter nižšie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Zobrazí dialóg pomocníka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Boli zistené neplatné nastavenia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Prijme (uloží) zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Zruší zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VirtualBox Preferences</source>
         <translation type="obsolete">Nastavenia VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used as a Host Key.</source>
         <translation type="obsolete">Zobrazuje kláves, ktorý sa používa ako Hostiteľský kláves. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hositeľský kláves.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Nový filter %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Language</source>
         <translation type="obsolete">Jazyk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Language </source>
         <translation type="obsolete"> Jazyk </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Interface Language</source>
         <translation type="obsolete">&amp;Jazyk rozhrania</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Author(s):</source>
         <translation type="obsolete">Autor(i):</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Language:</source>
         <translation type="obsolete">Jazyk:</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation type="obsolete"> (vstavaný)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation type="obsolete">&lt;nedostupný&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation type="obsolete">&lt;neznámy&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>
 &lt;qt&gt;Lists all available user interface languages. The effective language is
 written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset
@@ -3303,148 +3180,119 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
                                     </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation type="obsolete">Štandardný</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Zobrazí cestu k štandardnému priečinku VDI. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Obnoví štandardnú cestu k virtuálnym strojom na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Obnoví štandardnú cestu k VDI na štandardnú hodnotu. Skutočná štandardná cesta sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Zobrazí cestu k štandardnému priečinku s virtuálnymi strojmi. Priečinok sa použije, ak nie je výslovne uvedené inak, pri pridávaní existujúcich a tvorbe nových virtuálnych pevných diskov.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Opens a dialog to select the default VDI folder.</source>
         <translation type="obsolete">Otvorí dialóg pre výber štandardného VDI priečinka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Opens a dialog to select the default virtual machine folder.</source>
         <translation type="obsolete">Otvorí dialóg pre výber štandardného priečinka k virtuálnym strojom.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation type="obsolete">Ak je voľba začiarknutá, klávesnica sa automaticky zachytí pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako Alt-Tab) sú presmerované do okna virtuálneho stroja.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Lists all global USB filters. The checkbox to the left defines whether the particular filter is enabled or not.</source>
         <translation type="obsolete">Vypíše zoznam všetkých globálnych filtrov USB. Začiarkovacie pole vľavo určije, či sa konkrétny filter použije alebo nie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>V&amp;RDP Authentication Library</source>
         <translation type="obsolete">Autentifikačná knižnica V&amp;RDP</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Zobrazí cestu ku knižnici, ktorá poskytuje autentifikáciu klientov Vzdialeného displeja (VDRDP).</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Opens a dialog to select the VRDP authentication library file.</source>
         <translation type="obsolete">Otvorí dialóg pre výber autentifikačnej knižnice VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Obnoví súbor autentifikačnej knižnice na štandardnú hodnotu. Skutočná štandardný súbor autentifikačnej knižnice sa zobrazí po prijatí zmien a opätovnom otvorení tohto dialógu.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Extended Features</source>
         <translation type="obsolete">&amp;Rozšírené možnosti</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">Zapnúť &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+V</source>
         <translation type="obsolete">Alt+V</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Defines whether virtual machines should try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V by default or not.</source>
         <translation type="obsolete">Určuje, či sa štandardne majú virtuálne stroje pokúšať využiť virtualizačné rozšírenia hostiteľského CPU ako Intel VT-x a AMD-V alebo nie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Pridať prázdny filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Pridať prázdny filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Pridať filter pre zariadenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">P&amp;ridať filter pre zariadenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Odstrániť filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">O&amp;dstrániť filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Presunúť filter nahor</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Pre&amp;sunúť filter nahor</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Presunúť filter nadol</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Presu&amp;núť filter nadol</translation>
     </message>
@@ -3452,52 +3300,42 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
 <context>
     <name>VBoxHardDiskSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Slot</source>
         <translation type="obsolete">Slot</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Hard Disk</source>
         <translation type="obsolete">Pevný disk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxHardDiskSettings</source>
         <translation type="obsolete">VBoxHardDiskSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Hard Disks</source>
         <translation type="obsolete">&amp;Pevné disky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">&amp;Povoliť radič SATA</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Delete</source>
         <translation type="obsolete">Vymazať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select Hard Disk</source>
         <translation type="obsolete">Zvoľte si pevný disk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">&amp;Zvoľte si pevný disk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Space</translation>
     </message>
@@ -3507,17 +3345,17 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="83"/>
         <source>I &amp;Agree</source>
-        <translation type="unfinished">&amp;Súhlasím</translation>
+        <translation>&amp;Súhlasím</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="84"/>
         <source>I &amp;Disagree</source>
-        <translation type="unfinished">&amp;Nesúhlasím</translation>
+        <translation>&amp;Nesúhlasím</translation>
     </message>
     <message>
         <location filename="../src/VBoxLicenseViewer.cpp" line="81"/>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licencia VirtualBoxu</translation>
     </message>
 </context>
 <context>
@@ -3543,7 +3381,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation>&amp;Predošlý</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
@@ -3558,7 +3395,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation>&amp;Ďalší</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
     </message>
@@ -3598,12 +3434,12 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie je dostupné žiadne médium. Použite Virtuálny diskový manažér na pridanie média príslušného typu.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
         <source>&lt;no media&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;žiadne médium&gt;</translation>
     </message>
 </context>
 <context>
@@ -3611,102 +3447,102 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="619"/>
         <source>&amp;Actions</source>
-        <translation type="unfinished">Č&amp;innosti</translation>
+        <translation>Č&amp;innosti</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="621"/>
         <source>&amp;New...</source>
-        <translation type="unfinished">&amp;Nový...</translation>
+        <translation>&amp;Nový...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="622"/>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Pridať...</translation>
+        <translation>&amp;Pridať...</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="624"/>
         <source>R&amp;emove</source>
-        <translation type="unfinished">&amp;Odstrániť</translation>
+        <translation>&amp;Odstrániť</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="625"/>
         <source>Re&amp;lease</source>
-        <translation type="unfinished">&amp;Uvoľniť</translation>
+        <translation>&amp;Uvoľniť</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="626"/>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">O&amp;bnoviť</translation>
+        <translation>O&amp;bnoviť</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="635"/>
         <source>Create a new virtual hard disk</source>
-        <translation type="unfinished">Vytvoriť nový virtuálny pevný disk</translation>
+        <translation>Vytvoriť nový virtuálny pevný disk</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="636"/>
         <source>Add an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridať existujúce médium</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="638"/>
         <source>Remove the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Odstrániť vybrané médium</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="639"/>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Uvoľniť vybrané médium jeho odpojením od stroja</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="640"/>
         <source>Refresh the media list</source>
-        <translation type="unfinished">Obnoviť zoznam nosičov</translation>
+        <translation>Obnoviť zoznam médii</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="310"/>
         <source>Location</source>
-        <translation type="unfinished">Umiestnenie</translation>
+        <translation>Umiestnenie</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="131"/>
         <source>Type (Format)</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ (Formát)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="327"/>
         <source>Attached to</source>
-        <translation type="unfinished">Pripojený k</translation>
+        <translation>Pripojený k</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="665"/>
         <source>Checking accessibility</source>
-        <translation type="unfinished">Kontroluje sa prístupnosť</translation>
+        <translation>Kontroluje sa dostupnosť</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="675"/>
         <source>&amp;Select</source>
-        <translation type="unfinished">&amp;Vybrať</translation>
+        <translation>&amp;Vybrať</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1022"/>
         <source>All hard disk images (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Všetky obrazy pevných diskov (%1)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1023"/>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Všetky súbory (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1026"/>
         <source>Select a hard disk image file</source>
-        <translation type="unfinished">Vyberte súbor s obrazom pevného disku</translation>
+        <translation>Vyberte súbor s obrazom pevného disku</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1032"/>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="unfinished">Obrazy CD/DVD-ROM (*.iso);;Všetky súbory (*)</translation>
+        <translation>Obrazy CD/DVD-ROM (*.iso);;Všetky súbory (*)</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaManagerDlg.cpp" line="1033"/>
@@ -3826,7 +3662,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation>Vytvoriť nový virtuálny disk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -3840,7 +3675,6 @@ a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&
         <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho disku!</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -3865,7 +3699,6 @@ rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
         <translation type="obsolete">&amp;Dynamicky expandujúci obraz</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
@@ -3875,7 +3708,6 @@ rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
         <translation type="obsolete">&amp;Obraz s pevnou veľkosťou</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+F</source>
         <translation type="obsolete">Alt+F</translation>
     </message>
@@ -3885,7 +3717,6 @@ rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
         <translation type="obsolete">Typ obrazu virtuálneho disku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Stlačením tlačidla &lt;b&gt;Vybrať&lt;/b&gt; vyberiete umiestnenie a názov súboru
@@ -3897,12 +3728,10 @@ s obrazom pevného disku alebo môžete názov súboru napísať do vstupného p
         <translation type="obsolete">&amp;Názov súboru s obrazom pevného disku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select</source>
         <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte veľkosť obrazu pevného disku v megabajtoch. Táto veľkosť sa oznámi hosťovskémuOS
@@ -3924,7 +3753,6 @@ ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
         <translation type="obsolete">Chystáte sa vytvoriť nový virtuálny pevný disk s nasledovnými parametrami:</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
@@ -3943,7 +3771,6 @@ ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
         <translation>&lt;nobr&gt;%1 bajtov&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Umiestnenie:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Veľkosť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;bajtov)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -4070,7 +3897,6 @@ ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
         <translation>Vytvoriť nový virtuálny stroj</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -4085,7 +3911,6 @@ a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&
         <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho stroja!</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -4121,17 +3946,14 @@ Všetky súčasti VirtualBox ho použijú na označenie vášho virtuálneho str
         <translation>Veľkosť &amp;základnej pamäte</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
@@ -4146,7 +3968,6 @@ Všetky súčasti VirtualBox ho použijú na označenie vášho virtuálneho str
         <translation>Pamäť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -4183,7 +4004,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Virtuálny pevný disk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -4198,7 +4018,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
                             </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -4233,12 +4052,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Názov:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Typ OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Základná pamäť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Bootovací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
@@ -4410,12 +4227,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&lt;p&gt;Nepodarilo sa vytvoriť VirtualBox COM objekt.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepodarilo sa načítať globálnu konfiguráciu GUI.&lt;/p&gt;&lt;p&gt;Aplikácia sa teraz ukončí.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepodarilo sa uložiť globálnu konfiguráciu GUI.&lt;/p&gt;</translation>
     </message>
@@ -4445,12 +4260,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Nepodarilo sa použiť nastavenia na nový virtuálny stroj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Nepodarilo sa uložiť nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Nepodarilo sa načítať nastavenia virtuálneho stroja &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4540,7 +4353,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">&lt;p&gt;Súbor s obrazom &lt;b&gt;%1&lt;/b&gt; už existuje. Nemôžete vytvoriť nový virtuálny pevný disk, ktorý používa tento súbor, pretože ho už zrejme používa iný virtuálny pevný disk.&lt;/p&gt;&lt;p&gt;Prosím, zadajte iný názov súboru s obrazom.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Chcete zmazať súbor s obrazom &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; tohto pevého disku?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Nie&lt;/b&gt;, virtuálny disk sa odregistruje a odstráni zo zoznamu, ale súbor s obrazom zostane na vašom fyzickom pevnom disku.&lt;/p&gt;&lt;p&gt;Ak zvolíte &lt;b&gt;Áno&lt;/b&gt;, súbor s obrazom sa po odregistrovaní pevného disku natrvalo zmaže. Túto operáciu nie je možné vrátiť.&lt;/p&gt;</translation>
     </message>
@@ -4560,12 +4372,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">Nepodarilo sa vytvoriť obraz virtuálneho pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
         <translation type="obsolete">Nepodarilo sa pripojiť pevný disk s UUID %1 do slotu zariadenia %2 ovládača %3 stroja &lt;b&gt;%4&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Nepodarilo sa odpojiť pevný disk zo slotu zariadenia %1 ovládača %2 stroja &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
@@ -5341,17 +5151,14 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Zdieľané priečinky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
@@ -5364,7 +5171,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>VirtualBox OSE</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>innotek VirtualBox</source>
         <translation type="obsolete">innotek VirtualBox</translation>
     </message>
@@ -5425,7 +5231,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Nový...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>New</source>
         <translation type="obsolete">Nový</translation>
     </message>
@@ -5445,7 +5250,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Nastavenia...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Settings</source>
         <translation type="obsolete">Nastavenia</translation>
     </message>
@@ -5465,7 +5269,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Vymazať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Delete</source>
         <translation type="obsolete">Vymazať</translation>
     </message>
@@ -5480,7 +5283,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Zahodiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Discard</source>
         <translation type="obsolete">Zahodiť</translation>
     </message>
@@ -5495,7 +5297,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Obnoviť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Refresh</source>
         <translation type="obsolete">Obnoviť</translation>
     </message>
@@ -5515,7 +5316,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="obsolete">&amp;Obsah...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -5585,7 +5385,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Zobraziť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Show</source>
         <translation type="obsolete">Zobraziť</translation>
     </message>
@@ -5600,7 +5399,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>S&amp;pustiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Start</source>
         <translation type="obsolete">Spustiť</translation>
     </message>
@@ -5620,7 +5418,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Zobraziť &amp;záznam...</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Show Log...</source>
         <translation type="obsolete">Zobraziť záznam...</translation>
     </message>
@@ -5655,7 +5452,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>P&amp;okračovať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Resume</source>
         <translation type="obsolete">Pokračovať</translation>
     </message>
@@ -5675,7 +5471,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Pozastaviť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Pause</source>
         <translation type="obsolete">Pozastaviť</translation>
     </message>
@@ -5732,93 +5527,75 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
 <context>
     <name>VBoxSharedFoldersSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Name</source>
         <translation type="obsolete">Názov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Path</source>
         <translation type="obsolete">Cesta</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Shared &amp;Folders</source>
         <translation type="obsolete">Zdieľané &amp;priečinky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new shared folder definition.</source>
         <translation type="obsolete">Pridá definíciu nového zdieľaného priečinka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Removes the selected shared folder definition.</source>
         <translation type="obsolete">Odstráni definíciu vybraného virtuálneho priečinka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Machine Folders</source>
         <translation type="obsolete">Priečinky stroja</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Transient Folders</source>
         <translation type="obsolete">Dočasné priečinky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Edits the selected shared folder definition.</source>
         <translation type="obsolete">Upraví definíciu vybraného zdieľaného priečinka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxSharedFoldersSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxSharedFoldersSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add a new shared folder (Ins)</source>
         <translation type="obsolete">Pridať nový zdieľaný priečinok (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove the selected shared folder (Del)</source>
         <translation type="obsolete">Odstrániť vybraný zdieľaný priečinok (Del)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Access</source>
         <translation type="obsolete">Prístup</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Medzera</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Edit the selected shared folder (Ctrl+Space)</source>
         <translation type="obsolete">Upraví vybraný zdieľaný priečinok (Ctrl + Medzera)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Full</source>
         <translation type="obsolete">Plný</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Read-only</source>
         <translation type="obsolete">Iba na čítanie</translation>
     </message>
@@ -5831,7 +5608,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>VBoxSnapshotDetailsDlg</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Snapshot Details </source>
         <translation type="obsolete">Podrobnosti o snímke</translation>
     </message>
@@ -5851,22 +5627,18 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Podrobnosti o stroji</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
@@ -5894,12 +5666,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>snapshotActionGroup</source>
         <translation type="obsolete">snapshotActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Discard Snapshot</source>
         <translation type="obsolete">Zahodiť snímok</translation>
     </message>
@@ -5909,17 +5679,14 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">&amp;Zahodiť snímok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Shift+D</source>
         <translation type="obsolete">Ctrl+Shift+D</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>curStateActionGroup</source>
         <translation type="obsolete">curStateActionGroup</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Take Snapshot</source>
         <translation type="obsolete">Urobiť snímok</translation>
     </message>
@@ -5929,7 +5696,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">&amp;Urobiť snímok</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Discard Current Snapshot and State</source>
         <translation type="obsolete">Zahodiť aktuálny snímok a stav</translation>
     </message>
@@ -5939,7 +5705,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">&amp;Zahodiť aktuálny snímok a stav</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Show Details</source>
         <translation type="obsolete">Zobraziť podrobnosti</translation>
     </message>
@@ -6017,7 +5782,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">Zahodiť vybranú snímku virtuálneho stroja</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Shift+S</source>
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
@@ -6027,7 +5791,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">Vytvorí snímku aktuálneho stavu virtuálneho stroja</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Revert to Current Snapshot</source>
         <translation type="obsolete">Vrátiť sa k aktuálnej snímke</translation>
     </message>
@@ -6037,7 +5800,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">&amp;Vrátiť sa k aktuálnej snímke</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Shift+R</source>
         <translation type="obsolete">Ctrl+Shift+R</translation>
     </message>
@@ -6047,7 +5809,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">Obnoviť stav virtuálneho stroja zo stavu uloženého v aktuálnej snímke</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Shift+B</source>
         <translation type="obsolete">Ctrl+Shift+B</translation>
     </message>
@@ -6062,7 +5823,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation type="unfinished">Zobraziť podrobnosti o vybranej snímke</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Space</source>
         <translation type="obsolete">Ctrl+Medzera</translation>
     </message>
@@ -6080,7 +5840,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Zapnúť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>%1 %2</source>
         <translation type="obsolete">%1 %2</translation>
     </message>
@@ -6103,22 +5862,18 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Popis snímky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
@@ -6155,80 +5910,65 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
 <context>
     <name>VBoxUSBFilterSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxUSBFilterSettings</source>
         <comment>don&apos;t translate</comment>
         <translation type="obsolete">VBoxUSBFilterSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Názov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the filter name.</source>
         <translation type="obsolete">Zobrazí meno filtra.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Manufacturer</source>
         <translation type="obsolete">&amp;Výrobca</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Pro&amp;duct</source>
         <translation type="obsolete">Pr&amp;odukt</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Serial No.</source>
         <translation type="obsolete">&amp;Sériové číslo.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>R&amp;emote</source>
         <translation type="obsolete">&amp;Vzdialený</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Action</source>
         <translation type="obsolete">&amp;Akcia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Vendor ID</source>
         <translation type="obsolete">&amp;ID dodávateľa</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Product ID</source>
         <translation type="obsolete">&amp;ID produktu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Revision</source>
         <translation type="obsolete">&amp;Revízia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Por&amp;t</source>
         <translation type="obsolete">Por&amp;t</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation type="obsolete">Akýkoľvek</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation type="obsolete">Áno</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>No</source>
         <comment>remote</comment>
         <translation type="obsolete">Nie</translation>
@@ -6451,7 +6191,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&amp;Súbor s obrazom</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
@@ -6466,7 +6205,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>&lt;p&gt;Vybrali ste bootovanie z nasledujúcich médii:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude dočasne pripojené k virtuálnemu stroju a stroj bude spustený.&lt;/p&gt;&lt;p&gt;Majte na pamäti, že pri ukončení virtuálneho stroja bude špecifikované médium automaticky odpojené a bootovateľné zariadenie bude znovu nastavené na prvý pevný disk.&lt;/p&gt;&lt;p&gt;V závislosti na type inštalačného programu možno budete chcieť manuálne odpojiť (vybrať) médium predtým, ako inštalácia reštartuje virtuálny stroj, aby ste tak zabránili opätovnému spusteniu inštalácia. Môžete tak učiniť výberom zodpovedajúcej akcie &lt;b&gt;Odpojiť...&lt;/b&gt; z ponuky &lt;b&gt;Zariadenia&lt;/p&gt;.</translation>
     </message>
@@ -6491,7 +6229,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <translation>Mechanika hostiteľa %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Zdroj:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
@@ -6566,12 +6303,10 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">Informačné okno o relácii</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Close</source>
         <translation type="obsolete">&amp;Zatvoriť</translation>
     </message>
@@ -6646,7 +6381,6 @@ p, li { white-space: pre-wrap; }
         <translation>Štatistika sieťových adaptérov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Not attached</source>
         <translation type="obsolete">Nepripojená</translation>
     </message>
@@ -6719,19 +6453,16 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMListBox</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
         <translation type="obsolete">&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 od %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Relácia %4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Nedostupné od %2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Inaccessible</source>
         <translation type="obsolete">Nedostupné</translation>
     </message>
@@ -6829,12 +6560,10 @@ p, li { white-space: pre-wrap; }
         <translation>Uložiť záznamu VirtualBox ako</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
@@ -6852,122 +6581,98 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMNetworkSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxVMNetworkSettings</source>
         <translation type="obsolete">VBoxVMNetworkSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable Network Adapter</source>
         <translation type="obsolete">&amp;Povoliť sieťový adaptér</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Attached to</source>
         <translation type="obsolete">Pr&amp;ipojený k</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;MAC Address</source>
         <translation type="obsolete">&amp;MAC Address</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">&amp;Vygenerovať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Vygeneruje novú náhodnú MAC adresu.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">&amp;Kábel pripojený</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Nastavenia hostiteľského rozhrania</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Interface Name</source>
         <translation type="obsolete">&amp;Názov rozhrania</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;File Descriptor</source>
         <translation type="obsolete">&amp;Popisovač súboru</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Setup Application</source>
         <translation type="obsolete">&amp;Aplikácia pre konfiguráciu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select</source>
         <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Terminate Application</source>
         <translation type="obsolete">Apli&amp;kácia pre ukončenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Vyberte aplikáciu pre konfiguráciu TAP</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">Vyberte aplikáciu pre ukončenie TAP</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">Zobrazí názov rozhrania TAP.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Zobrazí príkaz, ktorý nastaví TAP rozhranie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Vyberie aplikáciu na konfiguráciu.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Zobrazí príkaz, ktorý zruší rozhranie TAP.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Vyberie aplikáciu na ukončenie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Zobrazí MAC adresu tohto adaptéru. Obsahuje presne 12 znakov z rozsahu {0-9,A-F}. Všimnite si, že druhý znak musí byť párna číslica.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Network Name</source>
         <translation type="obsolete">Ná&amp;zov siete</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adapter &amp;Type</source>
         <translation type="obsolete">&amp;Typ adaptéru</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Zobrazí názov vybranej internej siete pre tento adaptér.</translation>
     </message>
@@ -6975,42 +6680,34 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMParallelPortSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxVMParallelPortSettings</source>
         <translation type="obsolete">VBoxVMParallelPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable Parallel Port</source>
         <translation type="obsolete">&amp;Povoliť paralelný port</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
         <translation type="obsolete">Keď je zašrktnuté, povolí virtuálnemu stroju používať vybraný paralelný port.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Číslo &amp;portu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rt</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Cesta k &amp;portu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the host parallel device name.</source>
         <translation type="obsolete">Zobrazí názov paralelného zariadenia hostiteľa.</translation>
     </message>
@@ -7018,47 +6715,38 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSerialPortSettings</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxVMSerialPortSettings</source>
         <translation type="obsolete">VBoxVMSerialPortSettings</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable Serial Port</source>
         <translation type="obsolete">Povoliť &amp;sériový port</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation type="obsolete">Keď je zaškrtnuté, povolí používať virtuálnemu stroju vybraný sériový port.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port &amp;Number</source>
         <translation type="obsolete">Číslo &amp;portu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;IRQ</source>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rt</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port &amp;Mode</source>
         <translation type="obsolete">Reži&amp;m portu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Create Pipe</source>
         <translation type="obsolete">&amp;Vytvoriť rúru (pipe)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port &amp;Path</source>
         <translation type="obsolete">Cesta k &amp;portu</translation>
     </message>
@@ -7167,710 +6855,569 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="" line="792473893"/>
         <source>Category</source>
         <translation type="obsolete">Kategória</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[link]</source>
         <translation type="obsolete">[odkaz]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>[name]</source>
         <translation type="obsolete">[názov]</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;Zvoľte kategóriu nastavení zo zoznamu naľavo. Viac informácií získate podržaním myši nad položkou&lt;i&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> General </source>
         <translation type="obsolete"> Všeobecné </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>0</source>
         <translation type="obsolete">0</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#general</source>
         <translation type="obsolete">#všeobecné</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Hard Disks </source>
         <translation type="obsolete"> Pevné disky </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>1</source>
         <translation type="obsolete">1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#hdds</source>
         <translation type="obsolete">#hdds</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Floppy </source>
         <translation type="obsolete"> Disketa </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>2</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete"> CD/DVD-ROM </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>3</source>
         <translation type="obsolete">3</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Audio </source>
         <translation type="obsolete"> Zvuk </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>4</source>
         <translation type="obsolete">4</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Network </source>
         <translation type="obsolete"> Sieť </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>5</source>
         <translation type="obsolete">5</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>6</source>
         <translation type="obsolete">6</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Remote Display </source>
         <translation type="obsolete"> Vzdialený displej </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>7</source>
         <translation type="obsolete">7</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#vrdp</source>
         <translation type="obsolete">#vrdp</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Shared Folders </source>
         <translation type="obsolete"> Zdieľané priečinky </translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>8</source>
         <translation type="obsolete">8</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">&amp;Identifikácia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Názov</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">Žobrazí názov virtuálneho stroja.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">&amp;Typ OS</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">Veľkosť &amp;základnej pamäte</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">Ovláda množstvo pamäte poskytnutej virtuálnemu stroju. Ak pridelíte priveľa, stroj možno nenaštartuje.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">Veľkosť &amp;videopamäte</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">Ovláda množstvo videopamäte poskytnutej virtuálnemu stroju.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">&amp;Základné</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Select</source>
         <translation type="obsolete">Vybrať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">Vyberie cestu k priečinku snímky.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Reset</source>
         <translation type="obsolete">Reštartovať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Extended Features</source>
         <translation type="obsolete">Rozšírené možnosti</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">Zapnúť A&amp;CPI</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+C</source>
         <translation type="obsolete">Alt+C</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">Zapnúť IO A&amp;PIC</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">&amp;Poradie bootovania</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">&amp;Rozšírené</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Description</source>
         <translation type="obsolete">&amp;Popis</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Primary Master</source>
         <translation type="obsolete">&amp;Primary master</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;not selected&gt;</source>
         <translation type="obsolete">&lt;nevybrané&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>P&amp;rimary Slave</source>
         <translation type="obsolete">P&amp;rimary slave</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Secondary (IDE 1) Slave</source>
         <translation type="obsolete">&amp;Secondary (IDE 1) slave</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">&amp;Pripojiť disketovú mechaniku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">&amp;Hostiteľská disketová mechanika</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+D</source>
         <translation type="obsolete">Alt+D</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">Pripojí uvedenú hostiteľskú disketovú mechaniku ako virtuálnu disketovú mechaniku.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">&amp;Súbor s obrazom</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+I</source>
         <translation type="obsolete">Alt+I</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">Pripojí obraz diskety do disketovej mechaniky.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">&amp;Pripojiť obraz C&amp;D/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">Hostiteľská jednotka C&amp;D/DVD</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">Súbor s obrazom &amp;ISO</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">Pripojí uvedenú CD/DVD jednotku do virtuálnej jednotky CD/DVD.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">&amp;Zapnúť zvuk</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">Hostiteľský &amp;ovládač zvuku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">Zapnúť ovládač &amp;USB</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+U</source>
         <translation type="obsolete">Alt+U</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">&amp;Filtre zariadení USB</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Empty (Ins)</source>
         <translation type="obsolete">Pridať prázdny (Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add From (Alt+Ins)</source>
         <translation type="obsolete">Pridať z (Alt+Ins)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove (Del)</source>
         <translation type="obsolete">Odstrániť (Del)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Removes the selected USB filter.</source>
         <translation type="obsolete">Odstráni zvolený filter USB.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+hore</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Up (Ctrl+Up)</source>
         <translation type="obsolete">Presunúť hore (Ctrl+hore)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected USB filter up.</source>
         <translation type="obsolete">Presunie zvolený filter USB vyššie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+dolu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Down (Ctrl+Down)</source>
         <translation type="obsolete">Presunúť dolu (Ctrl+dolu)</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Moves the selected USB filter down.</source>
         <translation type="obsolete">Presunie zvolený filter USB nižšie.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">&amp;Zapnúť server VRDP</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">Určuje autentifikačnú metódu VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">Uvádza expiračnú dobu autentifikácie hosťa, v milisekundách.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Help</source>
         <translation type="obsolete">Pomocník</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">Zobrazí dialóg Pomocníka.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">Boli zistené neplatné nastavenia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;OK</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Alt+O</source>
         <translation type="obsolete">Alt+O</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">Prijme (uloží) zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">Zruší zmeny a zatvorí dialóg.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, attaches the specified virtual hard disk to the Master slot of the Primary IDE controller.</source>
         <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do master slotu primárneho radiča IDE.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Primary IDE controller.</source>
         <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu primárneho radiča IDE.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, attaches the specified virtual hard disk to the Slave slot of the Secondary IDE controller.</source>
         <translation type="obsolete">Keď je pole začiarknuté, uvedený virtuálny pevný disk pripojí do slave slotu sekundárneho radiča IDE.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Zobrazí virtuálny disk, ktorý sa pripojí do tohto slotu IDE a umožní rýchly výber iného pevného disku.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">Keď je pole začiarknuté, pripojí uvedený nosič do CD/DVD mechaniky virtuálneho stroja. Majte na pamäti, že CD/DVD jednotka sa vždy pripája na sekundárny master radič IDE stroja.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">Keď je zaškrtnuté, pripojí vybrané médium ako zariadenie diskovej mechaniky pre virtuálny stroj.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;nepripojený&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> - Settings</source>
         <translation type="obsolete"> - Nastavenia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">Nový filter %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">&amp;Zdieľaná schránka</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">Priečinok pre &amp;snímky</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Zobrazí typ operačného systému, ktorý sa chystáte nainštalovať na tento virtuálny stroj (nazýva sa hosťovský operačný systém).</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Defines the mode of sharing the clipboard between the guest and the host OS. Note that this feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">Určuje režim zdieľania schránky medzi hosťovským a hostiteľským OS. Všimnite si, že táto vlastnosť vyžaduje inštaláciu Hosťovských doplnkov v operačnom systéme hosťovského stroja.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Určuje cestu, kam budú ukladané snímky virtuálneho stroja. Všimnite si, že snímky môžu zaberať veľkú časť diskového priestoru.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Obnoví štandardnú cestu pre snímky. Vlastná štandardná cesta bude zobrazená po prijatí zmien a opätovnom otvorení tohto dialógového okna.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
         <translation type="obsolete">Zobrazí popis virtuálneho stroja. Pole s popisom je užitočné pre uloženie komentára o detailoch konfigurácie inštalovaného hosťovského OS.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">Keď je zaškrtnuté, povolí virtuálny USB radič tohto stroja.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na prázdne reťazce. Majte na pamäti, že takému filtru zodpovedá akékoľvek pripojené zariadenie USB.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation type="obsolete">Pridá nový filter USB so všetkými poľami implicitne nastavenými na hodnoty zvoleného zariadenia USB pripojeného k hostiteľskému PC.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">Adaptér %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">Rozhrania &amp;hostiteľa</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Zobrazí všetky dostupné rozhrania hostiteľa</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Pridá nové rozhranie hostiteľa.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Odstráni vybrané rozhranie hostiteľa.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;Žiadne vyhovujúce rozhrania&gt;</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add</source>
         <translation type="obsolete">Pridať</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove</source>
         <translation type="obsolete">Odstrániť</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">Hostiteľské rozhranie VirtualBoxu %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>9</source>
         <translation type="obsolete">9</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Serial Ports </source>
         <translation type="obsolete">Sériové porty</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#serialPorts</source>
         <translation type="obsolete">#serialPorts</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">Zapnúť &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">Ďalšie &amp;nastavenia</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">&amp;Pamätať si pripojené médiá pri štarte</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">&amp;Iné</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">&amp;Port servera</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">&amp;Metóda autentifikácie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">Čas pre au&amp;tentifikáciu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">Súbor s obrazom CD/DVD nie je vybraný</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">Súbor s obrazom diskety nie je vybraný</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">Je vybrané nesprávne sieťové rozhranie hostiteľa</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Duplicate port number is selected </source>
         <translation type="obsolete">Je vybrané duplikované číslo portu</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Duplicate port path is entered </source>
         <translation type="obsolete">Je zadaná duplikovaná cesta k portu</translation>
     </message>
@@ -7880,164 +7427,132 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">%1 je na strane &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">Paralelné porty</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>#parallelPorts</source>
         <translation type="obsolete">#parallelPorts</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">Zapnúť PA&amp;E/NX</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">Typ &amp;radiča IDE</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">Rad&amp;ič zvuku</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">Zapnúť &amp;radič USB 2.0</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">Pridať prázdny filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">&amp;Pridať prázdny filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">Pridať filter pre zariadenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">P&amp;ridať filter pre zariadenie</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Remove Filter</source>
         <translation type="obsolete">Odstrániť filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">O&amp;dstrániť filter</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">Presunúť filter nahor</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">Pre&amp;sunúť filter nahor</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">Presunúť filter nadol</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">Presu&amp;núť filter nadol</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Názov internej siete nie je definovaný</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port path is not specified </source>
         <translation type="obsolete">Cesta k portu nie je definovaná.</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">Port %1</translation>
     </message>
     <message>
-        <location filename="" line="792473893"/>
         <source>USBActionGroup</source>
         <translation type="obsolete">USBActionGroup</translation>
     </message>
