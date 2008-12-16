@@ -242,6 +242,11 @@ GLOBALNAME ICEnterTarget
     mov     rax, cs
     mov     ds, rax
     mov     es, rax
+    
+    ; Invalidate fs & gs
+    mov     rax, 0
+    mov     fs, rax
+    mov     gs, rax
 
     ; Setup stack; use the lss_esp, ss pair for lss
     DEBUG_CHAR('7')
