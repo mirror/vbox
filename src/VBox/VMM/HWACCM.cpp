@@ -1173,6 +1173,10 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         PVMCSCACHE pCache = &pVCpu->hwaccm.s.vmx.VMCSCache;
         for (unsigned j=0;j<pCache->Read.cValidEntries;j++)
             pCache->Read.aFieldVal[j] = 0;
+
+        /* Magic marker for searching in crash dumps. */
+        strcpy((char *)pCache->aMagic, "VMCSCACHE Magic");
+
     }
 }
 

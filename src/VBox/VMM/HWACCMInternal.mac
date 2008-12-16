@@ -25,6 +25,7 @@
 
 ; Structure for storing read and write VMCS actions. 
 struc VMCSCACHE
+    .aMagic                   resb    16
     .cr2                      resq    1
     .Write.cValidEntries      resd    1
     .Write.uAlignment         resd    1

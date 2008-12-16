@@ -386,6 +386,8 @@ typedef HWACCM *PHWACCM;
 /* Structure for storing read and write VMCS actions. */
 typedef struct VMCSCACHE
 {
+    /* Magic marker for searching in crash dumps. */
+    uint8_t         aMagic[16];
     /* CR2 is saved here for EPT syncing. */
     uint64_t        cr2;
     struct
