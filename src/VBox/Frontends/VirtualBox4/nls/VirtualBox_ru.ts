@@ -5527,7 +5527,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="63"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Перечисляет все общие папки, доступные этой машине. Используйте команду &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt; для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС, или &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; для доступа к ней из Линукс-подобной ОС. Эта возможность требует установки Дополнений гостевой ОС.</translation>
+        <translation>Перечисляет все общие папки, доступные этой машине. Используйте команду &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt; для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС или &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; для доступа из Линукс-подобной ОС. Требует установки Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSF.ui" line="73"/>
