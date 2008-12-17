@@ -171,7 +171,7 @@ static int __init VBoxNetFltLinuxInit(void)
         LogRel(("VBoxNetFlt: failed to initialize IPRT (rc=%d)\n", rc));
 
     memset(&g_VBoxNetFltGlobals, 0, sizeof(g_VBoxNetFltGlobals));
-    return RTErrConvertToErrno(rc);
+    return -RTErrConvertToErrno(rc);
 }
 
 
