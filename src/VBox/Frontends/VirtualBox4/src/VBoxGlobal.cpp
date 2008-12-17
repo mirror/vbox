@@ -1255,7 +1255,6 @@ VBoxGlobal::VBoxGlobal()
     , mUpdDlg (NULL)
 #ifdef VBOX_GUI_WITH_SYSTRAY
     , mIsTrayMenu (false)
-    , mIncreasedWindowCounter (false)
 #endif
     , mMediaEnumThread (NULL)
     , mVerString ("1.0")
@@ -5305,41 +5304,12 @@ void VBoxGlobal::init()
         return;
     }
 
-    /* create default non-null global settings */
-    gset = VBoxGlobalSettings (false);
-
-    /* try to load global settings */
-    gset.load (mVBox);
-    if (!mVBox.isOk() || !gset)
-    {
-        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
-        return;
-    }
-
-    /* Load the customized language as early as possible to get possible error
-     * messages translated */
-    QString languageId = gset.languageId();
-    if (!languageId.isNull())
-        loadLanguage (languageId);
-
-    retranslateUi();
-
-    /* Note: the settings conversion check must be done before anything else
-     * that may unconditionally overwrite settings files in the new format (like
-     * SetExtraData()). But after loading the proper the language. */
-    if (!checkForAutoConvertedSettings())
-        return;
-
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    {
-        /* Increase open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
-        AssertMsgReturnVoid ((c >= 0) || (mVBox.isOk()),
-            ("Something went wrong with the window reference count!"));
-        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
-        mIncreasedWindowCounter = mVBox.isOk();
-        AssertReturnVoid (mIncreasedWindowCounter);
-    }
+    /* Increase open Fe/Qt4 windows reference count. */
+    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
+    AssertMsg ((c>=0) || (mVBox.isOk()),
+        ("Something went wrong with the window reference count!"));
+    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
 #endif
 
     /* Initialize guest OS Type list */
@@ -5496,6 +5466,24 @@ void VBoxGlobal::init()
 
     qApp->installEventFilter (this);
 
+    /* create default non-null global settings */
+    gset = VBoxGlobalSettings (false);
+
+    /* try to load global settings */
+    gset.load (mVBox);
+    if (!mVBox.isOk() || !gset)
+    {
+        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
+        return;
+    }
+
+    /* Load customized language if any */
+    QString languageId = gset.languageId();
+    if (!languageId.isNull())
+        loadLanguage (languageId);
+
+    retranslateUi();
+
     /* process command line */
 
     vm_render_mode_str = 0;
@@ -5612,26 +5600,6 @@ void VBoxGlobal::cleanup()
         return;
     }
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    if (mIncreasedWindowCounter)
-    {
-        /* Decrease open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
-        AssertMsg ((c >= 0) || (mVBox.isOk()),
-            ("Something went wrong with the window reference count!"));
-        if (c < 0)
-            c = 0;   /* Clean up the mess. */
-        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount,
-                            (c > 0) ? QString ("%1").arg (c) : NULL);
-        AssertWrapperOk (mVBox);
-        if (c == 0)
-        {
-            mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
-            AssertWrapperOk (mVBox);
-        }
-    }
-#endif
-
     if (!callback.isNull())
     {
         mVBox.UnregisterCallback (callback);
@@ -5656,6 +5624,18 @@ void VBoxGlobal::cleanup()
         delete mConsoleWnd;
     if (mSelectorWnd)
         delete mSelectorWnd;
+
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    /* Decrease open Fe/Qt4 windows reference count. */
+    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
+    AssertMsg ((c>=0) || (mVBox.isOk()),
+        ("Something went wrong with the window reference count!"));
+    if (c < 0)
+        c = 0;   /* Clean up the mess. */
+    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, (c > 0) ? QString ("%1").arg (c) : NULL);
+    if (c == 0)
+        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
+#endif
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();
