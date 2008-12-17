@@ -1857,6 +1857,10 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
 
                                 rc = strioctl(pIp4VNode, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K,
                                             kcred, &ret);
+
+                                g_VBoxNetFltSolarisInstance = NULL;
+                                g_VBoxNetFltSolarisStreamType = kUndefined;
+
                                 if (!rc)
                                 {
                                     if (!fAttach)
@@ -1865,14 +1869,17 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
+                                    g_VBoxNetFltSolarisInstance = pThis;
                                     g_VBoxNetFltSolarisStreamType = kArpStream;
+
                                     rc = strioctl(pArpVNode, fAttach ? _I_INSERT : _I_REMOVE, (intptr_t)&ArpStrMod, 0, K_TO_K,
                                                 kcred, &ret);
+
+                                    g_VBoxNetFltSolarisInstance = NULL;
+                                    g_VBoxNetFltSolarisStreamType = kUndefined;
+
                                     if (!rc)
                                     {
-                                        g_VBoxNetFltSolarisInstance = NULL;
-                                        g_VBoxNetFltSolarisStreamType = kUndefined;
-
                                         /*
                                          * Our job's not yet over; we need to relink the upper and lower streams
                                          * otherwise we've pretty much screwed up the host interface.
