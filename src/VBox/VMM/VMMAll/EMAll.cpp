@@ -2232,6 +2232,7 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     case PARMTYPE_IMMEDIATE:
         if(param1.size != sizeof(uint16_t))
             return VERR_EM_INTERPRETER;
+        LogFlow(("emInterpretSmsw %d <- cr0 (%x)\n", pCpu->param1.base.reg_gen, cr0));
         rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, cr0);
         break;
 
@@ -2245,6 +2246,7 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
 
         pParam1 = (RTGCPTR)param1.val.val64;
         pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pCpu, &pCpu->param1, pParam1);
+        LogFlow(("emInterpretSmsw %VGv <- cr0 (%x)\n", pParam1, cr0));
 
         rc = emRamWrite(pVM, pParam1, &cr0, sizeof(uint16_t));
         if (RT_FAILURE(rc))
