@@ -841,11 +841,13 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                 }
-#endif
-                LogRel(("HWACCM: VMX enabled!\n"));
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM: 32-bit and 64-bit guest supported.\n"
                         : "HWACCM: 32-bit guest supported.\n"));
+#else
+                LogRel(("HWACCM: 32-bit guest supported.\n"));
+#endif
+                LogRel(("HWACCM: VMX enabled!\n"));
                 if (pVM->hwaccm.s.fNestedPaging)
                 {
                     LogRel(("HWACCM: Enabled nested paging\n"));
