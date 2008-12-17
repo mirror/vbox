@@ -1,0 +1,87 @@
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxRT.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDD.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDD2.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDDU.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxKeyboard.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSettings.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVMM.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxXPCOM.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedFolders.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedClipboard.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxGuestPropSvc.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VRDPAuth.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxC.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxHeadless.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLhostcrutil.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLhosterrorspu.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLrenderspu.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxPython.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM32.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM64.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSDL.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedCrOpenGL.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VirtualBox.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDDGC.gc
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDD2GC.gc
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDDR0.r0
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VBoxDD2R0.r0
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VMMGC.gc
+%VERPKG%: unstripped-binary-or-object ./usr/lib/virtualbox/VMMR0.r0
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxRT.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxDD.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxDD2.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxDDU.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxKeyboard.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSettings.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVMM.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxREM.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxXPCOM.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSharedFolders.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxSharedClipboard.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxGuestPropSvc.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VBoxVRDP.so
+%VERPKG%: no-shlibs-control-file usr/lib/virtualbox/VRDPAuth.so
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/bin/rdesktop-vrdp /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDD2.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDDU.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDbg.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxGuestPropSvc.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxHeadless /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxHeadless.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxKeyboard.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxManage /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLhostcrutil.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLhosterrorspu.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLrenderspu.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxPython.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM32.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM64.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxRT.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSDL /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSDL.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSVC /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSettings.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedClipboard.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedCrOpenGL.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedFolders.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVMM.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxVRDP.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOM.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOMIPCD /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VRDPAuth.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDbg.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxC.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxSVCM.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxXPCOMIPCC.so /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/kchmviewer /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/vboxwebsrv /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/webtest /usr/lib/virtualbox
+%VERPKG%: postrm-contains-additional-updaterc.d-calls /etc/init.d/vboxnet
