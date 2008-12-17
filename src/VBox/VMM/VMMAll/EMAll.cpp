@@ -2230,7 +2230,7 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
     switch(param1.type)
     {
     case PARMTYPE_IMMEDIATE:
-        if(!(param1.flags & PARAM_VAL16))
+        if(param1.size != sizeof(uint16_t))
             return VERR_EM_INTERPRETER;
         rc = DISWriteReg16(pRegFrame, pCpu->param1.base.reg_gen, cr0);
         break;
@@ -2240,7 +2240,7 @@ static int emInterpretSmsw(PVM pVM, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, R
         RTGCPTR pParam1;
 
         /* Actually forced to 16 bits regardless of the operand size. */
-        if(!(param1.flags & PARAM_VAL16))
+        if(param1.size != sizeof(uint16_t))
             return VERR_EM_INTERPRETER;
 
         pParam1 = (RTGCPTR)param1.val.val64;
