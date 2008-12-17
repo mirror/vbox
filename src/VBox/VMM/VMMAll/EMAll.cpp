@@ -406,6 +406,7 @@ static const char *emGetMnemonic(PDISCPUSTATE pCpu)
         case OP_BTS:        return "Bts";
         case OP_BTC:        return "Btc";
         case OP_LMSW:       return "Lmsw";
+        case OP_SMSW:       return "Smsw";
         case OP_CMPXCHG:    return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg"   : "CmpXchg";
         case OP_CMPXCHG8B:  return pCpu->prefix & PREFIX_LOCK ? "Lock CmpXchg8b" : "CmpXchg8b";
 
