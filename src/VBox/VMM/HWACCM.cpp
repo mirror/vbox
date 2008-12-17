@@ -832,7 +832,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 hwaccmR3DisableRawMode(pVM);
 
                 CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-#ifdef VBOX_ENABLE_64_BITS_GUESTS
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                 if (pVM->hwaccm.s.fAllow64BitGuests)
                 {
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE);
