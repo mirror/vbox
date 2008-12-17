@@ -36,6 +36,7 @@
 #define ___VBox_x86_h
 
 #include <VBox/types.h>
+#include <iprt/assert.h>
 
 /* Workaround for Solaris sys/regset.h defining CS, DS */
 #if defined(RT_OS_SOLARIS)
@@ -2289,6 +2290,130 @@ typedef X86DESC     *PX86DESCHC;
  * used, if clear byte. */
 #define X86_DESC_G                          RT_BIT(23)
 /** @} */
+
+/** @} */
+
+/** @name Task segment.
+ * @{
+ */
+#pragma pack(1)
+typedef struct X86TSS32
+{
+    /** Back link to previous task. (static) */
+    RTSEL       selPrev;
+    uint16_t    padding1;
+    /** Ring-0 stack pointer. (static) */
+    uint32_t    esp0;
+    /** Ring-0 stack segment. (static) */
+    RTSEL       ss0;
+    uint16_t    padding_ss0;
+    /** Ring-1 stack pointer. (static) */
+    uint32_t    esp1;
+    /** Ring-1 stack segment. (static) */
+    RTSEL       ss1;
+    uint16_t    padding_ss1;
+    /** Ring-2 stack pointer. (static) */
+    uint32_t    esp2;
+    /** Ring-2 stack segment. (static) */
+    RTSEL       ss2;
+    uint16_t    padding_ss2;
+    /** Page directory for the task. (static) */
+    uint32_t    cr3;
+    /** EIP before task switch. */
+    uint32_t    eip;
+    /** EFLAGS before task switch. */
+    uint32_t    eflags;
+    /** EAX before task switch. */
+    uint32_t    eax;
+    /** ECX before task switch. */
+    uint32_t    ecx;
+    /** EDX before task switch. */
+    uint32_t    edx;
+    /** EBX before task switch. */
+    uint32_t    ebx;
+    /** ESP before task switch. */
+    uint32_t    esp;
+    /** EBP before task switch. */
+    uint32_t    ebp;
+    /** ESI before task switch. */
+    uint32_t    esi;
+    /** EDI before task switch. */
+    uint32_t    edi;
+    /** ES before task switch. */
+    RTSEL       es;
+    uint16_t    padding_es;
+    /** CS before task switch. */
+    RTSEL       cs;
+    uint16_t    padding_cs;
+    /** SS before task switch. */
+    RTSEL       ss;
+    uint16_t    padding_ss;
+    /** DS before task switch. */
+    RTSEL       ds;
+    uint16_t    padding_ds;
+    /** FS before task switch. */
+    RTSEL       fs;
+    uint16_t    padding_fs;
+    /** GS before task switch. */
+    RTSEL       gs;
+    uint16_t    padding_gs;
+    /** LDTR before task switch. */
+    RTSEL       selLdt;
+    uint16_t    padding_ldt;
+    /** Debug trap flag */
+    uint16_t    fDebugTrap;
+    /** Offset relative to the TSS of the start of the I/O Bitmap
+     * and the end of the interrupt redirection bitmap. */
+    uint16_t    offIoBitmap;
+    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
+    uint8_t     IntRedirBitmap[32];
+} X86TSS32;
+#pragma pack()
+/** Pointer to task segment. */
+typedef X86TSS32 *PX86TSS32;
+/** Pointer to const task segment. */
+typedef const X86TSS32 *PCX86TSS32;
+/** @} */
+
+
+/** @name 64 bits Task segment.
+ * @{
+ */
+#pragma pack(1)
+typedef struct X86TSS64
+{
+    /** Reserved. */
+    uint32_t    u32Reserved;
+    /** Ring-0 stack pointer. (static) */
+    uint64_t    rsp0;
+    /** Ring-1 stack pointer. (static) */
+    uint64_t    rsp1;
+    /** Ring-2 stack pointer. (static) */
+    uint64_t    rsp2;
+    /** Reserved. */
+    uint32_t    u32Reserved2[2];
+    /* IST */
+    uint64_t    ist1;
+    uint64_t    ist2;
+    uint64_t    ist3;
+    uint64_t    ist4;
+    uint64_t    ist5;
+    uint64_t    ist6;
+    uint64_t    ist7;
+    /* Reserved. */
+    uint16_t    u16Reserved[5];
+    /** Offset relative to the TSS of the start of the I/O Bitmap
+     * and the end of the interrupt redirection bitmap. */
+    uint16_t    offIoBitmap;
+    /** 32 bytes for the virtual interrupt redirection bitmap. (VME) */
+    uint8_t     IntRedirBitmap[32];
+} X86TSS64;
+#pragma pack()
+/** Pointer to task segment. */
+typedef X86TSS64 *PX86TSS64;
+/** Pointer to const task segment. */
+typedef const X86TSS64 *PCX86TSS64;
+AssertCompileSize(X86TSS64, 136);
 
 /** @} */
 
