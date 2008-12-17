@@ -414,7 +414,7 @@ static int vboxadd_lock_hgcm_parms(void **ppvCtx, VBoxGuestHGCMCallInfo *pCallIn
                 break;
         }
     }
-    return RTErrConvertToErrno (rc);
+    return -RTErrConvertToErrno (rc);
 }
 
 /** Unlock R3 memory after the HGCM call.  Copied from HGCMInternal.cpp and
@@ -458,7 +458,7 @@ static int vboxadd_hgcm_call(unsigned long userspace_info, uint32_t u32Size)
         void *apvCtx[VBOX_HGCM_MAX_PARMS];
         unsigned haveParms = 0;
         int rc = 0;
-   
+
         pInfo = kmalloc(u32Size, GFP_KERNEL);
         if (pInfo == NULL)
                 rc = -ENOMEM;
@@ -514,7 +514,7 @@ static int vboxadd_hgcm_call_timed(unsigned long userspace_info,
         void *apvCtx[VBOX_HGCM_MAX_PARMS];
         unsigned haveParms = 0;
         int rc = 0;
-        
+
         pInfo = kmalloc(u32Size, GFP_KERNEL);
         if (pInfo == NULL)
                 rc = -ENOMEM;
