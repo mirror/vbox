@@ -161,7 +161,7 @@ struct VBoxDefs
 #endif
 #ifdef Q_WS_MAC
     static const char* GUI_RealtimeDockIconUpdateEnabled;
-#endif
+#endif /* Q_WS_MAC */
     static const char* GUI_PassCAD;
 };
 

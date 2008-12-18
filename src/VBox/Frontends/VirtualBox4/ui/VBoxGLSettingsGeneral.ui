@@ -135,7 +135,20 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="3" >
+   <item row="6" column="1" colspan="2" >
+    <widget class="QCheckBox" name="mCbCheckDockPreview" >
+     <property name="whatsThis" >
+      <string>When checked, the Dock Icon will reflect the VM window content in realtime.</string>
+     </property>
+     <property name="text" >
+      <string>&amp;Dock Icon Realtime Preview</string>
+     </property>
+     <property name="checked" >
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>

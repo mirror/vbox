@@ -32,7 +32,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 
 #ifndef VBOX_GUI_WITH_SYSTRAY
     mCbCheckTrayIcon->hide();
-#endif
+#endif /* VBOX_GUI_WITH_SYSTRAY */
+#ifndef Q_WS_MAC
+    mCbCheckDockPreview->hide();
+#endif /* Q_WS_MAC */
 
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
@@ -50,6 +53,9 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
     mPsMach->setPath (aProps.GetDefaultMachineFolder());
     mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
     mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
+#ifdef Q_WS_MAC
+    mCbCheckDockPreview->setChecked (aGs.dockPreviewEnabled());
+#endif /* Q_WS_MAC */
 }
 
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
@@ -62,6 +68,9 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
     if (aProps.isOk() && mPsVRDP->isModified())
         aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
     aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
+#ifdef Q_WS_MAC
+    aGs.setDockPreviewEnabled (mCbCheckDockPreview->isChecked());
+#endif /* Q_WS_MAC */
 }
 
 void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
@@ -70,6 +79,9 @@ void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mPsHardDisk, mPsMach);
     setTabOrder (mPsMach, mPsVRDP);
     setTabOrder (mPsVRDP, mCbCheckTrayIcon);
+#ifdef Q_WS_MAC
+    setTabOrder (mCbCheckTrayIcon, mCbCheckDockPreview);
+#endif /* Q_WS_MAC */
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()
