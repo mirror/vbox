@@ -8671,8 +8671,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         property. Thus, the number of elements in each returned array is the
         same and corresponds to the number of supported properties.
 
-        The returned arrays are not empty only if the
+        The returned arrays are filled in only if the
         <link to="HardDiskFormatCapabilities_Properties"/> flag is set.
+        All arguments must be non-NULL.
 
         <see>DataType</see>
         <see>DataFlags</see>

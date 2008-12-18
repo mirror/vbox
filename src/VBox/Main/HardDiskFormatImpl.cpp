@@ -242,12 +242,11 @@ STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
                                                 ComSafeArrayOut (ULONG, aFlags),
                                                 ComSafeArrayOut (BSTR, aDefaults))
 {
-    if (ComSafeArrayOutIsNull (aNames) ||
-        ComSafeArrayOutIsNull (aDescriptions) ||
-        ComSafeArrayOutIsNull (aTypes) ||
-        ComSafeArrayOutIsNull (aFlags) ||
-        ComSafeArrayOutIsNull (aDefaults))
-        return E_POINTER;
+    CheckComArgSafeArrayNotNull(aNames);
+    CheckComArgSafeArrayNotNull(aDescriptions);
+    CheckComArgSafeArrayNotNull(aTypes);
+    CheckComArgSafeArrayNotNull(aFlags);
+    CheckComArgSafeArrayNotNull(aDefaults);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
