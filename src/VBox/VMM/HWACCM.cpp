@@ -229,8 +229,10 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
             return VM_SET_ERROR(pVM, VERR_INVALID_PARAMETER, "64-bit guest support was requested without also enabling VT-x.");
     }
 #else
-    /* We always allow 64 bits guests on 64 bits hosts. */
-    pVM->hwaccm.s.fAllow64BitGuests = true;
+    /* On 64-bit hosts 64-bit guest support is enabled by default, but allow this to be overridden
+     * via VBoxInternal/HWVirtExt/64bitEnabled=0. (ConsoleImpl2.cpp doesn't set this to false for 64-bit.) */
+    rc = CFGMR3QueryBoolDef(pHWVirtExt, "64bitEnabled", &pVM->hwaccm.s.fAllow64BitGuests, true);
+    AssertLogRelRCReturn(rc, rc);
 #endif
 
     return VINF_SUCCESS;
