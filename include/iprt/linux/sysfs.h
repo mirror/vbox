@@ -33,8 +33,8 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 
-#include <stdarg.h>
 
 __BEGIN_DECLS
 
@@ -82,7 +82,8 @@ RTDECL(int) RTLinuxSysFsOpen(const char *pszFormat, ...);
 /**
  * Closes a file opened with RTLinuxSysFsOpen or RTLinuxSysFsOpenV.
  *
- * @param   fd
+ * @param   fd          File descriptor returned by RTLinuxSysFsOpen or
+ *                      RTLinuxSysFsOpenV.
  */
 RTDECL(void) RTLinuxSysFsClose(int fd);
 
@@ -144,9 +145,28 @@ RTDECL(ssize_t) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, const char 
 
 /**
  * Reads the last element of the path of the file pointed to by the symbolic
- * link specified.  This is needed at least to get the name of the driver
- * associated with a device, where pszFormat should be the "driver" link in the
- * devices sysfs directory.
+ * link specified.
+ *
+ * This is needed at least to get the name of the driver associated with a
+ * device, where pszFormat should be the "driver" link in the devices sysfs
+ * directory.
+ *
+ * @returns The number of characters written on success, -1 and errno on failure.
+ * @param   pszBuf      Where to store the path element.  Must be at least two
+ *                      characters, but a longer buffer would be advisable.
+ * @param   cchBuf      The size of the buffer pointed to by @a pszBuf.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va           Format args.
+ */
+RTDECL(ssize_t) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, const char *pszFormat, va_list va);
+
+/**
+ * Reads the last element of the path of the file pointed to by the symbolic
+ * link specified.
+ *
+ * This is needed at least to get the name of the driver associated with a
+ * device, where pszFormat should be the "driver" link in the devices sysfs
+ * directory.
  *
  * @returns The number of characters written on success, -1 and errno on failure.
  * @param   pszBuf      Where to store the path element.  Must be at least two
@@ -155,7 +175,7 @@ RTDECL(ssize_t) RTLinuxSysFsReadStrFile(char *pszBuf, size_t cchBuf, const char 
  * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
  * @param   ...         Format args.
  */
-RTDECL(int) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, const char *pszFormat, ...);
+RTDECL(ssize_t) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, const char *pszFormat, ...);
 
 /** @} */
 
