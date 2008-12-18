@@ -694,6 +694,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 
             case PGMMODE_32_BIT:        /* 32-bit paging. */
+                val &= ~X86_CR4_PAE;
                 break;
 
             case PGMMODE_PAE:           /* PAE paging. */
