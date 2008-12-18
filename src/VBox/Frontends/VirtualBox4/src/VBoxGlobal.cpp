@@ -1255,6 +1255,7 @@ VBoxGlobal::VBoxGlobal()
     , mUpdDlg (NULL)
 #ifdef VBOX_GUI_WITH_SYSTRAY
     , mIsTrayMenu (false)
+    , mIncreasedWindowCounter (false)
 #endif
     , mMediaEnumThread (NULL)
     , mVerString ("1.0")
@@ -2076,16 +2077,18 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
         "<table border=0 cellspacing=1 cellpadding=0>%1</table>";
     static const char *sSectionHrefTpl =
         "<tr><td width=22 rowspan=%1 align=left><img src='%2'></td>"
-            "<td colspan=2><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
+            "<td colspan=3><b><a href='%3'><nobr>%4</nobr></a></b></td></tr>"
             "%5"
-        "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
+        "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
     static const char *sSectionBoldTpl =
         "<tr><td width=22 rowspan=%1 align=left><img src='%2'></td>"
-            "<td colspan=2><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
+            "<td colspan=3><!-- %3 --><b><nobr>%4</nobr></b></td></tr>"
             "%5"
-        "<tr><td colspan=2><font size=1>&nbsp;</font></td></tr>";
-    static const char *sSectionItemTpl =
-        "<tr><td width=40%><nobr>%1</nobr></td><td>%2</td></tr>";
+        "<tr><td colspan=3><font size=1>&nbsp;</font></td></tr>";
+    static const char *sSectionItemTpl1 =
+        "<tr><td width=40%><nobr><i>%1</i></nobr></td><td/><td/></tr>";
+    static const char *sSectionItemTpl2 =
+        "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
 
     static QString sGeneralBasicHrefTpl, sGeneralBasicBoldTpl;
     static QString sGeneralFullHrefTpl, sGeneralFullBoldTpl;
@@ -2097,10 +2100,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
         mDetailReportTemplatesReady = true;
 
         QString generalItems
-            = QString (sSectionItemTpl).arg (tr ("Name", "details report"), "%1")
-            + QString (sSectionItemTpl).arg (tr ("OS Type", "details report"), "%2")
-            + QString (sSectionItemTpl).arg (tr ("Base Memory", "details report"),
-                                             tr ("<nobr>%3 MB</nobr>", "details report"));
+            = QString (sSectionItemTpl2).arg (tr ("Name", "details report"), "%1")
+            + QString (sSectionItemTpl2).arg (tr ("OS Type", "details report"), "%2")
+            + QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
+                                              tr ("<nobr>%3 MB</nobr>", "details report"));
         sGeneralBasicHrefTpl = QString (sSectionHrefTpl)
                 .arg (2 + 3) /* rows */
                 .arg (":/machine_16px.png", /* icon */
@@ -2115,14 +2118,14 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                       generalItems); /* items */
 
         generalItems
-           += QString (sSectionItemTpl).arg (tr ("Video Memory", "details report"),
-                                             tr ("<nobr>%4 MB</nobr>", "details report"))
-            + QString (sSectionItemTpl).arg (tr ("Boot Order", "details report"), "%5")
-            + QString (sSectionItemTpl).arg (tr ("ACPI", "details report"), "%6")
-            + QString (sSectionItemTpl).arg (tr ("IO APIC", "details report"), "%7")
-            + QString (sSectionItemTpl).arg (tr ("VT-x/AMD-V", "details report"), "%8")
-            + QString (sSectionItemTpl).arg (tr ("PAE/NX", "details report"), "%9")
-            + QString (sSectionItemTpl).arg (tr ("3D Acceleration", "details report"), "%10");
+           += QString (sSectionItemTpl2).arg (tr ("Video Memory", "details report"),
+                                              tr ("<nobr>%4 MB</nobr>", "details report"))
+            + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), "%5")
+            + QString (sSectionItemTpl2).arg (tr ("ACPI", "details report"), "%6")
+            + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), "%7")
+            + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), "%8")
+            + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), "%9")
+            + QString (sSectionItemTpl2).arg (tr ("3D Acceleration", "details report"), "%10");
 
         sGeneralFullHrefTpl = QString (sSectionHrefTpl)
             .arg (2 + 10) /* rows */
@@ -2161,7 +2164,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 KStorageBus bus = hda.GetBus();
                 LONG channel = hda.GetChannel();
                 LONG device = hda.GetDevice();
-                hardDisks += QString (sSectionItemTpl)
+                hardDisks += QString (sSectionItemTpl2)
                     .arg (toFullString (bus, channel, device))
                     .arg (details (hd, aIsNewVM));
                 ++ rows;
@@ -2170,8 +2173,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
 
         if (hardDisks.isNull())
         {
-            hardDisks = QString (sSectionItemTpl)
-                .arg (tr ("Not Attached", "details report (HDDs)")).arg ("");
+            hardDisks = QString (sSectionItemTpl1)
+                .arg (tr ("Not Attached", "details report (HDDs)"));
             ++ rows;
         }
 
@@ -2266,17 +2269,18 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
 
         /* DVD */
         CDVDDrive dvd = aMachine.GetDVDDrive();
-        item = QString (sSectionItemTpl);
         switch (dvd.GetState())
         {
             case KDriveState_NotMounted:
-                item = item.arg (tr ("Not mounted", "details report (DVD)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Not mounted", "details report (DVD)"));
                 break;
             case KDriveState_ImageMounted:
             {
                 CDVDImage2 img = dvd.GetImage();
-                item = item.arg (tr ("Image", "details report (DVD)"),
-                                 locationForHTML (img.GetName()));
+                item = QString (sSectionItemTpl2)
+                    .arg (tr ("Image", "details report (DVD)"),
+                          locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -2287,8 +2291,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 QString fullName = description.isEmpty() ?
                     drvName :
                     QString ("%1 (%2)").arg (description, drvName);
-                item = item.arg (tr ("Host Drive", "details report (DVD)"),
-                                 fullName);
+                item = QString (sSectionItemTpl2)
+                    .arg (tr ("Host Drive", "details report (DVD)"),
+                          fullName);
                 break;
             }
             default:
@@ -2303,17 +2308,18 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
 
         /* Floppy */
         CFloppyDrive floppy = aMachine.GetFloppyDrive();
-        item = QString (sSectionItemTpl);
         switch (floppy.GetState())
         {
             case KDriveState_NotMounted:
-                item = item.arg (tr ("Not mounted", "details report (floppy)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Not mounted", "details report (floppy)"));
                 break;
             case KDriveState_ImageMounted:
             {
                 CFloppyImage2 img = floppy.GetImage();
-                item = item.arg (tr ("Image", "details report (floppy)"),
-                                 locationForHTML (img.GetName()));
+                item = QString (sSectionItemTpl2)
+                    .arg (tr ("Image", "details report (floppy)"),
+                          locationForHTML (img.GetName()));
                 break;
             }
             case KDriveState_HostDriveCaptured:
@@ -2324,8 +2330,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 QString fullName = description.isEmpty() ?
                     drvName :
                     QString ("%1 (%2)").arg (description, drvName);
-                item = item.arg (tr ("Host Drive", "details report (floppy)"),
-                                 fullName);
+                item = QString (sSectionItemTpl2)
+                    .arg (tr ("Host Drive", "details report (floppy)"),
+                          fullName);
                 break;
             }
             default:
@@ -2343,15 +2350,15 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             CAudioAdapter audio = aMachine.GetAudioAdapter();
             int rows = audio.GetEnabled() ? 3 : 2;
             if (audio.GetEnabled())
-                item = QString (sSectionItemTpl)
+                item = QString (sSectionItemTpl2)
                        .arg (tr ("Host Driver", "details report (audio)"),
                              toString (audio.GetAudioDriver())) +
-                       QString (sSectionItemTpl)
+                       QString (sSectionItemTpl2)
                        .arg (tr ("Controller", "details report (audio)"),
                              toString (audio.GetAudioController()));
             else
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Disabled", "details report (audio)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Disabled", "details report (audio)"));
 
             detailsReport += sectionTpl
                 .arg (rows + 1) /* rows */
@@ -2385,7 +2392,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     else
                         attType = attType.arg (vboxGlobal().toString (type));
 
-                    item += QString (sSectionItemTpl)
+                    item += QString (sSectionItemTpl2)
                         .arg (tr ("Adapter %1", "details report (network)")
                               .arg (adapter.GetSlot() + 1))
                         .arg (attType);
@@ -2394,8 +2401,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             }
             if (item.isNull())
             {
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Disabled", "details report (network)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Disabled", "details report (network)"));
                 ++ rows;
             }
 
@@ -2427,7 +2434,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                     else
                         data += toString (mode);
 
-                    item += QString (sSectionItemTpl)
+                    item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (serial ports)")
                               .arg (port.GetSlot() + 1))
                         .arg (data);
@@ -2436,8 +2443,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             }
             if (item.isNull())
             {
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Disabled", "details report (serial ports)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Disabled", "details report (serial ports)"));
                 ++ rows;
             }
 
@@ -2463,7 +2470,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                         QString (" (<nobr>%1</nobr>)")
                         .arg (QDir::toNativeSeparators (port.GetPath()));
 
-                    item += QString (sSectionItemTpl)
+                    item += QString (sSectionItemTpl2)
                         .arg (tr ("Port %1", "details report (parallel ports)")
                               .arg (port.GetSlot() + 1))
                         .arg (data);
@@ -2472,8 +2479,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             }
             if (item.isNull())
             {
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Disabled", "details report (parallel ports)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("Disabled", "details report (parallel ports)"));
                 ++ rows;
             }
 
@@ -2501,14 +2508,14 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                         if (en.GetNext().GetActive())
                             active ++;
 
-                    item = QString (sSectionItemTpl)
+                    item = QString (sSectionItemTpl2)
                         .arg (tr ("Device Filters", "details report (USB)"),
                               tr ("%1 (%2 active)", "details report (USB)")
                                   .arg (coll.GetCount()).arg (active));
                 }
                 else
-                    item = QString (sSectionItemTpl)
-                        .arg (tr ("Disabled", "details report (USB)"), "");
+                    item = QString (sSectionItemTpl1)
+                        .arg (tr ("Disabled", "details report (USB)"));
 
                 detailsReport += sectionTpl
                     .arg (2 + 1) /* rows */
@@ -2523,14 +2530,13 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
             ulong count = aMachine.GetSharedFolders().GetCount();
             if (count > 0)
             {
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("Shared Folders", "details report (shared folders)"),
-                          tr ("%1", "details report (shadef folders)")
-                              .arg (count));
+                item = QString (sSectionItemTpl2)
+                    .arg (tr ("Shared Folders", "details report (shared folders)"))
+                    .arg (count);
             }
             else
-                item = QString (sSectionItemTpl)
-                    .arg (tr ("None", "details report (shared folders)"), "");
+                item = QString (sSectionItemTpl1)
+                    .arg (tr ("None", "details report (shared folders)"));
 
             detailsReport += sectionTpl
                 .arg (2 + 1) /* rows */
@@ -2547,13 +2553,12 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aIsNewVM,
                 /* the VRDP server may be unavailable (i.e. in VirtualBox OSE) */
 
                 if (srv.GetEnabled())
-                    item = QString (sSectionItemTpl)
-                        .arg (tr ("VRDP Server Port", "details report (VRDP)"),
-                              tr ("%1", "details report (VRDP)")
-                                  .arg (srv.GetPort()));
+                    item = QString (sSectionItemTpl2)
+                        .arg (tr ("VRDP Server Port", "details report (VRDP)"))
+                        .arg (srv.GetPort());
                 else
-                    item = QString (sSectionItemTpl)
-                        .arg (tr ("Disabled", "details report (VRDP)"), "");
+                    item = QString (sSectionItemTpl1)
+                        .arg (tr ("Disabled", "details report (VRDP)"));
 
                 detailsReport += sectionTpl
                     .arg (2 + 1) /* rows */
@@ -5304,12 +5309,41 @@ void VBoxGlobal::init()
         return;
     }
 
+    /* create default non-null global settings */
+    gset = VBoxGlobalSettings (false);
+
+    /* try to load global settings */
+    gset.load (mVBox);
+    if (!mVBox.isOk() || !gset)
+    {
+        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
+        return;
+    }
+
+    /* Load the customized language as early as possible to get possible error
+     * messages translated */
+    QString languageId = gset.languageId();
+    if (!languageId.isNull())
+        loadLanguage (languageId);
+
+    retranslateUi();
+
+    /* Note: the settings conversion check must be done before anything else
+     * that may unconditionally overwrite settings files in the new format (like
+     * SetExtraData()). But after loading the proper the language. */
+    if (!checkForAutoConvertedSettings())
+        return;
+
 #ifdef VBOX_GUI_WITH_SYSTRAY
-    /* Increase open Fe/Qt4 windows reference count. */
-    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
-    AssertMsg ((c>=0) || (mVBox.isOk()),
-        ("Something went wrong with the window reference count!"));
-    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
+    {
+        /* Increase open Fe/Qt4 windows reference count. */
+        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() + 1;
+        AssertMsgReturnVoid ((c >= 0) || (mVBox.isOk()),
+            ("Something went wrong with the window reference count!"));
+        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, QString ("%1").arg (c));
+        mIncreasedWindowCounter = mVBox.isOk();
+        AssertReturnVoid (mIncreasedWindowCounter);
+    }
 #endif
 
     /* Initialize guest OS Type list */
@@ -5466,24 +5500,6 @@ void VBoxGlobal::init()
 
     qApp->installEventFilter (this);
 
-    /* create default non-null global settings */
-    gset = VBoxGlobalSettings (false);
-
-    /* try to load global settings */
-    gset.load (mVBox);
-    if (!mVBox.isOk() || !gset)
-    {
-        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
-        return;
-    }
-
-    /* Load customized language if any */
-    QString languageId = gset.languageId();
-    if (!languageId.isNull())
-        loadLanguage (languageId);
-
-    retranslateUi();
-
     /* process command line */
 
     vm_render_mode_str = 0;
@@ -5600,6 +5616,26 @@ void VBoxGlobal::cleanup()
         return;
     }
 
+#ifdef VBOX_GUI_WITH_SYSTRAY
+    if (mIncreasedWindowCounter)
+    {
+        /* Decrease open Fe/Qt4 windows reference count. */
+        int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
+        AssertMsg ((c >= 0) || (mVBox.isOk()),
+            ("Something went wrong with the window reference count!"));
+        if (c < 0)
+            c = 0;   /* Clean up the mess. */
+        mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount,
+                            (c > 0) ? QString ("%1").arg (c) : NULL);
+        AssertWrapperOk (mVBox);
+        if (c == 0)
+        {
+            mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
+            AssertWrapperOk (mVBox);
+        }
+    }
+#endif
+
     if (!callback.isNull())
     {
         mVBox.UnregisterCallback (callback);
@@ -5624,18 +5660,6 @@ void VBoxGlobal::cleanup()
         delete mConsoleWnd;
     if (mSelectorWnd)
         delete mSelectorWnd;
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    /* Decrease open Fe/Qt4 windows reference count. */
-    int c = mVBox.GetExtraData (VBoxDefs::GUI_MainWindowCount).toInt() - 1;
-    AssertMsg ((c>=0) || (mVBox.isOk()),
-        ("Something went wrong with the window reference count!"));
-    if (c < 0)
-        c = 0;   /* Clean up the mess. */
-    mVBox.SetExtraData (VBoxDefs::GUI_MainWindowCount, (c > 0) ? QString ("%1").arg (c) : NULL);
-    if (c == 0)
-        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
-#endif
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();
