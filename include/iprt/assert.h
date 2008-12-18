@@ -564,6 +564,40 @@ __END_DECLS
     } while (0)
 #endif
 
+/** @def AssertMsgReturnStmt
+ * Assert that an expression is true, if it isn't execute the statement and
+ * return.
+ *
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute before break in case of a failed assertion.
+ * @param   rc      What is to be presented to return.
+ */
+#ifdef RT_STRICT
+# define AssertMsgReturnStmt(expr, a, stmt, rc)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertMsg2 a; \
+            RTAssertPanic(); \
+            stmt; \
+            return (rc); \
+        } \
+    } while (0)
+#else
+# define AssertMsgReturnStmt(expr, a, stmt, rc) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+            return (rc); \
+        } \
+    } while (0)
+#endif
+
 /** @def AssertMsgReturnVoid
  * Assert that an expression is true and returns if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before returning.
@@ -587,6 +621,39 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
             return; \
+    } while (0)
+#endif
+
+/** @def AssertMsgReturnVoidStmt
+ * Assert that an expression is true, if it isn't execute the statement and
+ * return.
+ *
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute before break in case of a failed assertion.
+ */
+#ifdef RT_STRICT
+# define AssertMsgReturnVoidStmt(expr, a, stmt)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            AssertMsg2 a; \
+            RTAssertPanic(); \
+            stmt; \
+            return; \
+        } \
+    } while (0)
+#else
+# define AssertMsgReturnVoidStmt(expr, a, stmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+            return; \
+        } \
     } while (0)
 #endif
 
