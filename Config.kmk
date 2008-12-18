@@ -1991,6 +1991,8 @@ ifeq ($(VBOX_LDR_FMT32),elf)
  TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
  TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
  TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
+ TEMPLATE_VBOXGCEXE_LDFLAGS.dbgopt = -g ## @todo kBuild #68: investigate why we're getting -S into the link when linking tstAsmStructsGC.
+ TEMPLATE_VBOXGCEXE_LDFLAGS.strict = -g ## @todo kBuild #68: investigate why we're getting -S into the link when linking tstAsmStructsGC.
  TEMPLATE_VBOXGCEXE_LDFLAGS.release = -g
 endif
 
