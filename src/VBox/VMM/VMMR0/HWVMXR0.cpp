@@ -3635,10 +3635,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     /* Call switcher. */
     rc = pVM->hwaccm.s.pfnHost32ToGuest64R0(pVM);
 
-#ifdef VBOX_STRICT
-    RTHCUINTREG  uFlagsTest = ASMGetFlags();
-#endif
-
     /* Make sure the VMX instructions don't cause #UD faults. */
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 
@@ -3653,7 +3649,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     }
 
     VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
-    Assert(!(uFlagsTest & X86_EFL_IF));
 
     return rc;
 }
