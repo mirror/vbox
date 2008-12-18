@@ -152,22 +152,22 @@ BEGINPROC VMXGCStartVM64
     mov     [rbx + VMCSCACHE.TestIn.pCtx], rsi
 %endif
 
-    mov     ecx, [xBX + VMCSCACHE.Write.cValidEntries]
+    mov     ecx, [rbx + VMCSCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
-    mov     edx, ecx
-    mov     ecx, 0
+    mov     rdx, rcx
+    mov     rcx, 0
     jmp     .cached_write
     
 ALIGN(16)    
 .cached_write:
-    mov     eax, [xBX + VMCSCACHE.Write.aField + xCX*4]
-    vmwrite xAX, qword [xBX + VMCSCACHE.Write.aFieldVal + xCX*8]
-    inc     xCX
-    cmp     xCX, xDX
+    mov     eax, [rbx + VMCSCACHE.Write.aField + rcx*4]
+    vmwrite rax, qword [rbx + VMCSCACHE.Write.aFieldVal + rcx*8]
+    inc     rcx
+    cmp     rcx, rdx
     jl     .cached_write
 
-    mov     dword [xBX + VMCSCACHE.Write.cValidEntries], 0
+    mov     dword [rbx + VMCSCACHE.Write.cValidEntries], 0
 .no_cached_writes:
 
     ; Save the pCache pointer
@@ -311,10 +311,10 @@ ALIGNCODE(16)
 
 ALIGN(16)
 .cached_read:
-    dec     xCX
-    mov     eax, [rdi + VMCSCACHE.Read.aField + xCX*4]
-    vmread  qword [rdi + VMCSCACHE.Read.aFieldVal + xCX*8], xAX
-    cmp     xCX, 0
+    dec     rcx
+    mov     eax, [rdi + VMCSCACHE.Read.aField + rcx*4]
+    vmread  qword [rdi + VMCSCACHE.Read.aFieldVal + rcx*8], rax
+    cmp     rcx, 0
     jnz     .cached_read
 .no_cached_reads:
 
