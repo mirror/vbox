@@ -124,12 +124,12 @@ BEGINPROC VMXGCStartVM64
     vmptrld [rbp + 16 + 8]
     jnc     .vmptrld_success
     mov     rax, VERR_VMX_INVALID_VMCS_PTR
-    jmp     .vmstart64_vmoff_end
+    jmp     .vmstart64_vmxoff_end
     
 .vmptrld_success:
     jnz     .vmptrld_success2
     mov     rax, VERR_VMX_GENERIC
-    jmp     .vmstart64_vmoff_end
+    jmp     .vmstart64_vmxoff_end
 
 .vmptrld_success2:
 
@@ -341,7 +341,7 @@ ALIGN(16)
     vmclear qword [rsp]  ;Pushed pVMCS
     add     rsp, 8
 
-.vmstart64_vmoff_end:
+.vmstart64_vmxoff_end:
     ; Disable VMX root mode
     vmxoff
 .vmstart64_vmxon_failed:
