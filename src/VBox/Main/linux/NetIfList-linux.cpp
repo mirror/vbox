@@ -38,6 +38,7 @@
 
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
+#include "Logging.h"
 
 int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 {
@@ -85,13 +86,23 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
                             RTNETADDRIPV6 IPv6Address;
                             unsigned uIndex, uLength, uScope, uTmp;
                             char szName[30];
-                            while (fscanf(fp,
-                                          "%08x%08x%08x%08x"
-                                          " %02x %02x %02x %02x %20s\n",
-                                          &IPv6Address.au32[0], &IPv6Address.au32[1],
-                                          &IPv6Address.au32[2], &IPv6Address.au32[3],
-                                          &uIndex, &uLength, &uScope, &uTmp, szName) != EOF)
+                            for (;;)
                             {
+                                memset(szName, 0, sizeof(szName));
+                                int n = fscanf(fp,
+                                               "%08x%08x%08x%08x"
+                                               " %02x %02x %02x %02x %20s\n",
+                                               &IPv6Address.au32[0], &IPv6Address.au32[1],
+                                               &IPv6Address.au32[2], &IPv6Address.au32[3],
+                                               &uIndex, &uLength, &uScope, &uTmp, szName);
+                                if (n == EOF)
+                                    break;
+                                if (n != 9 || uLength > 128)
+                                {
+                                    Log(("NetIfList: Error while reading /proc/net/if_inet6, n=%d uLength=%u\n",
+                                         n, uLength));
+                                    break;
+                                }
                                 if (!strcmp(pReq->ifr_name, szName))
                                 {
                                     Info.IPv6Address.au32[0] = htonl(IPv6Address.au32[0]);
