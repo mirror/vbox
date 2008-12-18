@@ -237,6 +237,13 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             const uint16_t u16 = pRam->aPages[i].HCPhys >> MM_RAM_FLAGS_IDX_SHIFT; /** @todo PAGE FLAGS */
             if (u16)
             {
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+                /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow and pgmPoolTrackFlushGCPhysPTs
+                   will/may kill the pool otherwise. */
+                PVMCPU pVCpu = VMMGetCpu(pVM);
+                uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+# endif
+
                 if ((u16 >> (MM_RAM_FLAGS_CREFS_SHIFT - MM_RAM_FLAGS_IDX_SHIFT)) != MM_RAM_FLAGS_CREFS_PHYSEXT)
                     pgmPoolTrackFlushGCPhysPT(pVM,
                                               pPage,
@@ -247,10 +254,25 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                 else
                     rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
                 fFlushTLBs = true;
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+                PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+#endif
             }
+
 #elif defined(PGMPOOL_WITH_CACHE)
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            /* Start a subset here because pgmPoolTrackFlushGCPhysPTsSlow kill the pool otherwise. */
+            PVMCPU pVCpu = VMMGetCpu(pVM);
+            uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
+# endif
+
             rc = pgmPoolTrackFlushGCPhysPTsSlow(pVM, pPage);
             fFlushTLBs = true;
+
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            PGMDynMapPopAutoSubset(pVCpu, iPrevSubset);
+# endif
 #endif
         }
 
