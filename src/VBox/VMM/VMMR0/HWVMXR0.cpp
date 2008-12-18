@@ -3601,7 +3601,6 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc, rc2;
-    RTHCUINTREG     uFlags;
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
 
@@ -3628,8 +3627,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     /* Leave VMX Root Mode. */
     VMXDisable();
 
-    uFlags = ASMIntDisableFlags();
-
     CPUMSetHyperESP(pVM, VMMGetStackRC(pVM));
     CPUMSetHyperEIP(pVM, pfnHandler);
     for (int i=(int)cbParam-1;i>=0;i--)
@@ -3641,8 +3638,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 #ifdef VBOX_STRICT
     RTHCUINTREG  uFlagsTest = ASMGetFlags();
 #endif
-
-    ASMSetFlags(uFlags);
 
     /* Make sure the VMX instructions don't cause #UD faults. */
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);

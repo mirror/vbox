@@ -71,6 +71,10 @@ BEGINPROC vmmR0HostToGuest
     STAM_PROFILE_ADV_START edx
  %endif
 
+    ; turn off interrupts
+    pushf
+    cli
+    
     ;
     ; Call worker.
     ;
@@ -79,6 +83,9 @@ BEGINPROC vmmR0HostToGuest
     push    cs                          ; allow for far return and restore cs correctly.
     call    NAME(vmmR0HostToGuestAsm)
 
+    ; restore original flags
+    popf
+    
 %ifdef VBOX_WITH_STATISTICS
     ;
     ; Switcher stats.
@@ -131,9 +138,6 @@ BEGINPROC vmmR0HostToGuestAsm
     sidt    [edx + CPUMCPU.Host.idtr]
     sgdt    [edx + CPUMCPU.Host.gdtr]
     str     [edx + CPUMCPU.Host.tr]
-    ; flags
-    pushfd
-    pop     dword [edx + CPUMCPU.Host.eflags]
 
     ; control registers.
     mov     eax, cr0
@@ -505,13 +509,8 @@ GLOBALNAME ICExitTarget
     mov     ebp, [edx + CPUMCPU.Host.ebp]
 
     ; store the return code in eax    
-    mov     eax, [edx + CPUMCPU.u32RetCode]
-    
-    push    dword [edx + CPUMCPU.Host.eflags]
-    popfd
-
+    mov     eax, [edx + CPUMCPU.u32RetCode]   
     retf
-        
 ENDPROC VMMGCGuestToHostAsm
 
 ;;
