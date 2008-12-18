@@ -604,10 +604,13 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tftp.c \
 	Network/slirp/udp.c
 
+# some day will be deleted
+VBOX_WITH_SIMPLIFIED_SLIRP_SYNC=1
+
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
   $(file)_DEFS += \
-      VBOX_WITH_SIMPLIFIED_SLIRP_SYNC \
+      $(if $(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC), VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),VBOX_WITH_SLIRP_MEMORY_CHECK,) \
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)
  ifeq ($(KBUILD_TARGET),win)

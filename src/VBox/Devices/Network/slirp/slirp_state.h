@@ -133,6 +133,9 @@ typedef struct NATState
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
 #endif
+#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+    int fIcmp;
+#endif
     STAMPROFILE StatFill;
     STAMPROFILE StatPoll;
     STAMPROFILE StatFastTimer;
@@ -245,5 +248,9 @@ typedef struct NATState
 #define tcp_reass_maxqlen pData->tcp_reass_maxqlen
 #define tcp_reass_maxseg pData->tcp_reass_maxseg
 #define tcp_reass_overflows pData->tcp_reass_overflows
+
+#if !defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
+# define fIcmp pData->fIcmp
+#endif
 
 #endif /* !_slirp_state_h_ */

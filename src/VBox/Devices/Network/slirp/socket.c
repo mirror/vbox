@@ -913,6 +913,9 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     u_char code = ~0;
 
     len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
+#ifndef VBOX_WITH_SIMPLIFIED_SLIRP_SYNC
+    fIcmp = 0;  /* reply processed */
+#endif
     if (len < 0)
     {
         LogRel(("NAT: Error (%d) occurred on ICMP receiving\n", GetLastError()));
