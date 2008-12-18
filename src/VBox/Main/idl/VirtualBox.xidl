@@ -8765,7 +8765,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <method name="mountImage">
-      <desc>Mounts a CD/DVD image with the specified UUID.</desc>
+      <desc>Mounts a CD/DVD image with the specified UUID.
+
+        <result name="VBOX_E_FILE_ERROR">
+          Invalid image file location.
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          Could not find a CD/DVD image matching @a imageID.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid media state.
+        </result>
+
+      </desc>
       <param name="imageId" type="uuid" dir="in"/>
     </method>
 
