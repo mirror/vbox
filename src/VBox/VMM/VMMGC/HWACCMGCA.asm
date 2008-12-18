@@ -115,6 +115,11 @@ BEGINPROC VMXGCStartVM64
     jmp     .vmstart64_vmxon_failed
     
 .vmxon_success:
+    jnz     .vmxon_success2
+    mov     rax, VERR_VMX_GENERIC
+    jmp     .vmstart64_vmxon_failed
+    
+.vmxon_success2:    
     ; Activate the VMCS pointer
     vmptrld [rbp + 16 + 8]
     jnc     .vmptrld_success
@@ -122,6 +127,11 @@ BEGINPROC VMXGCStartVM64
     jmp     .vmstart64_vmoff_end
     
 .vmptrld_success:
+    jnz     .vmptrld_success2
+    mov     rax, VERR_VMX_GENERIC
+    jmp     .vmstart64_vmoff_end
+
+.vmptrld_success2:
 
     ; Save the VMCS pointer on the stack
     push    qword [rbp + 16 + 8];
