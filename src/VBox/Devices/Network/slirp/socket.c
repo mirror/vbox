@@ -12,17 +12,18 @@
 #ifdef __sun__
 #include <sys/filio.h>
 #endif
-#if defined(VBOX_WITH_SLIRP_ICMP) && defined (RT_OS_WINDOWS)
+#if defined (RT_OS_WINDOWS)
 #include <iphlpapi.h>
 #include <icmpapi.h>
 #endif
 
 
-#ifdef VBOX_WITH_SLIRP_ICMP
 static void send_icmp_to_guest(PNATState, char *, size_t, struct socket *, const struct sockaddr_in *);
+#ifdef RT_OS_WINDOWS
 static void sorecvfrom_icmp_win(PNATState, struct socket *);
-#endif
+#else /* RT_OS_WINDOWS */
 static void sorecvfrom_icmp_unix(PNATState, struct socket *);
+#endif /* !RT_OS_WINDOWS */
 
 void
 so_init()
@@ -442,12 +443,11 @@ sorecvfrom(PNATState pData, struct socket *so)
     if (so->so_type == IPPROTO_ICMP)
     {
         /* This is a "ping" reply */
-#if !defined(VBOX_WITH_SLIRP_ICMP) || (defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS))
-        sorecvfrom_icmp_unix(pData, so);
-#endif
-#if defined(VBOX_WITH_SLIRP_ICMP) && defined(RT_OS_WINDOWS)
+#ifdef RT_OS_WINDOWS
         sorecvfrom_icmp_win(pData, so);
-#endif
+#else /* RT_OS_WINDOWS */
+        sorecvfrom_icmp_unix(pData, so);
+#endif /* !RT_OS_WINDOWS */
         udp_detach(pData, so);
     }
     else
@@ -785,7 +785,6 @@ sofwdrain(struct socket *so)
         sofcantsendmore(so);
 }
 
-#ifdef VBOX_WITH_SLIRP_ICMP
 static void
 send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
 {
@@ -895,7 +894,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     free(icm);
 }
 
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
 static void
 sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 {
@@ -959,7 +958,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 
                 nbytes = (data_len + icr[i].DataSize > m->m_size? m->m_size - data_len: icr[i].DataSize);
                 memcpy(icp->icmp_data, icr[i].Data, nbytes);
-                
+
                 data_len += icr[i].DataSize;
 
                 ip->ip_len = data_len;
@@ -987,7 +986,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
                 data_len = (ip_broken->ip_hl << 2) + 64;
 
-                nbytes =(hlen + ICMP_MINLEN + data_len > m->m_size? m->m_size - (hlen + ICMP_MINLEN): data_len); 
+                nbytes =(hlen + ICMP_MINLEN + data_len > m->m_size? m->m_size - (hlen + ICMP_MINLEN): data_len);
                 memcpy(icp->icmp_data, ip_broken,  nbytes);
                 icmp_reflect(pData, m);
                 break;
@@ -997,9 +996,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         }
     }
 }
-# endif /* RT_OS_WINDOWS */
-#endif /* VBOX_WITH_SLIRP_ICMP */
-
+#else /* RT_OS_WINDOWS */
 static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
@@ -1025,12 +1022,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     }
     else
     {
-#ifdef VBOX_WITH_SLIRP_ICMP
         send_icmp_to_guest(pData, buff, len, so, &addr);
-#else
-        icmp_reflect(pData, so->so_m);
-        so->so_m = 0; /* Don't m_free() it again! */
-#endif
     }
 }
-
+#endif /* !RT_OS_WINDOWS */

@@ -22,7 +22,7 @@ struct socket
     struct socket   *so_next;
     struct socket   *so_prev;    /* For a linked list of sockets */
 
-#if !defined(VBOX_WITH_SLIRP_ICMP) || !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
     int s;                       /* The actual socket */
 #else
     union {
@@ -44,10 +44,8 @@ struct socket
     struct in_addr  so_laddr;    /* local host table entry */
     u_int16_t       so_fport;    /* foreign port */
     u_int16_t       so_lport;    /* local port */
-#ifdef VBOX_WITH_SLIRP_ICMP
     u_int16_t       so_hlport; /* host local port */
     struct in_addr  so_hladdr;    /* local host addr */
-#endif
 
     u_int8_t        so_iptos;    /* Type of service */
     u_int8_t        so_emu;      /* Is the socket emulated? */

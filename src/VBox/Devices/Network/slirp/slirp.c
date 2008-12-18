@@ -28,17 +28,13 @@
 
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
-#define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, (fdset)))
+# define DO_CHECK_FD_SET(so, events, fdset) (FD_ISSET((so)->s, (fdset)))
 
-# ifdef VBOX_WITH_SLIRP_ICMP
-#  define ICMP_ENGAGE_EVENT(so, fdset)               \
+# define ICMP_ENGAGE_EVENT(so, fdset)               \
     do {                                             \
         if (pData->icmp_socket.s != -1)              \
             DO_ENGAGE_EVENT1((so), (fdset), ICMP);   \
     } while (0)
-# else /* !VBOX_WITH_SLIRP_ICMP */
-#  define ICMP_ENGAGE_EVENT(so, fdset)               do {} while (0)
-# endif /* !VBOX_WITH_SLIRP_ICMP */
 
 #else /* defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) */
 
@@ -360,9 +356,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
     debug_init();
     if_init(pData);
     ip_init(pData);
-#ifdef VBOX_WITH_SLIRP_ICMP
     icmp_init(pData);
-#endif /* VBOX_WITH_SLIRP_ICMP */
 
     /* Initialise mbufs *after* setting the MTU */
     m_init(pData);
@@ -442,14 +436,12 @@ void slirp_term(PNATState pData)
     if (pData->pszDomain)
         RTStrFree((char *)(void *)pData->pszDomain);
 
-#ifdef VBOX_WITH_SLIRP_ICMP
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);
     free(pData->pvIcmpBuffer);
 # else
     closesocket(pData->icmp_socket.s);
-# endif
 #endif
 
     slirp_link_down(pData);
@@ -712,14 +704,12 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
      */
     if (link_up)
     {
-#if defined(VBOX_WITH_SLIRP_ICMP)
-# if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
         if (fIcmp)
             sorecvfrom(pData, &pData->icmp_socket);
-# else
+#else
         if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
             sorecvfrom(pData, &pData->icmp_socket);
-# endif
 #endif
         /*
          * Check TCP sockets
@@ -914,17 +904,6 @@ void slirp_select_poll(PNATState pData, fd_set *readfds, fd_set *writefds, fd_se
             }
         }
 
-#if 0
-#if defined(VBOX_WITH_SLIRP_ICMP)
-# if defined(RT_OS_WINDOWS)
-        if (fIcmp)
-            sorecvfrom(pData, &pData->icmp_socket);
-# else
-        if (pData->icmp_socket.s != -1 && FD_ISSET(pData->icmp_socket.s, readfds))
-            sorecvfrom(pData, &pData->icmp_socket);
-# endif
-#endif
-#endif
     }
 
     /*

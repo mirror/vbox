@@ -36,9 +36,7 @@
 
 #ifndef _NETINET_IP_ICMP_H_
 #define _NETINET_IP_ICMP_H_
-#ifdef VBOX_WITH_SLIRP_ICMP
 #include <queue.h>
-#endif
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -172,7 +170,6 @@ void icmp_input _P((PNATState, struct mbuf *, int));
 void icmp_error _P((PNATState, struct mbuf *, u_char, u_char, int, const char *));
 void icmp_reflect _P((PNATState, struct mbuf *));
 
-#ifdef VBOX_WITH_SLIRP_ICMP
 struct icmp_msg{
     LIST_ENTRY(icmp_msg) im_list;
     struct mbuf *im_m;
@@ -183,6 +180,5 @@ LIST_HEAD(icmp_storage, icmp_msg);
 
 int icmp_init _P((PNATState ));
 struct icmp_msg * icmp_find_original_mbuf _P((PNATState , struct ip *));
-#endif /* VBOX_WITH_SLIRP_ICMP */
 
 #endif
