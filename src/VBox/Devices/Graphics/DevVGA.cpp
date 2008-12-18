@@ -84,6 +84,39 @@
 /** Some fixes to ensure that logical scan-line lengths are not overwritten. */
 #define KEEP_SCAN_LINE_LENGTH
 
+/** Check buffer if an VRAM offset is within the right range or not. */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
+    do { \
+        if ((off) >= VGA_MAPPING_SIZE) \
+        { \
+            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
+            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
+            return VINF_IOM_HC_MMIO_WRITE; \
+        } \
+    } while (0)
+#else
+# define VERIFY_VRAM_WRITE_OFF_RETURN(pThis, off) \
+        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS)
+#endif
+
+/** Check buffer if an VRAM offset is within the right range or not. */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
+    do { \
+        if ((off) >= VGA_MAPPING_SIZE) \
+        { \
+            AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
+            Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
+            (rcVar) = VINF_IOM_HC_MMIO_READ; \
+            return 0; \
+        } \
+    } while (0)
+#else
+# define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
+        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff)
+#endif
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -1108,9 +1141,10 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 
 /* called for accesses between 0xa0000 and 0xc0000 */
 #ifdef VBOX
-static
-#endif /* VBOX */
+static uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr, int *prc)
+#else
 uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
+#endif /* VBOX */
 {
     VGAState *s = (VGAState*)opaque;
     int memory_map_mode, plane;
@@ -1146,27 +1180,23 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         break;
     }
 
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-    if (addr >= VGA_MAPPING_SIZE)
-        return VINF_IOM_HC_MMIO_WRITE;
-#endif
-
     if (s->sr[4] & 0x08) {
         /* chain 4 mode : simplest access */
 #ifndef VBOX
         ret = s->vram_ptr[addr];
 #else /* VBOX */
-        ret = s->CTX_SUFF(vram_ptr)[addr];
 # ifdef IN_RING0
         /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
         if ((s->sr[2] & 3) == 3)
         {
-            /* @todo only allow read access (doesn't work now) */
+            /** @todo only allow read access (doesn't work now) */
             IOMMMIOModifyPage(PDMDevHlpGetVM(s->CTX_SUFF(pDevIns)), GCPhys, s->GCPhysVRAM + addr, X86_PTE_RW|X86_PTE_P);
             vga_set_dirty(s, addr);
             s->fRemappedVGA = true;
         }
 # endif /* IN_RING0 */
+        VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
+        ret = s->CTX_SUFF(vram_ptr)[addr];
 #endif /* VBOX */
     } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
@@ -1175,13 +1205,16 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
         ret = s->vram_ptr[((addr & ~1) << 1) | plane];
 #else /* VBOX */
         /* See the comment for a similar line in vga_mem_writeb. */
-        ret = s->CTX_SUFF(vram_ptr)[((addr & ~1) << 2) | plane];
+        RTGCPHYS off = ((addr & ~1) << 2) | plane;
+        VERIFY_VRAM_READ_OFF_RETURN(s, off, *prc);
+        ret = s->CTX_SUFF(vram_ptr)[off];
 #endif /* VBOX */
     } else {
         /* standard VGA latched access */
 #ifndef VBOX
         s->latch = ((uint32_t *)s->vram_ptr)[addr];
 #else /* VBOX */
+        VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
         s->latch = ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr];
 #endif /* VBOX */
 
@@ -1283,19 +1316,6 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-            if (addr >= VGA_MAPPING_SIZE)
-                return VINF_IOM_HC_MMIO_WRITE;
-# else
-            if (addr >= s->vram_size)
-            {
-                AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
-                                 addr, s->bank_offset, memory_map_mode));
-                return VINF_SUCCESS;
-            }
-# endif
-            s->CTX_SUFF(vram_ptr)[addr] = val;
-
 # ifdef IN_RING0
             /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
             if ((s->sr[2] & 3) == 3)
@@ -1305,6 +1325,8 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             }
 # endif /* IN_RING0 */
 
+            VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
+            s->CTX_SUFF(vram_ptr)[addr] = val;
 #endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
             Log(("vga: chain4: [0x%x]\n", addr));
@@ -1334,17 +1356,7 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #ifndef VBOX
             s->vram_ptr[addr] = val;
 #else /* VBOX */
-# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-            if (addr >= VGA_MAPPING_SIZE)
-                return VINF_IOM_HC_MMIO_WRITE;
-# else
-            if (addr >= s->vram_size)
-            {
-                AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
-                                 addr, s->bank_offset, memory_map_mode));
-                return VINF_SUCCESS;
-            }
-# endif
+            VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
             s->CTX_SUFF(vram_ptr)[addr] = val;
 #endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
@@ -1358,19 +1370,9 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #endif /* VBOX */
         }
     } else {
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        if (addr * 4 >= VGA_MAPPING_SIZE)
-            return VINF_IOM_HC_MMIO_WRITE;
-#else
-        if (addr * 4 >= s->vram_size)
-        {
-            AssertMsgFailed(("addr=%RGp - this needs to be done in HC! bank_offset=%08x memory_map_mode=%d\n",
-                             addr * 4, s->bank_offset, memory_map_mode));
-            return VINF_SUCCESS;
-        }
-#endif
-
         /* standard VGA latched access */
+        VERIFY_VRAM_WRITE_OFF_RETURN(s, addr * 4 + 3);
+
         write_mode = s->gr[5] & 3;
         switch(write_mode) {
         default:
@@ -3319,16 +3321,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (pThis->sr[4] & 0x08) {
         /* chain 4 mode : simplest access */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
-            return VINF_IOM_HC_MMIO_WRITE;
-#else
-        if (GCPhysAddr + cItems * cbItem >= pThis->vram_size)
-        {
-            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
-            return VINF_SUCCESS;
-        }
-#endif
+        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, GCPhysAddr + cItems * cbItem - 1);
 
         while (cItems-- > 0)
             for (i = 0; i < cbItem; i++)
@@ -3342,16 +3335,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
             }
     } else if (pThis->gr[5] & 0x10) {
         /* odd/even mode (aka text mode mapping) */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        if (GCPhysAddr * 2 + cItems * cbItem >= VGA_MAPPING_SIZE)
-            return VINF_IOM_HC_MMIO_WRITE;
-#else
-        if (GCPhysAddr * 2 + cItems * cbItem >= pThis->vram_size)
-        {
-            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
-            return VINF_SUCCESS;
-        }
-#endif
+        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, GCPhysAddr * 2 + cItems * cbItem - 1);
         while (cItems-- > 0)
             for (i = 0; i < cbItem; i++)
             {
@@ -3364,18 +3348,9 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
                 GCPhysAddr++;
             }
     } else {
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        if (GCPhysAddr + cItems * cbItem >= VGA_MAPPING_SIZE)
-            return VINF_IOM_HC_MMIO_WRITE;
-#else
-        if (GCPhysAddr + cItems * cbItem >= pThis->vram_size)
-        {
-            AssertMsgFailed(("GCPhysAddr=%RGp cItems=%#x cbItem=%d\n", GCPhysAddr, cItems, cbItem));
-            return VINF_SUCCESS;
-        }
-#endif
-
         /* standard VGA latched access */
+        VERIFY_VRAM_WRITE_OFF_RETURN(pThis, GCPhysAddr + cItems * cbItem - 1);
+
         switch(pThis->gr[5] & 3) {
         default:
         case 0:
@@ -3490,42 +3465,47 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
+    int rc = VINF_SUCCESS;
     NOREF(pvUser);
     switch (cb)
     {
         case 1:
-            *(uint8_t  *)pv = vga_mem_readb(pThis, GCPhysAddr); break;
+            *(uint8_t  *)pv = vga_mem_readb(pThis, GCPhysAddr, &rc); break;
         case 2:
-            *(uint16_t *)pv = vga_mem_readb(pThis, GCPhysAddr)
-                           | (vga_mem_readb(pThis, GCPhysAddr + 1) << 8);
+            *(uint16_t *)pv = vga_mem_readb(pThis, GCPhysAddr, &rc)
+                           | (vga_mem_readb(pThis, GCPhysAddr + 1, &rc) << 8);
             break;
         case 4:
-            *(uint32_t *)pv = vga_mem_readb(pThis, GCPhysAddr)
-                           | (vga_mem_readb(pThis, GCPhysAddr + 1) <<  8)
-                           | (vga_mem_readb(pThis, GCPhysAddr + 2) << 16)
-                           | (vga_mem_readb(pThis, GCPhysAddr + 3) << 24);
+            *(uint32_t *)pv = vga_mem_readb(pThis, GCPhysAddr, &rc)
+                           | (vga_mem_readb(pThis, GCPhysAddr + 1, &rc) <<  8)
+                           | (vga_mem_readb(pThis, GCPhysAddr + 2, &rc) << 16)
+                           | (vga_mem_readb(pThis, GCPhysAddr + 3, &rc) << 24);
             break;
 
         case 8:
-            *(uint64_t *)pv = (uint64_t)vga_mem_readb(pThis, GCPhysAddr)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 1) <<  8)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 2) << 16)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 3) << 24)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 4) << 32)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 5) << 40)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 6) << 48)
-                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 7) << 56);
+            *(uint64_t *)pv = (uint64_t)vga_mem_readb(pThis, GCPhysAddr, &rc)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 1, &rc) <<  8)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 2, &rc) << 16)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 3, &rc) << 24)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 4, &rc) << 32)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 5, &rc) << 40)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 6, &rc) << 48)
+                           | ((uint64_t)vga_mem_readb(pThis, GCPhysAddr + 7, &rc) << 56);
             break;
 
         default:
         {
             uint8_t *pu8Data = (uint8_t *)pv;
             while (cb-- > 0)
-                *pu8Data++ = vga_mem_readb(pThis, GCPhysAddr++);
+            {
+                *pu8Data++ = vga_mem_readb(pThis, GCPhysAddr++, &rc);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    break;
+            }
         }
     }
     STAM_PROFILE_STOP(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
