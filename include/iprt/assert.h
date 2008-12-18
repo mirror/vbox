@@ -384,6 +384,39 @@ __END_DECLS
     } while (0)
 #endif
 
+/** @def AssertReturnStmt
+ * Assert that an expression is true, if it isn't execute the given statement
+ * and return rc.
+ *
+ * In RT_STRICT mode it will hit a breakpoint before executing the statment and
+ * returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute before returning on failure.
+ * @param   rc      What is to be presented to return.
+ */
+#ifdef RT_STRICT
+# define AssertReturnStmt(expr, stmt, rc) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
+            return (rc); \
+        } \
+    } while (0)
+#else
+# define AssertReturnStmt(expr, stmt, rc) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+            return (rc); \
+        } \
+    } while (0)
+#endif
+
 /** @def AssertReturnVoid
  * Assert that an expression is true and returns if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before returning.
@@ -405,6 +438,37 @@ __END_DECLS
     do { \
         if (RT_UNLIKELY(!(expr))) \
             return; \
+    } while (0)
+#endif
+
+/** @def AssertReturnVoidStmt
+ * Assert that an expression is true, if it isn't execute the given statement
+ * and return.
+ *
+ * In RT_STRICT mode it will hit a breakpoint before returning.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   stmt    Statement to execute before returning on failure.
+ */
+#ifdef RT_STRICT
+# define AssertReturnVoidStmt(expr, stmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            AssertMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertPanic(); \
+            stmt; \
+            return; \
+        } \
+    } while (0)
+#else
+# define AssertReturnVoidStmt(expr, stmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+            return; \
+        } \
     } while (0)
 #endif
 
@@ -607,6 +671,29 @@ __END_DECLS
     } while (0)
 #endif
 
+/** @def AssertFailedReturnStmt
+ * An assertion failed, hit breakpoint (RT_STRICT mode only), execute a
+ * statement and return a value.
+ *
+ * @param stmt The statement to execute before returning.
+ * @param rc   The value to return.
+ */
+#ifdef RT_STRICT
+# define AssertFailedReturnStmt(stmt, rc)  \
+    do { \
+        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertPanic(); \
+        stmt; \
+        return (rc); \
+    } while (0)
+#else
+# define AssertFailedReturnStmt(stmt, rc)  \
+    do { \
+        stmt; \
+        return (rc); \
+    } while (0)
+#endif
+
 /** @def AssertFailedReturnVoid
  * An assertion failed, hit breakpoint (RT_STRICT mode only) and return.
  */
@@ -624,44 +711,18 @@ __END_DECLS
     } while (0)
 #endif
 
-
-/**
- * @def AssertFailedReturnStmt
- * An assertion failed, hit breakpoint (RT_STRICT mode only), execute a
- * statement and return a value.
- *
- * @param stmt The statement to execute.
- * @param rc   The value to return.
- */
-#ifdef RT_STRICT
-# define AssertFailedReturnStmt(stmt, rc)  \
-    do { \
-        AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        stmt; \
-        RTAssertPanic(); \
-        return (rc); \
-    } while (0)
-#else
-# define AssertFailedReturnStmt(stmt, rc)  \
-    do { \
-        stmt; \
-        return (rc); \
-    } while (0)
-#endif
-
-/**
- * @def AssertFailedReturnVoidStmt
+/** @def AssertFailedReturnVoidStmt
  * An assertion failed, hit breakpoint (RT_STRICT mode only), execute a
  * statement and return.
  *
- * @param stmt The statement to execute.
+ * @param stmt The statement to execute before returning.
  */
 #ifdef RT_STRICT
 # define AssertFailedReturnVoidStmt(stmt)  \
     do { \
         AssertMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
-        stmt; \
         RTAssertPanic(); \
+        stmt; \
         return; \
     } while (0)
 #else
@@ -671,7 +732,6 @@ __END_DECLS
         return; \
     } while (0)
 #endif
-
 
 
 /** @def AssertFailedBreak
