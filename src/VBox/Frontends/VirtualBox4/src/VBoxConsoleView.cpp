@@ -668,6 +668,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mDarwinEventHandlerRef (NULL)
 # endif
     , mDarwinKeyModifiers (0)
+    , mKeyboardGrabed (false)
     , mVirtualBoxLogo (NULL)
     , mDockIconEnabled (true)
 #endif
@@ -2207,6 +2208,7 @@ bool VBoxConsoleView::darwinKeyboardEvent (EventRef inEvent)
  */
 void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 {
+    mKeyboardGrabed = fGrab;
     if (fGrab)
     {
         /* Disable mouse event compression to get *really* all mouse events in
@@ -3935,7 +3937,7 @@ void VBoxConsoleView::setMouseCoalescingEnabled (bool aOn)
            all mouse events are registered in the VM. Only do this if
            the keyboard/mouse is grabed (this is when we have a valid
            event handler). */
-        if (mDarwinEventHandlerRef)
+        if (mKeyboardGrabed)
             ::SetMouseCoalescingEnabled (false, NULL);
     }
 }
