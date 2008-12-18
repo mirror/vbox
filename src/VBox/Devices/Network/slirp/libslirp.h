@@ -53,14 +53,13 @@ int slirp_redir(PNATState pData, int is_udp, int host_port,
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
 
-#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS) 
+#if defined(VBOX_WITH_SIMPLIFIED_SLIRP_SYNC) && defined(RT_OS_WINDOWS)
 
-# ifdef VBOX_WITH_SLIRP_ICMP
 
 /*
  * ICMP handle state change
  */
-#define VBOX_ICMP_EVENT_INDEX           0
+# define VBOX_ICMP_EVENT_INDEX           0
 
 /**
  * This event is for
@@ -69,25 +68,17 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
  *  - slirp_link_down
  *  - wakeup
  */
-#  define VBOX_WAKEUP_EVENT_INDEX       1
+# define VBOX_WAKEUP_EVENT_INDEX       1
 
 /*
  * UDP/TCP socket state change (socket ready to receive, to send, ...)
  */
-#  define VBOX_SOCKET_EVENT_INDEX       2
+# define VBOX_SOCKET_EVENT_INDEX       2
 
 /*
  * The number of events for WSAWaitForMultipleEvents().
  */
-#  define VBOX_EVENT_COUNT              3
-
-# else
-
-#  define VBOX_WAKEUP_EVENT_INDEX       0
-#  define VBOX_SOCKET_EVENT_INDEX       1
-#  define VBOX_EVENT_COUNT              2
-
-# endif
+# define VBOX_EVENT_COUNT              3
 
 HANDLE *slirp_get_events(PNATState pData);
 void slirp_register_external_event(PNATState pData, HANDLE hEvent, int index);
