@@ -143,35 +143,56 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg);
 
 /**
  * Get the last error as an iprt status code.
+ *
  * @returns iprt status code.
  */
-DECLINLINE(int) rtTcpError(bool fHErrNo)
+DECLINLINE(int) rtTcpError(void)
 {
 #ifdef RT_OS_WINDOWS
     return RTErrConvertFromWin32(WSAGetLastError());
 #else
-    if (fHErrNo)
+    return RTErrConvertFromErrno(errno);
+#endif
+}
+
+
+/**
+ * Resets the last error.
+ */
+DECLINLINE(void) rtTcpErrorReset(void)
+{
+#ifdef RT_OS_WINDOWS
+    WSASetLastError(0);
+#else
+    errno = 0;
+#endif
+}
+
+
+/**
+ * Get the last resolver error as an iprt status code.
+ *
+ * @returns iprt status code.
+ */
+DECLINLINE(int) rtTcpResolverError(void)
+{
+#ifdef RT_OS_WINDOWS
+    return RTErrConvertFromWin32(WSAGetLastError());
+#else
+    switch (h_errno)
     {
-        switch (h_errno)
-        {
-            case HOST_NOT_FOUND:
-                return VERR_NET_HOST_NOT_FOUND;
-                break;
-            case NO_DATA:
-                return VERR_NET_ADDRESS_NOT_AVAILABLE;
-                break;
-            case NO_RECOVERY:
-                return VERR_IO_GEN_FAILURE;
-                break;
-            case TRY_AGAIN:
-                return VERR_TRY_AGAIN;
-                break;
-            default:
-                return VERR_UNRESOLVED_ERROR;
-        }
+        case HOST_NOT_FOUND:
+            return VERR_NET_HOST_NOT_FOUND;
+        case NO_DATA:
+            return VERR_NET_ADDRESS_NOT_AVAILABLE;
+        case NO_RECOVERY:
+            return VERR_IO_GEN_FAILURE;
+        case TRY_AGAIN:
+            return VERR_TRY_AGAIN;
+
+        default:
+            return VERR_UNRESOLVED_ERROR;
     }
-    else
-        return RTErrConvertFromErrno(errno);
 #endif
 }
 
@@ -337,7 +358,7 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
             pHostEnt = gethostbyaddr((char *)&InAddr, 4, AF_INET);
             if (!pHostEnt)
             {
-                rc = rtTcpError(true);
+                rc = rtTcpResolverError();
                 AssertMsgFailed(("Could not get host address rc=%Rrc\n", rc));
                 return rc;
             }
@@ -396,25 +417,25 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
                 }
                 else
                 {
-                    rc = rtTcpError(false);
+                    rc = rtTcpError();
                     AssertMsgFailed(("listen() %Rrc\n", rc));
                 }
             }
             else
             {
-                rc = rtTcpError(false);
+                rc = rtTcpError();
             }
         }
         else
         {
-            rc = rtTcpError(false);
+            rc = rtTcpError();
             AssertMsgFailed(("setsockopt() %Rrc\n", rc));
         }
         rtTcpClose(WaitSock, "RTServerCreateEx");
     }
     else
     {
-        rc = rtTcpError(false);
+        rc = rtTcpError();
         AssertMsgFailed(("socket() %Rrc\n", rc));
     }
 
@@ -740,11 +761,12 @@ RTR3DECL(int)  RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t 
     size_t cbToRead = cbBuffer;
     for (;;)
     {
+        rtTcpErrorReset();
         ssize_t cbBytesRead = recv(Sock, (char *)pvBuffer + cbRead, cbToRead, MSG_NOSIGNAL);
         if (cbBytesRead < 0)
-            return rtTcpError(false);
-        if (cbBytesRead == 0 && rtTcpError(false))
-            return rtTcpError(false);
+            return rtTcpError();
+        if (cbBytesRead == 0 && rtTcpError())
+            return rtTcpError();
         if (pcbRead)
         {
             /* return partial data */
@@ -771,9 +793,9 @@ RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
     {
         ssize_t cbWritten = send(Sock, (const char *)pvBuffer, cbBuffer, MSG_NOSIGNAL);
         if (cbWritten < 0)
-            return rtTcpError(false);
+            return rtTcpError();
         AssertMsg(cbBuffer >= (size_t)cbWritten, ("Wrote more than we requested!!! cbWritten=%d cbBuffer=%d rtTcpError()=%d\n",
-                                                  cbWritten, cbBuffer, rtTcpError(false)));
+                                                  cbWritten, cbBuffer, rtTcpError()));
         cbBuffer -= cbWritten;
         pvBuffer = (char *)pvBuffer + cbWritten;
     } while (cbBuffer);
@@ -815,7 +837,7 @@ RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, unsigned cMillies)
         return VINF_SUCCESS;
     if (rc == 0)
         return VERR_TIMEOUT;
-    return rtTcpError(false);
+    return rtTcpError();
 }
 
 
@@ -855,7 +877,7 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
         pHostEnt = gethostbyaddr((char *)&InAddr, 4, AF_INET);
         if (!pHostEnt)
         {
-            rc = rtTcpError(false);
+            rc = rtTcpError();
             AssertMsgFailed(("Could not resolve '%s', rc=%Rrc\n", pszAddress, rc));
             return rc;
         }
@@ -876,11 +898,11 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
             *pSock = Sock;
             return VINF_SUCCESS;
         }
-        rc = rtTcpError(false);
+        rc = rtTcpError();
         rtTcpClose(Sock, "RTTcpClientConnect");
     }
     else
-        rc = rtTcpError(false);
+        rc = rtTcpError();
     return rc;
 }
 
@@ -910,7 +932,7 @@ static int rtTcpClose(RTSOCKET Sock, const char *pszMsg)
 #endif
     if (!rc)
         return VINF_SUCCESS;
-    rc = rtTcpError(false);
+    rc = rtTcpError();
     AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", pszMsg, Sock, rc));
     return rc;
 }
