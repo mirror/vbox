@@ -47,11 +47,9 @@ endif
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_LNX_INST_STAGE_DIR)/,\
-		$(if $(VBOX_OSE),,90-vbox-usb.fdi) \
 		install.sh \
 		deffiles \
 		routines.sh \
-		$(if $(VBOX_OSE),,vbox-create-usb-node.sh) \
 		vboxdrv.sh \
 		VirtualBox.tar.bz2 \
 		LICENSE) \
@@ -225,11 +223,9 @@ OTHER_CLEAN += $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_ARCH_FIL
 $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2 \
 		$(VBOX_VERSION_STAMP) \
-		$(if $(VBOX_OSE),,$(VBOX_PATH_LNX_INST_SRC)/90-vbox-usb.fdi) \
 		$(VBOX_PATH_LNX_INST_SRC)/routines.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/deffiles \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
-		$(if $(VBOX_OSE),,$(VBOX_PATH_LNX_INST_SRC)/vbox-create-usb-node.sh) \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
 		$(wildcard $(PATH_BIN)/src/*) \
@@ -238,11 +234,9 @@ $(PATH_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(wildcard $(PATH_BIN)/src/*/*/*/*)
 	$(call MSG_TOOL,makeself,,$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*.run)
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/90-vbox-usb.fdi  $(VBOX_LNX_INST_STAGE_DIR)/)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/routines.sh          $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/deffiles             $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)    $(VBOX_LNX_INST_STAGE_DIR)/LICENSE)
-	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0755 $(VBOX_PATH_LNX_INST_SRC)/vbox-create-usb-node.sh  $(VBOX_LNX_INST_STAGE_DIR)/)
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_INST_OUT_DIR)/install.sh            $(VBOX_LNX_INST_STAGE_DIR)/
 	$(QUIET)$(RM) -f $@
