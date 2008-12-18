@@ -47,6 +47,7 @@ private:
     QString languageId;
     QString maxGuestRes;
     bool trayIconEnabled;
+    bool dockPreviewEnabled;
 
     friend class VBoxGlobalSettings;
 };
@@ -62,6 +63,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
     Q_PROPERTY (bool trayIconEnabled READ trayIconEnabled WRITE setTrayIconEnabled)
+    Q_PROPERTY (bool dockPreviewEnabled READ dockPreviewEnabled WRITE setDockPreviewEnabled)
 
 public:
 
@@ -105,9 +107,17 @@ public:
     }
 
     bool trayIconEnabled() const { return data()->trayIconEnabled; }
-    void setTrayIconEnabled (bool enabled) {
+    void setTrayIconEnabled (bool enabled)
+    {
         mData()->trayIconEnabled = enabled;
     }
+
+    bool dockPreviewEnabled() const { return data()->dockPreviewEnabled; }
+    void setDockPreviewEnabled (bool enabled)
+    {
+        mData()->dockPreviewEnabled = enabled;
+    }
+
 
     //
 

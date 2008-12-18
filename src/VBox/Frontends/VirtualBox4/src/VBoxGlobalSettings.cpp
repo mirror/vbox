@@ -60,6 +60,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     languageId  = QString::null;
     maxGuestRes = "auto";
     trayIconEnabled = false;
+    dockPreviewEnabled = true;
 }
 
 VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &that)
@@ -70,6 +71,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
     trayIconEnabled = that.trayIconEnabled;
+    dockPreviewEnabled = that.dockPreviewEnabled;
 }
 
 VBoxGlobalSettingsData::~VBoxGlobalSettingsData()
@@ -84,7 +86,9 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
          guiFeatures == that.guiFeatures &&
          languageId  == that.languageId &&
          maxGuestRes == that.maxGuestRes &&
-         trayIconEnabled == that.trayIconEnabled);
+         trayIconEnabled == that.trayIconEnabled
+         && dockPreviewEnabled == that.dockPreviewEnabled
+        );
 }
 
 /** @class VBoxGlobalSettings
@@ -105,12 +109,15 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKey",       "hostKey",         "\\d*[1-9]\\d*", true },
-    { "GUI/Input/AutoCapture",   "autoCapture",     "true|false", true },
-    { "GUI/Customizations",      "guiFeatures",     "\\S+", true },
-    { "GUI/LanguageID",          "languageId",      gVBoxLangIDRegExp, true },
-    { "GUI/MaxGuestResolution",  "maxGuestRes",     "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
-    { "GUI/TrayIcon/Enabled",    "trayIconEnabled", "true|false", true }
+    { "GUI/Input/HostKey",                         "hostKey",            "\\d*[1-9]\\d*", true },
+    { "GUI/Input/AutoCapture",                     "autoCapture",        "true|false", true },
+    { "GUI/Customizations",                        "guiFeatures",        "\\S+", true },
+    { "GUI/LanguageID",                            "languageId",         gVBoxLangIDRegExp, true },
+    { "GUI/MaxGuestResolution",                    "maxGuestRes",        "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
+    { "GUI/TrayIcon/Enabled",                      "trayIconEnabled",    "true|false", true },
+#ifdef Q_WS_MAC
+    { VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "dockPreviewEnabled", "true|false", true }
+#endif /* Q_WS_MAC */
 };
 
 void VBoxGlobalSettings::setHostKey (int key)
