@@ -322,8 +322,8 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
             VBOX_SKB_RESET_NETWORK_HDR(pPkt);
             /* Restore ethernet header back. */
             skb_push(pPkt, ETH_HLEN);
+            VBOX_SKB_RESET_MAC_HDR(pPkt);
         }
-        VBOX_SKB_RESET_MAC_HDR(pPkt);
         VBOXNETFLT_SKB_CB(pPkt) = VBOXNETFLT_CB_TAG;
 
         return pPkt;
@@ -850,6 +850,8 @@ bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
     if (pDev)
     {
         fRc = !!(pDev->promiscuity - (ASMAtomicUoReadBool(&pThis->u.s.fPromiscuousSet) & 1));
+        Log(("vboxNetFltPortOsIsPromiscuous: returns %d, pDev->promiscuity=%d, fPromiscuousSet=%d\n",
+             fRc, pDev->promiscuity, pThis->u.s.fPromiscuousSet));
         vboxNetFltLinuxReleaseNetDev(pThis, pDev);
     }
     return fRc;
