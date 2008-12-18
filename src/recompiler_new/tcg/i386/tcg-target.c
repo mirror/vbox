@@ -620,7 +620,7 @@ static void tcg_out_vbox_phys_write(TCGContext *s, int index,
     tcg_out_mov(s, TCG_REG_EAX, addr_reg);
     Assert(!useReg2 || (val_reg2 != TCG_REG_EDX));
     /* mov val_reg, %edx */
-    tcg_out_mov(s, TCG_REG_EDX, val_reg);    
+    tcg_out_mov(s, TCG_REG_EDX, val_reg);
     if (useReg2)
         tcg_out_mov(s, TCG_REG_ECX, val_reg2);
 
@@ -877,9 +877,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 #endif
 #ifdef VBOX
 # ifdef RT_OS_DARWIN
-    int bias1 = 12, bias2 = 8, bias3 = 4;
+    int bias1 = 12, bias3 = 4;/** @todo TCG_TARGET_STACK_ALIGN. */
 # else
-    int bias1 = 0, bias2 = 0, bias3 = 0;
+    int bias1 = 0, bias3 = 0;
 # endif
 #endif
 
