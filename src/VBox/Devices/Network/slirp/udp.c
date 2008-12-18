@@ -71,10 +71,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     int len;
     struct ip save_ip;
     struct socket *so;
-#ifdef VBOX_WITH_SLIRP_ICMP
     int ret;
     int ttl;
-#endif
 
     DEBUG_CALL("udp_input");
     DEBUG_ARG("m = %lx", (long)m);
@@ -238,13 +236,12 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     if (so->so_emu)
         udp_emu(pData, so, m);
 
-#ifdef VBOX_WITH_SLIRP_ICMP
     ttl = ip->ip_ttl = save_ip.ip_ttl;
     ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
     if (ret < 0) {
         LogRel(("NAT: Error (%s) occurred while setting TTL(%d) attribute of IP packet to socket %R[natsock]\n", strerror(errno), ip->ip_ttl, so));
     }
-#endif
+
     if (sosendto(pData, so, m) == -1)
     {
         m->m_len += iphlen;
@@ -352,11 +349,9 @@ int
 udp_attach(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
-#ifdef VBOX_WITH_SLIRP_ICMP
     struct sockaddr sa_addr;
     socklen_t socklen = sizeof(struct sockaddr);
     int status;
-#endif
 
     if ((so->s = socket(AF_INET,SOCK_DGRAM,0)) != -1)
     {
@@ -387,12 +382,10 @@ udp_attach(PNATState pData, struct socket *so)
             /* enable broadcast for later use */
             setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
             insque(pData, so,&udb);
-#ifdef VBOX_WITH_SLIRP_ICMP
             status = getsockname(so->s, &sa_addr, &socklen);
             Assert(status == 0 && sa_addr.sa_family == AF_INET);
             so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
             so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
-#endif
         }
     }
     return so->s;
@@ -401,16 +394,11 @@ udp_attach(PNATState pData, struct socket *so)
 void
 udp_detach(PNATState pData, struct socket *so)
 {
-#ifndef VBOX_WITH_SLIRP_ICMP
-    closesocket(so->s);
-    sofree(pData, so);
-#else /*! VBOX_WITH_SLIRP_ICMP */
     if (so != &pData->icmp_socket)
     {
         closesocket(so->s);
         sofree(pData, so);
     }
-#endif /* VBOX_WITH_SLIRP_ICMP */
 }
 
 static const struct tos_t udptos[] =

@@ -70,7 +70,6 @@ static const int icmp_flush[19] =
 /* ADDR MASK REPLY (18) */   0
 };
 
-#ifdef VBOX_WITH_SLIRP_ICMP
 int
 icmp_init(PNATState pData)
 {
@@ -264,7 +263,6 @@ icmp_attach(PNATState pData, struct mbuf *m)
     LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
     return 0;
 }
-#endif /* VBOX_WITH_SLIRP_ICMP */
 
 /*
  * Process a received ICMP message.
@@ -277,7 +275,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     int icmplen = ip->ip_len;
     int status;
     uint32_t dst;
-#if defined(VBOX_WITH_SLIRP_ICMP) && !defined(RT_OS_WINDOWS)
+#if !defined(RT_OS_WINDOWS)
     int ttl;
 #endif
 
@@ -320,76 +318,22 @@ freeit:
     switch (icp->icmp_type)
     {
         case ICMP_ECHO:
-#ifndef VBOX_WITH_SLIRP_ICMP
-            icp->icmp_type = ICMP_ECHOREPLY;
-#endif /* !VBOX_WITH_SLIRP_ICMP */
-
             ip->ip_len += hlen;              /* since ip_input subtracts this */
             dst = ip->ip_dst.s_addr;
             if (dst == alias_addr.s_addr)
             {
-#ifdef VBOX_WITH_SLIRP_ICMP
                 icp->icmp_type = ICMP_ECHOREPLY;
                 ip->ip_dst.s_addr = ip->ip_src.s_addr;
                 ip->ip_src.s_addr = dst;
-#endif /* VBOX_WITH_SLIRP_ICMP */
                 icmp_reflect(pData, m);
             }
             else
             {
                 struct sockaddr_in addr;
-#ifndef VBOX_WITH_SLIRP_ICMP
-                struct socket *so;
-                if ((so = socreate()) == NULL)
-                    goto freeit;
-                if (udp_attach(pData, so) == -1)
-                {
-                    DEBUG_MISC((dfd,"icmp_input udp_attach errno = %d-%s\n",
-                                errno,strerror(errno)));
-                    sofree(pData, so);
-                    m_free(pData, m);
-                    goto end_error;
-                }
-                so->so_m = m;
-                so->so_faddr = ip->ip_dst;
-                so->so_fport = htons(7);
-                so->so_laddr = ip->ip_src;
-                so->so_lport = htons(9);
-                so->so_iptos = ip->ip_tos;
-                so->so_type = IPPROTO_ICMP;
-                so->so_state = SS_ISFCONNECTED;
-
-                addr.sin_family = AF_INET;
-                if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
-                {
-                    /* It's an alias */
-                    switch (ntohl(so->so_faddr.s_addr) & ~pData->netmask)
-                    {
-                        case CTL_DNS:
-                            addr.sin_addr = dns_addr;
-                            break;
-                        case CTL_ALIAS:
-                        default:
-                            addr.sin_addr = loopback_addr;
-                            break;
-                    }
-                }
-                else
-                    addr.sin_addr = so->so_faddr;
-                addr.sin_port = so->so_fport;
-                if (sendto(so->s, icmp_ping_msg, strlen(icmp_ping_msg), 0,
-                            (struct sockaddr *)&addr, sizeof(addr)) == -1)
-                {
-                    DEBUG_MISC((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-                                errno,strerror(errno)));
-                    icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0,strerror(errno));
-                    udp_detach(pData, so);
-                }
-#else /* VBOX_WITH_SLIRP_ICMP */
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
                 IP_OPTION_INFORMATION ipopt;
                 int error;
-# endif
+#endif
                 addr.sin_family = AF_INET;
                 if ((ip->ip_dst.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
                 {
@@ -407,7 +351,7 @@ freeit:
                 }
                 else
                     addr.sin_addr.s_addr = ip->ip_dst.s_addr;
-# ifndef RT_OS_WINDOWS
+#ifndef RT_OS_WINDOWS
                 if (pData->icmp_socket.s != -1)
                 {
                     icmp_attach(pData, m);
@@ -426,10 +370,10 @@ freeit:
                         icmp_error(pData, m, ICMP_UNREACH,ICMP_UNREACH_NET, 0, strerror(errno));
                         m_free(pData, m);
                     }
-                } 
+                }
                 else
                 {
-                    /* 
+                    /*
                      * We're freeing the ICMP message, which unable sent or process.
                      * That behavior described in rfc 793, we shouldn't notify sender about
                      * fail of processing it's ICMP packets
@@ -437,7 +381,7 @@ freeit:
                     m_free(pData, m);
                     return;
                 }
-# else /* RT_OS_WINDOWS */
+#else /* RT_OS_WINDOWS */
                 icmp_attach(pData, m);
                 pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
                 pData->icmp_socket.so_icmp_id = icp->icmp_id;
@@ -471,8 +415,7 @@ freeit:
                             break;
                     }
                 }
-# endif /* RT_OS_WINDOWS */
-#endif /* VBOX_WITH_SLIRP_ICMP */
+#endif /* RT_OS_WINDOWS */
             } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
             break;
         case ICMP_UNREACH:
@@ -666,31 +609,6 @@ icmp_reflect(PNATState pData, struct mbuf *m)
 
     m->m_data -= hlen;
     m->m_len += hlen;
-
-#ifndef VBOX_WITH_SLIRP_ICMP
-    /* fill in ip */
-    if (optlen > 0)
-    {
-        /*
-         * Strip out original options by copying rest of first
-         * mbuf's data back, and adjust the IP length.
-         */
-        memmove((caddr_t)(ip + 1), (caddr_t)ip + hlen,
-                 (unsigned )(m->m_len - hlen));
-        hlen -= optlen;
-        ip->ip_hl = hlen >> 2;
-        ip->ip_len -= optlen;
-        m->m_len -= optlen;
-    }
-    ip->ip_ttl = MAXTTL;
-    {
-        /* swap */
-        struct in_addr icmp_dst;
-        icmp_dst = ip->ip_dst;
-        ip->ip_dst = ip->ip_src;
-        ip->ip_src = icmp_dst;
-    }
-#endif /* !VBOX_WITH_SLIRP_ICMP */
 
     (void ) ip_output(pData, (struct socket *)NULL, m);
 

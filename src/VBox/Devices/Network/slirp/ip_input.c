@@ -146,9 +146,7 @@ ip_input(PNATState pData, struct mbuf *m)
         goto bad;
     }
 
-#ifdef VBOX_WITH_SLIRP_ICMP
     ip->ip_ttl--;
-#endif
     /*
      * If offset or IP_MF are set, must reassemble.
      * Otherwise, nothing need be done.
@@ -245,7 +243,7 @@ ip_reass(PNATState pData, struct mbuf* m)
          */
         struct ipq_t *q = TAILQ_LAST(head, ipqhead);
         if (q == NULL)
-        { 
+        {
             /* gak */
             for (i = 0; i < IPREASS_NHASH; i++)
             {
