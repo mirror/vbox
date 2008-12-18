@@ -116,7 +116,7 @@ static void vdiInitPreHeader(PVDIPREHEADER pPreHdr)
 static int vdiValidatePreHeader(PVDIPREHEADER pPreHdr)
 {
     if (pPreHdr->u32Signature != VDI_IMAGE_SIGNATURE)
-        return VERR_VD_VDI_INVALID_SIGNATURE;
+        return VERR_VD_VDI_INVALID_HEADER;
 
     if (    VDI_GET_VERSION_MAJOR(pPreHdr->u32Version) != VDI_IMAGE_VERSION_MAJOR
         &&  pPreHdr->u32Version != 0x00000002)    /* old version. */
