@@ -1147,7 +1147,7 @@ static uint64_t vhdGetSize(void *pBackendData)
 
     if (pImage)
     {
-        Log(("%s: cbSize=%llu\n", pImage->cbSize));
+        Log(("%s: cbSize=%llu\n", __FUNCTION__, pImage->cbSize));
         return pImage->cbSize;
     }
     else
