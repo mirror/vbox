@@ -262,7 +262,6 @@ DevicesR3_SOURCES       = \
 	Audio/DevSB16.cpp \
 	PC/DevDMA.cpp \
 	Storage/fdc.c \
-	Storage/Debug.cpp \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
 
@@ -579,6 +578,7 @@ Drivers_SOURCES    = \
 	Storage/DrvHostFloppy.cpp \
 	Storage/DrvMediaISO.cpp \
 	Storage/DrvRawImage.cpp \
+	Storage/Debug.cpp \
 	Storage/DrvVD.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
