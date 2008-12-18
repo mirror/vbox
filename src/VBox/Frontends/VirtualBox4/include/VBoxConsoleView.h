@@ -299,7 +299,7 @@ private:
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 mDarwinKeyModifiers;
-    bool mKeyboardGrabed;
+    bool mKeyboardGrabbed;
 #endif
 
     VBoxFrameBuffer *mFrameBuf;
